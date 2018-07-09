@@ -9,7 +9,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
 	This algorithm chooses splits within the tree based on which mutation occurs most frequently,
 	weighted by the prior probabilities of each mutation state for each character.
-	Strings with NA ('-') as a character in the split character are segregated with the
+	Strings with NA ('-') as a state in the split character are segregated with the
 	set of nodes which they most closely match to w.r.t. all other characters.
 
 	:param nodes:
@@ -30,7 +30,8 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 		DO NOT MODIFY
 	:return:
 		Returns a graph which contains splits as nodes in the form "character state (uniq_identifier)", and leaves
-		as either samples, or the roots of the subsets of samples that need to be considered by another algorithm
+		as either samples, or the roots of the subsets of samples that need to be considered by another algorithm.
+		Edges are labeled with the corresponding mutation taken
 		AND
 		a list in the form [[sub_root, sub_samples],....] which is a list of subproblems still needed to be solved
 	"""
@@ -134,7 +135,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 		left_nodes = [node for node in left_network.nodes() if left_network.in_degree(node) == 0]
 		G = nx.compose(G, left_network)
 		for node in left_nodes:
-			G.add_edge(splitter, node, weight=0)
+			G.add_edge(splitter, node, weight=0, label="None")
 
 	# Recursively build right side of network
 	right_network, right_subproblems = greedy_build(right_split, priors, cutoff, considered.copy(), uniq + "1" )
@@ -143,9 +144,9 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	G = nx.compose(G, right_network)
 	for node in right_nodes:
 		if not priors:
-			G.add_edge(splitter, node, weight=1)
+			G.add_edge(splitter, node, weight=1, label = str(character) + ": 0 -> " + str(state))
 		else:
-			G.add_edge(splitter, node, weight=-np.log(priors[int(character)][state]))
+			G.add_edge(splitter, node, weight=-np.log(priors[int(character)][state]), label=str(character) + ": 0 -> " + str(state))
 
 
 	return G, left_subproblems + right_subproblems

@@ -10,12 +10,13 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 						   MIPGap = .15, num_threads = 1, time_limit = -1):
     """
     Given a Steienr Tree problem instance, returns a minimum weight subgraph that satisfies the demands.
-    :param graph: a directed graph with attribute 'weight' on all edges
+
+    :param graph: a directed graph with attribute 'weight' and 'label' on all edges
     :param model: a Gurobi model to be optimized
     :param edge_variables: a dictionary of gurobi edge variables
     :param detailed_output: flag which when True will print the edges in the optimal subgraph
     :param time_limit: time limit for the run in seconds
-    :return: a optimal subgraph containing the path(s) if the solution is Optimal, else None
+    :return: an optimal subgraph containing the path(s) if the solution is Optimal, else None
     """
     start_time = python_time.time()
 
@@ -58,10 +59,12 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 
 def generate_mSteiner_model(graph, source, destinations):
 	"""
+	Generates a Gurobi instance along with its corresponding parameters of interest to be optimized over
+
 	:param graph: a directed graph with attribute 'weight' on all edges
 	:param source: source/root node for Steiner Tree
 	:param destinations: Set of terminal nodes for Steiner Tree problem
-	:return: a Gurobi model pertaining to the mTCP instance, and the edge_variables involved
+	:return: a Gurobi model pertaining to the Steiner Tree instance, and the edge_variables involved
 	"""
 
 	# Source get +len(destination) sourceflow, destinations get -1, other nodes 0
@@ -106,8 +109,6 @@ def generate_mSteiner_model(graph, source, destinations):
 	# OBJECTIVE
 	# Minimize total path weight
 
-
-	#print quicksum(edge_variables_binary[u, v] * graph[u][v]['weight'] for u, v in graph.edges())
 	objective_expression = quicksum(edge_variables_binary[u, v] * graph[u][v]['weight'] for u, v in graph.edges())
 	model.setObjective(objective_expression, GRB.MINIMIZE)
 
@@ -115,11 +116,13 @@ def generate_mSteiner_model(graph, source, destinations):
 
 def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 	"""
+	Extracts the optimal subgraphs associated with the Gurobi Steiner Tree model.
+
 	:param model: an optimized gurobi model
 	:param graph: a directed graph with attribute 'weight' on all edges
 	:param edge_variables: a dictionary of variables corresponding to the variables d_v,w
 	:param detailed_output: flag which when True will print the edges in the optimal subgraph
-	:return
+	:return List of most optimal subgraphs discovered while solving for the Gurobi Steiner Tree model
 	"""
 	# Recover minimal subgraphs
 	subgraphs = []
@@ -130,7 +133,7 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 			value_for_edge = model.getAttr('xn', edge_variables)
 			for u,v in graph.edges():
 				if value_for_edge[u,v] > 0:
-					subgraph.add_edge(u, v, weight=graph[u][v]['weight'])
+					subgraph.add_edge(u, v, weight=graph[u][v]['weight'], label=graph[u][v]['label'])
 
 		# Print solution
 			print('-----------------------------------------------------------------------')
@@ -146,6 +149,7 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 def execution_time(start_time, end_time):
 	"""
 	Returns the time of execution in days, hours, minutes, and seconds
+
 	:param start_time: the start time of execution
 	:param end_time: the end time of execution
 	:return:

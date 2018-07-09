@@ -62,6 +62,23 @@ def get_edge_length(x,y,priors=None):
 				return -1
 	return count
 
+def mutations_from_parent_to_child(parent, child):
+	"""
+	Creates a string label describing the mutations taken from  a parent to a child
+	:param parent: A node in the form 'Ch1|Ch2|....|Chn'
+	:param child: A node in the form 'Ch1|Ch2|....|Chn'
+	:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....
+	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
+	"""
+	parent_list = parent.split('|')
+	child_list = child.split('|')
+	mutations = []
+	for i in range(0, len(parent_list)):
+		if parent_list[i] != child_list[i] and child_list[i] != '-':
+			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+
+	return " , ".join(mutations)
+
 def root_finder(target_nodes):
 	"""
 	Given a list of targets_nodes, return the least common ancestor of all nodes
@@ -128,16 +145,16 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 
 					# Check this cutoff
 					if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < 4:
-						initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors))
-						initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors))
+						initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
+						initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 						temp_source_nodes.add(parent)
 
 			min_distance = min(top_parents, key = lambda k: k[0])[0]
 			lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
 
 			for parent, sample_2 in lst:
-				initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors))
-				initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors))
+				initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
+				initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 				temp_source_nodes.add(parent)
 
 		source_nodes = list(temp_source_nodes)

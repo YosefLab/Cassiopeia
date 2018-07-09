@@ -67,5 +67,8 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
 
 			else:
 				samples_as_string[sample] += '-|'
+	# Dropping final | in string
+	for sample in samples_as_string:
+		samples_as_string[sample] = samples_as_string[sample][:-1]
 
 	return samples_as_string
