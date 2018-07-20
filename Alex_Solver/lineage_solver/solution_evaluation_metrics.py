@@ -33,7 +33,7 @@ def cci_score(nodes):
 		return 1
 	else:
 		for i in range(0, len(compatability_score) - 1):
-			cci_score += ((compatability_score[i] + compatability_score[i + 1]) / 2.0) / (1.0 * len(cci) - 1)
+			cci_score += ((compatability_score[i] + compatability_score[i + 1]) / 2.0) / (1.0 * len(compatability_score) - 1)
 
 	return cci_score
 

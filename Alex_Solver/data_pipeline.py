@@ -72,3 +72,22 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
 		samples_as_string[sample] = samples_as_string[sample][:-1]
 
 	return samples_as_string
+
+def convert_network_to_newick_format(graph):
+	"""
+	Given a networkx network, converts to proper Newick format.
+
+	TODO: Add options for edge weights
+	:param graph: Networkx graph object
+	:return: String in newick format representing the above graph
+	"""
+
+	def _to_newick_str(g, node):
+		is_leaf = g.out_degree(node) == 0
+		return '%s' % (node,) if is_leaf else (
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')')
+
+	def to_newick_str(g, root=0):  # 0 assumed to be the root
+		return _to_newick_str(g, root) + ';'
+
+	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
