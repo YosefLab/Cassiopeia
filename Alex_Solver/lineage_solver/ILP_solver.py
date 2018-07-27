@@ -70,6 +70,11 @@ def generate_mSteiner_model(graph, source, destinations):
 	# Source get +len(destination) sourceflow, destinations get -1, other nodes 0
 	sourceflow = {v: 0 for v in graph.nodes()}
 	sourceflow[source] = len(destinations)
+
+	if source in destinations:
+		destinations.remove(source)
+		sourceflow[source] -= 1
+
 	for destination in destinations:
 		sourceflow[destination] = -1
 

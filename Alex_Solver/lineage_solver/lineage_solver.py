@@ -1,5 +1,8 @@
 import concurrent.futures
+import functools
+import multiprocessing
 import networkx as nx
+import traceback
 
 from greedy_solver import root_finder, greedy_build
 from ILP_solver import generate_mSteiner_model, solve_steiner_instance
@@ -43,9 +46,9 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 		return subgraph
 
 	if method == "hybrid":
-		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=100)
+		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=200)
 
-		executor = concurrent.futures.ProcessPoolExecutor(10)
+		executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), 10))
 		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, prior_probabilities) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
@@ -59,6 +62,20 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 	else:
 		raise Exception("Please specify one of the following methods: ilp, hybrid, greedy")
 
+def reraise_with_stack(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            traceback_str = traceback.format_exc(e)
+            raise StandardError("Error occurred. Original traceback "
+                                "is\n%s\n" % traceback_str)
+
+    return wrapped
+
+@reraise_with_stack
 def find_good_gurobi_subgraph(root, targets, prior_probabilities):
 	"""
 	Sub-Function used for multi-threading in hybrid method
@@ -76,10 +93,16 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities):
 	"""
 
 	print "Started new thread for: " + str(root)
+
+	if len(set(targets)) == 1:
+		graph = nx.DiGraph()
+		graph.add_node(root)
+		return graph
+
 	potential_network_priors = build_potential_graph_from_base_graph(targets, priors=prior_probabilities)
 
 	model, edge_variables = generate_mSteiner_model(potential_network_priors, root, set(targets))
 	subgraph = solve_steiner_instance(model, potential_network_priors, edge_variables, MIPGap=.01, detailed_output=False,
-						   time_limit=60)[0]
+						   time_limit=120)[0]
 	return subgraph
 

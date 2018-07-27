@@ -121,15 +121,8 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 		initial_network.add_node(sample)
 
 	samples = list(samples)
-	for i in range(0, len(samples)):
-		sample = samples[i]
-		for j in range(i+1, len(samples)):
-			sample_2 = samples[j]
-			edge_length = get_edge_length(sample, sample_2)
-			if edge_length != -1:
-				initial_network.add_edge(sample, sample_2, weight=edge_length)
 
-	source_nodes = get_sources_of_graph(initial_network)
+	source_nodes = samples
 
 	print "Number of initial extrapolated pairs:", len(source_nodes)
 	while len(source_nodes) != 1:
