@@ -3,6 +3,22 @@ import networkx as nx
 import random
 
 from simulation_utils import get_leaves_of_tree
+
+def tree_collapse(graph):
+	"""
+	Given a networkx graph in the form of a tree, collapse two nodes togethor if there are no mutations seperating the two nodes
+	:param graph: Networkx Graph as a tree
+	:return: Collapsed tree as a Networkx object
+	"""
+	new_network = nx.DiGraph()
+	for edge in graph.edges():
+		if edge[0].split('_')[0] == edge[1].split('_')[0]:
+			for node in graph.successors(edge[1]):
+				new_network.add_edge(edge[0], node)
+		else:
+			new_network.add_edge(edge[0], edge[1])
+	return new_network
+
 def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False):
 	"""
 	Given a simulated tree and a reconstructed tree, calculate the percentage of triplets that have
@@ -21,6 +37,7 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 	targets_original_network = get_leaves_of_tree(simulated_tree)
 	correct_classifications = defaultdict(int)
 	frequency_of_triplets = defaultdict(int)
+	simulated_tree = tree_collapse(simulated_tree)
 	for _ in range(0, number_of_trials):
 
 		# Sampling triplets a,b, and c without replacement

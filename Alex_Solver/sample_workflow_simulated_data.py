@@ -36,3 +36,7 @@ print "CCI complexity of reconstruction: ", cci_score(target_nodes)
 reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probabilities)
 
 print "Number of triplets correct: ", check_triplets_correct(true_network, reconstructed_network_greedy)
+
+#reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probabilities)
+
+#rint "Number of triplets correct: ", check_triplets_correct(true_n/etwork, reconstructed_network_greedy)

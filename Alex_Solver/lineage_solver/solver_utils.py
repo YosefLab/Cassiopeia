@@ -137,7 +137,7 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 					top_parents.append((get_edge_length(parent, sample) + get_edge_length(parent, sample_2), parent, sample_2))
 
 					# Check this cutoff
-					if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < 4:
+					if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < 3:
 						initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
 						initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 						temp_source_nodes.add(parent)

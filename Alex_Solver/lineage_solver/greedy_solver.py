@@ -42,6 +42,8 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	# G models the network that is returned recursively
 	G = nx.DiGraph()
 
+	root = root_finder(nodes)
+
 	# Base case check for recursion, returns a graph with one node corresponding to the root of the remaining nodes
 	if len(nodes) <= cutoff or len(nodes) == 1:
 		root = root_finder(nodes)
@@ -78,7 +80,8 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 			G.add_node(nodes[0])
 		else:
 			for i in range(0, len(nodes)):
-				G.add_node(nodes[i])
+				if nodes[i] != root:
+					G.add_edge(root, nodes[i])
 		return G, []
 
 	# Splitting nodes based on whether they have the mutation, don't have the mutation, or are NA('-') in that character
@@ -124,29 +127,35 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	# Add character, state that split occurred to already considered mutations
 	considered.add((str(character), state))
 	G = nx.DiGraph()
-	splitter = str(character) + " " + str(state) + " (" + uniq + ")"
+	#splitter = str(character) + " " + str(state) + " (" + uniq + ")"
+	splitter = root
 
 	# Recursively build left side of network (ie side that did not mutation at the character with the specific state)
 	G.add_node(splitter)
 	left_subproblems = []
 	if len(left_split) != 0:
+		left_root = root_finder(left_split)
+
 		left_network, left_subproblems = greedy_build(left_split, priors, cutoff, considered.copy(), uniq + "0")
 
 		left_nodes = [node for node in left_network.nodes() if left_network.in_degree(node) == 0]
 		G = nx.compose(G, left_network)
-		for node in left_nodes:
-			G.add_edge(splitter, node, weight=0, label="None")
+		if root != left_root:
+			G.add_edge(splitter, left_root, weight=0, label="None")
 
 	# Recursively build right side of network
 	right_network, right_subproblems = greedy_build(right_split, priors, cutoff, considered.copy(), uniq + "1" )
 	right_nodes = [node for node in right_network.nodes() if right_network.in_degree(node) == 0]
 
 	G = nx.compose(G, right_network)
-	for node in right_nodes:
+	right_root = root_finder(right_split)
+
+	#for node in right_nodes:
+	if root != right_root:
 		if not priors:
-			G.add_edge(splitter, node, weight=1, label = str(character) + ": 0 -> " + str(state))
+			G.add_edge(splitter, right_root, weight=1, label = str(character) + ": 0 -> " + str(state))
 		else:
-			G.add_edge(splitter, node, weight=-np.log(priors[int(character)][state]), label=str(character) + ": 0 -> " + str(state))
+			G.add_edge(splitter, right_root, weight=-np.log(priors[int(character)][state]), label=str(character) + ": 0 -> " + str(state))
 
 
 	return G, left_subproblems + right_subproblems
