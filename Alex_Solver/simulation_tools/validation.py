@@ -13,8 +13,11 @@ def tree_collapse(graph):
 	new_network = nx.DiGraph()
 	for edge in graph.edges():
 		if edge[0].split('_')[0] == edge[1].split('_')[0]:
-			for node in graph.successors(edge[1]):
-				new_network.add_edge(edge[0], node)
+                        if graph.out_degree(edge[1]) != 0:
+                                for node in graph.successors(edge[1]):
+                                        new_network.add_edge(edge[0], node)
+                        else:
+				new_network.add_edge(edge[0], edge[1])
 		else:
 			new_network.add_edge(edge[0], edge[1])
 	return new_network

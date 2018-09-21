@@ -28,7 +28,7 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
 			pass
 		else:
 			line = line.split()
-			if lineage_group in line[6] or not lineage_group:
+			if lineage_group is None or lineage_group in line[6]:
 				samples[line[0]][line[1] + '_1'] = line[3]
 				samples[line[0]][line[1] + '_2'] = line[4]
 				samples[line[0]][line[1] + '_3'] = line[5]
