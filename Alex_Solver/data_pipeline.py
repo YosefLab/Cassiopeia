@@ -91,3 +91,4 @@ def convert_network_to_newick_format(graph):
 		return _to_newick_str(g, root) + ';'
 
 	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
+
