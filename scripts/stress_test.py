@@ -259,12 +259,12 @@ if __name__ == "__main__":
 
         t0 = time.time()
         cmd = "~/software/phylip-3.697/exe/mix"
-        cmd += " < " + responses + " > screenout" 
+        cmd += " < " + responses + " > screenout1" 
         p = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p.pid, 0)
 
         consense_outtree = stem + "consenseouttree.txt"
-        consense_outfile = stem + "conenseoutfile.txt"
+        consense_outfile = stem + "consenseoutfile.txt"
 
         FH = open(responses, "w")
         FH.write(outtree + "\n")

@@ -4,6 +4,7 @@ import pandas as pd
 import sys
 import numpy as np
 import math
+import argparse
 
 def binarize(mat):
 
@@ -92,15 +93,16 @@ def construct_file(charmat, state_map, relaxed=False):
 
 if __name__ == "__main__":
 
-    charmat_fp = sys.argv[1]
-    outputfile_fp = sys.argv[2]
-    relaxed_cmd = ""
-    if len(sys.argv) > 3:
-        relaxed_cmd = sys.argv[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("charmat_fp", type=str)
+    parser.add_argument("out_fp", type=str)
+    parser.add_argument("--relaxed", action="store_true", default=False)
 
-    relaxed = False
-    if relaxed_cmd == "--relaxed":
-        relaxed = True
+    args = parser.parse_args()
+
+    charmat_fp = args.charmat_fp
+    outputfile_fp = args.out_fp
+    relaxed = args.relaxed
 
     charmat = pd.read_csv(charmat_fp, sep='\t')
 

@@ -168,7 +168,7 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 			elif len(source_nodes) > 2000:
 				flag = True
 			temp_source_nodes = set()
-			for i in tqdm(range(0, len(source_nodes)-1)):
+			for i in range(0, len(source_nodes)-1):
 				sample = source_nodes[i]
 				top_parents = []
 				for j in range(i + 1, len(source_nodes)):
