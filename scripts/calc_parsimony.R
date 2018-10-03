@@ -5,7 +5,7 @@ args = commandArgs(trailingOnly=T)
 tree.fp = args[[1]]
 char.fp = args[[2]]
 
-cmd = paste0("python2 /home/mattjones/projects/scLineages/scripts/binarize_multistate_charmat.py ", char.fp, " infile --relaxed")
+cmd = paste0("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py ", char.fp, " infile --relaxed")
 
 system(cmd)
 

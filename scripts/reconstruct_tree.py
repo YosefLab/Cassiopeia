@@ -1,16 +1,21 @@
 from __future__ import division
 
 import subprocess
+from string import ascii_uppercase
 
 import numpy as np
 import pandas as pd
+import pandascharm as pc
 import random
 from pylab import *
 import pickle as pic
 
+import argparse
+
 import Bio.Phylo as Phylo
 from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
 from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 import networkx as nx
 
 import sys
@@ -21,6 +26,7 @@ sys.path.append("/home/mattjones/projects/scLineages/SingleCellLineageTracing/Al
 from data_pipeline import convert_network_to_newick_format
 from lineage_solver.lineage_solver import solve_lineage_instance
 from lineage_solver.solution_evaluation_metrics import cci_score
+from lineage_solver.solver_utils import get_edge_length
 from simulation_tools.simulation_utils import get_leaves_of_tree
 
 def write_leaves_to_charmat(target_nodes, fn):
@@ -45,6 +51,66 @@ def write_leaves_to_charmat(target_nodes, fn):
                 f.write("\t" + c)
             f.write("\n")
 
+def unique_alignments(aln):
+
+    new_aln = []
+    obs = []
+    for a in aln:
+        
+        if a.seq in obs:
+            continue
+        
+        new_aln.append(a)
+        obs.append(a.seq)
+
+    return MultipleSeqAlignment(new_aln)
+
+def read_mutation_map(mmap):
+    """
+    Parse file describing the likelihood of state transtions per character.
+
+    Currently, we're just storing the mutation map as a pickle file, so read in with pickle.
+    """
+    
+    mut_map = pic.load(open(mmap, "rb"))
+
+    return mut_map
+
+def construct_weights(phy, weights_fn, write=True):
+    """
+    Given some binary phylip infile file path, compute the character-wise log frequencies
+    and translate to the phylip scaling (0-Z) for the weights file. 
+    """
+
+    aln = AlignIO.read(phy, "phylip")
+
+    df = pc.from_bioalignment(aln)
+
+    abund = df.apply(lambda x: len(x[x=="1"]) / len(x), axis=1)
+    
+    labund = np.array(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund))
+    labund[labund == 0] = labund.min()
+
+    # scale linearly to range for phylip weights
+    _min = 0
+    _max = 35
+
+    scaled = (_max - _min) / (labund.max() - labund.min()) * (labund - labund.max()) + _max
+    scaled = map(lambda x: int(x), scaled)
+
+    weights_range = [str(i) for i in range(10)] + [l for l in ascii_uppercase]
+    weights_dict = dict(zip(range(36), weights_range))
+
+    scaled = map(lambda x: weights_dict[x], scaled)
+
+    if write:
+        with open(weights_fn, "w") as f:
+            f.write(''.join(scaled))
+
+    return scaled
+
+
+
 if __name__ == "__main__":
     """
     Takes in a charachter matrix, an algorithm, and an output file and 
@@ -52,24 +118,41 @@ if __name__ == "__main__":
 
     """
 
-    char_fp = sys.argv[1]
-    alg = sys.argv[2]
-    out_fp = sys.argv[3]
-    verbosity = "" if len(sys.argv) < 4 else sys.argv[4]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("char_fp", type = str, help="character_matrix")
+    parser.add_argument("out_fp", type=str, help="output file name")
+    parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
+    parser.add_argument("--ilp", action="store_true", default=False)
+    parser.add_argument("--hybrid", action="store_true", default=False)
+    parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
+    parser.add_argument("--greedy", "-g", action="store_true", default=False)
+    parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
+    parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
+    parser.add_argument("--mutation_map", type=str, default="")
+
+    args = parser.parse_args()
+
+    char_fp = args.char_fp
+    out_fp = args.out_fp
+    verbose = args.verbose
+
+    cutoff = args.cutoff
 
     stem = ''.join(char_fp.split(".")[:-1])
 
-    verbose = False
-    if verbosity == "--verbose":
-        verbose = True
-
     cm = pd.read_csv(char_fp, sep='\t', index_col=0)
+    cm.drop_duplicates(inplace=True)
 
     newick = ""
 
-    if alg == "--greedy" or alg == "-g":
+    prior_probs = None
+    if args.mutation_map != "":
 
-        target_nodes = cm.apply(lambda x: '|'.join(x), axis=1)
+        prior_probs = read_mutation_map(args.mutation_map)
+
+    if args.greedy:
+
+        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
@@ -77,7 +160,14 @@ if __name__ == "__main__":
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy")
+        reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probs)
+        
+        # score parsimony
+        score = 0
+        for e in reconstructed_network_greedy.edges():
+            score += get_edge_length(e[0], e[1])
+           
+        print("Parsimony: " + str(score))
         
         reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
         newick = convert_network_to_newick_format(reconstructed_network_greedy) 
@@ -88,17 +178,24 @@ if __name__ == "__main__":
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_greedy, open(out_stem + ".pkl", "wb")) 
 
-    elif alg == "--hybrid" or alg == "-h":
+    elif args.hybrid:
 
-        target_nodes = cm.apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
-            print('Default Parameters: ILP on sets of 50 cells, 900s to complete optimization') 
+            print('Default Parameters: ILP on sets of ' + str(cutoff) + ' cells, 25min to complete optimization') 
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=50)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs)
+
+        # score parsimony
+        score = 0
+        for e in reconstructed_network_hybrid.edges():
+            score += get_edge_length(e[0], e[1])
+           
+        print("Parsimony: " + str(score))
         
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
         newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
@@ -109,68 +206,104 @@ if __name__ == "__main__":
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
 
-    elif alg == '--ilp':
+    elif args.ilp:
 
-        print('ilp')
+        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
+
+        if verbose:
+            print("Running Hybrid Algorithm on " + str(len(target_nodes)) + " Unique Cells")
+            print("Default Paramters: ILP allowed 900s to complete optimization")
+
+        string_to_sample = dict(zip(target_nodes, cm.index))
+
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs)
+
+        # score parsimony
+        score = 0
+        for e in reconstructed_network_ilp.edges():
+            score += get_edge_length(e[0], e[1])
+           
+        print("Parsimony: " + str(score))
+        
+        reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
+        newick = convert_network_to_newick_format(reconstructed_network_ilp) 
+
         with open(out_fp, "w") as f:
             f.write(newick)
 
-    elif alg == '--neighbor-joining' or alg == '-nj':
+        out_stem = "".join(out_fp.split(".")[:-1])
+        pic.dump(reconstructed_network_ilp, open(out_stem + ".pkl", "wb")) 
+
+    elif args.neighbor_joining:
 
 
-        cells = cm.index
-        samples = [("s" + str(i)) for i in range(len(cells))]
-        samples_to_cells = dict(zip(samples, cells))
-        cm.index = list(range(len(cells)))
+        cm.drop_duplicates(inplace=True) 
 
         if verbose:
-            print("Running Neighbor-Joining on " + str(len(cells)) + " Cells")
-        
-        cm.to_csv("phylo.txt", sep='\t')
-        
+            print("Running Neighbor-Joining on " + str(cm.shape[0]) + " Unique Cells")
 
-        os.system("python2 ~/projects/scLineages/scripts/binarize_multistate_charmat.py phylo.txt infile")
-        aln = AlignIO.read("infile", "phylip")
+        fn = stem + "phylo.txt"
+        infile = stem + "infile.txt"
+        
+        cm.to_csv(fn, sep='\t')
+        
+        os.system("python2 ~/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py "  + fn + " " + infile + " --relaxed")
+        aln = AlignIO.read(infile, "phylip-relaxed")
 
         calculator = DistanceCalculator('identity')
         constructor = DistanceTreeConstructor(calculator, 'nj')
         tree = constructor.build_tree(aln)
-        tree.rooted = True # force rootedness just in case
+
+        tree.root_at_midpoint()
+
         nj_net = Phylo.to_networkx(tree)
 
+        # convert labels to characters for writing to file 
+        i = 0
+        for n in nj_net:
+
+            if n.name is None:
+                n.name = "internal" + str(i)
+                i += 1
+
+      
         # convert labels to strings, not Bio.Phylo.Clade objects
         c2str = map(lambda x: str(x), nj_net.nodes())
         c2strdict = dict(zip(nj_net.nodes(), c2str))
         nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
-        # convert labels to characters for writing to file 
-        nj_net = nx.relabel_nodes(nj_net, samples_to_cells)
-
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
 
-        newick = convert_network_to_newick_format(nj_net) 
-        
+        newick = convert_network_to_newick_format(nj_net)
 
         with open(out_fp, "w") as f:
             f.write(newick)
 
-    elif alg == "--camin-sokal" or alg == "-cs":
+        os.system("rm " + infile)
+        os.system("rm " + fn)
+
+    elif args.camin_sokal:
         
         cells = cm.index
         samples = [("s" + str(i)) for i in range(len(cells))]
         samples_to_cells = dict(zip(samples, cells))
         
-        if verbose:
-            print("Running Camin-Sokal on " + str(len(cells)) + " Cells")
-
         cm.index = list(range(len(cells)))
         
-        cm.to_csv("phylo.txt", sep='\t')
+        if verbose:
+            print("Running Camin-Sokal on " + str(cm.shape[0]) + " Unique Cells")
+
 
         infile = stem + 'infile.txt'
+        fn = stem + "phylo.txt"
+        weights_fn = stem + "weights.txt"
         
-        os.system("python2 /home/mattjones/projects/scLineages/scripts/binarize_multistate_charmat.py phylo.txt " + infile) 
+        cm.to_csv(fn, sep='\t')
+
+        os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile) 
+
+        weights = construct_weights(infile, weights_fn)
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'
@@ -185,31 +318,114 @@ if __name__ == "__main__":
         FH.write("F\n" + outtree + "\n")
         FH.close()
 
+        t0 = time.time()
         cmd = "~/software/phylip-3.697/exe/mix"
         cmd += " < " + responses + " > screenout" 
         p = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p.pid, 0)
 
-        os.system("rm " + responses)
+        consense_outtree = stem + "consenseouttree.txt"
+        consense_outfile = stem + "conenseoutfile.txt"
 
-        tree = Phylo.parse(outtree, "newick").next()
+        FH = open(responses, "w")
+        FH.write(outtree + "\n")
+        FH.write("F\n" + consense_outfile + "\n")
+        FH.write("Y\n")
+        FH.write("F\n" + consense_outtree + "\n")
+        FH.close()
+
+        if verbose:
+            print("Computing Consensus Tree, elasped time: " + str(time.time() - t0))
+
+        cmd = "~/software/phylip-3.697/exe/consense"
+        cmd += " < " + responses + " > screenout2" 
+        p2 = subprocess.Popen(cmd, shell=True)
+        pid, ecode = os.waitpid(p2.pid, 0)
+
+        tree = Phylo.parse(consense_outtree, "newick").next()
+        tree.rooted = True
 
         cs_net = Phylo.to_networkx(tree)
+
+        i = 0
+        for n in cs_net:
+
+            if n.name is not None:
+
+                n.name = samples_to_cells[n.name]
+
+            else:
+                n.name = "internal" + str(i)
+                i += 1
+
+      
         c2str = map(lambda x: str(x), cs_net.nodes())
         c2strdict = dict(zip(cs_net.nodes(), c2str))
         cs_net = nx.relabel_nodes(cs_net, c2strdict)
 
-        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
+
         out_stem = "".join(out_fp.split(".")[:-1])
+
         pic.dump(cs_net, open(out_stem + ".pkl", "wb"))
 
         newick = convert_network_to_newick_format(cs_net)
 
         with open(out_fp, "w") as f:
             f.write(newick)
+
+        os.system("rm " + outfile)
+        os.system("rm " + responses)
+        os.system("rm " + outtree)
+        os.system("rm " + consense_outfile)
+        os.system("rm " + infile)
+        os.system("rm " + fn)
     
+    elif alg == "--max-likelihood" or alg == '-ml':
+
+        #cells = cm.index
+        #samples = [("s" + str(i)) for i in range(len(cells))]
+        #samples_to_cells = dict(zip(samples, cells))
+        
+        #cm.index = list(range(len(cells)))
+        
+        if verbose:
+            print("Running Camin-Sokal on " + str(cm.shape[0]) + " Unique Cells")
+
+        infile = stem + 'infile.txt'
+        fn = stem + "phylo.txt"
+        
+        cm.to_csv(fn, sep='\t')
+
+        os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile + " --relaxed") 
+
+        os.system("/home/mattjones/software/FastTreeMP < " + infile + " > " + out_fp)
+        
+        tree = Phylo.parse(out_fp, "newick").next()
+
+        ml_net = Phylo.to_networkx(tree)
+
+        i = 0
+        for n in ml_net:
+            if n.name is None:
+                n.name = "internal" + str(i)
+                i += 1
+
+      
+        c2str = map(lambda x: str(x), ml_net.nodes())
+        c2strdict = dict(zip(ml_net.nodes(), c2str))
+        ml_net = nx.relabel_nodes(ml_net, c2strdict)
+
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+
+        pic.dump(ml_net, open(out_stem + ".pkl", "wb"))
+
+        os.system("rm " + infile)
+        os.system("rm " + fn)
+
+
     else:
         
-        raise Exception("Please choose an algorithm from the list: greedy, hybrid, ilp, nj, or camin-sokal")
+        raise Exception("Please choose an algorithm from the list: greedy, hybrid, ilp, nj, max-likelihood, or camin-sokal")
 
 

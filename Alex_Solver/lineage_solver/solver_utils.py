@@ -124,7 +124,7 @@ def build_potential_graph_from_base_graph_OLD(samples, priors=None):
 
 	source_nodes = samples
 
-	print "Number of initial extrapolated pairs:", len(source_nodes)
+	print("Number of initial extrapolated pairs: " + str(len(source_nodes)))
 	while len(source_nodes) != 1:
 		temp_source_nodes = set()
 		for i in range(0, len(source_nodes)-1):
@@ -152,7 +152,7 @@ def build_potential_graph_from_base_graph_OLD(samples, priors=None):
 
 		source_nodes = list(temp_source_nodes)
 
-		print "Next layer number of nodes:", len(source_nodes)
+		print("Next layer number of nodes: " + str(len(source_nodes)))
 
 	return initial_network
 
@@ -189,8 +189,8 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 		samples = list(samples)
 
 		source_nodes = samples
-		print "Num Neighbors considered: ", max_neighbor_dist
-		print "Number of initial extrapolated pairs:", len(source_nodes)
+		print("Num Neighbors considered: " +  str(max_neighbor_dist))
+		print("Number of initial extrapolated pairs: " +  str(len(source_nodes)))
 		while len(source_nodes) != 1:
 			if len(source_nodes) > 3000 and prev_network != None:
 				return prev_network
@@ -225,7 +225,7 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 					return prev_network
 			source_nodes = list(temp_source_nodes)
 
-			print "Next layer number of nodes:", len(source_nodes)
+			print("Next layer number of nodes: " +  str(len(source_nodes)))
 		prev_network = initial_network
 		if flag:
 			if not prev_network:

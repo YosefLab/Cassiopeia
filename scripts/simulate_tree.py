@@ -42,7 +42,6 @@ for n, g in at.groupby(["intBC"]):
 number_of_characters = piv.shape[1] * 3 # number of characters = num intBC * 3
 #number_of_states = np.max(nunique_chars) # estimate by median number of unique states per character
 number_of_states = 10
-print(number_of_states)
 prior_probabilities = {}
 for i in range(0, number_of_characters):
 	sampled_probabilities = sorted([np.random.negative_binomial(5,.5) for _ in range(1,number_of_states)])
@@ -80,7 +79,7 @@ dropout_prob_map = {i: np.random.choice(data_dropout_rates.values()) for i in ra
 
 # Generate simulated network
 true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map,characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
-pic.dump(true_network, open("test_net.pkl", "wb"))
+pic.dump(true_network, open(output_file, "wb"))
 
 target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
 #target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
@@ -103,9 +102,9 @@ target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
 #            f.write("\t" + c)
 #        f.write("\n")
 
-print("Simulation written to " + output_file)
+#print("Simulation written to " + output_file)
 
-print "CCI complexity of reconstruction: ", cci_score(target_nodes)
+#print "CCI complexity of reconstruction: ", cci_score(target_nodes)
 
 # Hybrid solution
 #reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probabilities)

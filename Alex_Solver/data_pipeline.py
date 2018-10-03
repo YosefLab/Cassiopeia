@@ -1,4 +1,5 @@
 from collections import defaultdict
+from ete3 import Tree
 
 def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance = 0.1):
 	"""
@@ -85,10 +86,38 @@ def convert_network_to_newick_format(graph):
 	def _to_newick_str(g, node):
 		is_leaf = g.out_degree(node) == 0
 		return '%s' % (node,) if is_leaf else (
-					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')')
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + node)
 
 	def to_newick_str(g, root=0):  # 0 assumed to be the root
 		return _to_newick_str(g, root) + ';'
 
 	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
+
+def newick_to_network(newick_filepath):
+    """
+    Given a file path to a newick file, convert to a directed graph.
+    """
+
+    G = nx.DiGraph()    # the new graph
+
+    tree = Tree(newick_filepath, format=1)
+    nodes = [n.name for n in tree]
+
+    G.add_nodes_from(nodes)
+    
+    parent_stack = [tree]
+    visited = []
+    while len(parent_stack) > 0:
+        
+        p = parent_stack.pop(0)
+        visited.append(p)
+        
+        for c in p.children:
+            if c not in visited:
+                parent_stack.append(c)
+
+            G.add_edge(p.name, c.name)
+
+    return G
+
 
