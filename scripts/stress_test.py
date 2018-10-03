@@ -282,7 +282,7 @@ if __name__ == "__main__":
         pid, ecode = os.waitpid(p2.pid, 0)
 
         # read in newick file to networkx format
-        cs_net = newick_to_network(consense_outtree) 
+        cs_net = newick_to_network(consense_outtree, f=0) 
 
         # convert labels to characters for triplets correct analysis
         cs_net = nx.relabel_nodes(cs_net, s_to_char)

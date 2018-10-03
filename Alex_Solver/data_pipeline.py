@@ -1,4 +1,5 @@
 from collections import defaultdict
+import networkx as nx
 from ete3 import Tree
 
 def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance = 0.1):
@@ -93,14 +94,18 @@ def convert_network_to_newick_format(graph):
 
 	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
 
-def newick_to_network(newick_filepath):
+def newick_to_network(newick_filepath, f=1):
     """
     Given a file path to a newick file, convert to a directed graph.
     """
 
     G = nx.DiGraph()    # the new graph
 
-    tree = Tree(newick_filepath, format=1)
+    try:
+        tree = Tree(newick_filepath, format=f)
+    except:
+        tree = Tree(newick_filepath)
+
     nodes = [n.name for n in tree]
 
     G.add_nodes_from(nodes)

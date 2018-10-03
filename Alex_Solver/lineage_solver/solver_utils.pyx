@@ -3,7 +3,8 @@ import numpy as np
 import numba
 from tqdm import tqdm
 
-def node_parent(x, y):
+
+def node_parent(str x, str y):
 	"""
 	Given two nodes, finds the latest common ancestor
 
@@ -15,34 +16,41 @@ def node_parent(x, y):
 		Returns latest common ancestor of x and y
 	"""
 
+
 	x_list = x.split('|')
 	y_list = y.split('|')
-        
-        parr = []
+	
+	cdef int i
+
+	parr = ["-"] * len(x_list)
 	for i in range(0,len(x_list)):
 		if x_list[i] == y_list[i]:
-			parr.append(x_list[i])
+			#parr.append(x_list[i])
+			parr[i] = x_list[i]
 		elif x_list[i] == '-':
-			parr.append(y_list[i])
+			#parr.append(y_list[i])
+			parr[i] = y_list[i]
 		elif y_list[i] == '-':
-			parr.append(x_list[i])
+			#parr.append(x_list[i])
+			parr[i] = x_list[i]
 		else:
-			parr.append('0')
+			#parr.append('0')
+			parr[i] = '0'
 
 	return '|'.join(parr)
 
-def character_distance(a, b, prior=None):
+#def character_distance(a, b, prior=None):
 
-    if a == b or b == "-":
-        return 0
-    elif a == '0':
-        if prior is None:
-            return 1
-        else:
-            return -1.0 * np.log(prior)
-    return -1
+#    if a == b or b == "-":
+#        return 0
+#    elif a == '0':
+#        if prior is None:
+#            return 1
+#        else:
+#            return -1.0 * np.log(prior)
+#    return -1
 
-def get_edge_length(x,y,priors=None):
+def get_edge_length(x, y,priors=None):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
 
@@ -57,6 +65,9 @@ def get_edge_length(x,y,priors=None):
 	:return:
 		Length of edge if valid transition, else -1
 	"""
+
+	cdef int count, i
+
 	count = 0
 	x_list = x.split('|')
 	y_list = y.split('|')
@@ -84,6 +95,9 @@ def mutations_from_parent_to_child(parent, child):
 	:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....
 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
 	"""
+
+	cdef int i
+
 	parent_list = parent.split('|')
 	child_list = child.split('|')
 	mutations = []
@@ -130,6 +144,8 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 		A graph, which contains a tree which explains the data with minimal parsimony
 	"""
 		#print "Initial Sample Size:", len(set(samples))
+
+	cdef int max_neighbor_dist, i, j
 
 	prev_network = None
 	flag = False

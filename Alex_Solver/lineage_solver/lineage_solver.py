@@ -41,15 +41,14 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 
 		model, edge_variables = generate_mSteiner_model(potential_network, master_root, set(target_nodes))
 		
-		subgraph = solve_steiner_instance(model, potential_network, edge_variables, MIPGap=.01, detailed_output=False,
-							   time_limit=time_limit)[0]
+		subgraph = solve_steiner_instance(model, potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit)[0]
 		return subgraph
 
 	if method == "hybrid":
 		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff)
 
 		executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), 10))
-		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, prior_probabilities) for root, targets in target_sets]
+		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, prior_probabilities, time_limit) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
 			network = nx.compose(network, future.result())
@@ -76,7 +75,7 @@ def reraise_with_stack(func):
     return wrapped
 
 @reraise_with_stack
-def find_good_gurobi_subgraph(root, targets, prior_probabilities):
+def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit):
 	"""
 	Sub-Function used for multi-threading in hybrid method
 
@@ -102,7 +101,6 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities):
 	potential_network_priors = build_potential_graph_from_base_graph(targets, priors=prior_probabilities)
 
 	model, edge_variables = generate_mSteiner_model(potential_network_priors, root, set(targets))
-	subgraph = solve_steiner_instance(model, potential_network_priors, edge_variables, MIPGap=.01, detailed_output=False,
-						   time_limit=1500)[0]
+	subgraph = solve_steiner_instance(model, potential_network_priors, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit)[0]
 	return subgraph
 

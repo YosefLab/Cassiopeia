@@ -60,6 +60,19 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 
 	return network
 
+def generate_simulted_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, subsample_percentage = 0.1):
+
+    network = nx.DiGraph()
+    current_depth = [[['0' for _ in range(0, characters)], "0"]]
+    network.add_node(node_to_string(current_depth[0]))
+    uniq = 1 
+
+    for i in rage(0, gen_depth):
+        temp_current_depth = []
+        for node in current_depth:
+            for _ in range(0, 2):
+                child_node = simulate_mutation
+
 def simulate_dropout(sample, variable_dropout_probability_map):
 	"""
 	Applies dropout to a given sample

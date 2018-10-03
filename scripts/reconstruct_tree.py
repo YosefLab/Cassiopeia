@@ -125,6 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
+    parser.add_argument("--time_limit", type=int, default=1500, help="Time limit for ILP convergence")
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
     parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
@@ -137,6 +138,7 @@ if __name__ == "__main__":
     verbose = args.verbose
 
     cutoff = args.cutoff
+    time_limit = args.time_limit
 
     stem = ''.join(char_fp.split(".")[:-1])
 
@@ -184,11 +186,11 @@ if __name__ == "__main__":
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
-            print('Default Parameters: ILP on sets of ' + str(cutoff) + ' cells, 25min to complete optimization') 
+            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit)
 
         # score parsimony
         score = 0
@@ -212,11 +214,11 @@ if __name__ == "__main__":
 
         if verbose:
             print("Running Hybrid Algorithm on " + str(len(target_nodes)) + " Unique Cells")
-            print("Default Paramters: ILP allowed 900s to complete optimization")
+            print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs)
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit)
 
         # score parsimony
         score = 0
