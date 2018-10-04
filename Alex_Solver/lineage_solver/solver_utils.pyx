@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import networkx as nx
 import numpy as np
 import numba
@@ -158,8 +160,8 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 		samples = list(samples)
 
 		source_nodes = samples
-		print("Num Neighbors considered: " +  str(max_neighbor_dist))
-		print("Number of initial extrapolated pairs: " +  str(len(source_nodes)))
+		print("Num Neighbors considered: " +  str(max_neighbor_dist), flush=True)
+		print("Number of initial extrapolated pairs: " +  str(len(source_nodes)), flush=True)
 		while len(source_nodes) != 1:
 			if len(source_nodes) > 3000 and prev_network != None:
 				return prev_network
@@ -194,7 +196,7 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 					return prev_network
 			source_nodes = list(temp_source_nodes)
 
-			print("Next layer number of nodes: " +  str(len(source_nodes)))
+			print("Next layer number of nodes: " +  str(len(source_nodes)), flush=True)
 		prev_network = initial_network
 		if flag:
 			if not prev_network:

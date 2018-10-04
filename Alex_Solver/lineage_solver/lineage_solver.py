@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import concurrent.futures
 import functools
 import multiprocessing
@@ -91,7 +93,7 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit):
 		Optimal ilp subgraph for a given subset of nodes
 	"""
 
-	print("Started new thread for: " + str(root))
+	print("Started new thread for: " + str(root), flush=True)
 
 	if len(set(targets)) == 1:
 		graph = nx.DiGraph()

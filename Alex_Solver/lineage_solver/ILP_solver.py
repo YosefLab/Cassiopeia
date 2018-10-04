@@ -180,4 +180,4 @@ def print_edges_in_graph(graph, edges_per_line=5):
 			edges_printed_in_line = 0
 			edges_string += '\n'
 
-	print edges_string
+	print(edges_string)

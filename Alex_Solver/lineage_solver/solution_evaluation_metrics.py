@@ -191,7 +191,7 @@ def flag_double_mutated_samples(nodes, character, state):
 				if (len(s1 & s2) == 0 or s1.issubset(s2.union(s2_na)) or s2.issubset(s1.union(s1_na))):
 					pass
 				else:
-					print i, item
+					print(str(i), str(item))
 					# print i, j, item, item2, s1, s2, len(s1 & s2)
 					set1 = s1.union(s1_na) & s2.union(s2_na)
 					set2 = s1 - s2.union(s2_na)

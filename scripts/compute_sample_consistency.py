@@ -2,10 +2,13 @@ from __future__ import division
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 import pandas as pd
 from tqdm import tqdm
 sys.setrecursionlimit(10000)
 import pickle as pic
+
+import argparse
 
 import networkx as nx
 from collections import defaultdict
@@ -105,7 +108,7 @@ def cut_tree(G, depth):
 
     return nodes
 
-def calc_entropy(G, metavals, depth=0):
+def calc_entropy(G, metavals, meta_freqs, depth=0):
 
     nodes = cut_tree(G, depth)
 
@@ -119,6 +122,9 @@ def calc_entropy(G, metavals, depth=0):
     num_leaves = sum([G.nodes[m]["prog_size"] for m in metacounts.keys()])
 
     ents = []
+    exp_ents = []
+    chi_sq = []
+    pvals = []
     for mkey in metacounts.keys():
 
         mc = metacounts[mkey]
@@ -129,12 +135,26 @@ def calc_entropy(G, metavals, depth=0):
         tot = np.sum(list(mc.values()))
         probs = [s / float(tot) for s in list(mc.values()) if s != 0]
 
+        ni = G.nodes[mkey]["prog_size"]
         ei = -np.sum(probs * np.log2(probs))
-        pi = G.nodes[mkey]["prog_size"] / num_leaves
+        pi = ni / num_leaves
+
+        exp = dict(zip(meta_freqs.keys(), [ni * meta_freqs[m] for m in meta_freqs.keys()])) 
+        exp_probs = [s / float(tot) for s in exp.values()]
+
+
+        exp_ei = -np.sum(exp_probs * np.log2(exp_probs))
+        exp_ents.append(exp_ei * pi)
+
+        tstat = np.sum( [ (exp[m] - mc[m])**2 / exp[m] for m in meta_freqs.keys()])  
+        chi_sq.append(tstat)
+
+        pval = 1 - stats.chi2.cdf(tstat, len(meta_freqs.keys()) - 1)
+        pvals.append(pval)
 
         ents.append(ei * pi)
 
-    return ents
+    return ents, exp_ents, chi_sq, pvals
 
 def assign_meta(G, meta):
 
@@ -198,15 +218,18 @@ def calculate_empirical_pvalues(real, rand_ent_dist):
 
 if __name__ == "__main__":
 
-    netfp = sys.argv[1]
-    meta_fp = sys.argv[2]
-    char_fp = sys.argv[3]
-    out_fp = sys.argv[4]
-    p_cmd = "" if len(sys.argv) < 6 else sys.argv[5]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("netfp", type=str)
+    parser.add_argument("meta_fp", type=str)
+    parser.add_argument("char_fp", type=str)
+    parser.add_argument("out_fp", type=str)
 
+    args = parser.parse_args()
+    netfp = args.netfp
+    meta_fp = args.meta_fp
+    char_fp = args.char_fp
+    out_fp = args.out_fp
     permute = False
-    if p_cmd == "--random":
-        permute = True
 
     out_fp_stem = "".join(out_fp.split(".")[:-1])
 
@@ -229,51 +252,43 @@ if __name__ == "__main__":
     for i in tqdm(meta.columns, desc="Processing each meta item"):
         meta_vals = list(meta[i].unique())
         G = assign_meta(G, meta[i])
+        
+        meta_freqs = defaultdict(int)
+        tree_vals = [G.nodes[n]["meta"] for n in get_children_of_clade(G, root)]
+        for m in meta_vals:
+            meta_freqs[m] = tree_vals.count(m) / len(tree_vals)
 
         ents = []
+        exp_ents = []
+        tstats = []
+        pvalues = []
         for d in tqdm(range(1, max_depth), desc="Calculating entropy at each level"):
 
-            ents.append(np.mean(calc_entropy(G, meta_vals, depth=d)))
+            obs_ents, e_ents, chi_sq, pvals = calc_entropy(G, meta_vals, meta_freqs, depth=d)
+            ents.append(np.mean(obs_ents))
+            exp_ents.append(np.mean(e_ents))
+            tstats.append(np.mean(chi_sq))
+            pvalues.append(1 - stats.chi2.cdf(np.mean(chi_sq), len(meta_vals) - 1))
 
-        if permute:
+        plt.bar(np.arange(1, max_depth), -1*np.log10(pvalues))
+        plt.ylabel("- log(P Value)")
+        plt.xlabel("Depth")
+        plt.title("Significance of Sample Purity vs Depth, " + str(i))
+        plt.savefig(out_fp_stem + "_significance_" + str(i) + ".png")
+        plt.close()
 
-            P = 1000
-            rand_ents_per_level = defaultdict(list)
-            for p in tqdm(range(P), desc="Running Permutations"):
+        width = 0.35
+        plt.bar(np.arange(1, max_depth)-width/2, list(map(lambda x: np.mean(x), exp_ents)), width, label="Random")
+        plt.bar(np.arange(1, max_depth)+width/2,ents, width, label="True")
+        plt.ylabel("Meta Entropy")
+        plt.xlabel("Depth")
+        plt.title("Meta Entropy, " + str(i))
+        plt.legend()
+        plt.savefig(out_fp_stem + "_" + str(i) + ".png")
+        plt.close()
 
-                ents_rand = []
-                meta_rand = meta[i]
-                meta_rand.index = np.random.permutation(meta_rand.index)
-                G = assign_meta(G, meta_rand)
-                #for d in tqdm(range(1, max_depth), desc="Calculating entropy for permuted " + str(i)):
-                for d in range(1, max_depth):
-                    ents_rand.append(np.mean(calc_entropy(G, meta_vals, depth=d)))
-
-                for e in range(len(ents_rand)):
-                    rand_ents_per_level[e].append(ents_rand[e])
-
-            pvals = calculate_empirical_pvalues(ents, rand_ents_per_level)
-            plt.bar(np.arange(1, max_depth), -1*np.log10(pvals))
-            plt.ylabel("- log(P Value)")
-            plt.xlabel("Depth")
-            plt.title("Significance of Sample Purity vs Depth, " + str(i))
-            plt.savefig(out_fp_stem + "_significance_" + str(i) + ".png")
-            plt.close()
-
-            width = 0.35
-            plt.bar(np.arange(1, max_depth)-width/2, list(map(lambda x: np.mean(x), ents_rand)), width, label="Random")
-            plt.bar(np.arange(1, max_depth)+width/2,ents, width, label="True")
-            plt.ylabel("Meta Entropy")
-            plt.xlabel("Depth")
-            plt.title("Meta Entropy, " + str(i))
-            plt.legend()
-            plt.savefig(out_fp_stem + "_" + str(i) + ".png")
-            plt.close()
-
-        else:
-            fig = plt.figure(figsize=(7,7))
-            plt.bar(range(1, max_depth), ents)
-            plt.title("Meta Entropy, " + str(i))
-            plt.xlabel("Depth")
-            plt.ylabel("Meta Entropy")
-            plt.savefig(out_fp_stem + "_" + str(i) + ".png")
+        plt.bar(np.arange(1, max_depth), tstats)
+        plt.xlabel("Depth")
+        plt.ylabel("Mean Chi Squared Stat")
+        plt.title("Mean Chi Sq Statistic Per Depth")
+        plt.savefig(out_fp_stem + "_chisq_" + str(i) + ".png")

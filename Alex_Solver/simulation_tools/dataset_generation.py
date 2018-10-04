@@ -63,45 +63,45 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 
 def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):
 
-    network = nx.DiGraph()
-    current_depth = [[['0' for _ in range(0, characters)], "0"]]
-    network.add_node(node_to_string(current_depth[0]))
-    network.node[node_to_string(current_depth[0])]["plate"] = ""
-    uniq = 1 
+	network = nx.DiGraph()
+	current_depth = [[['0' for _ in range(0, characters)], "0"]]
+	network.add_node(node_to_string(current_depth[0]))
+	network.node[node_to_string(current_depth[0])]["plate"] = ""
+	uniq = 1
 
 
     #simulate two splits total
-    total_depth = (num_splits + 1) * gen_per_dish
-    for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
-        temp_current_depth = []
-        for node in current_depth:
-            for _ in range(0, 2):
-                child_node = simulate_mutation(node[0], mutation_prob_map)
-                if i == total_depth - 1:
-                    child_node = simulate_dropout(child_node, variable_dropout_prob_map)
+	total_depth = (num_splits + 1) * gen_per_dish
+	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
+		temp_current_depth = []
+		for node in current_depth:
+			for _ in range(0, 2):
+				child_node = simulate_mutation(node[0], mutation_prob_map)
+				if i == total_depth - 1:
+					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
 
-                temp_current_depth.append([child_node, uniq])
-                network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
-                if i != 0 and i % gen_per_dish == 0:
-                    split_right = (np.random.random() > 0.5) # split in half
-                    if split_right:
-                        network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0" 
-                    else:
-                        network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "1" 
+				temp_current_depth.append([child_node, uniq])
+				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
+				if i != 0 and i % gen_per_dish == 0:
+					split_right = (np.random.random() > 0.5) # split in half
+					if split_right:
+						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0"
+					else:
+						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "1"
 
-                else:
-                    network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"]
+				else:
+					network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"]
 
-                uniq += 1
+				uniq += 1
 
-	current_depth = temp_current_depth
+	        current_depth = temp_current_depth
 
-    subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
+	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
 
-    for node in subsampled_population_for_removal:
-        network.remove_node(node_to_string(node))
+	for node in subsampled_population_for_removal:
+		network.remove_node(node_to_string(node))
 
-    return network
+	return network
 
 
 
@@ -150,6 +150,3 @@ def simulate_mutation(sample, mutation_prob_map):
 		else:
 			new_sample.append(character)
 	return new_sample
-
-
-
