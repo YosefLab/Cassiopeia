@@ -2,7 +2,7 @@ import sys
 import networkx as nx 
 
 import pandas as pd
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import argparse
 
@@ -17,7 +17,7 @@ import pickle as pic
 
 def process_allele_table(cm, old_r = False, mutation_map=None):
 
-    filtered_samples = defaultdict(dict)
+    filtered_samples = defaultdict(OrderedDict)
     for sample in cm.index:
         cell = cm.loc[sample, "cellBC"] 
         if old_r:
@@ -30,12 +30,13 @@ def process_allele_table(cm, old_r = False, mutation_map=None):
 	    filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3']
 
     samples_as_string = defaultdict(str)
-    allele_counter = defaultdict(dict)
-    
-    intbc_uniq = set()
+    allele_counter = defaultdict(OrderedDict)
+
+    intbc_uniq = []
     for s in filtered_samples:
         for key in filtered_samples[s]:
-            intbc_uniq.add(key)
+            if key not in intbc_uniq:
+                intbc_uniq.append(key)
 
     prior_probs = {}
     # for all characters
@@ -58,7 +59,6 @@ def process_allele_table(cm, old_r = False, mutation_map=None):
                         samples_as_string[sample] += str(allele_counter[c][filtered_samples[sample][c]] + 1) + '|'
             else:
                 samples_as_string[sample] += '-|'
-
     for sample in samples_as_string:
         samples_as_string[sample] = samples_as_string[sample][:-1]
 
