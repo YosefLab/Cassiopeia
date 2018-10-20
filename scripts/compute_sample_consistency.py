@@ -14,6 +14,25 @@ import networkx as nx
 from collections import defaultdict
 from pylab import *
 
+def tree_collapse(graph):
+    """
+    Given a networkx graph in the form of a tree, collapse two nodes togethor if there are no mutations seperating the two nodes
+        :param graph: Networkx Graph as a tree
+        :return: Collapsed tree as a Networkx object
+    """
+
+    new_network = nx.DiGraph()
+    for edge in graph.edges():
+        if edge[0].split('_')[0] == edge[1].split('_')[0]:
+            if graph.out_degree(edge[1]) != 0:
+                for node in graph.successors(edge[1]):
+                    new_network.add_edge(edge[0], node)
+            else:
+                new_network.add_edge(edge[0], edge[1])
+        else:
+            new_network.add_edge(edge[0], edge[1])
+    return new_network
+
 def get_max_depth(G):
 
     md = 0
@@ -32,7 +51,7 @@ def extend_dummy_branches(G, max_depth):
     calculations of entropy
     """
 
-    leaves = [n for n in G.nodes if G.out_degree(n) == 0 and G.in_degree(n) == 1]
+    leaves = [n for n in G.nodes if G.out_degree(n) == 0]
     for n in leaves:
 
         new_node_iter = 1
@@ -82,7 +101,6 @@ def get_meta_counts(G, node, metavals):
     meta_counts = defaultdict(dict)
     children_vals = [G.nodes[n]["meta"] for n in get_children_of_clade(G, node)]
     for m in metavals:
-
         meta_counts[m] = children_vals.count(m)
 
     return meta_counts
@@ -133,17 +151,17 @@ def calc_entropy(G, metavals, meta_freqs, depth=0):
             return 1.0
 
         tot = np.sum(list(mc.values()))
-        probs = [s / float(tot) for s in list(mc.values()) if s != 0]
+        probs = dict(zip(mc.keys(), [s / float(tot) for s in list(mc.values())]))
+        nnz_probs = np.array([p for p in probs.values() if p > 0])
 
         ni = G.nodes[mkey]["prog_size"]
-        ei = -np.sum(probs * np.log2(probs))
+        ei = -np.sum(nnz_probs * np.log2(nnz_probs))
         pi = ni / num_leaves
 
         exp = dict(zip(meta_freqs.keys(), [ni * meta_freqs[m] for m in meta_freqs.keys()])) 
-        exp_probs = [s / float(tot) for s in exp.values()]
+        exp_probs = dict(zip(exp.keys(), [s / float(tot) for s in exp.values()]))
 
-
-        exp_ei = -np.sum(exp_probs * np.log2(exp_probs))
+        exp_ei = -np.sum(list(exp_probs.values()) * np.log2(list(exp_probs.values())))
         exp_ents.append(exp_ei * pi)
 
         tstat = np.sum( [ (exp[m] - mc[m])**2 / exp[m] for m in meta_freqs.keys()])  
@@ -223,12 +241,14 @@ if __name__ == "__main__":
     parser.add_argument("meta_fp", type=str)
     parser.add_argument("char_fp", type=str)
     parser.add_argument("out_fp", type=str)
+    parser.add_argument("--shuff", "-s", default="", type=str)
 
     args = parser.parse_args()
     netfp = args.netfp
     meta_fp = args.meta_fp
     char_fp = args.char_fp
     out_fp = args.out_fp
+    shuff_fp = args.shuff
     permute = False
 
     out_fp_stem = "".join(out_fp.split(".")[:-1])
@@ -245,7 +265,11 @@ if __name__ == "__main__":
     max_depth = get_max_depth(G)
     G = extend_dummy_branches(G, max_depth)
 
-    G = add_redundant_leaves(G, cm)
+    # make sure that extend dummy branches worked 
+    leaves = [n for n in G if G.out_degree(n) == 0]
+    assert (False not in [max_depth == G.nodes[l]['depth'] for l in leaves])
+
+    #G = add_redundant_leaves(G, cm)
 
     G = set_progeny_size(G, root)
 
@@ -268,26 +292,79 @@ if __name__ == "__main__":
             ents.append(np.mean(obs_ents))
             exp_ents.append(np.mean(e_ents))
             tstats.append(np.mean(chi_sq))
-            pvalues.append(1 - stats.chi2.cdf(np.mean(chi_sq), len(meta_vals) - 1))
+            pvalues.append(np.mean(pvals))
+            #pvalues.append(1 - stats.chi2.cdf(np.mean(chi_sq), len(meta_vals) - 1))
+    
+        if shuff_fp != "":
 
-        plt.bar(np.arange(1, max_depth), -1*np.log10(pvalues))
-        plt.ylabel("- log(P Value)")
-        plt.xlabel("Depth")
-        plt.title("Significance of Sample Purity vs Depth, " + str(i))
-        plt.savefig(out_fp_stem + "_significance_" + str(i) + ".png")
-        plt.close()
+            print("Computing Statistics for Shuffled Data", end="\n\n")
 
-        width = 0.35
-        plt.bar(np.arange(1, max_depth)-width/2, list(map(lambda x: np.mean(x), exp_ents)), width, label="Random")
-        plt.bar(np.arange(1, max_depth)+width/2,ents, width, label="True")
-        plt.ylabel("Meta Entropy")
-        plt.xlabel("Depth")
-        plt.title("Meta Entropy, " + str(i))
-        plt.legend()
-        plt.savefig(out_fp_stem + "_" + str(i) + ".png")
-        plt.close()
+            s_G = pic.load(open(shuff_fp, "rb"))
+            s_G = assign_meta(s_G, meta[i])
+            root = [n for n in s_G if s_G.in_degree(n) == 0][0]
 
-        plt.bar(np.arange(1, max_depth), tstats)
+            s_G = set_depth(s_G, root)
+            s_max_depth = get_max_depth(s_G)
+
+            s_G = extend_dummy_branches(s_G, max_depth)
+            s_G = set_progeny_size(s_G, root)
+
+            s_ents = []
+            s_exp_ents = []
+            s_tstats = []
+            s_pvalues = []
+            for d in tqdm(range(1, max_depth), desc="Calculating entropy at each level"):
+    
+                obs_ents, e_ents, chi_sq, pvals = calc_entropy(s_G, meta_vals, meta_freqs, depth=d)
+                s_ents.append(np.mean(obs_ents))
+                s_exp_ents.append(np.mean(e_ents))
+                s_tstats.append(np.mean(chi_sq))
+                #s_pvalues.append(1 - stats.chi2.cdf(np.mean(chi_sq), len(meta_vals) - 1))
+                s_pvalues.append(np.mean(pvals))
+
+            fig = plt.figure(figsize=(7,7))
+            plt.plot(range(1, max_depth), ents, label="Reconstructed")
+            plt.plot(range(1, s_max_depth), s_ents, label="Shuffled Reconstructed")
+            plt.xlim(0, max(max_depth, s_max_depth))
+            plt.ylim(0, max(max(s_ents), max(ents)))
+            plt.xlabel('Depth')
+            plt.ylabel('Meta Entropy')
+            plt.legend()
+            plt.title("Meta Entropy, " + str(i))
+            plt.savefig(out_fp_stem + "_" + str(i) + '.png')
+
+            fig = plt.figure(figsize=(7, 7))
+            plt.plot(np.arange(1, max_depth), -1*np.log10(pvalues), label="Reconstructed")
+            plt.plot(np.arange(1, s_max_depth), -1*np.log10(s_pvalues), label="Shuffled Reconstructed")
+            plt.ylabel("- log(P Value)")
+            plt.xlabel("Depth")
+            plt.title("Significance of Sample Purity vs Depth, " + str(i))
+            plt.legend()
+            plt.savefig(out_fp_stem + "_significance_" + str(i) + ".png")
+            plt.close()
+        
+        else:
+
+            fig = plt.figure(figsize=(7, 7))
+            plt.plot(np.arange(1, max_depth), -1*np.log10(pvalues))
+            plt.ylabel("- log(P Value)")
+            plt.xlabel("Depth")
+            plt.title("Significance of Sample Purity vs Depth, " + str(i))
+            plt.savefig(out_fp_stem + "_significance_" + str(i) + ".png")
+            plt.close()
+
+            fig = plt.figure(figsize=(7, 7))
+            plt.plot(np.arange(1, max_depth), ents, label='True')
+            plt.plot(np.arange(1, max_depth), exp_ents, label="Chi-Squared Null")
+            plt.ylabel("Meta Entropy")
+            plt.xlabel("Depth")
+            plt.title("Meta Entropy, " + str(i))
+            plt.legend()
+            plt.savefig(out_fp_stem + "_" + str(i) + ".png")
+            plt.close()
+
+        fig = plt.figure(figsize=(7, 7))
+        plt.plot(np.arange(1, max_depth), tstats)
         plt.xlabel("Depth")
         plt.ylabel("Mean Chi Squared Stat")
         plt.title("Mean Chi Sq Statistic Per Depth")

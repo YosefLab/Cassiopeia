@@ -32,4 +32,4 @@ def get_leaves_of_tree(tree, clip_identifier=False):
 
 	else:
 
-		return [x for x in tree.nodes() if tree.out_degree(x)==0 and shortest_paths[x] == max_depth]
+		return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]

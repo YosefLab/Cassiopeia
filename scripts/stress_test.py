@@ -22,6 +22,8 @@ import networkx as nx
 import sys
 import os
 
+import argparse
+
 sys.path.append("/home/mattjones/projects/scLineages/scripts")
 sys.path.append("/home/mattjones/projects/scLineages/SingleCellLineageTracing/Alex_Solver")
 
@@ -30,7 +32,7 @@ from lineage_solver.lineage_solver import solve_lineage_instance
 from lineage_solver.solution_evaluation_metrics import cci_score
 from simulation_tools.dataset_generation import generate_simulated_full_tree
 from simulation_tools.simulation_utils import get_leaves_of_tree
-from simulation_tools.validation import check_triplets_correct
+from simulation_tools.validation import check_triplets_correct, tree_collapse
 
 def write_leaves_to_charmat(target_nodes, fn):
     """
@@ -130,22 +132,44 @@ if __name__ == "__main__":
     returns a tree in newick format.
 
     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("netfp", type = str, help="character_matrix")
+    parser.add_argument("typ", type=str, help="category of stress test")
+    parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
+    parser.add_argument("--ilp", action="store_true", default=False)
+    parser.add_argument("--hybrid", action="store_true", default=False)
+    parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
+    parser.add_argument("--time_limit", type=int, default=1500, help="Time limit for ILP convergence")
+    parser.add_argument("--greedy", "-g", action="store_true", default=False)
+    parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
+    parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
+    parser.add_argument("--mutation_map", type=str, default="")
+    parser.add_argument("--num_threads", type=int, default=1)
 
-    netfp = sys.argv[1]
-    alg = sys.argv[2]
-    t = sys.argv[3]
-    verbose_command = sys.argv[4] if len(sys.argv) > 4 else ""
-    
+    args = parser.parse_args()
+
+    netfp = args.netfp
+    t = args.typ
+    verbose = args.verbose
+
+    cutoff = args.cutoff
+    time_limit = args.time_limit
+    num_threads = args.num_threads
+
     name = netfp.split("/")[-1]
     spl = name.split("_")
     param = spl[-3]
     run = spl[-1].split(".")[0]
 
-    stem = ''.join(name.split(".")[:-1])
+    if run < 10:
+        sys.exit()
 
-    verbose = False
-    if verbose_command == "--verbose":
-        verbose=True
+    prior_probs = None
+    if args.mutation_map != "":
+
+        prior_probs = read_mutation_map(args.mutation_map)
+
+    stem = '.'.join(name.split(".")[:-1])
 
     true_network = pic.load(open(netfp, "rb"))
     
@@ -160,40 +184,55 @@ if __name__ == "__main__":
     target_nodes_uniq = np.array(target_nodes)[unique_ii[1]]
     target_nodes_original_network_uniq = np.array(target_nodes_original_network)[unique_ii[1]]
 
+    string_to_sample = dict(zip(target_nodes, target_nodes_original_network))
 
-    if alg == "--greedy" or alg == "-g":
+    if args.greedy:
 
         if verbose:
-            print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
+            print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
-        write_leaves_to_charmat(target_nodes_original_network)
+        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy")
 
-        os.system("python2 binarize_multistate_charmat.py phylo.txt infile")
-
-        reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy")
+        reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
         tp = check_triplets_correct(true_network, reconstructed_network_greedy)
         print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t)
 
+        newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        out = stem + "_greedy.txt"
+        with open(out, "w") as f:
+            f.write(newick)
+
+    elif args.hybrid:
+
         if verbose:
-            reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, char_to_s)
-            newick = convert_network_to_newick_format(reconstructed_network_greedy) 
-            with open("test_newick", "w") as f:
-                f.write(newick)
+            print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
+            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
-    elif alg == "--hybrid":
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
 
-        print('hybrid')
-        with open(out_fp, "w") as f:
-            f.write(newick + ";")
+        reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
 
-    elif alg == '--ilp':
+        out = stem + "_hybrid.pkl"
+        pic.dump(reconstructed_network_hybrid, open(out, "wb")) 
+
+        newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
+
+        out = stem + "_hybrid.txt"
+        with open(out, "w") as f:
+            f.write(newick)
+
+        tp = check_triplets_correct(true_network, reconstructed_network)
+
+        print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(time.time() - t0))
+
+    elif args.ilp:
 
         print('ilp')
         with open(out_fp, "w") as f:
             f.write(newick + ";")
 
-    elif alg == '--neighbor-joining' or alg == "-nj":
+    elif args.neighbor_joining:
         
         if verbose:
             print("Running Neighbor-Joining on " + str(len(target_nodes_uniq)) + " Unique Cells")
@@ -208,26 +247,41 @@ if __name__ == "__main__":
 
         aln = unique_alignments(aln)
 
-        calculator = DistanceCalculator('identity')
+        calculator = DistanceCalculator('identity', skip_letters='?')
         constructor = DistanceTreeConstructor(calculator, 'nj')
 
         t0 = time.time()
         tree = constructor.build_tree(aln)
-        reconstructed_network = Phylo.to_networkx(tree)
+
+        out = stem + "_nj.txt"
+        Phylo.write(tree, out, 'newick')
+
+        nj_net = newick_to_network(out)
+
+        newick = convert_network_to_newick_format(nj_net)
+        with open(out, "w") as f:
+            f.write(newick)
+    
+        # old code for using Phylo to parse newick files to networkx objects
+        #nj_net = Phylo.to_networkx(tree)
 
         # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: str(x), cs_net.nodes())
-        c2strdict = dict(zip(cs_net.nodes(), c2str))
-        cs_net = nx.relabel_nodes(cs_net, c2strdict)
+        #c2str = map(lambda x: str(x), nj_net.nodes())
+        #c2strdict = dict(zip(nj_net.nodes(), c2str))
+        #nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
         # convert labels to characters for triplets correct analysis
-        cs_net = nx.relabel_nodes(cs_net, s_to_char)
+        nj_net = nx.relabel_nodes(nj_net, s_to_char)
 
-        tp = check_triplets_correct(true_network, cs_net)
+        tp = check_triplets_correct(true_network, nj_net)
 
         print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + '\t' + str(time.time() - t0))
 
-    elif alg == "--camin-sokal" or alg == "-cs":
+
+        os.system("rm " + infile)
+        os.system("rm " + fn)
+
+    elif args.camin_sokal:
         
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
@@ -282,7 +336,7 @@ if __name__ == "__main__":
         pid, ecode = os.waitpid(p2.pid, 0)
 
         # read in newick file to networkx format
-        cs_net = newick_to_network(consense_outtree, f=0) 
+        cs_net = newick_to_network(consense_outtree) 
 
         # convert labels to characters for triplets correct analysis
         cs_net = nx.relabel_nodes(cs_net, s_to_char)

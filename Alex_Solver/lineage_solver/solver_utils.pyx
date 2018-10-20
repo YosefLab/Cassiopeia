@@ -1,12 +1,7 @@
-from __future__ import print_function
-
 import networkx as nx
 import numpy as np
-import numba
-from tqdm import tqdm
 
-
-def node_parent(str x, str y):
+def node_parent(x, y):
 	"""
 	Given two nodes, finds the latest common ancestor
 
@@ -18,41 +13,26 @@ def node_parent(str x, str y):
 		Returns latest common ancestor of x and y
 	"""
 
-
+	parr = []
+	if '_' in x:
+		x = ''.join(x.split("_")[:-1])
+	if '_' in y:
+		y = ''.join(y.split("_")[:-1])
 	x_list = x.split('|')
 	y_list = y.split('|')
-	
-	cdef int i
-
-	parr = ["-"] * len(x_list)
 	for i in range(0,len(x_list)):
 		if x_list[i] == y_list[i]:
-			#parr.append(x_list[i])
-			parr[i] = x_list[i]
+			parr.append(x_list[i])
 		elif x_list[i] == '-':
-			#parr.append(y_list[i])
-			parr[i] = y_list[i]
+			parr.append(y_list[i])
 		elif y_list[i] == '-':
-			#parr.append(x_list[i])
-			parr[i] = x_list[i]
+			parr.append(x_list[i])
 		else:
-			#parr.append('0')
-			parr[i] = '0'
+			parr.append('0')
 
 	return '|'.join(parr)
 
-#def character_distance(a, b, prior=None):
-
-#    if a == b or b == "-":
-#        return 0
-#    elif a == '0':
-#        if prior is None:
-#            return 1
-#        else:
-#            return -1.0 * np.log(prior)
-#    return -1
-
-def get_edge_length(x, y,priors=None):
+def get_edge_length(x,y,priors=None):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
 
@@ -67,10 +47,11 @@ def get_edge_length(x, y,priors=None):
 	:return:
 		Length of edge if valid transition, else -1
 	"""
-
-	cdef int count, i
-
 	count = 0
+	if '_' in x:
+		x = ''.join(x.split("_")[:-1])
+	if '_' in y:
+		y = ''.join(y.split("_")[:-1])
 	x_list = x.split('|')
 	y_list = y.split('|')
 
@@ -97,13 +78,14 @@ def mutations_from_parent_to_child(parent, child):
 	:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....
 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
 	"""
-
-	cdef int i
+	if '_' in parent:
+		parent = ''.join(parent.split("_")[:-1])
+	if '_' in child:
+		child = ''.join(child.split("_")[:-1])
 
 	parent_list = parent.split('|')
 	child_list = child.split('|')
 	mutations = []
-
 	for i in range(0, len(parent_list)):
 		if parent_list[i] != child_list[i] and child_list[i] != '-':
 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
@@ -147,8 +129,7 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 	"""
 		#print "Initial Sample Size:", len(set(samples))
 
-	cdef int max_neighbor_dist, i, j
-
+	neighbor_mod = 0
 	prev_network = None
 	flag = False
 	for max_neighbor_dist in range(0, 15):
@@ -160,9 +141,11 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 		samples = list(samples)
 
 		source_nodes = samples
-		print("Num Neighbors considered: " +  str(max_neighbor_dist), flush=True)
-		print("Number of initial extrapolated pairs: " +  str(len(source_nodes)), flush=True)
+		neighbor_mod = max_neighbor_dist
+		print "Num Neighbors considered: ", max_neighbor_dist
+		print "Number of initial extrapolated pairs:", len(source_nodes)
 		while len(source_nodes) != 1:
+
 			if len(source_nodes) > 3000 and prev_network != None:
 				return prev_network
 			elif len(source_nodes) > 3000 and prev_network == None:
@@ -180,7 +163,8 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 						top_parents.append((get_edge_length(parent, sample) + get_edge_length(parent, sample_2), parent, sample_2))
 
 						#Check this cutoff
-						if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < max_neighbor_dist:
+						# print "checking cutoff"
+						if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < neighbor_mod:
 							initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
 							initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 							temp_source_nodes.add(parent)
@@ -189,20 +173,26 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
 
 				for parent, sample_2 in lst:
+					#if parent != sample_2:
 					initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
+					#if parent != sample:
 					initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 					temp_source_nodes.add(parent)
 				if len(temp_source_nodes) > 3000 and prev_network != None:
 					return prev_network
+			if len(source_nodes) > len(temp_source_nodes):
+				if neighbor_mod == max_neighbor_dist:
+					neighbor_mod *= 3
 			source_nodes = list(temp_source_nodes)
-
-			print("Next layer number of nodes: " +  str(len(source_nodes)), flush=True)
+			if len(source_nodes) < 10:
+				print source_nodes
+			print "Next layer number of nodes:", len(source_nodes)
 		prev_network = initial_network
 		if flag:
-			if not prev_network:
-				return initial_network
 			return prev_network
+
 	return initial_network
+
 
 def get_sources_of_graph(tree):
 	"""

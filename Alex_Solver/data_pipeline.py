@@ -75,6 +75,25 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
 
 	return samples_as_string
 
+def convert_network_to_newick_format_old(graph):
+	"""
+	Given a networkx network, converts to proper Newick format.
+
+	TODO: Add options for edge weights
+	:param graph: Networkx graph object
+	:return: String in newick format representing the above graph
+	"""
+
+	def _to_newick_str(g, node):
+		is_leaf = g.out_degree(node) == 0
+		return '%s' % (node,) if is_leaf else (
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')')
+
+	def to_newick_str(g, root=0):  # 0 assumed to be the root
+		return _to_newick_str(g, root) + ';'
+
+	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
+
 def convert_network_to_newick_format(graph):
 	"""
 	Given a networkx network, converts to proper Newick format.
@@ -105,8 +124,19 @@ def newick_to_network(newick_filepath, f=1):
         tree = Tree(newick_filepath, format=f)
     except:
         tree = Tree(newick_filepath)
+    
+    # relabel empty-labeled nodes
+    i = 1
+    if tree.name == "":
+        tree.name = "i" + str(i)
+        i += 1
 
-    nodes = [n.name for n in tree]
+    for n in tree:
+        if n.name == '':
+            n.name = "i" + str(i)
+            i += 1
+
+    nodes = [n.name for n in tree] + [tree.name]
 
     G.add_nodes_from(nodes)
     
@@ -118,6 +148,9 @@ def newick_to_network(newick_filepath, f=1):
         visited.append(p)
         
         for c in p.children:
+            if c.name  == '':
+                c.name = "i" + str(i)
+                i += 1
             if c not in visited:
                 parent_stack.append(c)
 

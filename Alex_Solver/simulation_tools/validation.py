@@ -70,6 +70,7 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 			true_common = 'ac'
 		elif bc_common > ab_common and bc_common > ac_common:
 			true_common = 'bc'
+		
 
 		# Find the triplet pair that is closer together in the reconstructed tree, to compare to the simulated tree
 		a_ancestors = nx.ancestors(reconstructed_tree, a.split('_')[0])
@@ -86,6 +87,7 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 			true_common_2 = 'ac'
 		elif bc_common > ab_common and bc_common > ac_common:
 			true_common_2 = 'bc'
+                
 
 		correct_classifications[index] += (true_common == true_common_2)
 		frequency_of_triplets[index] +=1

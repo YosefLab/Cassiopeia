@@ -23,11 +23,12 @@ import os
 
 sys.path.append("/home/mattjones/projects/scLineages/SingleCellLineageTracing/Alex_Solver")
 
-from data_pipeline import convert_network_to_newick_format
+from data_pipeline import convert_network_to_newick_format, newick_to_network
 from lineage_solver.lineage_solver import solve_lineage_instance
 from lineage_solver.solution_evaluation_metrics import cci_score
 from lineage_solver.solver_utils import get_edge_length
 from simulation_tools.simulation_utils import get_leaves_of_tree
+from simulation_tools.validation import tree_collapse
 
 def write_leaves_to_charmat(target_nodes, fn):
     """
@@ -130,6 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
     parser.add_argument("--mutation_map", type=str, default="")
+    parser.add_argument("--num_threads", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -139,11 +141,12 @@ if __name__ == "__main__":
 
     cutoff = args.cutoff
     time_limit = args.time_limit
+    num_threads = args.num_threads
 
     stem = ''.join(char_fp.split(".")[:-1])
 
     cm = pd.read_csv(char_fp, sep='\t', index_col=0)
-    cm.drop_duplicates(inplace=True)
+    cm_uniq = cm.drop_duplicates(inplace=False)
 
     newick = ""
 
@@ -190,8 +193,12 @@ if __name__ == "__main__":
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit)
+        print("running algorithm...")
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
 
+        if verbose:
+            print("Scoring Parsimony...")
+            
         # score parsimony
         score = 0
         for e in reconstructed_network_hybrid.edges():
@@ -199,21 +206,25 @@ if __name__ == "__main__":
            
         print("Parsimony: " + str(score))
         
+        if verbose:
+            print("Writing the tree to output...")
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+        pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
+
         newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
 
         with open(out_fp, "w") as f:
             f.write(newick)
 
-        out_stem = "".join(out_fp.split(".")[:-1])
-        pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
 
     elif args.ilp:
 
         target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
-            print("Running Hybrid Algorithm on " + str(len(target_nodes)) + " Unique Cells")
+            print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
             print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
         string_to_sample = dict(zip(target_nodes, cm.index))
@@ -273,6 +284,8 @@ if __name__ == "__main__":
         c2str = map(lambda x: str(x), nj_net.nodes())
         c2strdict = dict(zip(nj_net.nodes(), c2str))
         nj_net = nx.relabel_nodes(nj_net, c2strdict)
+
+        nj_net = tree_collapse(nj_net)
 
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
@@ -344,27 +357,19 @@ if __name__ == "__main__":
         p2 = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p2.pid, 0)
 
-        tree = Phylo.parse(consense_outtree, "newick").next()
-        tree.rooted = True
+        newick_str = ""
+        with open(consense_outtree, "r") as f:
+            for l in f:
+                l = l.strip()
+                newick_str += l
 
-        cs_net = Phylo.to_networkx(tree)
+        #tree = Phylo.parse(consense_outtree, "newick").next()
+        tree = newick_to_network(newick_str)
+        #tree.rooted = True
+        cs_net = tree_collapse(tree)
+        #cs_net = Phylo.to_networkx(tree)
 
-        i = 0
-        for n in cs_net:
-
-            if n.name is not None:
-
-                n.name = samples_to_cells[n.name]
-
-            else:
-                n.name = "internal" + str(i)
-                i += 1
-
-      
-        c2str = map(lambda x: str(x), cs_net.nodes())
-        c2strdict = dict(zip(cs_net.nodes(), c2str))
-        cs_net = nx.relabel_nodes(cs_net, c2strdict)
-
+        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
 
         out_stem = "".join(out_fp.split(".")[:-1])
 

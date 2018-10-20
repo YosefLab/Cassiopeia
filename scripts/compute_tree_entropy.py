@@ -10,6 +10,27 @@ import pickle as pic
 import networkx as nx
 from pylab import *
 
+import argparse
+
+def tree_collapse(graph):
+    """
+    Given a networkx graph in the form of a tree, collapse two nodes togethor if there are no mutations seperating the two nodes
+        :param graph: Networkx Graph as a tree
+        :return: Collapsed tree as a Networkx object
+    """
+
+    new_network = nx.DiGraph()
+    for edge in graph.edges():
+        if edge[0].split('_')[0] == edge[1].split('_')[0]:
+            if graph.out_degree(edge[1]) != 0:
+                for node in graph.successors(edge[1]):
+                    new_network.add_edge(edge[0], node)
+            else:
+                new_network.add_edge(edge[0], edge[1])
+        else:
+            new_network.add_edge(edge[0], edge[1])
+    return new_network
+
 def get_max_depth(G):
 
     md = 0
@@ -62,7 +83,7 @@ def set_depth(G, root):
 
     G.nodes[root]["depth"] = 0
 
-    for d in depth.keys():
+    for d in tqdm(depth.keys(), desc='Setting depth'):
 
         G.nodes[d]["depth"] = depth[d]
     
@@ -110,10 +131,20 @@ def calc_entropy(G, depth=0):
 
 if __name__ == "__main__":
 
-    net_fp = sys.argv[1]
-    out_fp = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("netfp", type=str)
+    parser.add_argument("--shuff", "-s", default="", type=str)
+    parser.add_argument("out_fp", type=str)
+
+    args = parser.parse_args()
+    net_fp = args.netfp
+    shuff_fp = args.shuff
+    out_fp = args.out_fp
 
     G = pic.load(open(net_fp, "rb"))
+
+    #make sure that all edges are collapsed
+    #G = tree_collapse(G)
 
     root = [n for n in G if G.in_degree(n) == 0][0]
 
@@ -128,9 +159,39 @@ if __name__ == "__main__":
     for d in tqdm(range(1, max_depth), desc="Computing entropy at all depths"):
         ents.append(calc_entropy(G, depth=d))
 
-    fig = plt.figure(figsize=(7,7))
-    plt.bar(range(1, max_depth), ents)
-    plt.title("Tree Entropy")
-    plt.xlabel("Depth")
-    plt.ylabel("Entropy")
-    plt.savefig(out_fp)
+    if shuff_fp != "":
+
+        print("Computing Statistics for Shuffled Data", end="\n\n")
+
+        s_G = pic.load(open(shuff_fp, "rb"))
+        root = [n for n in s_G if s_G.in_degree(n) == 0][0]
+
+        s_G = set_depth(s_G, root)
+        s_max_depth = get_max_depth(s_G)
+
+        s_G = extend_dummy_branches(s_G, max_depth)
+        s_G = set_progeny_size(s_G, root)
+
+        s_ents = []
+        for d in tqdm(range(1, s_max_depth), desc="Computing entropy at all depths for shuffled data"):
+            s_ents.append(calc_entropy(s_G, depth=d))
+
+        fig = plt.figure(figsize=(7,7))
+        plt.plot(range(1, max_depth), ents, label="Reconstructed")
+        plt.plot(range(1, s_max_depth), s_ents, label="Shuffled Reconstructed")
+        plt.xlim(0, max(max_depth, s_max_depth))
+        plt.ylim(0, max(max(s_ents), max(ents)) + 2)
+        plt.xlabel('Depth')
+        plt.ylabel('Entropy')
+        plt.title("Tree Entropy")
+        plt.legend()
+        plt.savefig(out_fp)
+
+    else:
+
+        fig = plt.figure(figsize=(7,7))
+        plt.bar(range(1, max_depth), ents)
+        plt.title("Tree Entropy")
+        plt.xlabel("Depth")
+        plt.ylabel("Entropy")
+        plt.savefig(out_fp)
