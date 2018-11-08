@@ -40,7 +40,7 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 	current_depth = [[['0' for _ in range(0, characters)], '0']]
 	network.add_node(node_to_string(current_depth[0]))
 	uniq = 1
-	for i in range(0, depth):
+	for i in tqdm(range(0, depth), desc="Simulating cells at every depth"):
 		temp_current_depth = []
 		for node in current_depth:
 			for _ in range(0,2):

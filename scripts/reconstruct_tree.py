@@ -132,6 +132,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
     parser.add_argument("--mutation_map", type=str, default="")
     parser.add_argument("--num_threads", type=int, default=1)
+    parser.add_argument("--max_neighborhood_size", type=int, default=10000)
 
     args = parser.parse_args()
 
@@ -142,6 +143,8 @@ if __name__ == "__main__":
     cutoff = args.cutoff
     time_limit = args.time_limit
     num_threads = args.num_threads
+
+    max_neighborhood_size = args.max_neighborhood_size
 
     stem = ''.join(char_fp.split(".")[:-1])
 
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         string_to_sample = dict(zip(target_nodes, cm.index))
 
         print("running algorithm...")
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
 
         if verbose:
             print("Scoring Parsimony...")
@@ -204,7 +207,8 @@ if __name__ == "__main__":
         for e in reconstructed_network_hybrid.edges():
             score += get_edge_length(e[0], e[1])
            
-        print("Parsimony: " + str(score))
+        if verbose:
+            print("Parsimony: " + str(score))
         
         if verbose:
             print("Writing the tree to output...")
@@ -229,7 +233,7 @@ if __name__ == "__main__":
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit)
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 
         # score parsimony
         score = 0
@@ -281,7 +285,7 @@ if __name__ == "__main__":
 
       
         # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: str(x), nj_net.nodes())
+        c2str = map(lambda x: x.name, nj_net.nodes())
         c2strdict = dict(zip(nj_net.nodes(), c2str))
         nj_net = nx.relabel_nodes(nj_net, c2strdict)
 

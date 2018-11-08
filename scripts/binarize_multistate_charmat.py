@@ -52,17 +52,22 @@ def multi_map(mat):
 
     return num_states_dict
 
-def convert_to_one_hot(char, num_bin):
+def convert_to_one_hot(char, num_bin, tab_delim=False):
 
     if char == "-":
-        return '?' * (num_bin)
+        s = ['?'] * (num_bin)
+        
+    else:
+        s = ["0"] * num_bin
+        s[int(char)] = "1"
 
-    s = [0] * num_bin
-    s[int(char)] = 1
+    if tab_delim:
+        return '\t'.join(s) + "\t"
+        #return '\t'.join(map(lambda x: str(int(x)), s))
 
-    return ''.join(map(lambda x: str(int(x)), s))
+    return ''.join(s)
 
-def construct_file(charmat, state_map, relaxed=False):
+def construct_file(charmat, state_map, relaxed=False, tab_delim=False):
 
     strings = []
 
@@ -82,7 +87,7 @@ def construct_file(charmat, state_map, relaxed=False):
 
             num_bin = state_map[j]
             char = charmat.iloc[i, j]
-            to_write = convert_to_one_hot(char, num_bin)
+            to_write = convert_to_one_hot(char, num_bin, tab_delim = tab_delim)
 
             s += to_write
             curr_len += len(to_write)
@@ -97,12 +102,14 @@ if __name__ == "__main__":
     parser.add_argument("charmat_fp", type=str)
     parser.add_argument("out_fp", type=str)
     parser.add_argument("--relaxed", action="store_true", default=False)
+    parser.add_argument("--tab_delim", action="store_true", default=False)
 
     args = parser.parse_args()
 
     charmat_fp = args.charmat_fp
     outputfile_fp = args.out_fp
     relaxed = args.relaxed
+    tab_delim = args.tab_delim
 
     charmat = pd.read_csv(charmat_fp, sep='\t')
 
@@ -110,11 +117,12 @@ if __name__ == "__main__":
 
     num_samples = charmat.shape[0]
 
-    strings, m = construct_file(charmat, state_map, relaxed=relaxed)
+    strings, m = construct_file(charmat, state_map, relaxed=relaxed, tab_delim = tab_delim)
 
     with open(outputfile_fp, "w") as f:
 
-        f.write("\t" + str(num_samples) + " " + str(m) + "\n")
+        if not tab_delim:
+            f.write("\t" + str(num_samples) + " " + str(m) + "\n")
 
         for i in strings:
             f.write(i)

@@ -145,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
     parser.add_argument("--mutation_map", type=str, default="")
     parser.add_argument("--num_threads", type=int, default=1)
+    parser.add_argument("--no_triplets", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -155,6 +156,8 @@ if __name__ == "__main__":
     cutoff = args.cutoff
     time_limit = args.time_limit
     num_threads = args.num_threads
+
+    score_triplets = (not args.no_triplets)
 
     name = netfp.split("/")[-1]
     spl = name.split("_")
@@ -191,12 +194,17 @@ if __name__ == "__main__":
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
+	t0 = time.time()
         reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy")
+	t1 = time.time()
 
         reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
-        tp = check_triplets_correct(true_network, reconstructed_network_greedy)
-        print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t)
+	if score_triplets:
+        	tp = check_triplets_correct(true_network, reconstructed_network_greedy)
+        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t + "\t" + str(t1 - t0))
+	else:
+		print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         newick = convert_network_to_newick_format(reconstructed_network_greedy) 
         out = stem + "_greedy.txt"
@@ -209,7 +217,9 @@ if __name__ == "__main__":
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
+	t0 = time.time()
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+	t1 = time.time()
 
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
 
@@ -222,15 +232,40 @@ if __name__ == "__main__":
         with open(out, "w") as f:
             f.write(newick)
 
-        tp = check_triplets_correct(true_network, reconstructed_network)
+	if score_triplets:
+        	tp = check_triplets_correct(true_network, reconstructed_network_hybrid)
+        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(t1 - t0))
+	else:
+		print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
 
-        print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(time.time() - t0))
 
     elif args.ilp:
 
-        print('ilp')
-        with open(out_fp, "w") as f:
-            f.write(newick + ";")
+        if verbose:
+            print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
+            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
+
+	t0 = time.time()
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+	t1 = time.time()
+
+        reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
+
+        out = stem + "_ilp.pkl"
+        pic.dump(reconstructed_network_ip, open(out, "wb")) 
+
+        newick = convert_network_to_newick_format(reconstructed_network_ilp) 
+
+        out = stem + "_ilp.txt"
+        with open(out, "w") as f:
+            f.write(newick)
+
+	if score_triplets:
+        	tp = check_triplets_correct(true_network, reconstructed_network_ilp)
+        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "ilp" + "\t" + t + "\t" + str(t1 - t0))
+	else:
+		print(str(param) + "\t" + str(run) + "\t" + "ilp" + "\t" + str(t) + "\t" + str(t1 - t0))
+
 
     elif args.neighbor_joining:
         
@@ -252,6 +287,7 @@ if __name__ == "__main__":
 
         t0 = time.time()
         tree = constructor.build_tree(aln)
+	t1 = time.time()
 
         out = stem + "_nj.txt"
         Phylo.write(tree, out, 'newick')
@@ -273,9 +309,11 @@ if __name__ == "__main__":
         # convert labels to characters for triplets correct analysis
         nj_net = nx.relabel_nodes(nj_net, s_to_char)
 
-        tp = check_triplets_correct(true_network, nj_net)
-
-        print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + '\t' + str(time.time() - t0))
+	if score_triplets:
+        	tp = check_triplets_correct(true_network, nj_net)
+        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + "\t" + str(t1 - t0))
+	else:
+		print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(t1 - t0))
 
 
         os.system("rm " + infile)
@@ -286,9 +324,9 @@ if __name__ == "__main__":
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
 
-        infile = ''.join(name.split(".")[:-1]) + 'infile.txt'
-        fn = ''.join(name.split(".")[:-1]) + 'phylo.txt'
-        weights_fn = ''.join(name.split(".")[:-1]) + "weights.txt"
+        infile = ''.join(name.split(".")[:-1]) + '_cs_infile.txt'
+        fn = ''.join(name.split(".")[:-1]) + '_cs_phylo.txt'
+        weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
         write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
         
         os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile) 
@@ -335,15 +373,18 @@ if __name__ == "__main__":
         p2 = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p2.pid, 0)
 
+	t1 = time.time()
+
         # read in newick file to networkx format
         cs_net = newick_to_network(consense_outtree) 
 
         # convert labels to characters for triplets correct analysis
         cs_net = nx.relabel_nodes(cs_net, s_to_char)
-
-        tp = check_triplets_correct(true_network, cs_net)
-
-        print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "camin-sokal" + "\t" + t + "\t" + str(time.time() - t0))
+	if score_triplets:
+        	tp = check_triplets_correct(true_network, cs_net)
+        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "camin-sokal" + "\t" + t + "\t" + str(t1 - t0))
+	else:
+		print(str(param) + "\t" + str(run) + "\t" + "camin-sokal" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         os.system("rm " + outfile)
         os.system("rm " + responses)
