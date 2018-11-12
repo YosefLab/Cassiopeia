@@ -40,7 +40,8 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 
 
 
-    print('-----------------------------------------------------------------------')
+    if detailed_output:
+        print('-----------------------------------------------------------------------')
     model.optimize()
 
     # Recover minimal subgraph
@@ -49,10 +50,11 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 
     end_time = python_time.time()
     days, hours, minutes, seconds = execution_time(start_time, end_time)
-    print('Steiner tree solving took %s days, %s hours, %s minutes, %s seconds' % (days, hours, minutes, seconds))
+    if detailed_output:
+        print('Steiner tree solving took %s days, %s hours, %s minutes, %s seconds' % (days, hours, minutes, seconds))
 
-    if model.status != GRB.status.OPTIMAL:
-        print('Warning: Steiner tree solving did not result in an optimal model')
+        if model.status != GRB.status.OPTIMAL:
+            print('Warning: Steiner tree solving did not result in an optimal model')
 
     return subgraphs
 
@@ -141,9 +143,9 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 					subgraph.add_edge(u, v, weight=graph[u][v]['weight'], label=graph[u][v]['label'])
 
 		# Print solution
-			print('-----------------------------------------------------------------------')
-			print('Solved Steiner Tree instance. Optimal Solution costs ' + str(model.PoolObjVal))
+		
 			if detailed_output:
+                                print('Solved Steiner Tree instance. Optimal Solution costs ' + str(model.PoolObjVal))
 				print('Edges in minimal subgraph:')
 				print_edges_in_graph(subgraph)
 			subgraphs.append(subgraph)

@@ -218,7 +218,11 @@ if __name__ == "__main__":
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
 	t0 = time.time()
+<<<<<<< HEAD
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, detailed_output=verbose)
+=======
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+>>>>>>> f048e23be6c6d0a5b690351f791ca0e009674a62
 	t1 = time.time()
 
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
@@ -324,9 +328,9 @@ if __name__ == "__main__":
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
 
-        infile = ''.join(name.split(".")[:-1]) + 'infile.txt'
-        fn = ''.join(name.split(".")[:-1]) + 'phylo.txt'
-        weights_fn = ''.join(name.split(".")[:-1]) + "weights.txt"
+        infile = ''.join(name.split(".")[:-1]) + '_cs_infile.txt'
+        fn = ''.join(name.split(".")[:-1]) + '_cs_phylo.txt'
+        weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
         write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
         
         os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile) 

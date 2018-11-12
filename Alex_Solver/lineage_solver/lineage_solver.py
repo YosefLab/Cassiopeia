@@ -10,6 +10,7 @@ import traceback
 import hashlib
 
 
+
 from greedy_solver import root_finder, greedy_build
 from ILP_solver import generate_mSteiner_model, solve_steiner_instance
 from solver_utils import build_potential_graph_from_base_graph
@@ -52,7 +53,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 	        _potential_network = nx.relabel_nodes(potential_network, encoder)
                 _targets = set(map(lambda x: encoder[x], target_nodes))
 
-		model, edge_variables = generate_mSteiner_model(_potential_network, encoder(master_root), _targets)
+		model, edge_variables = generate_mSteiner_model(_potential_network, encoder[master_root], _targets)
 		
 		subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads=threads)[0]
 		return subgraph
