@@ -15,11 +15,11 @@ def tree_collapse(graph):
 		if edge[0].split('_')[0] == edge[1].split('_')[0]:
                         if graph.out_degree(edge[1]) != 0:
                                 for node in graph.successors(edge[1]):
-                                        new_network.add_edge(edge[0], node)
+                                    new_network.add_edge(edge[0], node)
                         else:
-				new_network.add_edge(edge[0], edge[1])
+                            new_network.add_edge(edge[0], edge[1])
 		else:
-			new_network.add_edge(edge[0], edge[1])
+		    new_network.add_edge(edge[0], edge[1])
 	return new_network
 
 def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False):

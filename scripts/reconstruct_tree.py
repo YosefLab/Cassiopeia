@@ -132,6 +132,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
     parser.add_argument("--mutation_map", type=str, default="")
     parser.add_argument("--num_threads", type=int, default=1)
+    parser.add_argument("--max_neighborhood_size", type=int, default=10000)
 
     args = parser.parse_args()
 
@@ -142,6 +143,8 @@ if __name__ == "__main__":
     cutoff = args.cutoff
     time_limit = args.time_limit
     num_threads = args.num_threads
+
+    max_neighborhood_size = args.max_neighborhood_size
 
     stem = ''.join(char_fp.split(".")[:-1])
 
@@ -157,7 +160,7 @@ if __name__ == "__main__":
 
     if args.greedy:
 
-        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
@@ -174,7 +177,7 @@ if __name__ == "__main__":
            
         print("Parsimony: " + str(score))
         
-        reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
+        #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
         newick = convert_network_to_newick_format(reconstructed_network_greedy) 
 
         with open(out_fp, "w") as f:
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
     elif args.hybrid:
 
-        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         string_to_sample = dict(zip(target_nodes, cm.index))
 
         print("running algorithm...")
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
 
         if verbose:
             print("Scoring Parsimony...")
@@ -204,11 +207,13 @@ if __name__ == "__main__":
         for e in reconstructed_network_hybrid.edges():
             score += get_edge_length(e[0], e[1])
            
-        print("Parsimony: " + str(score))
+        if verbose:
+            print("Parsimony: " + str(score))
         
         if verbose:
             print("Writing the tree to output...")
-        reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
+
+        #reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
 
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
@@ -221,7 +226,7 @@ if __name__ == "__main__":
 
     elif args.ilp:
 
-        target_nodes = cm.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
@@ -229,7 +234,7 @@ if __name__ == "__main__":
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit)
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 
         # score parsimony
         score = 0
@@ -238,7 +243,7 @@ if __name__ == "__main__":
            
         print("Parsimony: " + str(score))
         
-        reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
+        #reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
         newick = convert_network_to_newick_format(reconstructed_network_ilp) 
 
         with open(out_fp, "w") as f:
@@ -281,7 +286,7 @@ if __name__ == "__main__":
 
       
         # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: str(x), nj_net.nodes())
+        c2str = map(lambda x: x.name, nj_net.nodes())
         c2strdict = dict(zip(nj_net.nodes(), c2str))
         nj_net = nx.relabel_nodes(nj_net, c2strdict)
 

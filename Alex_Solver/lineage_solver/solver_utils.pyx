@@ -65,7 +65,7 @@ def get_edge_length(x,y,priors=None):
 				if not priors:
 					count += 1
 				else:
-					count += - np.log(priors[i][str(y_list[i])])
+					count += -np.log(priors[i][str(y_list[i])])
 			else:
 				return -1
 	return count
@@ -107,7 +107,7 @@ def root_finder(target_nodes):
 
 	return np
 
-def build_potential_graph_from_base_graph(samples, priors=None):
+def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000, priors=None, pid=-1):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -142,15 +142,15 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 
 		source_nodes = samples
 		neighbor_mod = max_neighbor_dist
-		print "Num Neighbors considered: ", max_neighbor_dist
-		print "Number of initial extrapolated pairs:", len(source_nodes)
+		print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
+		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		while len(source_nodes) != 1:
 
-			if len(source_nodes) > 3000 and prev_network != None:
+			if len(source_nodes) > max_neighborhood_size and prev_network != None:
 				return prev_network
-			elif len(source_nodes) > 3000 and prev_network == None:
+			elif len(source_nodes) > max_neighborhood_size and prev_network == None:
 				flag = True
-			elif len(source_nodes) > 2000:
+			elif len(source_nodes) > max_neighborhood_size:
 				flag = True
 			temp_source_nodes = set()
 			for i in range(0, len(source_nodes)-1):
@@ -163,7 +163,6 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 						top_parents.append((get_edge_length(parent, sample) + get_edge_length(parent, sample_2), parent, sample_2))
 
 						#Check this cutoff
-						# print "checking cutoff"
 						if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < neighbor_mod:
 							initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
 							initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
@@ -178,15 +177,13 @@ def build_potential_graph_from_base_graph(samples, priors=None):
 					#if parent != sample:
 					initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
 					temp_source_nodes.add(parent)
-				if len(temp_source_nodes) > 3000 and prev_network != None:
+				if len(temp_source_nodes) > max_neighborhood_size  and prev_network != None:
 					return prev_network
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:
 					neighbor_mod *= 3
 			source_nodes = list(temp_source_nodes)
-			if len(source_nodes) < 10:
-				print source_nodes
-			print "Next layer number of nodes:", len(source_nodes)
+			print("Next layer number of nodes:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		prev_network = initial_network
 		if flag:
 			return prev_network

@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     if shuff_fp != "":
 
-        print("Computing Statistics for Shuffled Data", end="\n\n")
+        print("Computing Statistics for Shuffled Data")
 
         s_G = pic.load(open(shuff_fp, "rb"))
         root = [n for n in s_G if s_G.in_degree(n) == 0][0]

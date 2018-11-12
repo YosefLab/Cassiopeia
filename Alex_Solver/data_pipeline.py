@@ -86,8 +86,9 @@ def convert_network_to_newick_format_old(graph):
 
 	def _to_newick_str(g, node):
 		is_leaf = g.out_degree(node) == 0
+		print(node, is_leaf)
 		return '%s' % (node,) if is_leaf else (
-					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')')
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + node)
 
 	def to_newick_str(g, root=0):  # 0 assumed to be the root
 		return _to_newick_str(g, root) + ';'

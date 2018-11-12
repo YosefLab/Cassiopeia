@@ -17,12 +17,13 @@ aln = read.phyDat(infile, format = "phylip", type="USER", levels=c("0", "1"), am
 tree = read.tree(tree.fp)
 
 p = parsimony(tree, aln)
+#print(paste0("Parsimony: ", p))
 
 spl1 = unlist(strsplit(tree.fp, "/", fixed=T))
 name = spl1[[length(spl1)]]
 spl2 = rev(unlist(strsplit(name, "_", fixed=T)))
-param = spl2[[4]]
-run = unlist(strsplit(spl2[[2]], ".", fixed=T))[[1]]
+param = spl2[[3]]
+run = unlist(strsplit(spl2[[1]], ".", fixed=T))[[1]]
 
 write(paste(param, run, p, alg, t, sep='\t'), stdout())
 
