@@ -20,7 +20,7 @@ def cci_score(nodes):
 	cci = [0]
 	iters = 1
 	while nx.number_connected_components(compatability_network) != nx.number_of_nodes(compatability_network):
-		x = [x[0] for x in sorted(compatability_network.degree().items(), key=lambda x: x[1], reverse=False)]
+		x = [x[0] for x in sorted(compatability_network.degree(), key=lambda x: x[1], reverse=False)]
 		cci.append(iters)
 		compatability_network.remove_edges_from(compatability_network.edges(x.pop()))
 		compatability_score.append(

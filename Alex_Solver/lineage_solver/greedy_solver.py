@@ -52,15 +52,27 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 
 	# Accounting for frequency of mutated states per character, in order to choose the best split
 	for node in nodes:
-		node_list = node.split('|')
+                node_list = node.split("_")[0].split('|')
 		for i in range(0, len(node_list)):
 			char = node_list[i]
 			if char != '0' and char != '-':
 				character_mutation_mapping[(str(i), char)] += 1
+                        #if char != '0':
+                        #    if char == "-":
+                        #        character_mutation_mapping[(str(i), char)] -= 1
+                        #    else:
+                        #        character_mutation_mapping[(str(i), char)] += 1
 
 	# Choosing the best mutation to split on (ie character and state)
 	character, state = 0, 0
 	max_cost = 0
+
+	min_prior = 1
+        if priors:
+            for i in priors.keys():
+                for j in priors[i].keys():
+                    min_prior = min(min_prior, priors[i][j])
+
 	for i,j in character_mutation_mapping:
 		if not (i,j) in considered:
 			if not priors:
@@ -68,6 +80,8 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 					max_cost = character_mutation_mapping[(i, j)]
 					character, state = i, j
 			else:
+			        if j not in priors[int(i)]:
+			            priors[int(i)][j] = min_prior
 				if max_cost < -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]:
 					max_cost = -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]
 					character, state = i, j
@@ -105,6 +119,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 		right_split_score = 0
 		left_split_score = 0
 		node_list = node.split('|')
+		num_not_missing = len([n for n in node_list if n != "-"])
 		for i in range(0, len(node_list)):
 			if node_list[i] != '0' and node_list[i] != '-':
 				for node_2 in left_split:
@@ -116,7 +131,10 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 					if node_list[i] == node2_list[i]:
 						right_split_score += 1
 
-		if left_split_score < right_split_score:
+		avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
+		avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
+
+		if avg_left_split_score < avg_right_split_score:
 			right_split_temp.append(node)
 		else:
 			left_split_temp.append(node)

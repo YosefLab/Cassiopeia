@@ -168,6 +168,8 @@ if __name__ == "__main__":
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
+        target_nodes = map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index)
+
         reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probs)
         
         # score parsimony
@@ -195,6 +197,8 @@ if __name__ == "__main__":
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
         string_to_sample = dict(zip(target_nodes, cm.index))
+
+        target_nodes = map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index)
 
         print("running algorithm...")
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
@@ -233,6 +237,8 @@ if __name__ == "__main__":
             print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
         string_to_sample = dict(zip(target_nodes, cm.index))
+
+        target_nodes = map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index)
 
         reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 

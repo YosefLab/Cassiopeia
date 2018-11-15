@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 import traceback
 import hashlib
+from collections import defaultdict
 
 
 
@@ -42,38 +43,83 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 	:return:
 		A reconstructed subgraph representing the nodes
 	"""
+
+	node_name_dict = dict(zip([n.split("_")[0] for n in target_nodes], target_nodes))
+
+        # Account for possible cases where the state was not observed in the frequency table, thus we 
+        # set the value of this prior probability to the minimum probability observed
+	character_mutation_mapping = defaultdict(int)
+	min_prior = 1
+        if prior_probabilities:
+            for i in prior_probabilities.keys():
+                for j in prior_probabilities[i].keys():
+                    min_prior = min(min_prior, prior_probabilities[i][j])
+
+	    for node in target_nodes:
+                node_list = node.split("_")[0].split('|')
+	        for i in range(0, len(node_list)):
+		    char = node_list[i]
+		    if char != '0' and char != '-':
+		        character_mutation_mapping[(str(i), char)] += 1
+
+            for (i,j) in character_mutation_mapping:
+                if j not in prior_probabilities[int(i)]:
+                    prior_probabilities[int(i)][j] = min_prior
+
+
+        # clip identifier for now, but make sure to add later
+	target_nodes = [n.split("_")[0] for n in target_nodes] 
+
+	target_nodes = list(set(target_nodes))
 	master_root = root_finder(target_nodes)
 	if method == "ilp":
-		potential_network = build_potential_graph_from_base_graph(target_nodes, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size)
 
-	        nodes = list(potential_network.nodes())
-	        encoder = dict(zip(nodes, list(range(len(nodes)))))
-	        decoder = dict((v, k) for k, v in encoder.items())
 
-	        _potential_network = nx.relabel_nodes(potential_network, encoder)
-                _targets = set(map(lambda x: encoder[x], target_nodes))
+                subgraph, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
 
-		model, edge_variables = generate_mSteiner_model(_potential_network, encoder[master_root], _targets)
+		#potential_network = build_potential_graph_from_base_graph(target_nodes, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size)
+
+	        #nodes = list(potential_network.nodes())
+	        #encoder = dict(zip(nodes, list(range(len(nodes)))))
+	        #decoder = dict((v, k) for k, v in encoder.items())
+
+	        #_potential_network = nx.relabel_nodes(potential_network, encoder)
+                #_targets = set(map(lambda x: encoder[x], target_nodes))
+
+		#model, edge_variables = generate_mSteiner_model(_potential_network, encoder[master_root], _targets)
 		
-		subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads=threads)[0]
+		#subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads=threads)[0]
+
+		#subraph = nx.relabel_nodes(subgraph, decoder)
+
 		return subgraph
 
 	if method == "hybrid":
+
+
 		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff)
 
+                print("Using " + str(min(multiprocessing.cpu_count(), threads)) + " threads, " + str(multiprocessing.cpu_count()) + " available.")
 		executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), threads))
                 print("Sending off Target Sets: " + str(len(target_sets)))
 
-		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, prior_probabilities, time_limit, threads, max_neighborhood_size) for root, targets in target_sets]
+                # just in case you've hit a target node during the greedy reconstruction, append name at this stage
+                # so the composition step doesn't get confused when trying to join to the root. 
+                network = nx.relabel_nodes(network, node_name_dict)
+
+		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
 		        res, pid = future.result()
 		        new_names = {}
                         for n in res:
-                            if res.in_degree(n) > 0 and res.out_degree(n) > 0:
+                            if res.in_degree(n) > 0:
                                 new_names[n] = n + "_" + str(pid)
+                            else:
+                                new_names[n] = n
                         res = nx.relabel_nodes(res, new_names)
 			network = nx.compose(network, res)
+		print([n for n in network if network.in_degree(n) == 0])
 		return network
 
 	if method == "greedy":
@@ -97,7 +143,7 @@ def reraise_with_stack(func):
     return wrapped
 
 @reraise_with_stack
-def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, num_threads, max_neighborhood_size):
+def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size):
 	"""
 	Sub-Function used for multi-threading in hybrid method
 
@@ -115,11 +161,11 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
         
         pid = hashlib.md5(root).hexdigest()
 
-	print("Started new thread for: " + str(root) + ", pid = " + str(pid))
+	print("Started new thread for: " + str(root) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid))
 
 	if len(set(targets)) == 1:
 		graph = nx.DiGraph()
-		graph.add_node(root)
+		graph.add_node(node_name_dict[root])
 		return graph, pid
 
 	potential_network_priors = build_potential_graph_from_base_graph(targets, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
@@ -129,10 +175,13 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 	decoder = dict((v, k) for k, v in encoder.items())
 
 	_potential_network = nx.relabel_nodes(potential_network_priors, encoder)
-        _targets = set(map(lambda x: encoder[x], targets))
+        _targets = map(lambda x: encoder[x], set(targets))
 
 	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
 	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
 	subgraph = nx.relabel_nodes(subgraph, decoder)
+
+	subgraph = nx.relabel_nodes(subgraph, node_name_dict)
+
 	return subgraph, pid
 

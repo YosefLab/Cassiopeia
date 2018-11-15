@@ -132,7 +132,7 @@ def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
-	for max_neighbor_dist in range(0, 15):
+	for max_neighbor_dist in range(0, 14):
 		initial_network = nx.DiGraph()
 		samples = set(samples)
 		for sample in samples:
@@ -184,6 +184,10 @@ def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000
 					neighbor_mod *= 3
 			source_nodes = list(temp_source_nodes)
 			print("Next layer number of nodes:" + str(len(source_nodes)) + ", pid = " + str(pid))
+
+		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
+			return prev_network
+
 		prev_network = initial_network
 		if flag:
 			return prev_network
