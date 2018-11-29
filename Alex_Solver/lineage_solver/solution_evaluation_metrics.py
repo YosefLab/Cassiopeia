@@ -3,7 +3,7 @@ from collections import defaultdict
 import networkx as nx
 import random
 
-def cci_score(nodes):
+def cci_score(nodes, bound = "upper"):
 	"""
 	Returns a score between 0.5 and 1, corresponding to the complexity of parsimony problem (Where 0.5 means most complex)
 	:param nodes:
@@ -11,8 +11,11 @@ def cci_score(nodes):
 	:return:
 		Score between 0.5 and 1, where the lower the score the more complex/dirty the parsimony problem is
 	"""
+	if bound == "upper":
+		compatability_network, cvi = build_incompatability_graph_and_violating_samples_MODIFIED_UB(nodes)
 
-	compatability_network, cvi = build_incompatability_graph_and_violating_samples(nodes)
+	else:
+		compatability_network, cvi = build_incompatability_graph_and_violating_samples_MODIFIED_LB(nodes)
 
 	compatability_score = [
 		nx.number_connected_components(compatability_network) / (1.0 * nx.number_of_nodes(compatability_network))]
@@ -142,6 +145,187 @@ def build_incompatability_graph_and_violating_samples(nodes):
 		
 
 	return compatability_network, samples_dict
+
+
+def build_incompatability_graph_and_violating_samples_MODIFIED_LB(nodes):
+	"""
+	Generates a graph where nodes represent characters, and edges represent incompatibility between two characters
+	Also returns a dictionary containing for each sample, all characters which were incompatable as a result of the
+	presence of such sample
+
+	:param nodes:
+		A list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'
+	:return:
+		A compatibility graph where edges correspond to incompatible characters
+		A dictionary whose keys correspond to samples, and whose values are sets of tuples, where the tuples represnts
+		the two characters this sample caused incompatability for
+	"""
+
+	# Adding one node per character to networkx compatibility_network graph
+	new_nodes = []
+	for node in nodes:
+		new_nodes.append(node.split('|'))
+	zipped_columns = zip(*new_nodes)
+
+	columns = map('|'.join, zip(*new_nodes))
+
+	compatability_network = nx.Graph()
+
+	for i in range(0, len(columns)):
+		compatability_network.add_node(i)
+
+	# Generating positions for all possible characters and states
+	sets = [set(column.split('|')) for column in columns]
+	dct = {i: {} for i in range(0, len(columns))}
+
+	for i in range(0, len(columns)):
+		for char in sets[i]:
+			dct[i][char] = set([pos for pos, c in enumerate(zipped_columns[i]) if char == c])
+
+	samples_dict = defaultdict(set)
+
+	def look_for_edge(i, j, sub_i, sub_j):
+		"""
+		Sub-function which looks for incompatibility between two characters
+		:param i:
+			Character i
+		:param j:
+			Character j
+		:return:
+			True if there is incompatibility, else False
+		"""
+		flag = False
+		if i != j:
+
+			s1 = dct[i][sub_i]
+			s2 = dct[j][sub_j]
+
+			s1_na = dct[i]['-'] if '-' in dct[i] else set()
+			s2_na = dct[j]['-'] if '-' in dct[j] else set()
+			if (len(s1.union(s1_na) & s2.union(s2_na))) == 0 or (s1.union(s1_na)).issubset(s2) or (s2.union(s2_na)).issubset(s1):
+				pass
+			else:
+				# print i, j, item, item2, s1, s2, len(s1 & s2)
+				# Revisit this section
+				set1 = s1 & s2
+				set2 = s1 - s2.union(s2_na)
+				set3 = s2 - s1.union(s1_na)
+
+				# if len(set1) == min(len(set1), len(set2), len(set3)):
+				# 	ultimate_set = set1
+				# elif len(set2) == min(len(set1), len(set2), len(set3)):
+				# 	ultimate_set = set2
+				# else:
+				# 	ultimate_set = set3
+				#
+				# for node in ultimate_set:
+				# 	samples_dict[node].add((i, j))
+
+				flag = True
+			return flag
+
+	# Generating compatibility graph edges
+
+	for i in range(0, len(columns)):
+		for j in range(0, len(columns)):
+			for sub_i in sets[i]:
+				for sub_j in sets[j]:
+					if i != j and sub_i != 0 and sub_j != 0 and sub_i != '-' and sub_j != '-':
+						if look_for_edge(i, j, sub_i, sub_j):
+							compatability_network.add_edge((i, sub_i), (j, sub_j))
+
+	return compatability_network, samples_dict
+
+def build_incompatability_graph_and_violating_samples_MODIFIED_UB(nodes):
+	"""
+	Generates a graph where nodes represent characters, and edges represent incompatibility between two characters
+	Also returns a dictionary containing for each sample, all characters which were incompatable as a result of the
+	presence of such sample
+
+	:param nodes:
+		A list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'
+	:return:
+		A compatibility graph where edges correspond to incompatible characters
+		A dictionary whose keys correspond to samples, and whose values are sets of tuples, where the tuples represnts
+		the two characters this sample caused incompatability for
+	"""
+
+	# Adding one node per character to networkx compatibility_network graph
+	new_nodes = []
+	for node in nodes:
+		new_nodes.append(node.split('|'))
+	zipped_columns = zip(*new_nodes)
+
+	columns = map('|'.join, zip(*new_nodes))
+
+	compatability_network = nx.Graph()
+
+	for i in range(0, len(columns)):
+		compatability_network.add_node(i)
+
+	# Generating positions for all possible characters and states
+	sets = [set(column.split('|')) for column in columns]
+	dct = {i: {} for i in range(0, len(columns))}
+
+	for i in range(0, len(columns)):
+		for char in sets[i]:
+			dct[i][char] = set([pos for pos, c in enumerate(zipped_columns[i]) if char == c])
+
+	samples_dict = defaultdict(set)
+
+	def look_for_edge(i, j, sub_i, sub_j):
+		"""
+		Sub-function which looks for incompatibility between two characters
+		:param i:
+			Character i
+		:param j:
+			Character j
+		:return:
+			True if there is incompatibility, else False
+		"""
+		flag = False
+		if i != j:
+
+			s1 = dct[i][sub_i]
+			s2 = dct[j][sub_j]
+
+			s1_na = dct[i]['-'] if '-' in dct[i] else set()
+			s2_na = dct[j]['-'] if '-' in dct[j] else set()
+			if (len(s1 & s2) == 0 or s1.issubset(s2.union(s2_na)) or s2.issubset(s1.union(s1_na))):
+				pass
+			else:
+				# print i, j, item, item2, s1, s2, len(s1 & s2)
+				# Revisit this section
+				set1 = s1 & s2
+				set2 = s1 - s2.union(s2_na)
+				set3 = s2 - s1.union(s1_na)
+
+				if len(set1) == min(len(set1), len(set2), len(set3)):
+					ultimate_set = set1
+				elif len(set2) == min(len(set1), len(set2), len(set3)):
+					ultimate_set = set2
+				else:
+					ultimate_set = set3
+
+				for node in ultimate_set:
+					samples_dict[node].add((i, j))
+
+				flag = True
+			if flag:
+				return True
+
+	# Generating compatibility graph edges
+
+	for i in range(0, len(columns)):
+		for j in range(0, len(columns)):
+			for sub_i in sets[i]:
+				for sub_j in sets[j]:
+					if i != j and sub_i != 0 and sub_j != 0 and sub_i != '-' and sub_j != '-':
+						if look_for_edge(i, j, sub_i, sub_j):
+							compatability_network.add_edge((i, sub_i), (j, sub_j))
+
+	return compatability_network, samples_dict
+
 
 def flag_double_mutated_samples(nodes, character, state):
 	"""

@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+from greedy_solver import greedy_build
 
 def node_parent(x, y):
 	"""
@@ -83,8 +84,8 @@ def mutations_from_parent_to_child(parent, child):
 	if '_' in child:
 		child = ''.join(child.split("_")[:-1])
 
-	parent_list = parent.split('|')
-	child_list = child.split('|')
+	parent_list = parent.split("_")[0].split('|')
+	child_list = child.split("_")[0].split('|')
 	mutations = []
 	for i in range(0, len(parent_list)):
 		if parent_list[i] != child_list[i] and child_list[i] != '-':
@@ -107,7 +108,7 @@ def root_finder(target_nodes):
 
 	return np
 
-def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000, priors=None, pid=-1):
+def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -150,32 +151,50 @@ def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000
 				return prev_network
 			elif len(source_nodes) > max_neighborhood_size and prev_network == None:
 				flag = True
-			elif len(source_nodes) > max_neighborhood_size:
-				flag = True
+			elif len(source_nodes) > max_neighborhood_size * 2:
+				_r, _tset = greedy_build(samples, priors=priors, cutoff=-1) 
+				return _tset, False
 			temp_source_nodes = set()
 			for i in range(0, len(source_nodes)-1):
 				sample = source_nodes[i]
 				top_parents = []
+				p_to_s1_lengths, p_to_s2_lengths = {}, {}
+				muts_to_s1, muts_to_s2 = {}, {}
 				for j in range(i + 1, len(source_nodes)):
 					sample_2 = source_nodes[j]
 					if sample != sample_2:
+
 						parent = node_parent(sample, sample_2)
-						top_parents.append((get_edge_length(parent, sample) + get_edge_length(parent, sample_2), parent, sample_2))
+						edge_length_p_s1 = get_edge_length(parent, sample)
+						edge_length_p_s2 = get_edge_length(parent, sample_2)
+						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
+
+						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
+						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
+
+						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
+						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
 
 						#Check this cutoff
-						if get_edge_length(parent, sample) + get_edge_length(parent, sample_2) < neighbor_mod:
-							initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
-							initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
+						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
+
+							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
+
+							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
 							temp_source_nodes.add(parent)
+
+							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
+							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
 
 				min_distance = min(top_parents, key = lambda k: k[0])[0]
 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
 
 				for parent, sample_2 in lst:
 					#if parent != sample_2:
-					initial_network.add_edge(parent, sample_2, weight=get_edge_length(parent, sample_2, priors), label=mutations_from_parent_to_child(parent, sample_2))
+					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
 					#if parent != sample:
-					initial_network.add_edge(parent, sample, weight=get_edge_length(parent, sample, priors), label=mutations_from_parent_to_child(parent, sample))
+					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
 					temp_source_nodes.add(parent)
 				if len(temp_source_nodes) > max_neighborhood_size  and prev_network != None:
 					return prev_network
@@ -183,7 +202,7 @@ def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000
 				if neighbor_mod == max_neighbor_dist:
 					neighbor_mod *= 3
 			source_nodes = list(temp_source_nodes)
-			print("Next layer number of nodes:" + str(len(source_nodes)) + ", pid = " + str(pid))
+			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
 
 		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
 			return prev_network
@@ -192,7 +211,7 @@ def build_potential_graph_from_base_graph(samples, max_neighborhood_size = 10000
 		if flag:
 			return prev_network
 
-	return initial_network
+	return initial_network, True
 
 
 def get_sources_of_graph(tree):

@@ -164,13 +164,10 @@ if __name__ == "__main__":
     param = spl[-3]
     run = spl[-1].split(".")[0]
 
-    if run < 10:
-        sys.exit()
-
     prior_probs = None
     if args.mutation_map != "":
 
-        prior_probs = read_mutation_map(args.mutation_map)
+        prior_probs = pic.load(open(args.mutation_map, "rb"))
 
     stem = '.'.join(name.split(".")[:-1])
 
@@ -195,21 +192,24 @@ if __name__ == "__main__":
             print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
 	t0 = time.time()
-        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy")
+        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
 	t1 = time.time()
 
-        reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
+        #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
-	if score_triplets:
-        	tp = check_triplets_correct(true_network, reconstructed_network_greedy)
-        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t + "\t" + str(t1 - t0))
-	else:
-		print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
+	#if score_triplets:
+        #	tp = check_triplets_correct(true_network, reconstructed_network_greedy)
+        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t + "\t" + str(t1 - t0))
+	#else:
+	#	print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         newick = convert_network_to_newick_format(reconstructed_network_greedy) 
         out = stem + "_greedy.txt"
-        with open(out, "w") as f:
-            f.write(newick)
+        #with open(out, "w") as f:
+        #    f.write(newick)
+
+        pic.dump(reconstructed_network_greedy, open(name.replace("true", "greedy"), "wb"))
+
 
     elif args.hybrid:
 
@@ -218,11 +218,7 @@ if __name__ == "__main__":
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
 	t0 = time.time()
-<<<<<<< HEAD
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, detailed_output=verbose)
-=======
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
->>>>>>> f048e23be6c6d0a5b690351f791ca0e009674a62
 	t1 = time.time()
 
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)

@@ -44,7 +44,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 		A reconstructed subgraph representing the nodes
 	"""
 
-	node_name_dict = dict(zip([n.split("_")[0] for n in target_nodes], target_nodes))
+	node_name_dict = dict(zip([n.split("_")[0] for n in target_nodes], [n + "_target" for n in target_nodes]))
 
         # Account for possible cases where the state was not observed in the frequency table, thus we 
         # set the value of this prior probability to the minimum probability observed
@@ -77,21 +77,6 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 
                 subgraph, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
 
-		#potential_network = build_potential_graph_from_base_graph(target_nodes, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size)
-
-	        #nodes = list(potential_network.nodes())
-	        #encoder = dict(zip(nodes, list(range(len(nodes)))))
-	        #decoder = dict((v, k) for k, v in encoder.items())
-
-	        #_potential_network = nx.relabel_nodes(potential_network, encoder)
-                #_targets = set(map(lambda x: encoder[x], target_nodes))
-
-		#model, edge_variables = generate_mSteiner_model(_potential_network, encoder[master_root], _targets)
-		
-		#subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads=threads)[0]
-
-		#subraph = nx.relabel_nodes(subgraph, decoder)
-
 		return subgraph
 
 	if method == "hybrid":
@@ -119,7 +104,6 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
                                 new_names[n] = n
                         res = nx.relabel_nodes(res, new_names)
 			network = nx.compose(network, res)
-		print([n for n in network if network.in_degree(n) == 0])
 		return network
 
 	if method == "greedy":
@@ -168,20 +152,32 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		graph.add_node(node_name_dict[root])
 		return graph, pid
 
-	potential_network_priors = build_potential_graph_from_base_graph(targets, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
+	potential_network_priors, is_potential_graph = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
+
+        if not is_potential_graph:
+            potential_network_priors = nx.relabel_nodes(potential_network_priors, node_name_dict)
+            return potential_network_priors, pid
 
 	nodes = list(potential_network_priors.nodes())
 	encoder = dict(zip(nodes, list(range(len(nodes)))))
 	decoder = dict((v, k) for k, v in encoder.items())
 
+	assert len(encoder) == len(decoder)
+
 	_potential_network = nx.relabel_nodes(potential_network_priors, encoder)
-        _targets = map(lambda x: encoder[x], set(targets))
+        _targets = map(lambda x: encoder[x], targets)
 
 	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
 	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
 	subgraph = nx.relabel_nodes(subgraph, decoder)
 
 	subgraph = nx.relabel_nodes(subgraph, node_name_dict)
+        
+        # remove spurious roots left in the solution 
+        subgraph_roots = [n for n in subgraph if sugraph.in_degree(n) == 0]
+        for r in subgraph_roots:
+            if r != root:
+                subgraph.remove_node(r)
 
 	return subgraph, pid
 
