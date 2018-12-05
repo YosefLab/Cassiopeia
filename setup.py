@@ -18,18 +18,23 @@ requirements = [
         "tqdm >= 4",
 ]
 
-print(find_packages())
 
 author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn"
 
+# files to wrap with cython
 to_cythonize = [Extension("SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils", ["SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.c"]),
                 Extension("SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation", ["SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation.c"]),
                 Extension("SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils", ["SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.c"])]
 
 setup(
-        #ext_modules=cythonize(["TreeSolver/lineage_solver/solver_utils.pyx", "TreeSolver/simulation_tools/dataset_generation.pyx", "ProcessingPipeline/process/lineageGroup_utils.pyx"]),
         name="SingleCellLineageTracing",
         ext_modules=cythonize(to_cythonize),
+        entry_points={
+            'console_scripts': ['scLT = SingleCellLineageTracing.__main__:main',
+                                'reconstruct-lineage = SingleCellLineageTracing.reconstruct_tree:main',
+                                'post-process = SingleCellLineageTracing.post_process_tree:main',
+                                'stress-test = SingleCellLineageTracing.stress_test:main'],
+        },
         author_email="mattjones315@berkeley.edu",
         classifiers=[
             "Development Status :: 4 - Beta",

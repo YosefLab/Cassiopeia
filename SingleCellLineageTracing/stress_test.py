@@ -119,7 +119,7 @@ def construct_weights(phy, weights_fn, write=True):
     return scaled
 
 
-if __name__ == "__main__":
+def main():
     """
     Takes in a character matrix, an algorithm, and an output file and 
     returns a tree in newick format.

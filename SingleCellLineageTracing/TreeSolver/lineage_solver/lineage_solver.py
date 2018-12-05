@@ -10,8 +10,6 @@ import traceback
 import hashlib
 from collections import defaultdict
 
-
-
 from greedy_solver import root_finder, greedy_build
 from ILP_solver import generate_mSteiner_model, solve_steiner_instance
 from solver_utils import build_potential_graph_from_base_graph
@@ -156,10 +154,10 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 
         # network was too large to compute, so just run greedy on it
         if potential_network_priors is None:
-            subgraph = greedy_build(targets, priors=prior_probabilities, cutoff=-1)
+            subgraph = greedy_build(targets, priors=prior_probabilities, cutoff=-1)[0]
             subgraph = nx.relabel_nodes(subgraph, node_name_dict)
             print("Max Neighborhood Exceeded")
-            return subgraph, pid
+            return subgraph, root, pid
 
 	nodes = list(potential_network_priors.nodes())
 	encoder = dict(zip(nodes, list(range(len(nodes)))))
@@ -176,11 +174,11 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
         
         # remove spurious roots left in the solution 
         subgraph_roots = [n for n in subgraph if subgraph.in_degree(n) == 0]
-        #print(subgraph_roots, str(pid))
-        #print(root + " pid: " + str(pid))
-        #for r in subgraph_roots:
-        #    if r != root:
-        #        subgraph.remove_node(r)
+        print(subgraph_roots, str(pid))
+        print(root + " pid: " + str(pid))
+        for r in subgraph_roots:
+            if r != root:
+                subgraph.remove_node(r)
 
 	subgraph = nx.relabel_nodes(subgraph, node_name_dict)
 
