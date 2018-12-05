@@ -17,7 +17,8 @@ Quick Start
 
 3. Install the package using the following commands:
     * ``python setup.py build``
-    * ``python setup.py install --user``
+    * ``python setup.py bdist_wheel``
+    * ``python -m pip install . --user``
 
 You can then load in the package to a python session with ``import SingleCellLineageTracing`` if you'd like to use the package from within an existing session. We also provide a command-line interface for reconstructing and post-processing the lineage groups. From command line, you can use ``reconstruct-lineage`` and ``post-process``. Use the ``-h`` flag for documentation (further documentation forthcoming).
 
