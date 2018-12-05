@@ -95,13 +95,13 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
-		        res, pid = future.result()
+		        res, r, pid = future.result()
 		        new_names = {}
                         for n in res:
-                            if res.in_degree(n) > 0:
-                                new_names[n] = n + "_" + str(pid)
-                            else:
+                            if res.in_degree(n) == 0 or n == r:
                                 new_names[n] = n
+                            else:
+                                new_names[n] = n + "_" + str(pid)
                         res = nx.relabel_nodes(res, new_names)
 			network = nx.compose(network, res)
 		return network
@@ -150,13 +150,16 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	if len(set(targets)) == 1:
 		graph = nx.DiGraph()
 		graph.add_node(node_name_dict[root])
-		return graph, pid
+		return graph, root, pid
 
-	potential_network_priors, is_potential_graph = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
+	potential_network_priors = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
 
-        if not is_potential_graph:
-            potential_network_priors = nx.relabel_nodes(potential_network_priors, node_name_dict)
-            return potential_network_priors, pid
+        # network was too large to compute, so just run greedy on it
+        if potential_network_priors is None:
+            subgraph = greedy_build(targets, priors=prior_probabilities, cutoff=-1)
+            subgraph = nx.relabel_nodes(subgraph, node_name_dict)
+            print("Max Neighborhood Exceeded")
+            return subgraph, pid
 
 	nodes = list(potential_network_priors.nodes())
 	encoder = dict(zip(nodes, list(range(len(nodes)))))
@@ -170,14 +173,20 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
 	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
 	subgraph = nx.relabel_nodes(subgraph, decoder)
-
-	subgraph = nx.relabel_nodes(subgraph, node_name_dict)
         
         # remove spurious roots left in the solution 
-        subgraph_roots = [n for n in subgraph if sugraph.in_degree(n) == 0]
-        for r in subgraph_roots:
-            if r != root:
-                subgraph.remove_node(r)
+        subgraph_roots = [n for n in subgraph if subgraph.in_degree(n) == 0]
+        #print(subgraph_roots, str(pid))
+        #print(root + " pid: " + str(pid))
+        #for r in subgraph_roots:
+        #    if r != root:
+        #        subgraph.remove_node(r)
 
-	return subgraph, pid
+	subgraph = nx.relabel_nodes(subgraph, node_name_dict)
+
+	r_name = root
+        if root in node_name_dict:
+            r_name = node_name_dict[root]
+
+	return subgraph, r_name, pid
 

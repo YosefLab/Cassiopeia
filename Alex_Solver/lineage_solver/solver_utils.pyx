@@ -1,6 +1,5 @@
 import networkx as nx
 import numpy as np
-from greedy_solver import greedy_build
 
 def node_parent(x, y):
 	"""
@@ -149,11 +148,11 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 			if len(source_nodes) > max_neighborhood_size and prev_network != None:
 				return prev_network
+			elif len(source_nodes) > (max_neighborhood_size * 2):
+				print("Max Neighborhood Exceeded, Returning Network")
+				return prev_network
 			elif len(source_nodes) > max_neighborhood_size and prev_network == None:
 				flag = True
-			elif len(source_nodes) > max_neighborhood_size * 2:
-				_r, _tset = greedy_build(samples, priors=priors, cutoff=-1) 
-				return _tset, False
 			temp_source_nodes = set()
 			for i in range(0, len(source_nodes)-1):
 				sample = source_nodes[i]
@@ -211,7 +210,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		if flag:
 			return prev_network
 
-	return initial_network, True
+	return initial_network
 
 
 def get_sources_of_graph(tree):

@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from simulation_utils import node_to_string
 
-def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1):
+def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1, dropout=True):
 	"""
 	Given the following parameters, this method simulates the cell division and mutations over multiple lineages
 		- Cells/Samples are treated as a string, with a unique identifier appended to the end of the string,
@@ -45,7 +45,7 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 		for node in current_depth:
 			for _ in range(0,2):
 				child_node = simulate_mutation(node[0], mutation_prob_map)
-				if i == depth - 1:
+				if i == depth - 1 and dropout:
 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
 				temp_current_depth.append([child_node, uniq])
 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
@@ -117,6 +117,7 @@ def simulate_dropout(sample, variable_dropout_probability_map):
 	:return:
 		A sample with characters potential dropped out (Dropped out characters in the form '-')
 	"""
+	print(sample)
 	new_sample = []
 	for i in range(0, len(sample)):
 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:

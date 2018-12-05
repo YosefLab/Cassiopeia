@@ -146,6 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--mutation_map", type=str, default="")
     parser.add_argument("--num_threads", type=int, default=1)
     parser.add_argument("--no_triplets", action="store_true", default=False)
+    parser.add_argument("--max_neighborhood_size", type=str, default=3000)
 
     args = parser.parse_args()
 
@@ -156,6 +157,7 @@ if __name__ == "__main__":
     cutoff = args.cutoff
     time_limit = args.time_limit
     num_threads = args.num_threads
+    max_neighborhood_size = args.max_neighborhood_size
 
     score_triplets = (not args.no_triplets)
 
@@ -218,25 +220,27 @@ if __name__ == "__main__":
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
 	t0 = time.time()
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_original_network_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
 	t1 = time.time()
 
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
 
-        out = stem + "_hybrid.pkl"
-        pic.dump(reconstructed_network_hybrid, open(out, "wb")) 
+        #out = stem + "_hybrid.pkl"
+        #pic.dump(reconstructed_network_hybrid, open(out, "wb")) 
 
-        newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
+        #newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
 
-        out = stem + "_hybrid.txt"
-        with open(out, "w") as f:
-            f.write(newick)
+        #out = stem + "_hybrid.txt"
+        #with open(out, "w") as f:
+        #    f.write(newick)
 
-	if score_triplets:
-        	tp = check_triplets_correct(true_network, reconstructed_network_hybrid)
-        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(t1 - t0))
-	else:
-		print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
+	#if score_triplets:
+        #	tp = check_triplets_correct(true_network, reconstructed_network_hybrid)
+        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(t1 - t0))
+	#else:
+	#	print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
+
+	pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
 
 
     elif args.ilp:

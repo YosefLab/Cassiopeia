@@ -31,11 +31,11 @@ def tree_collapse(graph):
             new_network.add_edge(edge[0], edge[1])
     return new_network
 
-def get_max_depth(G):
+def get_max_depth(G, root):
 
     md = 0
 
-    for n in G.nodes:
+    for n in nx.descendants(G, root):
         
         if G.nodes[n]["depth"] > md:
 
@@ -49,7 +49,7 @@ def extend_dummy_branches(G, max_depth):
     calculations of entropy
     """
 
-    leaves = [n for n in G.nodes if G.out_degree(n) == 0 and G.in_degree(n) == 1]
+    leaves = [n for n in G.nodes if G.out_degree(n) == 0]
     for n in tqdm(leaves, desc="Extending dummy branches"):
         
         new_node_iter = 1
@@ -75,7 +75,7 @@ def get_progeny_size(G, node):
 
     all_prog = [node for node in nx.dfs_preorder_nodes(G, node)]
 
-    return len([n for n in all_prog if G.out_degree(n) == 0 and G.in_degree(n) == 1])
+    return len([n for n in all_prog if G.out_degree(n) == 0])
 
 def set_depth(G, root):
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     root = [n for n in G if G.in_degree(n) == 0][0]
 
     G  = set_depth(G, root)
-    max_depth = get_max_depth(G)
+    max_depth = get_max_depth(G, root)
 
     G = extend_dummy_branches(G, max_depth)
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         root = [n for n in s_G if s_G.in_degree(n) == 0][0]
 
         s_G = set_depth(s_G, root)
-        s_max_depth = get_max_depth(s_G)
+        s_max_depth = get_max_depth(s_G, root)
 
         s_G = extend_dummy_branches(s_G, max_depth)
         s_G = set_progeny_size(s_G, root)
