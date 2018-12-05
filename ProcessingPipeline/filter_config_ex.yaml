@@ -1,0 +1,24 @@
+## Example config file for TargetSeqAnalysis pipeline
+---
+sample_file:
+    - data/BL.moleculetable.txt
+output_file:
+    - BL.moleculetable.filtered.txt
+output_dir:
+    - BL_output
+cell_umi_thresh:
+    - 10
+umi_dist_thresh:
+    - 1
+umi_read_prop:
+    - 0.2
+umi_read_thresh:
+    - None
+intbc_prop_thresh:
+    - 0.5
+intbc_umi_thresh:
+    - 10
+intbc_dist_thresh:
+    - 1
+verbose:
+    - True
