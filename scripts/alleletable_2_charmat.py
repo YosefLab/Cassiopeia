@@ -9,10 +9,8 @@ import argparse
 
 from tqdm import tqdm
 
-sys.path.append("/home/mattjones/projects/scLineages/SingleCellLineageTracing/Alex_Solver")
-from data_pipeline import read_and_process_data, convert_network_to_newick_format
-from lineage_solver.lineage_solver import solve_lineage_instance
-from lineage_solver.solution_evaluation_metrics import cci_score
+from SingleCellLineageTracing.TreeSolver import *
+from SingleCellLineageTracing.TreeSolver.lineage_solver import *
 import random
 
 import pickle as pic

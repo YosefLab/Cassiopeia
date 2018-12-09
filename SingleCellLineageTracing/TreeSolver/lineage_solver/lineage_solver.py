@@ -90,7 +90,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
                 # so the composition step doesn't get confused when trying to join to the root. 
                 network = nx.relabel_nodes(network, node_name_dict)
 
-		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size) for root, targets in target_sets]
+		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, None, time_limit, 1, max_neighborhood_size) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
 		        res, r, pid = future.result()

@@ -32,8 +32,12 @@ setup(
         entry_points={
             'console_scripts': ['scLT = SingleCellLineageTracing.__main__:main',
                                 'reconstruct-lineage = SingleCellLineageTracing.reconstruct_tree:main',
-                                'post-process = SingleCellLineageTracing.post_process_tree:main',
-                                'stress-test = SingleCellLineageTracing.stress_test:main'],
+                                'post-process-tree = SingleCellLineageTracing.post_process_tree:main',
+                                'stress-test = SingleCellLineageTracing.stress_test:main',
+                                'simulate-tree = SingleCellLineageTracing.simulate_tree:main',
+                                'call-lineages = SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup:main',
+                                'filter-molecule-table = SingleCellLineageTracing.ProcessingPipeline.process.filterMoleculeTables:main']
+            
         },
         author_email="mattjones315@berkeley.edu",
         classifiers=[

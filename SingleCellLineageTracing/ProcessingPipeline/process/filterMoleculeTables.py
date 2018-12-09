@@ -8,6 +8,7 @@ import scipy as sp
 import Levenshtein
 import time
 from tqdm import tqdm
+import argparse
 import yaml
 
 # suppress warnings for mapping thmt takes place in some filter functions
@@ -411,30 +412,32 @@ def pickAlleles(moleculetable, outputdir, verbose=True):
 
     return moleculetable
 
-if __name__ == "__main__":
+def main():
 
-    # Read in parameters
-    inp = sys.argv[1]
-    with open(inp, "r") as stream:
-        try:
-            param = yaml.load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-            raise Exception(exc)
+    parser = argparse.ArgumentParser()
 
-    moleculetable_fp = param["sample_file"][0]
-    moleculetableFiltered_fp = param["output_file"][0]
-    outputdir = param["output_dir"][0]
-    cell_umi_thresh = param["cell_umi_thresh"][0]
-    umi_dist_thresh = param["umi_dist_thresh"][0]
-    umi_read_prop = param["umi_read_prop"][0]
-    umi_read_thresh = param["umi_read_thresh"][0]
-    intbc_prop_thresh = param["intbc_prop_thresh"][0]
-    intbc_umi_thresh = param["intbc_umi_thresh"][0]
-    intbc_dist_thresh = param["intbc_dist_thresh"][0]
-    error_correct_intbc = param["ec_intbc"][0]
-    verbose = param["verbose"][0]
+    parser.add_argument("molecule_table", type=str, help="Molecule Table to filter")
+    parser.add_argument("out_fp", type=str, help="Output file name to be written in the output directory")
+    parser.add_argument("outputdir", type=str, help="File path to output directory location")
+    parser.add_argument("--cell_umi_thresh", default=10, help="Minimum number of UMIs per cell")
+    parser.add_argument("--umi_read_thresh", default=None, help="Minimum number of reads per UMIs")
+    parser.add_argument("--intbc_prop_thresh", default=0.5, help="Minimum Proportion of reads allowed for error correcting of intBCs")
+    parser.add_argument("--intbc_umi_thresh", default=10, help='Maximum Number of UMIs allowed for a intBC to be error-corrected')
+    parser.add_argument("--intbc_dist_thresh", default = 1, help="Maximum distance between intBC allowed for error-correction")
+    parser.add_argument("--verbose", default=True, help="Enable verbose output")
+    parser.add_argument("--ec_intbc", default=False, help="Error Correct Integration Barcodes")
 
+    args = parser.parse_args()
+    moleculetable_fp = args.molecule_table
+    moleculetableFiltered_fp = args.out_fp
+    outputdir = args.outputdir
+    cell_umi_thresh = args.cell_umi_thresh
+    umi_read_thresh = args.umi_read_thresh
+    intbc_prop_thresh = args.intbc_prop_thresh
+    intbc_umi_thresh = args.intbc_umi_thresh
+    intbc_dist_thresh = args.intbc_dist_thresh
+    error_correct_intbc = args.ec_intbc
+    verbose = args.verbose
 
     outputdir = create_output_dir(outputdir)
 
@@ -459,12 +462,6 @@ if __name__ == "__main__":
     filtered_mt, cellBC2nM = filterCellBCs(mt, outputdir, umiCountThresh = cell_umi_thresh, verbose=verbose)
     rc_profile["CellFilter"], upi_profile["CellFilter"], upc_profile["CellFilter"] = record_stats(mt, outputdir)
 
-    #print(">>> ERROR CORRECTING UMIS...")
-    # Correct UMIs based on cellBC and allele
-    #filtered_mt = errorCorrectUMI(filtered_mt, outputdir, bcDistThresh = umi_dist_thresh,
-    #                                allelePropThresh = umi_read_prop, verbose=verbose)
-    #rc_profile["EC_UMI"], upi_profile["EC_UMI"], upc_profile["EC_UMI"] = record_stats(filtered_mt, outputdir, stage="EC_UMI")
-
     # Determine read threshold
     if umi_read_thresh == 'None':
         R = filtered_mt["readCount"]
@@ -484,11 +481,6 @@ if __name__ == "__main__":
 
     rc_profile["Process_intBC"], upi_profile["Process_intBC"], upc_profile["Process_intBC"] = record_stats(filtered_mt, outputdir, stage="Process_intBC")
 
-    #print(">>> PICKING ALLELES...")
-    # uniquely map intBCs to one allele each
-    #filtered_mt = pickAlleles(filtered_mt, outputdir)
-    rc_profile["MappedIntBC"], upi_profile["MappedIntBC"], upc_profile["MappedIntBC"] = record_stats(filtered_mt, outputdir, stage="MappedIntBC")
-
     # filter molecule table cells one more time
     filtered_mt, cellBC2nM = filterCellBCs(filtered_mt, outputdir, umiCountThresh = cell_umi_thresh, verbose=verbose)
     rc_profile["Final"], upi_profile["Final"], upc_profile["Final"] = record_stats(filtered_mt, outputdir)
@@ -502,7 +494,7 @@ if __name__ == "__main__":
     print(">>> LOGGING FINAL STATS...")
     record_stats(filtered_mt, outputdir, stage="Filtered")
 
-    stages = ["Init", "CellFilter", "Filtered_UMI", "Process_intBC", "MappedIntBC", "Final"]
+    stages = ["Init", "CellFilter", "Filtered_UMI", "Process_intBC", "Final"]
 
     # Plot Read Per UMI Histogram
     h = plt.figure(figsize=(14, 10))
@@ -540,8 +532,6 @@ if __name__ == "__main__":
 
     with open(outputdir + "/filterlog.txt", "a") as f:
         f.write("Overall: " + str(cellBC_count) + " cells, with " + str(filtered_mt.shape[0]) + " UMIs\n")
-
-
 
     filtered_mt.to_csv(outputdir + "/" + moleculetableFiltered_fp, sep='\t', index=False)
 

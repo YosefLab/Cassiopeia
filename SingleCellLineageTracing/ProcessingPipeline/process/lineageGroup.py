@@ -15,6 +15,8 @@ from rpy2.robjects import r, numpy2ri
 import time
 import yaml
 
+import argparse 
+
 sys.setrecursionlimit(10000)
 sys.path.append("/home/mattjones/TargetSeqAnalysis/process")
 import lineageGroup_utils as lg_utils
@@ -520,7 +522,7 @@ def filteredLG2AT(filtered_lgs):
     final_df = pd.concat(filtered_lgs)
     print(final_df.columns)
 
-    final_df = final_df.groupby(["cellBC", "intBC", "allele", "r1", "r2", "r3", "r1.old", "r2.old", "r3.old", "lineageGrp"], as_index=False).agg({"UMI": "count"})
+    final_df = final_df.groupby(["cellBC", "intBC", "allele", "r1", "r2", "r3", "r1.old", "r2.old", "r3.old", "lineageGrp"], as_index=False).agg({"UMI": "count", "readCount": "sum"})
     final_df["Sample"] = "N"
 
     for i in final_df.index:
@@ -568,24 +570,92 @@ def filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = 0.0025, byc
 
     return at_pivot_I[to_keep]
 
+def filterCellBCs(moleculetable, outputdir, umiCountThresh = 10, verbose=True):
+    """
+    Filter out cell barcodes thmt have too few UMIs
 
-if __name__ == "__main__":
+    :param moleculetable: allele table
+    :param outputdir: file pmth to output directory
+    :return: filtered allele table, cellBC to number umis mapping
+    """
+
+    if verbose:
+        with open(outputdir + "/lglog.txt", "a") as f:
+            f.write("FILTER CELL BARCODES:\n")
+
+            f.write("Initial:\n")
+            f.write("# UMIs: " + str(moleculetable.shape[0]) + "\n")
+            f.write("# Cell BCs: " + str(len(np.unique(moleculetable["cellBC"]))) + "\n")
+
+    tooFewUMI_UMI = []
+    cellBC2nM = {}
+
+    # Create a cell-filter dictionary for hash lookup lmter on when filling
+    # in the table
+    cell_filter = {}
+
+    for n, group in tqdm(moleculetable.groupby(["cellBC"])):
+        if np.sum(group["UMI"].values) <= umiCountThresh:
+            cell_filter[n] = "bad"
+            tooFewUMI_UMI.append(np.sum(group["UMI"].values))
+        else:
+            cell_filter[n] = "good"
+            cellBC2nM[n] = np.sum(group["UMI"].values)
+
+    # apply the filter using the hash table created above
+    moleculetable["status"] = moleculetable["cellBC"].map(cell_filter)
+
+    # count how many cells/umi's passed the filter for logging purposes
+    status = cell_filter.values()
+    tooFewUMI_cellBC = len(status) - len(np.where(status == "good")[0])
+    tooFewUMI_UMI = np.sum(tooFewUMI_UMI)
+
+    goodumis = moleculetable[(moleculetable["status"] == "good")].shape[0]
+
+    # filter based on status & reindex
+    n_moleculetable = moleculetable[(moleculetable["status"] == "good")]
+    n_moleculetable.index = [i for i in range(n_moleculetable.shape[0])]
+
+    # log results
+    if verbose:
+        with open(outputdir + "/lglog.txt", "a") as f:
+            f.write("Post:\n")
+            f.write("# UMIs: " + str(n_moleculetable.shape[0]) + "\n")
+            f.write("# Cell BCs: " + str(len(np.unique(n_moleculetable["cellBC"]))) + "\n\n")
+
+
+    return n_moleculetable, cellBC2nM
+
+
+def main():
 
     # Read in parameters
-    inp = sys.argv[1]
-    with open(inp, "r") as stream:
-        params = yaml.load(stream)
+    parser = argparse.ArgumentParser()
 
-    alleleTable_fp = params["sample_file"][0]
-    output_fp = params["output_file"][0]
-    outputdir = params["output_dir"][0]
-    min_cluster_size = params["min_cluster_size"][0]
-    min_intbc_thresh = params["min_intbc_thresh"][0]
-    verbose = params["verbose"][0]
-    filter_intbcs = params["filter_intbcs"][0]
-    detect_doublets = params["detect_doublets"][0]
+    parser.add_argument('molecule_table', type=str, help="MoleculeTable to be processed")
+    parser.add_argument('output_fp', type=str, help="Output name for AlleleTable, to be saved in output directory")
+    parser.add_argument("output_dir", type=str, help="File path to output directory for all results")
+    parser.add_argument("--min_cluster_prop", default=0.005, help="Minimum proportion of cells that can fall into a cluster for lineage group calling") 
+    parser.add_argument("--min_intbc_thresh", default=0.05, help="Threshold to filter out poor intBC per LineageGroup, as a function of the proportion of cells that report that intBC in the LG")
+    parser.add_argument("--detect_doublets_intra", default=False, action='store_true', help="Perform Intra-Doublet (from identical LGs) Detection")
+    parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
+    parser.add_argument('--no_filter_intbcs', default=False, action="store_true", help="Filter out low proportion intBCs")
+    parser.add_argument("--verbose", "-v", default=False, action="store_true", help="Verbose output")
+    parser.add_argument("--cell_umi_filter", default=10, help="Minimum UMIs per cell for final alleleTable")
 
+    args = parser.parse_args()
 
+    alleleTable_fp = args.molecule_table
+    output_fp = args.output_fp
+    outputdir = args.output_dir
+    min_cluster_prop = args.min_cluster_prop
+    min_intbc_thresh = args.min_intbc_thresh
+    verbose = args.verbose
+    filter_intbcs = (not args.no_filter_intbcs)
+    detect_doublets = args.detect_doublets_intra
+    doublet_thresh = args.doublet_threshold
+    cell_umi_filter = args.cell_umi_filter
+ 
     t0 = time.time()
 
     outputdir = create_output_dir(outputdir)
@@ -598,11 +668,11 @@ if __name__ == "__main__":
 
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write(str(at.shape[0]) + " UMIs (rows), with " + str(at.shape[1]) + " attributes (columns)\n")
-        f.write(str(len(at["cellBC"].unique())) + " Cells")
+        f.write(str(len(at["cellBC"].unique())) + " Cells\n")
 
     
     if detect_doublets:
-        prop = 0.35
+        prop = doublet_thresh
         print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
         at = lg_utils.filter_intra_doublets(at, outputdir, prop = prop)
 
@@ -622,17 +692,11 @@ if __name__ == "__main__":
         at_pivot_I = filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = 0.001)
 
 
-    #print(">>> SUBSAMPLING 30% FOR MEMORY EFFICIENCY...")
-    #at_pivot_I = at_pivot_I.sample(frac = 0.30)
-
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write(str(at_pivot_I.shape[0]) + " cells and " + str(at_pivot_I.shape[1]) + " intBCs\n")
 
     print(">>> CALCULATING MAXIMUM OVERLAP MATRIX...")
     oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
-
-    #print(">>> SAVING OVERLAP MATRIX...")
-    #np.savetxt(outputdir + "/overlap_matrix.txt", oMat, delimiter='\t') 
 
     print(">>> LOGGING CELL OVERLAP INFORMATION...")
     dm = analyze_overlap(oMat, outputdir)
@@ -648,7 +712,7 @@ if __name__ == "__main__":
 
     ds = sp.spatial.distance.squareform(dm)
 
-    min_cluster_size = int(0.005 * at_pivot_I.shape[0])
+    min_cluster_size = int(min_cluster_prop * at_pivot_I.shape[0])
     print(">>> CLUSTERING DENDROGRAM WITH MINIMUM CLUSTER SIZE OF " + str(min_cluster_size) + "...")
     clusters = cluster_with_dtcut(ds, xlink, minClusterSize=min_cluster_size)
 
@@ -660,18 +724,23 @@ if __name__ == "__main__":
     print(">>> ASSIGNING LINEAGE GROUPS...")
     at = assign_lineage_groups(at, clusters, at_pivot_I, outputdir)
 
-    if verbose:
-        print(">>> PLOTTING INTBC COUNT HISTOGRAM...")
-        plot_intBC_count_hist(clusters, at, outputdir)
+    #if verbose:
+        #print(">>> PLOTTING INTBC COUNT HISTOGRAM...")
+        #plot_intBC_count_hist(clusters, at, outputdir)
 
-        print(">>> PLOTTING INTBC RANK PROPORTION HISTOGRAMS...")
-        plot_intbc_ranks(clusters, at, outputdir)
+    #    print(">>> PLOTTING INTBC RANK PROPORTION HISTOGRAMS...")
+    #    plot_intbc_ranks(clusters, at, outputdir)
 
     print(">>> COLLECTING ALLELES...")
     filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
 
     print(">>> PRODUCING FINAL ALLELE TABLE...")
     at = filteredLG2AT(filtered_lgs)
+
+    print(at.head(5))
+
+    at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=cell_umi_filter, verbose=verbose)
+
     at.to_csv(outputdir + "/" + output_fp, sep='\t', index=False)
 
     print(">>> PRODUCING CLUSTERED HEATMAP...")

@@ -289,11 +289,11 @@ def main():
         out = stem + "_nj.txt"
         Phylo.write(tree, out, 'newick')
 
-        nj_net = newick_to_network(out)
+        #nj_net = newick_to_network(out)
 
-        newick = convert_network_to_newick_format(nj_net)
-        with open(out, "w") as f:
-            f.write(newick)
+        #newick = convert_network_to_newick_format(nj_net)
+        #with open(out, "w") as f:
+        #    f.write(newick)
     
         # old code for using Phylo to parse newick files to networkx objects
         #nj_net = Phylo.to_networkx(tree)
@@ -304,13 +304,13 @@ def main():
         #nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
         # convert labels to characters for triplets correct analysis
-        nj_net = nx.relabel_nodes(nj_net, s_to_char)
+        #nj_net = nx.relabel_nodes(nj_net, s_to_char)
 
-	if score_triplets:
-        	tp = check_triplets_correct(true_network, nj_net)
-        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + "\t" + str(t1 - t0))
-	else:
-		print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(t1 - t0))
+	#if score_triplets:
+        #	tp = check_triplets_correct(true_network, nj_net)
+        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + "\t" + str(t1 - t0))
+	#else:
+	#	print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(t1 - t0))
 
 
         os.system("rm " + infile)

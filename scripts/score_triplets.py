@@ -11,11 +11,8 @@ import os
 
 import argparse
 
-sys.path.append("/home/mattjones/projects/scLineages/SingleCellLineageTracing/Alex_Solver")
-
-from simulation_tools.simulation_utils import get_leaves_of_tree
-from simulation_tools.validation import check_triplets_correct, tree_collapse
-from data_pipeline import newick_to_network
+from SingleCellLineageTracing.TreeSolver.simulation_tools import *
+from SingleCellLineageTracing.TreeSolver import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument("true_net", type=str)

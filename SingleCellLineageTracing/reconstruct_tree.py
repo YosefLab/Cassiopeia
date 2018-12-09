@@ -23,6 +23,7 @@ import os
 
 from SingleCellLineageTracing.TreeSolver.lineage_solver import *
 from SingleCellLineageTracing.TreeSolver.simulation_tools import *
+from SingleCellLineageTracing.TreeSolver import *
 
 def write_leaves_to_charmat(target_nodes, fn):
     """

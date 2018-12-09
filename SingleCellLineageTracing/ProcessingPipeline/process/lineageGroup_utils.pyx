@@ -75,8 +75,6 @@ def mapIntBCs(moleculetable, outputdir, verbose=True):
     :return: cleaned moleculetable.
     """
 
-    print('here')
-
     iBC_assign = {}
     r1_assign = {}
     r2_assign = {}
