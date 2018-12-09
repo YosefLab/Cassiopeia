@@ -6,7 +6,7 @@ Single Cell Lineage Tracing
 
 * Free Software: MIT License
 
-Quick Start
+Installation
 -----------
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/SingleCellLineageTracing.git``
@@ -19,6 +19,38 @@ Quick Start
     * ``python setup.py build``
     * ``python setup.py bdist_wheel``
     * ``python -m pip install . --user``
+    
+To verify that it installed correctly, try using the package in a python session: ``import SingleCellLineageTracing``. Then, to make sure that the command-line tools work, try ``reconstruct-lineage -h`` and confirm that you get the usage details.
 
-You can then load in the package to a python session with ``import SingleCellLineageTracing`` if you'd like to use the package from within an existing session. We also provide a command-line interface for reconstructing and post-processing the lineage groups. From command line, you can use ``reconstruct-lineage`` and ``post-process``. Use the ``-h`` flag for documentation (further documentation forthcoming).
+Simulation Trees
+-----------
+
+To simulate trees, use the ``simulate-tree`` command line tool.
+
+Reconstruct Trees
+-----------------
+
+To reconstruct trees, use the ``reconstruct-lineage`` command line tool.
+
+Post Processing Trees
+---------------------
+
+To post process trees, use the ``post-process-tree`` command line tool.
+
+Stress Test
+-----------
+
+To run a stress test, use the ``stress-test`` command line tool.
+
+Lineage Group Assignments
+-------------------------
+
+To run the lineage group caller, use the ``call-lineages`` command line tool.
+
+Filtering Molecule Tables
+-------------------------
+
+To run the filter molecule table pipeline, use the ``filter-molecule-table`` command line tool.
+
+
 
