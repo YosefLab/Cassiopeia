@@ -10,6 +10,7 @@ import time
 from tqdm import tqdm
 import argparse
 import yaml
+import lineageGroup_utils as lg_utils
 
 # suppress warnings for mapping thmt takes place in some filter functions
 pd.options.mode.chained_assignment = None
@@ -426,6 +427,8 @@ def main():
     parser.add_argument("--intbc_dist_thresh", default = 1, help="Maximum distance between intBC allowed for error-correction")
     parser.add_argument("--verbose", default=True, help="Enable verbose output")
     parser.add_argument("--ec_intbc", default=False, help="Error Correct Integration Barcodes")
+    parser.add_argument("--detect_doublets_intra", default=False, action='store_true', help="Perform Intra-Doublet (from identical LGs) Detection")
+    parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
 
     args = parser.parse_args()
     moleculetable_fp = args.molecule_table
@@ -438,6 +441,8 @@ def main():
     intbc_dist_thresh = args.intbc_dist_thresh
     error_correct_intbc = args.ec_intbc
     verbose = args.verbose
+    detect_doublets = args.detect_doublets_intra
+    doublet_thresh = args.doublet_threshold
 
     outputdir = create_output_dir(outputdir)
 
@@ -483,8 +488,16 @@ def main():
 
     # filter molecule table cells one more time
     filtered_mt, cellBC2nM = filterCellBCs(filtered_mt, outputdir, umiCountThresh = cell_umi_thresh, verbose=verbose)
-    rc_profile["Final"], upi_profile["Final"], upc_profile["Final"] = record_stats(filtered_mt, outputdir)
 
+    if detect_doublets:
+        prop = doublet_thresh
+        print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
+        filtered_mt  = lg_utils.filter_intra_doublets(filtered_mt, outputdir, prop = prop)
+
+    print(">>> MAPPING REMAINING INTEGRATION BARCODE CONFLICTS...")
+    filtred_mt = lg_utils.mapIntBCs(filtered_mt, outputdir)
+
+    rc_profile["Final"], upi_profile["Final"], upc_profile["Final"] = record_stats(filtered_mt, outputdir)
 
     # Count total filtered cellBCs
     cellBC_count = 0

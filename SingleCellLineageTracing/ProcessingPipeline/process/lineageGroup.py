@@ -637,7 +637,7 @@ def main():
     parser.add_argument("output_dir", type=str, help="File path to output directory for all results")
     parser.add_argument("--min_cluster_prop", default=0.005, help="Minimum proportion of cells that can fall into a cluster for lineage group calling") 
     parser.add_argument("--min_intbc_thresh", default=0.05, help="Threshold to filter out poor intBC per LineageGroup, as a function of the proportion of cells that report that intBC in the LG")
-    parser.add_argument("--detect_doublets_intra", default=False, action='store_true', help="Perform Intra-Doublet (from identical LGs) Detection")
+    parser.add_argument("--detect_doublets_inter", default=False, action='store_true', help="Perform Inter-Doublet (from different  LGs) Detection")
     parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
     parser.add_argument('--no_filter_intbcs', default=False, action="store_true", help="Filter out low proportion intBCs")
     parser.add_argument("--verbose", "-v", default=False, action="store_true", help="Verbose output")
@@ -652,7 +652,7 @@ def main():
     min_intbc_thresh = args.min_intbc_thresh
     verbose = args.verbose
     filter_intbcs = (not args.no_filter_intbcs)
-    detect_doublets = args.detect_doublets_intra
+    detect_doublets = args.detect_doublets_inter
     doublet_thresh = args.doublet_threshold
     cell_umi_filter = args.cell_umi_filter
  
@@ -674,7 +674,7 @@ def main():
     if detect_doublets:
         prop = doublet_thresh
         print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
-        at = lg_utils.filter_intra_doublets(at, outputdir, prop = prop)
+        at = lg_utils.filter_inter_doublets(at, outputdir, prop = prop)
 
     print(">>> MAPPING REMAINING INTEGRATION BARCODE CONFLICTS...")
     at = lg_utils.mapIntBCs(at, outputdir)
