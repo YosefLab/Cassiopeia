@@ -11,11 +11,11 @@ target_meta = args[[4]]
 out_fp = args[[5]]
 
 color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='') {
-  scale = (length(lut)-1)/(max-min)
+  scale = (length(lut))/(max-min)
   
   plot(c(0,10), c(min,max), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='')
   for (i in 1:(length(lut)-1)) {
-    y = (i-1)/scale + min
+    y = (i)/scale + min
     rect(0,y,10,y+1/scale, col=lut[i], border=NA)
   }
   
@@ -48,6 +48,7 @@ nonelocs = sapply(as.vector(X), function(x) grepl("None", x))
 X = apply(X, 2, function(x) as.numeric(factor(x, levels=unique(x))))
 X2 = as.numeric(factor(X), levels=unique(X))
 nalleles = length(unique(X))
+unique_alleles = unique(X)
 #X[X == 0] = NA
 #X[X == "-"] = -1
 X2[emptylocs] = NA
@@ -57,10 +58,40 @@ rownames(X.sub) <- tree$tip.label
 
 
 message("creating color scheme...")
-allele_cols = colorRampPalette(brewer.pal(11, "Paired"))(max(nalleles))
-allele_cols = sample(allele_cols, length(allele_cols))
 
-heatmap.cbpalette = c("#C0C0C0", allele_cols)
+
+redmag = c(0.5, 1, 0, 0.5, 0, 1)
+grnyel = c(0, 1, 0.5, 1, 0, 0.5)
+cynblu = c(0, 0.5, 0, 1, 0.5, 1)
+color_list = list("red" = redmag, "grn" = grnyel, "blue" = cynblu)
+
+random_color <- function(rgb) { 
+  red = runif(1, rgb[[1]], rgb[[2]])
+  grn = runif(1, rgb[[3]], rgb[[4]])
+  blu = runif(1, rgb[[5]], rgb[[6]])
+  return(rgb(red, grn, blu, maxColorValue=1))
+}
+
+# randomly assign colors
+heatmap.cbpalette = sapply(unique_alleles, function(a) {
+  x = as.character(a)
+  if (nchar(x) == 0) {
+    return("#FFFFFF")
+  } else if (x == "NC") { 
+    return("#000000")  
+  } else if (grepl("None", x)) { 
+    return(rgb(0.75, 0.75, 0.75, maxColorValue=1))
+  }
+  
+  #if (grepl("I", x)) {
+  #  rgb_i = color_list[["red"]]
+  #} else if (grepl("D", x)) {
+  #  rgb_i = color_list[["blue"]]
+  #}
+  rgb_i = color_list[[sample(names(color_list), 1)]]
+  return(random_color(rgb_i))
+})
+
 
 names(heatmap.cbpalette) <- sapply(names(heatmap.cbpalette), as.numeric)
 
@@ -72,7 +103,10 @@ names(sample.cbpalette) = rev(sapply(unique(meta), as.character))
 #names(sample.cbpalette) = c("IVLT-2B_00", "IVLT-2B_01", "IVLT-2B_10", "IVLT-2B_11")
 
 cvec = sapply(meta, function(x) sample.cbpalette[[as.character(x)]])
-cvec = rev(cvec) # tree is built from bottom up, so need to flip cvec
+#cvec = rev(cvec) # tree is built from bottom up, so need to flip cvec
+
+print(length(meta))
+print(length(tree$tip.label))
 
 # now plot
 message("plotting...")
@@ -84,5 +118,4 @@ color.bar(cvec, -1)
 par(fig=c(0, 1, 0, 0.2), new=T)
 plot(NULL, xaxt='n', yaxt='n', bty='n', ylab='', xlab='', xlim=0:1, ylim=0:1)
 legend(x="bottom", legend = names(sample.cbpalette), col = sample.cbpalette, pch=16, pt.cex=10, cex=10, bty='n', horiz=T)
-#barplot(lg.um, horiz=T)
 dev.off()
