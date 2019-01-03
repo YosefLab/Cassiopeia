@@ -20,8 +20,6 @@ import yaml
 
 sys.setrecursionlimit(10000)
 
-
-
 def maxOverlap(mat):
     """
     Function to compute overlap of barcode occurences between column entries of the input matrix.
@@ -66,7 +64,7 @@ def maxOverlap(mat):
             k += 1
     return dm
 
-def mapIntBCs(moleculetable, outputdir, verbose=True):
+def mapIntBCs(moleculetable, outputfile, outputdir, verbose=True):
     """
     Performs a procedure to cleanly assign one allele to each intBC/cellBC pairing
 
@@ -132,7 +130,7 @@ def mapIntBCs(moleculetable, outputdir, verbose=True):
 
     # log results
     if verbose:
-        with open(outputdir + "/lglog.txt", "a") as f:
+        with open(outputdir + "/" + outputfile, "a") as f:
 
             f.write("PICK ALLELES:\n")
             f.write("# alleles removed: " + str(corrected) + "\n")
@@ -140,12 +138,11 @@ def mapIntBCs(moleculetable, outputdir, verbose=True):
 
     return moleculetable
 
-def filter_intra_doublets(mt, outputdir, prop=0.25):
+def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):
     """
     Filter doublets from the allele table AT.
 
     """
-
     doublet_list = []
 
     filter_dict = {}
@@ -181,12 +178,99 @@ def filter_intra_doublets(mt, outputdir, prop=0.25):
 
 
     mt["status"] = mt["cellBC"].map(filter_dict)
-    doublet_list = mt[(mt["status"] == "bad")]["cellBC"]
+    doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()
 
-    with open(outputdir + "/lglog.txt", "a") as f:
-           f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"])) + "\n")
+    with open(outputdir + "/" + outputfile, "a") as f:
+           f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")
 
     mt = mt[(mt["status"] == "good")]
     mt = mt.drop(columns = ["status"])
 
     return mt
+
+def get_intbc_sets(lgs, lg_names, thresh=None):
+
+    intbc_sets = {}
+    dropouts = {}
+
+    for n, g in zip(lg_names, lgs):
+        piv = pd.pivot_table(g, index="cellBC", columns="intBC", values="UMI", aggfunc=pylab.size)
+        do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)
+
+        if thresh is None:
+
+            intbc_sets[n] = do.index
+            dropouts[n] = do
+
+        else:
+            intbcs = do[do < thresh].index
+            intbc_sets[n] = intbcs
+            dropouts[n] = do
+
+    return intbc_sets, dropouts
+
+def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):
+    
+    lg_mem = {}
+    ibcs = np.unique(cell["intBC"])
+
+    for i in intbc_sets.keys():
+
+        lg_do = lg_dropouts[i]
+        intersect = np.intersect1d(ibcs, intbc_sets[i])
+        if len(intersect) > 0:
+
+            lg_mem[i] = np.sum(1 - lg_do[intersect]) / np.sum(1 - lg_do)
+
+        else:
+            lg_mem[i] = 0
+
+    factor = 1.0 / np.sum(list(lg_mem.values()))
+    for l in lg_mem:
+        lg_mem[l] = lg_mem[l] * factor
+
+    return lg_mem
+
+
+def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
+
+    def filter_cell(cell, rule):
+        true_lg = cell.loc["LG"]
+        return float(cell.loc[true_lg]) < rule
+
+    collapsed_lgs = []
+    lg_names = list(at["lineageGrp"].unique())
+
+    for n in lg_names:
+        collapsed_lgs.append(at[at["lineageGrp"] == n])
+
+    ibc_sets, dropouts = get_intbc_sets(collapsed_lgs, lg_names)
+
+    mems = {}
+    for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):
+        lg = int(g["lineageGrp"].iloc[0])
+        mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
+        mem["LG"] = lg
+        mems[n] = mem
+
+    mem_df = pd.DataFrame.from_dict(mems).T
+
+    filter_dict = {}
+
+    for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
+        if filter_cell(mem_df.loc[cell], rule):
+            filter_dict[cell] = "bad"
+        else:
+            filter_dict[cell] = "good"
+
+    at["status"] = at["cellBC"].map(filter_dict)
+    at_n = at[at["status"] == "good"]
+
+    dl = len(at[at["status"] == "bad"]["cellBC"].unique())
+    tot = len(at["cellBC"].unique())
+
+    with open(outputdir + "/" + outputfile, "a") as f:
+        f.write("Filtered " + str(dl) + " inter-doublets of " + str(tot) + " cells") 
+
+    return at_n.drop(columns=["status"])
+

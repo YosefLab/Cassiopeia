@@ -54,10 +54,10 @@ def unique_alignments(aln):
     new_aln = []
     obs = []
     for a in aln:
-        
+
         if a.seq in obs:
             continue
-        
+
         new_aln.append(a)
         obs.append(a.seq)
 
@@ -66,7 +66,7 @@ def unique_alignments(aln):
 def nx_to_charmat(target_nodes):
 
     number_of_characters = len(target_nodes[0].split("|"))
-    cm = pd.DataFrame(np.zeros((len(target_nodes), number_of_characters))) 
+    cm = pd.DataFrame(np.zeros((len(target_nodes), number_of_characters)))
 
     ind = []
     for i in range(len(target_nodes)):
@@ -77,7 +77,7 @@ def nx_to_charmat(target_nodes):
         chars = charstring.split("|")
         for c in chars:
             nr.append(c)
-        
+
         cm.iloc[i] = np.array(nr)
 
     cm.columns = [("r" + str(i)) for i in range(number_of_characters)]
@@ -88,7 +88,7 @@ def nx_to_charmat(target_nodes):
 def construct_weights(phy, weights_fn, write=True):
     """
     Given some binary phylip infile file path, compute the character-wise log frequencies
-    and translate to the phylip scaling (0-Z) for the weights file. 
+    and translate to the phylip scaling (0-Z) for the weights file.
     """
 
     aln = AlignIO.read(phy, "phylip")
@@ -96,7 +96,7 @@ def construct_weights(phy, weights_fn, write=True):
     df = pc.from_bioalignment(aln)
 
     abund = df.apply(lambda x: len(x[x=="1"]) / len(x), axis=1)
-    
+
     labund = np.array(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund))
     labund[labund == 0] = labund.min()
 
@@ -121,7 +121,7 @@ def construct_weights(phy, weights_fn, write=True):
 
 def main():
     """
-    Takes in a character matrix, an algorithm, and an output file and 
+    Takes in a character matrix, an algorithm, and an output file and
     returns a tree in newick format.
 
     """
@@ -167,7 +167,7 @@ def main():
     stem = '.'.join(name.split(".")[:-1])
 
     true_network = pic.load(open(netfp, "rb"))
-    
+
     target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
     target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
 
@@ -186,9 +186,7 @@ def main():
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
-	t0 = time.time()
         reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
-	t1 = time.time()
 
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
@@ -198,7 +196,7 @@ def main():
 	#else:
 	#	print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
 
-        newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        newick = convert_network_to_newick_format(reconstructed_network_greedy)
         out = stem + "_greedy.txt"
         #with open(out, "w") as f:
         #    f.write(newick)
@@ -210,18 +208,16 @@ def main():
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
-            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
+            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-	t0 = time.time()
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_original_network_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
-	t1 = time.time()
 
         reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
 
         #out = stem + "_hybrid.pkl"
-        #pic.dump(reconstructed_network_hybrid, open(out, "wb")) 
+        #pic.dump(reconstructed_network_hybrid, open(out, "wb"))
 
-        #newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
+        #newick = convert_network_to_newick_format(reconstructed_network_hybrid)
 
         #out = stem + "_hybrid.txt"
         #with open(out, "w") as f:
@@ -233,39 +229,23 @@ def main():
 	#else:
 	#	print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
 
-	pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
+        pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
 
 
     elif args.ilp:
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
-            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
+            print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-	t0 = time.time()
         reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
-	t1 = time.time()
 
         reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
-
-        out = stem + "_ilp.pkl"
-        pic.dump(reconstructed_network_ip, open(out, "wb")) 
-
-        newick = convert_network_to_newick_format(reconstructed_network_ilp) 
-
-        out = stem + "_ilp.txt"
-        with open(out, "w") as f:
-            f.write(newick)
-
-	if score_triplets:
-        	tp = check_triplets_correct(true_network, reconstructed_network_ilp)
-        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "ilp" + "\t" + t + "\t" + str(t1 - t0))
-	else:
-		print(str(param) + "\t" + str(run) + "\t" + "ilp" + "\t" + str(t) + "\t" + str(t1 - t0))
+        pic.dump(reconstructed_network_ilp, open(name.replace("true", "ilp"), "wb"))
 
 
     elif args.neighbor_joining:
-        
+
         if verbose:
             print("Running Neighbor-Joining on " + str(len(target_nodes_uniq)) + " Unique Cells")
 
@@ -282,9 +262,7 @@ def main():
         calculator = DistanceCalculator('identity', skip_letters='?')
         constructor = DistanceTreeConstructor(calculator, 'nj')
 
-        t0 = time.time()
         tree = constructor.build_tree(aln)
-	t1 = time.time()
 
         out = stem + "_nj.txt"
         Phylo.write(tree, out, 'newick')
@@ -294,7 +272,7 @@ def main():
         #newick = convert_network_to_newick_format(nj_net)
         #with open(out, "w") as f:
         #    f.write(newick)
-    
+
         # old code for using Phylo to parse newick files to networkx objects
         #nj_net = Phylo.to_networkx(tree)
 
@@ -317,7 +295,7 @@ def main():
         os.system("rm " + fn)
 
     elif args.camin_sokal:
-        
+
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
 
@@ -325,8 +303,8 @@ def main():
         fn = ''.join(name.split(".")[:-1]) + '_cs_phylo.txt'
         weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
         write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
-        
-        os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile) 
+
+        os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile)
 
         weights = construct_weights(infile, weights_fn)
 
@@ -348,7 +326,7 @@ def main():
 
         t0 = time.time()
         cmd = "~/software/phylip-3.697/exe/mix"
-        cmd += " < " + responses + " > screenout1" 
+        cmd += " < " + responses + " > screenout1"
         p = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p.pid, 0)
 
@@ -366,22 +344,9 @@ def main():
             print("Computing Consensus Tree, elasped time: " + str(time.time() - t0))
 
         cmd = "~/software/phylip-3.697/exe/consense"
-        cmd += " < " + responses + " > screenout" 
+        cmd += " < " + responses + " > screenout"
         p2 = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p2.pid, 0)
-
-	t1 = time.time()
-
-        # read in newick file to networkx format
-        cs_net = newick_to_network(consense_outtree) 
-
-        # convert labels to characters for triplets correct analysis
-        cs_net = nx.relabel_nodes(cs_net, s_to_char)
-	if score_triplets:
-        	tp = check_triplets_correct(true_network, cs_net)
-        	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "camin-sokal" + "\t" + t + "\t" + str(t1 - t0))
-	else:
-		print(str(param) + "\t" + str(run) + "\t" + "camin-sokal" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         os.system("rm " + outfile)
         os.system("rm " + responses)
@@ -391,7 +356,8 @@ def main():
         os.system("rm " + fn)
 
     else:
-        
+
         raise Exception("Please choose an algorithm from the list: greedy, hybrid, ilp, nj, or camin-sokal")
 
-
+if __name__ == "__main__":
+    main()

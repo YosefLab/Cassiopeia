@@ -12,7 +12,7 @@ def collapse_fastq(reads,outfile):
 	for r in reads: #itertools.islice(reads,10000): # iterate thru reads and collapse as necessary
 
 		if counter%1000000 == 0:
-			print str(counter) + " reads processed ..."
+			print(str(counter) + " reads processed ...")
 
 		n = r.name.split('_')
 		nseq = n[1] + "_" + n[2] + "_" + r.seq #[rSlice]

@@ -3,15 +3,18 @@
 import numpy as np
 import gzip
 import functools
+import string
 
 from pathlib import Path
 from itertools import chain
 from six.moves import zip
 from collections import namedtuple
 
-from . import utilities
+from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import *
+
+#from . import utilities
 from .fastq_cython import *
-from .utilities import identity, base_order, group_by
+#from utilities import identity, base_order, group_by
 
 # SANGER_OFFSET = 33 is imported from fastq_cython
 SOLEXA_OFFSET = 64

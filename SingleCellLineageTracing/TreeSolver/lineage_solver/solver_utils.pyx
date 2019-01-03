@@ -146,13 +146,10 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		while len(source_nodes) != 1:
 
-			if len(source_nodes) > max_neighborhood_size and prev_network != None:
-				return prev_network
-			elif len(source_nodes) > (max_neighborhood_size * 2):
+			print(len(source_nodes) > int(max_neighborhood_size))
+			if len(source_nodes) > int(max_neighborhood_size):
 				print("Max Neighborhood Exceeded, Returning Network")
 				return prev_network
-			elif len(source_nodes) > max_neighborhood_size and prev_network == None:
-				flag = True
 			temp_source_nodes = set()
 			for i in range(0, len(source_nodes)-1):
 				sample = source_nodes[i]
@@ -195,7 +192,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 					#if parent != sample:
 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
 					temp_source_nodes.add(parent)
-				if len(temp_source_nodes) > max_neighborhood_size  and prev_network != None:
+				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
 					return prev_network
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:

@@ -2,7 +2,7 @@ from collections import defaultdict
 import networkx as nx
 import random
 
-from simulation_utils import get_leaves_of_tree
+from .simulation_utils import get_leaves_of_tree
 
 def tree_collapse(graph):
 	"""

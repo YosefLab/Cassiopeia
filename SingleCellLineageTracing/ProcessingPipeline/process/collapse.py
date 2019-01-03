@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import division, print_function
+
 import argparse
 import array
 import heapq
@@ -18,10 +20,11 @@ import pysam
 
 import networkx as nx
 
-from sequencing import fastq, utilities, sw, sam
-from sequencing import annotation as annotation_module
 
-from collapse_cython import hq_mismatches_from_seed, hq_hamming_distance, hamming_distance_matrix, register_corrections
+from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import fastq, utilities, sw, sam
+from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import annotation as annotation_module
+
+from .collapse_cython import hq_mismatches_from_seed, hq_hamming_distance, hamming_distance_matrix, register_corrections
 
 progress = tqdm.tqdm
 
@@ -195,12 +198,15 @@ def sort_cellranger_bam(bam_fn, sorted_fn, sort_key, filter_func, show_progress=
     for fn in chunk_fns:
         fn.unlink()
     
-    yaml_fn = sorted_fn.with_suffix('.yaml')
+    yaml_fn = Path(sorted_fn).with_suffix('.yaml')
     stats = {
         'total_reads': total_reads_out,
         'max_read_length': max_read_length,
     }
-    yaml_fn.write_text(yaml.dump(stats, default_flow_style=False))
+
+    with open(yaml_fn, "w") as f:
+        f.write(yaml.dump(stats, default_flow_style=False))
+    #yaml_fn.write_text(yaml.dump(stats, default_flow_style=False))
 
 def error_correct_UMIs(cell_group, sampleID, max_UMI_distance=1):
 
@@ -277,10 +283,10 @@ def form_collapsed_clusters(sorted_fn,
                             max_UMI_distance,
                             show_progress=True):
 
-    collapsed_fn = sorted_fn.with_name(sorted_fn.stem + '_collapsed.bam')
+    collapsed_fn = '.'.join(sorted_fn.split(".")[:-1]) + ".collapsed.bam"
 
-    yaml_fn = sorted_fn.with_suffix('.yaml')
-    stats = yaml.load(yaml_fn.read_text())
+    yaml_fn = '.'.join(sorted_fn.split(".")[:-1]) + ".yaml"
+    stats = yaml.load(open(yaml_fn, "r"))
     max_read_length = stats['max_read_length']
     total_reads = stats['total_reads']
 
@@ -330,11 +336,11 @@ def form_collapsed_clusters(sorted_fn,
 
 
 def error_correct_allUMIs(sorted_fn,
-                          yaml_fn,
                             max_hq_mismatches,
                             max_indels,
                             max_UMI_distance,
                             sampleID,
+                            log_fh = None, 
                             show_progress=True):
 
     collapsed_fn = sorted_fn.with_name(sorted_fn.stem + '_ec.bam')
@@ -357,7 +363,13 @@ def error_correct_allUMIs(sorted_fn,
                 collapsed_fh.write(a)
 
             #log_fh.write(error_corrections)
-            print(erstring, end=' ', flush=True)
+            if log_fh is None:
+                print(erstring, end=' ')
+                sys.stdout.flush()
+            else:
+                with open(log_fh, "a") as f:
+                    f.write(erstring)
+
             num_corrected += num_corr
             total += tot
 
@@ -419,7 +431,7 @@ def make_cluster_fastqs(collapsed_fn, target, gemgroup, notebook=True):
     guides = split_into_guide_fastqs(collapsed_fn, cell_BC_to_guide, gemgroup, group_dir)
     make_sample_sheet(group_dir, target, guides)
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--base_dir', required=True)
@@ -502,8 +514,8 @@ if __name__ == '__main__':
         
         show_progress = not args.no_progress
 
-        input_fn = Path(info['cellranger_dir']) / 'outs' / 'possorted_genome_bam.bam'
-        sorted_fn = (base_dir / 'data' / name / name).with_suffix('.bam')
+        input_fn = info['bam_file']
+        sorted_fn = (base_dir / 'data' / name).with_suffix('.bam')
 
         sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
         filter_func = lambda al: al.has_tag(CELL_BC_TAG)
@@ -528,7 +540,7 @@ if __name__ == '__main__':
         name = args.correct
         info = sample_sheet[name]
 
-        bam_dir = info.get('cellranger_dir')
+        bam_dir = info.get('bam_dir')
         max_hq_mismatches = info.get("max_hq_mismatches", 10)
         max_indels = info.get('max_indels', 2)
         max_UMI_distance = info.get("max_UMI_distance", 1)
@@ -547,7 +559,6 @@ if __name__ == '__main__':
         sort_cellranger_bam(input_fn, sorted_fn, sort_key, filter_func, show_progress = show_progress)
 
         error_correct_allUMIs(sorted_fn, 
-                              yaml_fn,
                               max_hq_mismatches,
                               max_indels,
                               max_UMI_distance,

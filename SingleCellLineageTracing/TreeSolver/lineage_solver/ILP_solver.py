@@ -71,6 +71,7 @@ def generate_mSteiner_model(graph, source, destinations):
 
 	# Source get +len(destination) sourceflow, destinations get -1, other nodes 0
 	sourceflow = {v: 0 for v in graph.nodes()}
+	destinations = list(destinations)
 	sourceflow[source] = len(destinations)
 
 	if source in destinations:
@@ -112,7 +113,7 @@ def generate_mSteiner_model(graph, source, destinations):
 				sourceflow[v] ==
 				quicksum(edge_variables[v, w] for w in graph.successors(v))
 			)
-	
+
 	#for v in graph.nodes():
 
 	 #   model.addConstr(quicksum(edge_variables[u, v] for u in graph.predecessors(v)) <= 1)
@@ -148,9 +149,9 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 					subgraph.add_edge(u, v, weight=graph[u][v]['weight'], label=graph[u][v]['label'])
 
 		# Print solution
-		
+
 			if detailed_output:
-                                print('Solved Steiner Tree instance. Optimal Solution costs ' + str(model.PoolObjVal))
+				print('Solved Steiner Tree instance. Optimal Solution costs ' + str(model.PoolObjVal))
 				print('Edges in minimal subgraph:')
 				print_edges_in_graph(subgraph)
 			subgraphs.append(subgraph)

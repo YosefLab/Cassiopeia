@@ -2,7 +2,7 @@ from collections import defaultdict
 import networkx as nx
 import numpy as np
 
-from solver_utils import root_finder
+from .solver_utils import root_finder
 
 def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	"""
@@ -52,7 +52,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 
 	# Accounting for frequency of mutated states per character, in order to choose the best split
 	for node in nodes:
-                node_list = node.split("_")[0].split('|')
+		node_list = node.split("_")[0].split('|')
 		for i in range(0, len(node_list)):
 			char = node_list[i]
 			if char != '0' and char != '-':
@@ -68,10 +68,10 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	max_cost = 0
 
 	min_prior = 1
-        if priors:
-            for i in priors.keys():
-                for j in priors[i].keys():
-                    min_prior = min(min_prior, priors[i][j])
+	if priors:
+		for i in priors.keys():
+			for j in priors[i].keys():
+				min_prior = min(min_prior, priors[i][j])
 
 	for i,j in character_mutation_mapping:
 		if not (i,j) in considered:
@@ -80,8 +80,8 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 					max_cost = character_mutation_mapping[(i, j)]
 					character, state = i, j
 			else:
-			        if j not in priors[int(i)]:
-			            priors[int(i)][j] = min_prior
+				if j not in priors[int(i)]:
+					priors[int(i)][j] = min_prior
 				if max_cost < -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]:
 					max_cost = -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]
 					character, state = i, j

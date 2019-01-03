@@ -34,7 +34,7 @@ target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier
 
 pic.dump(target_nodes, open("test_target_nodes.pkl", "wb"))
 
-print "CCI complexity of reconstruction: ", cci_score(target_nodes)
+print("CCI complexity of reconstruction: " + str(cci_score(target_nodes)))
 
 # Hybrid solution
 reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", prior_probabilities=prior_probabilities, hybrid_subset_cutoff=200, time_limit=60, threads = 10)
@@ -45,8 +45,8 @@ newick = convert_network_to_newick_format(reconstructed_network_hybrid)
 with open("test_newick.txt", "w") as f:
     f.write(newick)
 
-print "Number of triplets correct: ", check_triplets_correct(true_network, reconstructed_network_hybrid)
+print("Number of triplets correct: " + str(check_triplets_correct(true_network, reconstructed_network_hybrid)))
 
 #reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probabilities)
 
-#rint "Number of triplets correct: ", check_triplets_correct(true_n/etwork, reconstructed_network_greedy)
+#print "Number of triplets correct: ", check_triplets_correct(true_n/etwork, reconstructed_network_greedy)

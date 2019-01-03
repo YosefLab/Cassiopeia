@@ -3,59 +3,127 @@ import os
 import pandas as pd 
 import numpy as np
 from tqdm import tqdm
+from pathlib import Path
+import bokeh.palettes
+import time
+import matplotlib.pyplot as plt
+import subprocess
+
+import SingleCellLineageTracing as sclt
+
+SCLT_PATH = Path(sclt.__path__[0])
+
+from . import collapse
 
 SAM_HEADER_PCT48 = "@HD	VN:1.3\n@SQ	SN:PCT48.ref	LN:750" 
+CELL_BC_TAG = 'CB'
+UMI_TAG = 'UR'
+NUM_READS_TAG = 'ZR'
+CLUSTER_ID_TAG = 'ZC'
+LOC_TAG = "BC"
+CO_TAG = "CO"
 
-def collapseUMIs(basdir, n_threads = 1):
+HIGH_Q = 31
+LOW_Q = 10
+N_Q = 2
+
+def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_distance = 2, n_threads = 1, show_progress=True, force_sort=False):
+
+        base_dir = Path(base_dir)
+        sorted_fn = (base_dir / fn).with_suffix('.sorted.bam')
+
+        sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
+        filter_func = lambda al: al.has_tag(CELL_BC_TAG)
+
+        if force_sort or not sorted_fn.exists():
+            sorted_fn = '.'.join(fn.split(".")[:-1]) + "_sorted.bam"
+            collapse.sort_cellranger_bam(fn, sorted_fn, sort_key, filter_func, show_progress=show_progress)
+
+        collapsed_fn = (base_dir / fn).with_suffix(".collapsed.bam")
+        if not collapsed_fn.exists():
+            collapse.form_collapsed_clusters(sorted_fn,
+                                max_hq_mismatches,
+                                max_indels,
+                                max_UMI_distance,
+                                show_progress=show_progress
+                               )
+        
+        collapsed_df_fn = (base_dir / fn).with_suffix(".collapsed.txt")
+        collapseBam2DF(str(collapsed_fn), str(collapsed_df_fn)) 
+
+
+def errorCorrectUMIs(input_fn, _id, log_file, max_hq_mismatches = 3, max_indels=2, max_UMI_distance=2, show_progress=True):
+
+    sort_key = lambda al: (al.get_tag(LOC_TAG), -1*int(al.query_name.split("_")[-1]))
     
-    cmd = "./collapse.py --base_dir " + base_dir
+    name = Path(input_fn)
+    sorted_fn = name.with_name(name.stem + "_sorted.bam")
 
-    if n_threads > 1:
-        cmd += "--parallel " + str(n_threads)
+    filter_func = lambda al: al.has_tag(LOC_TAG) or al.has_tag(CELL_BC_TAG)
 
-    os.system(cmd)
+    collapse.sort_cellranger_bam(input_fn, sorted_fn, sort_key, filter_func, show_progress = show_progress)
 
-def errorCorrectUMIs(basedir, log_file, n_threads = 1):
+    collapse.error_correct_allUMIs(sorted_fn, 
+                              max_hq_mismatches,
+                              max_indels,
+                              max_UMI_distance,
+                              _id, 
+                              log_fh = log_file,
+                            show_progress = show_progress)
 
-    cmd = "./collapse.py --base_dir " + basedir
+    ec_fh = sorted_fn.with_name(sorted_fn.stem + "_ec.bam")
+    mt_fh = ec_fh.with_suffix(".moleculeTable.txt")
 
-    if n_threads > 1:
-        cmd += "--correct_parallel " + str(n_threads)
+    convert_bam_to_moleculeTable(ec_fh, mt_fh)
 
-    cmd += " >> " + log_file
-
-    os.system(cmd)
 
 def collapseBam2DF(data_fp, out_fp):
 
-    cmd = "perl collapseBam2dataFrame.pl " + data_fp + " " + out_fp 
+    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseBam2dataFrame.pl')
 
-    os.system(cmd)
+    cmd = "perl " + str(perl_script) + " " + data_fp + " " + out_fp 
+    p = subprocess.Popen(cmd, shell=True)
+    pid, ecode = os.waitpid(p.pid, 0)
+
 
 def collapseDF2Fastq(data_fp, out_fp):
 
-    cmd = "perl collapseDF2fastq.pl " + data_fp + " " + out_fp
+    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseDF2fastq.pl')
+    cmd = "perl " + str(perl_script) + " " + data_fp + " " + out_fp
 
-    os.system(cmd)
+    p = subprocess.check_output(cmd, shell=True)
 
 def align_sequences(ref, queries, outfile, gapopen=20, gapextend=1, ref_format="fasta", query_format="fastq", out_format="sam"):
 
-    cmd = "water -asequence " + ref + " -sformat1 " + ref_format  + " -bsequence " + queries + " -sformat2 " + query_format + " -gapopen " + str(gapopen) + " -gapextend " + str(gapextend) + " -outfile " + outfile + " -aformat3 " + out_format 
+    queries_fastq = str(Path(queries).with_suffix(".fastq"))
+    collapseDF2Fastq(queries, queries_fastq)  
 
-    os.system(cmd)
+    cmd = "water -asequence " + ref + " -sformat1 " + ref_format  + " -bsequence " + queries_fastq + " -sformat2 " + query_format + " -gapopen " + str(gapopen) + " -gapextend " + str(gapextend) + " -outfile " + outfile + " -aformat3 " + out_format
 
-    ## modify sam headers
-    cmd2 = "echo -e " + SAM_HEADER_PCT48  " > .tmp; tail -n +2 -q " + outfile + " >> .tmp; mv .tmp "+ outfile
+    cmd = cmd.split(" ")
 
-    os.system(cmd2)
+    subprocess.check_output(cmd)
+
+    with open(outfile, "r+") as f:
+        content = f.read()
+        f.seek(0,0)
+        f.write(SAM_HEADER_PCT48 + "\n" + content)
 
 def call_indels(alignments, ref, output, context=True):
 
-    cmd = "perl callAlleles-PCT48.pl " + alignments + " " + ref + " " + output
+    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'callAlleles-PCT48.pl')
+    cmd = "perl " + str(perl_script) + " " + alignments + " " + ref + " " + output
     if context:
-        cmd += "--context"
+        cmd += " --context"
 
-    os.system(cmd + "> _log.stdout 2> _log.stderr")
+    cmd += " > _log.stdout 2> _log.stderr"
+
+    p = subprocess.Popen(cmd, shell=True)
+    pid, ecode = os.waitpid(p.pid, 0)
+
+    bam_file = str(Path(output).with_suffix(".bam"))
+
+    convert_sam_to_bam(output, bam_file) 
 
 def append_sample_id(data_fp, out_fp, sampleID):
     
@@ -73,20 +141,46 @@ def convert_sam_to_bam(sam_input, bam_input):
 
 def convert_bam_to_moleculeTable(bam_input, mt_out):
 
-    cmd = "perl processBam2MT.pl " + bam_input + " " + mt_out 
+    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'processBam2MT.pl')
+    cmd = "perl " + str(perl_script) + " " + str(bam_input) + " " + str(mt_out) 
 
-    os.system(cmd)
+    p = subprocess.Popen(cmd, shell=True)
+    pid, ecode = os.waitpid(p.pid, 0)
 
-def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, umi_read_thresh=0.5, intbc_prop_thresh=0.5, intbc_umi_thresh=10, intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True):
+def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, intbc_prop_thresh=0.5, intbc_umi_thresh=10, intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True):
 
-    args = ["filter-molecule-table", mt, out_fp, outputdir,  "--cell_umi_thresh", str(cell_umi_thresh, "--umi_read_thresh", str(umi_read_thresh), "--intbc_prop_thresh", str(intbc_read_thresh), "--intbc_umi_thresh", str(intbc_umi_thresh), "--intbc_dist_thresh", str(intbc_dist_thresh), "--verbose", verbose, "--ec_intbc", ec_intbc, "--detect_intra_doublets", detect_intra_doublets]
+    args = ["filter-molecule-table", mt, out_fp, outputdir,  "--cell_umi_thresh", str(cell_umi_thresh), "--intbc_prop_thresh", str(intbc_prop_thresh), "--intbc_umi_thresh", str(intbc_umi_thresh), "--intbc_dist_thresh", str(intbc_dist_thresh)]
 
-    cmd = " ".join(args)
+    if umi_read_thresh:
+        args.append("--umi_read_thresh " + str(umi_read_thresh))
+    if verbose:
+        args.append("--verbose")
+    if ec_intbc:
+        args.append("--ec_intbc")
+    if detect_intra_doublets:
+        args.append("--detect_doublets_intra")
 
-    os.system(cmd)
+    subprocess.check_output(args)
+
+def call_lineage_groups(mt, out_fp, outputdir, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, no_filter_intbcs=False, verbose=False, cell_umi_filter=10):
+
+    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter)]
+
+    if no_filter_intbcs:
+        args.append("--no_filter_intbcs")
+
+    if verbose:
+        args.append("--verbose")
+
+    if detect_doublets_inter:
+        args.append("--detect_doublets_inter")
+
+    print(" ".join(args))
+    subprocess.check_output(args)
+
+
 
 def filterCellBCs(data, outputdir, umi_per_cellBC_thresh, avg_reads_per_UMI_thresh, verbose=True):
-    # NEED TO MAKE THE THRESHOLD FOR UMI/cellBC and reads/cellBC more dynamic!
     """
     Filter out cell barcodes that have too few UMIs or too few reads/UMI
     """
@@ -121,7 +215,7 @@ def filterCellBCs(data, outputdir, umi_per_cellBC_thresh, avg_reads_per_UMI_thre
     # return filtered data table
     n_data = data[(data["status"] == "good")]
 
-    stat_dict = {"cells_kept": n_data(["cellBC"]), "num_umi_kept": goodumis, "cells_removed": tooFewUMI_cellBC, "num_umi_removed": tooFewUMI_UMI}
+    stat_dict = {"cells_kept": len(n_data["cellBC"].unique()), "num_umi_kept": goodumis, "cells_removed": tooFewUMI_cellBC, "num_umi_removed": tooFewUMI_UMI}
 
     return n_data, stat_dict
 
@@ -182,8 +276,15 @@ def resolveSequences(moleculetable, outputdir, verbose=True):
 
     return n_moleculetable
 
+def changeCellBCID(alleleTableIN, sampleID, alleleTableOUT):
 
-def pickSeq(moltable, sample_name, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI_thresh = 2.0, verbose=True, save_output=False): 
+    data = pd.read_csv(alleleTableIN, sep='\t')
+
+    data['cellBC'] = data.apply(lambda x: x.cellBC + "-" + sampleID, axis=1)
+
+    data.to_csv(alleleTableOUT, sep='\t')
+
+def pickSeq(moltable, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI_thresh = 2.0, verbose=True, save_output=False): 
 
     # Log time
     t0 = time.time()
@@ -207,9 +308,10 @@ def pickSeq(moltable, sample_name, out_fp, outputdir, cell_umi_thresh = 10, avg_
     mt = resolveSequences(mt, outputdir)
 
     print(">>> FILTERING CELL BARCODES...")
-    mt = filterCellBCs(mt, outputdir, cell_umi_thresh, avg_reads_per_UMI_thresh)
+    mt = filterCellBCs(mt, outputdir, cell_umi_thresh, avg_reads_per_UMI_thresh)[0]
 
     if save_output:
-        mt.to_csv(outputdir + "/" + moleculetableFiltered_fp, sep='\t')
+        mt.to_csv(out_fp, sep='\t')
+        return
 
     return mt

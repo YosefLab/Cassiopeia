@@ -10,7 +10,8 @@ import time
 from tqdm import tqdm
 import argparse
 import yaml
-import lineageGroup_utils as lg_utils
+from . import lineageGroup_utils as lg_utils
+#import .lineageGroup_utils as lg_utils
 
 # suppress warnings for mapping thmt takes place in some filter functions
 pd.options.mode.chained_assignment = None
@@ -115,7 +116,7 @@ def filterCellBCs(moleculetable, outputdir, umiCountThresh = 10, verbose=True):
     tooFewUMI_cellBC = len(status) - len(np.where(status == "good")[0])
     tooFewUMI_UMI = np.sum(tooFewUMI_UMI)
 
-    goodumis = moleculetable[(moleculetable["status"] == "good")].shape[0]
+    goodumis = moleculetable[moleculetable["status"] == "good"].shape[0]
 
     # filter based on status & reindex
     n_moleculetable = moleculetable[(moleculetable["status"] == "good")]
@@ -238,9 +239,8 @@ def filterUMIs(moleculetable, outputdir, readCountThresh=100, verbose=True):
 
     filteredReads = []
 
-
     # filter based on status & reindex
-    n_moleculetable = moleculetable.loc[moleculetable["readCount"] > readCountThresh]
+    n_moleculetable = moleculetable[(moleculetable["readCount"] > readCountThresh)]
     n_moleculetable.index = [i for i in range(n_moleculetable.shape[0])]
 
     # log results
@@ -434,11 +434,11 @@ def main():
     moleculetable_fp = args.molecule_table
     moleculetableFiltered_fp = args.out_fp
     outputdir = args.outputdir
-    cell_umi_thresh = args.cell_umi_thresh
+    cell_umi_thresh = int(args.cell_umi_thresh)
     umi_read_thresh = args.umi_read_thresh
-    intbc_prop_thresh = args.intbc_prop_thresh
-    intbc_umi_thresh = args.intbc_umi_thresh
-    intbc_dist_thresh = args.intbc_dist_thresh
+    intbc_prop_thresh = float(args.intbc_prop_thresh)
+    intbc_umi_thresh = int(args.intbc_umi_thresh)
+    intbc_dist_thresh = int(args.intbc_dist_thresh)
     error_correct_intbc = args.ec_intbc
     verbose = args.verbose
     detect_doublets = args.detect_doublets_intra
@@ -468,7 +468,7 @@ def main():
     rc_profile["CellFilter"], upi_profile["CellFilter"], upc_profile["CellFilter"] = record_stats(mt, outputdir)
 
     # Determine read threshold
-    if umi_read_thresh == 'None':
+    if umi_read_thresh is None:
         R = filtered_mt["readCount"]
         umi_read_thresh = np.percentile(R, 99) / 10
 
@@ -478,7 +478,7 @@ def main():
     rc_profile["Filtered_UMI"], upi_profile["Filtered_UMI"], upc_profile["Filtered_UMI"] = record_stats(filtered_mt, outputdir, stage="Filtered_UMI")
 
     print(">>> PROCESSING INTBCs...")
-    # filter and error correct integrmtion barcodes by allele
+    # filter and error correct integration barcodes by allele
     if error_correct_intbc:
 
         filtered_mt = errorCorrectIntBC(filtered_mt, outputdir, prop = intbc_prop_thresh, umiCountThresh = intbc_umi_thresh,
@@ -492,10 +492,10 @@ def main():
     if detect_doublets:
         prop = doublet_thresh
         print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
-        filtered_mt  = lg_utils.filter_intra_doublets(filtered_mt, outputdir, prop = prop)
+        filtered_mt  = lg_utils.filter_intra_doublets(filtered_mt, 'filterlog.txt', outputdir, prop = prop)
 
     print(">>> MAPPING REMAINING INTEGRATION BARCODE CONFLICTS...")
-    filtred_mt = lg_utils.mapIntBCs(filtered_mt, outputdir)
+    filtred_mt = lg_utils.mapIntBCs(filtered_mt, "filterlog.txt", outputdir)
 
     rc_profile["Final"], upi_profile["Final"], upc_profile["Final"] = record_stats(filtered_mt, outputdir)
 
@@ -546,7 +546,7 @@ def main():
     with open(outputdir + "/filterlog.txt", "a") as f:
         f.write("Overall: " + str(cellBC_count) + " cells, with " + str(filtered_mt.shape[0]) + " UMIs\n")
 
-    filtered_mt.to_csv(outputdir + "/" + moleculetableFiltered_fp, sep='\t', index=False)
+    filtered_mt.to_csv(moleculetableFiltered_fp, sep='\t', index=False)
 
     with open(outputdir + "/filterlog.txt", "a") as f:
         f.write("Saved file: " + outputdir + "/" + moleculetableFiltered_fp + "\n")

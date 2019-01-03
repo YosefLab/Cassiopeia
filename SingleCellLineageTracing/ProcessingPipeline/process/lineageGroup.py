@@ -18,8 +18,7 @@ import yaml
 import argparse 
 
 sys.setrecursionlimit(10000)
-sys.path.append("/home/mattjones/TargetSeqAnalysis/process")
-import lineageGroup_utils as lg_utils
+from . import lineageGroup_utils as lg_utils
 
 # NOTE: NEED PANDAS >= 0.22.0
 
@@ -43,9 +42,6 @@ def create_output_dir(outputdir = None):
 
     with open(outputdir + "/lglog.txt", "w") as f:
         f.write("LINEAGE GROUP OUTPUT LOG:\n")
-
-    with open(outputdir + "/log_pickalleles.txt", "w") as f:
-        f.write("INT BC MAPING LOG:\n")
 
     return outputdir
 
@@ -520,13 +516,10 @@ def collectAlleles(df, at_piv, clusters, outputdir, thresh = 0.05):
 def filteredLG2AT(filtered_lgs):
 
     final_df = pd.concat(filtered_lgs)
-    print(final_df.columns)
 
     final_df = final_df.groupby(["cellBC", "intBC", "allele", "r1", "r2", "r3", "r1.old", "r2.old", "r3.old", "lineageGrp"], as_index=False).agg({"UMI": "count", "readCount": "sum"})
-    final_df["Sample"] = "N"
 
-    for i in final_df.index:
-        final_df.loc[i, "Sample"] = final_df.loc[i, "cellBC"].split(".")[0]
+    final_df["Sample"] = final_df.apply(lambda x: x.cellBC.split(".")[0], axis=1)
 
     return final_df
 
@@ -648,13 +641,13 @@ def main():
     alleleTable_fp = args.molecule_table
     output_fp = args.output_fp
     outputdir = args.output_dir
-    min_cluster_prop = args.min_cluster_prop
-    min_intbc_thresh = args.min_intbc_thresh
+    min_cluster_prop = float(args.min_cluster_prop)
+    min_intbc_thresh = float(args.min_intbc_thresh)
     verbose = args.verbose
     filter_intbcs = (not args.no_filter_intbcs)
     detect_doublets = args.detect_doublets_inter
-    doublet_thresh = args.doublet_threshold
-    cell_umi_filter = args.cell_umi_filter
+    doublet_thresh = float(args.doublet_threshold)
+    cell_umi_filter = int(args.cell_umi_filter)
  
     t0 = time.time()
 
@@ -671,15 +664,6 @@ def main():
         f.write(str(len(at["cellBC"].unique())) + " Cells\n")
 
     
-    if detect_doublets:
-        prop = doublet_thresh
-        print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
-        at = lg_utils.filter_inter_doublets(at, outputdir, prop = prop)
-
-    print(">>> MAPPING REMAINING INTEGRATION BARCODE CONFLICTS...")
-    at = lg_utils.mapIntBCs(at, outputdir)
-    print(at.columns)
-
     print(">>> CREATING PIVOT TABLE...")
     at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
 
@@ -731,16 +715,21 @@ def main():
     #    print(">>> PLOTTING INTBC RANK PROPORTION HISTOGRAMS...")
     #    plot_intbc_ranks(clusters, at, outputdir)
 
+    if detect_doublets:
+        prop = doublet_thresh
+        print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
+        at = lg_utils.filter_inter_doublets(at, "lglog.txt", outputdir, rule = prop)
+
     print(">>> COLLECTING ALLELES...")
     filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
 
     print(">>> PRODUCING FINAL ALLELE TABLE...")
     at = filteredLG2AT(filtered_lgs)
 
-    print(at.head(5))
-
-    at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=cell_umi_filter, verbose=verbose)
-
+    print(">>> FILTERING OUT LOW-UMI CELLS...")
+    at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=int(cell_umi_filter), verbose=verbose)
+    
+    print(">>> WRITING OUTPUT...")
     at.to_csv(outputdir + "/" + output_fp, sep='\t', index=False)
 
     print(">>> PRODUCING CLUSTERED HEATMAP...")

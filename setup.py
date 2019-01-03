@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, Extension, find_packages
@@ -24,7 +24,11 @@ author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn"
 # files to wrap with cython
 to_cythonize = [Extension("SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils", ["SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.c"]),
                 Extension("SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation", ["SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation.c"]),
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils", ["SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.c"])]
+                Extension("SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils", ["SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.c"]), 
+                Extension("SingleCellLineageTracing/ProcessingPipeline/process/collapse_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/collapse_cython.c"]), 
+                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/fastq_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/fastq_cython.c"]),
+                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/adapters_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/adapters_cython.c"]),
+                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/sw_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/sw_cython.c"])]
 
 setup(
         name="SingleCellLineageTracing",
@@ -36,7 +40,8 @@ setup(
                                 'stress-test = SingleCellLineageTracing.stress_test:main',
                                 'simulate-tree = SingleCellLineageTracing.simulate_tree:main',
                                 'call-lineages = SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup:main',
-                                'filter-molecule-table = SingleCellLineageTracing.ProcessingPipeline.process.filterMoleculeTables:main']
+                                'filter-molecule-table = SingleCellLineageTracing.ProcessingPipeline.process.filterMoleculeTables:main',
+                                'collapse = SingleCellLineageTracing.ProcessingPipeline.process.collapse:main']
             
         },
         author_email="mattjones315@berkeley.edu",

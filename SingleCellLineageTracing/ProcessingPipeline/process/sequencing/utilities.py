@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import string
 from itertools import islice, groupby, cycle, product, chain
 from six.moves import zip
 import contextlib
