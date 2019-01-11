@@ -225,7 +225,7 @@ def main():
 
     elif args.ilp:
 
-        target_nodes = list(cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1))
+        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
 
         if verbose:
             print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
@@ -233,7 +233,7 @@ def main():
 
         string_to_sample = dict(zip(target_nodes, cm.index))
 
-        target_nodes = (map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
         reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 

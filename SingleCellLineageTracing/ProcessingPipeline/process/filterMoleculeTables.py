@@ -63,7 +63,7 @@ def record_stats(moleculetable, outputdir, stage="Init"):
 
     # Count UMI per intBC
     umi_per_ibc = np.array([])
-    for n, g in tqdm(moleculetable.groupby(["cellBC"])):
+    for n, g in tqdm(moleculetable.groupby(["cellBC"]), desc="Recording stats"):
         x = g.groupby(["intBC"]).agg({"UMI": "nunique"})["UMI"]
         if x.shape[0] > 0:
             umi_per_ibc = np.concatenate([umi_per_ibc, np.array(x)])
@@ -100,7 +100,7 @@ def filterCellBCs(moleculetable, outputdir, umiCountThresh = 10, verbose=True):
     # in the table
     cell_filter = {}
 
-    for n, group in tqdm(moleculetable.groupby(["cellBC"])):
+    for n, group in tqdm(moleculetable.groupby(["cellBC"]), desc="Filter cells"):
         if group.shape[0] <= umiCountThresh:
             cell_filter[n] = "bad"
             tooFewUMI_UMI.append(group.shape[0])
@@ -286,7 +286,7 @@ def errorCorrectIntBC(moleculetable, outputdir, prop = 0.5, umiCountThresh = 10,
 
     recovered = 0
     numUMI_corrected = 0
-    for name, grp in tqdm(moleculetable.groupby(["cellBC"])):
+    for name, grp in tqdm(moleculetable.groupby(["cellBC"]), desc="processing intBCs"):
 
         # name = cellBC
         # grp = moleculetable[cellBC = name]
@@ -370,7 +370,7 @@ def pickAlleles(moleculetable, outputdir, verbose=True):
     # For each intBC/cellBC pair, we want only one allele (select majority allele for now)
     corrected = 0
     numUMI_corrected = 0
-    for n, group in tqdm(moleculetable.groupby(["filter_column"])):
+    for n, group in tqdm(moleculetable.groupby(["filter_column"]), desc="picking alleles"):
 
         x1 = group.groupby(["filter_column", "allele"]).agg({"r1": "unique", "r2": "unique",
                                 "readCount": "count", "r3": "unique", "allele_counter": "count", "UMI": "count"}).sort_values("allele_counter", ascending=False).reset_index()
@@ -442,7 +442,7 @@ def main():
     error_correct_intbc = args.ec_intbc
     verbose = args.verbose
     detect_doublets = args.detect_doublets_intra
-    doublet_thresh = args.doublet_threshold
+    doublet_thresh = float(args.doublet_threshold)
 
     outputdir = create_output_dir(outputdir)
 

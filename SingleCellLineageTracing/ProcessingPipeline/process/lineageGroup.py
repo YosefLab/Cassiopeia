@@ -14,6 +14,7 @@ from tqdm import tqdm
 from rpy2.robjects import r, numpy2ri
 import time
 import yaml
+import networkx as nx
 
 import argparse 
 
@@ -386,7 +387,6 @@ def plot_overlap_heatmap(df_pivot_I, clusters, outputdir, cell_xlink):
     # ax4.set_yticks([])
     # ax4.set_xticks([])
 
-
     plt.savefig(outputdir + "/clustered_intbc.png")
     plt.close()
 
@@ -533,14 +533,14 @@ def filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = 0.0025, byc
 
     h = plt.figure(figsize=(10,10))
     data = bc_cell_props.sort_values(ascending=False)
-    ax = plt.plot(np.arange(data.shape[0]), data)
+    ax = plt.bar(list(range(len(data))), data)
     plt.ylabel("Proportion")
-    plt.yscale("log")
-    plt.xscale('log')
+    #plt.yscale("log")
+    #plt.xscale('log')
     plt.title("Integration Barcode Proportion by Cell")
     plt.axhline(y=thresh, color="red", linestyle="dashed")
     plt.xticks([], [])
-    plt.savefig(outputdir + "/intBC_cell_prop_ALL.png")
+    plt.savefig(outputdir + "/intBC_cell_prop_ALL.pdf")
     plt.close()
 
     #h = plt.figure(figsize=(10,10))
@@ -619,6 +619,62 @@ def filterCellBCs(moleculetable, outputdir, umiCountThresh = 10, verbose=True):
 
     return n_moleculetable, cellBC2nM
 
+def merge_lineage_groups(at, outputdir, thresh=0.3):
+
+    lg_intbc_piv = pd.pivot_table(at, index="lineageGrp", columns=["intBC"], values="UMI", aggfunc="count")
+    lg_intbc_piv[lg_intbc_piv > 0] = 1
+    lg_intbc_piv.fillna(value=0)
+
+    lg_oMat = np.asarray(lg_utils.maxOverlap(lg_intbc_piv.T))
+
+    lg_oMat = sp.spatial.distance.squareform(lg_oMat)
+
+    for i in range(lg_oMat.shape[0]):
+        lg_oMat[i, i] = 1.0
+
+    to_collapse = []
+    for i in range(lg_oMat.shape[0]):
+        for j in range(i+1, lg_oMat.shape[0]):
+            if lg_oMat[i, j] > thresh:
+                coll = (i, j)
+                to_collapse.append(coll)
+
+    collapse_net = nx.Graph()
+    for pair in to_collapse:
+
+        collapse_net.add_edge(pair[0], pair[1])
+
+    num_lg = len(at["lineageGrp"].unique())
+    cc = list(nx.connected_components(collapse_net))
+    for i, c in zip(range(1, len(cc)+1), cc):
+    
+        for n in c:
+
+            at.loc[at["lineageGrp"] == n, "lineageGrp" ]= i + num_lg 
+
+    lg_sizes = {}
+    rename_lg = {}
+
+    for n, g in at.groupby(["lineageGrp"]):
+
+        lg_sizes[n] = len(g["cellBC"].unique())
+
+    sorted_by_value = sorted(lg_sizes.items(), key = lambda kv: kv[1])[::-1]
+
+    for i, tup in zip(range(len(sorted_by_value)), sorted_by_value):
+    
+        rename_lg[tup[0]] = float(i)
+
+    at["lineageGrp"] = at.apply(lambda x: rename_lg[x.lineageGrp], axis=1)
+
+    with open(outputdir + "/lglog.txt", "a") as f:
+        f.write("Collapsing the following lineage groups:\n")
+        for coll in to_collapse:
+            f.write(str(coll) + "\n")
+
+    return at
+
+
 
 def main():
 
@@ -630,6 +686,7 @@ def main():
     parser.add_argument("output_dir", type=str, help="File path to output directory for all results")
     parser.add_argument("--min_cluster_prop", default=0.005, help="Minimum proportion of cells that can fall into a cluster for lineage group calling") 
     parser.add_argument("--min_intbc_thresh", default=0.05, help="Threshold to filter out poor intBC per LineageGroup, as a function of the proportion of cells that report that intBC in the LG")
+    parser.add_argument("--filter_intbc_thresh", default = 0.2, help="Threshold to filter out lowly represented intBC before lineage group calling")
     parser.add_argument("--detect_doublets_inter", default=False, action='store_true', help="Perform Inter-Doublet (from different  LGs) Detection")
     parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
     parser.add_argument('--no_filter_intbcs', default=False, action="store_true", help="Filter out low proportion intBCs")
@@ -645,6 +702,7 @@ def main():
     min_intbc_thresh = float(args.min_intbc_thresh)
     verbose = args.verbose
     filter_intbcs = (not args.no_filter_intbcs)
+    filter_intbc_thresh = float(args.filter_intbc_thresh)
     detect_doublets = args.detect_doublets_inter
     doublet_thresh = float(args.doublet_threshold)
     cell_umi_filter = int(args.cell_umi_filter)
@@ -673,7 +731,7 @@ def main():
 
     if filter_intbcs:
         print(">>> FILTERING OUT LOW PROPORTION INTEGRATION BARCODES...")
-        at_pivot_I = filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = 0.001)
+        at_pivot_I = filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = filter_intbc_thresh)
 
 
     with open(outputdir + "/lglog.txt", "a") as f:
@@ -700,7 +758,6 @@ def main():
     print(">>> CLUSTERING DENDROGRAM WITH MINIMUM CLUSTER SIZE OF " + str(min_cluster_size) + "...")
     clusters = cluster_with_dtcut(ds, xlink, minClusterSize=min_cluster_size)
 
-
     lineageGrps = np.unique(clusters)
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write(str(len(lineageGrps)) + " Lineage Groups\n")
@@ -715,10 +772,6 @@ def main():
     #    print(">>> PLOTTING INTBC RANK PROPORTION HISTOGRAMS...")
     #    plot_intbc_ranks(clusters, at, outputdir)
 
-    if detect_doublets:
-        prop = doublet_thresh
-        print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
-        at = lg_utils.filter_inter_doublets(at, "lglog.txt", outputdir, rule = prop)
 
     print(">>> COLLECTING ALLELES...")
     filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
@@ -728,9 +781,55 @@ def main():
 
     print(">>> FILTERING OUT LOW-UMI CELLS...")
     at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=int(cell_umi_filter), verbose=verbose)
+
+    print(">>> MERGING SIMILAR LINEAGE GROUPS...")
+    at = merge_lineage_groups(at, outputdir, thresh=0.5)
+
+    if detect_doublets:
+        prop = doublet_thresh
+        print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
+        at = lg_utils.filter_inter_doublets(at, "lglog.txt", outputdir, rule = prop)
     
+
+    clusters = at[["cellBC", "lineageGrp"]].drop_duplicates()["lineageGrp"]
+
+    LGs, LG_counts = np.unique(clusters, return_counts=True)
+    LG2cellCount = dict(zip(LGs, LG_counts))
+
+    with open(outputdir + "/lglog.txt", "a") as f:
+        f.write("Lineage Group Stats after Merging:\n")
+        for key in LG2cellCount.keys():
+           f.write("Lineage Group " + str(key) + ": " + str(LG2cellCount[key]) + " cellBCs\n")
+
+    print(">>> PERFOROMING FINAL CLUSTERING...")
+    at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
+
+    at_pivot_I = at_pivot
+    at_pivot_I[at_pivot_I > 0] = 1
+    at_pivot_I.fillna(value=0)
+
+    oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
+
+    dm = analyze_overlap(oMat, outputdir)
+
+    xlink = sp.cluster.hierarchy.linkage(dm, method="average")
+
+    c, coph_dists = sp.cluster.hierarchy.cophenet(xlink, dm)
+
+    ds = sp.spatial.distance.squareform(dm)
+    clusters = cluster_with_dtcut(ds, xlink, minClusterSize=0.005 * at_pivot.shape[0])
+
+    with open(outputdir + "/lglog.txt", "a") as f:
+        f.write("\nFinal Lineage Group stats:")
+
+    at = assign_lineage_groups(at, clusters, at_pivot_I, outputdir)
+
     print(">>> WRITING OUTPUT...")
     at.to_csv(outputdir + "/" + output_fp, sep='\t', index=False)
+
+    filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
+
+    print(">>> PRODUCING PLOTS...")
 
     print(">>> PRODUCING CLUSTERED HEATMAP...")
     plot_heatmap(dm, xlink, clusters, outputdir, 10, 10, maxD=2)

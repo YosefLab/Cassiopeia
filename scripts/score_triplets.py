@@ -91,7 +91,7 @@ else:
 tot_tp = 0
 if modified:
 
-    correct_class, freqs = check_triplets_correct(true_network, reconstructed_network, dict_return=True)
+    correct_class, freqs = check_triplets_correct2(true_network, reconstructed_network, number_of_trials=50000, dict_return=True)
 
     num_consid = 0
     for k in correct_class.keys():

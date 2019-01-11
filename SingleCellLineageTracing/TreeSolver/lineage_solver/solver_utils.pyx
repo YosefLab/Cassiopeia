@@ -146,7 +146,6 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		while len(source_nodes) != 1:
 
-			print(len(source_nodes) > int(max_neighborhood_size))
 			if len(source_nodes) > int(max_neighborhood_size):
 				print("Max Neighborhood Exceeded, Returning Network")
 				return prev_network

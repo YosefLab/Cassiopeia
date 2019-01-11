@@ -227,3 +227,6 @@ def main():
 
     with open(out_fp, "w") as f:
         f.write(newick)
+
+if __name__ == "__main__":
+    main()

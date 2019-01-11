@@ -147,7 +147,7 @@ def convert_bam_to_moleculeTable(bam_input, mt_out):
     p = subprocess.Popen(cmd, shell=True)
     pid, ecode = os.waitpid(p.pid, 0)
 
-def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, intbc_prop_thresh=0.5, intbc_umi_thresh=10, intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True):
+def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, intbc_prop_thresh=0.5, intbc_umi_thresh=10, intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True, doublet_threshold=0.35):
 
     args = ["filter-molecule-table", mt, out_fp, outputdir,  "--cell_umi_thresh", str(cell_umi_thresh), "--intbc_prop_thresh", str(intbc_prop_thresh), "--intbc_umi_thresh", str(intbc_umi_thresh), "--intbc_dist_thresh", str(intbc_dist_thresh)]
 
@@ -159,12 +159,14 @@ def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_
         args.append("--ec_intbc")
     if detect_intra_doublets:
         args.append("--detect_doublets_intra")
+        args.append("--doublet_threshold")
+        args.append(str(doublet_threshold))
 
     subprocess.check_output(args)
 
-def call_lineage_groups(mt, out_fp, outputdir, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, no_filter_intbcs=False, verbose=False, cell_umi_filter=10):
+def call_lineage_groups(mt, out_fp, outputdir, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, no_filter_intbcs=False, verbose=False, cell_umi_filter=10, filter_intbc_thresh = 0.001):
 
-    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter)]
+    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter), "--filter_intbc_thresh", str(filter_intbc_thresh)]
 
     if no_filter_intbcs:
         args.append("--no_filter_intbcs")
