@@ -40,13 +40,15 @@ spl2 = name2.split("_")
 
 ending = spl2[-1].split(".")[-1]
 
-true_network = pic.load(open(true_netfp, "rb"))
-target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
-target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
+#true_network = pic.load(open(true_netfp, "rb"))
+true_network = nx.read_gpickle(true_netfp)
+#target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
+#target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
 
 if ending == "pkl" or ending == "pickle":
 
-    reconstructed_network = pic.load(open(reconstructed_fp, "rb"))
+    #reconstructed_network = nx.read_gpickle(reconstructed_fp)
+    reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
 
     nodes = [n for n in reconstructed_network.nodes()]
     encoder = dict(zip(nodes, map(lambda x: x.split("_")[0], nodes)))
@@ -58,7 +60,7 @@ else:
     s_to_char = dict(zip(k, target_nodes))
     char_to_s = dict(zip(target_nodes, k))
 
-    reconstructed_tree = Phylo.parse(reconstructed_fp, "newick").next()
+    reconstructed_tree = next(Phylo.parse(reconstructed_fp, "newick"))
     reconstructed_tree.rooted = True
     reconstructed_network = Phylo.to_networkx(reconstructed_tree)
 
@@ -107,6 +109,6 @@ if modified:
     tot_tp /= num_consid
 
 else:
-    tot_tp = check_triplets_correct(true_network, reconstructed_network)
+    tot_tp = check_triplets_correct2(true_network, reconstructed_network)
 
 print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
