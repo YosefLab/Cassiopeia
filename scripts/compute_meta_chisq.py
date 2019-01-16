@@ -176,11 +176,14 @@ def sample_chisq_test(G, metavals, depth=0):
             csq_table[i, j] = clade[meta_item] 
 
     # drop cols where all 0, an infrequent occurence but can happen when the clades are really unbalanced
-    good_cols = (np.sum(csq_table, axis=0) > 0)
+    good_rows = (np.sum(csq_table, axis=1) > 5)
+    csq_table = csq_table[good_rows, :]
+    good_cols = (np.sum(csq_table, axis=0) > 5)
     csq_table = csq_table[:, good_cols]
+    #print(csq_table)
 
     # screen table before passing it to the test - make sure all variables passed the zero filter
-    if np.any(np.sum(csq_table, axis=1) == 0):
+    if np.any(np.sum(csq_table, axis=1) == 0) or len(csq_table) == 0:
         return 0, 0, 1, csq_table.shape[0]
 
     chisq = stats.chi2_contingency(csq_table)

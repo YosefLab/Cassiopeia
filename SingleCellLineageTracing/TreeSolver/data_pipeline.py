@@ -1,6 +1,16 @@
-from collections import defaultdict
+import sys
+
+from collections import defaultdict, OrderedDict
 import networkx as nx
+import pandas as pd
 from ete3 import Tree
+
+from tqdm import tqdm
+
+import pylab
+import math
+
+import pickle as pic
 
 def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance = 0.1):
 	"""
@@ -158,4 +168,201 @@ def newick_to_network(newick_filepath, f=1):
 
     return G
 
+
+def get_indel_props(at):
+
+    uniq_alleles = np.union1d(at["r1"], np.union1d(at["r2"], at["r3"]))
+
+    groups = at.groupby("intBC").agg({"r1": "unique", "r2": "unique", "r3": "unique"})
+
+    count = defaultdict(int)
+
+    for i in tqdm(groups.index, desc="Counting unique alleles"):
+        alleles = np.union1d(groups.loc[i, "r1"], np.union1d(groups.loc[i, "r2"], groups.loc[i, "r3"]))
+        for a in alleles:
+            if a != a:
+                continue
+            if "None" not in a:
+                count[a] += 1
+
+    tot = len(groups.index)
+    freqs = dict(zip(list(count.keys()), [ v / tot for v in count.values()]))
+
+    return_df = pd.DataFrame([count, freqs]).T
+    return_df.columns = ["count", "freq"]
+
+    return_df.index.name = "indel"
+    return return_df
+
+def process_allele_table(cm, old_r = False, mutation_map=None):
+
+    filtered_samples = defaultdict(OrderedDict)
+    for sample in cm.index:
+        cell = cm.loc[sample, "cellBC"]
+        if old_r:
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1.old']
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2.old']
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3.old']
+        else:
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1']
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2']
+            filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3']
+
+    samples_as_string = defaultdict(str)
+    allele_counter = defaultdict(OrderedDict)
+
+    intbc_uniq = []
+    for s in filtered_samples:
+        for key in filtered_samples[s]:
+            if key not in intbc_uniq:
+                intbc_uniq.append(key)
+
+    prior_probs = defaultdict(dict)
+    indel_to_charstate = defaultdict(dict)
+    # for all characters
+    for i in tqdm(range(len(list(intbc_uniq))), desc="Processing characters"):
+
+        c = list(intbc_uniq)[i]
+
+        # for all samples, construct a character string
+        for sample in filtered_samples.keys():
+
+            if c in filtered_samples[sample]:
+
+                state = filtered_samples[sample][c]
+
+                if type(state) != str and np.isnan(state):
+                    samples_as_string[sample] += "-|"
+                    continue
+
+                if state == "NONE" or "None" in state:
+                    samples_as_string[sample] += '0|'
+                else:
+                    if state in allele_counter[c]:
+                        samples_as_string[sample] += str(allele_counter[c][state] + 1) + '|'
+                    else:
+                        # if this is the first time we're seeing the state for this character,
+                        allele_counter[c][state] = len(allele_counter[c]) + 1
+                        samples_as_string[sample] += str(allele_counter[c][state] + 1) + '|'
+
+                        # add a new entry to the character's probability map
+                        if mutation_map is not None:
+                            prob = np.mean(mutation_map.loc[state]['freq'])
+                            prior_probs[i][str(len(allele_counter[c]) + 1)] = float(prob)
+                            indel_to_charstate[i][str(len(allele_counter[c]) + 1)] = state
+            else:
+                samples_as_string[sample] += '-|'
+    for sample in samples_as_string:
+        samples_as_string[sample] = samples_as_string[sample][:-1]
+
+    return samples_as_string, prior_probs, indel_to_charstate
+
+def string_to_cm(string_sample_values):
+
+    m = len(string_sample_values[list(string_sample_values.keys())[0]].split("|"))
+    n = len(string_sample_values.keys())
+
+    cols = ["r" + str(i) for i in range(m)]
+    cm = pd.DataFrame(np.zeros((n, m)))
+    indices = []
+    for i, k in zip(range(n), string_sample_values.keys()):
+        indices.append(k)
+        alleles = np.array(string_sample_values[k].split("|"))
+        cm.iloc[i,:] = alleles
+
+    cm.index = indices
+    cm.index.name = "cellBC"
+    cm.columns = cols
+
+    return cm
+
+
+
+def write_to_charmat(string_sample_values, out_fp):
+
+    m = len(string_sample_values[list(string_sample_values.keys())[0]].split("|"))
+
+    with open(out_fp, "w") as f:
+
+        cols = ["cellBC"] + [("r" + str(i)) for i in range(m)]
+        f.write('\t'.join(cols) + "\n")
+
+        for k in string_sample_values.keys():
+
+            f.write(k)
+            alleles = string_sample_values[k].split("|")
+
+            for a in alleles:
+                f.write("\t" + str(a))
+
+            f.write("\n")
+
+def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r = False, write=True):
+
+
+    out_stem = ''.join(out_fp.split('.')[:-1])
+
+    character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, old_r = old_r, mutation_map=mutation_map)
+
+    if mutation_map is not None:
+        # write prior probability dictionary to pickle for convenience
+        pic.dump(prior_probs, open(out_stem + "_priorprobs.pkl", "wb"))
+
+        # write indel to character state mapping to pickle
+        pic.dump(indel_to_charstate, open(out_stem + "_indel_character_map.pkl", "wb"))
+
+    if write:
+        if out_fp is None:
+            raise Exception("Need to specify an output file if writing to file")
+
+        write_to_charmat(character_matrix_values, out_fp)
+
+    else:
+        return string_to_cm(character_matrix_values)
+
+def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
+
+    if old_r:
+        g = lg.groupby(["cellBC", "intBC"]).agg({"r1.old": "unique", "r2.old": "unique", "r3.old": "unique"})
+    else:
+        g = lg.groupby(["cellBC", "intBC"]).agg({"r1": "unique", "r2": "unique", "r3": "unique"})
+
+    intbcs = lg["intBC"].unique()
+
+    # create mutltindex df by hand 
+    i1 = []
+    for i in intbcs:
+        i1 += [i]*3
+
+    if old_r:
+        i2 = ["r1.old", "r2.old", "r3.old"] * len(intbcs)
+    else:
+        i2 = ["r1", "r2", "r3"] * len(intbcs)
+
+    indices = [i1, i2]
+
+    allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
+
+    for j in tqdm(g.index, desc="filling in multiindex table"):
+        vals = map(lambda x: x[0], g.loc[j])
+        if old_r:
+            allele_piv.loc[j[0]][j[1], "r1.old"], allele_piv.loc[j[0]][j[1], "r2.old"], allele_piv.loc[j[0]][j[1], "r3.old"] = vals
+        else:
+            allele_piv.loc[j[0]][j[1], "r1"], allele_piv.loc[j[0]][j[1], "r2"], allele_piv.loc[j[0]][j[1], "r3"] = vals
+
+
+    allele_piv2 = pd.pivot_table(lg, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
+    col_order = allele_piv2.dropna(axis=1, how="all").sum().sort_values(ascending=False, inplace=False).index
+
+    lineage_profile = allele_piv[col_order]
+
+    # collapse column names here
+    lineage_profile.columns = ["_".join(tup).rstrip("_") for tup in lineage_profile.columns.values]
+
+    if write:
+            if out_fp is None:
+                    raise Exception("Specify an output file")
+            lineage_profile.to_csv(out_fp, sep='\t')
+    else:
+        return lineage_profile
 

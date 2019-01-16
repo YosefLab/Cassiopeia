@@ -82,9 +82,9 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 
         network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff)
 
-        print("Using " + str(min(multiprocessing.cpu_count(), threads)) + " threads, " + str(multiprocessing.cpu_count()) + " available.")
+        print("Using " + str(min(multiprocessing.cpu_count(), threads)) + " threads, " + str(multiprocessing.cpu_count()) + " available.", flush=True)
         executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), threads))
-        print("Sending off Target Sets: " + str(len(target_sets)))
+        print("Sending off Target Sets: " + str(len(target_sets)), flush=True)
 
         # just in case you've hit a target node during the greedy reconstruction, append name at this stage
         # so the composition step doesn't get confused when trying to join to the root.
@@ -143,7 +143,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 
     pid = hashlib.md5(root.encode('utf-8')).hexdigest()
 
-    print("Started new thread for: " + str(root) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid))
+    print("Started new thread for: " + str(root) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid), flush=True)
 
     if len(set(targets)) == 1:
         graph = nx.DiGraph()
@@ -156,7 +156,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
     if potential_network_priors is None:
         subgraph = greedy_build(targets, priors=prior_probabilities, cutoff=-1)[0]
         subgraph = nx.relabel_nodes(subgraph, node_name_dict)
-        print("Max Neighborhood Exceeded")
+        print("Max Neighborhood Exceeded", flush=True)
         return subgraph, root, pid
 
     nodes = list(potential_network_priors.nodes())
@@ -174,8 +174,8 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 
     # remove spurious roots left in the solution
     subgraph_roots = [n for n in subgraph if subgraph.in_degree(n) == 0]
-    print(subgraph_roots, str(pid))
-    print(root + " pid: " + str(pid))
+    print(subgraph_roots, str(pid), flush=True)
+    print(root + " pid: " + str(pid), flush=True)
     for r in subgraph_roots:
         if r != root:
             subgraph.remove_node(r)
