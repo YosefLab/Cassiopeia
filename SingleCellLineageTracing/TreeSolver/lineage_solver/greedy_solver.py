@@ -4,7 +4,7 @@ import numpy as np
 
 from .solver_utils import root_finder
 
-def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
+def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targets=[]):
 	"""
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
 	This algorithm chooses splits within the tree based on which mutation occurs most frequently,
@@ -153,8 +153,10 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 	left_subproblems = []
 	if len(left_split) != 0:
 		left_root = root_finder(left_split)
+		if left_root not in left_split and left_root in targets:
+			left_root = left_root + "_unique"
 
-		left_network, left_subproblems = greedy_build(left_split, priors, cutoff, considered.copy(), uniq + "0")
+		left_network, left_subproblems = greedy_build(left_split, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
 
 		left_nodes = [node for node in left_network.nodes() if left_network.in_degree(node) == 0]
 		G = nx.compose(G, left_network)
@@ -162,12 +164,13 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq=''):
 			G.add_edge(splitter, left_root, weight=0, label="None")
 
 	# Recursively build right side of network
-	right_network, right_subproblems = greedy_build(right_split, priors, cutoff, considered.copy(), uniq + "1" )
+	right_network, right_subproblems = greedy_build(right_split, priors, cutoff, considered.copy(), uniq + "1", targets=targets)
 	right_nodes = [node for node in right_network.nodes() if right_network.in_degree(node) == 0]
 
 	G = nx.compose(G, right_network)
 	right_root = root_finder(right_split)
-
+	if right_root not in right_split and right_root in targets:
+    	right_root = right_root + "_unique"
 	#for node in right_nodes:
 	if root != right_root:
 		if not priors:

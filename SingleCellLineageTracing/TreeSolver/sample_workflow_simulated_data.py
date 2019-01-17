@@ -37,7 +37,7 @@ pic.dump(target_nodes, open("test_target_nodes.pkl", "wb"))
 print("CCI complexity of reconstruction: " + str(cci_score(target_nodes)))
 
 # Hybrid solution
-reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", prior_probabilities=prior_probabilities, hybrid_subset_cutoff=200, time_limit=60, threads = 10)
+reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probabilities, hybrid_subset_cutoff=200, time_limit=60, threads = 10)
 
 pic.dump(reconstructed_network_hybrid, open("test_reconstruction.pkl", "wb"))
 newick = convert_network_to_newick_format(reconstructed_network_hybrid)
