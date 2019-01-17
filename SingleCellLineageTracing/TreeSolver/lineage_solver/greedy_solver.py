@@ -170,7 +170,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	G = nx.compose(G, right_network)
 	right_root = root_finder(right_split)
 	if right_root not in right_split and right_root in targets:
-    	right_root = right_root + "_unique"
+		right_root = right_root + "_unique"
 	#for node in right_nodes:
 	if root != right_root:
 		if not priors:
