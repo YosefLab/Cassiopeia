@@ -97,7 +97,7 @@ def construct_weights(phy, weights_fn, write=True):
 
     abund = df.apply(lambda x: len(x[x=="1"]) / len(x), axis=1)
 
-    labund = np.array(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund))
+    labund = np.array(list(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund)))
     labund[labund == 0] = labund.min()
 
     # scale linearly to range for phylip weights
@@ -105,12 +105,12 @@ def construct_weights(phy, weights_fn, write=True):
     _max = 35
 
     scaled = (_max - _min) / (labund.max() - labund.min()) * (labund - labund.max()) + _max
-    scaled = map(lambda x: int(x), scaled)
+    scaled = list(map(lambda x: int(x), scaled))
 
     weights_range = [str(i) for i in range(10)] + [l for l in ascii_uppercase]
     weights_dict = dict(zip(range(36), weights_range))
 
-    scaled = map(lambda x: weights_dict[x], scaled)
+    scaled = list(map(lambda x: weights_dict[x], scaled))
 
     if write:
         with open(weights_fn, "w") as f:
@@ -304,7 +304,7 @@ def main():
         weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
         write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
 
-        os.system("python2 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile)
+        os.system("python3.6 /home/mattjones/projects/scLineages/SingleCellLineageTracing/scripts/binarize_multistate_charmat.py " + fn + " " + infile)
 
         weights = construct_weights(infile, weights_fn)
 

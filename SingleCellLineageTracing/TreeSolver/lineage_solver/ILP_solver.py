@@ -108,15 +108,15 @@ def generate_mSteiner_model(graph, source, destinations):
 
 	# Flow conservation constraints
 	for v in graph.nodes():
-			model.addConstr(
-				quicksum(edge_variables[u, v] for u in graph.predecessors(v)) +
-				sourceflow[v] ==
-				quicksum(edge_variables[v, w] for w in graph.successors(v))
-			)
+		model.addConstr(
+			quicksum(edge_variables[u, v] for u in graph.predecessors(v)) +
+			sourceflow[v] ==
+			quicksum(edge_variables[v, w] for w in graph.successors(v))
+		)
 
-	#for v in graph.nodes():
+	for v in graph.nodes():
+		model.addConstr(quicksum(edge_variables[u, v] for u in graph.predecessors(v)) <= 1)
 
-	 #   model.addConstr(quicksum(edge_variables[u, v] for u in graph.predecessors(v)) <= 1)
 
 
 	# OBJECTIVE
