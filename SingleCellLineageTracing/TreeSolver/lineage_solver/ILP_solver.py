@@ -104,7 +104,12 @@ def generate_mSteiner_model(graph, source, destinations):
 	#Check if edge used
 	for u,v in graph.edges():
 		model.addConstr(edge_variables_binary[u, v] >= edge_variables[u, v] / len(destinations))
-		#model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
+		model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
+
+	# Make sure we have a well defined tree
+	for v in graph.nodes():
+		model.addConstr(quicksum(edge_variables_binary[u, v] for u in graph.predecessors(v)) <= 1)
+
 
 	# Flow conservation constraints
 	for v in graph.nodes():
