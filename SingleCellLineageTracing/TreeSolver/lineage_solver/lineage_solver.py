@@ -106,6 +106,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 
     if method == "greedy":
         graph = greedy_build(target_nodes, priors=prior_probabilities, cutoff=-1, targets=target_nodes)[0]
+
         return graph
 
     else:

@@ -152,6 +152,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	# Recursively build left side of network (ie side that did not mutation at the character with the specific state)
 	G.add_node(splitter)
 	left_subproblems = []
+	left_network = None
 	if len(left_split) != 0:
 		left_root = root_finder(left_split)
 		# if left_root not in left_split and left_root in targets:
@@ -178,7 +179,14 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	for n in right_network:
 		if n in list(G.nodes()) and n != right_root:
 			dup_dict[n] = n + "_" + str(hashlib.md5(right_root.encode('utf-8')).hexdigest())
-	right_network = nx.relabel_nodes(right_network, dup_dict)
+	for n in dup_dict:
+		rename_dict = {n: dup_dict[n]}
+		if right_network.out_degree(n) != 0:
+			right_network = nx.relabel_nodes(right_network, rename_dict)
+		else:
+			rename_dict = {n: dup_dict[n]}
+			G = nx.relabel_nodes(G, rename_dict)
+
 	G = nx.compose(G, right_network)
 	# if right_root not in right_split and right_root in targets:
 	# 	right_root = right_root + "_unique"
