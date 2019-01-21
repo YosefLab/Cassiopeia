@@ -119,8 +119,6 @@ def generate_mSteiner_model(graph, source, destinations):
 			quicksum(edge_variables[v, w] for w in graph.successors(v))
 		)
 
-	for v in graph.nodes():
-		model.addConstr(quicksum(edge_variables[u, v] for u in graph.predecessors(v)) <= 1)
 
 
 
