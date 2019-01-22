@@ -160,6 +160,9 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
         print("Max Neighborhood Exceeded", flush=True)
         return subgraph, root, pid
 
+    for l in potential_network_priors.selfloop_edges():
+        potential_network_priors.remove_edge(l[0], l[1])
+
     nodes = list(potential_network_priors.nodes())
     encoder = dict(zip(nodes, list(range(len(nodes)))))
     decoder = dict((v, k) for k, v in encoder.items())

@@ -28,7 +28,7 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 
     # Tuning parameters found to help speedup runtime (Do not touch)
     model.params.Threads = num_threads
-    model.params.Presolve = 2
+    model.params.Presolve = 1
     model.params.MIPFocus = 1
     model.params.Cuts = 1
     #model.params.Method = 3

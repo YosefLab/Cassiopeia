@@ -3,6 +3,7 @@ import sys
 from collections import defaultdict, OrderedDict
 import networkx as nx
 import pandas as pd
+import numpy as np
 from ete3 import Tree
 
 from tqdm import tqdm
