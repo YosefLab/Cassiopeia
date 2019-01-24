@@ -107,8 +107,8 @@ def generate_mSteiner_model(graph, source, destinations):
 		model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
 
 	# Make sure we have a well defined tree
-	for v in graph.nodes():
-		model.addConstr(quicksum(edge_variables_binary[u, v] for u in graph.predecessors(v)) <= 1)
+#	for v in graph.nodes():
+#		model.addConstr(quicksum(edge_variables_binary[u, v] for u in graph.predecessors(v)) <= 1)
 
 
 	# Flow conservation constraints
@@ -125,7 +125,7 @@ def generate_mSteiner_model(graph, source, destinations):
 	# OBJECTIVE
 	# Minimize total path weight
 
-	objective_expression = quicksum(edge_variables_binary[u, v] * graph[u][v]['weight'] for u, v in graph.edges())
+	objective_expression = quicksum(edge_variables_binary[u, v] * (graph[u][v]['weight']+1.0/(len(edge_variables_binary))) for u, v in graph.edges())
 	model.setObjective(objective_expression, GRB.MINIMIZE)
 
 	return model, edge_variables
