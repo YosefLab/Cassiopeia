@@ -174,6 +174,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 
     model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
     subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
+
     subgraph = nx.relabel_nodes(subgraph, decoder)
 
     # remove spurious roots left in the solution

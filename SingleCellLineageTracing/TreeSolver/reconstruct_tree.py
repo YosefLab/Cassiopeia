@@ -166,7 +166,7 @@ def main():
             print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
 
 
-        string_to_sample = dict(zip(target_nodes, cm.index))
+        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
         target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
@@ -196,7 +196,7 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
-        string_to_sample = dict(zip(target_nodes, cm.index))
+        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
         target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
@@ -236,7 +236,7 @@ def main():
             print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
             print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
-        string_to_sample = dict(zip(target_nodes, cm.index))
+        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
         target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
