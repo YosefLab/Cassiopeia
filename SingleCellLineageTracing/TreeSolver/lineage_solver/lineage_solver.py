@@ -74,6 +74,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 
 
         subgraph, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
+        clean_ilp_network(subgraph)
 
         return subgraph
 
@@ -185,9 +186,21 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
             subgraph.remove_node(r)
 
     subgraph = nx.relabel_nodes(subgraph, node_name_dict)
-
+    clean_ilp_network(subgraph)
+    
     r_name = root
     if root in node_name_dict:
         r_name = node_name_dict[root]
 
     return subgraph, r_name, pid
+
+def clean_ilp_network(network):
+        for u, v in network.edges():
+                if u == v:
+                        network.remove_edge(u,v)
+        trouble_nodes = [node for node in network.nodes() if network.in_degree(node) > 1]
+        for node in trouble_nodes:
+                pred = network.predecessors(node)
+                pred = sorted(y, key=lambda k: network[k][node]['weight'], reverse=True)
+                for anc_node in y[1:]:
+                        network.remove_edge(anc_node, node)

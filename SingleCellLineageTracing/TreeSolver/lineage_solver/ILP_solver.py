@@ -125,7 +125,7 @@ def generate_mSteiner_model(graph, source, destinations):
 	# OBJECTIVE
 	# Minimize total path weight
 
-	objective_expression = quicksum(edge_variables_binary[u, v] * (graph[u][v]['weight']+1.0/(len(edge_variables_binary))) for u, v in graph.edges())
+	objective_expression = quicksum(edge_variables_binary[u, v] * (graph[u][v]['weight']+0.0/(len(edge_variables_binary))) for u, v in graph.edges())
 	model.setObjective(objective_expression, GRB.MINIMIZE)
 
 	return model, edge_variables
