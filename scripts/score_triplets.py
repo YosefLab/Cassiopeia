@@ -42,8 +42,8 @@ ending = spl2[-1].split(".")[-1]
 
 #true_network = pic.load(open(true_netfp, "rb"))
 true_network = nx.read_gpickle(true_netfp)
-#target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
-#target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
+target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
+target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
 
 if ending == "pkl" or ending == "pickle":
 

@@ -28,7 +28,8 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
 
     # Tuning parameters found to help speedup runtime (Do not touch)
     model.params.Threads = num_threads
-    model.params.Presolve = 1
+    #model.params.Presolve = 2
+    model.params.Presolve = -1
     model.params.MIPFocus = 1
     model.params.Cuts = 1
     #model.params.Method = 3
@@ -104,7 +105,7 @@ def generate_mSteiner_model(graph, source, destinations):
 	#Check if edge used
 	for u,v in graph.edges():
 		model.addConstr(edge_variables_binary[u, v] >= edge_variables[u, v] / len(destinations))
-		model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
+		#model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
 
 	# Make sure we have a well defined tree
 #	for v in graph.nodes():

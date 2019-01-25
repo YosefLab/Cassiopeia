@@ -25,6 +25,7 @@ import os
 import argparse
 
 from SingleCellLineageTracing.TreeSolver.lineage_solver import *
+from SingleCellLineageTracing.TreeSolver.data_pipeline import convert_network_to_newick_format
 from SingleCellLineageTracing.TreeSolver.simulation_tools import *
 
 def write_leaves_to_charmat(target_nodes, fn):

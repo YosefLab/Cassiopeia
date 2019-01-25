@@ -16,7 +16,7 @@ from pylab import *
 
 from SingleCellLineageTracing.TreeSolver import convert_network_to_newick_format
 
-def post_process_tree(G):
+def prune_and_clean_leaves(G):
     """
     Given a networkx graph in the form of a tree, assign sample identities to character states.
 
@@ -44,7 +44,7 @@ def post_process_tree(G):
                 nodes_to_remove.append(n)
 
         return nodes_to_remove
-    
+
     nodes_to_remove = prune_leaves(G)
     while len(nodes_to_remove) > 0:
         for n in set(nodes_to_remove):
@@ -70,7 +70,7 @@ def post_process_tree(G):
                 name = "_".join(spl[:-1])
             else:
                 name = "_".join(spl[:-2])
-            
+
             # if this target is a leaf, just rename it
             # else we must add an extra 'redundant' leaf here
             if G.out_degree(n) == 0:
@@ -84,16 +84,6 @@ def post_process_tree(G):
 
     G = nx.relabel_nodes(G, node_dict2)
 
-    # remove any nodes that are not on the path from the root
-    #root = [n for n in G if G.in_degree(n) == 0][0]
-    #nodes_to_remove = []
-    #desc = nx.descendants(G, root)
-    #for n in G.nodes:
-    #    if n not in desc:
-    #        nodes_to_remove.append(n)
-
-    #for n in set(nodes_to_remove):
-    #    G.remove_node(n)
     return G
 
 def assign_samples_to_charstrings(G, cm):
@@ -106,7 +96,7 @@ def assign_samples_to_charstrings(G, cm):
     root = [n for n in G if G.in_degree(n) == 0][0]
 
     cm["lookup"] = cm.apply(lambda x: "|".join(x), axis=1)
-    
+
     for n in G:
 
         if n in cm['lookup'].values:
@@ -132,7 +122,7 @@ def assign_samples_to_charstrings(G, cm):
     #for n in set(nodes_to_remove):
     #    G.remove_node(n)
 
-        
+
 
     return G
 
@@ -186,23 +176,37 @@ def add_redundant_leaves(G, cm):
 
     return G
 
+def post_process_tree(G, cm, alg):
+
+    if alg == "greedy":
+        G = assign_samples_to_charstrings(G, cm)
+        G = prune_and_clean_leaves(G)
+
+    if alg == "hybrid" or alg == "ilp":
+        G = prune_and_clean_leaves(G)
+
+    G = add_redundant_leaves(G, cm)
+
+    return G
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("netfp", type=str, help="Networkx pickle file")
     parser.add_argument("char_fp", type=str, help="Character matrix")
     parser.add_argument("out_fp", type=str, help="Output file -- will be written as a newick file!")
-    parser.add_argument("--map_states", action="store_true", default=False, help="Map character states to sampleID with provided character matrix")
-    parser.add_argument("--collapse", action="store_true", default=False, help="Collapse unweighted edges")
-    parser.add_argument("--no_add_redundant_nodes", action="store_true", default=False, help="No need to assign 'redundant' nodes to the terminal character states")
+    parser.add_argument("alg", type=str, help="Algorithm used to reconstruct this tree")
+
+    algorithms = ["greedy", "hybrid", "ilp", "neighbor-joining", "camin-sokal"]
 
     args = parser.parse_args()
     netfp = args.netfp
     char_fp = args.char_fp
-    map_states = args.map_states
-    collapse = args.collapse
+    alg = args.alg
     out_fp = args.out_fp
-    post_process = (not args.no_add_redundant_nodes)
+
+    if alg not in algorithms:
+        raise Exception("Algorithm not recognized, use one of: " + str(algorithms))
 
     if out_fp.split(".")[-1] != 'txt':
 
@@ -211,16 +215,7 @@ def main():
     G = nx.read_gpickle(netfp)
     cm = pd.read_csv(char_fp, sep='\t', index_col = 0)
 
-    if map_states:
-        G = assign_samples_to_charstrings(G, cm)
-
-    if collapse:
-        G = tree_collapse(G)
-
-    if post_process:
-        G = post_process_tree(G)
-    
-        G = add_redundant_leaves(G, cm)
+    G = post_process_tree(G, cm, alg)
 
     stem = ".".join(out_fp.split(".")[:-1])
 
