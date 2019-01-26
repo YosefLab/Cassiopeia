@@ -52,7 +52,7 @@ def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_di
         collapseBam2DF(str(collapsed_fn), str(collapsed_df_fn)) 
 
 
-def errorCorrectUMIs(input_fn, _id, log_file, max_hq_mismatches = 3, max_indels=2, max_UMI_distance=2, show_progress=True):
+def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=True):
 
     sort_key = lambda al: (al.get_tag(LOC_TAG), -1*int(al.query_name.split("_")[-1]))
     
@@ -64,8 +64,6 @@ def errorCorrectUMIs(input_fn, _id, log_file, max_hq_mismatches = 3, max_indels=
     collapse.sort_cellranger_bam(input_fn, sorted_fn, sort_key, filter_func, show_progress = show_progress)
 
     collapse.error_correct_allUMIs(sorted_fn, 
-                              max_hq_mismatches,
-                              max_indels,
                               max_UMI_distance,
                               _id, 
                               log_fh = log_file,
