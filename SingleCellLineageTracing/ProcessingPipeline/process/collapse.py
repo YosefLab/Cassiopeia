@@ -336,8 +336,6 @@ def form_collapsed_clusters(sorted_fn,
 
 
 def error_correct_allUMIs(sorted_fn,
-                            max_hq_mismatches,
-                            max_indels,
                             max_UMI_distance,
                             sampleID,
                             log_fh = None, 
@@ -559,8 +557,6 @@ def main():
         sort_cellranger_bam(input_fn, sorted_fn, sort_key, filter_func, show_progress = show_progress)
 
         error_correct_allUMIs(sorted_fn, 
-                              max_hq_mismatches,
-                              max_indels,
                               max_UMI_distance,
                               info.get("id"), 
                             show_progress = show_progress)

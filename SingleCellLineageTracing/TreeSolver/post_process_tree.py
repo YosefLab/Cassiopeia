@@ -15,6 +15,7 @@ from collections import defaultdict
 from pylab import *
 
 from SingleCellLineageTracing.TreeSolver import convert_network_to_newick_format
+import SingleCellLineageTracing.TreeSolver.lineage_solver as ls
 
 def prune_and_clean_leaves(G):
     """
@@ -183,6 +184,7 @@ def post_process_tree(G, cm, alg):
         G = prune_and_clean_leaves(G)
 
     if alg == "hybrid" or alg == "ilp":
+        ls.clean_ilp_network(G)
         G = prune_and_clean_leaves(G)
 
     G = add_redundant_leaves(G, cm)

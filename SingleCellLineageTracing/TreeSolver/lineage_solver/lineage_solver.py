@@ -186,7 +186,12 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
         if r != root:
             subgraph.remove_node(r)
 
-    subgraph = nx.relabel_nodes(subgraph, node_name_dict)
+    node_name_dict_cleaned = {}
+    for n in node_name_dict.keys():
+        if n in targets:
+            node_name_dict_cleaned[n] = node_name_dict[n]
+
+    subgraph = nx.relabel_nodes(subgraph, node_name_dict_cleaned)
     clean_ilp_network(subgraph)
     
     r_name = root
@@ -211,7 +216,7 @@ def clean_ilp_network(network):
 				network.remove_edge(pred[0], node)
                 else:	
                         print "CASE 2: R->X->Z, R->Y->Z"
-			for anc_node in y[1:]:
+			for anc_node in pred[1:]:
                         	network.remove_edge(anc_node, node)
 
 
