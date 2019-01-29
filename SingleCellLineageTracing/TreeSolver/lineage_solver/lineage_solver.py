@@ -207,6 +207,16 @@ def clean_ilp_network(network):
         trouble_nodes = [node for node in network.nodes() if network.in_degree(node) > 1]
         for node in trouble_nodes:
                 pred = network.predecessors(node)
-                pred = sorted(pred, key=lambda k: network[k][node]['weight'], reverse=True)
-                for anc_node in pred[1:]:
-                        network.remove_edge(anc_node, node)
+                pred = sorted(y, key=lambda k: network[k][node]['weight'], reverse=True)
+                if len(pred) == 2 and (pred[1] in nx.ancestors(network, pred[0]) or pred[0] in nx.ancestors(network, pred[1])):
+			print "CASE 1: X-Y->Z, X->Z"
+			if pred[1] in nx.ancestors(network, pred[0]):
+				network.remove_edge(pred[1], node)
+			else:
+				network.remove_edge(pred[0], node)
+                else:	
+                        print "CASE 2: R->X->Z, R->Y->Z"
+			for anc_node in pred[1:]:
+                        	network.remove_edge(anc_node, node)
+
+
