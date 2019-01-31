@@ -362,25 +362,27 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r 
 	"""
 
 
-	out_stem = ''.join(out_fp.split('.')[:-1])
-
 	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, old_r = old_r, mutation_map=mutation_map)
 
-	if mutation_map is not None:
-		# write prior probability dictionary to pickle for convenience
-		pic.dump(prior_probs, open(out_stem + "_priorprobs.pkl", "wb"))
+    if write:
 
-		# write indel to character state mapping to pickle
-		pic.dump(indel_to_charstate, open(out_stem + "_indel_character_map.pkl", "wb"))
-
-	if write:
-		if out_fp is None:
-			raise Exception("Need to specify an output file if writing to file")
+        out_stem = ''.join(out_fp.split('.')[:-1])
+        if out_fp is None:
+            raise Exception("Need to specify an output file if writing to file")
 
 		write_to_charmat(character_matrix_values, out_fp)
 
 	else:
 		return string_to_cm(character_matrix_values)
+        if mutation_map is not None:
+            # write prior probability dictionary to pickle for convenience
+            pic.dump(prior_probs, open(out_stem + "_priorprobs.pkl", "wb"))
+
+            # write indel to character state mapping to pickle
+            pic.dump(indel_to_charstate, open(out_stem + "_indel_character_map.pkl", "wb"))
+
+    else:
+        return string_to_cm(character_matrix_values), prior_probs, indel_to_charstate
 
 def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
 	"""
