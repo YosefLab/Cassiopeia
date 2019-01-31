@@ -18,6 +18,7 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
     :param time_limit: time limit for the run in seconds
     :return: an optimal subgraph containing the path(s) if the solution is Optimal, else None
     """
+
     start_time = python_time.time()
 
 
@@ -140,6 +141,7 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
 	:param detailed_output: flag which when True will print the edges in the optimal subgraph
 	:return List of most optimal subgraphs discovered while solving for the Gurobi Steiner Tree model
 	"""
+
 	# Recover minimal subgraphs
 	subgraphs = []
 	for i in range(0, model.SolCount):
@@ -170,6 +172,7 @@ def execution_time(start_time, end_time):
 	:param end_time: the end time of execution
 	:return:
 	"""
+
 	execution_delta = datetime.timedelta(seconds=end_time - start_time)
 	return execution_delta.days, execution_delta.seconds // 3600, (execution_delta.seconds // 60) % 60, execution_delta.seconds % 60
 
@@ -177,10 +180,12 @@ def execution_time(start_time, end_time):
 def print_edges_in_graph(graph, edges_per_line=5):
 	"""
 	Given a graph, prints all edges
+
 	:param graph: a directed graph with attribute 'weight' on all edges
 	:param edges_per_line: number of edges to print per line
 	:return:
 	"""
+	
 	edges_string = ''
 	edges_printed_in_line = 0
 

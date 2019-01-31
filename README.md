@@ -1,13 +1,17 @@
 
-Single Cell Lineage Tracing
-===
+Cassiopeia
+============
 
-Single Cell Lineage Tracing 
+This is a software suite for proecessing data from single cell lineage tracing experiments. This suite comes equipped with three main modules:
 
-* Free Software: MIT License
+- **Target Site Sequencing Pipeline**: a pipeline for extracing lineage information from raw fastqs produced from a lineage tracing experiment.
+- **Phylogeny Reconstruction**: a collection of tools for constructing phylogenies. We support 5 algorithms currently: a greedy algorithm based on multi-state compatibility, an exact Steiner-Tree solver, Cassiopeia (the combination of these two), Neighbor-Joining, and Camin-Sokal Maximum Parsimony. 
+- **Benchmarking**: a set of tools for benchmarking; a simulation framework and tree comparsion tools. 
+
+Free Software: MIT License
 
 Installation
------------
+--------------
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/SingleCellLineageTracing.git``
 
@@ -25,36 +29,4 @@ Installation
     * ``python3.6 -m pip install . --user``
     
 To verify that it installed correctly, try using the package in a python session: ``import SingleCellLineageTracing``. Then, to make sure that the command-line tools work, try ``reconstruct-lineage -h`` and confirm that you get the usage details.
-
-Simulation Trees
------------
-
-To simulate trees, use the ``simulate-tree`` command line tool.
-
-Reconstruct Trees
------------------
-
-To reconstruct trees, use the ``reconstruct-lineage`` command line tool.
-
-Post Processing Trees
----------------------
-
-To post process trees, use the ``post-process-tree`` command line tool.
-
-Stress Test
------------
-
-To run a stress test, use the ``stress-test`` command line tool.
-
-Lineage Group Assignments
--------------------------
-
-To run the lineage group caller, use the ``call-lineages`` command line tool.
-
-Filtering Molecule Tables
--------------------------
-
-To run the filter molecule table pipeline, use the ``filter-molecule-table`` command line tool.
-
-
 

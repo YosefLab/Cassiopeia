@@ -127,9 +127,6 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	:return:
 		A graph, which contains a tree which explains the data with minimal parsimony
 	"""
-		#print "Initial Sample Size:", len(set(samples))
-
-	cdef int neighbor_mod
 
 	neighbor_mod = 0
 	prev_network = None

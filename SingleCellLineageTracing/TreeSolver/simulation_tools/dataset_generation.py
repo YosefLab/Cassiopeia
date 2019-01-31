@@ -3,7 +3,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from simulation_utils import node_to_string
+from SingleCellLineageTracing.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
 
 def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1, dropout=True):
 	"""
@@ -11,7 +11,7 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 		- Cells/Samples are treated as a string, with a unique identifier appended to the end of the string,
 		  in the form sample = 0|3|0|12, where len(sample.split('|')) = characters
 		- Each generation, all cells are duplicated, and each character is independently transformed
-      	  with the probabilities of transformation defined in mutation_prob_map
+		  with the probabilities of transformation defined in mutation_prob_map
 		- At the end of this process of duplication, there will be 2 ^ depth samples.
 		- We sample subsample_percentage of the 2 ^ depth samples
 		- On the subsampled population, we simulate dropout on each individual character in each sample
@@ -62,6 +62,38 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 	return network
 
 def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):
+	"""
+	Given the following parameters, this method simulates the cell division and mutations. As with `generate_simulated_full_tree`:
+		- Cells/Samples are treated as a string, with a unique identifier appended to the end of the string,
+		  in the form sample = 0|3|0|12, where len(sample.split('|')) = characters
+		- Each generation, all cells are duplicated, and each character is independently transformed
+		  with the probabilities of transformation defined in mutation_prob_map
+		- At the end of this process of duplication, there will be 2 ^ depth samples.
+		- We sample subsample_percentage of the 2 ^ depth samples
+		- On the subsampled population, we simulate dropout on each individual character in each sample
+		  with probability variable_dropout_prob_map
+		- At every GEN_PER_DISH generations, we also simulate a split and maintain these
+		sample labels for each cell going forwards.
+
+	:param mutation_prob_map:
+		A nested dictionary containing mutation probabilities for [character][state] mappings
+		where characters are in the form of integers, and states are in the form of strings,
+		and values are the probability of mutation from the '0' state.
+		I.e {0:{"0":0.975, "1":0.25},....}
+	:param variable_dropout_prob_map:
+		A dictionary containing dropout probabilities for each individual character
+		I.e {0: 0.05, 1: 0.01, 2: 0.2,...}
+	:param characters:
+		The number of characters to simulate
+	:param gen_per_dish:
+		The number of generations between splits.
+	:param num_splits:
+		The number of splits to simulate. Depth is simply num_splits * gen_per_dish.
+	:param subsample_percentage:
+		Percentage of population to subsample after the final generation
+	:return:
+		A networkx tree of samples
+	"""
 
 	network = nx.DiGraph()
 	current_depth = [[['0' for _ in range(0, characters)], "0"]]
@@ -70,7 +102,7 @@ def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_
 	uniq = 1
 
 
-    #simulate two splits total
+	#simulate two splits total
 	total_depth = (num_splits + 1) * gen_per_dish
 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
 		temp_current_depth = []
@@ -94,7 +126,7 @@ def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_
 
 				uniq += 1
 
-	        current_depth = temp_current_depth
+			current_depth = temp_current_depth
 
 	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
 

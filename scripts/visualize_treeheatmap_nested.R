@@ -3,6 +3,7 @@ require(RColorBrewer)
 require(ggplot2)
 require(reshape2)
 require(plotrix)
+require(oce)
 
 args = commandArgs(trailingOnly = T)
 tree.fp = args[[1]]
@@ -39,6 +40,7 @@ get_unique_indels <- function(X.fp, tree) {
     rn = rownames(X)
 
     X = X[tree$tip.label,]
+    X[which(nchar(X) == 0)] = "missing"
 
     unique_alleles = unique(as.character(X))
 
@@ -63,6 +65,7 @@ X1.out = get_unique_indels(X.fp1, tree1)
 X2.out = get_unique_indels(X.fp2, tree2)
 X3.out = get_unique_indels(X.fp3, tree3)
 
+
 unique_alleles = unique(c(X1.out[[2]], X2.out[[2]], X3.out[[2]]))
 allele_map = 1:length(unique_alleles)
 names(allele_map) <- unique_alleles
@@ -86,7 +89,7 @@ random_color <- function(rgb) {
 # randomly assign colors
 heatmap.cbpalette = sapply(names(allele_map), function(a) {
   x = as.character(a)
-  if (nchar(x) == 0) {
+  if (x == "missing") {
     return("#FFFFFF")
   } else if (x == "NC") { 
     return("#000000")  
@@ -94,41 +97,39 @@ heatmap.cbpalette = sapply(names(allele_map), function(a) {
     return(rgb(0.75, 0.75, 0.75, maxColorValue=1))
   }
   
-  #if (grepl("I", x)) {
-  #  rgb_i = color_list[["red"]]
-  #} else if (grepl("D", x)) {
-  #  rgb_i = color_list[["blue"]]
-  #}
+  if (grepl("I", x)) {
+    rgb_i = color_list[["red"]]
+  } else if (grepl("D", x)) {
+    rgb_i = color_list[["blue"]]
+  }
   rgb_i = color_list[[sample(names(color_list), 1)]]
   return(random_color(rgb_i))
 })
 
-#names(heatmap.cbpalette) <- as.integer(factor(unique_alleles))
 names(heatmap.cbpalette) <- allele_map
-sorted_names = sort(sapply(names(heatmap.cbpalette), as.integer))
-heatmap.cbpalette <- heatmap.cbpalette[as.character(sorted_names)]
-
-message("creating color scheme...")
-#allele_cols = colorRampPalette(brewer.pal(11, "Paired"))(max(nalleles))
-#allele_cols = sample(allele_cols, length(allele_cols))
-
-#heatmap.cbpalette = c("#C0C0C0", allele_cols)
-
-names(heatmap.cbpalette) <- sapply(names(heatmap.cbpalette), as.numeric)
-
-print(heatmap.cbpalette)
-print(allele_map[1:10])
+unique_x1 = unique(c(X1.sub))
+unique_x2 = unique(c(X2.sub))
+unique_x3 = unique(c(X3.sub))
+ii1 = intersect(names(heatmap.cbpalette), unique_x1)
+ii2 = intersect(names(heatmap.cbpalette), unique_x2)
+ii3 = intersect(names(heatmap.cbpalette), unique_x3)
+heatmap1 = heatmap.cbpalette[ii1]
+heatmap2 = heatmap.cbpalette[ii2]
+heatmap3 = heatmap.cbpalette[ii3]
 
 # now plot
 message("plotting...")
 X.subs = list(X1.sub, X2.sub, X3.sub)
 trees = list(tree1, tree2, tree3)
 outs = list(out1, out2, out3)
+heatmaps = list(heatmap1, heatmap2, heatmap3)
+
 for (i in 1:3) { 
-    sorted_names = sort(sapply(names(heatmap.cbpalette), as.integer))
-    heatmap.cbpalette <- heatmap.cbpalette[as.character(sorted_names)]
     pdf(outs[[i]], height = 7, width = 7, compress=F)
-    phylo.heatmap(trees[[i]], X.subs[[i]], labels=F, legend = F, ftype="off", colors=heatmap.cbpalette, new=T)
+    lims = 0:(length(heatmaps[[i]]))
+    X.sub = X.subs[[i]]
+    X.sub = apply(X.sub, c(1,2), function(x) x-0.1)
+    phylo.heatmap(trees[[i]], X.sub, labels=F, legend = F, fsize=0.1, col=heatmaps[[i]], new=T)
     dev.off()
 }
 

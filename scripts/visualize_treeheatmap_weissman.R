@@ -22,6 +22,8 @@ color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nti
 }
 
 tree = read.newick(tree.fp)
+rii = which(duplicated(tree$tip.label))
+tree = drop.tip(tree, rii)
 print(paste0("Number of samples: ", length(tree$tip.label)))
 tree$edge.length = rep(1, length(tree$edge))
 
@@ -40,21 +42,23 @@ rn = rownames(X)
 all.X <- X
 
 X = X[tree$tip.label, ]
+unique_alleles = unique(as.character(X))
 
 emptylocs = sapply(as.vector(X), function(x) nchar(x) == 0)
 nonelocs = sapply(as.vector(X), function(x) grepl("None", x))
 #X2 = t(apply(X, 1, function(x) mapply(paste0, x, intbc)))
 
-X = apply(X, 2, function(x) as.numeric(factor(x, levels=unique(x))))
-X2 = as.numeric(factor(X), levels=unique(X))
+#X = apply(X, 2, function(x) as.numeric(factor(x, levels=unique(x))))
+#X2 = as.numeric(factor(X), levels=unique(X))
 nalleles = length(unique(X))
-unique_alleles = unique(X)
+#unique_alleles = unique(X)
 #X[X == 0] = NA
 #X[X == "-"] = -1
-X2[emptylocs] = NA
-X2[nonelocs] = -1
-X.sub = matrix(X2, nrow(X), ncol(X))
-rownames(X.sub) <- tree$tip.label
+#X2[emptylocs] = NA
+#X2[nonelocs] = -1
+#X.sub = matrix(X2, nrow(X), ncol(X))
+X.sub = X
+#rownames(X.sub) <- tree$tip.label
 
 
 message("creating color scheme...")
@@ -92,11 +96,12 @@ heatmap.cbpalette = sapply(unique_alleles, function(a) {
   return(random_color(rgb_i))
 })
 
+indel_to_num = sapply(unique_alleles, function(x) as.numeric(factor(x, levels=unique_alleles)))
+X.sub = apply(X.sub, c(1,2), function(x) indel_to_num[[factor(x, levels=unique_alleles)]])
 
-names(heatmap.cbpalette) <- sapply(names(heatmap.cbpalette), as.numeric)
 
-
-sample.cbpalette = colorRampPalette(brewer.pal(9, "Set1"))(length(unique(meta)))
+#sample.cbpalette = colorRampPalette(brewer.pal(12, "Set3"))(length(unique(meta)))
+sample.cbpalette = c("red", "blue", "yellow")
 names(sample.cbpalette) = rev(sapply(unique(meta), as.character))
 
 #sample.cbpalette = c("#ED1C24", "#FCEE21", "#green", "#blue")
