@@ -12,7 +12,7 @@ import argparse
 
 import networkx as nx
 from collections import defaultdict
-from pylab import *
+import pylab
 
 from SingleCellLineageTracing.TreeSolver import convert_network_to_newick_format
 import SingleCellLineageTracing.TreeSolver.lineage_solver as ls

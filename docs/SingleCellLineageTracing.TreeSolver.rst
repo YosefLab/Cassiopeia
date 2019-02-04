@@ -36,6 +36,14 @@ __________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
+Post-Processing Trees
+_______________________
+
+.. automodule:: SingleCellLineageTracing.TreeSolver.post_process_tree
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Benchmarking module
 ---------------------------------------------------------------
 
@@ -61,6 +69,12 @@ _______________________________________________________________________
   :undoc-members:
   :show-inheritance:
 
+Meta Analysis
+_______________
+.. automodule:: SingleCellLineageTracing.TreeSolver.compute_meta_purity
+  :members:
+  :undoc-members:
+  :show-inheritance:
 
 Processing Allele Tables & Character Matrices
 --------------------------------------------------
