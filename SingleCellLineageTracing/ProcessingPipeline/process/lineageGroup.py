@@ -783,7 +783,7 @@ def main():
     at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=int(cell_umi_filter), verbose=verbose)
 
     print(">>> MERGING SIMILAR LINEAGE GROUPS...")
-    at = merge_lineage_groups(at, outputdir, thresh=0.5)
+    #at = merge_lineage_groups(at, outputdir, thresh=0.5)
 
     if detect_doublets:
         prop = doublet_thresh
@@ -801,23 +801,23 @@ def main():
         for key in LG2cellCount.keys():
            f.write("Lineage Group " + str(key) + ": " + str(LG2cellCount[key]) + " cellBCs\n")
 
-    print(">>> PERFOROMING FINAL CLUSTERING...")
-    at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
+    #print(">>> PERFOROMING FINAL CLUSTERING...")
+    #at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
 
-    at_pivot_I = at_pivot
-    at_pivot_I[at_pivot_I > 0] = 1
-    at_pivot_I.fillna(value=0)
+    #at_pivot_I = at_pivot
+    #at_pivot_I[at_pivot_I > 0] = 1
+    #at_pivot_I.fillna(value=0)
 
-    oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
+    #oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
 
-    dm = analyze_overlap(oMat, outputdir)
+    #dm = analyze_overlap(oMat, outputdir)
 
-    xlink = sp.cluster.hierarchy.linkage(dm, method="average")
+    #xlink = sp.cluster.hierarchy.linkage(dm, method="average")
 
-    c, coph_dists = sp.cluster.hierarchy.cophenet(xlink, dm)
+    #c, coph_dists = sp.cluster.hierarchy.cophenet(xlink, dm)
 
-    ds = sp.spatial.distance.squareform(dm)
-    clusters = cluster_with_dtcut(ds, xlink, minClusterSize=0.005 * at_pivot.shape[0])
+    #ds = sp.spatial.distance.squareform(dm)
+    #clusters = cluster_with_dtcut(ds, xlink, minClusterSize=0.005 * at_pivot.shape[0])
 
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write("\nFinal Lineage Group stats:")

@@ -1,10 +1,10 @@
 SingleCellLineageTracing.TreeSolver package
 ============================================
 
-lineage_solver module
+Lineage Solver module
 ----------------------------------------------------------
 
-lineage_solver.lineage_solver
+Lineage Solving Entry Points
 __________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.lineage_solver.lineage_solver
@@ -12,7 +12,7 @@ __________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
-lineage_solver.greedy_solver
+Greedy Solver
 __________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.lineage_solver.greedy_solver
@@ -20,7 +20,7 @@ __________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
-lineage_solver.ILP_solver
+ILP Solver
 __________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.lineage_solver.ILP_solver
@@ -28,7 +28,7 @@ __________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
-lineage_solver.solver_utils
+Solver Utilities
 __________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.lineage_solver.solver_utils
@@ -36,10 +36,10 @@ __________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
-simulation_tools module
+Benchmarking module
 ---------------------------------------------------------------
 
-SingleCellLineageTracing.TreeSolver.simulation_tools.dataset_generation
+Dataset Generation
 __________________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.simulation_tools.dataset_generation
@@ -47,14 +47,14 @@ __________________________________________________________________________
     :undoc-members:
     :show-inheritance:
 
-simulation_tools.validation
+Validation
 ________________________________________________________________
 .. automodule:: SingleCellLineageTracing.TreeSolver.simulation_tools.validation
    :members:
    :undoc-members:
    :show-inheritance:
 
-simulation_tools.simulation_utils
+Simulation Utilities
 _______________________________________________________________________
 .. automodule:: SingleCellLineageTracing.TreeSolver.simulation_tools.simulation_utils
   :members:
@@ -62,7 +62,7 @@ _______________________________________________________________________
   :show-inheritance:
 
 
-data_pipeline
+Processing Allele Tables & Character Matrices
 --------------------------------------------------
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.data_pipeline

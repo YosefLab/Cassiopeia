@@ -27,32 +27,73 @@ HIGH_Q = 31
 LOW_Q = 10
 N_Q = 2
 
-def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_distance = 2, n_threads = 1, show_progress=True, force_sort=False):
+def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_distance = 2, n_threads = 1, show_progress=True, force_sort=True):
+    """
+    Collapses UMIs together from a bam file. On a basic level, it aggregates together identical reads to count how many times a UMI was read.
+    Also, it performs basic error correction, allowing UMIs to be collapsed together which differ by at most a certain number of high quality 
+    mismatches and indels in the sequence read itself. Writes out a dataframe of the collapsed UMIs table.
 
-        base_dir = Path(base_dir)
-        sorted_fn = (base_dir / fn).with_suffix('.sorted.bam')
+    :param base_dir:
+        Base directory in which to look for a bam file. This will also be where the collapsed matrix is written to.
+    :param fn:
+        File name of the bam file -- just the name, not the entire file path.
+    :param max_hq_mismatches:
+        Maximum number of high quality mismatches allowed between two seqeunces to be collapsed.
+    :param max_indels:
+        Maximum number of indels allowed between two sequences to be collapsed.
+    :param n_threads:
+        Number of threads used. Currently only supports single threaded use.
+    :param show_progress:
+        Allow progress bar to be shown.
+    :param force_sort:
+        Sort the initial bam directory. 
+    :return:
+        None; output table is written to file.
+    """
 
-        sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
-        filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 
-        if force_sort or not sorted_fn.exists():
-            sorted_fn = '.'.join(fn.split(".")[:-1]) + "_sorted.bam"
-            collapse.sort_cellranger_bam(fn, sorted_fn, sort_key, filter_func, show_progress=show_progress)
+    base_dir = Path(base_dir)
+    sorted_fn = (base_dir / fn).with_suffix('.sorted.bam')
 
-        collapsed_fn = (base_dir / fn).with_suffix(".collapsed.bam")
-        if not collapsed_fn.exists():
-            collapse.form_collapsed_clusters(sorted_fn,
-                                max_hq_mismatches,
-                                max_indels,
-                                max_UMI_distance,
-                                show_progress=show_progress
-                               )
-        
-        collapsed_df_fn = (base_dir / fn).with_suffix(".collapsed.txt")
-        collapseBam2DF(str(collapsed_fn), str(collapsed_df_fn)) 
+    sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
+    filter_func = lambda al: al.has_tag(CELL_BC_TAG)
+
+    if force_sort or not sorted_fn.exists():
+        sorted_fn = '.'.join(fn.split(".")[:-1]) + "_sorted.bam"
+        collapse.sort_cellranger_bam(fn, sorted_fn, sort_key, filter_func, show_progress=show_progress)
+
+    collapsed_fn = (base_dir / fn).with_suffix(".collapsed.bam")
+    if not collapsed_fn.exists():
+        collapse.form_collapsed_clusters(sorted_fn,
+                            max_hq_mismatches,
+                            max_indels,
+                            max_UMI_distance,
+                            show_progress=show_progress
+                           )
+    
+    collapsed_df_fn = (base_dir / fn).with_suffix(".collapsed.txt")
+    collapseBam2DF(str(collapsed_fn), str(collapsed_df_fn)) 
 
 
 def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=True):
+    """
+    Error correct UMIs together within equivalence classes, as defined as the same cellBC-intBC pair. UMIs whose identifier 
+    is within the maximum UMI distance are corrected towards whichever UMI is more abundant. 
+
+    :param input_fn:
+        Input file name.
+    :param _id:
+        Identification of sample.
+    :param log_file:
+        Filepath for logging error correction information.
+    :param max_UMI_distance:
+        Maximum UMI distance allowed for error correction.
+    :param show_progress:
+        Allow a progress bar to be shown.
+    :return:
+        None; a table of error corrected UMIs is written to file.
+
+    """
 
     sort_key = lambda al: (al.get_tag(LOC_TAG), -1*int(al.query_name.split("_")[-1]))
     
@@ -76,6 +117,16 @@ def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=
 
 
 def collapseBam2DF(data_fp, out_fp):
+    """
+    Collapses a BAM file to a Dataframe. 
+
+    :param data_fp:
+        BAM file input.
+    :param out_fp:
+        Filepath for output DataFrame.
+    :return:
+        None.
+    """
 
     perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseBam2dataFrame.pl')
 
@@ -85,6 +136,16 @@ def collapseBam2DF(data_fp, out_fp):
 
 
 def collapseDF2Fastq(data_fp, out_fp):
+    """
+    Collapses a DataFrame to a FASTQ file.
+
+    :param data_fp:
+        Dataframe input file.
+    :param out_fp:
+        Filepath for output FASTQ file.
+    :return:
+        None.
+    """
 
     perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseDF2fastq.pl')
     cmd = "perl " + str(perl_script) + " " + data_fp + " " + out_fp
@@ -92,6 +153,27 @@ def collapseDF2Fastq(data_fp, out_fp):
     p = subprocess.check_output(cmd, shell=True)
 
 def align_sequences(ref, queries, outfile, gapopen=20, gapextend=1, ref_format="fasta", query_format="fastq", out_format="sam"):
+    """
+    Aligns many queries to a single reference sequence using EMBOSS water. By default, we assume the reference is in FASTA format, the queries 
+    are all in FASTQ format, and that the output format will be a SAM file. The output file is automatically written.
+
+    :param ref:
+        File path to the reference sequence.
+    :param queries:
+        Queries, provided as a dataframe output from the `pickSeq` function. This will automatically be converted to a FASTQ file.
+    :param gapopen:
+        Gap open penalty.
+    :param gapextend:
+        Gap extension penalty.
+    :param ref_format:
+        Format of reference sequence.
+    :param query_format:
+        Format of query seqeunces.
+    :param out_format:
+        Output file format.
+    :return:
+        None. 
+    """
 
     queries_fastq = str(Path(queries).with_suffix(".fastq"))
     collapseDF2Fastq(queries, queries_fastq)  
@@ -108,6 +190,20 @@ def align_sequences(ref, queries, outfile, gapopen=20, gapextend=1, ref_format="
         f.write(SAM_HEADER_PCT48 + "\n" + content)
 
 def call_indels(alignments, ref, output, context=True):
+    """
+    Given many alignments, we extract the indels by comparing the CIGAR strings in the alignments to the reference sequence. 
+
+    :param alignments:
+        Alignments provided in SAM or BAM format.
+    :param ref:
+        File path to the reference seqeunce, assumed to be a FASTA.
+    :param output:
+        Output file path.
+    :param context:
+        Include sequence context around indels.
+    :return:
+        None
+    """
 
     perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'callAlleles-PCT48.pl')
     cmd = "perl " + str(perl_script) + " " + alignments + " " + ref + " " + output
@@ -123,7 +219,17 @@ def call_indels(alignments, ref, output, context=True):
 
     convert_sam_to_bam(output, bam_file) 
 
-def append_sample_id(data_fp, out_fp, sampleID):
+def append_sample_id(data_fp, sampleID):
+    """
+    Append sample IDs to the cellBCs of a given molecule table. 
+
+    :param data_fp:
+        DataFrame file path.
+    :param sampleID:
+        Sample ID to be appended to the cellBCs.
+    :return:
+        New molecule table Dataframe with modified cellBCs.
+    """
     
     data = pd.read_csv(data_fp, sep='\t')
 
@@ -131,13 +237,33 @@ def append_sample_id(data_fp, out_fp, sampleID):
 
     return data
 
-def convert_sam_to_bam(sam_input, bam_input):
+def convert_sam_to_bam(sam_input, bam_output):
+    """
+    Converts a SAM file to BAM file.
 
-    cmd = "samtools view -S -b " + sam_input + " > " + bam_input
+    :param sam_input:
+        Sam input file 
+    :param bam_output:
+        File path to write the bam output.
+    :return:
+        None.
+    """
+
+    cmd = "samtools view -S -b " + sam_input + " > " + bam_output
 
     os.system(cmd)
 
 def convert_bam_to_moleculeTable(bam_input, mt_out):
+    """
+    Converts a BAM file to a molecule table Dataframe.
+
+    :param bam_input:
+        BAM input file 
+    :param mt_out:
+        File path to write the molecule table.
+    :return:
+        None.
+    """
 
     perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'processBam2MT.pl')
     cmd = "perl " + str(perl_script) + " " + str(bam_input) + " " + str(mt_out) 
@@ -145,7 +271,41 @@ def convert_bam_to_moleculeTable(bam_input, mt_out):
     p = subprocess.Popen(cmd, shell=True)
     pid, ecode = os.waitpid(p.pid, 0)
 
-def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, intbc_prop_thresh=0.5, intbc_umi_thresh=10, intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True, doublet_threshold=0.35):
+def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_thresh = None, intbc_prop_thresh=0.5, intbc_umi_thresh=10, 
+                intbc_dist_thresh=1, verbose=False, ec_intbc = False, detect_intra_doublets=True, doublet_threshold=0.35):
+    """
+    Wrapper function for interacting with the `Filter Molecule Table` module. Takes in a molecule table file path and performs cellBC filtering, 
+    UMI filtering, intBC filtering, intBC error correction, and intra doublet detection.
+
+    :param mt:
+        File path to molecule table to be filtered.
+    :param out_fp:
+        Output file name. This will be written to `outputdir`.
+    :param outputdir:
+        Directory to output all logs and files.
+    :param cell_umi_thresh:
+        Cell UMI Threshold for filtering.
+    :param umi_read_thresh:
+        UMI read threshold for filtering.
+    :param intbc_prop_thresh:
+        A minimum proportion of reads required for the more abundant intBC during intBC error correction. If the proportion is not met, then 
+        error correction is not performed.
+    :param intbc_umi_thresh:
+        A minimum number of UMIs that need to be observed for the m ore abundant intBC during intBC error correction.
+    :param intbc_dist_thresh:
+        A hamming distance threshold for considering intBCs to be error corrected.
+    :param verbose:
+        Verbose output, consisting of output to log files.
+    :param ec_intbc:
+        Error correct integration barcodes.
+    :param detect_intra_doublets:
+        Perform intra doublet detection.
+    :param doublet_threshold:
+        Threshold to be used during intra doublet detection.
+    :return:
+        None. A filtered molecule table is written to file.
+    """
+
 
     args = ["filter-molecule-table", mt, out_fp, outputdir,  "--cell_umi_thresh", str(cell_umi_thresh), "--intbc_prop_thresh", str(intbc_prop_thresh), "--intbc_umi_thresh", str(intbc_umi_thresh), "--intbc_dist_thresh", str(intbc_dist_thresh)]
 
@@ -162,7 +322,39 @@ def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_
 
     subprocess.check_output(args)
 
-def call_lineage_groups(mt, out_fp, outputdir, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, no_filter_intbcs=False, verbose=False, cell_umi_filter=10, filter_intbc_thresh = 0.001):
+def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, 
+            no_filter_intbcs=False, filter_intbc_thresh = 0.001, verbose=False):
+    """
+    Wrapper function for interacting with the `Lineage Group` module. Takes in a filtered molecule table and preforms lineage group calling, 
+    inter doublet detection, intBC filtering, and a final round of cellBC filtering. 
+
+    :param mt:
+        File path to the filtered molecule table.
+    :param out_fp:
+        Output file name. This will be written to `outputdir`.
+    :param outputdir:
+        Directory to output all logs and files.
+    :param cell_umi_thresh:
+        Cell UMI Threshold for filtering.
+    :param min_cluster_prop:
+        Lower bound of lineage group size, as defined as a proportion of the total number of cells.
+    :param min_intbc_thresh:
+        Filtering criteria for intBC at the lineage group level -- the minimum proportion of cells that must have an intBC for the intBC to be
+        considered legitimate.
+    :param detect_doublets_inter:
+        Perform inter doublet detection.
+    :param doublet_threshold:
+        Threshold to be used during inter doublet detection.
+    :param no_filter_intbcs:
+        Do not filter intBCS before calling lineage groups.
+    :param filter_intbc_thresh:
+        Filtering criteria for intBC before calling lineage groups -- the minimum number of cells overall that contain that intBC in order
+        for it to be used during lineage group calling.
+    :param verobse:
+        Allow output to log files.
+    :return:
+        None. An alleletable is written to file.
+    """
 
     args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter), "--filter_intbc_thresh", str(filter_intbc_thresh)]
 
@@ -180,9 +372,18 @@ def call_lineage_groups(mt, out_fp, outputdir, min_cluster_prop=0.005, min_intbc
 
 
 
-def filterCellBCs(data, outputdir, umi_per_cellBC_thresh, avg_reads_per_UMI_thresh, verbose=True):
+def filterCellBCs(data, umi_per_cellBC_thresh, avg_reads_per_UMI_thresh):
     """
     Filter out cell barcodes that have too few UMIs or too few reads/UMI
+
+    :param data:
+        Molecule table
+    :param umi_per_cellBC_thresh:
+        Minimum number of UMIs per cellBC allowed.
+    :param avg_reads_per_UMI_thresh:
+        Minimum average number of reads per UMI allowed. 
+    :return:
+        A filtered dataset and a stat dictionary storing how many cells/UMIs were filtered/kept.
     """
 
     tooFewUMI_UMI = []
@@ -219,10 +420,17 @@ def filterCellBCs(data, outputdir, umi_per_cellBC_thresh, avg_reads_per_UMI_thre
 
     return n_data, stat_dict
 
-def resolveSequences(moleculetable, outputdir, verbose=True):
+def resolveSequences(moleculetable, outputdir):
     """
     Pick most abundant sequence from a set of equivalent reads (i.e. same cellBC and UMI)
     Output a single sequence per unique cellBC-UMI pair
+
+    :param moleculetable:
+        Moleculetable relating cellBCs to UMIs and reads.
+    :param outputdir:
+        Output directory to store plots and logs.
+    :return:
+        A molecule table with unique mappings between cellBC-UMI pairs and sequences.
     """
 
     mt_filter = {}
@@ -276,15 +484,25 @@ def resolveSequences(moleculetable, outputdir, verbose=True):
 
     return n_moleculetable
 
-def changeCellBCID(alleleTableIN, sampleID, alleleTableOUT):
+def pickSeq(moltable, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI_thresh = 2.0, save_output=False): 
+    """
+    Procedure for filtering out UMIs and cellBCs and then resolving sequences with the `resolveSequences` function.
 
-    data = pd.read_csv(alleleTableIN, sep='\t')
-
-    data['cellBC'] = data.apply(lambda x: x.cellBC + "-" + sampleID, axis=1)
-
-    data.to_csv(alleleTableOUT, sep='\t')
-
-def pickSeq(moltable, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI_thresh = 2.0, verbose=True, save_output=False): 
+    :param moltable:
+        Moleculetable relating cellBCs to UMIs and reads.
+    :param out_fp:
+        Output file name.
+    :param outputdir:
+        Output directory for logs, new molecule tables, and plots.
+    :param avg_reads_per_UMI_thresh:
+        Minimum average number of reads per UMI allowed. 
+    :param cell_umi_thresh:
+        Minimum number of UMIs per cell allowed.
+    :param save_output:
+        Write new molecule table to file.
+    :return:
+        A molecule table with unique mappings between cellBC-UMI pairs and sequences if save_output is false. Else None.
+    """
 
     # Log time
     t0 = time.time()

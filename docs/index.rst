@@ -19,6 +19,7 @@ Cassiopeia!
    :caption: Package Reference
 
    SingleCellLineageTracing.TreeSolver
+   SingleCellLineageTracing.ProcessingPipeline
 
 
 

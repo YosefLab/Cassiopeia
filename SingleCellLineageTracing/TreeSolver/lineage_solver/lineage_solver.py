@@ -207,20 +207,33 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	return subgraph, r_name, pid
 
 def clean_ilp_network(network):
-        for u, v in network.edges():
-                if u == v:
-                        network.remove_edge(u,v)
-        trouble_nodes = [node for node in network.nodes() if network.in_degree(node) > 1]
-        for node in trouble_nodes:
-                pred = network.predecessors(node)
-                pred = sorted(y, key=lambda k: network[k][node]['weight'], reverse=True)
-                if len(pred) == 2 and (pred[1] in nx.ancestors(network, pred[0]) or pred[0] in nx.ancestors(network, pred[1])):
-			print "CASE 1: X-Y->Z, X->Z"
+	"""
+	Post-processes networks after an ILP run. At times the ILP will return Steiner Trees which are not necessarily 
+	tres (specifically, a node may have more than one parent). To get around this we remove these spurious edges so
+	that the trees returned are truly trees. CAUTION: this will modify the network in place. 
+
+	:param network: 
+		Network returned from an ILP run.
+	:return:
+		None. 
+
+	"""
+
+
+	for u, v in network.edges():
+		if u == v:
+			network.remove_edge(u,v)
+	trouble_nodes = [node for node in network.nodes() if network.in_degree(node) > 1]
+	for node in trouble_nodes:
+		pred = network.predecessors(node)
+		pred = sorted(y, key=lambda k: network[k][node]['weight'], reverse=True)
+		if len(pred) == 2 and (pred[1] in nx.ancestors(network, pred[0]) or pred[0] in nx.ancestors(network, pred[1])):
+			print("CASE 1: X-Y->Z, X->Z")
 			if pred[1] in nx.ancestors(network, pred[0]):
 				network.remove_edge(pred[1], node)
 			else:
 				network.remove_edge(pred[0], node)
-                else:	
-                        print "CASE 2: R->X->Z, R->Y->Z"
+		else:	
+			print("CASE 2: R->X->Z, R->Y->Z")
 			for anc_node in pred[1:]:
-                        	network.remove_edge(anc_node, node)
+				network.remove_edge(anc_node, node)

@@ -70,7 +70,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "flasky"
+#pygments_style = "flasky"
 
 mathjax_config = {
     'extensions': ['tex2jax.js'],
