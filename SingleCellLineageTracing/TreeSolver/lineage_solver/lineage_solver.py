@@ -207,6 +207,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	return subgraph, r_name, pid
 
 def clean_ilp_network(network):
+<<<<<<< HEAD
 	"""
 	Post-processes networks after an ILP run. At times the ILP will return Steiner Trees which are not necessarily 
 	tres (specifically, a node may have more than one parent). To get around this we remove these spurious edges so
