@@ -40,7 +40,7 @@ Post-Processing Trees
 _______________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.post_process_tree
-    :members:
+    :members: prune_and_clean_leaves, assign_samples_to_charstrings, add_redundant_leaves, post_process_tree
     :undoc-members:
     :show-inheritance:
 
@@ -51,7 +51,7 @@ Dataset Generation
 __________________________________________________________________________
 
 .. automodule:: SingleCellLineageTracing.TreeSolver.simulation_tools.dataset_generation
-    :members:
+    :members: 
     :undoc-members:
     :show-inheritance:
 
@@ -72,7 +72,7 @@ _______________________________________________________________________
 Meta Analysis
 _______________
 .. automodule:: SingleCellLineageTracing.TreeSolver.compute_meta_purity
-  :members:
+  :members: get_max_depth, extend_dummy_branches, set_progeny_size, get_progeny_size, get_children_of_clade, get_meta_counts, set_depth, cut_tree, calc_entropy, sample_chisq_test, compute_mean_membership, assign_meta, nearest_neighbor_dist,  
   :undoc-members:
   :show-inheritance:
 

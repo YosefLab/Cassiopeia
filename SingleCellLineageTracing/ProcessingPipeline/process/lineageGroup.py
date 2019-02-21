@@ -21,6 +21,9 @@ import argparse
 sys.setrecursionlimit(10000)
 from . import lineageGroup_utils as lg_utils
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 # NOTE: NEED PANDAS >= 0.22.0
 
 def create_output_dir(outputdir = None):
@@ -46,7 +49,91 @@ def create_output_dir(outputdir = None):
 
     return outputdir
 
+def findTopLG(PIVOT_in, iteration, outputdir):
 
+    # calculate sum of observed intBCs, identify top intBC
+    intBC_sums = PIVOT_in.sum(0).sort_values(ascending=False)
+    ordered_intBCs = intBC_sums.index.tolist()
+    intBC_top = intBC_sums.index[0]
+
+
+    # take subset of PIVOT table that contain cells that have the top intBC
+    subPIVOT_in = PIVOT_in[PIVOT_in[intBC_top]>0]
+    subPIVOT_in_sums = subPIVOT_in.sum(0)
+    ordered_intBCs2 = subPIVOT_in_sums.sort_values(ascending=False).index.tolist()
+    subPIVOT_in = subPIVOT_in[ordered_intBCs2]
+    
+    # binarize
+    subPIVOT_in[subPIVOT_in>0]=1
+
+
+    # Define intBC set
+    subPIVOT_in_sums2 = subPIVOT_in.sum(0)
+    total = subPIVOT_in_sums2[intBC_top]
+    intBC_sums_filt = subPIVOT_in_sums2[subPIVOT_in_sums2>=0.20*total]
+    
+    # Reduce PIV to only intBCs considered in set
+    intBC_set = intBC_sums_filt.index.tolist()
+    PIV_set = PIVOT_in.iloc[:,PIVOT_in.columns.isin(intBC_set)]
+
+    # Calculate fraction of UMIs within intBC_set ("kinship") for each cell in PIV_set
+    f_inset = PIV_set.sum(axis=1)
+
+    # define set of cells with good kinship
+    f_inset_filt = f_inset[f_inset>=0.25]
+    LG_cells = f_inset_filt.index.tolist()
+
+    # Return updated PIV with LG_cells removed
+    PIV_noLG = PIVOT_in.iloc[~PIVOT_in.index.isin(LG_cells),:]
+
+    # Return PIV with LG_cells assigned
+    PIV_LG = PIVOT_in.iloc[PIVOT_in.index.isin(LG_cells),:]
+    PIV_LG["lineageGrp"]= iteration+1
+    
+    with open(outputdir + "/lglog.txt", "a") as f:
+        # print statements
+        f.write("LG"+str(iteration+1)+" Assignment: " + str(PIV_LG.shape[0]) +  " cells assigned\n")
+    
+    # Plot distribution of kinship scores
+    h4 = plt.figure(figsize=(15,10))
+    ax4 = plt.hist(f_inset, bins=49, alpha=0.5, histtype='step')
+    yax4 = plt.yscale('log', basey=10)
+    plt.savefig(outputdir + "/kinship_scores.png")
+ 
+    return PIV_LG, PIV_noLG, intBC_set
+
+def iterative_lg_assign(pivot_in, min_clust_size, outputdir):
+    ## Run LG Assign function
+
+    # initiate output variables
+    PIV_assigned = pd.DataFrame()
+    master_intBC_list = []
+
+    # Loop for iteratively assigning LGs
+    prev_clust_size = np.inf
+
+    i = 0
+    while prev_clust_size > min_clust_size:
+        # run function
+        PIV_outs = findTopLG(pivot_in, i, outputdir)
+        
+        # parse returned objects
+        PIV_LG = PIV_outs[0]
+        PIV_noLG = PIV_outs[1]
+        intBC_set_i = PIV_outs[2]
+        
+        # append returned objects to output variables
+        PIV_assigned = PIV_assigned.append(PIV_LG)
+        master_intBC_list.append(intBC_set_i)
+        
+        # update PIVOT-in
+        pivot_in = PIV_noLG
+
+        prev_clust_size = PIV_LG.shape[0]
+
+        i += 1
+
+    return PIV_assigned, master_intBC_list
 
 def get_lg_group(df, piv, curr_LG):
 
@@ -131,125 +218,8 @@ def rand_cmap(nlabels, type='bright', first_color_black=True, last_color_black=F
 
     return random_colormap
 
-def analyze_overlap(oMat, outputdir):
-    """
-    Function to analyze overlap and produce basic QC information for downstream analysis.
-    :param oMat: overlap matrix
-    :param outputdir: file path to output directory
-    :return: Dissimilarity Matrix
-    """
 
-    dm = 1 - oMat
-
-    # remove old plots
-    plt.close()
-
-    h = plt.figure(figsize=(10, 5))
-    ax = plt.subplot(1, 2, 1)
-    x1 = plt.hist(oMat)
-    ax2 = plt.title("overlap mat")
-    ax = plt.subplot(1, 2, 2)
-    x1 = plt.hist(dm)
-    ax3 = plt.title("distance mat")
-
-    plt.savefig(outputdir + "/overlap_hist.png")
-
-
-    return dm
-
-
-def plot_heatmap(dm, xlink, ind1, outputdir, outSizeLen, outSizeHeight, maxD=1):
-    """
-    Function to produce the clustered heatmap. Taken from Michelle Chan's singleClusterAndPlotX function.
-
-    :param dm:
-    :param xlink:
-    :param ind1:
-    :param outSizeLen:
-    :param outSizeHeight:
-    :param maxD:
-    :return:
-    """
-
-    # remove old plots
-    plt.close()
-
-    fClustThresh = 0.5
-    h = plt.figure(1, figsize=(18,10))
-    color_bar_w = 0.015
-    cmap = "RdBu"
-
-    # ax1, placement of dendrogram 1
-    [ax1_x, ax1_y, ax1_w, ax1_h] = [0.05, 0.22, 0.2, 0.6]
-    width_btn_ax1_axr = 0.004
-    height_btn_ax1_axc = 0.004 # dst btn top color bar and mat
-
-    # axr, placement of row side colorbar
-    [axr_x, axr_y, axr_w, axr_h] = [0.31, 0.22, color_bar_w, 0.6]
-    axr_x = ax1_x + ax1_w + width_btn_ax1_axr
-    axc_y = ax1_y
-    axc_h = ax1_h
-    width_btn_axr_axm = 0.004
-
-    # axc, placement of column side colorbar
-    [axc_x, axc_y, axc_w, axc_h] = [0.4, 0.63, 0.5, color_bar_w]
-    axc_x = axr_x + axr_w + width_btn_axr_axm
-    axc_y = ax1_y + ax1_h + height_btn_ax1_axc
-    height_btn_axc_ax2 = 0.004
-
-    # axm, placement of heatmap
-    [axm_x, axm_y, axm_w, axm_h] = [0.4, 0.9, 2.5, 0.5]
-    axm_x = axr_x + axr_w + width_btn_axr_axm
-    axm_y = ax1_y
-    axm_h = ax1_h
-    axm_w = 0.5
-
-    # ax2, placement of dendrogram 2, on top of heatmap
-    [ax2_x, ax2_y, ax2_w, ax2_h] = [0.3, 0.72, 0.6, 0.15]
-    ax2_x = axr_x + axr_w + width_btn_axr_axm
-    ax2_y = ax1_y + ax1_h + height_btn_ax1_axc + axc_h + height_btn_axc_ax2
-    ax2_w = axc_w
-
-    # axcb = placement of color legend
-    [axcb_x, axcb_y, axcb_w, axcb_h] = [0.05, 0.88, 0.18, 0.09]
-
-    # compute and plot left dendrogram
-    ax1 = h.add_axes([ax1_x, ax1_y, ax1_w, ax1_h], frame_on=True)
-    sqfrmDistMat = sp.spatial.distance.squareform(dm)
-    xdendro = sp.cluster.hierarchy.dendrogram(xlink, orientation='left', color_threshold=maxD)
-    ax1.set_yticks([])
-
-    ax2 = h.add_axes([ax2_x, ax2_y, ax2_w, ax2_h], frame_on=True)
-    xdendro2 = sp.cluster.hierarchy.dendrogram(xlink, color_threshold=maxD)
-    ax2.set_xticks([])
-
-    axm = h.add_axes([axm_x, axm_y, axm_w, axm_h])
-    idx1 = xdendro['leaves']
-    im = axm.matshow(sqfrmDistMat[:, idx1][idx1], aspect='auto', origin='lower', cmap=cmap)
-    axm.set_xticks([])
-    axm.set_yticks([])
-
-    axr = h.add_axes([axr_x, axr_y, axr_w, axr_h])
-    dr = np.array(ind1[idx1], dtype=int)
-    dr.shape = (len(ind1), 1)
-    cmap_r = colors.ListedColormap(['r', 'g', 'b', 'y', 'w', 'k', 'm'])
-    im_r = axr.matshow(dr, aspect='auto', origin='lower', cmap=cmap_r)
-    axr.set_xticks([])
-    axr.set_yticks([])
-
-    axc = h.add_axes([axc_x, axc_y, axc_w, axc_h])
-    dr.shape = (1, len(ind1))
-    im_c = axc.matshow(dr, aspect='auto', origin='lower', cmap=cmap_r)
-    axc.set_xticks([])
-    axc.set_yticks([])
-
-    axcb = h.add_axes([axcb_x, axcb_y, axcb_w, axcb_h], frame_on=False)
-    cb = colorbar.ColorbarBase(axcb, cmap=cmap, orientation='horizontal')
-    axcb.set_title("colorbar")
-
-    plt.savefig(outputdir + "/alleleTable.filtered_lineageGroups.png")
-
-def assign_lineage_groups(alleletable, ind1, df_pivot_I, outputdir):
+def assign_lineage_groups(dfMT, max_kinship_LG, master_intBCs):
     """
     Assign cells in the allele table to a lineage group
 
@@ -259,133 +229,55 @@ def assign_lineage_groups(alleletable, ind1, df_pivot_I, outputdir):
     :return: allele table with lineage group assignments
     """
 
-    alleletable["lineageGrp"] = -1
-    lineageGrp2cellBC = dict(zip(df_pivot_I.index.tolist(), ind1))
+    dfMT["lineageGrp"]=0
 
-    alleletable["lineageGrp"] = alleletable["cellBC"].map(lineageGrp2cellBC)
-
-    #for cell_i in tqdm(lineageGrp2cellBC):
-    #    cellBC_i = cell_i[1]
-    #    LG_i = cell_i[0]
-    #    alleletable.loc[alleletable["cellBC"] == cellBC_i, "lineageGrp"] = LG_i
-
-    LGs, LG_counts = np.unique(ind1, return_counts=True)
-    LG2cellCount = dict(zip(LGs, LG_counts))
-
-    with open(outputdir + "/lglog.txt", "a") as f:
-        for key in LG2cellCount.keys():
-           f.write("Lineage Group " + str(key) + ": " + str(LG2cellCount[key]) + " cellBCs\n")
-
-    return alleletable
-
-def cluster_with_dtcut(ds, xlink, minClusterSize=1):
-    base = importr("base")
-    stats = importr("stats")
-    dtc = importr("dynamicTreeCut")
-    # mat = importr("Matrix")
-    numpy2ri.activate()
-
-    r = robjects.r
-    base.gc()
-    dmat = robjects.vectors.Matrix(ds)
-    hc = r.hclust(stats.as_dist(dmat), method="average")
-
-    clusters = dtc.cutreeDynamic(hc, distM = dmat,  minClusterSize=minClusterSize,
-                                     respectSmallClusters=False, pamRespectsDendro=False, deepSplit = 0)
-    return np.array(clusters)
-
-def plot_lg_rank_iBCProps(df, curr_LG, title, output_file = None):
-
-    # Get cells in curr_LG
-    lg_group = df[df["lineageGrp"] == curr_LG]
-
-    # get unique intBC list
-    intbcs = np.unique(lg_group["intBC"])
-    intbc_counter = pd.DataFrame({"iBC": intbcs, "counter": [0]*len(intbcs)})
-    for cb in np.unique(lg_group["cellBC"]):
-        # get unique intbcs in this cell
-        mols = np.unique(lg_group.loc[lg_group["cellBC"] == cb, "intBC"])
-        intbc_counter.loc[(intbc_counter["iBC"]).isin(mols), "counter"] += 1
-
-    n_cells = len(np.unique(lg_group["cellBC"]))
-
-    intbc_counter["counter"] /= n_cells
-    intbc_counter = intbc_counter.sort_values(by="counter", ascending=False)
-    intbc_counter.index = intbc_counter["iBC"]
-
-    plt.figure()
-    intbc_counter[:30].plot(kind="bar")
-    plt.title(title)
-    plt.tight_layout()
+    cellBC2LG = {}
+    for n in max_kinship_LG.index:
+        cellBC2LG[n] = max_kinship_LG.loc[n, "lineageGrp"]
 
 
-    if output_file is not None:
-        plt.savefig(output_file)
+    dfMT["lineageGrp"] = dfMT["cellBC"].map(cellBC2LG)
 
-    plt.close()
+    dfMT["lineageGrp"] = dfMT["lineageGrp"].fillna(value=0)
+
+    lg_sizes = {}
+    rename_lg = {}
+
+    for n, g in dfMT.groupby(["lineageGrp"]):
+
+        if n != 0:
+            lg_sizes[n] = len(g["cellBC"].unique())
+
+    sorted_by_value = sorted(lg_sizes.items(), key = lambda kv: kv[1])[::-1]
+
+    for i, tup in zip(range(1, len(sorted_by_value)+1), sorted_by_value):
+        print(i, tup[0], float(i))
+        rename_lg[tup[0]] = float(i)
+
+    rename_lg[0] = 0.0
+
+    dfMT["lineageGrp"] = dfMT.apply(lambda x: rename_lg[x.lineageGrp], axis=1)
+
+    return dfMT
 
 
-def plot_intbc_ranks(clusters, df, outputdir):
 
-    if not os.path.exists(outputdir + "/rank_intbc_hists"):
-        os.makedirs(outputdir + "/rank_intbc_hists")
-
-    lineageGrps = np.unique(clusters)
-
-    for lg in tqdm(clusters):
-        name = "rank_iBC_prop_lg" + str(lg) + ".png"
-        plot_lg_rank_iBCProps(df, lg, "Lineage Group " + str(lg), output_file = outputdir + "/rank_intbc_hists/" + name)
-
-
-def plot_overlap_heatmap(df_pivot_I, clusters, outputdir, cell_xlink):
+def plot_overlap_heatmap(at_pivot_I, at, outputdir):
 
     # remove old plots
     plt.close()
 
-    oMatIntBC = np.asarray(lg_utils.maxOverlap(df_pivot_I))
-    dmIntBC = 1-oMatIntBC
-    xlinkIntBC = sp.cluster.hierarchy.linkage(dmIntBC,method='average')
-    xdendro = sp.cluster.hierarchy.dendrogram(xlinkIntBC,no_plot=True)
+    flat_master = []
+    for n, lg in at.groupby("lineageGrp"):
 
-    idxIntBC = xdendro["leaves"]
-    idxIntBC1 = df_pivot_I.columns[idxIntBC]
+        for item in lg["intBC"].unique():
+            flat_master.append(item)
 
-    cell_dendro = sp.cluster.hierarchy.dendrogram(cell_xlink, no_plot=True)
-    idxcells = cell_dendro["leaves"]
-    idxcells1 = df_pivot_I.index[idxcells]
+    at_pivot_I = at_pivot_I[flat_master]
 
-    clusters = np.array(clusters)
-
-    idx1 = np.argsort(clusters)
-
-    idxCells = df_pivot_I.index[idx1]
-
-    lg = clusters[idx1]
-    lg.shape = (len(lg), 1)
-
-    lineageGrps = np.unique(clusters)
-
-    cmapDis = rand_cmap(len(lineageGrps), type='bright', first_color_black=True, last_color_black=False, verbose=False)
-
-    h = plt.figure(figsize=(14,10))
-
-    ax1 = h.add_axes([0.15, 0.05, 0.6, 0.9],frame_on=True)
-    im = ax1.matshow(df_pivot_I.loc[idxCells,idxIntBC1], aspect='auto',origin='lower',cmap='Greys',vmin=0,vmax=1)
-    ax1.set_yticks([])
-    ax1.set_title("Clustered IntBC, Max Overlap")
-
-    ax2 = h.add_axes([0.95,0.05,0.02,0.9],frame_on=True)
-    im_1 = ax2.matshow(lg,aspect='auto',origin='lower',cmap=cmapDis)
-
-    # ax3 = h.add_axes([0.15, 0.9, 0.6, 0.1])
-    # xdendro = sp.cluster.hierarchy.dendrogram(xlinkIntBC, no_labels=True, color_threshold=2)
-    # ax3.set_yticks([])
-    # ax3.set_xticks([])
-    #
-    # ax4 = h.add_axes([0.05, 0.05, 0.1, 0.9])
-    # xdendro2 = sp.cluster.hierarchy.dendrogram(cell_xlink, no_labels=True, color_threshold=2, orientation="left")
-    # ax4.set_yticks([])
-    # ax4.set_xticks([])
+    h2 = plt.figure(figsize=(20,20))
+    axmat2 = h2.add_axes([0.3,0.1,0.6,0.8])
+    im2 = axmat2.matshow(at_pivot_I, aspect='auto', origin='upper')
 
     plt.savefig(outputdir + "/clustered_intbc.png")
     plt.close()
@@ -421,16 +313,16 @@ def add_cutsite_encoding(lg_group):
 
     return lg_group
 
-def plot_overlap_heatmap_lg(lgs, at_pivot_I, outputdir):
+def plot_overlap_heatmap_lg(at, at_pivot_I, outputdir):
 
     if not os.path.exists(outputdir + "/lineageGrp_piv_heatmaps"):
         os.makedirs(outputdir + "/lineageGrp_piv_heatmaps")
 
-    for i in tqdm(range(len(lgs))):
+    for n, lg_group in  tqdm(at.groupby("lineageGrp")):
 
         plt.close()
 
-        lg_group = add_cutsite_encoding(lgs[i])
+        lg_group = add_cutsite_encoding(lg_group)
 
         s_cmap = colors.ListedColormap(['grey', 'red', 'blue'], N=3)
 
@@ -493,22 +385,36 @@ def plot_overlap_heatmap_lg(lgs, at_pivot_I, outputdir):
 
         #plt.gcf().subplots_adjust(bottom=0.15)
         plt.tight_layout()
-        plt.savefig(outputdir + "/lineageGrp_piv_heatmaps/lg_" + str(i) + "_piv_heatmap.png")
+        plt.savefig(outputdir + "/lineageGrp_piv_heatmaps/lg_" + str(int(n)) + "_piv_heatmap.png")
         plt.close()
 
 
-def collectAlleles(df, at_piv, clusters, outputdir, thresh = 0.05):
+def collectAlleles(at, thresh = 0.05):
 
-    lineageGrps = np.unique(clusters)
+    lineageGrps = at["lineageGrp"].unique()
+    at_piv = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
+    at_piv.fillna(value = 0, inplace=True)
+    at_piv[at_piv > 0] = 1
+
 
     lgs = []
 
     for i in tqdm(lineageGrps):
-        lg_group, intbc_counter = get_lg_group(df, at_piv, i)
 
-        p_bc = intbc_counter[(intbc_counter["prop"] > thresh) & (intbc_counter["iBC"] != "NC")]
+        lg = at[at["lineageGrp"] == i]
+        cells = lg["cellBC"].unique()
 
-        lg_group = lg_group.loc[np.in1d(lg_group["intBC"], p_bc["iBC"])]
+        lg_pivot = at_piv.loc[cells]
+
+        props = lg_pivot.apply(lambda x: pylab.sum(x) / len(x)).to_frame().reset_index()
+        props.columns = ["iBC", "prop"]
+
+        props = props.sort_values(by="prop", ascending=False)
+        props.index = props["iBC"]
+        
+        p_bc = props[(props["prop"] > thresh) & (props["iBC"] != "NC")]
+
+        lg_group = lg.loc[np.in1d(lg["intBC"], p_bc["iBC"])]
         lgs.append(lg_group)
 
     return lgs
@@ -523,45 +429,28 @@ def filteredLG2AT(filtered_lgs):
 
     return final_df
 
-def filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = 0.0025, bycell=True):
+def filter_low_prop_intBCs(PIV_assigned, thresh = 0.2):
 
-    num_umi = at_pivot.values.sum()
+    master_intBCs = {}
+    master_LGs = []
 
-    bc_cell_props = at_pivot_I.apply(lambda x: pylab.sum(x) / len(x))
-    bc_umi_props = at_pivot.apply(lambda x: pylab.sum(x) / num_umi)
-    to_keep = bc_cell_props[bc_cell_props > thresh].index
+    for i, PIV_i in PIV_assigned.groupby(["lineageGrp"]):
+        PIVi_bin = PIV_i.copy()
+        PIVi_bin = PIVi_bin.drop(['lineageGrp'], axis=1) # drop the lineageGroup column
+        PIVi_bin[PIVi_bin>0]=1
 
-    h = plt.figure(figsize=(10,10))
-    data = bc_cell_props.sort_values(ascending=False)
-    ax = plt.bar(list(range(len(data))), data)
-    plt.ylabel("Proportion")
-    #plt.yscale("log")
-    #plt.xscale('log')
-    plt.title("Integration Barcode Proportion by Cell")
-    plt.axhline(y=thresh, color="red", linestyle="dashed")
-    plt.xticks([], [])
-    plt.savefig(outputdir + "/intBC_cell_prop_ALL.pdf")
-    plt.close()
-
-    #h = plt.figure(figsize=(10,10))
-    #ax = bc_umi_props.sort_values(ascending=False).plot(kind = "bar")
-    #plt.ylabel("Proportion")
-    #plt.title("Integration Barcode Proportion by UMI")
-    #plt.xticks([],[])
-    #plt.savefig(outputdir + "/intBC_umi_prop_ALL.png")
-    #plt.close()
-
-    #h = plt.figure(figsize=(10,10))
-    #ax = plt.plot(bc_cell_props, bc_umi_props[bc_cell_props.index], "r.")
-    #plt.loglog()
-    #plt.ylabel("Molecule Proportion")
-    #plt.xlabel("Cell Proportion")
-    #plt.title("UMI vs Cell Proportion of IntBCs")
-    #plt.savefig(outputdir + "/intBC_cell_vs_umi_prop.png")
-    #plt.close()
-
-
-    return at_pivot_I[to_keep]
+        intBC_sums = PIVi_bin.sum(0)
+        ordered_intBCs = intBC_sums.sort_values(ascending=False).index.tolist()
+        intBC_normsums = intBC_sums/max(intBC_sums)
+        
+        intBC_normsums_filt_i = intBC_normsums[intBC_normsums >= thresh]
+        intBC_set_i = intBC_normsums_filt_i.index.tolist()
+        
+        # update masters
+        master_intBCs[i] = intBC_set_i
+        master_LGs.append(i)
+    
+    return master_LGs, master_intBCs
 
 def filterCellBCs(moleculetable, outputdir, umiCountThresh = 10, verbose=True):
     """
@@ -674,6 +563,52 @@ def merge_lineage_groups(at, outputdir, thresh=0.3):
 
     return at
 
+def filter_cells_by_kinship_scores(PIV, master_LGs, master_intBCs, outputdir):
+
+    dfLG2intBC = pd.DataFrame()
+
+    for i in range(len(master_LGs)):
+        LGi = master_LGs[i]
+        intBCsi = master_intBCs[LGi]
+        dfi = pd.DataFrame(index=[LGi], columns=intBCsi, data=1)
+        dfLG2intBC = dfLG2intBC.append(dfi,'sort=False')
+
+    dfLG2intBC = dfLG2intBC.fillna(0)
+
+    # reorder
+    flat_master_intBCs = []
+    intBC_dupl_check = set()
+    for key in master_intBCs.keys():
+        sublist = master_intBCs[key]
+        for item in sublist:
+            if item not in intBC_dupl_check:
+                flat_master_intBCs.append(item)
+                intBC_dupl_check.add(item)
+
+    dfLG2intBC = dfLG2intBC[flat_master_intBCs]
+
+    # Construct matrices for multiplication
+    ## subPIVOT (cellBC vs. intBC, value = freq)
+    subPIVOT = PIV[flat_master_intBCs]
+    subPIVOT = subPIVOT.fillna(0)
+
+    # Matrix math
+    dfCellBC2LG = subPIVOT.dot(dfLG2intBC.T)
+    max_kinship = dfCellBC2LG.max(axis=1)
+
+    max_kinship_ind = dfCellBC2LG.idxmax(axis=1).to_frame()
+    max_kinship_frame = max_kinship.to_frame()
+
+    max_kinship_LG = pd.concat([max_kinship_frame, max_kinship_ind+1], axis=1)
+    max_kinship_LG.columns = ["maxOverlap","lineageGrp"]
+
+    #max_kinship_LG_filt = max_kinship_LG[max_kinship_LG['maxOverlap'] >= 0.75]
+
+    #with open(outputdir + "/lglog.txt", "a") as f:
+    #    f.write(str(max_kinship_LG.shape[0] - max_kinship_LG_filt.shape[0]) + " cells filtered by kinship\n")
+
+    return max_kinship_LG
+    
 
 
 def main():
@@ -686,10 +621,8 @@ def main():
     parser.add_argument("output_dir", type=str, help="File path to output directory for all results")
     parser.add_argument("--min_cluster_prop", default=0.005, help="Minimum proportion of cells that can fall into a cluster for lineage group calling") 
     parser.add_argument("--min_intbc_thresh", default=0.05, help="Threshold to filter out poor intBC per LineageGroup, as a function of the proportion of cells that report that intBC in the LG")
-    parser.add_argument("--filter_intbc_thresh", default = 0.2, help="Threshold to filter out lowly represented intBC before lineage group calling")
     parser.add_argument("--detect_doublets_inter", default=False, action='store_true', help="Perform Inter-Doublet (from different  LGs) Detection")
     parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
-    parser.add_argument('--no_filter_intbcs', default=False, action="store_true", help="Filter out low proportion intBCs")
     parser.add_argument("--verbose", "-v", default=False, action="store_true", help="Verbose output")
     parser.add_argument("--cell_umi_filter", default=10, help="Minimum UMIs per cell for final alleleTable")
 
@@ -701,8 +634,6 @@ def main():
     min_cluster_prop = float(args.min_cluster_prop)
     min_intbc_thresh = float(args.min_intbc_thresh)
     verbose = args.verbose
-    filter_intbcs = (not args.no_filter_intbcs)
-    filter_intbc_thresh = float(args.filter_intbc_thresh)
     detect_doublets = args.detect_doublets_inter
     doublet_thresh = float(args.doublet_threshold)
     cell_umi_filter = int(args.cell_umi_filter)
@@ -712,133 +643,72 @@ def main():
     outputdir = create_output_dir(outputdir)
 
     print(">>> READING IN ALLELE TABLE...")
-    at = pd.read_csv(alleleTable_fp, sep='\t')
+    mt = pd.read_csv(alleleTable_fp, sep='\t')
 
-    if "allele" not in at.columns:
-        at["allele"] = at.apply(lambda x: x["r1"] + x["r2"] + x["r3"], axis=1)
-
-    with open(outputdir + "/lglog.txt", "a") as f:
-        f.write(str(at.shape[0]) + " UMIs (rows), with " + str(at.shape[1]) + " attributes (columns)\n")
-        f.write(str(len(at["cellBC"].unique())) + " Cells\n")
-
-    
-    print(">>> CREATING PIVOT TABLE...")
-    at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
-
-    at_pivot_I = at_pivot
-    at_pivot_I[at_pivot_I > 0] = 1
-    at_pivot_I.fillna(value=0)
-
-    if filter_intbcs:
-        print(">>> FILTERING OUT LOW PROPORTION INTEGRATION BARCODES...")
-        at_pivot_I = filter_low_prop_intBCs(at_pivot_I, at_pivot, outputdir, thresh = filter_intbc_thresh)
-
+    if "allele" not in mt.columns:
+        mt["allele"] = mt.apply(lambda x: x["r1"] + x["r2"] + x["r3"], axis=1)
 
     with open(outputdir + "/lglog.txt", "a") as f:
-        f.write(str(at_pivot_I.shape[0]) + " cells and " + str(at_pivot_I.shape[1]) + " intBCs\n")
+        f.write(str(mt.shape[0]) + " UMIs (rows), with " + str(mt.shape[1]) + " attributes (columns)\n")
+        f.write(str(len(mt["cellBC"].unique())) + " Cells\n")
 
-    print(">>> CALCULATING MAXIMUM OVERLAP MATRIX...")
-    oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
+    PIV = pd.pivot_table(mt, index="cellBC",columns="intBC", values="UMI", aggfunc="count")
+    PIV = PIV.div(PIV.sum(axis=1), axis=0)
 
-    print(">>> LOGGING CELL OVERLAP INFORMATION...")
-    dm = analyze_overlap(oMat, outputdir)
+    # reorder PIV columns by binarized intBC frequency
+    PIVbin = PIV.copy()
+    PIVbin[PIVbin>0]=1
+    intBC_sums = PIVbin.sum(0)
+    ordered_intBCs = intBC_sums.sort_values(ascending=False).index.tolist()
+    PIV = PIV[ordered_intBCs]
 
-    print(">>> CLUSTERING CELLS BASED ON OVERLAP...")
-    xlink = sp.cluster.hierarchy.linkage(dm, method="average")
+    min_clust_size = int(min_cluster_prop * PIV.shape[0])
+    print(">>> CLUSTERING WITH MINIMUM CLUSTER SIZE " + str(min_clust_size) + "...")
+    PIV_assigned, master_intBC_list = iterative_lg_assign(PIV, min_clust_size, outputdir)
 
-    print(">>> CALCULATING COPHENETIC DISTANCES...")
-    c, coph_dists = sp.cluster.hierarchy.cophenet(xlink, dm)
+    print(">>> FILTERING OUT LOW PROPORTION INTBCs...")
+    master_LGs, master_intBCs = filter_low_prop_intBCs(PIV_assigned, thresh = min_intbc_thresh)
 
-    with open(outputdir + "/lglog.txt", "a") as f:
-        f.write("Cophenetic Correlation Distance: " + str(c) + "\n")
-
-    ds = sp.spatial.distance.squareform(dm)
-
-    min_cluster_size = int(min_cluster_prop * at_pivot_I.shape[0])
-    print(">>> CLUSTERING DENDROGRAM WITH MINIMUM CLUSTER SIZE OF " + str(min_cluster_size) + "...")
-    clusters = cluster_with_dtcut(ds, xlink, minClusterSize=min_cluster_size)
-
-    lineageGrps = np.unique(clusters)
-    with open(outputdir + "/lglog.txt", "a") as f:
-        f.write(str(len(lineageGrps)) + " Lineage Groups\n")
+    print(">>> COMPUTING KINSHIP MATRIX...")
+    kinship_scores = filter_cells_by_kinship_scores(PIV_assigned, master_LGs, master_intBCs, outputdir)
 
     print(">>> ASSIGNING LINEAGE GROUPS...")
-    at = assign_lineage_groups(at, clusters, at_pivot_I, outputdir)
-
-    #if verbose:
-        #print(">>> PLOTTING INTBC COUNT HISTOGRAM...")
-        #plot_intBC_count_hist(clusters, at, outputdir)
-
-    #    print(">>> PLOTTING INTBC RANK PROPORTION HISTOGRAMS...")
-    #    plot_intbc_ranks(clusters, at, outputdir)
-
-
-    print(">>> COLLECTING ALLELES...")
-    filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
-
-    print(">>> PRODUCING FINAL ALLELE TABLE...")
-    at = filteredLG2AT(filtered_lgs)
-
-    print(">>> FILTERING OUT LOW-UMI CELLS...")
-    at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=int(cell_umi_filter), verbose=verbose)
-
-    print(">>> MERGING SIMILAR LINEAGE GROUPS...")
-    #at = merge_lineage_groups(at, outputdir, thresh=0.5)
+    at = assign_lineage_groups(mt, kinship_scores, master_intBCs)
 
     if detect_doublets:
         prop = doublet_thresh
         print(">>> FILTERING OUT INTRA-LINEAGE GROUP DOUBLETS WITH PROP "  + str(prop) + "...")
         at = lg_utils.filter_inter_doublets(at, "lglog.txt", outputdir, rule = prop)
-    
 
-    clusters = at[["cellBC", "lineageGrp"]].drop_duplicates()["lineageGrp"]
+    filtered_lgs = collectAlleles(at, thresh = min_intbc_thresh)
 
-    LGs, LG_counts = np.unique(clusters, return_counts=True)
-    LG2cellCount = dict(zip(LGs, LG_counts))
+    at = filteredLG2AT(filtered_lgs)
 
     with open(outputdir + "/lglog.txt", "a") as f:
-        f.write("Lineage Group Stats after Merging:\n")
-        for key in LG2cellCount.keys():
-           f.write("Lineage Group " + str(key) + ": " + str(LG2cellCount[key]) + " cellBCs\n")
+        f.write("Final LG assignments:\n")
 
-    #print(">>> PERFOROMING FINAL CLUSTERING...")
-    #at_pivot = pd.pivot_table(at, index=["cellBC"], columns=["intBC"], values="UMI", aggfunc=pylab.size)
+        for n, g in at.groupby(["lineageGrp"]):
+            f.write("LG " + str(n) + ": " + str(len(g["cellBC"].unique())) + " cells\n")
 
-    #at_pivot_I = at_pivot
-    #at_pivot_I[at_pivot_I > 0] = 1
-    #at_pivot_I.fillna(value=0)
-
-    #oMat = np.asarray(lg_utils.maxOverlap(at_pivot_I.T))
-
-    #dm = analyze_overlap(oMat, outputdir)
-
-    #xlink = sp.cluster.hierarchy.linkage(dm, method="average")
-
-    #c, coph_dists = sp.cluster.hierarchy.cophenet(xlink, dm)
-
-    #ds = sp.spatial.distance.squareform(dm)
-    #clusters = cluster_with_dtcut(ds, xlink, minClusterSize=0.005 * at_pivot.shape[0])
-
-    with open(outputdir + "/lglog.txt", "a") as f:
-        f.write("\nFinal Lineage Group stats:")
-
-    at = assign_lineage_groups(at, clusters, at_pivot_I, outputdir)
+    print(">>> FILTERING OUT LOW-UMI CELLS...")
+    at, cell2BCnM = filterCellBCs(at, outputdir, umiCountThresh=int(cell_umi_filter), verbose=verbose)
 
     print(">>> WRITING OUTPUT...")
     at.to_csv(outputdir + "/" + output_fp, sep='\t', index=False)
 
-    filtered_lgs = collectAlleles(at, at_pivot_I, clusters, outputdir, thresh = min_intbc_thresh)
-
     print(">>> PRODUCING PLOTS...")
+    at_piv = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
+    at_pivot_I = at_piv
+    at_pivot_I.fillna(value = 0, inplace=True)
+    at_pivot_I[at_pivot_I > 0] = 1
 
-    print(">>> PRODUCING CLUSTERED HEATMAP...")
-    plot_heatmap(dm, xlink, clusters, outputdir, 10, 10, maxD=2)
+    clusters = at[["cellBC", "lineageGrp"]].drop_duplicates()["lineageGrp"]
 
     print(">>> PRODUCING PIVOT TABLE HEATMAP...")
-    plot_overlap_heatmap(at_pivot_I, clusters, outputdir, xlink)
+    plot_overlap_heatmap(at_pivot_I, at, outputdir)
 
     print(">>> PLOTTING FILTERED LINEAGE GROUP PIVOT TABLE HEATMAPS...")
-    plot_overlap_heatmap_lg(filtered_lgs, at_pivot_I, outputdir)
+    plot_overlap_heatmap_lg(at, at_pivot_I, outputdir)
 
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write("Final allele table written to " + outputdir + "/" + output_fp + "\n")

@@ -19,10 +19,13 @@ import SingleCellLineageTracing.TreeSolver.lineage_solver as ls
 
 def prune_and_clean_leaves(G):
     """
-    Given a networkx graph in the form of a tree, assign sample identities to character states.
+    Prune off leaves that don't correspond to samples and clean up the names on leaves (i.e. only keep the sample
+    labels and remove character states or post-processing hashes.)
 
-    :param graph: Networkx Graph as a tree
-    :return: postprocessed tree as a Networkx object
+    :param G: 
+        Networkx Graph as a tree
+    :return: 
+        Pruned and cleaned tree as a Networkx object.
     """
 
     new_nodes = []
@@ -88,6 +91,18 @@ def prune_and_clean_leaves(G):
     return G
 
 def assign_samples_to_charstrings(G, cm):
+    """
+    Preprocessing step if sample names are not in the tree. Assigns sample name to appropriate
+    character states in the phylogeny. 
+
+    :param G:
+        Input graph.
+    :param cm:
+        Character matrix pandas Dataframe.
+
+    :return:
+        Networkx Graph object as a tree with samples mapped onto the tree.
+    """
 
     new_nodes = []
     new_edges = []
@@ -150,6 +165,14 @@ def add_redundant_leaves(G, cm):
     """
     To fairly take into account sample purity, we'll add back in 'redundant' leaves (i.e.
     leaves that were removed because of non-unique character strings).
+
+    :param G:
+        Input graph
+    :param cm:
+        Character matrix pandas Dataframe
+
+    :return:
+        Graph with redundant samples added back on.
     """
 
     # create lookup value for duplicates
@@ -158,8 +181,12 @@ def add_redundant_leaves(G, cm):
 
     uniq = cm.loc[net_nodes]
 
+    if uniq.shape == cm.shape:
+        return G
+
     # find all non-unique character states in cm
-    nonuniq = np.setdiff1d(cm.index, np.array(uniq))
+    #nonuniq = np.setdiff1d(cm.index, np.array(uniq))
+    nonuniq = np.setdiff1d(cm.index, uniq.index)
 
     for n in nonuniq:
 
@@ -178,6 +205,20 @@ def add_redundant_leaves(G, cm):
     return G
 
 def post_process_tree(G, cm, alg):
+    """
+    Entry point for post-process-tree. Depending on which algorithm was used to construct a tree, 
+    will perform sample mapping (i.e. assigning samples to the character states in the phylogeny)
+
+    :param G:
+        Input graph.
+    :param cm:
+        Character matrix pandas Dataframe
+    :param alg:
+        Which algorithm was used. Chosen from `greedy, hybrid, ilp, neighbor-joining`, or `camin-sokal`.
+
+    :return:
+        Post-Processed Tree as a networkx object
+    """
 
     if alg == "greedy":
         G = assign_samples_to_charstrings(G, cm)

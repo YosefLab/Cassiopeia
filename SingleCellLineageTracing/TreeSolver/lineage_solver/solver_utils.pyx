@@ -202,8 +202,10 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 			source_nodes = list(temp_source_nodes)
 			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
 
-		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
-			return prev_network
+		#print('testing isomporpic!')
+		#if prev_network is not None and nx.graph_edit_distance(prev_network, initial_network) == 0:
+		#if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
+		#	return prev_network
 
 		prev_network = initial_network
 		if flag:

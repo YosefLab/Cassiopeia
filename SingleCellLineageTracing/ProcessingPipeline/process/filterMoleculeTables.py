@@ -286,7 +286,7 @@ def errorCorrectIntBC(moleculetable, outputdir, prop = 0.5, umiCountThresh = 10,
 
     recovered = 0
     numUMI_corrected = 0
-    for name, grp in tqdm(moleculetable.groupby(["cellBC"]), desc="processing intBCs"):
+    for name, grp in tqdm(moleculetable.groupby(["cellBC"]), desc="Error Correcting intBCs"):
 
         # name = cellBC
         # grp = moleculetable[cellBC = name]
@@ -477,10 +477,10 @@ def main():
     filtered_mt = filterUMIs(filtered_mt, outputdir, readCountThresh = umi_read_thresh, verbose = verbose)
     rc_profile["Filtered_UMI"], upi_profile["Filtered_UMI"], upc_profile["Filtered_UMI"] = record_stats(filtered_mt, outputdir, stage="Filtered_UMI")
 
-    print(">>> PROCESSING INTBCs...")
     # filter and error correct integration barcodes by allele
     if error_correct_intbc:
 
+        print(">>> ERROR CORRECTING INTBCs...")
         filtered_mt = errorCorrectIntBC(filtered_mt, outputdir, prop = intbc_prop_thresh, umiCountThresh = intbc_umi_thresh,
                             bcDistThresh = intbc_dist_thresh, verbose=verbose)
 
@@ -495,7 +495,7 @@ def main():
         filtered_mt  = lg_utils.filter_intra_doublets(filtered_mt, 'filterlog.txt', outputdir, prop = prop)
 
     print(">>> MAPPING REMAINING INTEGRATION BARCODE CONFLICTS...")
-    filtred_mt = lg_utils.mapIntBCs(filtered_mt, "filterlog.txt", outputdir)
+    filtered_mt = lg_utils.mapIntBCs(filtered_mt, "filterlog.txt", outputdir)
 
     rc_profile["Final"], upi_profile["Final"], upc_profile["Final"] = record_stats(filtered_mt, outputdir)
 
@@ -546,7 +546,7 @@ def main():
     with open(outputdir + "/filterlog.txt", "a") as f:
         f.write("Overall: " + str(cellBC_count) + " cells, with " + str(filtered_mt.shape[0]) + " UMIs\n")
 
-    filtered_mt.to_csv(moleculetableFiltered_fp, sep='\t', index=False)
+    filtered_mt.to_csv(outputdir + "/" + moleculetableFiltered_fp, sep='\t', index=False)
 
     with open(outputdir + "/filterlog.txt", "a") as f:
         f.write("Saved file: " + outputdir + "/" + moleculetableFiltered_fp + "\n")

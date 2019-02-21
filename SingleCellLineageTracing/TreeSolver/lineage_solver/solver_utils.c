@@ -1367,7 +1367,6 @@ static const char __pyx_k_neighbor_mod[] = "neighbor_mod";
 static const char __pyx_k_prev_network[] = "prev_network";
 static const char __pyx_k_source_nodes[] = "source_nodes";
 static const char __pyx_k_target_nodes[] = "target_nodes";
-static const char __pyx_k_is_isomorphic[] = "is_isomorphic";
 static const char __pyx_k_get_edge_length[] = "get_edge_length";
 static const char __pyx_k_initial_network[] = "initial_network";
 static const char __pyx_k_p_to_s1_lengths[] = "p_to_s1_lengths";
@@ -1425,7 +1424,6 @@ static PyObject *__pyx_n_s_i;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_in_degree;
 static PyObject *__pyx_n_s_initial_network;
-static PyObject *__pyx_n_s_is_isomorphic;
 static PyObject *__pyx_n_s_j;
 static PyObject *__pyx_n_s_join;
 static PyObject *__pyx_n_s_key;
@@ -3358,7 +3356,6 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
   PyObject *__pyx_t_15 = NULL;
   PyObject *(*__pyx_t_16)(PyObject *);
   int __pyx_t_17;
-  int __pyx_t_18;
   __Pyx_RefNannySetupContext("build_potential_graph_from_base_graph", 0);
   __Pyx_INCREF(__pyx_v_samples);
 
@@ -4977,7 +4974,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
  * 			source_nodes = list(temp_source_nodes)
  * 			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))             # <<<<<<<<<<<<<<
  * 
- * 		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
+ * 		#print('testing isomporpic!')
  */
       __pyx_t_11 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 203, __pyx_L1_error)
       __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_11); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 203, __pyx_L1_error)
@@ -5001,99 +4998,8 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
     }
 
-    /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":205
- * 			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
- * 
- * 		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):             # <<<<<<<<<<<<<<
- * 			return prev_network
- * 
- */
-    __pyx_t_17 = (__pyx_v_prev_network != Py_None);
-    __pyx_t_18 = (__pyx_t_17 != 0);
-    if (__pyx_t_18) {
-    } else {
-      __pyx_t_9 = __pyx_t_18;
-      goto __pyx_L29_bool_binop_done;
-    }
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_nx); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_is_isomorphic); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 205, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_10);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = NULL;
-    __pyx_t_8 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_10))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_10);
-      if (likely(__pyx_t_4)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_10);
-        __Pyx_INCREF(__pyx_t_4);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_10, function);
-        __pyx_t_8 = 1;
-      }
-    }
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_10)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_prev_network, __pyx_v_initial_network};
-      __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_10, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 205, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_13);
-    } else
-    #endif
-    #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_10)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_prev_network, __pyx_v_initial_network};
-      __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_10, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 205, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_GOTREF(__pyx_t_13);
-    } else
-    #endif
-    {
-      __pyx_t_15 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 205, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_15);
-      if (__pyx_t_4) {
-        __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_4); __pyx_t_4 = NULL;
-      }
-      __Pyx_INCREF(__pyx_v_prev_network);
-      __Pyx_GIVEREF(__pyx_v_prev_network);
-      PyTuple_SET_ITEM(__pyx_t_15, 0+__pyx_t_8, __pyx_v_prev_network);
-      __Pyx_INCREF(__pyx_v_initial_network);
-      __Pyx_GIVEREF(__pyx_v_initial_network);
-      PyTuple_SET_ITEM(__pyx_t_15, 1+__pyx_t_8, __pyx_v_initial_network);
-      __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_t_15, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 205, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
-      __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    }
-    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-    __pyx_t_18 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 205, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-    __pyx_t_9 = __pyx_t_18;
-    __pyx_L29_bool_binop_done:;
-    if (__pyx_t_9) {
-
-      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":206
- * 
- * 		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
- * 			return prev_network             # <<<<<<<<<<<<<<
- * 
- * 		prev_network = initial_network
- */
-      __Pyx_XDECREF(__pyx_r);
-      __Pyx_INCREF(__pyx_v_prev_network);
-      __pyx_r = __pyx_v_prev_network;
-      goto __pyx_L0;
-
-      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":205
- * 			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
- * 
- * 		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):             # <<<<<<<<<<<<<<
- * 			return prev_network
- * 
- */
-    }
-
-    /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":208
- * 			return prev_network
+    /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":210
+ * 		#	return prev_network
  * 
  * 		prev_network = initial_network             # <<<<<<<<<<<<<<
  * 		if flag:
@@ -5102,7 +5008,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
     __Pyx_INCREF(__pyx_v_initial_network);
     __Pyx_DECREF_SET(__pyx_v_prev_network, __pyx_v_initial_network);
 
-    /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":209
+    /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5112,7 +5018,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
     __pyx_t_9 = (__pyx_v_flag != 0);
     if (__pyx_t_9) {
 
-      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":210
+      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":212
  * 		prev_network = initial_network
  * 		if flag:
  * 			return prev_network             # <<<<<<<<<<<<<<
@@ -5124,7 +5030,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
       __pyx_r = __pyx_v_prev_network;
       goto __pyx_L0;
 
-      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":209
+      /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5134,7 +5040,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
     }
   }
 
-  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":212
+  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":214
  * 			return prev_network
  * 
  * 	return initial_network             # <<<<<<<<<<<<<<
@@ -5142,7 +5048,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_initial_network)) { __Pyx_RaiseUnboundLocalError("initial_network"); __PYX_ERR(0, 212, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_initial_network)) { __Pyx_RaiseUnboundLocalError("initial_network"); __PYX_ERR(0, 214, __pyx_L1_error) }
   __Pyx_INCREF(__pyx_v_initial_network);
   __pyx_r = __pyx_v_initial_network;
   goto __pyx_L0;
@@ -5195,7 +5101,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":215
+/* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5232,15 +5138,15 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("get_sources_of_graph", 0);
 
-  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":224
+  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":226
  * 		Leaves of the corresponding Tree
  * 	"""
  * 	return [x for x in tree.nodes() if tree.in_degree(x)==0 ]             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -5254,16 +5160,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
   }
   __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_5 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 224, __pyx_L1_error)
+    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 224, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 226, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -5271,17 +5177,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 224, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 226, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 224, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 226, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -5291,7 +5197,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 224, __pyx_L1_error)
+          else __PYX_ERR(0, 226, __pyx_L1_error)
         }
         break;
       }
@@ -5299,7 +5205,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
     }
     __Pyx_XDECREF_SET(__pyx_v_x, __pyx_t_2);
     __pyx_t_2 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_in_degree); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 224, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_in_degree); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_7 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -5313,16 +5219,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
     }
     __pyx_t_2 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_7, __pyx_v_x) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_x);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_t_2, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 224, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_t_2, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 224, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 226, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_8) {
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_x))) __PYX_ERR(0, 224, __pyx_L1_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_x))) __PYX_ERR(0, 226, __pyx_L1_error)
     }
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -5330,7 +5236,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_10TreeSolver_14lineage_solv
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":215
+  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5435,7 +5341,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_in_degree, __pyx_k_in_degree, sizeof(__pyx_k_in_degree), 0, 0, 1, 1},
   {&__pyx_n_s_initial_network, __pyx_k_initial_network, sizeof(__pyx_k_initial_network), 0, 0, 1, 1},
-  {&__pyx_n_s_is_isomorphic, __pyx_k_is_isomorphic, sizeof(__pyx_k_is_isomorphic), 0, 0, 1, 1},
   {&__pyx_n_s_j, __pyx_k_j, sizeof(__pyx_k_j), 0, 0, 1, 1},
   {&__pyx_n_s_join, __pyx_k_join, sizeof(__pyx_k_join), 0, 0, 1, 1},
   {&__pyx_n_s_key, __pyx_k_key, sizeof(__pyx_k_key), 0, 0, 1, 1},
@@ -5575,17 +5480,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__17);
   __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(5, 0, 29, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_solver_utils_pyx, __pyx_n_s_build_potential_graph_from_base_2, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 110, __pyx_L1_error)
 
-  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":215
+  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Returns all nodes with in-degree zero
  */
-  __pyx_tuple__19 = PyTuple_Pack(2, __pyx_n_s_tree, __pyx_n_s_x); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_tuple__19 = PyTuple_Pack(2, __pyx_n_s_tree, __pyx_n_s_x); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__19);
   __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_solver_utils_pyx, __pyx_n_s_get_sources_of_graph, 215, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_solver_utils_pyx, __pyx_n_s_get_sources_of_graph, 217, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -5947,16 +5852,16 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_build_potential_graph_from_base_2, __pyx_t_1) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":215
+  /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Returns all nodes with in-degree zero
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_SingleCellLineageTracing_TreeSol); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_SingleCellLineageTracing_TreeSol); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_sources_of_graph, __pyx_t_1) < 0) __PYX_ERR(0, 215, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_sources_of_graph, __pyx_t_1) < 0) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.pyx":1

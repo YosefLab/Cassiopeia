@@ -57,6 +57,17 @@ def tree_collapse(graph):
     return new_network
 
 def get_max_depth(G, root):
+    """
+    Gives the maximum depth of the graph G from some node (typically the root).
+
+    :param G:
+        input tree
+    :param root:
+        Node from which to compute the maximum depth:
+
+    :returns:
+        The max depth.
+    """
 
     md = 0
 
@@ -70,8 +81,16 @@ def get_max_depth(G, root):
 
 def extend_dummy_branches(G, max_depth):
     """
-    Extends dummy branches from leaves to bottom of the tree for easier
-    calculations of entropy
+    Converts the tree to an ultrametric tree by adding in dummy nodes and branches &
+    extending true leaves to the max depth.
+
+    :param G:
+        Input tree
+    :param max_depth:
+        Depth to extend leaves to.
+
+    :returns:
+        Ultrametric tree with dummy edges/nodes.
     """
 
     leaves = [n for n in G.nodes if G.out_degree(n) == 0]
@@ -96,6 +115,18 @@ def extend_dummy_branches(G, max_depth):
     return G
 
 def set_progeny_size(G, root):
+    """
+    Store as a node attribute the number of leaves below a given node. Traverses from the root provided.
+
+    :param G:
+        input tree
+    :param root:
+        Root of tree
+    
+    :return:
+        Graph with progeny size stored as a node attribute (for some node n you can get this value like so:
+        G.nodes[n]['prog_size'])
+    """
 
     s = get_progeny_size(G, root)
 
@@ -109,17 +140,51 @@ def set_progeny_size(G, root):
     return G
 
 def get_progeny_size(G, node):
+    """
+    Get the progeny size of a node in the graph. 
+    :param G:
+        input tree
+    :param root:
+        internal node.
+    
+    :return:
+        Integer value denoting the number of leaves below that node.
+
+    """
 
     all_prog = [node for node in nx.dfs_preorder_nodes(G, node)]
 
     return len([n for n in all_prog if G.out_degree(n) == 0 and G.in_degree(n) == 1])
 
 def get_children_of_clade(G, node):
+    """
+    Get the names of the leaves below the node in G.
+    :param G:
+        input tree
+    :param root:
+        internal node.
+    
+    :return:
+        List of all leaves below the node.
+
+    """
 
     all_prog = [node for node in nx.dfs_preorder_nodes(G, node)]
     return [n for n in all_prog if G.out_degree(n) == 0 and G.in_degree(n) == 1]
 
 def get_meta_counts(G, node, metavals):
+    """
+    For all the leaves below the node in G, count how many occurences of each value in metavals.  
+    :param G:
+        input tree
+    :param root:
+        internal node.
+    :param metavals:
+        List of possible metavals.
+    
+    :return:
+        Dictionary mapping each metaval to the number of occurences.
+    """
 
     meta_counts = defaultdict(dict)
     children_vals = [G.nodes[n]["meta"] for n in get_children_of_clade(G, node)]
@@ -130,6 +195,16 @@ def get_meta_counts(G, node, metavals):
 
 
 def set_depth(G, root):
+    """
+    Store the depth of each node as an attribute in the graph. 
+    :param G:
+        input tree
+    :param root:
+        root of tree.
+    
+    :return:
+        Graph with depth as an attribute for each node. You can access this by using G.nodes[n]['depth'] for any node n.
+    """
 
     depth = nx.shortest_path_length(G, root)
 
@@ -140,6 +215,16 @@ def set_depth(G, root):
     return G
 
 def cut_tree(G, depth):
+    """
+    Gets the internal nodes at the depth specified in the tree.
+    :param G:
+        input tree
+    :param depth:
+        Depth at which to cut the tree.
+
+    :return:
+        List of internal nodes at the depth specified.
+    """
 
     nodes = []
     for n in G.nodes:
@@ -150,6 +235,22 @@ def cut_tree(G, depth):
     return nodes
 
 def calc_entropy(G, depth=0):
+    """
+    Calculates the entropy of the tree at every possible depth of the graph. At some given depth, we first 
+    cut the tree (i.e. get the internal nodes at that depth) and compute the balance of the tree as quantified 
+    with entropy. For example, if there are $C$ clades at some depth $d$, we can compute the probability of a node
+    residing in each of the $C$ clades and compute the entropy as $$E_d = -1 * \sum_i^C p_i log(p_i) $$. To note, the
+    probability of a node residing in each clade is purely the size of the clade divided by the total number of
+    leaves.
+
+    :param G:
+        input tree
+    :param depth:
+        Depth at which to compute entropy. 
+    
+    :return:
+        Tree entropy at that depth.
+    """
 
     nodes = cut_tree(G, depth)
 
@@ -168,6 +269,24 @@ def calc_entropy(G, depth=0):
 
 
 def sample_chisq_test(G, metavals, depth=0):
+    """
+    Calculates the association between clades and meta variables with a Chi-Squared test every possible depth of the graph. 
+    At some given depth, we first  cut the tree (i.e. get the internal nodes at that depth) and compute the number of
+    occurences for each meta value under that node. We form a contingency table .. math::(T) of size :math: (C x M) where :math:(C) is the number
+    of clades and :math:(M) is the number of meta values. The elements in the table, :math: (m_{i,j}), are the frequencies of meta item 
+    :math(m_j) in clade :math:(c_i) . We can then use a Chi-Squared Test to compute the association.
+
+    :param G:
+        input tree
+    ;param metavals:
+        Possible meta values.
+    :param depth:
+        Depth at which to compute the chisq test.
+    
+    :return:
+        A list consisting of the test statistic, the p value, (1 - Cramer's V) statistic, and the number of clades at the
+        depth.
+    """
 
     nodes = cut_tree(G, depth)
 
@@ -212,7 +331,24 @@ def sample_chisq_test(G, metavals, depth=0):
 
     return tstat, pval, (1 - V), csq_table.shape[0]
 
-def compute_meta_purity(G, metavals, depth=0):
+def compute_mean_membership(G, metavals, depth=0):
+    """
+    Calculates the mean membership of the tree at every possible depth of the graph. At some given depth, we first 
+    cut the tree (i.e. get the internal nodes at that depth) and for each clade $c_i$ in the set $C_d$ we compute the majority
+    meta item (i.e. the metaval that is most frequent in the leaves of that clade). The membership is computed as the proportion of
+    votes that go to the most frequent meta value, and the mean membership is reported (i.e. the mean of all memberships across the 
+    clades in $C_d$). 
+
+   :param G:
+        input tree
+    ;param metavals:
+        Possible meta values.
+    :param depth:
+        Depth at which to compute the mean membership test.
+    
+    :return:
+        A list of the mean membership and the number of clades at the depth.
+    """
 
     nodes = cut_tree(G, depth)
 
@@ -247,6 +383,18 @@ def compute_meta_purity(G, metavals, depth=0):
     return np.mean(vote_prop), csq_table.shape[0]
 
 def assign_meta(G, meta):
+    """
+    Assign meta items to all leaves in G and store as a node attribute.
+
+    :param G:
+        Input graph.
+    :param meta:
+        pandas Series of meta items, where the index are sample labels.
+
+    :return:
+        Graph with meta items assigned to leaves. 
+    """
+
 
     root = [node for node in G.nodes() if G.in_degree(node) == 0][0]
 
@@ -308,6 +456,16 @@ def calculate_empirical_pvalues(real, rand_ent_dist):
     return np.array(pvs)
 
 def nearest_neighbor_dist(G):
+    """
+    Compute the distance for each leaf to the nearest leaf with the same meta value. 
+
+    :param G:
+        Input graph with meta values already mapped.
+    
+    :return:
+        A list consisting of a vector of all nearest neighbor distances and the max distance of the tree to normalize
+        by.
+    """
 
     _leaves = [n for n in G if G.out_degree(n) == 0]
     n = len(_leaves)

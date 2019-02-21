@@ -939,8 +939,8 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
@@ -1964,7 +1964,9 @@ static const char __pyx_k_l[] = "l";
 static const char __pyx_k_m[] = "m";
 static const char __pyx_k_n[] = "n";
 static const char __pyx_k_r[] = "r";
+static const char __pyx_k_x[] = "x";
 static const char __pyx_k_LG[] = "LG";
+static const char __pyx_k_MT[] = "MT";
 static const char __pyx_k__3[] = "\t";
 static const char __pyx_k__5[] = "\n";
 static const char __pyx_k__7[] = "/";
@@ -1975,12 +1977,9 @@ static const char __pyx_k_dm[] = "dm";
 static const char __pyx_k_do[] = "do";
 static const char __pyx_k_id[] = "id";
 static const char __pyx_k_lg[] = "lg";
-static const char __pyx_k_mt[] = "mt";
 static const char __pyx_k_np[] = "np";
 static const char __pyx_k_os[] = "os";
 static const char __pyx_k_pd[] = "pd";
-static const char __pyx_k_r1[] = "r1";
-static const char __pyx_k_r2[] = "r2";
 static const char __pyx_k_sp[] = "sp";
 static const char __pyx_k_x1[] = "x1";
 static const char __pyx_k_UMI[] = "UMI";
@@ -2011,11 +2010,10 @@ static const char __pyx_k_dmat[] = "dmat";
 static const char __pyx_k_drop[] = "drop";
 static const char __pyx_k_exit[] = "__exit__";
 static const char __pyx_k_good[] = "good";
-static const char __pyx_k_iBC1[] = "iBC1";
-static const char __pyx_k_iBC2[] = "iBC2";
 static const char __pyx_k_ibcs[] = "ibcs";
 static const char __pyx_k_iloc[] = "iloc";
 static const char __pyx_k_join[] = "join";
+static const char __pyx_k_keep[] = "keep";
 static const char __pyx_k_keys[] = "keys";
 static const char __pyx_k_mSum[] = "mSum";
 static const char __pyx_k_main[] = "__main__";
@@ -2043,6 +2041,7 @@ static const char __pyx_k_count[] = "count";
 static const char __pyx_k_dtype[] = "dtype";
 static const char __pyx_k_enter[] = "__enter__";
 static const char __pyx_k_error[] = "error";
+static const char __pyx_k_first[] = "first";
 static const char __pyx_k_flags[] = "flags";
 static const char __pyx_k_group[] = "group";
 static const char __pyx_k_index[] = "index";
@@ -2051,13 +2050,13 @@ static const char __pyx_k_isnan[] = "isnan";
 static const char __pyx_k_lg_do[] = "lg_do";
 static const char __pyx_k_mSize[] = "mSize";
 static const char __pyx_k_numpy[] = "numpy";
-static const char __pyx_k_props[] = "props";
 static const char __pyx_k_pylab[] = "pylab";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_scipy[] = "scipy";
 static const char __pyx_k_shape[] = "shape";
 static const char __pyx_k_start[] = "start";
 static const char __pyx_k_write[] = "write";
+static const char __pyx_k_xuniq[] = "xuniq";
 static const char __pyx_k_zeros[] = "zeros";
 static const char __pyx_k_allele[] = "allele";
 static const char __pyx_k_cellBC[] = "cellBC";
@@ -2084,11 +2083,8 @@ static const char __pyx_k_unpack[] = "unpack";
 static const char __pyx_k_update[] = "update";
 static const char __pyx_k_values[] = "values";
 static const char __pyx_k_aggfunc[] = "aggfunc";
-static const char __pyx_k_allele1[] = "allele1";
-static const char __pyx_k_allele2[] = "allele2";
 static const char __pyx_k_cluster[] = "cluster";
 static const char __pyx_k_columns[] = "columns";
-static const char __pyx_k_doublet[] = "doublet";
 static const char __pyx_k_fortran[] = "fortran";
 static const char __pyx_k_groupby[] = "groupby";
 static const char __pyx_k_importr[] = "importr";
@@ -2132,7 +2128,6 @@ static const char __pyx_k_maxOverlap[] = "maxOverlap";
 static const char __pyx_k_outputfile[] = "outputfile";
 static const char __pyx_k_pyx_result[] = "__pyx_result";
 static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
-static const char __pyx_k_totalCount[] = "totalCount";
 static const char __pyx_k_MemoryError[] = "MemoryError";
 static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_filter_cell[] = "filter_cell";
@@ -2158,6 +2153,7 @@ static const char __pyx_k_get_intbc_sets[] = "get_intbc_sets";
 static const char __pyx_k_View_MemoryView[] = "View.MemoryView";
 static const char __pyx_k_alleles_removed[] = "# alleles removed: ";
 static const char __pyx_k_allocate_buffer[] = "allocate_buffer";
+static const char __pyx_k_drop_duplicates[] = "drop_duplicates";
 static const char __pyx_k_dtype_is_object[] = "dtype_is_object";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
@@ -2168,10 +2164,12 @@ static const char __pyx_k_matplotlib_pyplot[] = "matplotlib.pyplot";
 static const char __pyx_k_pyx_unpickle_Enum[] = "__pyx_unpickle_Enum";
 static const char __pyx_k_setrecursionlimit[] = "setrecursionlimit";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_prop_multi_alleles[] = "prop_multi_alleles";
 static const char __pyx_k_strided_and_direct[] = "<strided and direct>";
 static const char __pyx_k_log_pickalleles_txt[] = "/log_pickalleles.txt";
 static const char __pyx_k_strided_and_indirect[] = "<strided and indirect>";
 static const char __pyx_k_compute_lg_membership[] = "compute_lg_membership";
+static const char __pyx_k_conflicting_umi_count[] = "conflicting_umi_count";
 static const char __pyx_k_contiguous_and_direct[] = "<contiguous and direct>";
 static const char __pyx_k_filter_inter_doublets[] = "filter_inter_doublets";
 static const char __pyx_k_filter_intra_doublets[] = "filter_intra_doublets";
@@ -2183,7 +2181,6 @@ static const char __pyx_k_MemoryView_of_r_at_0x_x[] = "<MemoryView of %r at 0x%x
 static const char __pyx_k_contiguous_and_indirect[] = "<contiguous and indirect>";
 static const char __pyx_k_mapIntBCs_locals_lambda[] = "mapIntBCs.<locals>.<lambda>";
 static const char __pyx_k_Cannot_index_with_type_s[] = "Cannot index with type '%s'";
-static const char __pyx_k_Filtering_Intra_doublets[] = "Filtering Intra-doublets";
 static const char __pyx_k_Invalid_shape_in_axis_d_d[] = "Invalid shape in axis %d: %d.";
 static const char __pyx_k_Identifying_Inter_doublets[] = "Identifying Inter doublets";
 static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
@@ -2221,7 +2218,6 @@ static PyObject *__pyx_n_s_DataFrame;
 static PyObject *__pyx_n_s_Ellipsis;
 static PyObject *__pyx_kp_s_Empty_shape_tuple_for_cython_arr;
 static PyObject *__pyx_kp_s_Filtered;
-static PyObject *__pyx_kp_s_Filtering_Intra_doublets;
 static PyObject *__pyx_kp_s_Identifying_Inter_doublets;
 static PyObject *__pyx_kp_s_Incompatible_checksums_s_vs_0xb0;
 static PyObject *__pyx_n_s_IndexError;
@@ -2230,6 +2226,7 @@ static PyObject *__pyx_kp_s_Intra_Lineage_Group_Doublets_of;
 static PyObject *__pyx_kp_s_Invalid_mode_expected_c_or_fortr;
 static PyObject *__pyx_kp_s_Invalid_shape_in_axis_d_d;
 static PyObject *__pyx_n_s_LG;
+static PyObject *__pyx_n_s_MT;
 static PyObject *__pyx_n_s_MemoryError;
 static PyObject *__pyx_kp_s_MemoryView_of_r_at_0x_x;
 static PyObject *__pyx_kp_s_MemoryView_of_r_object;
@@ -2254,8 +2251,6 @@ static PyObject *__pyx_n_s_a;
 static PyObject *__pyx_n_s_agg;
 static PyObject *__pyx_n_s_aggfunc;
 static PyObject *__pyx_n_s_allele;
-static PyObject *__pyx_n_s_allele1;
-static PyObject *__pyx_n_s_allele2;
 static PyObject *__pyx_n_s_allele_counter;
 static PyObject *__pyx_kp_s_alleles_removed;
 static PyObject *__pyx_n_s_allocate_buffer;
@@ -2279,6 +2274,7 @@ static PyObject *__pyx_n_s_colorbar;
 static PyObject *__pyx_n_s_colors;
 static PyObject *__pyx_n_s_columns;
 static PyObject *__pyx_n_s_compute_lg_membership;
+static PyObject *__pyx_n_s_conflicting_umi_count;
 static PyObject *__pyx_kp_s_contiguous_and_direct;
 static PyObject *__pyx_kp_s_contiguous_and_indirect;
 static PyObject *__pyx_n_s_corrected;
@@ -2290,9 +2286,9 @@ static PyObject *__pyx_n_s_dm;
 static PyObject *__pyx_n_s_dmat;
 static PyObject *__pyx_n_s_do;
 static PyObject *__pyx_n_s_dot;
-static PyObject *__pyx_n_s_doublet;
 static PyObject *__pyx_n_s_doublet_list;
 static PyObject *__pyx_n_s_drop;
+static PyObject *__pyx_n_s_drop_duplicates;
 static PyObject *__pyx_n_s_dropna;
 static PyObject *__pyx_n_s_dropouts;
 static PyObject *__pyx_n_s_dtype;
@@ -2311,6 +2307,7 @@ static PyObject *__pyx_n_s_filter_dict;
 static PyObject *__pyx_n_s_filter_inter_doublets;
 static PyObject *__pyx_n_s_filter_inter_doublets_locals_fil;
 static PyObject *__pyx_n_s_filter_intra_doublets;
+static PyObject *__pyx_n_s_first;
 static PyObject *__pyx_n_s_flags;
 static PyObject *__pyx_n_s_format;
 static PyObject *__pyx_n_s_fortran;
@@ -2325,8 +2322,6 @@ static PyObject *__pyx_kp_s_got_differing_extents_in_dimensi;
 static PyObject *__pyx_n_s_group;
 static PyObject *__pyx_n_s_groupby;
 static PyObject *__pyx_n_s_i;
-static PyObject *__pyx_n_s_iBC1;
-static PyObject *__pyx_n_s_iBC2;
 static PyObject *__pyx_n_s_iBC_assign;
 static PyObject *__pyx_n_s_ibc_sets;
 static PyObject *__pyx_n_s_ibcs;
@@ -2348,6 +2343,7 @@ static PyObject *__pyx_kp_s_itemsize_0_for_cython_array;
 static PyObject *__pyx_n_s_j;
 static PyObject *__pyx_n_s_join;
 static PyObject *__pyx_n_s_k;
+static PyObject *__pyx_n_s_keep;
 static PyObject *__pyx_n_s_keys;
 static PyObject *__pyx_n_s_l;
 static PyObject *__pyx_n_s_lg;
@@ -2377,7 +2373,6 @@ static PyObject *__pyx_n_s_mems;
 static PyObject *__pyx_n_s_memview;
 static PyObject *__pyx_n_s_mode;
 static PyObject *__pyx_n_s_moleculetable;
-static PyObject *__pyx_n_s_mt;
 static PyObject *__pyx_n_s_n;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_name_2;
@@ -2401,7 +2396,7 @@ static PyObject *__pyx_n_s_piv;
 static PyObject *__pyx_n_s_pivot_table;
 static PyObject *__pyx_n_s_plt;
 static PyObject *__pyx_n_s_prop;
-static PyObject *__pyx_n_s_props;
+static PyObject *__pyx_n_s_prop_multi_alleles;
 static PyObject *__pyx_n_s_pylab;
 static PyObject *__pyx_n_s_pyx_PickleError;
 static PyObject *__pyx_n_s_pyx_checksum;
@@ -2412,9 +2407,7 @@ static PyObject *__pyx_n_s_pyx_type;
 static PyObject *__pyx_n_s_pyx_unpickle_Enum;
 static PyObject *__pyx_n_s_pyx_vtable;
 static PyObject *__pyx_n_s_r;
-static PyObject *__pyx_n_s_r1;
 static PyObject *__pyx_n_s_r1_assign;
-static PyObject *__pyx_n_s_r2;
 static PyObject *__pyx_n_s_r2_assign;
 static PyObject *__pyx_n_s_r3_assign;
 static PyObject *__pyx_n_s_range;
@@ -2453,7 +2446,6 @@ static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_thresh;
 static PyObject *__pyx_n_s_time;
 static PyObject *__pyx_n_s_tot;
-static PyObject *__pyx_n_s_totalCount;
 static PyObject *__pyx_n_s_tqdm;
 static PyObject *__pyx_n_s_true_lg;
 static PyObject *__pyx_kp_s_unable_to_allocate_array_data;
@@ -2464,7 +2456,9 @@ static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_n_s_values;
 static PyObject *__pyx_n_s_verbose;
 static PyObject *__pyx_n_s_write;
+static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_x1;
+static PyObject *__pyx_n_s_xuniq;
 static PyObject *__pyx_n_s_yaml;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_n_s_zip;
@@ -2472,7 +2466,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
 static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x); /* proto */
 static PyObject *__pyx_lambda_funcdef_lambda1(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x); /* proto */
 static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_2mapIntBCs(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_moleculetable, PyObject *__pyx_v_outputfile, PyObject *__pyx_v_outputdir, PyObject *__pyx_v_verbose); /* proto */
-static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mt, PyObject *__pyx_v_outputfile, PyObject *__pyx_v_outputdir, PyObject *__pyx_v_prop); /* proto */
+static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_MT, PyObject *__pyx_v_outputfile, PyObject *__pyx_v_outputdir, PyObject *__pyx_v_prop); /* proto */
 static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__pyx_v_x); /* proto */
 static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_6get_intbc_sets(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_lgs, PyObject *__pyx_v_lg_names, PyObject *__pyx_v_thresh); /* proto */
 static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_8compute_lg_membership(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_cell, PyObject *__pyx_v_intbc_sets, PyObject *__pyx_v_lg_dropouts, CYTHON_UNUSED PyObject *__pyx_v_scale_by_dropout); /* proto */
@@ -2526,6 +2520,7 @@ static PyObject *__pyx_tp_new_Enum(PyTypeObject *t, PyObject *a, PyObject *k); /
 static PyObject *__pyx_tp_new_memoryview(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new__memoryviewslice(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values = {0, &__pyx_n_s_values, 0, 0, 0};
+static PyObject *__pyx_float_0_1;
 static PyObject *__pyx_float_1_0;
 static PyObject *__pyx_float_0_35;
 static PyObject *__pyx_int_0;
@@ -4676,7 +4671,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  * 
  *     return moleculetable             # <<<<<<<<<<<<<<
  * 
- * def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_moleculetable);
@@ -4726,17 +4721,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
 /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":141
  *     return moleculetable
  * 
- * def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):             # <<<<<<<<<<<<<<
- *     """
- *     Filter doublets from the allele table AT.
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):             # <<<<<<<<<<<<<<
+ * 
+ *     doublet_list = []
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets[] = "\n    Filter doublets from the allele table AT.\n\n    ";
-static PyMethodDef __pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets = {"filter_intra_doublets", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets, METH_VARARGS|METH_KEYWORDS, __pyx_doc_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets};
+static PyMethodDef __pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets = {"filter_intra_doublets", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets, METH_VARARGS|METH_KEYWORDS, 0};
 static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  PyObject *__pyx_v_mt = 0;
+  PyObject *__pyx_v_MT = 0;
   PyObject *__pyx_v_outputfile = 0;
   PyObject *__pyx_v_outputdir = 0;
   PyObject *__pyx_v_prop = 0;
@@ -4744,9 +4738,9 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("filter_intra_doublets (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_mt,&__pyx_n_s_outputfile,&__pyx_n_s_outputdir,&__pyx_n_s_prop,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_MT,&__pyx_n_s_outputfile,&__pyx_n_s_outputdir,&__pyx_n_s_prop,0};
     PyObject* values[4] = {0,0,0,0};
-    values[3] = ((PyObject *)__pyx_float_0_35);
+    values[3] = ((PyObject *)__pyx_float_0_1);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
@@ -4765,7 +4759,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_mt)) != 0)) kw_args--;
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_MT)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -4800,7 +4794,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_mt = values[0];
+    __pyx_v_MT = values[0];
     __pyx_v_outputfile = values[1];
     __pyx_v_outputdir = values[2];
     __pyx_v_prop = values[3];
@@ -4813,28 +4807,22 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(__pyx_self, __pyx_v_mt, __pyx_v_outputfile, __pyx_v_outputdir, __pyx_v_prop);
+  __pyx_r = __pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(__pyx_self, __pyx_v_MT, __pyx_v_outputfile, __pyx_v_outputdir, __pyx_v_prop);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mt, PyObject *__pyx_v_outputfile, PyObject *__pyx_v_outputdir, PyObject *__pyx_v_prop) {
+static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_4filter_intra_doublets(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_MT, PyObject *__pyx_v_outputfile, PyObject *__pyx_v_outputdir, PyObject *__pyx_v_prop) {
   PyObject *__pyx_v_doublet_list = NULL;
   PyObject *__pyx_v_filter_dict = NULL;
   PyObject *__pyx_v_n = NULL;
   PyObject *__pyx_v_g = NULL;
-  PyObject *__pyx_v_x1 = NULL;
-  int __pyx_v_doublet;
-  PyObject *__pyx_v_r1 = NULL;
-  PyObject *__pyx_v_iBC1 = NULL;
-  PyObject *__pyx_v_allele1 = NULL;
-  PyObject *__pyx_v_r2 = NULL;
-  PyObject *__pyx_v_iBC2 = NULL;
-  PyObject *__pyx_v_allele2 = NULL;
-  PyObject *__pyx_v_totalCount = NULL;
-  PyObject *__pyx_v_props = NULL;
+  PyObject *__pyx_v_conflicting_umi_count = NULL;
+  PyObject *__pyx_v_x = NULL;
+  PyObject *__pyx_v_xuniq = NULL;
+  PyObject *__pyx_v_prop_multi_alleles = NULL;
   PyObject *__pyx_v_f = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -4843,202 +4831,211 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   PyObject *__pyx_t_3 = NULL;
   PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
-  Py_ssize_t __pyx_t_6;
-  PyObject *(*__pyx_t_7)(PyObject *);
+  PyObject *__pyx_t_6 = NULL;
+  Py_ssize_t __pyx_t_7;
   PyObject *(*__pyx_t_8)(PyObject *);
-  PyObject *__pyx_t_9 = NULL;
+  PyObject *(*__pyx_t_9)(PyObject *);
   PyObject *__pyx_t_10 = NULL;
   int __pyx_t_11;
-  Py_ssize_t __pyx_t_12;
-  PyObject *(*__pyx_t_13)(PyObject *);
-  Py_ssize_t __pyx_t_14;
-  PyObject *(*__pyx_t_15)(PyObject *);
-  int __pyx_t_16;
-  PyObject *__pyx_t_17 = NULL;
-  PyObject *__pyx_t_18 = NULL;
-  PyObject *__pyx_t_19 = NULL;
-  PyObject *__pyx_t_20 = NULL;
-  PyObject *__pyx_t_21 = NULL;
+  PyObject *__pyx_t_12 = NULL;
+  PyObject *__pyx_t_13 = NULL;
+  PyObject *__pyx_t_14 = NULL;
+  PyObject *__pyx_t_15 = NULL;
+  PyObject *__pyx_t_16 = NULL;
+  int __pyx_t_17;
   __Pyx_RefNannySetupContext("filter_intra_doublets", 0);
-  __Pyx_INCREF(__pyx_v_mt);
+  __Pyx_INCREF(__pyx_v_MT);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":146
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":143
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):
  * 
- *     """
  *     doublet_list = []             # <<<<<<<<<<<<<<
- * 
  *     filter_dict = {}
+ *     for n, g in tqdm(MT.groupby(["cellBC"])):
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_doublet_list = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":148
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":144
+ * 
  *     doublet_list = []
- * 
  *     filter_dict = {}             # <<<<<<<<<<<<<<
- * 
- *     for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):
+ *     for n, g in tqdm(MT.groupby(["cellBC"])):
+ *         conflicting_umi_count = 0
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_filter_dict = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":150
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":145
+ *     doublet_list = []
  *     filter_dict = {}
+ *     for n, g in tqdm(MT.groupby(["cellBC"])):             # <<<<<<<<<<<<<<
+ *         conflicting_umi_count = 0
  * 
- *     for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):             # <<<<<<<<<<<<<<
- * 
- *         x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_mt, __pyx_n_s_groupby); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_MT, __pyx_n_s_groupby); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(__pyx_n_s_cellBC);
   __Pyx_GIVEREF(__pyx_n_s_cellBC);
-  PyList_SET_ITEM(__pyx_t_4, 0, __pyx_n_s_cellBC);
-  __pyx_t_5 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_3);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
-      __Pyx_INCREF(__pyx_t_5);
+  PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_cellBC);
+  __pyx_t_6 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+      __Pyx_INCREF(__pyx_t_6);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_3, function);
+      __Pyx_DECREF_SET(__pyx_t_4, function);
     }
   }
-  __pyx_t_2 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_5, __pyx_t_4) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_6, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_2);
-  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
-  __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_desc, __pyx_kp_s_Filtering_Intra_doublets) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
-    __pyx_t_2 = __pyx_t_4; __Pyx_INCREF(__pyx_t_2); __pyx_t_6 = 0;
-    __pyx_t_7 = NULL;
-  } else {
-    __pyx_t_6 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_7 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 150, __pyx_L1_error)
-  }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
+    __pyx_t_2 = __pyx_t_1; __Pyx_INCREF(__pyx_t_2); __pyx_t_7 = 0;
+    __pyx_t_8 = NULL;
+  } else {
+    __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 145, __pyx_L1_error)
+  }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
-    if (likely(!__pyx_t_7)) {
+    if (likely(!__pyx_t_8)) {
       if (likely(PyList_CheckExact(__pyx_t_2))) {
-        if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_2)) break;
+        if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_4); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 150, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
-        if (__pyx_t_6 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
+        if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_4); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 150, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_1); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
     } else {
-      __pyx_t_4 = __pyx_t_7(__pyx_t_2);
-      if (unlikely(!__pyx_t_4)) {
+      __pyx_t_1 = __pyx_t_8(__pyx_t_2);
+      if (unlikely(!__pyx_t_1)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 150, __pyx_L1_error)
+          else __PYX_ERR(0, 145, __pyx_L1_error)
         }
         break;
       }
-      __Pyx_GOTREF(__pyx_t_4);
+      __Pyx_GOTREF(__pyx_t_1);
     }
-    if ((likely(PyTuple_CheckExact(__pyx_t_4))) || (PyList_CheckExact(__pyx_t_4))) {
-      PyObject* sequence = __pyx_t_4;
+    if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
+      PyObject* sequence = __pyx_t_1;
       Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 150, __pyx_L1_error)
+        __PYX_ERR(0, 145, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
         __pyx_t_3 = PyTuple_GET_ITEM(sequence, 0); 
-        __pyx_t_1 = PyTuple_GET_ITEM(sequence, 1); 
+        __pyx_t_4 = PyTuple_GET_ITEM(sequence, 1); 
       } else {
         __pyx_t_3 = PyList_GET_ITEM(sequence, 0); 
-        __pyx_t_1 = PyList_GET_ITEM(sequence, 1); 
+        __pyx_t_4 = PyList_GET_ITEM(sequence, 1); 
       }
       __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_4);
       #else
-      __pyx_t_3 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_3 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_1 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_4 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
       #endif
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_5 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_5 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_8 = Py_TYPE(__pyx_t_5)->tp_iternext;
-      index = 0; __pyx_t_3 = __pyx_t_8(__pyx_t_5); if (unlikely(!__pyx_t_3)) goto __pyx_L5_unpacking_failed;
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_9 = Py_TYPE(__pyx_t_5)->tp_iternext;
+      index = 0; __pyx_t_3 = __pyx_t_9(__pyx_t_5); if (unlikely(!__pyx_t_3)) goto __pyx_L5_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_3);
-      index = 1; __pyx_t_1 = __pyx_t_8(__pyx_t_5); if (unlikely(!__pyx_t_1)) goto __pyx_L5_unpacking_failed;
-      __Pyx_GOTREF(__pyx_t_1);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_5), 2) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
-      __pyx_t_8 = NULL;
+      index = 1; __pyx_t_4 = __pyx_t_9(__pyx_t_5); if (unlikely(!__pyx_t_4)) goto __pyx_L5_unpacking_failed;
+      __Pyx_GOTREF(__pyx_t_4);
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_9(__pyx_t_5), 2) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
+      __pyx_t_9 = NULL;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       goto __pyx_L6_unpacking_done;
       __pyx_L5_unpacking_failed:;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_8 = NULL;
+      __pyx_t_9 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 150, __pyx_L1_error)
+      __PYX_ERR(0, 145, __pyx_L1_error)
       __pyx_L6_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_3);
     __pyx_t_3 = 0;
-    __Pyx_XDECREF_SET(__pyx_v_g, __pyx_t_1);
-    __pyx_t_1 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_g, __pyx_t_4);
+    __pyx_t_4 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":152
- *     for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":146
+ *     filter_dict = {}
+ *     for n, g in tqdm(MT.groupby(["cellBC"])):
+ *         conflicting_umi_count = 0             # <<<<<<<<<<<<<<
  * 
- *         x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()             # <<<<<<<<<<<<<<
- * 
- *         doublet = False
+ *         x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_g, __pyx_n_s_groupby); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_XDECREF_SET(__pyx_v_conflicting_umi_count, __pyx_int_0);
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":148
+ *         conflicting_umi_count = 0
+ * 
+ *         x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()             # <<<<<<<<<<<<<<
+ *         xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")
+ * 
+ */
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_g, __pyx_n_s_groupby); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_9 = PyList_New(2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 152, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_9);
+    __pyx_t_6 = PyList_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __Pyx_INCREF(__pyx_n_s_intBC);
     __Pyx_GIVEREF(__pyx_n_s_intBC);
-    PyList_SET_ITEM(__pyx_t_9, 0, __pyx_n_s_intBC);
+    PyList_SET_ITEM(__pyx_t_6, 0, __pyx_n_s_intBC);
     __Pyx_INCREF(__pyx_n_s_allele);
     __Pyx_GIVEREF(__pyx_n_s_allele);
-    PyList_SET_ITEM(__pyx_t_9, 1, __pyx_n_s_allele);
+    PyList_SET_ITEM(__pyx_t_6, 1, __pyx_n_s_allele);
     __pyx_t_10 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
       __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_5);
@@ -5049,662 +5046,103 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         __Pyx_DECREF_SET(__pyx_t_5, function);
       }
     }
-    __pyx_t_3 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_10, __pyx_t_9) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_9);
+    __pyx_t_3 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_10, __pyx_t_6) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6);
     __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_agg); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_agg); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_UMI, __pyx_n_s_count) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_readCount, __pyx_n_s_sum) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
-    __pyx_t_9 = NULL;
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_UMI, __pyx_n_s_count) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
+    __pyx_t_6 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_9 = PyMethod_GET_SELF(__pyx_t_5);
-      if (likely(__pyx_t_9)) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_5);
+      if (likely(__pyx_t_6)) {
         PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-        __Pyx_INCREF(__pyx_t_9);
+        __Pyx_INCREF(__pyx_t_6);
         __Pyx_INCREF(function);
         __Pyx_DECREF_SET(__pyx_t_5, function);
       }
     }
-    __pyx_t_1 = (__pyx_t_9) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_9, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+    __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_t_3) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_sort_values); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sort_values); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_ascending, Py_False) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__9, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_ascending, Py_False) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__9, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_reset_index); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_reset_index); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
-      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_4);
       if (likely(__pyx_t_3)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
         __Pyx_INCREF(__pyx_t_3);
         __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_1, function);
+        __Pyx_DECREF_SET(__pyx_t_4, function);
       }
     }
-    __pyx_t_4 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
+    __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_XDECREF_SET(__pyx_v_x1, __pyx_t_4);
-    __pyx_t_4 = 0;
-
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":154
- *         x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()
- * 
- *         doublet = False             # <<<<<<<<<<<<<<
- *         if x1.shape[0] > 0:
- * 
- */
-    __pyx_v_doublet = 0;
-
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":155
- * 
- *         doublet = False
- *         if x1.shape[0] > 0:             # <<<<<<<<<<<<<<
- * 
- *             for r1 in range(x1.shape[0]):
- */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_shape); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyObject_RichCompare(__pyx_t_1, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (__pyx_t_11) {
+    __Pyx_XDECREF_SET(__pyx_v_x, __pyx_t_1);
+    __pyx_t_1 = 0;
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":157
- *         if x1.shape[0] > 0:
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":149
  * 
- *             for r1 in range(x1.shape[0]):             # <<<<<<<<<<<<<<
+ *         x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()
+ *         xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")             # <<<<<<<<<<<<<<
  * 
- *                 iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
+ *         conflicting_umi_count = x["UMI"].sum() - xuniq["UMI"].sum()
  */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_shape); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
-        __pyx_t_1 = __pyx_t_4; __Pyx_INCREF(__pyx_t_1); __pyx_t_12 = 0;
-        __pyx_t_13 = NULL;
-      } else {
-        __pyx_t_12 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_13 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 157, __pyx_L1_error)
-      }
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      for (;;) {
-        if (likely(!__pyx_t_13)) {
-          if (likely(PyList_CheckExact(__pyx_t_1))) {
-            if (__pyx_t_12 >= PyList_GET_SIZE(__pyx_t_1)) break;
-            #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_12); __Pyx_INCREF(__pyx_t_4); __pyx_t_12++; if (unlikely(0 < 0)) __PYX_ERR(0, 157, __pyx_L1_error)
-            #else
-            __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_12); __pyx_t_12++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            #endif
-          } else {
-            if (__pyx_t_12 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
-            #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_12); __Pyx_INCREF(__pyx_t_4); __pyx_t_12++; if (unlikely(0 < 0)) __PYX_ERR(0, 157, __pyx_L1_error)
-            #else
-            __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_12); __pyx_t_12++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            #endif
-          }
-        } else {
-          __pyx_t_4 = __pyx_t_13(__pyx_t_1);
-          if (unlikely(!__pyx_t_4)) {
-            PyObject* exc_type = PyErr_Occurred();
-            if (exc_type) {
-              if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-              else __PYX_ERR(0, 157, __pyx_L1_error)
-            }
-            break;
-          }
-          __Pyx_GOTREF(__pyx_t_4);
-        }
-        __Pyx_XDECREF_SET(__pyx_v_r1, __pyx_t_4);
-        __pyx_t_4 = 0;
-
-        /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":159
- *             for r1 in range(x1.shape[0]):
- * 
- *                 iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]             # <<<<<<<<<<<<<<
- * 
- *                 for r2 in range(r1 + 1, x1.shape[0]):
- */
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_INCREF(__pyx_v_r1);
-        __Pyx_GIVEREF(__pyx_v_r1);
-        PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_r1);
-        __Pyx_INCREF(__pyx_n_s_intBC);
-        __Pyx_GIVEREF(__pyx_n_s_intBC);
-        PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_n_s_intBC);
-        __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_5);
-        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __Pyx_INCREF(__pyx_v_r1);
-        __Pyx_GIVEREF(__pyx_v_r1);
-        PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_r1);
-        __Pyx_INCREF(__pyx_n_s_allele);
-        __Pyx_GIVEREF(__pyx_n_s_allele);
-        PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_n_s_allele);
-        __pyx_t_9 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 159, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __Pyx_XDECREF_SET(__pyx_v_iBC1, __pyx_t_5);
-        __pyx_t_5 = 0;
-        __Pyx_XDECREF_SET(__pyx_v_allele1, __pyx_t_9);
-        __pyx_t_9 = 0;
-
-        /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":161
- *                 iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
- * 
- *                 for r2 in range(r1 + 1, x1.shape[0]):             # <<<<<<<<<<<<<<
- * 
- *                     iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
- */
-        __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_v_r1, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 161, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_5, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 161, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_5);
-        __Pyx_GIVEREF(__pyx_t_9);
-        PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_9);
-        __Pyx_GIVEREF(__pyx_t_4);
-        PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
-        __pyx_t_9 = 0;
-        __pyx_t_4 = 0;
-        __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 161, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
-          __pyx_t_5 = __pyx_t_4; __Pyx_INCREF(__pyx_t_5); __pyx_t_14 = 0;
-          __pyx_t_15 = NULL;
-        } else {
-          __pyx_t_14 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_15 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 161, __pyx_L1_error)
-        }
-        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        for (;;) {
-          if (likely(!__pyx_t_15)) {
-            if (likely(PyList_CheckExact(__pyx_t_5))) {
-              if (__pyx_t_14 >= PyList_GET_SIZE(__pyx_t_5)) break;
-              #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_14); __Pyx_INCREF(__pyx_t_4); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
-              #else
-              __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 161, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              #endif
-            } else {
-              if (__pyx_t_14 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
-              #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_14); __Pyx_INCREF(__pyx_t_4); __pyx_t_14++; if (unlikely(0 < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
-              #else
-              __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_14); __pyx_t_14++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 161, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              #endif
-            }
-          } else {
-            __pyx_t_4 = __pyx_t_15(__pyx_t_5);
-            if (unlikely(!__pyx_t_4)) {
-              PyObject* exc_type = PyErr_Occurred();
-              if (exc_type) {
-                if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                else __PYX_ERR(0, 161, __pyx_L1_error)
-              }
-              break;
-            }
-            __Pyx_GOTREF(__pyx_t_4);
-          }
-          __Pyx_XDECREF_SET(__pyx_v_r2, __pyx_t_4);
-          __pyx_t_4 = 0;
-
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":163
- *                 for r2 in range(r1 + 1, x1.shape[0]):
- * 
- *                     iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]             # <<<<<<<<<<<<<<
- * 
- *                     if iBC1 == iBC2 and allele1 != allele2:
- */
-          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_9);
-          __Pyx_INCREF(__pyx_v_r2);
-          __Pyx_GIVEREF(__pyx_v_r2);
-          PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_v_r2);
-          __Pyx_INCREF(__pyx_n_s_intBC);
-          __Pyx_GIVEREF(__pyx_n_s_intBC);
-          PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_n_s_intBC);
-          __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_t_9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-          __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_9);
-          __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_INCREF(__pyx_v_r2);
-          __Pyx_GIVEREF(__pyx_v_r2);
-          PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_r2);
-          __Pyx_INCREF(__pyx_n_s_allele);
-          __Pyx_GIVEREF(__pyx_n_s_allele);
-          PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_n_s_allele);
-          __pyx_t_10 = __Pyx_PyObject_GetItem(__pyx_t_9, __pyx_t_4); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 163, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_10);
-          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_XDECREF_SET(__pyx_v_iBC2, __pyx_t_3);
-          __pyx_t_3 = 0;
-          __Pyx_XDECREF_SET(__pyx_v_allele2, __pyx_t_10);
-          __pyx_t_10 = 0;
-
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":165
- *                     iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
- * 
- *                     if iBC1 == iBC2 and allele1 != allele2:             # <<<<<<<<<<<<<<
- * 
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()
- */
-          __pyx_t_10 = PyObject_RichCompare(__pyx_v_iBC1, __pyx_v_iBC2, Py_EQ); __Pyx_XGOTREF(__pyx_t_10); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 165, __pyx_L1_error)
-          __pyx_t_16 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_16 < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          if (__pyx_t_16) {
-          } else {
-            __pyx_t_11 = __pyx_t_16;
-            goto __pyx_L13_bool_binop_done;
-          }
-          __pyx_t_10 = PyObject_RichCompare(__pyx_v_allele1, __pyx_v_allele2, Py_NE); __Pyx_XGOTREF(__pyx_t_10); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 165, __pyx_L1_error)
-          __pyx_t_16 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_16 < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_11 = __pyx_t_16;
-          __pyx_L13_bool_binop_done:;
-          if (__pyx_t_11) {
-
-            /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":167
- *                     if iBC1 == iBC2 and allele1 != allele2:
- * 
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()             # <<<<<<<<<<<<<<
- *                         props = x1.loc[[r1, r2], "UMI"] / totalCount
- *                         if props.iloc[1] >= prop:
- */
-            __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_3);
-            __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_INCREF(__pyx_v_r1);
-            __Pyx_GIVEREF(__pyx_v_r1);
-            PyList_SET_ITEM(__pyx_t_4, 0, __pyx_v_r1);
-            __Pyx_INCREF(__pyx_v_r2);
-            __Pyx_GIVEREF(__pyx_v_r2);
-            PyList_SET_ITEM(__pyx_t_4, 1, __pyx_v_r2);
-            __pyx_t_9 = PyTuple_New(2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_9);
-            __Pyx_GIVEREF(__pyx_t_4);
-            PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_4);
-            __Pyx_INCREF(__pyx_n_s_UMI);
-            __Pyx_GIVEREF(__pyx_n_s_UMI);
-            PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_n_s_UMI);
-            __pyx_t_4 = 0;
-            __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-            __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-            __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_9);
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_4 = NULL;
-            if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_9))) {
-              __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_9);
-              if (likely(__pyx_t_4)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_9);
-                __Pyx_INCREF(__pyx_t_4);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_9, function);
-              }
-            }
-            __pyx_t_10 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_9);
-            __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-            if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 167, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_10);
-            __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-            __Pyx_XDECREF_SET(__pyx_v_totalCount, __pyx_t_10);
-            __pyx_t_10 = 0;
-
-            /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":168
- * 
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()
- *                         props = x1.loc[[r1, r2], "UMI"] / totalCount             # <<<<<<<<<<<<<<
- *                         if props.iloc[1] >= prop:
- *                             filter_dict[n] = 'bad'
- */
-            __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_x1, __pyx_n_s_loc); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 168, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_10);
-            __pyx_t_9 = PyList_New(2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 168, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_9);
-            __Pyx_INCREF(__pyx_v_r1);
-            __Pyx_GIVEREF(__pyx_v_r1);
-            PyList_SET_ITEM(__pyx_t_9, 0, __pyx_v_r1);
-            __Pyx_INCREF(__pyx_v_r2);
-            __Pyx_GIVEREF(__pyx_v_r2);
-            PyList_SET_ITEM(__pyx_t_9, 1, __pyx_v_r2);
-            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 168, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_GIVEREF(__pyx_t_9);
-            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_9);
-            __Pyx_INCREF(__pyx_n_s_UMI);
-            __Pyx_GIVEREF(__pyx_n_s_UMI);
-            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_n_s_UMI);
-            __pyx_t_9 = 0;
-            __pyx_t_9 = __Pyx_PyObject_GetItem(__pyx_t_10, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 168, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_9);
-            __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_t_9, __pyx_v_totalCount); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 168, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-            __Pyx_XDECREF_SET(__pyx_v_props, __pyx_t_4);
-            __pyx_t_4 = 0;
-
-            /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":169
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()
- *                         props = x1.loc[[r1, r2], "UMI"] / totalCount
- *                         if props.iloc[1] >= prop:             # <<<<<<<<<<<<<<
- *                             filter_dict[n] = 'bad'
- *                             doublet = True
- */
-            __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_props, __pyx_n_s_iloc); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_9 = __Pyx_GetItemInt(__pyx_t_4, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 169, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_9);
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_4 = PyObject_RichCompare(__pyx_t_9, __pyx_v_prop, Py_GE); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-            __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 169, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            if (__pyx_t_11) {
-
-              /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":170
- *                         props = x1.loc[[r1, r2], "UMI"] / totalCount
- *                         if props.iloc[1] >= prop:
- *                             filter_dict[n] = 'bad'             # <<<<<<<<<<<<<<
- *                             doublet = True
- *                             break
- */
-              if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_n, __pyx_n_s_bad) < 0)) __PYX_ERR(0, 170, __pyx_L1_error)
-
-              /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":171
- *                         if props.iloc[1] >= prop:
- *                             filter_dict[n] = 'bad'
- *                             doublet = True             # <<<<<<<<<<<<<<
- *                             break
- *                 if doublet:
- */
-              __pyx_v_doublet = 1;
-
-              /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":172
- *                             filter_dict[n] = 'bad'
- *                             doublet = True
- *                             break             # <<<<<<<<<<<<<<
- *                 if doublet:
- *                     break
- */
-              goto __pyx_L11_break;
-
-              /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":169
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()
- *                         props = x1.loc[[r1, r2], "UMI"] / totalCount
- *                         if props.iloc[1] >= prop:             # <<<<<<<<<<<<<<
- *                             filter_dict[n] = 'bad'
- *                             doublet = True
- */
-            }
-
-            /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":165
- *                     iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
- * 
- *                     if iBC1 == iBC2 and allele1 != allele2:             # <<<<<<<<<<<<<<
- * 
- *                         totalCount = x1.loc[[r1, r2], "UMI"].sum()
- */
-          }
-
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":161
- *                 iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
- * 
- *                 for r2 in range(r1 + 1, x1.shape[0]):             # <<<<<<<<<<<<<<
- * 
- *                     iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
- */
-        }
-        __pyx_L11_break:;
-        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-        /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":173
- *                             doublet = True
- *                             break
- *                 if doublet:             # <<<<<<<<<<<<<<
- *                     break
- * 
- */
-        __pyx_t_11 = (__pyx_v_doublet != 0);
-        if (__pyx_t_11) {
-
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
- *                             break
- *                 if doublet:
- *                     break             # <<<<<<<<<<<<<<
- * 
- *         if not doublet:
- */
-          goto __pyx_L9_break;
-
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":173
- *                             doublet = True
- *                             break
- *                 if doublet:             # <<<<<<<<<<<<<<
- *                     break
- * 
- */
-        }
-
-        /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":157
- *         if x1.shape[0] > 0:
- * 
- *             for r1 in range(x1.shape[0]):             # <<<<<<<<<<<<<<
- * 
- *                 iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
- */
-      }
-      __pyx_L9_break:;
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":155
- * 
- *         doublet = False
- *         if x1.shape[0] > 0:             # <<<<<<<<<<<<<<
- * 
- *             for r1 in range(x1.shape[0]):
- */
-    }
-
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":176
- *                     break
- * 
- *         if not doublet:             # <<<<<<<<<<<<<<
- *             filter_dict[n] = "good"
- * 
- */
-    __pyx_t_11 = ((!(__pyx_v_doublet != 0)) != 0);
-    if (__pyx_t_11) {
-
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":177
- * 
- *         if not doublet:
- *             filter_dict[n] = "good"             # <<<<<<<<<<<<<<
- * 
- * 
- */
-      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_n, __pyx_n_s_good) < 0)) __PYX_ERR(0, 177, __pyx_L1_error)
-
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":176
- *                     break
- * 
- *         if not doublet:             # <<<<<<<<<<<<<<
- *             filter_dict[n] = "good"
- * 
- */
-    }
-
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":150
- *     filter_dict = {}
- * 
- *     for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):             # <<<<<<<<<<<<<<
- * 
- *         x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()
- */
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":180
- * 
- * 
- *     mt["status"] = mt["cellBC"].map(filter_dict)             # <<<<<<<<<<<<<<
- *     doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()
- * 
- */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_mt, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_map); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_5);
-    if (likely(__pyx_t_1)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-      __Pyx_INCREF(__pyx_t_1);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_5, function);
-    }
-  }
-  __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_1, __pyx_v_filter_dict) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_filter_dict);
-  __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(PyObject_SetItem(__pyx_v_mt, __pyx_n_s_status, __pyx_t_2) < 0)) __PYX_ERR(0, 180, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":181
- * 
- *     mt["status"] = mt["cellBC"].map(filter_dict)
- *     doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()             # <<<<<<<<<<<<<<
- * 
- *     with open(outputdir + "/" + outputfile, "a") as f:
- */
-  __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_mt, __pyx_n_s_status); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_t_5, __pyx_n_s_bad, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_mt, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_5);
-    if (likely(__pyx_t_1)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-      __Pyx_INCREF(__pyx_t_1);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_5, function);
-    }
-  }
-  __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF_SET(__pyx_v_doublet_list, __pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":183
- *     doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()
- * 
- *     with open(outputdir + "/" + outputfile, "a") as f:             # <<<<<<<<<<<<<<
- *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")
- * 
- */
-  /*with:*/ {
-    __pyx_t_2 = PyNumber_Add(__pyx_v_outputdir, __pyx_kp_s__7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = PyNumber_Add(__pyx_t_2, __pyx_v_outputfile); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_GIVEREF(__pyx_t_5);
-    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_5);
-    __Pyx_INCREF(__pyx_n_s_a);
-    __Pyx_GIVEREF(__pyx_n_s_a);
-    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_a);
-    __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_17 = __Pyx_PyObject_LookupSpecial(__pyx_t_5, __pyx_n_s_exit); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_17);
-    __pyx_t_1 = __Pyx_PyObject_LookupSpecial(__pyx_t_5, __pyx_n_s_enter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L18_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_drop_duplicates); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_INCREF(__pyx_n_s_intBC);
+    __Pyx_GIVEREF(__pyx_n_s_intBC);
+    PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_intBC);
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_subset, __pyx_t_3) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_keep, __pyx_n_s_first) < 0) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_empty_tuple, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_xuniq, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":151
+ *         xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")
+ * 
+ *         conflicting_umi_count = x["UMI"].sum() - xuniq["UMI"].sum()             # <<<<<<<<<<<<<<
+ * 
+ *         prop_multi_alleles = conflicting_umi_count / x["UMI"].sum()
+ */
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_x, __pyx_n_s_UMI); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
       __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_1);
@@ -5715,80 +5153,304 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         __Pyx_DECREF_SET(__pyx_t_1, function);
       }
     }
-    __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
+    __pyx_t_3 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L18_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __pyx_t_2;
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_xuniq, __pyx_n_s_UMI); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_4 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
+      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+      if (likely(__pyx_t_4)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_5, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_5);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_5 = PyNumber_Subtract(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_DECREF_SET(__pyx_v_conflicting_umi_count, __pyx_t_5);
+    __pyx_t_5 = 0;
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":153
+ *         conflicting_umi_count = x["UMI"].sum() - xuniq["UMI"].sum()
+ * 
+ *         prop_multi_alleles = conflicting_umi_count / x["UMI"].sum()             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_x, __pyx_n_s_UMI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_sum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_5 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyNumber_Divide(__pyx_v_conflicting_umi_count, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_prop_multi_alleles, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":156
+ * 
+ * 
+ *         if prop_multi_alleles > prop:             # <<<<<<<<<<<<<<
+ *             filter_dict[n] = "bad"
+ *         else:
+ */
+    __pyx_t_3 = PyObject_RichCompare(__pyx_v_prop_multi_alleles, __pyx_v_prop, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 156, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 156, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__pyx_t_11) {
+
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":157
+ * 
+ *         if prop_multi_alleles > prop:
+ *             filter_dict[n] = "bad"             # <<<<<<<<<<<<<<
+ *         else:
+ *             filter_dict[n] = "good"
+ */
+      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_n, __pyx_n_s_bad) < 0)) __PYX_ERR(0, 157, __pyx_L1_error)
+
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":156
+ * 
+ * 
+ *         if prop_multi_alleles > prop:             # <<<<<<<<<<<<<<
+ *             filter_dict[n] = "bad"
+ *         else:
+ */
+      goto __pyx_L7;
+    }
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":159
+ *             filter_dict[n] = "bad"
+ *         else:
+ *             filter_dict[n] = "good"             # <<<<<<<<<<<<<<
+ * 
+ *     MT["status"] = MT["cellBC"].map(filter_dict)
+ */
+    /*else*/ {
+      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_n, __pyx_n_s_good) < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+    }
+    __pyx_L7:;
+
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":145
+ *     doublet_list = []
+ *     filter_dict = {}
+ *     for n, g in tqdm(MT.groupby(["cellBC"])):             # <<<<<<<<<<<<<<
+ *         conflicting_umi_count = 0
+ * 
+ */
+  }
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":161
+ *             filter_dict[n] = "good"
+ * 
+ *     MT["status"] = MT["cellBC"].map(filter_dict)             # <<<<<<<<<<<<<<
+ * 
+ *     doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()
+ */
+  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_MT, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_map); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_5);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_5, function);
+    }
+  }
+  __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_3, __pyx_v_filter_dict) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_filter_dict);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (unlikely(PyObject_SetItem(__pyx_v_MT, __pyx_n_s_status, __pyx_t_2) < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":163
+ *     MT["status"] = MT["cellBC"].map(filter_dict)
+ * 
+ *     doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()             # <<<<<<<<<<<<<<
+ * 
+ *     with open(outputdir + "/" + outputfile, "a") as f:
+ */
+  __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_MT, __pyx_n_s_status); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_3 = PyObject_RichCompare(__pyx_t_5, __pyx_n_s_bad, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_MT, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_5);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_5, function);
+    }
+  }
+  __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF_SET(__pyx_v_doublet_list, __pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":165
+ *     doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()
+ * 
+ *     with open(outputdir + "/" + outputfile, "a") as f:             # <<<<<<<<<<<<<<
+ *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")
+ * 
+ */
+  /*with:*/ {
+    __pyx_t_2 = PyNumber_Add(__pyx_v_outputdir, __pyx_kp_s__7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_5 = PyNumber_Add(__pyx_t_2, __pyx_v_outputfile); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_5);
+    __Pyx_INCREF(__pyx_n_s_a);
+    __Pyx_GIVEREF(__pyx_n_s_a);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_n_s_a);
+    __pyx_t_5 = 0;
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_12 = __Pyx_PyObject_LookupSpecial(__pyx_t_5, __pyx_n_s_exit); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_t_3 = __Pyx_PyObject_LookupSpecial(__pyx_t_5, __pyx_n_s_enter); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L8_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_1)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_1);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L8_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __pyx_t_2;
     __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     /*try:*/ {
       {
         __Pyx_PyThreadState_declare
         __Pyx_PyThreadState_assign
-        __Pyx_ExceptionSave(&__pyx_t_18, &__pyx_t_19, &__pyx_t_20);
-        __Pyx_XGOTREF(__pyx_t_18);
-        __Pyx_XGOTREF(__pyx_t_19);
-        __Pyx_XGOTREF(__pyx_t_20);
+        __Pyx_ExceptionSave(&__pyx_t_13, &__pyx_t_14, &__pyx_t_15);
+        __Pyx_XGOTREF(__pyx_t_13);
+        __Pyx_XGOTREF(__pyx_t_14);
+        __Pyx_XGOTREF(__pyx_t_15);
         /*try:*/ {
-          __pyx_v_f = __pyx_t_1;
-          __pyx_t_1 = 0;
+          __pyx_v_f = __pyx_t_3;
+          __pyx_t_3 = 0;
 
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":184
+          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":166
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:
- *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")             # <<<<<<<<<<<<<<
+ *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")             # <<<<<<<<<<<<<<
  * 
- *     mt = mt[(mt["status"] == "good")]
+ *     MT = MT[(MT["status"] == "good")]
  */
-          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_write); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_write); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_6 = PyObject_Length(__pyx_v_doublet_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 184, __pyx_L22_error)
-          __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_7 = PyObject_Length(__pyx_v_doublet_list); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 166, __pyx_L12_error)
+          __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_2 = PyNumber_Add(__pyx_kp_s_Filtered, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_2 = PyNumber_Add(__pyx_kp_s_Filtered, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_2);
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __pyx_t_1 = PyNumber_Add(__pyx_t_2, __pyx_kp_s_Intra_Lineage_Group_Doublets_of); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+          __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_MT, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_unique); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __pyx_t_4 = PyNumber_Add(__pyx_t_2, __pyx_kp_s_Intra_Lineage_Group_Doublets_of); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_9 = __Pyx_PyObject_Dict_GetItem(__pyx_v_mt, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_9);
-          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_unique); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_10);
-          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-          __pyx_t_9 = NULL;
-          if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_10))) {
-            __pyx_t_9 = PyMethod_GET_SELF(__pyx_t_10);
-            if (likely(__pyx_t_9)) {
-              PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_10);
-              __Pyx_INCREF(__pyx_t_9);
+          __pyx_t_4 = NULL;
+          if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_6))) {
+            __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_6);
+            if (likely(__pyx_t_4)) {
+              PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+              __Pyx_INCREF(__pyx_t_4);
               __Pyx_INCREF(function);
-              __Pyx_DECREF_SET(__pyx_t_10, function);
+              __Pyx_DECREF_SET(__pyx_t_6, function);
             }
           }
-          __pyx_t_2 = (__pyx_t_9) ? __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_t_9) : __Pyx_PyObject_CallNoArg(__pyx_t_10);
-          __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_6);
+          __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_6 = PyObject_Length(__pyx_t_2); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 184, __pyx_L22_error)
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __pyx_t_7 = PyObject_Length(__pyx_t_2); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_10);
+          __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_2 = PyNumber_Add(__pyx_t_4, __pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L22_error)
+          __pyx_t_2 = PyNumber_Add(__pyx_t_1, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L12_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = PyNumber_Add(__pyx_t_2, __pyx_kp_s__5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __pyx_t_6 = PyNumber_Add(__pyx_t_2, __pyx_kp_s__5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_2 = NULL;
           if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -5800,158 +5462,158 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
               __Pyx_DECREF_SET(__pyx_t_5, function);
             }
           }
-          __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_t_10) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_10);
+          __pyx_t_3 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_t_6) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_6);
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L22_error)
-          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 166, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":183
- *     doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()
+          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":165
+ *     doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:             # <<<<<<<<<<<<<<
- *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")
+ *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")
  * 
  */
         }
-        __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-        __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
-        __Pyx_XDECREF(__pyx_t_20); __pyx_t_20 = 0;
-        goto __pyx_L27_try_end;
-        __pyx_L22_error:;
-        __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+        __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+        __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
+        __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
+        goto __pyx_L17_try_end;
+        __pyx_L12_error:;
         __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.filter_intra_doublets", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_10) < 0) __PYX_ERR(0, 183, __pyx_L24_except_error)
-          __Pyx_GOTREF(__pyx_t_1);
+          if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_5, &__pyx_t_6) < 0) __PYX_ERR(0, 165, __pyx_L14_except_error)
+          __Pyx_GOTREF(__pyx_t_3);
           __Pyx_GOTREF(__pyx_t_5);
-          __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_2 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_5, __pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L24_except_error)
+          __Pyx_GOTREF(__pyx_t_6);
+          __pyx_t_2 = PyTuple_Pack(3, __pyx_t_3, __pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L14_except_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_21 = __Pyx_PyObject_Call(__pyx_t_17, __pyx_t_2, NULL);
-          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+          __pyx_t_16 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_2, NULL);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 183, __pyx_L24_except_error)
-          __Pyx_GOTREF(__pyx_t_21);
-          __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_21);
-          __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
-          if (__pyx_t_11 < 0) __PYX_ERR(0, 183, __pyx_L24_except_error)
-          __pyx_t_16 = ((!(__pyx_t_11 != 0)) != 0);
-          if (__pyx_t_16) {
-            __Pyx_GIVEREF(__pyx_t_1);
+          if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 165, __pyx_L14_except_error)
+          __Pyx_GOTREF(__pyx_t_16);
+          __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_16);
+          __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
+          if (__pyx_t_11 < 0) __PYX_ERR(0, 165, __pyx_L14_except_error)
+          __pyx_t_17 = ((!(__pyx_t_11 != 0)) != 0);
+          if (__pyx_t_17) {
+            __Pyx_GIVEREF(__pyx_t_3);
             __Pyx_GIVEREF(__pyx_t_5);
-            __Pyx_XGIVEREF(__pyx_t_10);
-            __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_5, __pyx_t_10);
-            __pyx_t_1 = 0; __pyx_t_5 = 0; __pyx_t_10 = 0; 
-            __PYX_ERR(0, 183, __pyx_L24_except_error)
+            __Pyx_XGIVEREF(__pyx_t_6);
+            __Pyx_ErrRestoreWithState(__pyx_t_3, __pyx_t_5, __pyx_t_6);
+            __pyx_t_3 = 0; __pyx_t_5 = 0; __pyx_t_6 = 0; 
+            __PYX_ERR(0, 165, __pyx_L14_except_error)
           }
-          __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-          goto __pyx_L23_exception_handled;
+          __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+          goto __pyx_L13_exception_handled;
         }
-        __pyx_L24_except_error:;
-        __Pyx_XGIVEREF(__pyx_t_18);
-        __Pyx_XGIVEREF(__pyx_t_19);
-        __Pyx_XGIVEREF(__pyx_t_20);
-        __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_19, __pyx_t_20);
+        __pyx_L14_except_error:;
+        __Pyx_XGIVEREF(__pyx_t_13);
+        __Pyx_XGIVEREF(__pyx_t_14);
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_ExceptionReset(__pyx_t_13, __pyx_t_14, __pyx_t_15);
         goto __pyx_L1_error;
-        __pyx_L23_exception_handled:;
-        __Pyx_XGIVEREF(__pyx_t_18);
-        __Pyx_XGIVEREF(__pyx_t_19);
-        __Pyx_XGIVEREF(__pyx_t_20);
-        __Pyx_ExceptionReset(__pyx_t_18, __pyx_t_19, __pyx_t_20);
-        __pyx_L27_try_end:;
+        __pyx_L13_exception_handled:;
+        __Pyx_XGIVEREF(__pyx_t_13);
+        __Pyx_XGIVEREF(__pyx_t_14);
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_ExceptionReset(__pyx_t_13, __pyx_t_14, __pyx_t_15);
+        __pyx_L17_try_end:;
       }
     }
     /*finally:*/ {
       /*normal exit:*/{
-        if (__pyx_t_17) {
-          __pyx_t_20 = __Pyx_PyObject_Call(__pyx_t_17, __pyx_tuple__6, NULL);
-          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-          if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 183, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_20);
-          __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
+        if (__pyx_t_12) {
+          __pyx_t_15 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_tuple__6, NULL);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 165, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_15);
+          __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
         }
-        goto __pyx_L21;
+        goto __pyx_L11;
       }
-      __pyx_L21:;
+      __pyx_L11:;
     }
-    goto __pyx_L31;
-    __pyx_L18_error:;
-    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+    goto __pyx_L21;
+    __pyx_L8_error:;
+    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     goto __pyx_L1_error;
-    __pyx_L31:;
+    __pyx_L21:;
   }
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":186
- *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":168
+ *            f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")
  * 
- *     mt = mt[(mt["status"] == "good")]             # <<<<<<<<<<<<<<
- *     mt = mt.drop(columns = ["status"])
+ *     MT = MT[(MT["status"] == "good")]             # <<<<<<<<<<<<<<
+ *     MT = MT.drop(columns = ["status"])
  * 
  */
-  __pyx_t_10 = __Pyx_PyObject_Dict_GetItem(__pyx_v_mt, __pyx_n_s_status); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 186, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = PyObject_RichCompare(__pyx_t_10, __pyx_n_s_good, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 186, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_GetItem(__pyx_v_mt, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 186, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
+  __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_MT, __pyx_n_s_status); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_5 = PyObject_RichCompare(__pyx_t_6, __pyx_n_s_good, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_MT, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF_SET(__pyx_v_mt, __pyx_t_10);
-  __pyx_t_10 = 0;
+  __Pyx_DECREF_SET(__pyx_v_MT, __pyx_t_6);
+  __pyx_t_6 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":187
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":169
  * 
- *     mt = mt[(mt["status"] == "good")]
- *     mt = mt.drop(columns = ["status"])             # <<<<<<<<<<<<<<
+ *     MT = MT[(MT["status"] == "good")]
+ *     MT = MT.drop(columns = ["status"])             # <<<<<<<<<<<<<<
  * 
- *     return mt
+ *     return MT
  */
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_mt, __pyx_n_s_drop); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_MT, __pyx_n_s_drop); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_n_s_status);
   __Pyx_GIVEREF(__pyx_n_s_status);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_status);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_columns, __pyx_t_1) < 0) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_empty_tuple, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+  PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_status);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_columns, __pyx_t_3) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_empty_tuple, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF_SET(__pyx_v_mt, __pyx_t_1);
-  __pyx_t_1 = 0;
+  __Pyx_DECREF_SET(__pyx_v_MT, __pyx_t_3);
+  __pyx_t_3 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":189
- *     mt = mt.drop(columns = ["status"])
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":171
+ *     MT = MT.drop(columns = ["status"])
  * 
- *     return mt             # <<<<<<<<<<<<<<
+ *     return MT             # <<<<<<<<<<<<<<
  * 
- * def get_intbc_sets(lgs, lg_names, thresh=None):
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_INCREF(__pyx_v_mt);
-  __pyx_r = __pyx_v_mt;
+  __Pyx_INCREF(__pyx_v_MT);
+  __pyx_r = __pyx_v_MT;
   goto __pyx_L0;
 
   /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":141
  *     return moleculetable
  * 
- * def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):             # <<<<<<<<<<<<<<
- *     """
- *     Filter doublets from the allele table AT.
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):             # <<<<<<<<<<<<<<
+ * 
+ *     doublet_list = []
  */
 
   /* function exit code */
@@ -5961,7 +5623,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_10);
   __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.filter_intra_doublets", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
@@ -5970,24 +5632,19 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __Pyx_XDECREF(__pyx_v_filter_dict);
   __Pyx_XDECREF(__pyx_v_n);
   __Pyx_XDECREF(__pyx_v_g);
-  __Pyx_XDECREF(__pyx_v_x1);
-  __Pyx_XDECREF(__pyx_v_r1);
-  __Pyx_XDECREF(__pyx_v_iBC1);
-  __Pyx_XDECREF(__pyx_v_allele1);
-  __Pyx_XDECREF(__pyx_v_r2);
-  __Pyx_XDECREF(__pyx_v_iBC2);
-  __Pyx_XDECREF(__pyx_v_allele2);
-  __Pyx_XDECREF(__pyx_v_totalCount);
-  __Pyx_XDECREF(__pyx_v_props);
+  __Pyx_XDECREF(__pyx_v_conflicting_umi_count);
+  __Pyx_XDECREF(__pyx_v_x);
+  __Pyx_XDECREF(__pyx_v_xuniq);
+  __Pyx_XDECREF(__pyx_v_prop_multi_alleles);
   __Pyx_XDECREF(__pyx_v_f);
-  __Pyx_XDECREF(__pyx_v_mt);
+  __Pyx_XDECREF(__pyx_v_MT);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
@@ -6030,7 +5687,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_lg_names)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_intbc_sets", 0, 2, 3, 1); __PYX_ERR(0, 191, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_intbc_sets", 0, 2, 3, 1); __PYX_ERR(0, 174, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -6040,7 +5697,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_intbc_sets") < 0)) __PYX_ERR(0, 191, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_intbc_sets") < 0)) __PYX_ERR(0, 174, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6058,7 +5715,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_intbc_sets", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 191, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_intbc_sets", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 174, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.get_intbc_sets", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6071,7 +5728,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":198
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":181
  *     for n, g in zip(lg_names, lgs):
  *         piv = pd.pivot_table(g, index="cellBC", columns="intBC", values="UMI", aggfunc=pylab.size)
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)             # <<<<<<<<<<<<<<
@@ -6106,7 +5763,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   __pyx_outer_scope = (struct __pyx_obj_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_isnull); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_isnull); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -6120,10 +5777,10 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   }
   __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -6138,19 +5795,19 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_cur_scope->__pyx_v_piv)) { __Pyx_RaiseClosureNameError("piv"); __PYX_ERR(0, 198, __pyx_L1_error) }
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_piv, __pyx_n_s_shape); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (unlikely(!__pyx_cur_scope->__pyx_v_piv)) { __Pyx_RaiseClosureNameError("piv"); __PYX_ERR(0, 181, __pyx_L1_error) }
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_piv, __pyx_n_s_shape); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyNumber_Float(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyNumber_Float(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -6172,8 +5829,8 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
@@ -6206,43 +5863,43 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 191, __pyx_L1_error)
+    __PYX_ERR(0, 174, __pyx_L1_error)
   } else {
     __Pyx_GOTREF(__pyx_cur_scope);
   }
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":193
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":176
  * def get_intbc_sets(lgs, lg_names, thresh=None):
  * 
  *     intbc_sets = {}             # <<<<<<<<<<<<<<
  *     dropouts = {}
  * 
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_intbc_sets = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":194
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":177
  * 
  *     intbc_sets = {}
  *     dropouts = {}             # <<<<<<<<<<<<<<
  * 
  *     for n, g in zip(lg_names, lgs):
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_dropouts = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":196
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":179
  *     dropouts = {}
  * 
  *     for n, g in zip(lg_names, lgs):             # <<<<<<<<<<<<<<
  *         piv = pd.pivot_table(g, index="cellBC", columns="intBC", values="UMI", aggfunc=pylab.size)
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)
  */
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_lg_names);
   __Pyx_GIVEREF(__pyx_v_lg_names);
@@ -6250,16 +5907,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __Pyx_INCREF(__pyx_v_lgs);
   __Pyx_GIVEREF(__pyx_v_lgs);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_lgs);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_1 = __pyx_t_2; __Pyx_INCREF(__pyx_t_1); __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 196, __pyx_L1_error)
+    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -6267,17 +5924,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 196, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 179, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 196, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 179, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -6287,7 +5944,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 196, __pyx_L1_error)
+          else __PYX_ERR(0, 179, __pyx_L1_error)
         }
         break;
       }
@@ -6299,7 +5956,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 196, __pyx_L1_error)
+        __PYX_ERR(0, 179, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -6312,15 +5969,15 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_t_6);
       #else
-      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 196, __pyx_L1_error)
+      __pyx_t_5 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 179, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 196, __pyx_L1_error)
+      __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 179, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       #endif
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 196, __pyx_L1_error)
+      __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 179, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_7)->tp_iternext;
@@ -6328,7 +5985,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_GOTREF(__pyx_t_5);
       index = 1; __pyx_t_6 = __pyx_t_8(__pyx_t_7); if (unlikely(!__pyx_t_6)) goto __pyx_L5_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_6);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_7), 2) < 0) __PYX_ERR(0, 179, __pyx_L1_error)
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L6_unpacking_done;
@@ -6336,7 +5993,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 196, __pyx_L1_error)
+      __PYX_ERR(0, 179, __pyx_L1_error)
       __pyx_L6_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_5);
@@ -6344,36 +6001,36 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_g, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":197
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":180
  * 
  *     for n, g in zip(lg_names, lgs):
  *         piv = pd.pivot_table(g, index="cellBC", columns="intBC", values="UMI", aggfunc=pylab.size)             # <<<<<<<<<<<<<<
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pd); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pd); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_pivot_table); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_pivot_table); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_v_g);
     __Pyx_GIVEREF(__pyx_v_g);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_g);
-    __pyx_t_5 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_index, __pyx_n_s_cellBC) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_columns, __pyx_n_s_intBC) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_values, __pyx_n_s_UMI) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
-    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_pylab); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 197, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_index, __pyx_n_s_cellBC) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_columns, __pyx_n_s_intBC) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_values, __pyx_n_s_UMI) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_pylab); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_size); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_size); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_aggfunc, __pyx_t_9) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_aggfunc, __pyx_t_9) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6383,26 +6040,26 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_GIVEREF(__pyx_t_9);
     __pyx_t_9 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":198
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":181
  *     for n, g in zip(lg_names, lgs):
  *         piv = pd.pivot_table(g, index="cellBC", columns="intBC", values="UMI", aggfunc=pylab.size)
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)             # <<<<<<<<<<<<<<
  * 
  *         if thresh is None:
  */
-    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_piv, __pyx_n_s_apply); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_cur_scope->__pyx_v_piv, __pyx_n_s_apply); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
-    __pyx_t_5 = __Pyx_CyFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_14get_intbc_sets_lambda2, 0, __pyx_n_s_get_intbc_sets_locals_lambda, ((PyObject*)__pyx_cur_scope), __pyx_n_s_SingleCellLineageTracing_Process, __pyx_d, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_CyFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_14get_intbc_sets_lambda2, 0, __pyx_n_s_get_intbc_sets_locals_lambda, ((PyObject*)__pyx_cur_scope), __pyx_n_s_SingleCellLineageTracing_Process, __pyx_d, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_5);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_5);
     __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_axis, __pyx_int_0) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
-    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_9, __pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 198, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_axis, __pyx_int_0) < 0) __PYX_ERR(0, 181, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_9, __pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6410,7 +6067,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_do, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":200
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":183
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)
  * 
  *         if thresh is None:             # <<<<<<<<<<<<<<
@@ -6421,28 +6078,28 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __pyx_t_11 = (__pyx_t_10 != 0);
     if (__pyx_t_11) {
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":202
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":185
  *         if thresh is None:
  * 
  *             intbc_sets[n] = do.index             # <<<<<<<<<<<<<<
  *             dropouts[n] = do
  * 
  */
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_do, __pyx_n_s_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 202, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_do, __pyx_n_s_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 185, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      if (unlikely(PyDict_SetItem(__pyx_v_intbc_sets, __pyx_v_n, __pyx_t_6) < 0)) __PYX_ERR(0, 202, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_intbc_sets, __pyx_v_n, __pyx_t_6) < 0)) __PYX_ERR(0, 185, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":203
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":186
  * 
  *             intbc_sets[n] = do.index
  *             dropouts[n] = do             # <<<<<<<<<<<<<<
  * 
  *         else:
  */
-      if (unlikely(PyDict_SetItem(__pyx_v_dropouts, __pyx_v_n, __pyx_v_do) < 0)) __PYX_ERR(0, 203, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_dropouts, __pyx_v_n, __pyx_v_do) < 0)) __PYX_ERR(0, 186, __pyx_L1_error)
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":200
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":183
  *         do = piv.apply(lambda x: x.isnull().sum() / float(piv.shape[0]), axis=0)
  * 
  *         if thresh is None:             # <<<<<<<<<<<<<<
@@ -6452,7 +6109,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       goto __pyx_L7;
     }
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":206
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":189
  * 
  *         else:
  *             intbcs = do[do < thresh].index             # <<<<<<<<<<<<<<
@@ -6460,37 +6117,37 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  *             dropouts[n] = do
  */
     /*else*/ {
-      __pyx_t_6 = PyObject_RichCompare(__pyx_v_do, __pyx_v_thresh, Py_LT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 206, __pyx_L1_error)
-      __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_do, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 206, __pyx_L1_error)
+      __pyx_t_6 = PyObject_RichCompare(__pyx_v_do, __pyx_v_thresh, Py_LT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_do, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 189, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 206, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 189, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF_SET(__pyx_v_intbcs, __pyx_t_6);
       __pyx_t_6 = 0;
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":207
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":190
  *         else:
  *             intbcs = do[do < thresh].index
  *             intbc_sets[n] = intbcs             # <<<<<<<<<<<<<<
  *             dropouts[n] = do
  * 
  */
-      if (unlikely(PyDict_SetItem(__pyx_v_intbc_sets, __pyx_v_n, __pyx_v_intbcs) < 0)) __PYX_ERR(0, 207, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_intbc_sets, __pyx_v_n, __pyx_v_intbcs) < 0)) __PYX_ERR(0, 190, __pyx_L1_error)
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":208
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
  *             intbcs = do[do < thresh].index
  *             intbc_sets[n] = intbcs
  *             dropouts[n] = do             # <<<<<<<<<<<<<<
  * 
  *     return intbc_sets, dropouts
  */
-      if (unlikely(PyDict_SetItem(__pyx_v_dropouts, __pyx_v_n, __pyx_v_do) < 0)) __PYX_ERR(0, 208, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_dropouts, __pyx_v_n, __pyx_v_do) < 0)) __PYX_ERR(0, 191, __pyx_L1_error)
     }
     __pyx_L7:;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":196
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":179
  *     dropouts = {}
  * 
  *     for n, g in zip(lg_names, lgs):             # <<<<<<<<<<<<<<
@@ -6500,7 +6157,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":210
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":193
  *             dropouts[n] = do
  * 
  *     return intbc_sets, dropouts             # <<<<<<<<<<<<<<
@@ -6508,7 +6165,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_intbc_sets);
   __Pyx_GIVEREF(__pyx_v_intbc_sets);
@@ -6520,8 +6177,8 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
@@ -6551,7 +6208,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":212
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":195
  *     return intbc_sets, dropouts
  * 
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):             # <<<<<<<<<<<<<<
@@ -6598,13 +6255,13 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_intbc_sets)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, 1); __PYX_ERR(0, 212, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, 1); __PYX_ERR(0, 195, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_lg_dropouts)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, 2); __PYX_ERR(0, 212, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, 2); __PYX_ERR(0, 195, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -6614,7 +6271,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "compute_lg_membership") < 0)) __PYX_ERR(0, 212, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "compute_lg_membership") < 0)) __PYX_ERR(0, 195, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6634,7 +6291,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 212, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("compute_lg_membership", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 195, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.compute_lg_membership", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6671,31 +6328,31 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   int __pyx_t_12;
   __Pyx_RefNannySetupContext("compute_lg_membership", 0);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":214
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":197
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):
  * 
  *     lg_mem = {}             # <<<<<<<<<<<<<<
  *     ibcs = np.unique(cell["intBC"])
  * 
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_lg_mem = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":215
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":198
  * 
  *     lg_mem = {}
  *     ibcs = np.unique(cell["intBC"])             # <<<<<<<<<<<<<<
  * 
  *     for i in intbc_sets.keys():
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cell, __pyx_n_s_intBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cell, __pyx_n_s_intBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -6710,20 +6367,20 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_ibcs = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":217
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":200
  *     ibcs = np.unique(cell["intBC"])
  * 
  *     for i in intbc_sets.keys():             # <<<<<<<<<<<<<<
  * 
  *         lg_do = lg_dropouts[i]
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_intbc_sets, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_intbc_sets, __pyx_n_s_keys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -6737,16 +6394,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
     __pyx_t_3 = __pyx_t_1; __Pyx_INCREF(__pyx_t_3); __pyx_t_5 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 217, __pyx_L1_error)
+    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 217, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 200, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
@@ -6754,17 +6411,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 200, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
         if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_1); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 200, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
@@ -6774,7 +6431,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 217, __pyx_L1_error)
+          else __PYX_ERR(0, 200, __pyx_L1_error)
         }
         break;
       }
@@ -6783,31 +6440,31 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":219
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":202
  *     for i in intbc_sets.keys():
  * 
  *         lg_do = lg_dropouts[i]             # <<<<<<<<<<<<<<
  *         intersect = np.intersect1d(ibcs, intbc_sets[i])
  *         if len(intersect) > 0:
  */
-    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_lg_dropouts, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_lg_dropouts, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_lg_do, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":220
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":203
  * 
  *         lg_do = lg_dropouts[i]
  *         intersect = np.intersect1d(ibcs, intbc_sets[i])             # <<<<<<<<<<<<<<
  *         if len(intersect) > 0:
  * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 220, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 203, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_intersect1d); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 220, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_intersect1d); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 203, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_intbc_sets, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 220, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_intbc_sets, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 203, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_7 = NULL;
     __pyx_t_8 = 0;
@@ -6824,7 +6481,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     #if CYTHON_FAST_PYCALL
     if (PyFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[3] = {__pyx_t_7, __pyx_v_ibcs, __pyx_t_2};
-      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 220, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -6833,14 +6490,14 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     #if CYTHON_FAST_PYCCALL
     if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
       PyObject *__pyx_temp[3] = {__pyx_t_7, __pyx_v_ibcs, __pyx_t_2};
-      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 220, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else
     #endif
     {
-      __pyx_t_9 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 220, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       if (__pyx_t_7) {
         __Pyx_GIVEREF(__pyx_t_7); PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_7); __pyx_t_7 = NULL;
@@ -6851,7 +6508,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_GIVEREF(__pyx_t_2);
       PyTuple_SET_ITEM(__pyx_t_9, 1+__pyx_t_8, __pyx_t_2);
       __pyx_t_2 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 220, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
     }
@@ -6859,32 +6516,32 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_intersect, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":221
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":204
  *         lg_do = lg_dropouts[i]
  *         intersect = np.intersect1d(ibcs, intbc_sets[i])
  *         if len(intersect) > 0:             # <<<<<<<<<<<<<<
  * 
  *             lg_mem[i] = np.sum(1 - lg_do[intersect]) / np.sum(1 - lg_do)
  */
-    __pyx_t_10 = PyObject_Length(__pyx_v_intersect); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_10 = PyObject_Length(__pyx_v_intersect); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 204, __pyx_L1_error)
     __pyx_t_11 = ((__pyx_t_10 > 0) != 0);
     if (__pyx_t_11) {
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":223
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":206
  *         if len(intersect) > 0:
  * 
  *             lg_mem[i] = np.sum(1 - lg_do[intersect]) / np.sum(1 - lg_do)             # <<<<<<<<<<<<<<
  * 
  *         else:
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_lg_do, __pyx_v_intersect); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_lg_do, __pyx_v_intersect); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_t_4, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_t_4, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_4 = NULL;
@@ -6900,15 +6557,15 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_9, __pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_2);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 223, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sum); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_v_lg_do, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_v_lg_do, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_7 = NULL;
       if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
@@ -6923,17 +6580,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __pyx_t_9 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_7, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_2);
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 223, __pyx_L1_error)
+      if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 223, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_i, __pyx_t_4) < 0)) __PYX_ERR(0, 223, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_i, __pyx_t_4) < 0)) __PYX_ERR(0, 206, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":221
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":204
  *         lg_do = lg_dropouts[i]
  *         intersect = np.intersect1d(ibcs, intbc_sets[i])
  *         if len(intersect) > 0:             # <<<<<<<<<<<<<<
@@ -6943,7 +6600,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       goto __pyx_L5;
     }
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":226
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":209
  * 
  *         else:
  *             lg_mem[i] = 0             # <<<<<<<<<<<<<<
@@ -6951,11 +6608,11 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  *     factor = 1.0 / np.sum(list(lg_mem.values()))
  */
     /*else*/ {
-      if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_i, __pyx_int_0) < 0)) __PYX_ERR(0, 226, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_i, __pyx_int_0) < 0)) __PYX_ERR(0, 209, __pyx_L1_error)
     }
     __pyx_L5:;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":217
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":200
  *     ibcs = np.unique(cell["intBC"])
  * 
  *     for i in intbc_sets.keys():             # <<<<<<<<<<<<<<
@@ -6965,21 +6622,21 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":228
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":211
  *             lg_mem[i] = 0
  * 
  *     factor = 1.0 / np.sum(list(lg_mem.values()))             # <<<<<<<<<<<<<<
  *     for l in lg_mem:
  *         lg_mem[l] = lg_mem[l] * factor
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_sum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_Values(__pyx_v_lg_mem); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_Values(__pyx_v_lg_mem); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = PySequence_List(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_1 = PySequence_List(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -6995,16 +6652,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_t_3 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_9, __pyx_t_4, __pyx_t_1) : __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_1);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = __Pyx_PyFloat_DivideCObj(__pyx_float_1_0, __pyx_t_3, 1.0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyFloat_DivideCObj(__pyx_float_1_0, __pyx_t_3, 1.0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_factor = __pyx_t_9;
   __pyx_t_9 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":229
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":212
  * 
  *     factor = 1.0 / np.sum(list(lg_mem.values()))
  *     for l in lg_mem:             # <<<<<<<<<<<<<<
@@ -7012,7 +6669,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  * 
  */
   __pyx_t_5 = 0;
-  __pyx_t_3 = __Pyx_dict_iterator(__pyx_v_lg_mem, 1, ((PyObject *)NULL), (&__pyx_t_10), (&__pyx_t_8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_dict_iterator(__pyx_v_lg_mem, 1, ((PyObject *)NULL), (&__pyx_t_10), (&__pyx_t_8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_9);
   __pyx_t_9 = __pyx_t_3;
@@ -7020,29 +6677,29 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   while (1) {
     __pyx_t_12 = __Pyx_dict_iter_next(__pyx_t_9, __pyx_t_10, &__pyx_t_5, &__pyx_t_3, NULL, NULL, __pyx_t_8);
     if (unlikely(__pyx_t_12 == 0)) break;
-    if (unlikely(__pyx_t_12 == -1)) __PYX_ERR(0, 229, __pyx_L1_error)
+    if (unlikely(__pyx_t_12 == -1)) __PYX_ERR(0, 212, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_l, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":230
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":213
  *     factor = 1.0 / np.sum(list(lg_mem.values()))
  *     for l in lg_mem:
  *         lg_mem[l] = lg_mem[l] * factor             # <<<<<<<<<<<<<<
  * 
  *     return lg_mem
  */
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_lg_mem, __pyx_v_l); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_lg_mem, __pyx_v_l); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = PyNumber_Multiply(__pyx_t_3, __pyx_v_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 230, __pyx_L1_error)
+    __pyx_t_1 = PyNumber_Multiply(__pyx_t_3, __pyx_v_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_l, __pyx_t_1) < 0)) __PYX_ERR(0, 230, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_lg_mem, __pyx_v_l, __pyx_t_1) < 0)) __PYX_ERR(0, 213, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":232
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":215
  *         lg_mem[l] = lg_mem[l] * factor
  * 
  *     return lg_mem             # <<<<<<<<<<<<<<
@@ -7054,7 +6711,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_r = __pyx_v_lg_mem;
   goto __pyx_L0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":212
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":195
  *     return intbc_sets, dropouts
  * 
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):             # <<<<<<<<<<<<<<
@@ -7085,7 +6742,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":218
  * 
  * 
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):             # <<<<<<<<<<<<<<
@@ -7132,13 +6789,13 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_outputfile)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, 1); __PYX_ERR(0, 235, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, 1); __PYX_ERR(0, 218, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_outputdir)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, 2); __PYX_ERR(0, 235, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, 2); __PYX_ERR(0, 218, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
@@ -7148,7 +6805,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "filter_inter_doublets") < 0)) __PYX_ERR(0, 235, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "filter_inter_doublets") < 0)) __PYX_ERR(0, 218, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7168,7 +6825,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 235, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("filter_inter_doublets", 0, 3, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 218, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.filter_inter_doublets", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7181,7 +6838,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":237
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":220
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
  * 
  *     def filter_cell(cell, rule):             # <<<<<<<<<<<<<<
@@ -7221,11 +6878,11 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_rule)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("filter_cell", 1, 2, 2, 1); __PYX_ERR(0, 237, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("filter_cell", 1, 2, 2, 1); __PYX_ERR(0, 220, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "filter_cell") < 0)) __PYX_ERR(0, 237, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "filter_cell") < 0)) __PYX_ERR(0, 220, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -7238,7 +6895,7 @@ static PyObject *__pyx_pw_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("filter_cell", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 237, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("filter_cell", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 220, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.filter_inter_doublets.filter_cell", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7259,22 +6916,22 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannySetupContext("filter_cell", 0);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":238
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":221
  * 
  *     def filter_cell(cell, rule):
  *         true_lg = cell.loc["LG"]             # <<<<<<<<<<<<<<
  *         return float(cell.loc[true_lg]) < rule
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cell, __pyx_n_s_loc); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cell, __pyx_n_s_loc); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_1, __pyx_n_s_LG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_1, __pyx_n_s_LG); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_true_lg = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":239
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":222
  *     def filter_cell(cell, rule):
  *         true_lg = cell.loc["LG"]
  *         return float(cell.loc[true_lg]) < rule             # <<<<<<<<<<<<<<
@@ -7282,21 +6939,21 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  *     collapsed_lgs = []
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_cell, __pyx_n_s_loc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 239, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_cell, __pyx_n_s_loc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_true_lg); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_true_lg); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyNumber_Float(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 239, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyNumber_Float(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyObject_RichCompare(__pyx_t_2, __pyx_v_rule, Py_LT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_t_2, __pyx_v_rule, Py_LT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":237
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":220
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
  * 
  *     def filter_cell(cell, rule):             # <<<<<<<<<<<<<<
@@ -7317,7 +6974,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   return __pyx_r;
 }
 
-/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
+/* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":218
  * 
  * 
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):             # <<<<<<<<<<<<<<
@@ -7364,40 +7021,40 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   int __pyx_t_17;
   __Pyx_RefNannySetupContext("filter_inter_doublets", 0);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":237
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":220
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
  * 
  *     def filter_cell(cell, rule):             # <<<<<<<<<<<<<<
  *         true_lg = cell.loc["LG"]
  *         return float(cell.loc[true_lg]) < rule
  */
-  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_21filter_inter_doublets_1filter_cell, 0, __pyx_n_s_filter_inter_doublets_locals_fil, NULL, __pyx_n_s_SingleCellLineageTracing_Process, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_21filter_inter_doublets_1filter_cell, 0, __pyx_n_s_filter_inter_doublets_locals_fil, NULL, __pyx_n_s_SingleCellLineageTracing_Process, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 220, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_filter_cell = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":241
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":224
  *         return float(cell.loc[true_lg]) < rule
  * 
  *     collapsed_lgs = []             # <<<<<<<<<<<<<<
  *     lg_names = list(at["lineageGrp"].unique())
  * 
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 224, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_collapsed_lgs = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":242
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":225
  * 
  *     collapsed_lgs = []
  *     lg_names = list(at["lineageGrp"].unique())             # <<<<<<<<<<<<<<
  * 
  *     for n in lg_names:
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -7412,16 +7069,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 242, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_3 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_lg_names = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":244
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":227
  *     lg_names = list(at["lineageGrp"].unique())
  * 
  *     for n in lg_names:             # <<<<<<<<<<<<<<
@@ -7432,32 +7089,32 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   for (;;) {
     if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_3)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 244, __pyx_L1_error)
+    __pyx_t_1 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 227, __pyx_L1_error)
     #else
-    __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
+    __pyx_t_1 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 227, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":245
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":228
  * 
  *     for n in lg_names:
  *         collapsed_lgs.append(at[at["lineageGrp"] == n])             # <<<<<<<<<<<<<<
  * 
  *     ibc_sets, dropouts = get_intbc_sets(collapsed_lgs, lg_names)
  */
-    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_v_n, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_v_n, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_5 = __Pyx_PyList_Append(__pyx_v_collapsed_lgs, __pyx_t_1); if (unlikely(__pyx_t_5 == ((int)-1))) __PYX_ERR(0, 245, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyList_Append(__pyx_v_collapsed_lgs, __pyx_t_1); if (unlikely(__pyx_t_5 == ((int)-1))) __PYX_ERR(0, 228, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":244
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":227
  *     lg_names = list(at["lineageGrp"].unique())
  * 
  *     for n in lg_names:             # <<<<<<<<<<<<<<
@@ -7467,14 +7124,14 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":247
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":230
  *         collapsed_lgs.append(at[at["lineageGrp"] == n])
  * 
  *     ibc_sets, dropouts = get_intbc_sets(collapsed_lgs, lg_names)             # <<<<<<<<<<<<<<
  * 
  *     mems = {}
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_get_intbc_sets); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_get_intbc_sets); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 230, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = NULL;
   __pyx_t_6 = 0;
@@ -7491,7 +7148,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_v_collapsed_lgs, __pyx_v_lg_names};
-    __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_GOTREF(__pyx_t_3);
   } else
@@ -7499,13 +7156,13 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
     PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_v_collapsed_lgs, __pyx_v_lg_names};
-    __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_GOTREF(__pyx_t_3);
   } else
   #endif
   {
-    __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     if (__pyx_t_2) {
       __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -7516,7 +7173,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_INCREF(__pyx_v_lg_names);
     __Pyx_GIVEREF(__pyx_v_lg_names);
     PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_v_lg_names);
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
@@ -7527,7 +7184,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     if (unlikely(size != 2)) {
       if (size > 2) __Pyx_RaiseTooManyValuesError(2);
       else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-      __PYX_ERR(0, 247, __pyx_L1_error)
+      __PYX_ERR(0, 230, __pyx_L1_error)
     }
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
     if (likely(PyTuple_CheckExact(sequence))) {
@@ -7540,15 +7197,15 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_INCREF(__pyx_t_1);
     __Pyx_INCREF(__pyx_t_7);
     #else
-    __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     #endif
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
     Py_ssize_t index = -1;
-    __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
+    __pyx_t_2 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 230, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext;
@@ -7556,7 +7213,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_GOTREF(__pyx_t_1);
     index = 1; __pyx_t_7 = __pyx_t_8(__pyx_t_2); if (unlikely(!__pyx_t_7)) goto __pyx_L5_unpacking_failed;
     __Pyx_GOTREF(__pyx_t_7);
-    if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_2), 2) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
+    if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_2), 2) < 0) __PYX_ERR(0, 230, __pyx_L1_error)
     __pyx_t_8 = NULL;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L6_unpacking_done;
@@ -7564,7 +7221,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_8 = NULL;
     if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-    __PYX_ERR(0, 247, __pyx_L1_error)
+    __PYX_ERR(0, 230, __pyx_L1_error)
     __pyx_L6_unpacking_done:;
   }
   __pyx_v_ibc_sets = __pyx_t_1;
@@ -7572,28 +7229,28 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_v_dropouts = __pyx_t_7;
   __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":249
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":232
  *     ibc_sets, dropouts = get_intbc_sets(collapsed_lgs, lg_names)
  * 
  *     mems = {}             # <<<<<<<<<<<<<<
  *     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):
  *         lg = int(g["lineageGrp"].iloc[0])
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_v_mems = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":250
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":233
  * 
  *     mems = {}
  *     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):             # <<<<<<<<<<<<<<
  *         lg = int(g["lineageGrp"].iloc[0])
  *         mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_at, __pyx_n_s_groupby); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_at, __pyx_n_s_groupby); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -7607,18 +7264,18 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_7 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_2, __pyx_n_s_cellBC) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_n_s_cellBC);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
+  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_7);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_7);
   __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_desc, __pyx_kp_s_Creating_Membership_DF) < 0) __PYX_ERR(0, 250, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_1, __pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_desc, __pyx_kp_s_Creating_Membership_DF) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_1, __pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7627,9 +7284,9 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __pyx_t_7 = __pyx_t_2; __Pyx_INCREF(__pyx_t_7); __pyx_t_4 = 0;
     __pyx_t_9 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 233, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_9 = Py_TYPE(__pyx_t_7)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 250, __pyx_L1_error)
+    __pyx_t_9 = Py_TYPE(__pyx_t_7)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 233, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -7637,17 +7294,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (likely(PyList_CheckExact(__pyx_t_7))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_7)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 250, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 233, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_7)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 250, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 233, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 233, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -7657,7 +7314,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 250, __pyx_L1_error)
+          else __PYX_ERR(0, 233, __pyx_L1_error)
         }
         break;
       }
@@ -7669,7 +7326,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (unlikely(size != 2)) {
         if (size > 2) __Pyx_RaiseTooManyValuesError(2);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 250, __pyx_L1_error)
+        __PYX_ERR(0, 233, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       if (likely(PyTuple_CheckExact(sequence))) {
@@ -7682,15 +7339,15 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_INCREF(__pyx_t_1);
       __Pyx_INCREF(__pyx_t_3);
       #else
-      __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_3 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       #endif
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     } else {
       Py_ssize_t index = -1;
-      __pyx_t_10 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_10 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 233, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_8 = Py_TYPE(__pyx_t_10)->tp_iternext;
@@ -7698,7 +7355,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_GOTREF(__pyx_t_1);
       index = 1; __pyx_t_3 = __pyx_t_8(__pyx_t_10); if (unlikely(!__pyx_t_3)) goto __pyx_L9_unpacking_failed;
       __Pyx_GOTREF(__pyx_t_3);
-      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_10), 2) < 0) __PYX_ERR(0, 250, __pyx_L1_error)
+      if (__Pyx_IternextUnpackEndCheck(__pyx_t_8(__pyx_t_10), 2) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
       __pyx_t_8 = NULL;
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       goto __pyx_L10_unpacking_done;
@@ -7706,7 +7363,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __pyx_t_8 = NULL;
       if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-      __PYX_ERR(0, 250, __pyx_L1_error)
+      __PYX_ERR(0, 233, __pyx_L1_error)
       __pyx_L10_unpacking_done:;
     }
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_1);
@@ -7714,37 +7371,37 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_g, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":251
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":234
  *     mems = {}
  *     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):
  *         lg = int(g["lineageGrp"].iloc[0])             # <<<<<<<<<<<<<<
  *         mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
  *         mem["LG"] = lg
  */
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_g, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_g, __pyx_n_s_lineageGrp); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_iloc); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_iloc); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_3, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyNumber_Int(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyNumber_Int(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_XDECREF_SET(__pyx_v_lg, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":252
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
  *     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):
  *         lg = int(g["lineageGrp"].iloc[0])
  *         mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)             # <<<<<<<<<<<<<<
  *         mem["LG"] = lg
  *         mems[n] = mem
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_compute_lg_membership); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_compute_lg_membership); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(__pyx_v_g);
     __Pyx_GIVEREF(__pyx_v_g);
@@ -7755,10 +7412,10 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_INCREF(__pyx_v_dropouts);
     __Pyx_GIVEREF(__pyx_v_dropouts);
     PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_v_dropouts);
-    __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_scale_by_dropout, Py_True) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
-    __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 252, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_scale_by_dropout, Py_True) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 235, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -7766,25 +7423,25 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_mem, __pyx_t_10);
     __pyx_t_10 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":253
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":236
  *         lg = int(g["lineageGrp"].iloc[0])
  *         mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
  *         mem["LG"] = lg             # <<<<<<<<<<<<<<
  *         mems[n] = mem
  * 
  */
-    if (unlikely(PyObject_SetItem(__pyx_v_mem, __pyx_n_s_LG, __pyx_v_lg) < 0)) __PYX_ERR(0, 253, __pyx_L1_error)
+    if (unlikely(PyObject_SetItem(__pyx_v_mem, __pyx_n_s_LG, __pyx_v_lg) < 0)) __PYX_ERR(0, 236, __pyx_L1_error)
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":254
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":237
  *         mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
  *         mem["LG"] = lg
  *         mems[n] = mem             # <<<<<<<<<<<<<<
  * 
  *     mem_df = pd.DataFrame.from_dict(mems).T
  */
-    if (unlikely(PyDict_SetItem(__pyx_v_mems, __pyx_v_n, __pyx_v_mem) < 0)) __PYX_ERR(0, 254, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_mems, __pyx_v_n, __pyx_v_mem) < 0)) __PYX_ERR(0, 237, __pyx_L1_error)
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":250
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":233
  * 
  *     mems = {}
  *     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):             # <<<<<<<<<<<<<<
@@ -7794,19 +7451,19 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":256
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":239
  *         mems[n] = mem
  * 
  *     mem_df = pd.DataFrame.from_dict(mems).T             # <<<<<<<<<<<<<<
  * 
  *     filter_dict = {}
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_pd); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_pd); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_from_dict); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_from_dict); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -7821,47 +7478,47 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_7 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_10, __pyx_t_1, __pyx_v_mems) : __Pyx_PyObject_CallOneArg(__pyx_t_10, __pyx_v_mems);
   __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 256, __pyx_L1_error)
+  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_T); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_T); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_v_mem_df = __pyx_t_10;
   __pyx_t_10 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":258
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":241
  *     mem_df = pd.DataFrame.from_dict(mems).T
  * 
  *     filter_dict = {}             # <<<<<<<<<<<<<<
  * 
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
  */
-  __pyx_t_10 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 241, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __pyx_v_filter_dict = ((PyObject*)__pyx_t_10);
   __pyx_t_10 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":260
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":243
  *     filter_dict = {}
  * 
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):             # <<<<<<<<<<<<<<
  *         if filter_cell(mem_df.loc[cell], rule):
  *             filter_dict[cell] = "bad"
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_mem_df, __pyx_n_s_index); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_mem_df, __pyx_n_s_index); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_7);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_7);
   __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_desc, __pyx_kp_s_Identifying_Inter_doublets) < 0) __PYX_ERR(0, 260, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_t_1, __pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_desc, __pyx_kp_s_Identifying_Inter_doublets) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_t_1, __pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7870,9 +7527,9 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __pyx_t_7 = __pyx_t_2; __Pyx_INCREF(__pyx_t_7); __pyx_t_4 = 0;
     __pyx_t_9 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 260, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 243, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_9 = Py_TYPE(__pyx_t_7)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 260, __pyx_L1_error)
+    __pyx_t_9 = Py_TYPE(__pyx_t_7)->tp_iternext; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 243, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -7880,17 +7537,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       if (likely(PyList_CheckExact(__pyx_t_7))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_7)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 260, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 243, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_7)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 260, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_7, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 243, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_7, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -7900,7 +7557,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 260, __pyx_L1_error)
+          else __PYX_ERR(0, 243, __pyx_L1_error)
         }
         break;
       }
@@ -7909,35 +7566,35 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_XDECREF_SET(__pyx_v_cell, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":261
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":244
  * 
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
  *         if filter_cell(mem_df.loc[cell], rule):             # <<<<<<<<<<<<<<
  *             filter_dict[cell] = "bad"
  *         else:
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_mem_df, __pyx_n_s_loc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_mem_df, __pyx_n_s_loc); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_cell); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_cell); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_21filter_inter_doublets_filter_cell(__pyx_v_filter_cell, __pyx_t_1, __pyx_v_rule); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+    __pyx_t_2 = __pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_21filter_inter_doublets_filter_cell(__pyx_v_filter_cell, __pyx_t_1, __pyx_v_rule); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 244, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 261, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 244, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (__pyx_t_11) {
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":262
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":245
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
  *         if filter_cell(mem_df.loc[cell], rule):
  *             filter_dict[cell] = "bad"             # <<<<<<<<<<<<<<
  *         else:
  *             filter_dict[cell] = "good"
  */
-      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_cell, __pyx_n_s_bad) < 0)) __PYX_ERR(0, 262, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_cell, __pyx_n_s_bad) < 0)) __PYX_ERR(0, 245, __pyx_L1_error)
 
-      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":261
+      /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":244
  * 
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
  *         if filter_cell(mem_df.loc[cell], rule):             # <<<<<<<<<<<<<<
@@ -7947,7 +7604,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
       goto __pyx_L13;
     }
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":264
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":247
  *             filter_dict[cell] = "bad"
  *         else:
  *             filter_dict[cell] = "good"             # <<<<<<<<<<<<<<
@@ -7955,11 +7612,11 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  *     at["status"] = at["cellBC"].map(filter_dict)
  */
     /*else*/ {
-      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_cell, __pyx_n_s_good) < 0)) __PYX_ERR(0, 264, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_filter_dict, __pyx_v_cell, __pyx_n_s_good) < 0)) __PYX_ERR(0, 247, __pyx_L1_error)
     }
     __pyx_L13:;
 
-    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":260
+    /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":243
  *     filter_dict = {}
  * 
  *     for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):             # <<<<<<<<<<<<<<
@@ -7969,16 +7626,16 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":266
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":249
  *             filter_dict[cell] = "good"
  * 
  *     at["status"] = at["cellBC"].map(filter_dict)             # <<<<<<<<<<<<<<
  *     at_n = at[at["status"] == "good"]
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 266, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_map); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_map); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -7993,47 +7650,47 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_7 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_2, __pyx_v_filter_dict) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_filter_dict);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 266, __pyx_L1_error)
+  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(PyObject_SetItem(__pyx_v_at, __pyx_n_s_status, __pyx_t_7) < 0)) __PYX_ERR(0, 266, __pyx_L1_error)
+  if (unlikely(PyObject_SetItem(__pyx_v_at, __pyx_n_s_status, __pyx_t_7) < 0)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":267
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":250
  * 
  *     at["status"] = at["cellBC"].map(filter_dict)
  *     at_n = at[at["status"] == "good"]             # <<<<<<<<<<<<<<
  * 
  *     dl = len(at[at["status"] == "bad"]["cellBC"].unique())
  */
-  __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_status); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_status); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_1 = PyObject_RichCompare(__pyx_t_7, __pyx_n_s_good, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_1 = PyObject_RichCompare(__pyx_t_7, __pyx_n_s_good, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_at_n = __pyx_t_7;
   __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":269
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":252
  *     at_n = at[at["status"] == "good"]
  * 
  *     dl = len(at[at["status"] == "bad"]["cellBC"].unique())             # <<<<<<<<<<<<<<
  *     tot = len(at["cellBC"].unique())
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_status); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_status); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_n_s_bad, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_t_1, __pyx_n_s_bad, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_at, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_1, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_1, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_unique); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8048,26 +7705,26 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_7 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 269, __pyx_L1_error)
+  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_4 = PyObject_Length(__pyx_t_7); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_4 = PyObject_Length(__pyx_t_7); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_7 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_v_dl = __pyx_t_7;
   __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":270
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":253
  * 
  *     dl = len(at[at["status"] == "bad"]["cellBC"].unique())
  *     tot = len(at["cellBC"].unique())             # <<<<<<<<<<<<<<
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_at, __pyx_n_s_cellBC); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_unique); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_unique); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -8082,17 +7739,17 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   }
   __pyx_t_7 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_4 = PyObject_Length(__pyx_t_7); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_4 = PyObject_Length(__pyx_t_7); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_7 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_v_tot = __pyx_t_7;
   __pyx_t_7 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":272
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":255
  *     tot = len(at["cellBC"].unique())
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:             # <<<<<<<<<<<<<<
@@ -8100,12 +7757,12 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
  * 
  */
   /*with:*/ {
-    __pyx_t_7 = PyNumber_Add(__pyx_v_outputdir, __pyx_kp_s__7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_7 = PyNumber_Add(__pyx_v_outputdir, __pyx_kp_s__7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 255, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_2 = PyNumber_Add(__pyx_t_7, __pyx_v_outputfile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_2 = PyNumber_Add(__pyx_t_7, __pyx_v_outputfile); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 255, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_GIVEREF(__pyx_t_2);
     PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_2);
@@ -8113,12 +7770,12 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __Pyx_GIVEREF(__pyx_n_s_a);
     PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_n_s_a);
     __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_open, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_12 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_exit); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 272, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_exit); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 255, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
-    __pyx_t_1 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_enter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L14_error)
+    __pyx_t_1 = __Pyx_PyObject_LookupSpecial(__pyx_t_2, __pyx_n_s_enter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L14_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_10 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -8132,7 +7789,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     }
     __pyx_t_7 = (__pyx_t_10) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_10) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
     __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 272, __pyx_L14_error)
+    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 255, __pyx_L14_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = __pyx_t_7;
@@ -8150,30 +7807,30 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
           __pyx_v_f = __pyx_t_1;
           __pyx_t_1 = 0;
 
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":273
+          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":256
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:
  *         f.write("Filtered " + str(dl) + " inter-doublets of " + str(tot) + " cells")             # <<<<<<<<<<<<<<
  * 
  *     return at_n.drop(columns=["status"])
  */
-          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_f, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_dl); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_dl); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_7);
-          __pyx_t_10 = PyNumber_Add(__pyx_kp_s_Filtered, __pyx_t_7); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_10 = PyNumber_Add(__pyx_kp_s_Filtered, __pyx_t_7); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          __pyx_t_7 = PyNumber_Add(__pyx_t_10, __pyx_kp_s_inter_doublets_of); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_7 = PyNumber_Add(__pyx_t_10, __pyx_kp_s_inter_doublets_of); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_7);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_tot); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_tot); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_3 = PyNumber_Add(__pyx_t_7, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_3 = PyNumber_Add(__pyx_t_7, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __pyx_t_10 = PyNumber_Add(__pyx_t_3, __pyx_kp_s_cells); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 273, __pyx_L18_error)
+          __pyx_t_10 = PyNumber_Add(__pyx_t_3, __pyx_kp_s_cells); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_10);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __pyx_t_3 = NULL;
@@ -8189,12 +7846,12 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
           __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_t_10) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_10);
           __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L18_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":272
+          /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":255
  *     tot = len(at["cellBC"].unique())
  * 
  *     with open(outputdir + "/" + outputfile, "a") as f:             # <<<<<<<<<<<<<<
@@ -8214,20 +7871,20 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup_utils.filter_inter_doublets", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_10) < 0) __PYX_ERR(0, 272, __pyx_L20_except_error)
+          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_10) < 0) __PYX_ERR(0, 255, __pyx_L20_except_error)
           __Pyx_GOTREF(__pyx_t_1);
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_3 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_2, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 272, __pyx_L20_except_error)
+          __pyx_t_3 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_2, __pyx_t_10); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 255, __pyx_L20_except_error)
           __Pyx_GOTREF(__pyx_t_3);
           __pyx_t_16 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_3, NULL);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 272, __pyx_L20_except_error)
+          if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 255, __pyx_L20_except_error)
           __Pyx_GOTREF(__pyx_t_16);
           __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_16);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-          if (__pyx_t_11 < 0) __PYX_ERR(0, 272, __pyx_L20_except_error)
+          if (__pyx_t_11 < 0) __PYX_ERR(0, 255, __pyx_L20_except_error)
           __pyx_t_17 = ((!(__pyx_t_11 != 0)) != 0);
           if (__pyx_t_17) {
             __Pyx_GIVEREF(__pyx_t_1);
@@ -8235,7 +7892,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
             __Pyx_XGIVEREF(__pyx_t_10);
             __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_2, __pyx_t_10);
             __pyx_t_1 = 0; __pyx_t_2 = 0; __pyx_t_10 = 0; 
-            __PYX_ERR(0, 272, __pyx_L20_except_error)
+            __PYX_ERR(0, 255, __pyx_L20_except_error)
           }
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -8261,7 +7918,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
         if (__pyx_t_12) {
           __pyx_t_15 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_tuple__6, NULL);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 272, __pyx_L1_error)
+          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 255, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_15);
           __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
         }
@@ -8276,25 +7933,25 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
     __pyx_L27:;
   }
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":275
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":258
  *         f.write("Filtered " + str(dl) + " inter-doublets of " + str(tot) + " cells")
  * 
  *     return at_n.drop(columns=["status"])             # <<<<<<<<<<<<<<
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_at_n, __pyx_n_s_drop); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_at_n, __pyx_n_s_drop); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_s_status);
   __Pyx_GIVEREF(__pyx_n_s_status);
   PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_status);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_columns, __pyx_t_1) < 0) __PYX_ERR(0, 275, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_columns, __pyx_t_1) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -8302,7 +7959,7 @@ static PyObject *__pyx_pf_24SingleCellLineageTracing_18ProcessingPipeline_7proce
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":218
  * 
  * 
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):             # <<<<<<<<<<<<<<
@@ -21950,7 +21607,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Ellipsis, __pyx_k_Ellipsis, sizeof(__pyx_k_Ellipsis), 0, 0, 1, 1},
   {&__pyx_kp_s_Empty_shape_tuple_for_cython_arr, __pyx_k_Empty_shape_tuple_for_cython_arr, sizeof(__pyx_k_Empty_shape_tuple_for_cython_arr), 0, 0, 1, 0},
   {&__pyx_kp_s_Filtered, __pyx_k_Filtered, sizeof(__pyx_k_Filtered), 0, 0, 1, 0},
-  {&__pyx_kp_s_Filtering_Intra_doublets, __pyx_k_Filtering_Intra_doublets, sizeof(__pyx_k_Filtering_Intra_doublets), 0, 0, 1, 0},
   {&__pyx_kp_s_Identifying_Inter_doublets, __pyx_k_Identifying_Inter_doublets, sizeof(__pyx_k_Identifying_Inter_doublets), 0, 0, 1, 0},
   {&__pyx_kp_s_Incompatible_checksums_s_vs_0xb0, __pyx_k_Incompatible_checksums_s_vs_0xb0, sizeof(__pyx_k_Incompatible_checksums_s_vs_0xb0), 0, 0, 1, 0},
   {&__pyx_n_s_IndexError, __pyx_k_IndexError, sizeof(__pyx_k_IndexError), 0, 0, 1, 1},
@@ -21959,6 +21615,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_Invalid_mode_expected_c_or_fortr, __pyx_k_Invalid_mode_expected_c_or_fortr, sizeof(__pyx_k_Invalid_mode_expected_c_or_fortr), 0, 0, 1, 0},
   {&__pyx_kp_s_Invalid_shape_in_axis_d_d, __pyx_k_Invalid_shape_in_axis_d_d, sizeof(__pyx_k_Invalid_shape_in_axis_d_d), 0, 0, 1, 0},
   {&__pyx_n_s_LG, __pyx_k_LG, sizeof(__pyx_k_LG), 0, 0, 1, 1},
+  {&__pyx_n_s_MT, __pyx_k_MT, sizeof(__pyx_k_MT), 0, 0, 1, 1},
   {&__pyx_n_s_MemoryError, __pyx_k_MemoryError, sizeof(__pyx_k_MemoryError), 0, 0, 1, 1},
   {&__pyx_kp_s_MemoryView_of_r_at_0x_x, __pyx_k_MemoryView_of_r_at_0x_x, sizeof(__pyx_k_MemoryView_of_r_at_0x_x), 0, 0, 1, 0},
   {&__pyx_kp_s_MemoryView_of_r_object, __pyx_k_MemoryView_of_r_object, sizeof(__pyx_k_MemoryView_of_r_object), 0, 0, 1, 0},
@@ -21983,8 +21640,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_agg, __pyx_k_agg, sizeof(__pyx_k_agg), 0, 0, 1, 1},
   {&__pyx_n_s_aggfunc, __pyx_k_aggfunc, sizeof(__pyx_k_aggfunc), 0, 0, 1, 1},
   {&__pyx_n_s_allele, __pyx_k_allele, sizeof(__pyx_k_allele), 0, 0, 1, 1},
-  {&__pyx_n_s_allele1, __pyx_k_allele1, sizeof(__pyx_k_allele1), 0, 0, 1, 1},
-  {&__pyx_n_s_allele2, __pyx_k_allele2, sizeof(__pyx_k_allele2), 0, 0, 1, 1},
   {&__pyx_n_s_allele_counter, __pyx_k_allele_counter, sizeof(__pyx_k_allele_counter), 0, 0, 1, 1},
   {&__pyx_kp_s_alleles_removed, __pyx_k_alleles_removed, sizeof(__pyx_k_alleles_removed), 0, 0, 1, 0},
   {&__pyx_n_s_allocate_buffer, __pyx_k_allocate_buffer, sizeof(__pyx_k_allocate_buffer), 0, 0, 1, 1},
@@ -22008,6 +21663,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_colors, __pyx_k_colors, sizeof(__pyx_k_colors), 0, 0, 1, 1},
   {&__pyx_n_s_columns, __pyx_k_columns, sizeof(__pyx_k_columns), 0, 0, 1, 1},
   {&__pyx_n_s_compute_lg_membership, __pyx_k_compute_lg_membership, sizeof(__pyx_k_compute_lg_membership), 0, 0, 1, 1},
+  {&__pyx_n_s_conflicting_umi_count, __pyx_k_conflicting_umi_count, sizeof(__pyx_k_conflicting_umi_count), 0, 0, 1, 1},
   {&__pyx_kp_s_contiguous_and_direct, __pyx_k_contiguous_and_direct, sizeof(__pyx_k_contiguous_and_direct), 0, 0, 1, 0},
   {&__pyx_kp_s_contiguous_and_indirect, __pyx_k_contiguous_and_indirect, sizeof(__pyx_k_contiguous_and_indirect), 0, 0, 1, 0},
   {&__pyx_n_s_corrected, __pyx_k_corrected, sizeof(__pyx_k_corrected), 0, 0, 1, 1},
@@ -22019,9 +21675,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_dmat, __pyx_k_dmat, sizeof(__pyx_k_dmat), 0, 0, 1, 1},
   {&__pyx_n_s_do, __pyx_k_do, sizeof(__pyx_k_do), 0, 0, 1, 1},
   {&__pyx_n_s_dot, __pyx_k_dot, sizeof(__pyx_k_dot), 0, 0, 1, 1},
-  {&__pyx_n_s_doublet, __pyx_k_doublet, sizeof(__pyx_k_doublet), 0, 0, 1, 1},
   {&__pyx_n_s_doublet_list, __pyx_k_doublet_list, sizeof(__pyx_k_doublet_list), 0, 0, 1, 1},
   {&__pyx_n_s_drop, __pyx_k_drop, sizeof(__pyx_k_drop), 0, 0, 1, 1},
+  {&__pyx_n_s_drop_duplicates, __pyx_k_drop_duplicates, sizeof(__pyx_k_drop_duplicates), 0, 0, 1, 1},
   {&__pyx_n_s_dropna, __pyx_k_dropna, sizeof(__pyx_k_dropna), 0, 0, 1, 1},
   {&__pyx_n_s_dropouts, __pyx_k_dropouts, sizeof(__pyx_k_dropouts), 0, 0, 1, 1},
   {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
@@ -22040,6 +21696,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_filter_inter_doublets, __pyx_k_filter_inter_doublets, sizeof(__pyx_k_filter_inter_doublets), 0, 0, 1, 1},
   {&__pyx_n_s_filter_inter_doublets_locals_fil, __pyx_k_filter_inter_doublets_locals_fil, sizeof(__pyx_k_filter_inter_doublets_locals_fil), 0, 0, 1, 1},
   {&__pyx_n_s_filter_intra_doublets, __pyx_k_filter_intra_doublets, sizeof(__pyx_k_filter_intra_doublets), 0, 0, 1, 1},
+  {&__pyx_n_s_first, __pyx_k_first, sizeof(__pyx_k_first), 0, 0, 1, 1},
   {&__pyx_n_s_flags, __pyx_k_flags, sizeof(__pyx_k_flags), 0, 0, 1, 1},
   {&__pyx_n_s_format, __pyx_k_format, sizeof(__pyx_k_format), 0, 0, 1, 1},
   {&__pyx_n_s_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 0, 1, 1},
@@ -22054,8 +21711,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_group, __pyx_k_group, sizeof(__pyx_k_group), 0, 0, 1, 1},
   {&__pyx_n_s_groupby, __pyx_k_groupby, sizeof(__pyx_k_groupby), 0, 0, 1, 1},
   {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
-  {&__pyx_n_s_iBC1, __pyx_k_iBC1, sizeof(__pyx_k_iBC1), 0, 0, 1, 1},
-  {&__pyx_n_s_iBC2, __pyx_k_iBC2, sizeof(__pyx_k_iBC2), 0, 0, 1, 1},
   {&__pyx_n_s_iBC_assign, __pyx_k_iBC_assign, sizeof(__pyx_k_iBC_assign), 0, 0, 1, 1},
   {&__pyx_n_s_ibc_sets, __pyx_k_ibc_sets, sizeof(__pyx_k_ibc_sets), 0, 0, 1, 1},
   {&__pyx_n_s_ibcs, __pyx_k_ibcs, sizeof(__pyx_k_ibcs), 0, 0, 1, 1},
@@ -22077,6 +21732,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_j, __pyx_k_j, sizeof(__pyx_k_j), 0, 0, 1, 1},
   {&__pyx_n_s_join, __pyx_k_join, sizeof(__pyx_k_join), 0, 0, 1, 1},
   {&__pyx_n_s_k, __pyx_k_k, sizeof(__pyx_k_k), 0, 0, 1, 1},
+  {&__pyx_n_s_keep, __pyx_k_keep, sizeof(__pyx_k_keep), 0, 0, 1, 1},
   {&__pyx_n_s_keys, __pyx_k_keys, sizeof(__pyx_k_keys), 0, 0, 1, 1},
   {&__pyx_n_s_l, __pyx_k_l, sizeof(__pyx_k_l), 0, 0, 1, 1},
   {&__pyx_n_s_lg, __pyx_k_lg, sizeof(__pyx_k_lg), 0, 0, 1, 1},
@@ -22106,7 +21762,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_memview, __pyx_k_memview, sizeof(__pyx_k_memview), 0, 0, 1, 1},
   {&__pyx_n_s_mode, __pyx_k_mode, sizeof(__pyx_k_mode), 0, 0, 1, 1},
   {&__pyx_n_s_moleculetable, __pyx_k_moleculetable, sizeof(__pyx_k_moleculetable), 0, 0, 1, 1},
-  {&__pyx_n_s_mt, __pyx_k_mt, sizeof(__pyx_k_mt), 0, 0, 1, 1},
   {&__pyx_n_s_n, __pyx_k_n, sizeof(__pyx_k_n), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
@@ -22130,7 +21785,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pivot_table, __pyx_k_pivot_table, sizeof(__pyx_k_pivot_table), 0, 0, 1, 1},
   {&__pyx_n_s_plt, __pyx_k_plt, sizeof(__pyx_k_plt), 0, 0, 1, 1},
   {&__pyx_n_s_prop, __pyx_k_prop, sizeof(__pyx_k_prop), 0, 0, 1, 1},
-  {&__pyx_n_s_props, __pyx_k_props, sizeof(__pyx_k_props), 0, 0, 1, 1},
+  {&__pyx_n_s_prop_multi_alleles, __pyx_k_prop_multi_alleles, sizeof(__pyx_k_prop_multi_alleles), 0, 0, 1, 1},
   {&__pyx_n_s_pylab, __pyx_k_pylab, sizeof(__pyx_k_pylab), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
@@ -22141,9 +21796,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pyx_unpickle_Enum, __pyx_k_pyx_unpickle_Enum, sizeof(__pyx_k_pyx_unpickle_Enum), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
   {&__pyx_n_s_r, __pyx_k_r, sizeof(__pyx_k_r), 0, 0, 1, 1},
-  {&__pyx_n_s_r1, __pyx_k_r1, sizeof(__pyx_k_r1), 0, 0, 1, 1},
   {&__pyx_n_s_r1_assign, __pyx_k_r1_assign, sizeof(__pyx_k_r1_assign), 0, 0, 1, 1},
-  {&__pyx_n_s_r2, __pyx_k_r2, sizeof(__pyx_k_r2), 0, 0, 1, 1},
   {&__pyx_n_s_r2_assign, __pyx_k_r2_assign, sizeof(__pyx_k_r2_assign), 0, 0, 1, 1},
   {&__pyx_n_s_r3_assign, __pyx_k_r3_assign, sizeof(__pyx_k_r3_assign), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
@@ -22182,7 +21835,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_thresh, __pyx_k_thresh, sizeof(__pyx_k_thresh), 0, 0, 1, 1},
   {&__pyx_n_s_time, __pyx_k_time, sizeof(__pyx_k_time), 0, 0, 1, 1},
   {&__pyx_n_s_tot, __pyx_k_tot, sizeof(__pyx_k_tot), 0, 0, 1, 1},
-  {&__pyx_n_s_totalCount, __pyx_k_totalCount, sizeof(__pyx_k_totalCount), 0, 0, 1, 1},
   {&__pyx_n_s_tqdm, __pyx_k_tqdm, sizeof(__pyx_k_tqdm), 0, 0, 1, 1},
   {&__pyx_n_s_true_lg, __pyx_k_true_lg, sizeof(__pyx_k_true_lg), 0, 0, 1, 1},
   {&__pyx_kp_s_unable_to_allocate_array_data, __pyx_k_unable_to_allocate_array_data, sizeof(__pyx_k_unable_to_allocate_array_data), 0, 0, 1, 0},
@@ -22193,7 +21845,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_values, __pyx_k_values, sizeof(__pyx_k_values), 0, 0, 1, 1},
   {&__pyx_n_s_verbose, __pyx_k_verbose, sizeof(__pyx_k_verbose), 0, 0, 1, 1},
   {&__pyx_n_s_write, __pyx_k_write, sizeof(__pyx_k_write), 0, 0, 1, 1},
+  {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_x1, __pyx_k_x1, sizeof(__pyx_k_x1), 0, 0, 1, 1},
+  {&__pyx_n_s_xuniq, __pyx_k_xuniq, sizeof(__pyx_k_xuniq), 0, 0, 1, 1},
   {&__pyx_n_s_yaml, __pyx_k_yaml, sizeof(__pyx_k_yaml), 0, 0, 1, 1},
   {&__pyx_n_s_zeros, __pyx_k_zeros, sizeof(__pyx_k_zeros), 0, 0, 1, 1},
   {&__pyx_n_s_zip, __pyx_k_zip, sizeof(__pyx_k_zip), 0, 0, 1, 1},
@@ -22202,7 +21856,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 52, __pyx_L1_error)
   __pyx_builtin_open = __Pyx_GetBuiltinName(__pyx_n_s_open); if (!__pyx_builtin_open) __PYX_ERR(0, 119, __pyx_L1_error)
-  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 179, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 133, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 148, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 151, __pyx_L1_error)
@@ -22252,28 +21906,28 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":152
- *     for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":148
+ *         conflicting_umi_count = 0
  * 
- *         x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()             # <<<<<<<<<<<<<<
+ *         x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()             # <<<<<<<<<<<<<<
+ *         xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")
  * 
- *         doublet = False
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_n_s_UMI); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_n_s_UMI); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":237
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":220
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
  * 
  *     def filter_cell(cell, rule):             # <<<<<<<<<<<<<<
  *         true_lg = cell.loc["LG"]
  *         return float(cell.loc[true_lg]) < rule
  */
-  __pyx_tuple__10 = PyTuple_Pack(3, __pyx_n_s_cell, __pyx_n_s_rule, __pyx_n_s_true_lg); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(3, __pyx_n_s_cell, __pyx_n_s_rule, __pyx_n_s_true_lg); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 220, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_cell, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_cell, 220, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 220, __pyx_L1_error)
 
   /* "View.MemoryView":133
  * 
@@ -22505,50 +22159,50 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":141
  *     return moleculetable
  * 
- * def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):             # <<<<<<<<<<<<<<
- *     """
- *     Filter doublets from the allele table AT.
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):             # <<<<<<<<<<<<<<
+ * 
+ *     doublet_list = []
  */
-  __pyx_tuple__36 = PyTuple_Pack(19, __pyx_n_s_mt, __pyx_n_s_outputfile, __pyx_n_s_outputdir, __pyx_n_s_prop, __pyx_n_s_doublet_list, __pyx_n_s_filter_dict, __pyx_n_s_n, __pyx_n_s_g, __pyx_n_s_x1, __pyx_n_s_doublet, __pyx_n_s_r1, __pyx_n_s_iBC1, __pyx_n_s_allele1, __pyx_n_s_r2, __pyx_n_s_iBC2, __pyx_n_s_allele2, __pyx_n_s_totalCount, __pyx_n_s_props, __pyx_n_s_f); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(13, __pyx_n_s_MT, __pyx_n_s_outputfile, __pyx_n_s_outputdir, __pyx_n_s_prop, __pyx_n_s_doublet_list, __pyx_n_s_filter_dict, __pyx_n_s_n, __pyx_n_s_g, __pyx_n_s_conflicting_umi_count, __pyx_n_s_x, __pyx_n_s_xuniq, __pyx_n_s_prop_multi_alleles, __pyx_n_s_f); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__36);
   __Pyx_GIVEREF(__pyx_tuple__36);
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(4, 0, 19, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_intra_doublets, 141, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(4, 0, 13, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_intra_doublets, 141, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 141, __pyx_L1_error)
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
  *     intbc_sets = {}
  */
-  __pyx_tuple__38 = PyTuple_Pack(10, __pyx_n_s_lgs, __pyx_n_s_lg_names, __pyx_n_s_thresh, __pyx_n_s_intbc_sets, __pyx_n_s_dropouts, __pyx_n_s_n, __pyx_n_s_g, __pyx_n_s_piv, __pyx_n_s_do, __pyx_n_s_intbcs); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(10, __pyx_n_s_lgs, __pyx_n_s_lg_names, __pyx_n_s_thresh, __pyx_n_s_intbc_sets, __pyx_n_s_dropouts, __pyx_n_s_n, __pyx_n_s_g, __pyx_n_s_piv, __pyx_n_s_do, __pyx_n_s_intbcs); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__38);
   __Pyx_GIVEREF(__pyx_tuple__38);
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(3, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_get_intbc_sets, 191, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(3, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_get_intbc_sets, 174, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 174, __pyx_L1_error)
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":212
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":195
  *     return intbc_sets, dropouts
  * 
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):             # <<<<<<<<<<<<<<
  * 
  *     lg_mem = {}
  */
-  __pyx_tuple__40 = PyTuple_Pack(11, __pyx_n_s_cell, __pyx_n_s_intbc_sets, __pyx_n_s_lg_dropouts, __pyx_n_s_scale_by_dropout, __pyx_n_s_lg_mem, __pyx_n_s_ibcs, __pyx_n_s_i, __pyx_n_s_lg_do, __pyx_n_s_intersect, __pyx_n_s_factor, __pyx_n_s_l); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_tuple__40 = PyTuple_Pack(11, __pyx_n_s_cell, __pyx_n_s_intbc_sets, __pyx_n_s_lg_dropouts, __pyx_n_s_scale_by_dropout, __pyx_n_s_lg_mem, __pyx_n_s_ibcs, __pyx_n_s_i, __pyx_n_s_lg_do, __pyx_n_s_intersect, __pyx_n_s_factor, __pyx_n_s_l); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__40);
   __Pyx_GIVEREF(__pyx_tuple__40);
-  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(4, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_compute_lg_membership, 212, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(4, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_compute_lg_membership, 195, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 195, __pyx_L1_error)
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":218
  * 
  * 
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):             # <<<<<<<<<<<<<<
  * 
  *     def filter_cell(cell, rule):
  */
-  __pyx_tuple__42 = PyTuple_Pack(22, __pyx_n_s_at, __pyx_n_s_outputfile, __pyx_n_s_outputdir, __pyx_n_s_rule, __pyx_n_s_filter_cell, __pyx_n_s_filter_cell, __pyx_n_s_collapsed_lgs, __pyx_n_s_lg_names, __pyx_n_s_n, __pyx_n_s_ibc_sets, __pyx_n_s_dropouts, __pyx_n_s_mems, __pyx_n_s_g, __pyx_n_s_lg, __pyx_n_s_mem, __pyx_n_s_mem_df, __pyx_n_s_filter_dict, __pyx_n_s_cell, __pyx_n_s_at_n, __pyx_n_s_dl, __pyx_n_s_tot, __pyx_n_s_f); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(22, __pyx_n_s_at, __pyx_n_s_outputfile, __pyx_n_s_outputdir, __pyx_n_s_rule, __pyx_n_s_filter_cell, __pyx_n_s_filter_cell, __pyx_n_s_collapsed_lgs, __pyx_n_s_lg_names, __pyx_n_s_n, __pyx_n_s_ibc_sets, __pyx_n_s_dropouts, __pyx_n_s_mems, __pyx_n_s_g, __pyx_n_s_lg, __pyx_n_s_mem, __pyx_n_s_mem_df, __pyx_n_s_filter_dict, __pyx_n_s_cell, __pyx_n_s_at_n, __pyx_n_s_dl, __pyx_n_s_tot, __pyx_n_s_f); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 218, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__42);
   __Pyx_GIVEREF(__pyx_tuple__42);
-  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(4, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_inter_doublets, 235, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(4, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_lineageGroup_utils_pyx, __pyx_n_s_filter_inter_doublets, 218, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 218, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -22624,6 +22278,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
 static CYTHON_SMALL_CODE int __Pyx_InitGlobals(void) {
   __pyx_umethod_PyDict_Type_values.type = (PyObject*)&PyDict_Type;
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  __pyx_float_0_1 = PyFloat_FromDouble(0.1); if (unlikely(!__pyx_float_0_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float_1_0 = PyFloat_FromDouble(1.0); if (unlikely(!__pyx_float_1_0)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float_0_35 = PyFloat_FromDouble(0.35); if (unlikely(!__pyx_float_0_35)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -22677,7 +22332,7 @@ static int __Pyx_modinit_type_init_code(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
   __pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets.tp_print = 0;
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets.tp_dictoffset && __pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils___pyx_scope_struct__get_intbc_sets.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
@@ -23264,49 +22919,49 @@ if (!__Pyx_RefNanny) {
   /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":141
  *     return moleculetable
  * 
- * def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):             # <<<<<<<<<<<<<<
- *     """
- *     Filter doublets from the allele table AT.
+ * def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):             # <<<<<<<<<<<<<<
+ * 
+ *     doublet_list = []
  */
   __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_5filter_intra_doublets, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_filter_intra_doublets, __pyx_t_2) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":191
- *     return mt
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":174
+ * 
  * 
  * def get_intbc_sets(lgs, lg_names, thresh=None):             # <<<<<<<<<<<<<<
  * 
  *     intbc_sets = {}
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_7get_intbc_sets, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_7get_intbc_sets, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_intbc_sets, __pyx_t_2) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_intbc_sets, __pyx_t_2) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":212
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":195
  *     return intbc_sets, dropouts
  * 
  * def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):             # <<<<<<<<<<<<<<
  * 
  *     lg_mem = {}
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_9compute_lg_membership, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_9compute_lg_membership, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_compute_lg_membership, __pyx_t_2) < 0) __PYX_ERR(0, 212, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_compute_lg_membership, __pyx_t_2) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":235
+  /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":218
  * 
  * 
  * def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):             # <<<<<<<<<<<<<<
  * 
  *     def filter_cell(cell, rule):
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_11filter_inter_doublets, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_24SingleCellLineageTracing_18ProcessingPipeline_7process_18lineageGroup_utils_11filter_inter_doublets, NULL, __pyx_n_s_SingleCellLineageTracing_Process); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 218, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_filter_inter_doublets, __pyx_t_2) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_filter_inter_doublets, __pyx_t_2) < 0) __PYX_ERR(0, 218, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.pyx":1

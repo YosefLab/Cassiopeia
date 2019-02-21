@@ -167,7 +167,7 @@ def main():
 
     stem = '.'.join(name.split(".")[:-1])
 
-    true_network = pic.load(open(netfp, "rb"))
+    true_network = nx.read_gpickle(netfp)
 
     target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
     target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
@@ -194,8 +194,7 @@ def main():
 	#if score_triplets:
         #	tp = check_triplets_correct(true_network, reconstructed_network_greedy)
         #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t + "\t" + str(t1 - t0))
-	#else:
-	#	print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
+        print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         newick = convert_network_to_newick_format(reconstructed_network_greedy)
         out = stem + "_greedy.txt"
@@ -227,8 +226,7 @@ def main():
 	#if score_triplets:
         #	tp = check_triplets_correct(true_network, reconstructed_network_hybrid)
         #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(t1 - t0))
-	#else:
-	#	print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
+        print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
 
@@ -260,6 +258,7 @@ def main():
 
         aln = unique_alignments(aln)
 
+        t0 = time.time()
         calculator = DistanceCalculator('identity', skip_letters='?')
         constructor = DistanceTreeConstructor(calculator, 'nj')
 
@@ -268,28 +267,7 @@ def main():
         out = stem + "_nj.txt"
         Phylo.write(tree, out, 'newick')
 
-        #nj_net = newick_to_network(out)
-
-        #newick = convert_network_to_newick_format(nj_net)
-        #with open(out, "w") as f:
-        #    f.write(newick)
-
-        # old code for using Phylo to parse newick files to networkx objects
-        #nj_net = Phylo.to_networkx(tree)
-
-        # convert labels to strings, not Bio.Phylo.Clade objects
-        #c2str = map(lambda x: str(x), nj_net.nodes())
-        #c2strdict = dict(zip(nj_net.nodes(), c2str))
-        #nj_net = nx.relabel_nodes(nj_net, c2strdict)
-
-        # convert labels to characters for triplets correct analysis
-        #nj_net = nx.relabel_nodes(nj_net, s_to_char)
-
-	#if score_triplets:
-        #	tp = check_triplets_correct(true_network, nj_net)
-        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "neighbor-joining" + "\t" + t + "\t" + str(t1 - t0))
-	#else:
-	#	print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(t1 - t0))
+        print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(time.time() - t0))
 
 
         os.system("rm " + infile)

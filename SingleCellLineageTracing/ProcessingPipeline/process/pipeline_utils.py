@@ -53,25 +53,27 @@ def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_di
 
 
     base_dir = Path(base_dir)
-    sorted_fn = (base_dir / fn).with_suffix('.sorted.bam')
+    sorted_fn = Path('.'.join(str(base_dir / fn).split(".")[:-1]) + "_sorted.bam")
 
     sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
     filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 
+    print(str(sorted_fn))
     if force_sort or not sorted_fn.exists():
-        sorted_fn = '.'.join(fn.split(".")[:-1]) + "_sorted.bam"
-        collapse.sort_cellranger_bam(fn, sorted_fn, sort_key, filter_func, show_progress=show_progress)
+        sorted_fn = Path('.'.join(fn.split(".")[:-1]) + "_sorted.bam")
+        collapse.sort_cellranger_bam(fn, str(sorted_fn), sort_key, filter_func, show_progress=show_progress)
 
-    collapsed_fn = (base_dir / fn).with_suffix(".collapsed.bam")
+    collapsed_fn = sorted_fn.with_suffix(".collapsed.bam")
+    print(str(collapsed_fn))
     if not collapsed_fn.exists():
-        collapse.form_collapsed_clusters(sorted_fn,
+        collapse.form_collapsed_clusters(str(sorted_fn),
                             max_hq_mismatches,
                             max_indels,
                             max_UMI_distance,
                             show_progress=show_progress
                            )
     
-    collapsed_df_fn = (base_dir / fn).with_suffix(".collapsed.txt")
+    collapsed_df_fn = sorted_fn.with_suffix(".collapsed.txt")
     collapseBam2DF(str(collapsed_fn), str(collapsed_df_fn)) 
 
 
@@ -111,7 +113,7 @@ def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=
                             show_progress = show_progress)
 
     ec_fh = sorted_fn.with_name(sorted_fn.stem + "_ec.bam")
-    mt_fh = ec_fh.with_suffix(".moleculeTable.txt")
+    mt_fh = Path(str(ec_fh).split(".")[0] + ".moleculeTable.txt")
 
     convert_bam_to_moleculeTable(ec_fh, mt_fh)
 
@@ -526,7 +528,7 @@ def pickSeq(moltable, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI
     mt = resolveSequences(mt, outputdir)
 
     print(">>> FILTERING CELL BARCODES...")
-    mt = filterCellBCs(mt, outputdir, cell_umi_thresh, avg_reads_per_UMI_thresh)[0]
+    mt = filterCellBCs(mt, cell_umi_thresh, avg_reads_per_UMI_thresh)[0]
 
     if save_output:
         mt.to_csv(out_fp, sep='\t')

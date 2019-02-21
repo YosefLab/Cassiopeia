@@ -73,7 +73,7 @@ def solve_lineage_instance(target_nodes, prior_probabilities = None, method='hyb
 	if method == "ilp":
 
 
-		subgraph, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
+		subgraph, r, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
 		clean_ilp_network(subgraph)
 
 		return subgraph
@@ -226,7 +226,7 @@ def clean_ilp_network(network):
 	trouble_nodes = [node for node in network.nodes() if network.in_degree(node) > 1]
 	for node in trouble_nodes:
 		pred = network.predecessors(node)
-		pred = sorted(y, key=lambda k: network[k][node]['weight'], reverse=True)
+		pred = sorted(pred, key=lambda k: network[k][node]['weight'], reverse=True)
 		if len(pred) == 2 and (pred[1] in nx.ancestors(network, pred[0]) or pred[0] in nx.ancestors(network, pred[1])):
 			print("CASE 1: X-Y->Z, X->Z")
 			if pred[1] in nx.ancestors(network, pred[0]):

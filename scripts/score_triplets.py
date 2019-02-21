@@ -13,6 +13,7 @@ import argparse
 
 from SingleCellLineageTracing.TreeSolver.simulation_tools import *
 from SingleCellLineageTracing.TreeSolver import *
+from SingleCellLineageTracing.TreeSolver.lineage_solver.solver_utils import node_parent
 
 parser = argparse.ArgumentParser()
 parser.add_argument("true_net", type=str)
@@ -70,17 +71,6 @@ else:
             n.name = "i" + str(i)
             i += 1
 
-    #newick_str = ""
-    #with open(reconstructed_fp, "r") as f:
-    #    for l in f:
-    #        l = l.strip()
-    #        newick_str += l
-
-    #reconstructed_tree = newick_to_network(reconstructed_fp)
-    #reconstructed_tree = newick_to_network(newick_str)
-    #reconstructed_network = tree_collapse(reconstructed_tree)
-
-
     # convert labels to strings, not Bio.Phylo.Clade objects
     c2str = map(lambda x: x.name, reconstructed_network.nodes())
     c2strdict = dict(zip(reconstructed_network.nodes(), c2str))
@@ -88,7 +78,31 @@ else:
 
     # convert labels to characters for triplets correct analysis
     reconstructed_network = nx.relabel_nodes(reconstructed_network, s_to_char)
-    #reconstructed_network = tree_collapse(reconstructed_network)
+
+    dct = defaultdict(str)
+    while len(dct) != len(reconstructed_network.nodes()):
+        for node in reconstructed_network:
+            if '|' in node:
+                dct[node] = node
+            else:
+                succ = list(reconstructed_network.successors(node))
+                if len(succ) == 1:
+                        if '|' in succ[0]:
+                             dct[node] = succ[0]
+                        elif '|' in dct[succ[0]]:
+                            dct[node] = dct[succ[0]]
+                else:
+                    if '|' in succ[0] and '|' in succ[1]:
+                            dct[node] = node_parent(succ[0], succ[1])
+                    elif '|' in dct[succ[0]] and '|' in succ[1]:
+                            dct[node] = node_parent(dct[succ[0]], succ[1])
+                    elif '|' in succ[0] and '|' in dct[succ[1]]:
+                            dct[node] = node_parent(succ[0], dct[succ[1]])
+                    elif '|' in dct[succ[0]] and '|' in dct[succ[1]]:
+                            dct[node] = node_parent(dct[succ[0]], dct[succ[1]])
+
+    reconstructed_network = nx.relabel_nodes(reconstructed_network, dct)
+    reconstructed_network.remove_edges_from(reconstructed_network.selfloop_edges())		
 
 tot_tp = 0
 if modified:

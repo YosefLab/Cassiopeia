@@ -138,55 +138,38 @@ def mapIntBCs(moleculetable, outputfile, outputdir, verbose=True):
 
     return moleculetable
 
-def filter_intra_doublets(mt, outputfile, outputdir, prop=0.35):
-    """
-    Filter doublets from the allele table AT.
+def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):
 
-    """
     doublet_list = []
-
     filter_dict = {}
+    for n, g in tqdm(MT.groupby(["cellBC"])):
+        conflicting_umi_count = 0
+        
+        x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()
+        xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")
 
-    for n, g in tqdm(mt.groupby(["cellBC"]), desc="Filtering Intra-doublets"):
+        conflicting_umi_count = x["UMI"].sum() - xuniq["UMI"].sum()
+                    
+        prop_multi_alleles = conflicting_umi_count / x["UMI"].sum()
 
-        x1 = g.groupby(["intBC", "allele"]).agg({"UMI": 'count', 'readCount': 'sum'}).sort_values("UMI", ascending=False).reset_index()
 
-        doublet = False
-        if x1.shape[0] > 0:
-
-            for r1 in range(x1.shape[0]):
-
-                iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
-
-                for r2 in range(r1 + 1, x1.shape[0]):
-
-                    iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
-
-                    if iBC1 == iBC2 and allele1 != allele2:
-
-                        totalCount = x1.loc[[r1, r2], "UMI"].sum()
-                        props = x1.loc[[r1, r2], "UMI"] / totalCount
-                        if props.iloc[1] >= prop:
-                            filter_dict[n] = 'bad'
-                            doublet = True
-                            break
-                if doublet:
-                    break
-
-        if not doublet:
+        if prop_multi_alleles > prop:
+            filter_dict[n] = "bad"
+        else:
             filter_dict[n] = "good"
 
+    MT["status"] = MT["cellBC"].map(filter_dict)
 
-    mt["status"] = mt["cellBC"].map(filter_dict)
-    doublet_list = mt[(mt["status"] == "bad")]["cellBC"].unique()
+    doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()
 
     with open(outputdir + "/" + outputfile, "a") as f:
-           f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(mt["cellBC"].unique())) + "\n")
+           f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")
 
-    mt = mt[(mt["status"] == "good")]
-    mt = mt.drop(columns = ["status"])
+    MT = MT[(MT["status"] == "good")]
+    MT = MT.drop(columns = ["status"])
 
-    return mt
+    return MT
+
 
 def get_intbc_sets(lgs, lg_names, thresh=None):
 

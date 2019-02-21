@@ -76,7 +76,7 @@ def build_incompatability_graph_and_violating_samples(nodes):
 		new_nodes.append(node.split('|'))
 	zipped_columns = zip(*new_nodes)
 
-	columns = map('|'.join, zip(*new_nodes))
+	columns = list(map('|'.join, zip(*new_nodes)))
 
 	compatability_network = nx.Graph()
 
@@ -167,7 +167,7 @@ def build_incompatability_graph_and_violating_samples_MODIFIED_LB(nodes):
 		new_nodes.append(node.split('|'))
 	zipped_columns = zip(*new_nodes)
 
-	columns = map('|'.join, zip(*new_nodes))
+	columns = list(map('|'.join, zip(*new_nodes)))
 
 	compatability_network = nx.Graph()
 
@@ -256,7 +256,7 @@ def build_incompatability_graph_and_violating_samples_MODIFIED_UB(nodes):
 		new_nodes.append(node.split('|'))
 	zipped_columns = zip(*new_nodes)
 
-	columns = map('|'.join, zip(*new_nodes))
+	columns = list(map('|'.join, zip(*new_nodes)))
 
 	compatability_network = nx.Graph()
 
@@ -347,7 +347,7 @@ def flag_double_mutated_samples(nodes, character, state):
 		new_nodes.append(node.split('|'))
 	zipped_columns = zip(*new_nodes)
 
-	columns = map('|'.join, zip(*new_nodes))
+	columns = list(map('|'.join, zip(*new_nodes)))
 
 
 	# Generating positions for all possible characters and states
