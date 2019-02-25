@@ -18,8 +18,8 @@ Cassiopeia!
    :maxdepth: 1
    :caption: Package Reference
 
-   SingleCellLineageTracing.TreeSolver
-   SingleCellLineageTracing.ProcessingPipeline
+   Cassiopeia.TreeSolver
+   Cassiopeia.ProcessingPipeline
 
 
 
