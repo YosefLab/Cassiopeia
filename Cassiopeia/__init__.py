@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Top-level for SingleCellLineageTracing development."""
+"""Top-level for Cassiopeia development."""
 
 __author__ = "Matt Jones, Alex Khodaveridan"
 __email__ = "mattjones315@berkeley.edu"
