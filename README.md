@@ -13,7 +13,7 @@ Free Software: MIT License
 Installation
 --------------
 
-1. Clone the package as so: ``git clone https://github.com/YosefLab/SingleCellLineageTracing.git``
+1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
 2. Ensure that you have python3.6 installed. You can install this via pip.
 
