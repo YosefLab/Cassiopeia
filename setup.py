@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, Extension, find_packages
@@ -22,26 +22,25 @@ requirements = [
 author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn"
 
 # files to wrap with cython
-to_cythonize = [Extension("SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils", ["SingleCellLineageTracing/TreeSolver/lineage_solver/solver_utils.c"]),
-                Extension("SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation", ["SingleCellLineageTracing/TreeSolver/simulation_tools/dataset_generation.c"]),
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils", ["SingleCellLineageTracing/ProcessingPipeline/process/lineageGroup_utils.c"]), 
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/collapse_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/collapse_cython.c"]), 
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/fastq_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/fastq_cython.c"]),
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/adapters_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/adapters_cython.c"]),
-                Extension("SingleCellLineageTracing/ProcessingPipeline/process/sequencing/sw_cython", ["SingleCellLineageTracing/ProcessingPipeline/process/sequencing/sw_cython.c"])]
+to_cythonize = [Extension("Cassiopeia/TreeSolver/lineage_solver/solver_utils", ["Cassiopeia/TreeSolver/lineage_solver/solver_utils.c"]),
+                Extension("Cassiopeia/TreeSolver/simulation_tools/dataset_generation", ["Cassiopeia/TreeSolver/simulation_tools/dataset_generation.c"]),
+                Extension("Cassiopeia/ProcessingPipeline/process/lineageGroup_utils", ["Cassiopeia/ProcessingPipeline/process/lineageGroup_utils.c"]), 
+                Extension("Cassiopeia/ProcessingPipeline/process/collapse_cython", ["Cassiopeia/ProcessingPipeline/process/collapse_cython.c"]), 
+                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython.c"]),
+                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython.c"]),
+                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython.c"])]
 
 setup(
-        name="SingleCellLineageTracing",
+        name="Cassiopeia",
         ext_modules=cythonize(to_cythonize),
         entry_points={
-            'console_scripts': ['scLT = SingleCellLineageTracing.__main__:main',
-                                'reconstruct-lineage = SingleCellLineageTracing.TreeSolver.reconstruct_tree:main',
-                                'post-process-tree = SingleCellLineageTracing.TreeSolver.post_process_tree:main',
-                                'stress-test = SingleCellLineageTracing.TreeSolver.stress_test:main',
-                                'simulate-tree = SingleCellLineageTracing.TreeSolver.simulate_tree:main',
-                                'call-lineages = SingleCellLineageTracing.ProcessingPipeline.process.lineageGroup:main',
-                                'filter-molecule-table = SingleCellLineageTracing.ProcessingPipeline.process.filterMoleculeTables:main',
-                                'collapse = SingleCellLineageTracing.ProcessingPipeline.process.collapse:main']
+            'console_scripts': ['scLT = Cassiopeia.__main__:main',
+                                'reconstruct-lineage = Cassiopeia.TreeSolver.reconstruct_tree:main',
+                                'post-process-tree = Cassiopeia.TreeSolver.post_process_tree:main',
+                                'stress-test = Cassiopeia.TreeSolver.stress_test:main',
+                                'simulate-tree = Cassiopeia.TreeSolver.simulate_tree:main',
+                                'call-lineages = Cassiopeia.ProcessingPipeline.process.lineageGroup:main',
+                                'filter-molecule-table = Cassiopeia.ProcessingPipeline.process.filterMoleculeTables:main']
             
         },
         author_email="mattjones315@berkeley.edu",
@@ -62,7 +61,7 @@ setup(
         include_package_data=True,
         packages=find_packages(),
         keywords="scLT",
-        url="https://github.com/YosefLab/SingleCellLineageTracing",
+        url="https://github.com/YosefLab/Cassiopeia",
         version='0.0.1',
         zip_safe=False,
 )
