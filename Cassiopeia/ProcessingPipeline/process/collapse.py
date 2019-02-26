@@ -21,8 +21,8 @@ import pysam
 import networkx as nx
 
 
-from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import fastq, utilities, sw, sam
-from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import annotation as annotation_module
+from Cassiopeia.ProcessingPipeline.process.sequencing import fastq, utilities, sw, sam
+from Cassiopeia.ProcessingPipeline.process.sequencing import annotation as annotation_module
 
 from .collapse_cython import hq_mismatches_from_seed, hq_hamming_distance, hamming_distance_matrix, register_corrections
 

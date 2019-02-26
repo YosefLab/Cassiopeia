@@ -239,6 +239,25 @@ def append_sample_id(data_fp, sampleID):
 
     return data
 
+def changeCellBCID(alleleTableIN, sampleID, alleleTableOUT):
+
+	fOut = open(alleleTableOUT, 'w')
+	header = True
+	with open(alleleTableIN, 'r') as umiList:
+		for umi in umiList:
+			if header:
+				fOut.write(umi)
+				header = False
+				continue
+			umiAttr = umi.split("\t")
+			cellBC = umiAttr[0]
+			new_cellBC = sampleID + "." + cellBC
+			fOut.write(new_cellBC)
+			for i in range(1,len(umiAttr)):
+				fOut.write("\t" + umiAttr[i])
+	fOut.close()
+	
+
 def convert_sam_to_bam(sam_input, bam_output):
     """
     Converts a SAM file to BAM file.
@@ -324,8 +343,7 @@ def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_
 
     subprocess.check_output(args)
 
-def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, 
-            no_filter_intbcs=False, filter_intbc_thresh = 0.001, verbose=False):
+def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, verbose=False):
     """
     Wrapper function for interacting with the `Lineage Group` module. Takes in a filtered molecule table and preforms lineage group calling, 
     inter doublet detection, intBC filtering, and a final round of cellBC filtering. 
@@ -347,21 +365,13 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
         Perform inter doublet detection.
     :param doublet_threshold:
         Threshold to be used during inter doublet detection.
-    :param no_filter_intbcs:
-        Do not filter intBCS before calling lineage groups.
-    :param filter_intbc_thresh:
-        Filtering criteria for intBC before calling lineage groups -- the minimum number of cells overall that contain that intBC in order
-        for it to be used during lineage group calling.
     :param verobse:
         Allow output to log files.
     :return:
         None. An alleletable is written to file.
     """
 
-    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter), "--filter_intbc_thresh", str(filter_intbc_thresh)]
-
-    if no_filter_intbcs:
-        args.append("--no_filter_intbcs")
+    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter)]
 
     if verbose:
         args.append("--verbose")

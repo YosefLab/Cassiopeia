@@ -11,6 +11,7 @@ import pandascharm as pc
 import random
 from pylab import *
 import pickle as pic
+from pathlib import Path
 
 import Bio.Phylo as Phylo
 from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer
@@ -195,11 +196,6 @@ def main():
 
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
-	#if score_triplets:
-        #	tp = check_triplets_correct(true_network, reconstructed_network_greedy)
-        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "greedy" + "\t" + t + "\t" + str(t1 - t0))
-        print(str(param) + "\t" + str(run) + "\t" + "greedy" + "\t" + str(t) + "\t" + str(t1 - t0))
-
         newick = convert_network_to_newick_format(reconstructed_network_greedy)
         out = stem + "_greedy.txt"
         #with open(out, "w") as f:
@@ -227,10 +223,6 @@ def main():
         #with open(out, "w") as f:
         #    f.write(newick)
 
-	#if score_triplets:
-        #	tp = check_triplets_correct(true_network, reconstructed_network_hybrid)
-        #	print(str(param) + "\t" + str(run) + "\t" + str(tp) + "\t" + "hybrid" + "\t" + t + "\t" + str(t1 - t0))
-        print(str(param) + "\t" + str(run) + "\t" + "hybrid" + "\t" + str(t) + "\t" + str(t1 - t0))
 
         pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
 

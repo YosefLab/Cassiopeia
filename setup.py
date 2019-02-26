@@ -10,12 +10,25 @@ with open("README.md") as readme_file:
 
 
 requirements = [
-
         "numpy > 1.0, < 1.15",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
         "networkx >= 2.0",
         "tqdm >= 4",
+        "gurobipy",
+        'ete3 >= 3.1.1',
+        'argparse >= 1.1', 
+        "Biopython >= 1.71",
+        "pathlib",
+        'pandas-charm >= 0.1.3',
+        'pysam >= 0.14.1',
+        'bokeh >= 0.12.15',
+        'PyYAML >= 3.12',
+        'cython >= 0.29.2',
+        'scipy >= 1.2.0',
+        "python-Levenshtein",
+        "rpy2 >= 2.9.5",
+        
 ]
 
 
