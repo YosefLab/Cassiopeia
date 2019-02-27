@@ -29,9 +29,7 @@ requirements = [
         "python-Levenshtein",
         "rpy2 >= 2.9.5",
         'nbconvert >= 5.4.0',
-        'nbformat >= 4.4.0',
-        'nbsphinx'
-        
+        'nbformat >= 4.4.0'
 ]
 
 
