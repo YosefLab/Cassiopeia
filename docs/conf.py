@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import SingleCellLineageTracing
+import Cassiopeia
 
 # -- Project information -----------------------------------------------------
 
@@ -25,9 +25,9 @@ copyright = u'2019, Matthew Jones, Alex Khodaverdian, Jeffrey Quinn'
 author = u'Matthew Jones, Alex Khodaverdian, Jeffrey Quinn'
 
 # The short X.Y version
-version = SingleCellLineageTracing.__version__
+version = Cassiopeia.__version__
 # The full version, including alpha/beta/rc tags
-release = SingleCellLineageTracing.__version__
+release = Cassiopeia.__version__
 
 
 # -- General configuration ---------------------------------------------------
