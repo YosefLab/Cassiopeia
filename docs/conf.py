@@ -42,7 +42,6 @@ release = Cassiopeia.__version__
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'nbsphinx',
-              'sphinx_autodoc_typehints',
               'sphinx.ext.ifconfig',
               'sphinx.ext.mathjax']
 
