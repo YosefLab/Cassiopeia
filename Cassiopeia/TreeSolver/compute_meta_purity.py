@@ -142,6 +142,7 @@ def set_progeny_size(G, root):
 def get_progeny_size(G, node):
     """
     Get the progeny size of a node in the graph. 
+
     :param G:
         input tree
     :param root:
@@ -159,6 +160,7 @@ def get_progeny_size(G, node):
 def get_children_of_clade(G, node):
     """
     Get the names of the leaves below the node in G.
+
     :param G:
         input tree
     :param root:
@@ -175,6 +177,7 @@ def get_children_of_clade(G, node):
 def get_meta_counts(G, node, metavals):
     """
     For all the leaves below the node in G, count how many occurences of each value in metavals.  
+
     :param G:
         input tree
     :param root:
@@ -197,6 +200,7 @@ def get_meta_counts(G, node, metavals):
 def set_depth(G, root):
     """
     Store the depth of each node as an attribute in the graph. 
+
     :param G:
         input tree
     :param root:
@@ -217,6 +221,7 @@ def set_depth(G, root):
 def cut_tree(G, depth):
     """
     Gets the internal nodes at the depth specified in the tree.
+    
     :param G:
         input tree
     :param depth:
