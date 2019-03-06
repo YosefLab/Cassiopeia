@@ -343,7 +343,7 @@ def filter_molecule_table(mt, out_fp, outputdir, cell_umi_thresh = 10, umi_read_
 
     subprocess.check_output(args)
 
-def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, verbose=False):
+def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_prop=0.005, min_intbc_thresh=0.05, detect_doublets_inter=True, doublet_threshold=0.35, verbose=False, plot=False, kinship_thresh = 0.25):
     """
     Wrapper function for interacting with the `Lineage Group` module. Takes in a filtered molecule table and preforms lineage group calling, 
     inter doublet detection, intBC filtering, and a final round of cellBC filtering. 
@@ -371,13 +371,16 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
         None. An alleletable is written to file.
     """
 
-    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter)]
+    args = ["call-lineages", mt, out_fp, outputdir, "--min_cluster_prop", str(min_cluster_prop), "--min_intbc_thresh", str(min_intbc_thresh), "--doublet_threshold", str(doublet_threshold), "--cell_umi_filter", str(cell_umi_filter), "--kinship_thresh", str(kinship_thresh)]
 
     if verbose:
         args.append("--verbose")
 
     if detect_doublets_inter:
         args.append("--detect_doublets_inter")
+
+    if plot:
+        args.append("--plot")
 
     print(" ".join(args))
     subprocess.check_output(args)

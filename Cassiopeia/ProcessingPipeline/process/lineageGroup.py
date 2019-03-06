@@ -49,7 +49,7 @@ def create_output_dir(outputdir = None):
 
     return outputdir
 
-def findTopLG(PIVOT_in, iteration, outputdir):
+def findTopLG(PIVOT_in, iteration, outputdir, min_intbc_prop = 0.2, kinship_thresh=0.2):
 
     # calculate sum of observed intBCs, identify top intBC
     intBC_sums = PIVOT_in.sum(0).sort_values(ascending=False)
@@ -70,7 +70,7 @@ def findTopLG(PIVOT_in, iteration, outputdir):
     # Define intBC set
     subPIVOT_in_sums2 = subPIVOT_in.sum(0)
     total = subPIVOT_in_sums2[intBC_top]
-    intBC_sums_filt = subPIVOT_in_sums2[subPIVOT_in_sums2>=0.20*total]
+    intBC_sums_filt = subPIVOT_in_sums2[subPIVOT_in_sums2>=min_intbc_prop*total]
     
     # Reduce PIV to only intBCs considered in set
     intBC_set = intBC_sums_filt.index.tolist()
@@ -80,7 +80,7 @@ def findTopLG(PIVOT_in, iteration, outputdir):
     f_inset = PIV_set.sum(axis=1)
 
     # define set of cells with good kinship
-    f_inset_filt = f_inset[f_inset>=0.25]
+    f_inset_filt = f_inset[f_inset>=kinship_thresh]
     LG_cells = f_inset_filt.index.tolist()
 
     # Return updated PIV with LG_cells removed
@@ -102,7 +102,7 @@ def findTopLG(PIVOT_in, iteration, outputdir):
  
     return PIV_LG, PIV_noLG, intBC_set
 
-def iterative_lg_assign(pivot_in, min_clust_size, outputdir):
+def iterative_lg_assign(pivot_in, min_clust_size, outputdir, min_intbc_thresh=0.2, kinship_thresh=0.2):
     ## Run LG Assign function
 
     # initiate output variables
@@ -115,7 +115,7 @@ def iterative_lg_assign(pivot_in, min_clust_size, outputdir):
     i = 0
     while prev_clust_size > min_clust_size:
         # run function
-        PIV_outs = findTopLG(pivot_in, i, outputdir)
+        PIV_outs = findTopLG(pivot_in, i, outputdir, min_intbc_prop=min_intbc_thresh, kinship_thresh=kinship_thresh)
         
         # parse returned objects
         PIV_LG = PIV_outs[0]
@@ -621,10 +621,12 @@ def main():
     parser.add_argument("output_dir", type=str, help="File path to output directory for all results")
     parser.add_argument("--min_cluster_prop", default=0.005, help="Minimum proportion of cells that can fall into a cluster for lineage group calling") 
     parser.add_argument("--min_intbc_thresh", default=0.05, help="Threshold to filter out poor intBC per LineageGroup, as a function of the proportion of cells that report that intBC in the LG")
+    parser.add_argument("--kinship_thresh", default = 0.25, help="Threshold by which to exclude cells during lineage group calling, based on their overlap (or kinship) of intBCs in that lineage group.")
     parser.add_argument("--detect_doublets_inter", default=False, action='store_true', help="Perform Inter-Doublet (from different  LGs) Detection")
     parser.add_argument("--doublet_threshold", default=0.35, help="Threshold at which to call intra-doublets")
     parser.add_argument("--verbose", "-v", default=False, action="store_true", help="Verbose output")
     parser.add_argument("--cell_umi_filter", default=10, help="Minimum UMIs per cell for final alleleTable")
+    parser.add_argument("--plot", default=False, action="store_true", help="Plot summaries at end of process")
 
     args = parser.parse_args()
 
@@ -633,10 +635,12 @@ def main():
     outputdir = args.output_dir
     min_cluster_prop = float(args.min_cluster_prop)
     min_intbc_thresh = float(args.min_intbc_thresh)
+    kinship_thresh = float(args.kinship_thresh)
     verbose = args.verbose
     detect_doublets = args.detect_doublets_inter
     doublet_thresh = float(args.doublet_threshold)
     cell_umi_filter = int(args.cell_umi_filter)
+    plot = args.plot
  
     t0 = time.time()
 
@@ -664,7 +668,7 @@ def main():
 
     min_clust_size = int(min_cluster_prop * PIV.shape[0])
     print(">>> CLUSTERING WITH MINIMUM CLUSTER SIZE " + str(min_clust_size) + "...")
-    PIV_assigned, master_intBC_list = iterative_lg_assign(PIV, min_clust_size, outputdir)
+    PIV_assigned, master_intBC_list = iterative_lg_assign(PIV, min_clust_size, outputdir, min_intbc_thresh=min_intbc_thresh, kinship_thresh=kinship_thresh)
 
     print(">>> FILTERING OUT LOW PROPORTION INTBCs...")
     master_LGs, master_intBCs = filter_low_prop_intBCs(PIV_assigned, thresh = min_intbc_thresh)
@@ -696,19 +700,20 @@ def main():
     print(">>> WRITING OUTPUT...")
     at.to_csv(outputdir + "/" + output_fp, sep='\t', index=False)
 
-    print(">>> PRODUCING PLOTS...")
-    at_piv = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
-    at_pivot_I = at_piv
-    at_pivot_I.fillna(value = 0, inplace=True)
-    at_pivot_I[at_pivot_I > 0] = 1
+    if plot:
+        print(">>> PRODUCING PLOTS...")
+        at_piv = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
+        at_pivot_I = at_piv
+        at_pivot_I.fillna(value = 0, inplace=True)
+        at_pivot_I[at_pivot_I > 0] = 1
 
-    clusters = at[["cellBC", "lineageGrp"]].drop_duplicates()["lineageGrp"]
+        clusters = at[["cellBC", "lineageGrp"]].drop_duplicates()["lineageGrp"]
 
-    print(">>> PRODUCING PIVOT TABLE HEATMAP...")
-    plot_overlap_heatmap(at_pivot_I, at, outputdir)
+        print(">>> PRODUCING PIVOT TABLE HEATMAP...")
+        plot_overlap_heatmap(at_pivot_I, at, outputdir)
 
-    print(">>> PLOTTING FILTERED LINEAGE GROUP PIVOT TABLE HEATMAPS...")
-    plot_overlap_heatmap_lg(at, at_pivot_I, outputdir)
+        print(">>> PLOTTING FILTERED LINEAGE GROUP PIVOT TABLE HEATMAPS...")
+        plot_overlap_heatmap_lg(at, at_pivot_I, outputdir)
 
     with open(outputdir + "/lglog.txt", "a") as f:
         f.write("Final allele table written to " + outputdir + "/" + output_fp + "\n")
