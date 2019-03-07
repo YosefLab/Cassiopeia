@@ -1,3 +1,6 @@
 sphinx
 nbsphinx
 sphinx-autodoc-typehints
+pandas
+networkx
+
