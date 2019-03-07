@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 *.pyc
+*.so
 _build
 _static
 _templates
