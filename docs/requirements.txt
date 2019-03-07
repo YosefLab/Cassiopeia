@@ -16,5 +16,4 @@ PyYAML
 cython
 scipy
 python-Levenshtein
-rpy2
 
