@@ -19,6 +19,10 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import Cassiopeia
 
+autodoc_mock_imports = ["Cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", 
+                        "Cassiopeia.ProcessingPipeline.process.collapse",
+                        "gurobipy"]
+
 # -- Project information -----------------------------------------------------
 
 project = u'Cassiopeia'
