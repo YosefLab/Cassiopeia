@@ -16,4 +16,5 @@ PyYAML
 cython
 scipy
 python-Levenshtein
-
+pathlib
+gurobipy
