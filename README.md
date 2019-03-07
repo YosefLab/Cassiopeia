@@ -8,7 +8,7 @@ This is a software suite for proecessing data from single cell lineage tracing e
 - **Phylogeny Reconstruction**: a collection of tools for constructing phylogenies. We support 5 algorithms currently: a greedy algorithm based on multi-state compatibility, an exact Steiner-Tree solver, Cassiopeia (the combination of these two), Neighbor-Joining, and Camin-Sokal Maximum Parsimony. 
 - **Benchmarking**: a set of tools for benchmarking; a simulation framework and tree comparsion tools. 
 
-You can find all documentation [here](https://cassiopeia-lineage.readthedocs.io/en/latest/readme)
+You can find all documentation [here](https://cassiopeia-lineage.readthedocs.io/en/latest/readme.html)
 
 You can also find example notebooks in this repository:
 
