@@ -17,4 +17,3 @@ cython
 scipy
 python-Levenshtein
 pathlib
-gurobipy
