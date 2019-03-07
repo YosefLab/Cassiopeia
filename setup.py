@@ -27,7 +27,6 @@ requirements = [
         'cython >= 0.29.2',
         'scipy >= 1.2.0',
         "python-Levenshtein",
-        "rpy2 >= 2.9.5",
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0'
 ]
