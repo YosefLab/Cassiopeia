@@ -1,6 +1,3 @@
-# Separate function file for some heavy lifting during lineage group calling. Wrapped in Cython, this should
-# make things a lot faster. 
-
 import sys
 import os
 import matplotlib.pyplot as plt

@@ -1,5 +1,5 @@
-import numpy as np
 cimport cython
+import numpy as np
 cdef int OFFSET = 33
 
 def hamming_distance(char* first, char* second):

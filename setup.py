@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup, Extension, find_packages
+from setuptools import find_packages
 from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 
 
 with open("README.md") as readme_file:
@@ -34,18 +36,21 @@ requirements = [
 
 author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn"
 
+cmdclass = {'build_ext': build_ext}
+
 # files to wrap with cython
-to_cythonize = [Extension("Cassiopeia/TreeSolver/lineage_solver/solver_utils", ["Cassiopeia/TreeSolver/lineage_solver/solver_utils.c"]),
-                Extension("Cassiopeia/TreeSolver/simulation_tools/dataset_generation", ["Cassiopeia/TreeSolver/simulation_tools/dataset_generation.c"]),
-                Extension("Cassiopeia/ProcessingPipeline/process/lineageGroup_utils", ["Cassiopeia/ProcessingPipeline/process/lineageGroup_utils.c"]), 
-                Extension("Cassiopeia/ProcessingPipeline/process/collapse_cython", ["Cassiopeia/ProcessingPipeline/process/collapse_cython.c"]), 
-                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython.c"]),
-                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython.c"]),
-                Extension("Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython.c"])]
+to_cythonize = [Extension("Cassiopeia.TreeSolver.lineage_solver.solver_utils", ["Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
+                Extension("Cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
+                Extension("Cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["Cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
+                Extension("Cassiopeia.ProcessingPipeline.process.collapse_cython", ["Cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"]), 
+                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython.pyx"]),
+                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.adapters_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython.pyx"]),
+                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.sw_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython.pyx"])]
 
 setup(
         name="Cassiopeia",
         ext_modules=cythonize(to_cythonize),
+        cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = Cassiopeia.__main__:main',
                                 'reconstruct-lineage = Cassiopeia.TreeSolver.reconstruct_tree:main',
