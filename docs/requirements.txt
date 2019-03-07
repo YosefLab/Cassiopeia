@@ -2,10 +2,10 @@ sphinx
 nbsphinx
 sphinx-autodoc-typehints
 pandas
-networkx
+networkx >= 2.0
 tqdm
 ete3
-numpy
+numpy > 1.0, < 1.15
 matplotlib
 argparse
 Biopython
@@ -13,7 +13,7 @@ pandas-charm
 pysam
 bokeh
 PyYAML
-cython >= 0.23
+cython >= 0.29.2
 scipy
 python-Levenshtein
 pathlib
