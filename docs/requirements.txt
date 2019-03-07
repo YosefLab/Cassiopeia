@@ -3,4 +3,18 @@ nbsphinx
 sphinx-autodoc-typehints
 pandas
 networkx
+tqdm
+ete3
+numpy
+matplotlib
+argparse
+Biopython
+pandas-charm
+pysam
+bokeh
+PyYAML
+cython
+scipy
+python-Levenshtein
+rpy2
 
