@@ -10,7 +10,7 @@ from itertools import chain
 from six.moves import zip
 from collections import namedtuple
 
-from SingleCellLineageTracing.ProcessingPipeline.process.sequencing import *
+from Cassiopeia.ProcessingPipeline.process.sequencing import *
 
 #from . import utilities
 from .fastq_cython import *

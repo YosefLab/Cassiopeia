@@ -10,6 +10,12 @@ This is a software suite for proecessing data from single cell lineage tracing e
 
 You can find all documentation [here](https://cassiopeia-lineage.readthedocs.io/en/latest/readme)
 
+You can also find example notebooks in this repository:
+
+- [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/process_fastq.ipynb)
+- [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct_lineages.ipynb)
+- [simulating trees and stress testing](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/simulate_and_stress_test.ipynb)
+
 Free Software: MIT License
 
 Installation
