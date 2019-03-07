@@ -357,7 +357,10 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
     :param cell_umi_thresh:
         Cell UMI Threshold for filtering.
     :param min_cluster_prop:
-        Lower bound of lineage group size, as defined as a proportion of the total number of cells.
+        Lower bound of lineage group size, as defined as a proportion of the total number of cells. Given as a float between 0 and 1.
+    :param kinship_thresh:
+        Threshold on which to filter out cells from a lineage group during iterative assignment, based on the proportion of intBCs that a cell
+        shares with that lineage group. Given as a float between 0 and 1.
     :param min_intbc_thresh:
         Filtering criteria for intBC at the lineage group level -- the minimum proportion of cells that must have an intBC for the intBC to be
         considered legitimate.
@@ -365,8 +368,10 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
         Perform inter doublet detection.
     :param doublet_threshold:
         Threshold to be used during inter doublet detection.
-    :param verobse:
+    :param verbose:
         Allow output to log files.
+    :param plot:
+        Allow plotting at the end of the pipeline. 
     :return:
         None. An alleletable is written to file.
     """
