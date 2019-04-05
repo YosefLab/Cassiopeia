@@ -1,5 +1,7 @@
 """Top level for Tree Solver development."""
 from .data_pipeline import *
+from .Node import * 
+from .Cassiopeia_Tree import *
 
 __author__ = "Matt Jones, Alex Khodaverdian"
 __email__ = "mattjones315@berkeley.edu"
