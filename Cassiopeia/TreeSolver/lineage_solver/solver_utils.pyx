@@ -34,7 +34,7 @@ def node_parent(n1, n2):
 		else:
 			parr.append('0')
 
-	parent_node = Node("internal", parr, '|'.join(parr))
+	parent_node = Node("internal", parr, is_target=False)
 
 	return parent_node
 
@@ -191,6 +191,9 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 						# if parent already exists, we need to find it
 						if parent.get_character_string() in list(char_strings_to_node.keys()):
 							parent = char_strings_to_node[parent.get_character_string()]
+
+						if parent != root:
+							parent.pid = pid
 
 						edge_length_p_s1 = get_edge_length(parent, sample)
 						edge_length_p_s2 = get_edge_length(parent, sample_2)
