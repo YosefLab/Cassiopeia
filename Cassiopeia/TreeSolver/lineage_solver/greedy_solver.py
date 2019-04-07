@@ -3,6 +3,11 @@ import networkx as nx
 import numpy as np
 import hashlib
 
+
+
+
+from Cassiopeia.TreeSolver.Node import Node
+
 from .solver_utils import root_finder
 
 def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, considered=set(), uniq='', targets=[]):
@@ -181,9 +186,21 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 
 		left_nodes = [node for node in left_network.nodes() if left_network.in_degree(node) == 0]
 
+		dup_dict = {}
+		names = set(node.get_character_string() for node in G)
+		for n in left_network:
+			if n in names and n.get_character_string() != left_root.get_character_string():
+				dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid=str(hashlib.md5(left_root.get_character_string().encode('utf-8')).hexdigest()))
+
+
 		rs = [n for n in left_network if n.get_character_string() == left_root.get_character_string()]
 		if len(rs) > 0:
-			left_network.add_edge(left_root, rs[0], weight=0, lable="None")
+			dup_dict[rs[0]] = left_root
+
+		left_network = nx.relabel_nodes(left_network, dup_dict)
+
+		#if len(rs) > 0:
+		#	left_network.add_edge(left_root, rs[0], weight=0, lable="None")
 
 		G = nx.compose(G, left_network)
 		if left_root != splitter:
@@ -194,14 +211,26 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	right_nodes = [node for node in right_network.nodes() if right_network.in_degree(node) == 0]
 	right_root = root_finder(right_split)
 
+
 	if right_root in targets:
 		right_root = targets[targets.index(right_root)]
 	else:
 		right_root.pid = uniq 
 
+	dup_dict = {}
+	names = set(node.get_character_string() for node in G)
+	for n in right_network:
+		if n in names and n.get_character_string() != right_root.get_character_string():
+			dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid=str(hashlib.md5(right_network.get_character_string().encode('utf-8')).hexdigest()))
+
 	rs = [n for n in right_network if n.get_character_string() == right_root.get_character_string()]
 	if len(rs) > 0:
-		right_network.add_edge(right_root, rs[0], weight=0, lable="None")
+		dup_dict[rs[0]] = right_root
+
+	right_network = nx.relabel_nodes(right_network, dup_dict)
+
+	#if len(rs) > 0:
+	#	right_network.add_edge(right_root, rs[0], weight=0, lable="None")
 
 	#if right_root.get_character_string() == splitter.get_character_string():
 	#	right_root = splitter
