@@ -190,7 +190,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 		names = set(node.get_character_string() for node in G)
 		for n in left_network:
 			if n in names and n.get_character_string() != left_root.get_character_string():
-				dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid=str(hashlib.md5(left_root.get_character_string().encode('utf-8')).hexdigest()))
+				dup_dict[n] = Node(n.get_name(), n.get_character_string())
 
 
 		rs = [n for n in left_network if n.get_character_string() == left_root.get_character_string()]
@@ -221,7 +221,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	names = set(node.get_character_string() for node in G)
 	for n in right_network:
 		if n in names and n.get_character_string() != right_root.get_character_string():
-			dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid=str(hashlib.md5(right_network.get_character_string().encode('utf-8')).hexdigest()))
+			dup_dict[n] = Node(n.get_name(), n.get_character_string())
 
 	rs = [n for n in right_network if n.get_character_string() == right_root.get_character_string()]
 	if len(rs) > 0:
