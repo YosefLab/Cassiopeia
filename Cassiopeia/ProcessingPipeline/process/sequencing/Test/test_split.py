@@ -1,7 +1,7 @@
 import unittest
-import Sequencing.Parallel
-import Sequencing.Parallel.split_file as split_file
-import Sequencing.fastq as fastq
+import Cassiopeia.ProcessingPipeline.process.sequencing.Parallel
+import Cassiopeia.ProcessingPipeline.process.sequencing.Parallel.split_file as split_file
+import Cassiopeia.ProcessingPipeline.process.sequencing.fastq as fastq
 from collections import defaultdict
 
 class TestSplit(unittest.TestCase):

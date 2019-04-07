@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from process import filterMoleculeTables
+from Cassiopeia.ProcessingPipeline.process import filterMoleculeTables
 
 def test_umi_errcorr():
 

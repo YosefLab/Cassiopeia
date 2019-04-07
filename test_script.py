@@ -15,19 +15,20 @@ n10 = Node('j', [0,1,1,0,1])
 
 nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10]
 
-tree = ls.solve_lineage_instance(nodes, method='greedy')
-net = tree.get_network()
-root = [n for n in net if net.in_degree(n) == 0][0]
+#tree = ls.solve_lineage_instance(nodes, method='greedy')
+#net = tree.get_network()
+#root = [n for n in net if net.in_degree(n) == 0][0]
 #print([(r.name, r.char_string, r.pid) for r in net if net.in_degree(r) == 0])
 #print(root.name, root.char_string, root.pid)
-for e in nx.dfs_edges(net, root):
+#for e in nx.dfs_edges(net, root):
 #for e in net.edges():
-    print((e[0].name, e[0].char_string, e[0].pid), '->', (e[1].name, e[1].char_string, e[1].pid))
+#    print((e[0].name, e[0].char_string, e[0].pid), '->', (e[1].name, e[1].char_string, e[1].pid))
 
 #leaves = tree.get_leaves()
 #for l in leaves:
 #    print(l.name, l.char_string)
-print("is connected: " + str(len([n for n in net if net.in_degree(n) == 0])== 1))
+#print("is connected: " + str(len([n for n in net if net.in_degree(n) == 0])== 1))
+#print("Number of targets: ", len([n for n in net if n.is_target]))
 
 #tree = ls.solve_lineage_instance(nodes, method='ilp')
 #net = tree.get_network()
@@ -35,19 +36,16 @@ print("is connected: " + str(len([n for n in net if net.in_degree(n) == 0])== 1)
 #for e in nx.dfs_edges(net, root):
 #    print((e[0].name, e[0].char_string), (e[1].name, e[1].char_string))
 
-#leaves = tree.get_leaves()
-#for l in leaves:
-#    print(l.name, l.char_string)
+#print("is connected: " + str(len([n for n in net if net.in_degree(n) == 0])== 1))
+#print("Number of targets: ", len([n for n in net if n.is_target]))
 
-#tree = ls.solve_lineage_instance(nodes, method='hybrid', hybrid_subset_cutoff=3)
-#net = tree.get_network()
-#root = [n for n in net if net.in_degree(n) == 0][0]
-#for e in nx.dfs_edges(net, root):
-#    print((e[0].name, e[0].char_string), (e[1].name, e[1].char_string))
-
-#leaves = tree.get_leaves()
-#for l in leaves:
-#    print(l.name, l.char_string)
+tree = ls.solve_lineage_instance(nodes, method='hybrid', hybrid_subset_cutoff=3)
+net = tree.get_network()
+root = [n for n in net if net.in_degree(n) == 0][0]
+for e in nx.dfs_edges(net, root):
+    print((e[0].name, e[0].char_string), (e[1].name, e[1].char_string))
 
 
+print("is connected: " + str(len([n for n in net if net.in_degree(n) == 0])== 1))
+print("Number of targets: ", len([n for n in net if n.is_target]))
 

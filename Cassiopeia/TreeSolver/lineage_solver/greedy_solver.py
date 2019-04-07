@@ -177,10 +177,6 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 			left_root = targets[targets.index(left_root)]
 		else:
 			left_root.pid = uniq
-		#if left_root.get_character_string() == splitter.get_character_string():
-		#	left_root = splitter
-		#else:
-		#	left_root.pid = uniq
 
 		left_network, left_subproblems = greedy_build(left_split, master_list_nodes, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
 
@@ -191,7 +187,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 		for n in left_network:
 			if n.get_character_string() in names and n.get_character_string() != left_root.get_character_string():
 				1/0
-				dup_dict[n] = Node(n.get_name(), n.get_character_string())
+				dup_dict[n] = Node(n.get_name(), n.get_character_string(), is_target=False)
 
 
 		rs = [n for n in left_network if n.get_character_string() == left_root.get_character_string()]
@@ -199,9 +195,6 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 			dup_dict[rs[0]] = left_root
 
 		left_network = nx.relabel_nodes(left_network, dup_dict)
-
-		#if len(rs) > 0:
-		#	left_network.add_edge(left_root, rs[0], weight=0, lable="None")
 
 		G = nx.compose(G, left_network)
 		if left_root != splitter:
@@ -223,7 +216,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	for n in right_network:
 		if n.get_character_string() in names and n.get_character_string() != right_root.get_character_string():
 			#1/0
-			dup_dict[n] = Node(n.get_name(), n.get_character_string())
+			dup_dict[n] = Node(n.get_name(), n.get_character_string(), is_target=False)
 
 	rs = [n for n in right_network if n.get_character_string() == right_root.get_character_string()]
 	if len(rs) > 0:
@@ -231,17 +224,8 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 
 	right_network = nx.relabel_nodes(right_network, dup_dict)
 
-	#if len(rs) > 0:
-	#	right_network.add_edge(right_root, rs[0], weight=0, lable="None")
-
-	#if right_root.get_character_string() == splitter.get_character_string():
-	#	right_root = splitter
-	#else:
-	#	right_root.pid = uniq + "1"
-
 	G = nx.compose(G, right_network)
-	#right_root = [n for n in right_network if right_network.in_degree(n) == 0]
-	#if len(right_root) > 0:
+
 	if splitter != right_root:
 		G.add_edge(splitter, right_root, weight=1, label = str(character) + ": 0 -> " + str(state))
 
