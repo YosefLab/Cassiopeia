@@ -213,11 +213,11 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 	#subgraph = nx.relabel_nodes(subgraph, node_name_dict_cleaned)
 	clean_ilp_network(subgraph)
 
-	r_name = root.get_character_string()
+	#r_name = root.get_character_string()
 	#if root in node_name_dict:
 	#	r_name = node_name_dict[root]
 
-	return subgraph, r_name, pid
+	return subgraph, root, pid
 
 def clean_ilp_network(network):
 	"""

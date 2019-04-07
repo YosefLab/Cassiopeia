@@ -1,0 +1,417 @@
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun Apr  7 15:12:37 2019
+
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun Apr  7 15:12:37 2019
+
+Academic license - for non-commercial use only
+Academic license - for non-commercial use only
+Changed value of parameter MIPGap to 0.01
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Threads to 1
+Changed value of parameter Presolve to 2
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter Presolve to 2
+Changed value of parameter MIPFocus to 1
+   Prev: -1  Min: -1  Max: 2  Default: -1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter MIPFocus to 1
+Changed value of parameter Cuts to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Changed value of parameter Cuts to 1
+Changed value of parameter Method to 4
+   Prev: -1  Min: -1  Max: 3  Default: -1
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter Method to 4
+Changed value of parameter TimeLimit to 1800.0
+   Prev: -1  Min: -1  Max: 5  Default: -1
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 3 rows, 2 columns and 4 nonzeros
+Variable types: 0 continuous, 2 integer (1 binary)
+Optimize a model with 5 rows, 4 columns and 8 nonzeros
+Coefficient statistics:
+Variable types: 0 continuous, 4 integer (2 binary)
+  Matrix range     [1e+00, 1e+00]
+Coefficient statistics:
+  Objective range  [1e+00, 1e+00]
+  Matrix range     [5e-01, 1e+00]
+  Bounds range     [1e+00, 1e+00]
+  Objective range  [1e+00, 1e+00]
+  RHS range        [1e+00, 1e+00]
+  Bounds range     [1e+00, 2e+00]
+  RHS range        [1e+00, 2e+00]
+Found heuristic solution: objective 1.0000000
+Presolve removed 3 rows and 2 columns
+Presolve removed 5 rows and 4 columns
+Presolve time: 0.00s
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+Thread count was 1 (of 56 available processors)
+
+Solution count 1: 1 
+
+Solution count 1: 2 
+
+
+Optimal solution found (tolerance 1.00e-02)
+Optimal solution found (tolerance 1.00e-02)
+Best objective 1.000000000000e+00, best bound 1.000000000000e+00, gap 0.0000%
+Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0000%
+Parameter SolutionNumber unchanged
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun 07 Apr 2019 03:16:41 PM PDT
+
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun 07 Apr 2019 03:16:41 PM PDT
+
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun 07 Apr 2019 03:16:41 PM PDT
+
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun 07 Apr 2019 03:16:41 PM PDT
+
+Academic license - for non-commercial use only
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Presolve to 2
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter MIPFocus to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter Cuts to 1
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Changed value of parameter Method to 4
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 5 rows, 4 columns and 8 nonzeros
+Variable types: 0 continuous, 4 integer (2 binary)
+Coefficient statistics:
+  Matrix range     [5e-01, 1e+00]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [1e+00, 2e+00]
+  RHS range        [1e+00, 2e+00]
+Presolve removed 5 rows and 4 columns
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+
+Solution count 1: 2 
+
+Optimal solution found (tolerance 1.00e-02)
+Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0000%
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Academic license - for non-commercial use only
+Academic license - for non-commercial use only
+Academic license - for non-commercial use only
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter MIPGap to 0.01
+Changed value of parameter Presolve to 2
+   Prev: -1  Min: -1  Max: 2  Default: -1
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter MIPFocus to 1
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Cuts to 1
+Changed value of parameter Presolve to 2
+   Prev: -1  Min: -1  Max: 3  Default: -1
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter Method to 4
+Changed value of parameter MIPFocus to 1
+   Prev: -1  Min: -1  Max: 5  Default: -1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter TimeLimit to 1800.0
+Changed value of parameter Cuts to 1
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Changed value of parameter MIPGap to 0.01
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Optimize a model with 3 rows, 2 columns and 4 nonzeros
+Changed value of parameter Method to 4
+Variable types: 0 continuous, 2 integer (1 binary)
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Coefficient statistics:
+Changed value of parameter Threads to 1
+  Matrix range     [1e+00, 1e+00]
+Changed value of parameter TimeLimit to 1800.0
+  Objective range  [1e+00, 1e+00]
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+  Bounds range     [1e+00, 1e+00]
+Changed value of parameter Presolve to 2
+  RHS range        [1e+00, 1e+00]
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Optimize a model with 5 rows, 4 columns and 8 nonzeros
+Changed value of parameter MIPFocus to 1
+Found heuristic solution: objective 1.0000000
+Variable types: 0 continuous, 4 integer (2 binary)
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Coefficient statistics:
+Changed value of parameter Cuts to 1
+  Matrix range     [5e-01, 1e+00]
+   Prev: -1  Min: -1  Max: 3  Default: -1
+  Objective range  [1e+00, 1e+00]
+Changed value of parameter Method to 4
+  Bounds range     [1e+00, 2e+00]
+   Prev: -1  Min: -1  Max: 5  Default: -1
+  RHS range        [1e+00, 2e+00]
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 3 rows, 2 columns and 4 nonzeros
+Variable types: 0 continuous, 2 integer (1 binary)
+Presolve removed 3 rows and 2 columns
+Coefficient statistics:
+Presolve time: 0.00s
+  Matrix range     [1e+00, 1e+00]
+Presolve: All rows and columns removed
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [1e+00, 1e+00]
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+  RHS range        [1e+00, 1e+00]
+Thread count was 1 (of 56 available processors)
+Presolve removed 5 rows and 4 columns
+
+Solution count 1: 1 
+Found heuristic solution: objective 1.0000000
+
+Presolve time: 0.00s
+Optimal solution found (tolerance 1.00e-02)
+Presolve: All rows and columns removed
+Best objective 1.000000000000e+00, best bound 1.000000000000e+00, gap 0.0000%
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Parameter SolutionNumber unchanged
+Thread count was 1 (of 56 available processors)
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+
+Solution count 1: 2 
+
+Optimal solution found (tolerance 1.00e-02)
+Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0000%
+Presolve removed 3 rows and 2 columns
+Parameter SolutionNumber unchanged
+Presolve time: 0.00s
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+
+Solution count 1: 1 
+
+Optimal solution found (tolerance 1.00e-02)
+Best objective 1.000000000000e+00, best bound 1.000000000000e+00, gap 0.0000%
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+
+Gurobi 8.0.1 (linux64, Python) logging started Sun 07 Apr 2019 03:16:41 PM PDT
+
+Academic license - for non-commercial use only
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Presolve to 2
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter MIPFocus to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter Cuts to 1
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Changed value of parameter Method to 4
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 34 rows, 44 columns and 88 nonzeros
+Variable types: 0 continuous, 44 integer (22 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 1e+00]
+  Objective range  [1e+00, 3e+00]
+  Bounds range     [1e+00, 1e+01]
+  RHS range        [1e+00, 1e+01]
+Found heuristic solution: objective 16.0000000
+Presolve removed 30 rows and 37 columns
+Presolve time: 0.00s
+Presolved: 4 rows, 7 columns, 10 nonzeros
+Found heuristic solution: objective 12.0000000
+Variable types: 0 continuous, 7 integer (3 binary)
+Presolve removed 4 rows and 7 columns
+Presolve: All rows and columns removed
+
+Root relaxation: objective 1.000000e+01, 0 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0      10.0000000   10.00000  0.00%     -    0s
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+
+Solution count 3: 10 12 13 
+
+Optimal solution found (tolerance 1.00e-02)
+Best objective 1.000000000000e+01, best bound 1.000000000000e+01, gap 0.0000%
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter SolutionNumber to 1
+   Prev: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter SolutionNumber to 2
+   Prev: 1  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter MIPGap to 0.01
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Threads to 1
+Changed value of parameter Presolve to 2
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter Presolve to 2
+Changed value of parameter MIPFocus to 1
+   Prev: -1  Min: -1  Max: 2  Default: -1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter MIPFocus to 1
+Changed value of parameter Cuts to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Changed value of parameter Cuts to 1
+Changed value of parameter Method to 4
+   Prev: -1  Min: -1  Max: 3  Default: -1
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter Method to 4
+Changed value of parameter TimeLimit to 1800.0
+   Prev: -1  Min: -1  Max: 5  Default: -1
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 3 rows, 2 columns and 4 nonzeros
+Variable types: 0 continuous, 2 integer (1 binary)
+Optimize a model with 5 rows, 4 columns and 8 nonzeros
+Coefficient statistics:
+Variable types: 0 continuous, 4 integer (2 binary)
+  Matrix range     [1e+00, 1e+00]
+Coefficient statistics:
+  Objective range  [1e+00, 1e+00]
+  Matrix range     [5e-01, 1e+00]
+  Bounds range     [1e+00, 1e+00]
+  Objective range  [1e+00, 1e+00]
+  RHS range        [1e+00, 1e+00]
+  Bounds range     [1e+00, 2e+00]
+  RHS range        [1e+00, 2e+00]
+Found heuristic solution: objective 1.0000000
+Presolve removed 3 rows and 2 columns
+Presolve removed 5 rows and 4 columns
+Presolve time: 0.00s
+Presolve time: 0.00s
+Presolve: All rows and columns removed
+Presolve: All rows and columns removed
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+
+Explored 0 nodes (0 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+Thread count was 1 (of 56 available processors)
+
+Solution count 1: 1 
+
+Solution count 1: 2 
+
+
+Optimal solution found (tolerance 1.00e-02)
+Optimal solution found (tolerance 1.00e-02)
+Best objective 1.000000000000e+00, best bound 1.000000000000e+00, gap 0.0000%
+Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0000%
+Parameter SolutionNumber unchanged
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter MIPGap to 0.01
+   Prev: 0.0001  Min: 0.0  Max: 1e+100  Default: 0.0001
+Changed value of parameter Threads to 1
+   Prev: 0  Min: 0  Max: 1024  Default: 0
+Changed value of parameter Presolve to 2
+   Prev: -1  Min: -1  Max: 2  Default: -1
+Changed value of parameter MIPFocus to 1
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter Cuts to 1
+   Prev: -1  Min: -1  Max: 3  Default: -1
+Changed value of parameter Method to 4
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter TimeLimit to 1800.0
+   Prev: 1e+100  Min: 0.0  Max: 1e+100  Default: 1e+100
+Optimize a model with 45 rows, 62 columns and 124 nonzeros
+Variable types: 0 continuous, 62 integer (31 binary)
+Coefficient statistics:
+  Matrix range     [1e-01, 1e+00]
+  Objective range  [1e+00, 4e+00]
+  Bounds range     [1e+00, 7e+00]
+  RHS range        [1e+00, 7e+00]
+Found heuristic solution: objective 15.0000000
+Presolve removed 17 rows and 17 columns
+Presolve time: 0.00s
+Presolved: 28 rows, 45 columns, 91 nonzeros
+Variable types: 0 continuous, 45 integer (29 binary)
+Presolve removed 21 rows and 29 columns
+Presolved: 7 rows, 16 columns, 29 nonzeros
+
+
+Root relaxation: objective 9.490476e+00, 5 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+     0     0    9.49048    0    8   15.00000    9.49048  36.7%     -    0s
+H    0     0                      13.0000000    9.49048  27.0%     -    0s
+     0     0   11.00000    0    2   13.00000   11.00000  15.4%     -    0s
+H    0     0                      12.0000000   11.00000  8.33%     -    0s
+     0     0     cutoff    0        12.00000   12.00000  0.00%     -    0s
+
+Cutting planes:
+  Gomory: 4
+  Cover: 3
+  Implied bound: 1
+  Clique: 1
+  MIR: 2
+  Flow cover: 3
+  Zero half: 2
+
+Explored 1 nodes (15 simplex iterations) in 0.00 seconds
+Thread count was 1 (of 56 available processors)
+
+Solution count 3: 12 13 15 
+
+Optimal solution found (tolerance 1.00e-02)
+Best objective 1.200000000000e+01, best bound 1.200000000000e+01, gap 0.0000%
+Parameter SolutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter SolutionNumber to 1
+   Prev: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter SolutionNumber to 2
+   Prev: 1  Min: 0  Max: 2000000000  Default: 0

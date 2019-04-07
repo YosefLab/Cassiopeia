@@ -56,9 +56,9 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 
 	# check if root already exists.
 	#mask = np.array([root.get_character_string() == n.get_character_string() for n in master_list_nodes])
-	#mask = np.array([root.get_character_string() == n.get_character_string() for n in master_list_nodes])
-	#if True in mask:
-	#	root = master_list_nodes[np.where(mask == True)[0][0]]
+	mask = np.array([root.get_character_string() == n.get_character_string() for n in master_list_nodes])
+	if True in mask:
+		root = master_list_nodes[np.where(mask == True)[0][0]]
 
 	if root in targets:
 		root = targets[targets.index(root)]
@@ -173,10 +173,10 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	if len(left_split) != 0:
 		left_root = root_finder(left_split)
 
-		if left_root in targets:
-			left_root = targets[targets.index(left_root)]
+		if left_root in master_list_nodes:
+			left_root = master_list_nodes[master_list_nodes.index(left_root)]
 		else:
-			left_root.pid = uniq
+			left_root.pid = None if uniq == '' else uniq
 
 		left_network, left_subproblems = greedy_build(left_split, master_list_nodes, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
 
@@ -187,7 +187,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 		for n in left_network:
 			if n.get_character_string() in names and n.get_character_string() != left_root.get_character_string():
 				1/0
-				dup_dict[n] = Node(n.get_name(), n.get_character_string(), is_target=False)
+				dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq + "0", is_target=False)
 
 
 		rs = [n for n in left_network if n.get_character_string() == left_root.get_character_string()]
@@ -206,17 +206,17 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	right_root = root_finder(right_split)
 
 
-	if right_root in targets:
-		right_root = targets[targets.index(right_root)]
+	if right_root in master_list_nodes:
+		right_root = master_list_nodes[master_list_nodes.index(right_root)]
 	else:
-		right_root.pid = uniq 
+		right_root.pid = None if uniq == '' else uniq
 
 	dup_dict = {}
 	names = set(node.get_character_string() for node in G)
 	for n in right_network:
 		if n.get_character_string() in names and n.get_character_string() != right_root.get_character_string():
 			#1/0
-			dup_dict[n] = Node(n.get_name(), n.get_character_string(), is_target=False)
+			dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq+'1', is_target=False)
 
 	rs = [n for n in right_network if n.get_character_string() == right_root.get_character_string()]
 	if len(rs) > 0:
