@@ -64,9 +64,44 @@ class Node:
 			return (self.char_string, self.pid) == (other.char_string, other.pid)
 		return False
 
+	def __ne__(self, other):
+
+		if isinstance(other, Node):
+			return (self.char_string, self.pid) != (other.char_string, other.pid)
+		return False
+
+	def __gt__(self, other):
+
+		if isinstance(other, Node):
+			return (self.char_string, self.pid) > (other.char_string, other.pid)
+
+		raise Exception("Both items must be Nodes.")
+
+	def __ge__(self, other):
+
+		if isinstance(other, Node):
+			return (self.char_string, self.pid) >= (other.char_string, other.pid)
+
+		raise Exception("Both items must be Nodes.")
+
+	def __lt__(self, other):
+
+		if isinstance(other, Node):
+			return (self.char_string, self.pid) < (other.char_string, other.pid)
+
+		raise Exception("Both items must be Nodes.")
+
+	def __le__(self, other):
+
+		if isinstance(other, Node):
+			return (self.char_string, self.pid) <= (other.char_string, other.pid)
+
+		raise Exception("Both items must be Nodes.")
+
+
 	def __hash__(self):
 
-		return int(hashlib.md5((self.get_character_string() + self.name + str(self.pid)).encode('utf-8')).hexdigest(), 16)
+		return int(hashlib.md5((self.get_character_string() + "_" + str(self.pid)).encode('utf-8')).hexdigest(), 16)
 
 
 
