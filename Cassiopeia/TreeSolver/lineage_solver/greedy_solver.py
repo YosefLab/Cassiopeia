@@ -3,9 +3,6 @@ import networkx as nx
 import numpy as np
 import hashlib
 
-
-
-
 from Cassiopeia.TreeSolver.Node import Node
 
 from .solver_utils import root_finder
@@ -59,9 +56,11 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	mask = np.array([root.get_character_string() == n.get_character_string() for n in master_list_nodes])
 	if True in mask:
 		root = master_list_nodes[np.where(mask == True)[0][0]]
+	else:
+		root.pid = None if uniq == '' else uniq
 
-	if root in targets:
-		root = targets[targets.index(root)]
+	#if root in targets:
+	#	root = targets[targets.index(root)]
 
 	# Base case check for recursion, returns a graph with one node corresponding to the root of the remaining nodes
 	if len(nodes) == 1 or len(nodes) <= cutoff:
@@ -173,10 +172,12 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 	if len(left_split) != 0:
 		left_root = root_finder(left_split)
 
-		if left_root in master_list_nodes:
-			left_root = master_list_nodes[master_list_nodes.index(left_root)]
+		mask = np.array([left_root.get_character_string() == n.get_character_string() for n in master_list_nodes])
+		if True in mask:
+			left_root = master_list_nodes[np.where(mask == True)[0][0]]
 		else:
-			left_root.pid = None if uniq == '' else uniq
+			left_root.pid = uniq + "0"
+			master_list_nodes.append(left_root)
 
 		left_network, left_subproblems = greedy_build(left_split, master_list_nodes, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
 
@@ -187,7 +188,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 		for n in left_network:
 			if n.get_character_string() in names and n.get_character_string() != left_root.get_character_string():
 				1/0
-				dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq + "0", is_target=False)
+				dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq, is_target=False)
 
 
 		rs = [n for n in left_network if n.get_character_string() == left_root.get_character_string()]
@@ -197,26 +198,26 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 		left_network = nx.relabel_nodes(left_network, dup_dict)
 
 		G = nx.compose(G, left_network)
-		if left_root != splitter:
-			G.add_edge(splitter, left_root, weight=0, label="None")
+		G.add_edge(splitter, left_root, weight=0, label="None")
 
 	# Recursively build right side of network
 	right_network, right_subproblems = greedy_build(right_split, master_list_nodes, priors, cutoff, considered.copy(), uniq + "1", targets=targets)
 	right_nodes = [node for node in right_network.nodes() if right_network.in_degree(node) == 0]
 	right_root = root_finder(right_split)
 
-
-	if right_root in master_list_nodes:
-		right_root = master_list_nodes[master_list_nodes.index(right_root)]
+	mask = np.array([right_root.get_character_string() == n.get_character_string() for n in master_list_nodes])
+	if True in mask:
+		right_root = master_list_nodes[np.where(mask == True)[0][0]]
 	else:
-		right_root.pid = None if uniq == '' else uniq
+		right_root.pid = uniq + "1"
+		master_list_nodes.append(right_root)
 
 	dup_dict = {}
 	names = set(node.get_character_string() for node in G)
 	for n in right_network:
 		if n.get_character_string() in names and n.get_character_string() != right_root.get_character_string():
 			#1/0
-			dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq+'1', is_target=False)
+			dup_dict[n] = Node(n.get_name(), n.get_character_string(), pid = uniq, is_target=False)
 
 	rs = [n for n in right_network if n.get_character_string() == right_root.get_character_string()]
 	if len(rs) > 0:
@@ -226,8 +227,7 @@ def greedy_build(nodes, master_list_nodes = None, priors=None, cutoff=200, consi
 
 	G = nx.compose(G, right_network)
 
-	if splitter != right_root:
-		G.add_edge(splitter, right_root, weight=1, label = str(character) + ": 0 -> " + str(state))
+	G.add_edge(splitter, right_root, weight=1, label = str(character) + ": 0 -> " + str(state))
 
 	# remove self edges
 	to_remove = []

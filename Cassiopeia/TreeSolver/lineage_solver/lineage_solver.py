@@ -161,9 +161,9 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 		Optimal ilp subgraph for a given subset of nodes in the time limit allowed.
 	"""
 
-	pid = hashlib.md5(root.get_character_string().encode('utf-8')).hexdigest()
+	pid = root.__hash__()
 
-	print("Started new thread for: " + str(root.get_character_string()) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid), flush=True)
+	print("Started new thread for: " + str(root.get_character_string()) + ", split id: " + str(root.pid) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid), flush=True)
 
 	if len(set(targets)) == 1:
 		graph = nx.DiGraph()
@@ -175,12 +175,17 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:
 		subgraph = greedy_build(targets, priors=prior_probabilities, cutoff=-1)[0]
-		#subgraph = nx.relabel_nodes(subgraph, node_name_dict)
 		print("Max Neighborhood Exceeded", flush=True)
+
+		# before returning the network, rename the root of the greedy solution 
+		subgraph = nx.relabel_nodes(subgraph, {[n for n in subgraph if subgraph.in_degree(n) == 0][0]: root})
 		return subgraph, root, pid
 
-	for l in potential_network_priors.selfloop_edges():
-		potential_network_priors.remove_edge(l[0], l[1])
+	self_loops = []
+	for e in potential_network_priors.edges():
+		if e[0] == e[1]:
+			self_loops.append(e)
+	potential_network_priors.remove_edges_from(self_loops)
 
 	nodes = list(potential_network_priors.nodes())
 	encoder = dict(zip(nodes, list(range(len(nodes)))))
@@ -190,7 +195,7 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 	_potential_network = nx.relabel_nodes(potential_network_priors, encoder)
 	_targets = list(map(lambda x: encoder[x], targets))
 
-	root = [n for n in potential_network_priors.nodes if n.get_character_string() == root.get_character_string()][0]
+	#root = [n for n in potential_network_priors.nodes if n.get_character_string() == root.get_character_string()][0]
 
 	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
 	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
@@ -204,18 +209,8 @@ def find_good_gurobi_subgraph(root, targets, prior_probabilities, time_limit, nu
 	for r in subgraph_roots:
 		if r != root:
 			subgraph.remove_node(r)
-
-	#node_name_dict_cleaned = {}
-	#for n in node_name_dict.keys():
-	#	if n in targets:
-	#		node_name_dict_cleaned[n] = node_name_dict[n]
-
-	#subgraph = nx.relabel_nodes(subgraph, node_name_dict_cleaned)
 	clean_ilp_network(subgraph)
 
-	#r_name = root.get_character_string()
-	#if root in node_name_dict:
-	#	r_name = node_name_dict[root]
 
 	return subgraph, root, pid
 

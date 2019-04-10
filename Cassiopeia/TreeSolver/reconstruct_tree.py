@@ -24,7 +24,8 @@ import os
 
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.simulation_tools import *
-from Cassiopeia.TreeSolver import *
+#from Cassiopeia.TreeSolver import *
+from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
 
 import Cassiopeia as sclt
 
@@ -160,27 +161,29 @@ def main():
 
     if args.greedy:
 
-        target_nodes = list(cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1))
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
 
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
+        #string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+        #target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probs)
         
+        net = reconstructed_network_greedy.get_network()
         # score parsimony
         score = 0
-        for e in reconstructed_network_greedy.edges():
+        for e in net.edges():
             score += get_edge_length(e[0], e[1])
            
         print("Parsimony: " + str(score))
         
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
-        newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        #newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        newick = reconstructed_network_greedy.get_newick()
 
         with open(out_fp, "w") as f:
             f.write(newick)
@@ -190,15 +193,15 @@ def main():
 
     elif args.hybrid:
 
-        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
+        #string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+        #target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
         print("running algorithm...")
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
@@ -206,23 +209,23 @@ def main():
         if verbose:
             print("Scoring Parsimony...")
             
+        net = reconstructed_network_hybrid.get_network()
         # score parsimony
         score = 0
-        for e in reconstructed_network_hybrid.edges():
+        for e in net.edges():
             score += get_edge_length(e[0], e[1])
            
+        print("Parsimony: " + str(score))
+        
+        newick = reconstructed_network_hybrid.get_newick()
         if verbose:
             print("Parsimony: " + str(score))
         
         if verbose:
             print("Writing the tree to output...")
 
-        #reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
-
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
-
-        newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
 
         with open(out_fp, "w") as f:
             f.write(newick)
@@ -230,33 +233,35 @@ def main():
 
     elif args.ilp:
 
-        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
             print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
-
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
-
         reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 
+        net = reconstructed_network_ilp.get_network()
         # score parsimony
         score = 0
-        for e in reconstructed_network_ilp.edges():
+        for e in net.edges():
             score += get_edge_length(e[0], e[1])
            
         print("Parsimony: " + str(score))
         
-        #reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
-        newick = convert_network_to_newick_format(reconstructed_network_ilp) 
+        newick = reconstructed_network_ilp.get_newick()
+        if verbose:
+            print("Parsimony: " + str(score))
+        
+        if verbose:
+            print("Writing the tree to output...")
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+        pic.dump(reconstructed_network_ilp, open(out_stem + ".pkl", "wb")) 
 
         with open(out_fp, "w") as f:
             f.write(newick)
 
-        out_stem = "".join(out_fp.split(".")[:-1])
-        pic.dump(reconstructed_network_ilp, open(out_stem + ".pkl", "wb")) 
 
     elif args.neighbor_joining:
 

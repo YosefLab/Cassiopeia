@@ -97,8 +97,12 @@ def convert_network_to_newick_format(graph):
 
 	def _to_newick_str(g, node):
 		is_leaf = g.out_degree(node) == 0
-		return '%s' % (node,) if is_leaf else (
-					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + node)
+		if node.name == 'internal':
+			_name = node.get_character_string()
+		else:
+			_name = node.name
+		return '%s' % (_name,) if is_leaf else (
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + _name)
 
 	def to_newick_str(g, root=0):  # 0 assumed to be the root
 		return _to_newick_str(g, root) + ';'

@@ -162,6 +162,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		neighbor_mod = max_neighbor_dist
 		char_string_edges = []
 		char_strings_to_node = dict(zip([s.get_character_string() for s in samples], samples))
+		char_strings_to_node[root.get_character_string()] = root
 
 
 		print("\nNum Neighbors considered: " + str(max_neighbor_dist) + ", pid = " + str(pid))
@@ -184,7 +185,8 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 				for j in range(i + 1, len(source_nodes)):
 					sample_2 = source_nodes[j]
 					
-					if sample.get_character_string() != sample_2.get_character_string():
+					if sample != sample_2:
+					#if sample.get_character_string() != sample_2.get_character_string():
 
 						parent = node_parent(sample, sample_2)
 
@@ -195,15 +197,16 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 						if parent != root:
 							parent.pid = pid
 
-						edge_length_p_s1 = get_edge_length(parent, sample)
-						edge_length_p_s2 = get_edge_length(parent, sample_2)
+						edge_length_p_s1 = get_edge_length(parent, sample, priors)
+						edge_length_p_s2 = get_edge_length(parent, sample_2, priors)
+
+						muts_to_s1[(parent.get_character_string(), sample.get_character_string())] = mutations_from_parent_to_child(parent, sample)
+						muts_to_s2[(parent.get_character_string(), sample_2.get_character_string())] = mutations_from_parent_to_child(parent, sample_2)
+
+						p_to_s1_lengths[(parent.get_character_string(), sample.get_character_string())] = edge_length_p_s1
+						p_to_s2_lengths[(parent.get_character_string(), sample_2.get_character_string())] = edge_length_p_s2
+
 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
-
-						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
-						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
-
-						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
-						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
 
 						#Check this cutoff
 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
@@ -211,20 +214,19 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
 
 							if parent.get_character_string() != sample_2.get_character_string() and (parent.get_character_string(), sample_2.get_character_string()) not in char_string_edges:
-								initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+								initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent.get_character_string(), sample_2.get_character_string())])
 								char_string_edges.append((parent.get_character_string(), sample_2.get_character_string()))
 
 							if parent.get_character_string() != sample.get_character_string() and (parent.get_character_string(), sample.get_character_string()) not in char_string_edges:
-								initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
+								initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent.get_character_string(), sample.get_character_string())])
 								char_string_edges.append((parent.get_character_string(), sample.get_character_string()))
 
 
 							temp_source_nodes.add(parent)
 							char_strings_to_node[parent.get_character_string()] = parent
 
-
-							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
-							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
+							p_to_s1_lengths[(parent.get_character_string(), sample.get_character_string())] = edge_length_p_s1_priors
+							p_to_s2_lengths[(parent.get_character_string(), sample_2.get_character_string())] = edge_length_p_s2_priors
 
 				min_distance = min(top_parents, key = lambda k: k[0])[0]
 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
@@ -232,11 +234,11 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 				for parent, sample_2 in lst:
 
 					if parent.get_character_string() != sample_2.get_character_string() and (parent.get_character_string(), sample_2.get_character_string()) not in char_string_edges:
-						initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
+						initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent.get_character_string(), sample_2.get_character_string())], label=muts_to_s2[(parent.get_character_string(), sample_2.get_character_string())])
 						char_string_edges.append((parent.get_character_string(), sample_2.get_character_string()))
 
 					if parent.get_character_string() != sample.get_character_string() and (parent.get_character_string(), sample.get_character_string()) not in char_string_edges:
-						initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
+						initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent.get_character_string(), sample.get_character_string())], label=muts_to_s1[(parent.get_character_string(), sample.get_character_string())])
 						char_string_edges.append((parent.get_character_string(), sample.get_character_string()))
 
 					if parent.get_character_string() not in [n.get_character_string() for n in temp_source_nodes]:
