@@ -58,50 +58,51 @@ class Node:
 				return -1
 		return count
 
-	def __eq__(self, other):
+	# def __eq__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) == (other.char_string, other.pid)
-		return False
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) == (other.char_string, other.pid)
+	# 	return False
 
-	def __ne__(self, other):
+	# def __ne__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) != (other.char_string, other.pid)
-		return False
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) != (other.char_string, other.pid)
+	# 	return False
 
-	def __gt__(self, other):
+	# def __gt__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) > (other.char_string, other.pid)
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) > (other.char_string, other.pid)
 
-		raise Exception("Both items must be Nodes.")
+	# 	raise Exception("Both items must be Nodes.")
 
-	def __ge__(self, other):
+	# def __ge__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) >= (other.char_string, other.pid)
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) >= (other.char_string, other.pid)
 
-		raise Exception("Both items must be Nodes.")
+	# 	raise Exception("Both items must be Nodes.")
 
-	def __lt__(self, other):
+	# def __lt__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) < (other.char_string, other.pid)
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) < (other.char_string, other.pid)
 
-		raise Exception("Both items must be Nodes.")
+	# 	raise Exception("Both items must be Nodes.")
 
-	def __le__(self, other):
+	# def __le__(self, other):
 
-		if isinstance(other, Node):
-			return (self.char_string, self.pid) <= (other.char_string, other.pid)
+	# 	if isinstance(other, Node):
+	# 		return (self.char_string, self.pid) <= (other.char_string, other.pid)
 
-		raise Exception("Both items must be Nodes.")
+	# 	raise Exception("Both items must be Nodes.")
 
 
-	def __hash__(self):
+	# def __hash__(self):
 
-		return int(hashlib.md5((self.get_character_string() + "_" + str(self.pid)).encode('utf-8')).hexdigest(), 16)
+	# 	#return hash((self.pid, self.get_character_string()))
+	# 	return int(hashlib.md5((self.get_character_string() +  "_" + self.name + "_" + str(self.pid)).encode('utf-8')).hexdigest(), 16)
 
 
 

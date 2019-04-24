@@ -4,6 +4,7 @@ import Cassiopeia.TreeSolver.lineage_solver as ls
 import Cassiopeia.TreeSolver.simulation_tools.simulation_utils as sim_utils
 import pickle as pic
 
+import os
 import sys
 stdout_backup = "testlog"
 
@@ -58,6 +59,8 @@ def test_hybrid_simple():
 		sys.stdout = f
 		tree = ls.solve_lineage_instance(nodes, method="hybrid", hybrid_subset_cutoff=3)
 
+	os.remove(stdout_backup)
+
 	net = tree.get_network()
 
 	roots = [n for n in net if net.in_degree(n) == 0]
@@ -90,6 +93,7 @@ def test_ilp_simple():
 	with open(stdout_backup, "w") as f:
 		sys.stdout = f
 		tree = ls.solve_lineage_instance(nodes, method="ilp")
+	os.remove(stdout_backup)
 
 	net = tree.get_network()
 
@@ -154,6 +158,8 @@ def test_hybrid_parallel_evo():
 	with open(stdout_backup, "w") as f:
 		sys.stdout = f
 		tree = ls.solve_lineage_instance(nodes, method='hybrid', hybrid_subset_cutoff=2)
+	os.remove(stdout_backup)
+
 	net = tree.get_network()
 
 	roots = [n for n in net if net.in_degree(n) == 0]
@@ -188,6 +194,8 @@ def test_ilp_parallel_evo():
 	with open(stdout_backup, "w") as f:
 		sys.stdout = f
 		tree = ls.solve_lineage_instance(nodes, method='ilp')
+	os.remove(stdout_backup)
+
 	net = tree.get_network()
 
 	roots = [n for n in net if net.in_degree(n) == 0]
@@ -209,62 +217,66 @@ def test_ilp_parallel_evo():
 
 def test_on_sim_greedy():
 
-    stree = pic.load(open("sim_net.pkl", "rb"))
-    leaves = sim_utils.get_leaves_of_tree(stree)
+	stree = pic.load(open("sim_net.pkl", "rb"))
+	leaves = sim_utils.get_leaves_of_tree(stree)
 
-    target_nodes = []
-    for l in leaves:
-        new_node = Node(l.name, l.get_character_vec())
-        target_nodes.append(new_node)
+	target_nodes = []
+	for l in leaves:
+		new_node = Node(l.name, l.get_character_vec())
+		target_nodes.append(new_node)
 
-    rtree = ls.solve_lineage_instance(target_nodes, method="greedy")
+	rtree = ls.solve_lineage_instance(target_nodes, method="greedy")
 
-    rnet = rtree.get_network()
-    roots = [n for n in rnet if rnet.in_degree(n) == 0]
+	rnet = rtree.get_network()
+	roots = [n for n in rnet if rnet.in_degree(n) == 0]
 
-    assert len(roots) == 1
+	assert len(roots) == 1
 
-    root =roots[0] 
+	root =roots[0] 
 
-    targets = [n for n in rnet if n.is_target]
+	targets = [n for n in rnet if n.is_target]
 
-    assert len(targets) == len(target_nodes)
+	assert len(targets) == len(target_nodes)
 
-    for t in targets:
-        assert nx.has_path(rnet, root, t)
+	for t in targets:
+		assert nx.has_path(rnet, root, t)
 
-    multi_parents = [n for n in rnet if rnet.in_degree(n) > 1]
+	multi_parents = [n for n in rnet if rnet.in_degree(n) > 1]
 
-    assert len(multi_parents) == 0
+	assert len(multi_parents) == 0
 
 def test_on_sim_hybrid():
 
 
-    stree = pic.load(open("sim_net.pkl", "rb"))
-    leaves = sim_utils.get_leaves_of_tree(stree)
+	stree = pic.load(open("sim_net.pkl", "rb"))
+	leaves = sim_utils.get_leaves_of_tree(stree)
 
-    target_nodes = []
-    for l in leaves:
-        new_node = Node(l.name, l.get_character_vec())
-        target_nodes.append(new_node)
+	target_nodes = []
+	for l in leaves:
+		new_node = Node(l.name, l.get_character_vec())
+		target_nodes.append(new_node)
 
-    rtree = ls.solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=200, time_limit=100, max_neighborhood_size=500, threads=4)
+	with open(stdout_backup, "w") as f:
+		sys.stdout = f
+		rtree = ls.solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=200, time_limit=100, max_neighborhood_size=500, threads=4)
 
-    rnet = rtree.get_network()
-    roots = [n for n in rnet if rnet.in_degree(n) == 0]
+	os.remove(stdout_backup)
 
-    assert len(roots) == 1
+	rnet = rtree.get_network()
+	roots = [n for n in rnet if rnet.in_degree(n) == 0]
 
-    root = roots[0] 
+	assert len(roots) == 1
 
-    targets = [n for n in rnet if n.is_target]
+	root = roots[0] 
 
-    assert len(targets) == len(target_nodes)
+	targets = [n for n in rnet if n.is_target]
 
-    for t in targets:
-        assert nx.has_path(rnet, root, t)
+	assert len(targets) == len(target_nodes)
 
-    multi_parents = [n for n in rnet if rnet.in_degree(n) > 1]
+	for t in targets:
+		assert nx.has_path(rnet, root, t)
 
-    assert len(multi_parents) == 0
+	multi_parents = [n for n in rnet if rnet.in_degree(n) > 1]
+
+	assert len(multi_parents) == 0
 
