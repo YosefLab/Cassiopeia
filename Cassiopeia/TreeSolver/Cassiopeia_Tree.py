@@ -8,7 +8,7 @@ import copy
 
 class Cassiopeia_Tree:
 
-	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None, post_processed_tree = None, post_processed_newick = None):
+	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None):
 
 		assert network is not None or newick is not None
 
@@ -19,9 +19,6 @@ class Cassiopeia_Tree:
 		self.network = network
 		self.newick = newick
 		self.cm = character_matrix
-
-		self.post_processed_tree = post_processed_tree
-		self.post_processed_newick = post_processed_newick
 
 	def dump_network(self, output_name):
 

@@ -4,7 +4,7 @@ import random
 from tqdm import tqdm
 
 from simulation_utils import node_to_string
-from Cassiopeia.TreeSolver import Node
+from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
 
 def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1, dropout=True):
 	"""
@@ -38,31 +38,36 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 	"""
 
 	network = nx.DiGraph()
-	current_depth = [node_to_string([['0' for _ in range(0, characters)], '0'])]
-	network.add_node(current_depth[0])
+	current_depth = [[['0' for _ in range(0, characters)], '0']]
+	network.add_node(node_to_string(current_depth[0]))
 	uniq = 1
 	for i in range(0, depth):
 		temp_current_depth = []
 		for node in current_depth:
 			for _ in range(0,2):
-				child_node = simulate_mutation(node.get_character_vec(), mutation_prob_map)
+				child_node = simulate_mutation(node[0], mutation_prob_map)
 				if i == depth - 1 and dropout:
 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
-				temp_current_depth.append(node_to_string([child_node, uniq], pid=str(i)))
-				network.add_edge(node, node_to_string([child_node, str(uniq)], pid = str(i)))
+				temp_current_depth.append([child_node, uniq])
+				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
 				uniq +=1
 
 		current_depth = temp_current_depth
 
 	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
 
-	print("removing " + str(len(subsampled_population_for_removal)) + " of " + str(len(current_depth)) + " nodes.")
-
 	for node in subsampled_population_for_removal:
-		network.remove_node(node)
+		network.remove_node(node_to_string(node))
+
+	rdict = {}
+	for n in network.nodes:
+		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+		rdict[n] = nn
+
+	state_tree = nx.relabel_nodes(network, rdict)
 
 
-	return network
+	return state_tree
 
 def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):
 
