@@ -33,9 +33,9 @@ def get_leaves_of_tree(tree, clip_identifier=False):
 	max_depth = max(nx.shortest_path_length(tree,source,node) for node in tree.nodes())
 	shortest_paths = nx.shortest_path_length(tree,source)
 
-	if clip_identifier:
-		return [x[:x.index('_')] for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x)==1 and shortest_paths[x] == max_depth]
+	#if clip_identifier:
+	#	return [x[:x.index('_')] for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x)==1 and shortest_paths[x] == max_depth]
 
-	else:
+	#else:
 
-		return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]
+	return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]

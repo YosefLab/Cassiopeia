@@ -20,7 +20,7 @@ class Node:
 	
 	"""
 
-	def __init__(self, name, character_vec, is_target = True, pid = None):
+	def __init__(self, name, character_vec = [], is_target = True, pid = None):
 
 		self.name = name
 		self.char_vec = [str(c) for c in character_vec]
@@ -38,11 +38,12 @@ class Node:
 	def get_character_vec(self):
 		return self.char_vec
 
-	def get_edit_distance(self, node2):
+	def get_edit_distance(self, node2, priors=None):
 
 		cs1, cs2 = self.get_character_string(), node2.get_character_string()
 		x_list, y_list = cs1.split("|"), cs2.split("|")
-
+		
+		count = 0
 		for i in range(0, len(x_list)):
 			if x_list[i] == y_list[i]:
 				pass

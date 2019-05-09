@@ -30,8 +30,6 @@ def score_triplets(true_network, reconstructed_network, modified = True, min_siz
                 num_consid += 1
                 tot_tp += correct_class[k] / freqs[k]
 
-            #tot_tp += tp / nf
-
         tot_tp /= num_consid
 
     else:
@@ -74,53 +72,37 @@ def main():
 
     if ending == "pkl" or ending == "pickle":
 
-        #reconstructed_network = nx.read_gpickle(reconstructed_fp)
         reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
 
-        nodes = [n for n in reconstructed_network.nodes()]
-        encoder = dict(zip(nodes, map(lambda x: x.split("_")[0], nodes)))
-
-        reconstructed_network = nx.relabel_nodes(reconstructed_network, encoder)
-
     else:
-        k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
-        s_to_char = dict(zip(k, target_nodes))
-        char_to_s = dict(zip(target_nodes, k))
+        # k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
+        # s_to_char = dict(zip(k, target_nodes))
+        # char_to_s = dict(zip(target_nodes, k))
 
         reconstructed_tree = next(Phylo.parse(reconstructed_fp, "newick"))
         reconstructed_tree.rooted = True
         reconstructed_network = Phylo.to_networkx(reconstructed_tree)
 
-        i = 1
-        for n in reconstructed_network:
-            if n.name is None:
-                n.name = "i" + str(i)
-                i += 1
-
-        #newick_str = ""
-        #with open(reconstructed_fp, "r") as f:
-        #    for l in f:
-        #        l = l.strip()
-        #        newick_str += l
-
-        #reconstructed_tree = newick_to_network(reconstructed_fp)
-        #reconstructed_tree = newick_to_network(newick_str)
-        #reconstructed_network = tree_collapse(reconstructed_tree)
+        #i = 1
+        #for n in reconstructed_network:
+        #    if n.name is None:
+        #        n.name = "i" + str(i)
+        #        i += 1
 
 
         # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: x.name, reconstructed_network.nodes())
-        c2strdict = dict(zip(reconstructed_network.nodes(), c2str))
-        reconstructed_network  = nx.relabel_nodes(reconstructed_network, c2strdict)
+        #c2str = map(lambda x: x.name, reconstructed_network.nodes())
+        #c2strdict = dict(zip(reconstructed_network.nodes(), c2str))
+        #reconstructed_network  = nx.relabel_nodes(reconstructed_network, c2strdict)
 
         # convert labels to characters for triplets correct analysis
-        reconstructed_network = nx.relabel_nodes(reconstructed_network, s_to_char)
+        #reconstructed_network = nx.relabel_nodes(reconstructed_network, s_to_char)
         #reconstructed_network = tree_collapse(reconstructed_network)
 
 
-        tot_tp = score_triplets(true_network, reconstructed_network, number_of_trials=50000, modified = modified)
+    tot_tp = score_triplets(true_network, reconstructed_network, number_of_trials=50000, modified = modified)
 
-        print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
+    print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
 
 
 if __name__ == "__main__":

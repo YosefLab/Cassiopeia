@@ -16,7 +16,8 @@ import pylab
 
 import copy
 
-from Cassiopeia.TreeSolver import convert_network_to_newick_format, Node
+from .data_pipeline import *
+from Cassiopeia.TreeSolver import Node
 
 def prune_and_clean_leaves(G):
     """

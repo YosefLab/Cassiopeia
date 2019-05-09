@@ -2,11 +2,15 @@ from collections import defaultdict
 import networkx as nx
 import random
 
+from tqdm import tqdm
+
 from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
+from Cassiopeia.TreeSolver.lineage_solver.solver_utils import node_parent
+from Cassiopeia.TreeSolver import Node
 
 def tree_collapse(graph):
 	"""
-	Given a networkx graph in the form of a tree, collapse two nodes togethor if there are no mutations seperating the two nodes
+	Given a networkx graph in the form of a tree, collapse two nodes together if there are no mutations seperating the two nodes
 
 	:param graph: Networkx Graph as a tree
 	:return: Collapsed tree as a Networkx object
@@ -15,15 +19,95 @@ def tree_collapse(graph):
 	new_network = nx.DiGraph()
 	new = {}
 	for node in graph.nodes():
-		new[node] = node.split('_')[0]
+
+		if isinstance(node, Node):
+			new[node] = node.char_string
+		else:
+			new[node] = node.split("_")[0]
+
 	new_graph = nx.relabel_nodes(graph, new)
 
-	new2 = {}
-	for node in new_graph.nodes():
-		new2[node] = node+'_x'
-	new_graph = nx.relabel_nodes(new_graph, new2)
+	dct = defaultdict(str)
+	while len(dct) != len(new_graph.nodes()):
+		for node in new_graph:
+			if '|' in node:
+				dct[node] = node
+			else:
+				succ = list(new_graph.successors(node))
+				if len(succ) == 1:
+						if '|' in succ[0]:
+							 dct[node] = succ[0]
+						elif '|' in dct[succ[0]]:
+							dct[node] = dct[succ[0]]
+				else:
+					if '|' in succ[0] and '|' in succ[1]:
+							dct[node] = node_parent(succ[0], succ[1])
+					elif '|' in dct[succ[0]] and '|' in succ[1]:
+							dct[node] = node_parent(dct[succ[0]], succ[1])
+					elif '|' in succ[0] and '|' in dct[succ[1]]:
+							dct[node] = node_parent(succ[0], dct[succ[1]])
+					elif '|' in dct[succ[0]] and '|' in dct[succ[1]]:
+							dct[node] = node_parent(dct[succ[0]], dct[succ[1]])
+
+	new_graph = nx.relabel_nodes(new_graph, dct)
+	new_graph.remove_edges_from(new_graph.selfloop_edges())     
+	# new2 = {}
+	# for node in new_graph.nodes():
+	# 	new2[node] = node+'_x'
+	# new_graph = nx.relabel_nodes(new_graph, new2)
 
 	return new_graph
+
+def find_parent(node_list):
+    
+    parent = []
+    if isinstance(node_list[0], Node):
+    	node_list = [n.get_character_string() for n in node_list]
+
+    num_char = len(node_list[0].split("|"))
+    for x in range(num_char):
+        inherited = True
+
+        state = node_list[0].split("|")[x]
+        for n in node_list:
+            if n.split("|")[x] != state:
+           		inherited = False
+            		
+        if not inherited:
+            parent.append("0")
+            
+        else: 
+            parent.append(state)
+    
+    return "|".join(parent)
+
+def fill_in_tree(tree, cm):
+    
+    # rename samples to character strings
+    rndct = {}
+    for n in tree.nodes:
+        if n in cm.index.values:
+            rndct[n] = "|".join([str(k) for k in cm.loc[n].values])
+    
+    tree = nx.relabel_nodes(tree, rndct)
+    
+    root = [n for n in tree if tree.in_degree(n) == 0][0]
+    
+    # run dfs and reconstruct states 
+    anc_dct = {}
+    for n in tqdm(nx.dfs_postorder_nodes(tree, root)):
+        if '|' not in n:
+            children = list(tree[n].keys())
+            for c in range(len(children)):
+                if children[c] in anc_dct:
+                    children[c] = anc_dct[children[c]]
+            anc_dct[n] = find_parent(children)
+            
+    tree = nx.relabel_nodes(tree, anc_dct)
+
+    tree.remove_edges_from(tree.selfloop_edges())
+
+    return tree
 
 def check_triplets_correct2(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False):
 	"""
@@ -43,10 +127,11 @@ def check_triplets_correct2(simulated_tree, reconstructed_tree, number_of_trials
 
 
 	success_rate = 0
-	targets_original_network = get_leaves_of_tree(simulated_tree)
+	targets_original_network = [n.char_string for n in get_leaves_of_tree(simulated_tree)]
 	correct_classifications = defaultdict(int)
 	frequency_of_triplets = defaultdict(int)
 	simulated_tree = tree_collapse(simulated_tree)
+	reconstructed_tree = tree_collapse(reconstructed_tree)
 
 	# NEW
 	dct = {node.split('_')[0]:node for node in simulated_tree.nodes()}

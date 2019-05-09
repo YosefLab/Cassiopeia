@@ -1,8 +1,8 @@
 import pickle as pic
 import networkx as nx
 
-from .data_pipeline import convert_network_to_newick_format, newick_to_network
-from .post_process_tree import post_process_tree
+from Cassiopeia.TreeSolver import convert_network_to_newick_format
+from Cassiopeia.TreeSolver.post_process_tree import post_process_tree
 
 import copy
 

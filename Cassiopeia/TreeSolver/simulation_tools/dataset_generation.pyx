@@ -60,8 +60,10 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 		network.remove_node(node_to_string(node))
 
 	rdict = {}
+	i = 0
 	for n in network.nodes:
-		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+		i += 1
 		rdict[n] = nn
 
 	state_tree = nx.relabel_nodes(network, rdict)

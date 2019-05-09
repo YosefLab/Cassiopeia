@@ -13,6 +13,9 @@ import math
 
 import pickle as pic
 
+# from .Cassiopeia_Tree import Cassiopeia_Tree
+# from .Node import Node
+
 def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance = 0.1):
 	"""
 	Given an alleletable file, converts the corresponding cell samples to a string format

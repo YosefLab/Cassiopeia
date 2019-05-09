@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--num_states", "-s", default=10, type = int, help="Number of states to simulate")
     parser.add_argument("--mutation_rate", '-m', default=0.025, type = float, help="Mutation rate, assumed to be constant across all characters")
     parser.add_argument("--allele_table", default=None, help="Optional alleletable to provide, where parameters will be estimated from")
+    parser.add_argument("--mutation_map", default={}, help="Probabilities of mutating to each state. Given as a nested dictionary.")
 
     args = parser.parse_args()
     output_file = args.out_fp
@@ -39,7 +40,7 @@ def main():
     dropout_rates = args.dropout_rate
     mutation_rate = args.mutation_rate
     allele_table = args.allele_table
-
+    prior_probabilities = args.mutation_map
 
     if allele_table is not None:
         at = pd.read_csv(allele_table, sep='\t')
@@ -60,25 +61,25 @@ def main():
         number_of_states = np.median(nunique_chars)
         
     no_mut_rate = 1 - mutation_rate
-    prior_probabilities = {}
-    for i in range(0, number_of_characters):
-        sampled_probabilities = sorted([np.random.negative_binomial(5,.5) for _ in range(1,number_of_states)])
-        prior_probabilities[i] = {'0': no_mut_rate}
-        total = np.sum(sampled_probabilities)
-        for j in range(1, number_of_states):
-            prior_probabilities[i][str(j)] = (mutation_rate)*sampled_probabilities[j-1]/(1.0 * total)
-
-    with open("prior_probs.txt", "w") as f:
-    
+    if len(prior_probabilities) == 0:
         for i in range(0, number_of_characters):
-            f.write(str(i))
-
+            sampled_probabilities = sorted([np.random.negative_binomial(5,.5) for _ in range(1,number_of_states)])
+            prior_probabilities[i] = {'0': no_mut_rate}
+            total = np.sum(sampled_probabilities)
             for j in range(1, number_of_states):
-                f.write("\t" + str(prior_probabilities[i][str(j)]))
+                prior_probabilities[i][str(j)] = (mutation_rate)*sampled_probabilities[j-1]/(1.0 * total)
+
+        with open("prior_probs.txt", "w") as f:
+        
+            for i in range(0, number_of_characters):
+                f.write(str(i))
+
+                for j in range(1, number_of_states):
+                    f.write("\t" + str(prior_probabilities[i][str(j)]))
+
+                f.write("\n")
 
             f.write("\n")
-
-        f.write("\n")
 
     if dropout_rates is not None:
         dropouts = pd.read_csv(dropout_rate, sep='\t', index_col = 0) 
@@ -105,7 +106,7 @@ def main():
     dropout_prob_map = {i: np.random.choice(list(data_dropout_rates.values())) for i in range(0,number_of_characters)}
 
     # Generate simulated network
-    true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map,characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
+    true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map, characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
     tree = Cassiopeia_Tree('simulated', network=true_network)
     pic.dump(tree, open(output_file, "wb"))
 

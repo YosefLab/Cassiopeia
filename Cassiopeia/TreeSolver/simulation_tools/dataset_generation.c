@@ -1273,13 +1273,13 @@ static const char __pyx_k_uniform[] = "uniform";
 static const char __pyx_k_add_edge[] = "add_edge";
 static const char __pyx_k_add_node[] = "add_node";
 static const char __pyx_k_networkx[] = "networkx";
+static const char __pyx_k_StateNode[] = "StateNode";
 static const char __pyx_k_character[] = "character";
 static const char __pyx_k_is_target[] = "is_target";
 static const char __pyx_k_characters[] = "characters";
 static const char __pyx_k_child_node[] = "child_node";
 static const char __pyx_k_new_sample[] = "new_sample";
 static const char __pyx_k_num_splits[] = "num_splits";
-static const char __pyx_k_state_node[] = "state-node";
 static const char __pyx_k_state_tree[] = "state_tree";
 static const char __pyx_k_remove_node[] = "remove_node";
 static const char __pyx_k_split_right[] = "split_right";
@@ -1317,6 +1317,7 @@ static PyObject *__pyx_n_s_Cassiopeia_TreeSolver_simulation_2;
 static PyObject *__pyx_n_s_DiGraph;
 static PyObject *__pyx_kp_s_Generating_cells_at_each_level_i;
 static PyObject *__pyx_n_s_Node;
+static PyObject *__pyx_n_s_StateNode;
 static PyObject *__pyx_kp_s__2;
 static PyObject *__pyx_kp_s__3;
 static PyObject *__pyx_kp_s__5;
@@ -1369,7 +1370,6 @@ static PyObject *__pyx_n_s_simulate_mutation;
 static PyObject *__pyx_n_s_simulation_utils;
 static PyObject *__pyx_n_s_split;
 static PyObject *__pyx_n_s_split_right;
-static PyObject *__pyx_kp_s_state_node;
 static PyObject *__pyx_n_s_state_tree;
 static PyObject *__pyx_n_s_subsample_percentage;
 static PyObject *__pyx_n_s_subsampled_population_for_remova;
@@ -2336,8 +2336,8 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  * 		network.remove_node(node_to_string(node))
  * 
  * 	rdict = {}             # <<<<<<<<<<<<<<
+ * 	i = 0
  * 	for n in network.nodes:
- * 		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
  */
   __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -2347,19 +2347,29 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":63
  * 
  * 	rdict = {}
- * 	for n in network.nodes:             # <<<<<<<<<<<<<<
- * 		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
- * 		rdict[n] = nn
+ * 	i = 0             # <<<<<<<<<<<<<<
+ * 	for n in network.nodes:
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_nodes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_INCREF(__pyx_int_0);
+  __Pyx_XDECREF_SET(__pyx_v_i, __pyx_int_0);
+
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":64
+ * 	rdict = {}
+ * 	i = 0
+ * 	for n in network.nodes:             # <<<<<<<<<<<<<<
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+ * 		i += 1
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_nodes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
     __pyx_t_6 = __pyx_t_1; __Pyx_INCREF(__pyx_t_6); __pyx_t_4 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (;;) {
@@ -2367,17 +2377,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       if (likely(PyList_CheckExact(__pyx_t_6))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_6)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 64, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_4); __Pyx_INCREF(__pyx_t_1); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 64, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_6, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
@@ -2387,7 +2397,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 63, __pyx_L1_error)
+          else __PYX_ERR(0, 64, __pyx_L1_error)
         }
         break;
       }
@@ -2396,64 +2406,21 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":64
- * 	rdict = {}
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":65
+ * 	i = 0
  * 	for n in network.nodes:
- * 		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)             # <<<<<<<<<<<<<<
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)             # <<<<<<<<<<<<<<
+ * 		i += 1
  * 		rdict[n] = nn
- * 
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Node); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Node); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_17);
-    __pyx_t_12 = NULL;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_17))) {
-      __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_17);
-      if (likely(__pyx_t_12)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_17);
-        __Pyx_INCREF(__pyx_t_12);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_17, function);
-      }
-    }
-    __pyx_t_2 = (__pyx_t_12) ? __Pyx_PyObject_Call2Args(__pyx_t_17, __pyx_t_12, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_17, __pyx_n_s_);
-    __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-    __pyx_t_17 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_17);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_17, __pyx_n_s_split); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-    __pyx_t_17 = NULL;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
-      __pyx_t_17 = PyMethod_GET_SELF(__pyx_t_2);
-      if (likely(__pyx_t_17)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-        __Pyx_INCREF(__pyx_t_17);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_2, function);
-      }
-    }
-    __pyx_t_3 = (__pyx_t_17) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_17, __pyx_kp_s__2) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_kp_s__2);
-    __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_2 = PyNumber_Add(__pyx_n_s_StateNode, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_INCREF(__pyx_kp_s_state_node);
-    __Pyx_GIVEREF(__pyx_kp_s_state_node);
-    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_kp_s_state_node);
-    __Pyx_GIVEREF(__pyx_t_3);
-    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_3);
-    __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __pyx_t_7 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_12))) {
@@ -2467,52 +2434,112 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     }
     __pyx_t_17 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_7, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_n_s_);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 64, __pyx_L1_error)
+    if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_17);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    __pyx_t_12 = __Pyx_GetItemInt(__pyx_t_17, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_GetItemInt(__pyx_t_17, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_pid, __pyx_t_12) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_split); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_17);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_is_target, Py_False) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
-    __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_12 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_17))) {
+      __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_17);
+      if (likely(__pyx_t_12)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_17);
+        __Pyx_INCREF(__pyx_t_12);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_17, function);
+      }
+    }
+    __pyx_t_3 = (__pyx_t_12) ? __Pyx_PyObject_Call2Args(__pyx_t_17, __pyx_t_12, __pyx_kp_s__2) : __Pyx_PyObject_CallOneArg(__pyx_t_17, __pyx_kp_s__2);
+    __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+    __pyx_t_17 = PyTuple_New(2); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_17);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_17, 0, __pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_17, 1, __pyx_t_3);
+    __pyx_t_2 = 0;
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_split); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_t_7 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_12))) {
+      __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_12);
+      if (likely(__pyx_t_7)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_12);
+        __Pyx_INCREF(__pyx_t_7);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_12, function);
+      }
+    }
+    __pyx_t_2 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_7, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_n_s_);
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_12 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_pid, __pyx_t_12) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_is_target, Py_False) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_17, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_nn, __pyx_t_12);
     __pyx_t_12 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":65
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":66
  * 	for n in network.nodes:
- * 		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+ * 		i += 1             # <<<<<<<<<<<<<<
+ * 		rdict[n] = nn
+ * 
+ */
+    __pyx_t_12 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 66, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __Pyx_DECREF_SET(__pyx_v_i, __pyx_t_12);
+    __pyx_t_12 = 0;
+
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":67
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+ * 		i += 1
  * 		rdict[n] = nn             # <<<<<<<<<<<<<<
  * 
  * 	state_tree = nx.relabel_nodes(network, rdict)
  */
-    if (unlikely(PyDict_SetItem(__pyx_v_rdict, __pyx_v_n, __pyx_v_nn) < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_rdict, __pyx_v_n, __pyx_v_nn) < 0)) __PYX_ERR(0, 67, __pyx_L1_error)
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":63
- * 
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":64
  * 	rdict = {}
+ * 	i = 0
  * 	for n in network.nodes:             # <<<<<<<<<<<<<<
- * 		nn = Node("state-node", n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
- * 		rdict[n] = nn
+ * 		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+ * 		i += 1
  */
   }
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":67
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":69
  * 		rdict[n] = nn
  * 
  * 	state_tree = nx.relabel_nodes(network, rdict)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_nx); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_nx); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_relabel_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_n_s_relabel_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   __pyx_t_12 = NULL;
@@ -2530,7 +2557,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_12, __pyx_v_network, __pyx_v_rdict};
-    __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 69, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
     __Pyx_GOTREF(__pyx_t_6);
   } else
@@ -2538,32 +2565,32 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_12, __pyx_v_network, __pyx_v_rdict};
-    __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 69, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
     __Pyx_GOTREF(__pyx_t_6);
   } else
   #endif
   {
-    __pyx_t_2 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_17 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 69, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_17);
     if (__pyx_t_12) {
-      __Pyx_GIVEREF(__pyx_t_12); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_12); __pyx_t_12 = NULL;
+      __Pyx_GIVEREF(__pyx_t_12); PyTuple_SET_ITEM(__pyx_t_17, 0, __pyx_t_12); __pyx_t_12 = NULL;
     }
     __Pyx_INCREF(__pyx_v_network);
     __Pyx_GIVEREF(__pyx_v_network);
-    PyTuple_SET_ITEM(__pyx_t_2, 0+__pyx_t_11, __pyx_v_network);
+    PyTuple_SET_ITEM(__pyx_t_17, 0+__pyx_t_11, __pyx_v_network);
     __Pyx_INCREF(__pyx_v_rdict);
     __Pyx_GIVEREF(__pyx_v_rdict);
-    PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_11, __pyx_v_rdict);
-    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 67, __pyx_L1_error)
+    PyTuple_SET_ITEM(__pyx_t_17, 1+__pyx_t_11, __pyx_v_rdict);
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_17, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 69, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_state_tree = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":70
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":72
  * 
  * 
  * 	return state_tree             # <<<<<<<<<<<<<<
@@ -2615,7 +2642,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":72
+/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":74
  * 	return state_tree
  * 
  * def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):             # <<<<<<<<<<<<<<
@@ -2671,7 +2698,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_variable_dropout_prob_map)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("generate_simulated_ivlt_experiment", 0, 2, 6, 1); __PYX_ERR(0, 72, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("generate_simulated_ivlt_experiment", 0, 2, 6, 1); __PYX_ERR(0, 74, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -2699,7 +2726,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_simulated_ivlt_experiment") < 0)) __PYX_ERR(0, 72, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "generate_simulated_ivlt_experiment") < 0)) __PYX_ERR(0, 74, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -2726,7 +2753,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("generate_simulated_ivlt_experiment", 0, 2, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 72, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("generate_simulated_ivlt_experiment", 0, 2, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 74, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("Cassiopeia.TreeSolver.simulation_tools.dataset_generation.generate_simulated_ivlt_experiment", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2772,16 +2799,16 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   int __pyx_t_17;
   __Pyx_RefNannySetupContext("generate_simulated_ivlt_experiment", 0);
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":74
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":76
  * def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):
  * 
  * 	network = nx.DiGraph()             # <<<<<<<<<<<<<<
  * 	current_depth = [[['0' for _ in range(0, characters)], "0"]]
  * 	network.add_node(node_to_string(current_depth[0]))
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_nx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_nx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DiGraph); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DiGraph); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -2796,22 +2823,22 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_network = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":75
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":77
  * 
  * 	network = nx.DiGraph()
  * 	current_depth = [[['0' for _ in range(0, characters)], "0"]]             # <<<<<<<<<<<<<<
  * 	network.add_node(node_to_string(current_depth[0]))
  * 	network.node[node_to_string(current_depth[0])]["plate"] = ""
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -2819,16 +2846,16 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __Pyx_INCREF(__pyx_v_characters);
   __Pyx_GIVEREF(__pyx_v_characters);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_characters);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_4 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 75, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 77, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -2836,17 +2863,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 75, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 77, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 75, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 77, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -2856,7 +2883,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 75, __pyx_L1_error)
+          else __PYX_ERR(0, 77, __pyx_L1_error)
         }
         break;
       }
@@ -2864,10 +2891,10 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     }
     __Pyx_XDECREF_SET(__pyx_v__, __pyx_t_2);
     __pyx_t_2 = 0;
-    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_kp_s_0))) __PYX_ERR(0, 75, __pyx_L1_error)
+    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_kp_s_0))) __PYX_ERR(0, 77, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
@@ -2875,7 +2902,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __Pyx_GIVEREF(__pyx_kp_s_0);
   PyList_SET_ITEM(__pyx_t_3, 1, __pyx_kp_s_0);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
@@ -2883,18 +2910,18 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_v_current_depth = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":76
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":78
  * 	network = nx.DiGraph()
  * 	current_depth = [[['0' for _ in range(0, characters)], "0"]]
  * 	network.add_node(node_to_string(current_depth[0]))             # <<<<<<<<<<<<<<
  * 	network.node[node_to_string(current_depth[0])]["plate"] = ""
  * 	uniq = 1
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_add_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_add_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_v_current_depth, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_v_current_depth, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_t_8 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_6))) {
@@ -2909,7 +2936,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_t_2 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_8, __pyx_t_7) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_6 = NULL;
@@ -2925,23 +2952,23 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_t_1 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_6, __pyx_t_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2);
   __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":77
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":79
  * 	current_depth = [[['0' for _ in range(0, characters)], "0"]]
  * 	network.add_node(node_to_string(current_depth[0]))
  * 	network.node[node_to_string(current_depth[0])]["plate"] = ""             # <<<<<<<<<<<<<<
  * 	uniq = 1
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_current_depth, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_current_depth, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_7 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_2))) {
@@ -2956,17 +2983,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_t_3 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_7, __pyx_t_6) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(PyObject_SetItem(__pyx_t_2, __pyx_n_s_plate, __pyx_kp_s__3) < 0)) __PYX_ERR(0, 77, __pyx_L1_error)
+  if (unlikely(PyObject_SetItem(__pyx_t_2, __pyx_n_s_plate, __pyx_kp_s__3) < 0)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":78
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":80
  * 	network.add_node(node_to_string(current_depth[0]))
  * 	network.node[node_to_string(current_depth[0])]["plate"] = ""
  * 	uniq = 1             # <<<<<<<<<<<<<<
@@ -2976,31 +3003,31 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __Pyx_INCREF(__pyx_int_1);
   __pyx_v_uniq = __pyx_int_1;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":82
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":84
  * 
  *     #simulate two splits total
  * 	total_depth = (num_splits + 1) * gen_per_dish             # <<<<<<<<<<<<<<
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
  * 		temp_current_depth = []
  */
-  __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_num_splits, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_num_splits, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_2, __pyx_v_gen_per_dish); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_2, __pyx_v_gen_per_dish); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_total_depth = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":83
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":85
  *     #simulate two splits total
  * 	total_depth = (num_splits + 1) * gen_per_dish
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):             # <<<<<<<<<<<<<<
  * 		temp_current_depth = []
  * 		for node in current_depth:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_tqdm); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -3008,18 +3035,18 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __Pyx_INCREF(__pyx_v_total_depth);
   __Pyx_GIVEREF(__pyx_v_total_depth);
   PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_total_depth);
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_desc, __pyx_kp_s_Generating_cells_at_each_level_i) < 0) __PYX_ERR(0, 83, __pyx_L1_error)
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 83, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_desc, __pyx_kp_s_Generating_cells_at_each_level_i) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -3028,9 +3055,9 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __pyx_t_1 = __pyx_t_6; __Pyx_INCREF(__pyx_t_1); __pyx_t_4 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 85, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   for (;;) {
@@ -3038,17 +3065,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_6 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_6 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 85, __pyx_L1_error)
         #else
-        __pyx_t_6 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_6 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 85, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_6 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_6 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_6); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 85, __pyx_L1_error)
         #else
-        __pyx_t_6 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 83, __pyx_L1_error)
+        __pyx_t_6 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 85, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         #endif
       }
@@ -3058,7 +3085,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 83, __pyx_L1_error)
+          else __PYX_ERR(0, 85, __pyx_L1_error)
         }
         break;
       }
@@ -3067,19 +3094,19 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":84
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":86
  * 	total_depth = (num_splits + 1) * gen_per_dish
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
  * 		temp_current_depth = []             # <<<<<<<<<<<<<<
  * 		for node in current_depth:
  * 			for _ in range(0, 2):
  */
-    __pyx_t_6 = PyList_New(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_6 = PyList_New(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 86, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF_SET(__pyx_v_temp_current_depth, ((PyObject*)__pyx_t_6));
     __pyx_t_6 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":85
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":87
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
  * 		temp_current_depth = []
  * 		for node in current_depth:             # <<<<<<<<<<<<<<
@@ -3090,15 +3117,15 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     for (;;) {
       if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_6)) break;
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_2 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __pyx_t_2 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_9); __Pyx_INCREF(__pyx_t_2); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 87, __pyx_L1_error)
       #else
-      __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
+      __pyx_t_2 = PySequence_ITEM(__pyx_t_6, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       #endif
       __Pyx_XDECREF_SET(__pyx_v_node, __pyx_t_2);
       __pyx_t_2 = 0;
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":86
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":88
  * 		temp_current_depth = []
  * 		for node in current_depth:
  * 			for _ in range(0, 2):             # <<<<<<<<<<<<<<
@@ -3106,21 +3133,21 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  * 				if i == total_depth - 1:
  */
       for (__pyx_t_10 = 0; __pyx_t_10 < 2; __pyx_t_10+=1) {
-        __pyx_t_2 = __Pyx_PyInt_From_long(__pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyInt_From_long(__pyx_t_10); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_XDECREF_SET(__pyx_v__, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":87
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":89
  * 		for node in current_depth:
  * 			for _ in range(0, 2):
  * 				child_node = simulate_mutation(node[0], mutation_prob_map)             # <<<<<<<<<<<<<<
  * 				if i == total_depth - 1:
  * 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
  */
-        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_simulate_mutation); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 87, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_simulate_mutation); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_7 = __Pyx_GetItemInt(__pyx_v_node, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 87, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_GetItemInt(__pyx_v_node, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 89, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
         __pyx_t_8 = NULL;
         __pyx_t_11 = 0;
@@ -3137,7 +3164,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[3] = {__pyx_t_8, __pyx_t_7, __pyx_v_mutation_prob_map};
-          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -3146,14 +3173,14 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[3] = {__pyx_t_8, __pyx_t_7, __pyx_v_mutation_prob_map};
-          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         } else
         #endif
         {
-          __pyx_t_12 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 87, __pyx_L1_error)
+          __pyx_t_12 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 89, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
           if (__pyx_t_8) {
             __Pyx_GIVEREF(__pyx_t_8); PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_8); __pyx_t_8 = NULL;
@@ -3164,7 +3191,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           __Pyx_GIVEREF(__pyx_v_mutation_prob_map);
           PyTuple_SET_ITEM(__pyx_t_12, 1+__pyx_t_11, __pyx_v_mutation_prob_map);
           __pyx_t_7 = 0;
-          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_12, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_12, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         }
@@ -3172,29 +3199,29 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __Pyx_XDECREF_SET(__pyx_v_child_node, __pyx_t_2);
         __pyx_t_2 = 0;
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":88
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":90
  * 			for _ in range(0, 2):
  * 				child_node = simulate_mutation(node[0], mutation_prob_map)
  * 				if i == total_depth - 1:             # <<<<<<<<<<<<<<
  * 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
  * 
  */
-        __pyx_t_2 = __Pyx_PyInt_SubtractObjC(__pyx_v_total_depth, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyInt_SubtractObjC(__pyx_v_total_depth, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_3 = PyObject_RichCompare(__pyx_v_i, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+        __pyx_t_3 = PyObject_RichCompare(__pyx_v_i, __pyx_t_2, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 88, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 90, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         if (__pyx_t_13) {
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":89
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":91
  * 				child_node = simulate_mutation(node[0], mutation_prob_map)
  * 				if i == total_depth - 1:
  * 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)             # <<<<<<<<<<<<<<
  * 
  * 				temp_current_depth.append([child_node, uniq])
  */
-          __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_simulate_dropout); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_simulate_dropout); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 91, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __pyx_t_12 = NULL;
           __pyx_t_11 = 0;
@@ -3211,7 +3238,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_12, __pyx_v_child_node, __pyx_v_variable_dropout_prob_map};
-            __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
             __Pyx_GOTREF(__pyx_t_3);
           } else
@@ -3219,13 +3246,13 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
             PyObject *__pyx_temp[3] = {__pyx_t_12, __pyx_v_child_node, __pyx_v_variable_dropout_prob_map};
-            __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
             __Pyx_GOTREF(__pyx_t_3);
           } else
           #endif
           {
-            __pyx_t_7 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 89, __pyx_L1_error)
+            __pyx_t_7 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 91, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
             if (__pyx_t_12) {
               __Pyx_GIVEREF(__pyx_t_12); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_12); __pyx_t_12 = NULL;
@@ -3236,7 +3263,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             __Pyx_INCREF(__pyx_v_variable_dropout_prob_map);
             __Pyx_GIVEREF(__pyx_v_variable_dropout_prob_map);
             PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_11, __pyx_v_variable_dropout_prob_map);
-            __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           }
@@ -3244,7 +3271,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           __Pyx_DECREF_SET(__pyx_v_child_node, __pyx_t_3);
           __pyx_t_3 = 0;
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":88
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":90
  * 			for _ in range(0, 2):
  * 				child_node = simulate_mutation(node[0], mutation_prob_map)
  * 				if i == total_depth - 1:             # <<<<<<<<<<<<<<
@@ -3253,14 +3280,14 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  */
         }
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":91
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":93
  * 					child_node = simulate_dropout(child_node, variable_dropout_prob_map)
  * 
  * 				temp_current_depth.append([child_node, uniq])             # <<<<<<<<<<<<<<
  * 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
  * 				if i != 0 and i % gen_per_dish == 0:
  */
-        __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
+        __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_v_child_node);
         __Pyx_GIVEREF(__pyx_v_child_node);
@@ -3268,19 +3295,19 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __Pyx_INCREF(__pyx_v_uniq);
         __Pyx_GIVEREF(__pyx_v_uniq);
         PyList_SET_ITEM(__pyx_t_3, 1, __pyx_v_uniq);
-        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_current_depth, __pyx_t_3); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 91, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_current_depth, __pyx_t_3); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 93, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":92
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":94
  * 
  * 				temp_current_depth.append([child_node, uniq])
  * 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))             # <<<<<<<<<<<<<<
  * 				if i != 0 and i % gen_per_dish == 0:
  * 					split_right = (np.random.random() > 0.5) # split in half
  */
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         __pyx_t_8 = NULL;
         if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_12))) {
@@ -3294,14 +3321,14 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         }
         __pyx_t_7 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_8, __pyx_v_node) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_v_node);
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 92, __pyx_L1_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_15 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_16 = PyList_New(2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 92, __pyx_L1_error)
+        __pyx_t_16 = PyList_New(2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_16);
         __Pyx_INCREF(__pyx_v_child_node);
         __Pyx_GIVEREF(__pyx_v_child_node);
@@ -3322,7 +3349,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __pyx_t_12 = (__pyx_t_15) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_15, __pyx_t_16) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_16);
         __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
         __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-        if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 92, __pyx_L1_error)
+        if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 94, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __pyx_t_8 = NULL;
@@ -3340,7 +3367,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[3] = {__pyx_t_8, __pyx_t_7, __pyx_t_12};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -3350,7 +3377,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[3] = {__pyx_t_8, __pyx_t_7, __pyx_t_12};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -3358,7 +3385,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         } else
         #endif
         {
-          __pyx_t_16 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 92, __pyx_L1_error)
+          __pyx_t_16 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 94, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_16);
           if (__pyx_t_8) {
             __Pyx_GIVEREF(__pyx_t_8); PyTuple_SET_ITEM(__pyx_t_16, 0, __pyx_t_8); __pyx_t_8 = NULL;
@@ -3369,53 +3396,53 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           PyTuple_SET_ITEM(__pyx_t_16, 1+__pyx_t_11, __pyx_t_12);
           __pyx_t_7 = 0;
           __pyx_t_12 = 0;
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_16, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_16, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
         }
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":93
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":95
  * 				temp_current_depth.append([child_node, uniq])
  * 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
  * 				if i != 0 and i % gen_per_dish == 0:             # <<<<<<<<<<<<<<
  * 					split_right = (np.random.random() > 0.5) # split in half
  * 					if split_right:
  */
-        __pyx_t_3 = __Pyx_PyInt_NeObjC(__pyx_v_i, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyInt_NeObjC(__pyx_v_i, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_17 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 93, __pyx_L1_error)
+        __pyx_t_17 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         if (__pyx_t_17) {
         } else {
           __pyx_t_13 = __pyx_t_17;
           goto __pyx_L13_bool_binop_done;
         }
-        __pyx_t_3 = PyNumber_Remainder(__pyx_v_i, __pyx_v_gen_per_dish); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
+        __pyx_t_3 = PyNumber_Remainder(__pyx_v_i, __pyx_v_gen_per_dish); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_2 = __Pyx_PyInt_EqObjC(__pyx_t_3, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyInt_EqObjC(__pyx_t_3, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __pyx_t_17 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 93, __pyx_L1_error)
+        __pyx_t_17 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_17 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_t_13 = __pyx_t_17;
         __pyx_L13_bool_binop_done:;
         if (__pyx_t_13) {
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":94
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":96
  * 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
  * 				if i != 0 and i % gen_per_dish == 0:
  * 					split_right = (np.random.random() > 0.5) # split in half             # <<<<<<<<<<<<<<
  * 					if split_right:
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0"
  */
-          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_random); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 94, __pyx_L1_error)
+          __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_random); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 96, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_16);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_16, __pyx_n_s_random); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_16, __pyx_n_s_random); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
           __pyx_t_16 = NULL;
@@ -3430,34 +3457,34 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           }
           __pyx_t_2 = (__pyx_t_16) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_16) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
           __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_3 = PyObject_RichCompare(__pyx_t_2, __pyx_float_0_5, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
+          __pyx_t_3 = PyObject_RichCompare(__pyx_t_2, __pyx_float_0_5, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_XDECREF_SET(__pyx_v_split_right, __pyx_t_3);
           __pyx_t_3 = 0;
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":95
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":97
  * 				if i != 0 and i % gen_per_dish == 0:
  * 					split_right = (np.random.random() > 0.5) # split in half
  * 					if split_right:             # <<<<<<<<<<<<<<
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0"
  * 					else:
  */
-          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_v_split_right); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
+          __pyx_t_13 = __Pyx_PyObject_IsTrue(__pyx_v_split_right); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 97, __pyx_L1_error)
           if (__pyx_t_13) {
 
-            /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":96
+            /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":98
  * 					split_right = (np.random.random() > 0.5) # split in half
  * 					if split_right:
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0"             # <<<<<<<<<<<<<<
  * 					else:
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "1"
  */
-            __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
-            __Pyx_GetModuleGlobalName(__pyx_t_16, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_16, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
             __pyx_t_12 = NULL;
             if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_16))) {
@@ -3471,26 +3498,26 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             }
             __pyx_t_2 = (__pyx_t_12) ? __Pyx_PyObject_Call2Args(__pyx_t_16, __pyx_t_12, __pyx_v_node) : __Pyx_PyObject_CallOneArg(__pyx_t_16, __pyx_v_node);
             __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-            if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
+            if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-            __pyx_t_16 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_16 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_16, __pyx_n_s_plate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_16, __pyx_n_s_plate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-            __pyx_t_16 = PyNumber_Add(__pyx_t_2, __pyx_kp_s_0); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_16 = PyNumber_Add(__pyx_t_2, __pyx_kp_s_0); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
-            __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_12);
-            __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
-            __pyx_t_8 = PyList_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_8 = PyList_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_8);
             __Pyx_INCREF(__pyx_v_child_node);
             __Pyx_GIVEREF(__pyx_v_child_node);
@@ -3511,18 +3538,18 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             __pyx_t_3 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_7, __pyx_t_8) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_t_8);
             __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
             __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 96, __pyx_L1_error)
+            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-            __pyx_t_12 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 96, __pyx_L1_error)
+            __pyx_t_12 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_12);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-            if (unlikely(PyObject_SetItem(__pyx_t_12, __pyx_n_s_plate, __pyx_t_16) < 0)) __PYX_ERR(0, 96, __pyx_L1_error)
+            if (unlikely(PyObject_SetItem(__pyx_t_12, __pyx_n_s_plate, __pyx_t_16) < 0)) __PYX_ERR(0, 98, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
 
-            /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":95
+            /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":97
  * 				if i != 0 and i % gen_per_dish == 0:
  * 					split_right = (np.random.random() > 0.5) # split in half
  * 					if split_right:             # <<<<<<<<<<<<<<
@@ -3532,7 +3559,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             goto __pyx_L15;
           }
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":98
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":100
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "0"
  * 					else:
  * 						network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"] + "1"             # <<<<<<<<<<<<<<
@@ -3540,9 +3567,9 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  * 				else:
  */
           /*else*/ {
-            __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
-            __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __pyx_t_2 = NULL;
             if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -3556,26 +3583,26 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             }
             __pyx_t_12 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_v_node) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_node);
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
+            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_12);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-            __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_t_16, __pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_t_16, __pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-            __pyx_t_12 = __Pyx_PyObject_Dict_GetItem(__pyx_t_3, __pyx_n_s_plate); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_12 = __Pyx_PyObject_Dict_GetItem(__pyx_t_3, __pyx_n_s_plate); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_12);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-            __pyx_t_3 = PyNumber_Add(__pyx_t_12, __pyx_kp_s_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_3 = PyNumber_Add(__pyx_t_12, __pyx_kp_s_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-            __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_12);
-            __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
-            __pyx_t_8 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_8 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_8);
-            __pyx_t_7 = PyList_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_7 = PyList_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
             __Pyx_INCREF(__pyx_v_child_node);
             __Pyx_GIVEREF(__pyx_v_child_node);
@@ -3596,20 +3623,20 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
             __pyx_t_16 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_8, __pyx_t_7) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_7);
             __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-            if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 98, __pyx_L1_error)
+            if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_16);
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_12, __pyx_t_16); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_12, __pyx_t_16); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
             __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-            if (unlikely(PyObject_SetItem(__pyx_t_2, __pyx_n_s_plate, __pyx_t_3) < 0)) __PYX_ERR(0, 98, __pyx_L1_error)
+            if (unlikely(PyObject_SetItem(__pyx_t_2, __pyx_n_s_plate, __pyx_t_3) < 0)) __PYX_ERR(0, 100, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           }
           __pyx_L15:;
 
-          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":93
+          /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":95
  * 				temp_current_depth.append([child_node, uniq])
  * 				network.add_edge(node_to_string(node), node_to_string([child_node, str(uniq)]))
  * 				if i != 0 and i % gen_per_dish == 0:             # <<<<<<<<<<<<<<
@@ -3619,7 +3646,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           goto __pyx_L12;
         }
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":101
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":103
  * 
  * 				else:
  * 					network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"]             # <<<<<<<<<<<<<<
@@ -3627,9 +3654,9 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  * 				uniq += 1
  */
         /*else*/ {
-          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_GetModuleGlobalName(__pyx_t_16, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_16, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_16);
           __pyx_t_12 = NULL;
           if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_16))) {
@@ -3643,23 +3670,23 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           }
           __pyx_t_2 = (__pyx_t_12) ? __Pyx_PyObject_Call2Args(__pyx_t_16, __pyx_t_12, __pyx_v_node) : __Pyx_PyObject_CallOneArg(__pyx_t_16, __pyx_v_node);
           __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __pyx_t_16 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_16 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_16);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_16, __pyx_n_s_plate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_t_16, __pyx_n_s_plate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_node); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_16);
-          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
-          __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_7 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_uniq); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
-          __pyx_t_8 = PyList_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_8 = PyList_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
           __Pyx_INCREF(__pyx_v_child_node);
           __Pyx_GIVEREF(__pyx_v_child_node);
@@ -3680,33 +3707,33 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
           __pyx_t_3 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_12, __pyx_t_7, __pyx_t_8) : __Pyx_PyObject_CallOneArg(__pyx_t_12, __pyx_t_8);
           __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          __pyx_t_12 = __Pyx_PyObject_GetItem(__pyx_t_16, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 101, __pyx_L1_error)
+          __pyx_t_12 = __Pyx_PyObject_GetItem(__pyx_t_16, __pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(PyObject_SetItem(__pyx_t_12, __pyx_n_s_plate, __pyx_t_2) < 0)) __PYX_ERR(0, 101, __pyx_L1_error)
+          if (unlikely(PyObject_SetItem(__pyx_t_12, __pyx_n_s_plate, __pyx_t_2) < 0)) __PYX_ERR(0, 103, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         }
         __pyx_L12:;
 
-        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":103
+        /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":105
  * 					network.node[node_to_string([child_node, str(uniq)])]["plate"] = network.node[node_to_string(node)]["plate"]
  * 
  * 				uniq += 1             # <<<<<<<<<<<<<<
  * 
  * 
  */
-        __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_uniq, __pyx_int_1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_uniq, __pyx_int_1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF_SET(__pyx_v_uniq, __pyx_t_2);
         __pyx_t_2 = 0;
       }
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":85
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":87
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):
  * 		temp_current_depth = []
  * 		for node in current_depth:             # <<<<<<<<<<<<<<
@@ -3716,7 +3743,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":106
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":108
  * 
  * 
  * 		current_depth = temp_current_depth             # <<<<<<<<<<<<<<
@@ -3726,7 +3753,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __Pyx_INCREF(__pyx_v_temp_current_depth);
     __Pyx_DECREF_SET(__pyx_v_current_depth, __pyx_v_temp_current_depth);
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":83
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":85
  *     #simulate two splits total
  * 	total_depth = (num_splits + 1) * gen_per_dish
  * 	for i in tqdm(range(0, total_depth), desc="Generating cells at each level in tree"):             # <<<<<<<<<<<<<<
@@ -3736,28 +3763,28 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":108
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":110
  * 		current_depth = temp_current_depth
  * 
  * 	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))             # <<<<<<<<<<<<<<
  * 
  * 	for node in subsampled_population_for_removal:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_sample); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_sample); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_v_subsample_percentage, 1, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyInt_SubtractCObj(__pyx_int_1, __pyx_v_subsample_percentage, 1, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_current_depth); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 108, __pyx_L1_error)
-  __pyx_t_12 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_current_depth); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_12 = PyInt_FromSsize_t(__pyx_t_4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_6, __pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_6, __pyx_t_12); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-  __pyx_t_12 = __Pyx_PyNumber_Int(__pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyNumber_Int(__pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -3775,7 +3802,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_current_depth, __pyx_t_12};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
@@ -3784,14 +3811,14 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_3, __pyx_v_current_depth, __pyx_t_12};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_11, 2+__pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(2+__pyx_t_11); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -3802,7 +3829,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __Pyx_GIVEREF(__pyx_t_12);
     PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_11, __pyx_t_12);
     __pyx_t_12 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
@@ -3810,7 +3837,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_v_subsampled_population_for_removal = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":110
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":112
  * 	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
  * 
  * 	for node in subsampled_population_for_removal:             # <<<<<<<<<<<<<<
@@ -3821,26 +3848,26 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __pyx_t_1 = __pyx_v_subsampled_population_for_removal; __Pyx_INCREF(__pyx_t_1); __pyx_t_4 = 0;
     __pyx_t_5 = NULL;
   } else {
-    __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_subsampled_population_for_removal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_4 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_subsampled_population_for_removal); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 112, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __pyx_t_5 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 112, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_5)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 112, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_4 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 112, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -3850,7 +3877,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 110, __pyx_L1_error)
+          else __PYX_ERR(0, 112, __pyx_L1_error)
         }
         break;
       }
@@ -3859,16 +3886,16 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __Pyx_XDECREF_SET(__pyx_v_node, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":111
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":113
  * 
  * 	for node in subsampled_population_for_removal:
  * 		network.remove_node(node_to_string(node))             # <<<<<<<<<<<<<<
  * 
  * 	return network
  */
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_remove_node); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_network, __pyx_n_s_remove_node); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_node_to_string); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_16 = NULL;
     if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -3882,7 +3909,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     }
     __pyx_t_12 = (__pyx_t_16) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_16, __pyx_v_node) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_node);
     __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-    if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 111, __pyx_L1_error)
+    if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -3898,12 +3925,12 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
     __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_6, __pyx_t_3, __pyx_t_12) : __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_12);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":110
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":112
  * 	subsampled_population_for_removal = random.sample(current_depth, int((1-subsample_percentage) * len(current_depth)))
  * 
  * 	for node in subsampled_population_for_removal:             # <<<<<<<<<<<<<<
@@ -3913,7 +3940,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":113
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":115
  * 		network.remove_node(node_to_string(node))
  * 
  * 	return network             # <<<<<<<<<<<<<<
@@ -3925,7 +3952,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_r = __pyx_v_network;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":72
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":74
  * 	return state_tree
  * 
  * def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):             # <<<<<<<<<<<<<<
@@ -3963,7 +3990,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":117
+/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":119
  * 
  * 
  * def simulate_dropout(sample, variable_dropout_probability_map):             # <<<<<<<<<<<<<<
@@ -4004,11 +4031,11 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_variable_dropout_probability_map)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("simulate_dropout", 1, 2, 2, 1); __PYX_ERR(0, 117, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("simulate_dropout", 1, 2, 2, 1); __PYX_ERR(0, 119, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "simulate_dropout") < 0)) __PYX_ERR(0, 117, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "simulate_dropout") < 0)) __PYX_ERR(0, 119, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4021,7 +4048,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("simulate_dropout", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 117, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("simulate_dropout", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 119, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("Cassiopeia.TreeSolver.simulation_tools.dataset_generation.simulate_dropout", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4049,64 +4076,64 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("simulate_dropout", 0);
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":129
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":131
  * 		A sample with characters potential dropped out (Dropped out characters in the form '-')
  * 	"""
  * 	new_sample = []             # <<<<<<<<<<<<<<
  * 	for i in range(0, len(sample)):
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_new_sample = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":130
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":132
  * 	"""
  * 	new_sample = []
  * 	for i in range(0, len(sample)):             # <<<<<<<<<<<<<<
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:
  * 			new_sample.append('-')
  */
-  __pyx_t_2 = PyObject_Length(__pyx_v_sample); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_2 = PyObject_Length(__pyx_v_sample); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 132, __pyx_L1_error)
   __pyx_t_3 = __pyx_t_2;
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":131
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":133
  * 	new_sample = []
  * 	for i in range(0, len(sample)):
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:             # <<<<<<<<<<<<<<
  * 			new_sample.append('-')
  * 		else:
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_random); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_random); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_uniform); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_uniform); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_variable_dropout_probability_map, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_variable_dropout_probability_map, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_t_5, Py_LE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_6 = PyObject_RichCompare(__pyx_t_1, __pyx_t_5, Py_LE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (__pyx_t_7) {
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":132
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":134
  * 	for i in range(0, len(sample)):
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:
  * 			new_sample.append('-')             # <<<<<<<<<<<<<<
  * 		else:
  * 			new_sample.append(sample[i])
  */
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_kp_s__5); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 132, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_kp_s__5); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 134, __pyx_L1_error)
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":131
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":133
  * 	new_sample = []
  * 	for i in range(0, len(sample)):
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:             # <<<<<<<<<<<<<<
@@ -4116,7 +4143,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       goto __pyx_L5;
     }
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":134
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":136
  * 			new_sample.append('-')
  * 		else:
  * 			new_sample.append(sample[i])             # <<<<<<<<<<<<<<
@@ -4124,15 +4151,15 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
  * 
  */
     /*else*/ {
-      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_sample, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 134, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_sample, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 136, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_t_6); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 134, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_t_6); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 136, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
     __pyx_L5:;
   }
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":135
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":137
  * 		else:
  * 			new_sample.append(sample[i])
  * 	return new_sample             # <<<<<<<<<<<<<<
@@ -4144,7 +4171,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_r = __pyx_v_new_sample;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":117
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":119
  * 
  * 
  * def simulate_dropout(sample, variable_dropout_probability_map):             # <<<<<<<<<<<<<<
@@ -4166,7 +4193,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":137
+/* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":139
  * 	return new_sample
  * 
  * def simulate_mutation(sample, mutation_prob_map):             # <<<<<<<<<<<<<<
@@ -4207,11 +4234,11 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_mutation_prob_map)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("simulate_mutation", 1, 2, 2, 1); __PYX_ERR(0, 137, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("simulate_mutation", 1, 2, 2, 1); __PYX_ERR(0, 139, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "simulate_mutation") < 0)) __PYX_ERR(0, 137, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "simulate_mutation") < 0)) __PYX_ERR(0, 139, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -4224,7 +4251,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("simulate_mutation", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 137, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("simulate_mutation", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 139, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("Cassiopeia.TreeSolver.simulation_tools.dataset_generation.simulate_mutation", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4258,62 +4285,62 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   int __pyx_t_10;
   __Pyx_RefNannySetupContext("simulate_mutation", 0);
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":152
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":154
  * 		A sample with characters potential mutated
  * 	"""
  * 	new_sample = []             # <<<<<<<<<<<<<<
  * 	for i in range(0, len(sample)):
  * 		character = sample[i]
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_new_sample = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":153
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":155
  * 	"""
  * 	new_sample = []
  * 	for i in range(0, len(sample)):             # <<<<<<<<<<<<<<
  * 		character = sample[i]
  * 		if character == '0':
  */
-  __pyx_t_2 = PyObject_Length(__pyx_v_sample); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 153, __pyx_L1_error)
+  __pyx_t_2 = PyObject_Length(__pyx_v_sample); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 155, __pyx_L1_error)
   __pyx_t_3 = __pyx_t_2;
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_i = __pyx_t_4;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":154
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":156
  * 	new_sample = []
  * 	for i in range(0, len(sample)):
  * 		character = sample[i]             # <<<<<<<<<<<<<<
  * 		if character == '0':
  * 			values, probabilities = zip(*mutation_prob_map[i].items())
  */
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_sample, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_sample, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_character, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":155
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":157
  * 	for i in range(0, len(sample)):
  * 		character = sample[i]
  * 		if character == '0':             # <<<<<<<<<<<<<<
  * 			values, probabilities = zip(*mutation_prob_map[i].items())
  * 			new_character = np.random.choice(values, p=probabilities)
  */
-    __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_v_character, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
+    __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_v_character, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 157, __pyx_L1_error)
     if (__pyx_t_5) {
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":156
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":158
  * 		character = sample[i]
  * 		if character == '0':
  * 			values, probabilities = zip(*mutation_prob_map[i].items())             # <<<<<<<<<<<<<<
  * 			new_character = np.random.choice(values, p=probabilities)
  * 			new_sample.append(new_character)
  */
-      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_mutation_prob_map, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_mutation_prob_map, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_items); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_items); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_6 = NULL;
@@ -4328,13 +4355,13 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       }
       __pyx_t_1 = (__pyx_t_6) ? __Pyx_PyObject_CallOneArg(__pyx_t_7, __pyx_t_6) : __Pyx_PyObject_CallNoArg(__pyx_t_7);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = __Pyx_PySequence_Tuple(__pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PySequence_Tuple(__pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_zip, __pyx_t_7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
@@ -4343,7 +4370,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         if (unlikely(size != 2)) {
           if (size > 2) __Pyx_RaiseTooManyValuesError(2);
           else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-          __PYX_ERR(0, 156, __pyx_L1_error)
+          __PYX_ERR(0, 158, __pyx_L1_error)
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
         if (likely(PyTuple_CheckExact(sequence))) {
@@ -4356,15 +4383,15 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __Pyx_INCREF(__pyx_t_7);
         __Pyx_INCREF(__pyx_t_6);
         #else
-        __pyx_t_7 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 156, __pyx_L1_error)
+        __pyx_t_7 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 158, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 156, __pyx_L1_error)
+        __pyx_t_6 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 158, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         #endif
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       } else {
         Py_ssize_t index = -1;
-        __pyx_t_8 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 156, __pyx_L1_error)
+        __pyx_t_8 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 158, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __pyx_t_9 = Py_TYPE(__pyx_t_8)->tp_iternext;
@@ -4372,7 +4399,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __Pyx_GOTREF(__pyx_t_7);
         index = 1; __pyx_t_6 = __pyx_t_9(__pyx_t_8); if (unlikely(!__pyx_t_6)) goto __pyx_L6_unpacking_failed;
         __Pyx_GOTREF(__pyx_t_6);
-        if (__Pyx_IternextUnpackEndCheck(__pyx_t_9(__pyx_t_8), 2) < 0) __PYX_ERR(0, 156, __pyx_L1_error)
+        if (__Pyx_IternextUnpackEndCheck(__pyx_t_9(__pyx_t_8), 2) < 0) __PYX_ERR(0, 158, __pyx_L1_error)
         __pyx_t_9 = NULL;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         goto __pyx_L7_unpacking_done;
@@ -4380,7 +4407,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __pyx_t_9 = NULL;
         if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-        __PYX_ERR(0, 156, __pyx_L1_error)
+        __PYX_ERR(0, 158, __pyx_L1_error)
         __pyx_L7_unpacking_done:;
       }
       __Pyx_XDECREF_SET(__pyx_v_values, __pyx_t_7);
@@ -4388,30 +4415,30 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       __Pyx_XDECREF_SET(__pyx_v_probabilities, __pyx_t_6);
       __pyx_t_6 = 0;
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":157
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":159
  * 		if character == '0':
  * 			values, probabilities = zip(*mutation_prob_map[i].items())
  * 			new_character = np.random.choice(values, p=probabilities)             # <<<<<<<<<<<<<<
  * 			new_sample.append(new_character)
  * 		else:
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_random); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_choice); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_choice); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = PyTuple_New(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __pyx_t_6 = PyTuple_New(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_INCREF(__pyx_v_values);
       __Pyx_GIVEREF(__pyx_v_values);
       PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_v_values);
-      __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_p, __pyx_v_probabilities) < 0) __PYX_ERR(0, 157, __pyx_L1_error)
-      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 157, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_p, __pyx_v_probabilities) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 159, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -4419,16 +4446,16 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       __Pyx_XDECREF_SET(__pyx_v_new_character, __pyx_t_8);
       __pyx_t_8 = 0;
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":158
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":160
  * 			values, probabilities = zip(*mutation_prob_map[i].items())
  * 			new_character = np.random.choice(values, p=probabilities)
  * 			new_sample.append(new_character)             # <<<<<<<<<<<<<<
  * 		else:
  * 			new_sample.append(character)
  */
-      __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_v_new_character); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 158, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_v_new_character); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 160, __pyx_L1_error)
 
-      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":155
+      /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":157
  * 	for i in range(0, len(sample)):
  * 		character = sample[i]
  * 		if character == '0':             # <<<<<<<<<<<<<<
@@ -4438,19 +4465,19 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
       goto __pyx_L5;
     }
 
-    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":160
+    /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":162
  * 			new_sample.append(new_character)
  * 		else:
  * 			new_sample.append(character)             # <<<<<<<<<<<<<<
  * 	return new_sample
  */
     /*else*/ {
-      __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_v_character); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 160, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_new_sample, __pyx_v_character); if (unlikely(__pyx_t_10 == ((int)-1))) __PYX_ERR(0, 162, __pyx_L1_error)
     }
     __pyx_L5:;
   }
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":161
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":163
  * 		else:
  * 			new_sample.append(character)
  * 	return new_sample             # <<<<<<<<<<<<<<
@@ -4460,7 +4487,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset
   __pyx_r = __pyx_v_new_sample;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":137
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":139
  * 	return new_sample
  * 
  * def simulate_mutation(sample, mutation_prob_map):             # <<<<<<<<<<<<<<
@@ -4543,6 +4570,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_DiGraph, __pyx_k_DiGraph, sizeof(__pyx_k_DiGraph), 0, 0, 1, 1},
   {&__pyx_kp_s_Generating_cells_at_each_level_i, __pyx_k_Generating_cells_at_each_level_i, sizeof(__pyx_k_Generating_cells_at_each_level_i), 0, 0, 1, 0},
   {&__pyx_n_s_Node, __pyx_k_Node, sizeof(__pyx_k_Node), 0, 0, 1, 1},
+  {&__pyx_n_s_StateNode, __pyx_k_StateNode, sizeof(__pyx_k_StateNode), 0, 0, 1, 1},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},
   {&__pyx_kp_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 0},
   {&__pyx_kp_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 0},
@@ -4595,7 +4623,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_simulation_utils, __pyx_k_simulation_utils, sizeof(__pyx_k_simulation_utils), 0, 0, 1, 1},
   {&__pyx_n_s_split, __pyx_k_split, sizeof(__pyx_k_split), 0, 0, 1, 1},
   {&__pyx_n_s_split_right, __pyx_k_split_right, sizeof(__pyx_k_split_right), 0, 0, 1, 1},
-  {&__pyx_kp_s_state_node, __pyx_k_state_node, sizeof(__pyx_k_state_node), 0, 0, 1, 0},
   {&__pyx_n_s_state_tree, __pyx_k_state_tree, sizeof(__pyx_k_state_tree), 0, 0, 1, 1},
   {&__pyx_n_s_subsample_percentage, __pyx_k_subsample_percentage, sizeof(__pyx_k_subsample_percentage), 0, 0, 1, 1},
   {&__pyx_n_s_subsampled_population_for_remova, __pyx_k_subsampled_population_for_remova, sizeof(__pyx_k_subsampled_population_for_remova), 0, 0, 1, 1},
@@ -4613,7 +4640,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 41, __pyx_L1_error)
-  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 156, __pyx_L1_error)
+  __pyx_builtin_zip = __Pyx_GetBuiltinName(__pyx_n_s_zip); if (!__pyx_builtin_zip) __PYX_ERR(0, 158, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -4623,14 +4650,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":131
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":133
  * 	new_sample = []
  * 	for i in range(0, len(sample)):
  * 		if random.uniform(0, 1) <= variable_dropout_probability_map[i]:             # <<<<<<<<<<<<<<
  * 			new_sample.append('-')
  * 		else:
  */
-  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_1); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_1); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
@@ -4646,41 +4673,41 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__6);
   __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(6, 0, 19, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_generate_simulated_full_tree, 9, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 9, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":72
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":74
  * 	return state_tree
  * 
  * def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):             # <<<<<<<<<<<<<<
  * 
  * 	network = nx.DiGraph()
  */
-  __pyx_tuple__8 = PyTuple_Pack(17, __pyx_n_s_mutation_prob_map, __pyx_n_s_variable_dropout_prob_map, __pyx_n_s_characters, __pyx_n_s_gen_per_dish, __pyx_n_s_num_splits, __pyx_n_s_subsample_percentage, __pyx_n_s_network, __pyx_n_s_current_depth, __pyx_n_s_uniq, __pyx_n_s_total_depth, __pyx_n_s_i, __pyx_n_s_temp_current_depth, __pyx_n_s_node, __pyx_n_s_, __pyx_n_s_child_node, __pyx_n_s_split_right, __pyx_n_s_subsampled_population_for_remova); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 72, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(17, __pyx_n_s_mutation_prob_map, __pyx_n_s_variable_dropout_prob_map, __pyx_n_s_characters, __pyx_n_s_gen_per_dish, __pyx_n_s_num_splits, __pyx_n_s_subsample_percentage, __pyx_n_s_network, __pyx_n_s_current_depth, __pyx_n_s_uniq, __pyx_n_s_total_depth, __pyx_n_s_i, __pyx_n_s_temp_current_depth, __pyx_n_s_node, __pyx_n_s_, __pyx_n_s_child_node, __pyx_n_s_split_right, __pyx_n_s_subsampled_population_for_remova); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(6, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_generate_simulated_ivlt_experime, 72, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 72, __pyx_L1_error)
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(6, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_generate_simulated_ivlt_experime, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 74, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":117
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":119
  * 
  * 
  * def simulate_dropout(sample, variable_dropout_probability_map):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Applies dropout to a given sample
  */
-  __pyx_tuple__10 = PyTuple_Pack(4, __pyx_n_s_sample, __pyx_n_s_variable_dropout_probability_map, __pyx_n_s_new_sample, __pyx_n_s_i); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(4, __pyx_n_s_sample, __pyx_n_s_variable_dropout_probability_map, __pyx_n_s_new_sample, __pyx_n_s_i); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_simulate_dropout, 117, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_simulate_dropout, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 119, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":137
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":139
  * 	return new_sample
  * 
  * def simulate_mutation(sample, mutation_prob_map):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Transforms a newly generated sample into a potentially mutated one
  */
-  __pyx_tuple__12 = PyTuple_Pack(8, __pyx_n_s_sample, __pyx_n_s_mutation_prob_map, __pyx_n_s_new_sample, __pyx_n_s_i, __pyx_n_s_character, __pyx_n_s_values, __pyx_n_s_probabilities, __pyx_n_s_new_character); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(8, __pyx_n_s_sample, __pyx_n_s_mutation_prob_map, __pyx_n_s_new_sample, __pyx_n_s_i, __pyx_n_s_character, __pyx_n_s_values, __pyx_n_s_probabilities, __pyx_n_s_new_character); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_simulate_mutation, 137, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_simulation, __pyx_n_s_simulate_mutation, 139, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -5081,40 +5108,40 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_simulated_full_tree, __pyx_t_2) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":72
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":74
  * 	return state_tree
  * 
  * def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):             # <<<<<<<<<<<<<<
  * 
  * 	network = nx.DiGraph()
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_3generate_simulated_ivlt_experiment, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 72, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_3generate_simulated_ivlt_experiment, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_simulated_ivlt_experime, __pyx_t_2) < 0) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_generate_simulated_ivlt_experime, __pyx_t_2) < 0) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":117
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":119
  * 
  * 
  * def simulate_dropout(sample, variable_dropout_probability_map):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Applies dropout to a given sample
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_5simulate_dropout, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 117, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_5simulate_dropout, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_simulate_dropout, __pyx_t_2) < 0) __PYX_ERR(0, 117, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_simulate_dropout, __pyx_t_2) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":137
+  /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":139
  * 	return new_sample
  * 
  * def simulate_mutation(sample, mutation_prob_map):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Transforms a newly generated sample into a potentially mutated one
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_7simulate_mutation, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_16simulation_tools_18dataset_generation_7simulate_mutation, NULL, __pyx_n_s_Cassiopeia_TreeSolver_simulation_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_simulate_mutation, __pyx_t_2) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_simulate_mutation, __pyx_t_2) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx":1
