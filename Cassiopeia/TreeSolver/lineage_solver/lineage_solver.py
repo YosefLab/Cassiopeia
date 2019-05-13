@@ -13,7 +13,7 @@ from collections import defaultdict
 from .greedy_solver import root_finder, greedy_build
 from .ILP_solver import generate_mSteiner_model, solve_steiner_instance
 from .solver_utils import build_potential_graph_from_base_graph
-from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
+from Cassiopeia.TreeSolver import Cassiopeia_Tree, Node
 
 
 def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000):
@@ -94,7 +94,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 
 
-		return Cassiopeia_Tree(method="ilp", network=state_tree, name="Cassiopeia_state_tree")
+		return Cassiopeia_Tree.Cassiopeia_Tree(method="ilp", network=state_tree, name="Cassiopeia_state_tree")
 
 	if method == "hybrid":
 
@@ -139,7 +139,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 		state_tree = nx.relabel_nodes(network, rdict)
 
-		return Cassiopeia_Tree(method="hybrid", network=state_tree, name="Cassiopeia_state_tree")
+		return Cassiopeia_Tree.Cassiopeia_Tree(method="hybrid", network=state_tree, name="Cassiopeia_state_tree")
 
 	if method == "greedy":
 		graph = greedy_build(target_nodes, priors=prior_probabilities, cutoff=-1, targets=target_nodes)[0]
@@ -156,7 +156,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 		state_tree = nx.relabel_nodes(graph, rdict)
 
-		return Cassiopeia_Tree(method='greedy', network=state_tree, name='Cassiopeia_state_tree')
+		return Cassiopeia_Tree.Cassiopeia_Tree(method='greedy', network=state_tree, name='Cassiopeia_state_tree')
 
 	else:
 		raise Exception("Please specify one of the following methods: ilp, hybrid, greedy")

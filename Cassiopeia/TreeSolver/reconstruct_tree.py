@@ -24,8 +24,8 @@ import os
 
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.simulation_tools import *
-#from Cassiopeia.TreeSolver import *
-from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree, newick_to_network
+from Cassiopeia.TreeSolver import *
+# from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
 
 import Cassiopeia as sclt
 
@@ -371,6 +371,11 @@ def main():
         pid, ecode = os.waitpid(p.pid, 0)
 
         weights = construct_weights(infile, weights_fn)
+
+        p = subprocess.Popen("touch outfile.txt")
+        pid, ecode = os.waitpd(p.pid, 0)
+        p = subprocess.Popen("touch outtree.txt")
+        pid, ecode = os.waitpid(p.pid, 0)
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'

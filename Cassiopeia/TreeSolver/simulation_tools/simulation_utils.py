@@ -24,7 +24,7 @@ def get_leaves_of_tree(tree, clip_identifier=False):
 		List of leaves of the corresponding tree in string format
 	"""
 
-	if isinstance(tree, Cassiopeia_Tree):
+	if isinstance(tree, Cassiopeia_Tree.Cassiopeia_Tree):
 		tree = tree.get_network()
 
 

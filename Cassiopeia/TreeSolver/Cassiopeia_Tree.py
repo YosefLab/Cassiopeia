@@ -3,6 +3,7 @@ import networkx as nx
 
 from Cassiopeia.TreeSolver import convert_network_to_newick_format
 from Cassiopeia.TreeSolver.post_process_tree import post_process_tree
+from Cassiopeia.TreeSolver.simulation_tools.validation import tree_collapse, fill_in_tree
 
 import copy
 
@@ -78,6 +79,31 @@ class Cassiopeia_Tree:
 		net = nx.relabel_nodes(net, copy_dict)
 
 		return post_process_tree(net, self.cm.copy(), self.method)
+
+	def score_parsimony(self, cm = None):
+
+		if cm is not None:
+			self.cm = cm
+
+		assert self.cm is not None
+
+		net = self.get_network().copy()
+		copy_dict = {}
+		for n in net:
+			copy_dict[n] = copy.copy(n)
+
+		net = nx.relabel_nodes(net, copy_dict)
+
+		#net = fill_in_tree(net, cm)
+		#net = tree_collapse(net)
+
+		root = [n for n in net if net.in_degree(n) == 0][0]
+
+		score = 0
+		for e in nx.dfs_edges(net, source=root):
+			score += e[0].get_edit_distance(e[1])
+
+		return score
 
 
 

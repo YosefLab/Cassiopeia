@@ -212,6 +212,7 @@ def post_process_tree(G, cm, alg):
         Post-Processed Tree as a networkx object
     """
 
+    
     if alg in ['greedy', 'hybrid', 'ilp']:
         G = assign_samples_to_charstrings(G, cm)
         G = prune_and_clean_leaves(G)
