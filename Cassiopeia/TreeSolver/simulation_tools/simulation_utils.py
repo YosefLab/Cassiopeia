@@ -1,5 +1,5 @@
 import networkx as nx
-from Cassiopeia.TreeSolver import Cassiopeia_Tree
+
 
 def node_to_string(sample):
 	"""
@@ -24,9 +24,7 @@ def get_leaves_of_tree(tree, clip_identifier=False):
 		List of leaves of the corresponding tree in string format
 	"""
 
-	if isinstance(tree, Cassiopeia_Tree.Cassiopeia_Tree):
-		tree = tree.get_network()
-
+	assert isinstance(tree, nx.DiGraph)
 
 	source = [x for x in tree.nodes() if tree.in_degree(x)==0][0]
 

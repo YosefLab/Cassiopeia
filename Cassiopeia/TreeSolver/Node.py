@@ -59,6 +59,10 @@ class Node:
 				return -1
 		return count
 
+	def __print__(self):
+
+		print(self.name, self.char_string)
+
 	# def __eq__(self, other):
 
 	# 	if isinstance(other, Node):

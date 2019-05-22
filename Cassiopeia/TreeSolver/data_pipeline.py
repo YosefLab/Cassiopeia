@@ -132,13 +132,13 @@ def newick_to_network(newick_filepath, f=1):
 
 	# relabel empty-labeled nodes
 	i = 1
-	if tree.name == "":
-		tree.name = "i" + str(i)
+	if tree.name == "" or tree.name == "state-node":
+		tree.name = "state-node" + str(i)
 		i += 1
 
 	for n in tree:
-		if n.name == '':
-			n.name = "i" + str(i)
+		if n.name == '' or n.name == "state-node":
+			n.name = "state-node" + str(i)
 			i += 1
 
 	nodes = [n.name for n in tree] + [tree.name]
@@ -153,8 +153,8 @@ def newick_to_network(newick_filepath, f=1):
 		visited.append(p)
 
 		for c in p.children:
-			if c.name  == '':
-				c.name = "i" + str(i)
+			if c.name  == '' or c.name == "state-node":
+				c.name = "state-node" + str(i)
 				i += 1
 			if c not in visited:
 				parent_stack.append(c)

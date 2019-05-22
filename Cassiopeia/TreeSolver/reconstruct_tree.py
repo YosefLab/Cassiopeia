@@ -24,7 +24,11 @@ import os
 
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.simulation_tools import *
+from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import *
+from Cassiopeia.TreeSolver.Node import Node
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
+
 # from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
 
 import Cassiopeia as sclt
@@ -149,9 +153,10 @@ def main():
 
     stem = ''.join(char_fp.split(".")[:-1])
 
-    cm = pd.read_csv(char_fp, sep='\t', index_col=0)
+    cm = pd.read_csv(char_fp, sep='\t', index_col=0, dtype=str)
     cm_uniq = cm.drop_duplicates(inplace=False)
 
+    cm_lookup = list(cm.apply(lambda x: "|".join(x.values), axis=1))
     newick = ""
 
     prior_probs = None
@@ -316,17 +321,14 @@ def main():
         out_stem = "".join(out_fp.split(".")[:-1])
 
         rdict = {}
-        for n in nj_net:
-            spl = n.split("_")
-            nn = Node('state-node', spl[0].split("|"), is_target = False)
-            if len(spl) > 1:
-                nn.pid = spl[1] 
-            if spl[0] in cm.index.values:
-                nn.is_target = True
-            rdict[n] = nn
+        for n in nj_net: 
+            if n.char_string in cm_lookup:
+                n.is_target = True
+            #rdict[n] = nn
 
-        state_tree = nx.relabel_nodes(nj_net, rdict)
+        #state_tree = nx.relabel_nodes(nj_net, rdict)
 
+        state_tree = nj_net
         ret_tree =  Cassiopeia_Tree(method='neighbor-joining', network=state_tree, name='Cassiopeia_state_tree')
 
         pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
@@ -372,10 +374,8 @@ def main():
 
         weights = construct_weights(infile, weights_fn)
 
-        p = subprocess.Popen("touch outfile.txt")
-        pid, ecode = os.waitpd(p.pid, 0)
-        p = subprocess.Popen("touch outtree.txt")
-        pid, ecode = os.waitpid(p.pid, 0)
+        os.system("touch outfile")
+        os.system("touch outtree")
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'

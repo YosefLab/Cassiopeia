@@ -4,7 +4,8 @@ import random
 from tqdm import tqdm
 
 from simulation_utils import node_to_string
-from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
+from Cassiopeia.TreeSolver.Node import Node
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
 def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1, dropout=True):
 	"""

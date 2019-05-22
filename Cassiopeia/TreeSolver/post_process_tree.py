@@ -17,7 +17,7 @@ import pylab
 import copy
 
 from .data_pipeline import *
-from Cassiopeia.TreeSolver import Node
+from Cassiopeia.TreeSolver.Node import Node
 
 def prune_and_clean_leaves(G):
     """
@@ -224,34 +224,28 @@ def post_process_tree(G, cm, alg):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("netfp", type=str, help="Networkx pickle file")
+    parser.add_argument("treefp", type=str, help="Cassiopeia Tree Pickle File")
     parser.add_argument("char_fp", type=str, help="Character matrix")
     parser.add_argument("out_fp", type=str, help="Output file -- will be written as a newick file!")
-    parser.add_argument("alg", type=str, help="Algorithm used to reconstruct this tree")
-
-    algorithms = ["greedy", "hybrid", "ilp", "neighbor-joining", "camin-sokal"]
 
     args = parser.parse_args()
-    netfp = args.netfp
+    treefp = args.treefp
     char_fp = args.char_fp
-    alg = args.alg
     out_fp = args.out_fp
-
-    if alg not in algorithms:
-        raise Exception("Algorithm not recognized, use one of: " + str(algorithms))
 
     if out_fp.split(".")[-1] != 'txt':
 
         print("Warning! output is a newick file")
 
-    G = nx.read_gpickle(netfp)
+    tree = pic.load(open(treefp, "rb"))
     cm = pd.read_csv(char_fp, sep='\t', index_col = 0)
 
-    G = post_process_tree(G, cm, alg)
+    tree2 = tree.post_process(cm = cm)
+    G = tree2.network
 
     stem = ".".join(out_fp.split(".")[:-1])
 
-    pic.dump(G, open(stem + ".pkl", "wb"))
+    pic.dump(tree2, open(stem + ".pkl", "wb"))
 
     newick = convert_network_to_newick_format(G)
 

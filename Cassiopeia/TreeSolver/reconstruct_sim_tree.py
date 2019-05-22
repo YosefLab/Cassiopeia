@@ -28,6 +28,7 @@ import argparse
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
 from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import *
+from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import Cassiopeia_Tree, Node
 
 import Cassiopeia as sclt
@@ -163,11 +164,6 @@ def main():
 
     score_triplets = (not args.no_triplets)
 
-    name = netfp.split("/")[-1]
-    spl = name.split("_")
-    param = spl[-3]
-    run = spl[-1].split(".")[0]
-
     prior_probs = None
     if args.mutation_map != "":
 
@@ -296,16 +292,16 @@ def main():
 
         cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
 
-        rdict = {}
+        #rdict = {}
         for n in nj_net:
-            spl = n.split("_")
-            nn = Node('state-node', spl[0].split("|"), is_target = False)
-            if len(spl) > 1:
-                nn.pid = spl[1] 
-            if spl[0] in cm_lookup.keys():
-                nn.is_target = True
-                nn.name = cm_lookup[spl[0]]
-            rdict[n] = nn
+            #spl = n.split("_")
+            #nn = Node('state-node', spl[0].split("|"), is_target = False)
+            #if len(spl) > 1:
+            #    nn.pid = spl[1] 
+            if n.char_string in cm_lookup.keys():
+                n.is_target = True
+                #nn.name = cm_lookup[spl[0]]
+            # rdict[n] = nn
 
 
         out = stem + "_nj.pkl"
