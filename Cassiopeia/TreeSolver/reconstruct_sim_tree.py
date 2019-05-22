@@ -169,6 +169,7 @@ def main():
 
         prior_probs = pic.load(open(args.mutation_map, "rb"))
 
+    name = netfp.split("/")[-1]
     stem = '.'.join(name.split(".")[:-1])
 
     true_network = nx.read_gpickle(netfp)
@@ -184,21 +185,6 @@ def main():
         if t.char_string not in seen_charstrings:
             seen_charstrings.append(t.char_string)
             target_nodes_uniq.append(t)
-
-
-    #target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
-
-    # target_nodes = [n for n in true_network if n.is_target]
-
-    #k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
-    #s_to_char = dict(zip(k, target_nodes))
-    #char_to_s = dict(zip(target_nodes, k))
-
-    #unique_ii = np.unique(target_nodes, return_index=True)
-    #target_nodes_uniq = np.array(target_nodes)[unique_ii[1]]
-    #target_nodes_original_network_uniq = np.array(target_nodes_original_network)[unique_ii[1]]
-
-    #string_to_sample = dict(zip(target_nodes, target_nodes_original_network))
 
     if args.greedy:
 
