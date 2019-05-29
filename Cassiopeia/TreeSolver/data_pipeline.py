@@ -164,7 +164,7 @@ def newick_to_network(newick_filepath, f=1):
 	return G
 
 
-def get_indel_props(at):
+def get_indel_props(at, group_var = ['intBC']):
 	"""
 	Given an alleletable file, this function will split the alleletable into independent
 	lineage groups and estimate the indel formation probabilities. This is done by
@@ -181,7 +181,7 @@ def get_indel_props(at):
 
 	uniq_alleles = np.union1d(at["r1"], np.union1d(at["r2"], at["r3"]))
 
-	groups = at.groupby("intBC").agg({"r1": "unique", "r2": "unique", "r3": "unique"})
+	groups = at.groupby(group_var).agg({"r1": "unique", "r2": "unique", "r3": "unique"})
 
 	count = defaultdict(int)
 

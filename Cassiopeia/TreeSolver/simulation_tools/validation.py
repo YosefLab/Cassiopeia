@@ -4,9 +4,9 @@ import random
 
 from tqdm import tqdm
 
-from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
 from Cassiopeia.TreeSolver.lineage_solver.solver_utils import node_parent
-from Cassiopeia.TreeSolver.simulation_tools.utilities import tree_collapse
+from Cassiopeia.TreeSolver.utilities import tree_collapse
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
 def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False):
 	"""
@@ -24,10 +24,8 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 	:return:
 	"""
 
-	assert isinstance(simulated_tree, Cassiopeia_Tree.Cassiopeia_Tree) and isinstance(reconstructed_tree, Cassiopeia_Tree.Cassiopeia_Tree)
-
 	success_rate = 0
-	targets_original_network = [n for n in get_leaves_of_tree(simulated_tree)]
+	targets_original_network = [n for n in simulated_tree.get_leaves()]
 	correct_classifications = defaultdict(int)
 	frequency_of_triplets = defaultdict(int)
 	simulated_tree = tree_collapse(simulated_tree)
@@ -37,8 +35,7 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 	#dct = {node.split('_')[0]:node for node in simulated_tree.nodes()}
 	#targets_original_network = [dct[node.split('_')[0]] for node in targets_original_network]
 
-	stree = Cassiopeia_Tree.Cassiopeia_Tree('simulated', network = simulated_tree)
-	#rtree = Cassiopeia_Tree.Cassiopeia_Tree('simulated', network = reconstructed_tree)
+	stree = Cassiopeia_Tree('simulated', network = simulated_tree)
 
 	for _ in range(0, number_of_trials):
 		# Sampling triplets a,b, and c without replacement

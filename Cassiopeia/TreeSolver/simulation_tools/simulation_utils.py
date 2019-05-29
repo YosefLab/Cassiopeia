@@ -12,7 +12,7 @@ def node_to_string(sample):
 	"""
 	return "|".join(sample[0]) + "_" + str(sample[1])
 
-def get_leaves_of_tree(tree, clip_identifier=False):
+def get_leaves_of_tree(tree):
 	"""
 	Given a tree, returns all leaf nodes with/without their identifiers
 

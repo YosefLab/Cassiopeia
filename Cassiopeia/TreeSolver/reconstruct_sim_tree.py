@@ -26,7 +26,7 @@ import os
 import argparse
 
 from Cassiopeia.TreeSolver.lineage_solver import *
-from Cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
+from Cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format, newick_to_network
 from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import *
 from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import Cassiopeia_Tree, Node
@@ -302,18 +302,28 @@ def main():
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
 
+
+        samples_to_cells = {}
+        indices = []
+        for i, n in zip(range(len(target_nodes_uniq)), target_nodes_uniq):
+            samples_to_cells["s" + str(i)] = n.name
+            indices.append(n.name)
+            n.name = str(i)
+
         infile = ''.join(name.split(".")[:-1]) + '_cs_infile.txt'
         fn = ''.join(name.split(".")[:-1]) + '_cs_phylo.txt'
         weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
         write_leaves_to_charmat(target_nodes_uniq, fn)
 
         script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
-        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
+        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile 
         pi = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(pi.pid, 0)
 
         weights = construct_weights(infile, weights_fn)
 
+        os.system("touch outfile")
+        os.system("touch outtree")
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'
@@ -353,6 +363,32 @@ def main():
         cmd += " < " + responses + " > screenout"
         p2 = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p2.pid, 0)
+
+        newick_str = ""
+        with open(consense_outtree, "r") as f:
+            for l in f:
+                l = l.strip()
+                newick_str += l
+
+        cm = pd.read_csv(fn, sep='\t', index_col = 0)
+        cm.index = indices
+
+        cs_net = newick_to_network(newick_str)
+
+        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
+
+        cs_net = fill_in_tree(cs_net, cm)
+
+        cs_net = tree_collapse(cs_net)
+
+        cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
+
+        for n in cs_net:
+            if n.char_string in cm_lookup.keys():
+                n.is_target = True
+
+        out = stem + "_cs.pkl"
+        pic.dump(cs_net, open(name.replace("true", "cs"), "wb"))
 
         os.system("rm " + outfile)
         os.system("rm " + responses)
