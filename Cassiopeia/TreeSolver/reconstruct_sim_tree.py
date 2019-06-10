@@ -142,7 +142,8 @@ def main():
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
-    parser.add_argument("--time_limit", type=int, default=1500, help="Time limit for ILP convergence")
+    parser.add_argument("--time_limit", type=int, default=-1, help="Time limit for ILP convergence")
+    parser.add_argument("--iter_limit", type = int, default = -1, help="Max number of iterations for ILP solver")
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
     parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
@@ -150,17 +151,22 @@ def main():
     parser.add_argument("--num_threads", type=int, default=1)
     parser.add_argument("--no_triplets", action="store_true", default=False)
     parser.add_argument("--max_neighborhood_size", type=str, default=3000)
+    parser.add_argument("--out_fp", type=str, default=None, help="optional output file")
+    parser.add_argument("--seed", type = int, default = None, help="Random seed for ILP solver")
 
     args = parser.parse_args()
 
     netfp = args.netfp
+    outfp = args.out_fp
     t = args.typ
     verbose = args.verbose
 
     cutoff = args.cutoff
     time_limit = args.time_limit
+    iter_limit = args.iter_limit
     num_threads = args.num_threads
     max_neighborhood_size = args.max_neighborhood_size
+    seed = args.seed
 
     score_triplets = (not args.no_triplets)
 
@@ -177,7 +183,7 @@ def main():
     if isinstance(true_network, Cassiopeia_Tree):
         true_network = true_network.get_network()
 
-    target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
+    target_nodes = get_leaves_of_tree(true_network)
 
     target_nodes_uniq = []
     seen_charstrings = []
@@ -197,7 +203,9 @@ def main():
 
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
-        pic.dump(net, open(name.replace("true", "greedy"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'greedy')
+        pic.dump(net, open(outfp, "wb"))
 
 
     elif args.hybrid:
@@ -206,11 +214,13 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
         net = reconstructed_network_hybrid.get_network()
 
-        pic.dump(net, open(name.replace("true", "hybrid"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'hybrid')
+        pic.dump(net, open(outfp, "wb"))
 
 
     elif args.ilp:
@@ -220,11 +230,13 @@ def main():
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
         reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, 
-                                    time_limit=time_limit, max_neighborhood_size = max_neighborhood_size)
+                                    time_limit=time_limit, max_neighborhood_size = max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
         net = reconstructed_network_ilp.get_network()
         # reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
-        pic.dump(net, open(name.replace("true", "ilp"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'ilp')
+        pic.dump(net, open(outfp, 'wb'))
 
 
     elif args.neighbor_joining:
@@ -290,8 +302,9 @@ def main():
             # rdict[n] = nn
 
 
-        out = stem + "_nj.pkl"
-        pic.dump(nj_net, open(name.replace("true", "nj"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'nj')
+        pic.dump(nj_net, open(outfp, 'wb'))
         # Phylo.write(tree, out, 'newick')
 
         os.system("rm " + infile)
@@ -387,8 +400,9 @@ def main():
             if n.char_string in cm_lookup.keys():
                 n.is_target = True
 
-        out = stem + "_cs.pkl"
-        pic.dump(cs_net, open(name.replace("true", "cs"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'cs')
+        pic.dump(cs_net, open(outfp, 'wb'))
 
         os.system("rm " + outfile)
         os.system("rm " + responses)

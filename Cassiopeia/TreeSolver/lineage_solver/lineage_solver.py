@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 
 import concurrent.futures
+import random
 import functools
 import multiprocessing
 import networkx as nx
@@ -16,7 +17,7 @@ from .solver_utils import build_potential_graph_from_base_graph
 from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from Cassiopeia.TreeSolver.Node import Node
 
-def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000):
+def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, seed=None, num_iter=-1):
 	"""
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
 	accounting the given target nodes
@@ -48,6 +49,9 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 	node_name_dict = dict(zip([n.split("_")[0] for n in target_nodes], [n + "_target" for n in target_nodes]))
 
+	if seed is not None:
+		np.random.seed(seed)
+		random.seed(seed)
 	# Account for possible cases where the state was not observed in the frequency table, thus we
 	# set the value of this prior probability to the minimum probability observed
 	character_mutation_mapping = defaultdict(int)
@@ -77,7 +81,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	if method == "ilp":
 
 
-		subgraph, r, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size)
+		subgraph, r, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size, seed = seed, num_iter=num_iter)
 		clean_ilp_network(subgraph)
 
 		rdict = {}
@@ -109,7 +113,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 		# so the composition step doesn't get confused when trying to join to the root.
 		network = nx.relabel_nodes(network, node_name_dict)
 
-		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, None, time_limit, 1, max_neighborhood_size) for root, targets in target_sets]
+		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, None, time_limit, 1, max_neighborhood_size, seed, num_iter) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
 			res, r, pid = future.result()
@@ -177,7 +181,7 @@ def reraise_with_stack(func):
 	return wrapped
 
 @reraise_with_stack
-def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size):
+def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size, seed=None, num_iter=-1):
 	"""
 	Sub-Function used for multi-threading in hybrid method
 
@@ -230,7 +234,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	_targets = map(lambda x: encoder[x], targets)
 
 	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
-	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads)[0]
+	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads, seed=seed, num_iter=num_iter)[0]
 
 	subgraph = nx.relabel_nodes(subgraph, decoder)
 

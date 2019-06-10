@@ -7,7 +7,7 @@ import datetime
 
 
 def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
-						   MIPGap = .15, num_threads = 1, time_limit = -1):
+						   MIPGap = .15, num_threads = 1, time_limit = -1, seed = None, num_iter = -1):
     """
     Given a Steienr Tree problem instance, returns a minimum weight subgraph that satisfies the demands.
 
@@ -35,6 +35,12 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
     #model.params.Method = 3
     #AW: Alex chose the non-deterministic concurrent but I chose the deterministic concurrent for reproducibility
     model.params.Method = 4
+
+    if seed is not None:
+        model.params.Seed = seed
+
+    if num_iter >= 0:
+        model.params.IterationLimit = num_iter
 
     if time_limit >= 0:
         model.params.TimeLimit = time_limit
