@@ -17,7 +17,8 @@ from .solver_utils import build_potential_graph_from_base_graph
 from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from Cassiopeia.TreeSolver.Node import Node
 
-def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, seed=None, num_iter=-1):
+def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, 
+							seed=None, num_iter=-1):
 	"""
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
 	accounting the given target nodes
@@ -76,7 +77,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	# clip identifier for now, but make sure to add later
 	target_nodes = [n.split("_")[0] for n in target_nodes]
 
-	target_nodes = list(set(target_nodes))
+	#target_nodes = list(set(target_nodes))
 	master_root = root_finder(target_nodes)
 	if method == "ilp":
 

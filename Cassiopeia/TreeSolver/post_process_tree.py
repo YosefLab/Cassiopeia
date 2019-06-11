@@ -115,7 +115,7 @@ def assign_samples_to_charstrings(G, cm):
 
     root = [n for n in G if G.in_degree(n) == 0][0]
 
-    cm["lookup"] = cm.apply(lambda x: "|".join(x), axis=1)
+    cm["lookup"] = cm.astype(str).apply(lambda x: "|".join(x), axis=1)
 
     for n in G:
 

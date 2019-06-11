@@ -168,6 +168,10 @@ def main():
     max_neighborhood_size = args.max_neighborhood_size
     seed = args.seed
 
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+
     score_triplets = (not args.no_triplets)
 
     prior_probs = None
