@@ -196,7 +196,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 				temp_source_nodes = list(np.unique(temp_source_nodes))
 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
-					return prev_network, max_neighbor_dist
+					return prev_network, max_neighbor_dist - 1
 
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:

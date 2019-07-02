@@ -156,6 +156,7 @@ def main():
     parser.add_argument("char_fp", type = str, help="character_matrix")
     parser.add_argument("out_fp", type=str, help="output file name")
     parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
+    parser.add_argument("--neighbor_joining_weighted", action='store_true', default=False)
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
@@ -302,27 +303,62 @@ def main():
 
     elif args.neighbor_joining:
 
-
-        # cm.drop_duplicates(inplace=True) 
-
         if verbose:
             print("Running Neighbor-Joining on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
-        # fn = stem + "phylo.txt"
-        # infile = stem + "infile.txt"
+        fn = stem + "phylo.txt"
+        infile = stem + "infile.txt"
         
-        # cm.to_csv(fn, sep='\t')
+        cm_uniq.to_csv(fn, sep='\t')
         
-        # script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
-        # cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
-        # p = subprocess.Popen(cmd, shell=True)
-        # pid, ecode = os.waitpid(p.pid, 0)
+        script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
+        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
+        p = subprocess.Popen(cmd, shell=True)
+        pid, ecode = os.waitpid(p.pid, 0)
         
-        # aln = AlignIO.read(infile, "phylip-relaxed")
+        aln = AlignIO.read(infile, "phylip-relaxed")
 
-        # calculator = DistanceCalculator('identity')
-        # constructor = DistanceTreeConstructor(calculator, 'nj')
-        # tree = constructor.build_tree(aln)
+        calculator = DistanceCalculator('identity')
+        constructor = DistanceTreeConstructor(calculator, 'nj')
+        tree = constructor.build_tree(aln)
+       
+        tree.root_at_midpoint()
+
+        nj_net = Phylo.to_networkx(tree)
+
+        # convert labels to characters for writing to file 
+        i = 0
+        for n in nj_net:
+
+            if n.name is None:
+                n.name = "internal" + str(i)
+                i += 1
+
+      
+        # convert labels to strings, not Bio.Phylo.Clade objects
+        c2str = map(lambda x: x.name, list(nj_net.nodes()))
+        c2strdict = dict(zip(list(nj_net.nodes()), c2str))
+        nj_net = nx.relabel_nodes(nj_net, c2strdict)
+
+        nj_net = fill_in_tree(nj_net, cm)
+
+        nj_net = tree_collapse(nj_net)
+
+        Phylo.write(tree, out_fp, 'newick')
+        pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
+
+        newick = convert_network_to_newick_format(nj_net)
+
+        with open(out_fp, "w") as f:
+           f.write(newick)
+
+        os.system("rm " + infile)
+        os.system("rm " + fn)
+
+    elif args.neighbor_joining_weighted:
+
+        if verbose:
+            print("Running Neighbor-Joining with Weighted Scoring on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
         dm = compute_distance_mat(cm_uniq.values.astype(np.str), cm_uniq.shape[0])
         
@@ -338,31 +374,6 @@ def main():
         nj_net = fill_in_tree(tree, cm_uniq)
         nj_net = tree_collapse(nj_net)
 
-        #nj_net = tree_collapse(nj_net)
-        #print("num targets: ", len([n for n in nj_net if n.is_target]))
-
-       
-        # tree.root_at_midpoint()
-
-        # nj_net = Phylo.to_networkx(tree)
-
-        # # convert labels to characters for writing to file 
-        # i = 0
-        # for n in nj_net:
-
-        #     if n.name is None:
-        #         n.name = "internal" + str(i)
-        #         i += 1
-
-      
-        # # convert labels to strings, not Bio.Phylo.Clade objects
-        # c2str = map(lambda x: x.name, list(nj_net.nodes()))
-        # c2strdict = dict(zip(list(nj_net.nodes()), c2str))
-        # nj_net = nx.relabel_nodes(nj_net, c2strdict)
-
-        # nj_net = fill_in_tree(nj_net, cm)
-
-        # nj_net = tree_collapse(nj_net)
 
         out_stem = "".join(out_fp.split(".")[:-1])
 
@@ -382,17 +393,6 @@ def main():
 
         with open(out_fp, "w") as f:
             f.write(newick)
-
-        # Phylo.write(tree, out_fp, 'newick')
-        #pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
-
-        #newick = convert_network_to_newick_format(nj_net)
-
-        #with open(out_fp, "w") as f:
-        #    f.write(newick)
-
-        #os.system("rm " + infile)
-        #os.system("rm " + fn)
 
     elif args.camin_sokal:
         
