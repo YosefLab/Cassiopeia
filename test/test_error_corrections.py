@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from process import filterMoleculeTables
+from Cassiopeia.ProcessingPipeline.process import filterMoleculeTables
 
 def test_umi_errcorr():
 
@@ -66,7 +66,7 @@ def test_allele_corr():
 
     corrected = filterMoleculeTables.pickAlleles(sdata_alleles, "", verbose=False)
 
-    assert sdata_true.shape == corrected.shape
+    assert corrected.shape == sdata_true.shape
 
     # Let's make sure that each integration barcode maps to the same allele across
     # the two datasets

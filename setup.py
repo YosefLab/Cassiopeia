@@ -53,7 +53,7 @@ setup(
             'console_scripts': ['scLT = Cassiopeia.__main__:main',
                                 'reconstruct-lineage = Cassiopeia.TreeSolver.reconstruct_tree:main',
                                 'post-process-tree = Cassiopeia.TreeSolver.post_process_tree:main',
-                                'stress-test = Cassiopeia.TreeSolver.stress_test:main',
+                                'stress-test = Cassiopeia.TreeSolver.reconstruct_sim_tree:main',
                                 'simulate-tree = Cassiopeia.TreeSolver.simulate_tree:main',
                                 'call-lineages = Cassiopeia.ProcessingPipeline.process.lineageGroup:main',
                                 'filter-molecule-table = Cassiopeia.ProcessingPipeline.process.filterMoleculeTables:main']
@@ -80,4 +80,6 @@ setup(
         url="https://github.com/YosefLab/Cassiopeia",
         version='1.0.0',
         zip_safe=False,
+        test_suite='nose.collector',
+        test_require=['nose']
 )

@@ -14,7 +14,10 @@ import networkx as nx
 from collections import defaultdict
 import pylab
 
-from Cassiopeia.TreeSolver import convert_network_to_newick_format
+import copy
+
+from .data_pipeline import *
+from Cassiopeia.TreeSolver.Node import Node
 
 def prune_and_clean_leaves(G):
     """
@@ -43,7 +46,7 @@ def prune_and_clean_leaves(G):
         for n in _leaves:
             # if we have this case, where the leaf doesn't have a sample label in the name, we need to remove this path
             #if "target" not in n:
-            if "target" not in n:
+            if not n.is_target:
                 nodes_to_remove.append(n)
 
         return nodes_to_remove
@@ -56,36 +59,38 @@ def prune_and_clean_leaves(G):
         nodes_to_remove = prune_leaves(G)
 
     # remove character strings from node name
-    node_dict = {}
-    for n in tqdm(G.nodes, desc="removing character strings from sample names"):
-        spl = n.split("_")
-        if "|" in spl[0] and "target" in n:
-            nn = "_".join(spl[1:])
-            node_dict[n] = nn
+    # node_dict = {}
+    # for n in tqdm(G.nodes, desc="removing character strings from sample names"):
+    #     spl = n.split("_")
+    #     if "|" in spl[0] and "target" in n:
+    #         nn = "_".join(spl[1:])
+    #         node_dict[n] = nn
 
-    G = nx.relabel_nodes(G, node_dict)
+    # G = nx.relabel_nodes(G, node_dict)
 
     node_dict2 = {}
     for n in G.nodes:
-        spl = n.split("_")
-        if "target" in n:
-            if spl[-1] == "target":
-                name = "_".join(spl[:-1])
-            else:
-                name = "_".join(spl[:-2])
+       # spl = n.split("_")
+        if n.is_target:
+            #if spl[-1] == "target":
+            #    name = "_".join(spl[:-1])
+            #else:
+            #    name = "_".join(spl[:-2])
 
             # if this target is a leaf, just rename it
             # else we must add an extra 'redundant' leaf here
-            if G.out_degree(n) == 0:
-                node_dict2[n] = name
-            else:
-                new_nodes.append(name)
-                new_edges.append((n, name))
+            if G.out_degree(n) != 0:
+            #    node_dict2[n] = name
+                n.is_target = False
+                new_node = Node(n.name, n.get_character_vec(), is_target=True)
+            # else:
+                new_nodes.append(new_node)
+                new_edges.append((n, new_node))
 
     G.add_nodes_from(new_nodes)
     G.add_edges_from(new_edges)
 
-    G = nx.relabel_nodes(G, node_dict2)
+    # G = nx.relabel_nodes(G, node_dict2)
 
     return G
 
@@ -110,34 +115,20 @@ def assign_samples_to_charstrings(G, cm):
 
     root = [n for n in G if G.in_degree(n) == 0][0]
 
-    cm["lookup"] = cm.apply(lambda x: "|".join(x), axis=1)
+    cm["lookup"] = cm.astype(str).apply(lambda x: "|".join(x), axis=1)
 
     for n in G:
 
-        if n in cm['lookup'].values:
-            _nodes  = cm.loc[cm["lookup"] == n].index
-            _nodes = map(lambda x: x + "_target", _nodes)
+        if n.get_character_string() in cm['lookup'].values and n.is_target:
+            n.is_target = False
+            sub_cm  = cm.loc[cm["lookup"] == n.get_character_string()]
+            _nodes = sub_cm.apply(lambda x: Node(x.name, x.values, is_target=True), axis=1)
             for new_node in _nodes:
                 new_nodes.append(new_node)
                 new_edges.append((n, new_node))
 
     G.add_nodes_from(new_nodes)
     G.add_edges_from(new_edges)
-
-    #_leaves = [n for n in G if G.out_degree(n) == 0]
-
-    #for n in _leaves:
-    #    if n not in cm.index:
-    #        paths = nx.all_simple_paths(G, root, n)
-    #        for p in paths:
-    #            for n in p:
-    #                if n != root and G.out_degree(n) <= 1:
-    #                    nodes_to_remove.append(n)
-
-    #for n in set(nodes_to_remove):
-    #    G.remove_node(n)
-
-
 
     return G
 
@@ -176,7 +167,7 @@ def add_redundant_leaves(G, cm):
 
     # create lookup value for duplicates
     cm["lookup"] = cm.astype('str').apply('|'.join, axis=1)
-    net_nodes = np.intersect1d(cm.index, [n for n in G])
+    net_nodes = np.intersect1d(cm.index, [n.name for n in G])
 
     uniq = cm.loc[net_nodes]
 
@@ -193,6 +184,8 @@ def add_redundant_leaves(G, cm):
 
         try:
             _leaf = uniq.index[uniq["lookup"] == cm.loc[n]["lookup"]][0]
+
+            new_node = Node(str(n), cm.loc[n].values, is_target=True)
 
             parents = list(G.predecessors(_leaf))
             for p in parents:
@@ -219,11 +212,9 @@ def post_process_tree(G, cm, alg):
         Post-Processed Tree as a networkx object
     """
 
-    if alg == "greedy":
+    
+    if alg in ['greedy', 'hybrid', 'ilp', 'neighbor-joining', 'nj']:
         G = assign_samples_to_charstrings(G, cm)
-        G = prune_and_clean_leaves(G)
-
-    if alg == "hybrid" or alg == "ilp":
         G = prune_and_clean_leaves(G)
 
     G = add_redundant_leaves(G, cm)
@@ -233,34 +224,28 @@ def post_process_tree(G, cm, alg):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("netfp", type=str, help="Networkx pickle file")
+    parser.add_argument("treefp", type=str, help="Cassiopeia Tree Pickle File")
     parser.add_argument("char_fp", type=str, help="Character matrix")
     parser.add_argument("out_fp", type=str, help="Output file -- will be written as a newick file!")
-    parser.add_argument("alg", type=str, help="Algorithm used to reconstruct this tree")
-
-    algorithms = ["greedy", "hybrid", "ilp", "neighbor-joining", "camin-sokal"]
 
     args = parser.parse_args()
-    netfp = args.netfp
+    treefp = args.treefp
     char_fp = args.char_fp
-    alg = args.alg
     out_fp = args.out_fp
-
-    if alg not in algorithms:
-        raise Exception("Algorithm not recognized, use one of: " + str(algorithms))
 
     if out_fp.split(".")[-1] != 'txt':
 
         print("Warning! output is a newick file")
 
-    G = nx.read_gpickle(netfp)
+    tree = pic.load(open(treefp, "rb"))
     cm = pd.read_csv(char_fp, sep='\t', index_col = 0)
 
-    G = post_process_tree(G, cm, alg)
+    tree2 = tree.post_process(cm = cm)
+    G = tree2.network
 
     stem = ".".join(out_fp.split(".")[:-1])
 
-    pic.dump(G, open(stem + ".pkl", "wb"))
+    pic.dump(tree2, open(stem + ".pkl", "wb"))
 
     newick = convert_network_to_newick_format(G)
 

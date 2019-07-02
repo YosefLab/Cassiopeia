@@ -13,6 +13,9 @@ import math
 
 import pickle as pic
 
+# from .Cassiopeia_Tree import Cassiopeia_Tree
+# from .Node import Node
+
 def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance = 0.1):
 	"""
 	Given an alleletable file, converts the corresponding cell samples to a string format
@@ -97,8 +100,12 @@ def convert_network_to_newick_format(graph):
 
 	def _to_newick_str(g, node):
 		is_leaf = g.out_degree(node) == 0
-		return '%s' % (node,) if is_leaf else (
-					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + node)
+		if node.name == 'internal':
+			_name = node.get_character_string()
+		else:
+			_name = node.name
+		return '%s' % (_name,) if is_leaf else (
+					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + _name)
 
 	def to_newick_str(g, root=0):  # 0 assumed to be the root
 		return _to_newick_str(g, root) + ';'
@@ -125,13 +132,13 @@ def newick_to_network(newick_filepath, f=1):
 
 	# relabel empty-labeled nodes
 	i = 1
-	if tree.name == "":
-		tree.name = "i" + str(i)
+	if tree.name == "" or tree.name == "state-node":
+		tree.name = "state-node" + str(i)
 		i += 1
 
 	for n in tree:
-		if n.name == '':
-			n.name = "i" + str(i)
+		if n.name == '' or n.name == "state-node":
+			n.name = "state-node" + str(i)
 			i += 1
 
 	nodes = [n.name for n in tree] + [tree.name]
@@ -146,8 +153,8 @@ def newick_to_network(newick_filepath, f=1):
 		visited.append(p)
 
 		for c in p.children:
-			if c.name  == '':
-				c.name = "i" + str(i)
+			if c.name  == '' or c.name == "state-node":
+				c.name = "state-node" + str(i)
 				i += 1
 			if c not in visited:
 				parent_stack.append(c)
@@ -157,7 +164,7 @@ def newick_to_network(newick_filepath, f=1):
 	return G
 
 
-def get_indel_props(at):
+def get_indel_props(at, group_var = ['intBC']):
 	"""
 	Given an alleletable file, this function will split the alleletable into independent
 	lineage groups and estimate the indel formation probabilities. This is done by
@@ -174,7 +181,7 @@ def get_indel_props(at):
 
 	uniq_alleles = np.union1d(at["r1"], np.union1d(at["r2"], at["r3"]))
 
-	groups = at.groupby("intBC").agg({"r1": "unique", "r2": "unique", "r3": "unique"})
+	groups = at.groupby(group_var).agg({"r1": "unique", "r2": "unique", "r3": "unique"})
 
 	count = defaultdict(int)
 

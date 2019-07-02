@@ -11,14 +11,14 @@ import os
 
 import argparse
 
-from Cassiopeia.TreeSolver.simulation_tools import *
-from Cassiopeia.TreeSolver import *
+from Cassiopeia.TreeSolver.simulation_tools.validation import check_triplets_correct
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
 def score_triplets(true_network, reconstructed_network, modified = True, min_size_depth = 20, number_of_trials = 50000):
 
     tot_tp = 0
     if modified:
-        correct_class, freqs = check_triplets_correct2(true_network, reconstructed_network,
+        correct_class, freqs = check_triplets_correct(true_network, reconstructed_network,
                                 number_of_trials=number_of_trials, dict_return=True)
 
         num_consid = 0
@@ -30,15 +30,14 @@ def score_triplets(true_network, reconstructed_network, modified = True, min_siz
                 num_consid += 1
                 tot_tp += correct_class[k] / freqs[k]
 
-            #tot_tp += tp / nf
-
         tot_tp /= num_consid
 
     else:
 
-        tot_tp = check_triplets_correct2(true_network, reconstructed_network)
+        tot_tp = check_triplets_correct(true_network, reconstructed_network, number_of_trials = number_of_trials)
 
     return tot_tp
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -47,6 +46,9 @@ def main():
     parser.add_argument("alg", type=str)
     parser.add_argument("typ", type=str)
     parser.add_argument("--modified", action="store_true", default=False)
+    parser.add_argument('--num_trials', '-n', type=int, default=50000, help="Number of tripelts to sample & compare")
+    parser.add_argument("--param", type=int, default=0)
+    parser.add_argument("--run", type=int, default=0)
 
     args = parser.parse_args()
 
@@ -55,72 +57,38 @@ def main():
     alg = args.alg
     t = args.typ
     modified = args.modified
+    num_trials = args.num_trials
+    param = args.param
+    run = args.run
 
-    name = true_netfp.split("/")[-1]
-    spl = name.split("_")
-    param = spl[-3]
-    run = spl[-1].split(".")[0]
-    #param = "na"
+    try:
+        name = true_netfp.split("/")[-1]
+        spl = name.split("_")
+        param = spl[-3]
+        run = spl[-1].split(".")[0]
+    except:
+        print("No extra information provided regarding parameters and run; assuming param and run are 0")
 
     name2 = reconstructed_fp.split("/")[-1]
     spl2 = name2.split("_")
 
     ending = spl2[-1].split(".")[-1]
 
-    #true_network = pic.load(open(true_netfp, "rb"))
-    true_network = nx.read_gpickle(true_netfp)
-    target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
-    target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
+    true_network = pic.load(open(true_netfp, "rb"))
+    reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
 
-    if ending == "pkl" or ending == "pickle":
-
-        #reconstructed_network = nx.read_gpickle(reconstructed_fp)
-        reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
-
-        nodes = [n for n in reconstructed_network.nodes()]
-        encoder = dict(zip(nodes, map(lambda x: x.split("_")[0], nodes)))
-
-        reconstructed_network = nx.relabel_nodes(reconstructed_network, encoder)
-
+    if isinstance(true_network, Cassiopeia_Tree):
+        stree = true_network
     else:
-        k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
-        s_to_char = dict(zip(k, target_nodes))
-        char_to_s = dict(zip(target_nodes, k))
+        stree = Cassiopeia_Tree('simulated', network = true_network)
 
-        reconstructed_tree = next(Phylo.parse(reconstructed_fp, "newick"))
-        reconstructed_tree.rooted = True
-        reconstructed_network = Phylo.to_networkx(reconstructed_tree)
+    if isinstance(reconstructed_network, Cassiopeia_Tree):
+        rtree = reconstructed_network
+    else:
+        rtree = Cassiopeia_Tree('simulated', network = reconstructed_network)
+    tot_tp = score_triplets(stree, rtree, number_of_trials=num_trials, modified = modified)
 
-        i = 1
-        for n in reconstructed_network:
-            if n.name is None:
-                n.name = "i" + str(i)
-                i += 1
-
-        #newick_str = ""
-        #with open(reconstructed_fp, "r") as f:
-        #    for l in f:
-        #        l = l.strip()
-        #        newick_str += l
-
-        #reconstructed_tree = newick_to_network(reconstructed_fp)
-        #reconstructed_tree = newick_to_network(newick_str)
-        #reconstructed_network = tree_collapse(reconstructed_tree)
-
-
-        # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: x.name, reconstructed_network.nodes())
-        c2strdict = dict(zip(reconstructed_network.nodes(), c2str))
-        reconstructed_network  = nx.relabel_nodes(reconstructed_network, c2strdict)
-
-        # convert labels to characters for triplets correct analysis
-        reconstructed_network = nx.relabel_nodes(reconstructed_network, s_to_char)
-        #reconstructed_network = tree_collapse(reconstructed_network)
-
-
-        tot_tp = score_triplets(true_network, reconstructed_network, number_of_trials=50000, modified = modified)
-
-        print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
+    print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
 
 
 if __name__ == "__main__":

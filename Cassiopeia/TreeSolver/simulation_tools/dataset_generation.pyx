@@ -4,6 +4,8 @@ import random
 from tqdm import tqdm
 
 from simulation_utils import node_to_string
+from Cassiopeia.TreeSolver.Node import Node
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
 def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, characters=10, depth=12, subsample_percentage = 0.1, dropout=True):
 	"""
@@ -58,8 +60,17 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 	for node in subsampled_population_for_removal:
 		network.remove_node(node_to_string(node))
 
+	rdict = {}
+	i = 0
+	for n in network.nodes:
+		nn = Node("StateNode" + str(i), n.split("_")[0].split("|"), pid = n.split("_")[1], is_target=False)
+		i += 1
+		rdict[n] = nn
 
-	return network
+	state_tree = nx.relabel_nodes(network, rdict)
+
+
+	return state_tree
 
 def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_map, characters=10, gen_per_dish=7, num_splits = 2, subsample_percentage = 0.1):
 

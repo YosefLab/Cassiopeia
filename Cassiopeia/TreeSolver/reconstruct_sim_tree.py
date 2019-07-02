@@ -26,8 +26,10 @@ import os
 import argparse
 
 from Cassiopeia.TreeSolver.lineage_solver import *
-from Cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
-from Cassiopeia.TreeSolver.simulation_tools import *
+from Cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format, newick_to_network
+from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import *
+from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
+from Cassiopeia.TreeSolver import Cassiopeia_Tree, Node
 
 import Cassiopeia as sclt
 
@@ -39,7 +41,7 @@ def write_leaves_to_charmat(target_nodes, fn):
     needed to run camin-sokal.
     """
 
-    number_of_characters = len(target_nodes[0].split("|"))
+    number_of_characters = len(target_nodes[0].char_string.split("|"))
     with open(fn, "w") as f:
 
         f.write("cellBC")
@@ -48,12 +50,14 @@ def write_leaves_to_charmat(target_nodes, fn):
         f.write("\n")
 
         for n in target_nodes:
-            charstring, sname = n.split("_")
+            charstring, sname = n.char_string, n.name
+
             f.write(sname)
             chars = charstring.split("|")
             for c in chars:
                 f.write("\t" + c)
             f.write("\n")
+
 
 def unique_alignments(aln):
 
@@ -138,7 +142,8 @@ def main():
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
-    parser.add_argument("--time_limit", type=int, default=1500, help="Time limit for ILP convergence")
+    parser.add_argument("--time_limit", type=int, default=-1, help="Time limit for ILP convergence")
+    parser.add_argument("--iter_limit", type = int, default = -1, help="Max number of iterations for ILP solver")
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
     parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
     parser.add_argument("--verbose", action="store_true", default=False, help="output verbosity")
@@ -146,46 +151,50 @@ def main():
     parser.add_argument("--num_threads", type=int, default=1)
     parser.add_argument("--no_triplets", action="store_true", default=False)
     parser.add_argument("--max_neighborhood_size", type=str, default=3000)
+    parser.add_argument("--out_fp", type=str, default=None, help="optional output file")
+    parser.add_argument("--seed", type = int, default = None, help="Random seed for ILP solver")
 
     args = parser.parse_args()
 
     netfp = args.netfp
+    outfp = args.out_fp
     t = args.typ
     verbose = args.verbose
 
     cutoff = args.cutoff
     time_limit = args.time_limit
+    iter_limit = args.iter_limit
     num_threads = args.num_threads
     max_neighborhood_size = args.max_neighborhood_size
+    seed = args.seed
+
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
 
     score_triplets = (not args.no_triplets)
-
-    name = netfp.split("/")[-1]
-    spl = name.split("_")
-    param = spl[-3]
-    run = spl[-1].split(".")[0]
 
     prior_probs = None
     if args.mutation_map != "":
 
         prior_probs = pic.load(open(args.mutation_map, "rb"))
 
+    name = netfp.split("/")[-1]
     stem = '.'.join(name.split(".")[:-1])
 
     true_network = nx.read_gpickle(netfp)
 
-    target_nodes = get_leaves_of_tree(true_network, clip_identifier=True)
-    target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
+    if isinstance(true_network, Cassiopeia_Tree):
+        true_network = true_network.get_network()
 
-    k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
-    s_to_char = dict(zip(k, target_nodes))
-    char_to_s = dict(zip(target_nodes, k))
+    target_nodes = get_leaves_of_tree(true_network)
 
-    unique_ii = np.unique(target_nodes, return_index=True)
-    target_nodes_uniq = np.array(target_nodes)[unique_ii[1]]
-    target_nodes_original_network_uniq = np.array(target_nodes_original_network)[unique_ii[1]]
-
-    string_to_sample = dict(zip(target_nodes, target_nodes_original_network))
+    target_nodes_uniq = []
+    seen_charstrings = []
+    for t in target_nodes:
+        if t.char_string not in seen_charstrings:
+            seen_charstrings.append(t.char_string)
+            target_nodes_uniq.append(t)
 
     if args.greedy:
 
@@ -194,14 +203,13 @@ def main():
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
 
+        net = reconstructed_network_greedy.get_network()
+
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
-        newick = convert_network_to_newick_format(reconstructed_network_greedy)
-        out = stem + "_greedy.txt"
-        #with open(out, "w") as f:
-        #    f.write(newick)
-
-        pic.dump(reconstructed_network_greedy, open(name.replace("true", "greedy"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'greedy')
+        pic.dump(net, open(outfp, "wb"))
 
 
     elif args.hybrid:
@@ -210,21 +218,13 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_original_network_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
+        net = reconstructed_network_hybrid.get_network()
 
-        #out = stem + "_hybrid.pkl"
-        #pic.dump(reconstructed_network_hybrid, open(out, "wb"))
-
-        #newick = convert_network_to_newick_format(reconstructed_network_hybrid)
-
-        #out = stem + "_hybrid.txt"
-        #with open(out, "w") as f:
-        #    f.write(newick)
-
-
-        pic.dump(reconstructed_network_hybrid, open(name.replace("true", "hybrid"), "wb"))
+        if outfp is None:
+            outfp = name.replace('true', 'hybrid')
+        pic.dump(net, open(outfp, "wb"))
 
 
     elif args.ilp:
@@ -233,10 +233,14 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-        reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads)
+        reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, 
+                                    time_limit=time_limit, max_neighborhood_size = max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
-        pic.dump(reconstructed_network_ilp, open(name.replace("true", "ilp"), "wb"))
+        net = reconstructed_network_ilp.get_network()
+        # reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
+        if outfp is None:
+            outfp = name.replace('true', 'ilp')
+        pic.dump(net, open(outfp, 'wb'))
 
 
     elif args.neighbor_joining:
@@ -247,14 +251,14 @@ def main():
 
         infile = ''.join(name.split(".")[:-1]) + 'infile.txt'
         fn = ''.join(name.split(".")[:-1]) + 'phylo.txt'
-        write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
+        write_leaves_to_charmat(target_nodes_uniq, fn)
 
         script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
         cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
         p = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p.pid, 0)
 
-        aln = AlignIO.read(infile, "phylip")
+        aln = AlignIO.read(infile, "phylip-relaxed")
 
         aln = unique_alignments(aln)
 
@@ -264,11 +268,48 @@ def main():
 
         tree = constructor.build_tree(aln)
 
-        out = stem + "_nj.txt"
-        Phylo.write(tree, out, 'newick')
+        tree.root_at_midpoint()
 
-        print(str(param) + "\t" + str(run) + "\t" + "neighbor-joining" + "\t" + str(t) + "\t" + str(time.time() - t0))
+        nj_net = Phylo.to_networkx(tree)
 
+        # convert labels to characters for writing to file 
+        i = 0
+        for n in nj_net:
+
+            if n.name is None:
+                n.name = "internal" + str(i)
+                i += 1
+
+      
+        # convert labels to strings, not Bio.Phylo.Clade objects
+        c2str = map(lambda x: x.name, list(nj_net.nodes()))
+        c2strdict = dict(zip(list(nj_net.nodes()), c2str))
+        nj_net = nx.relabel_nodes(nj_net, c2strdict)
+
+        cm = pd.read_csv(fn, sep='\t', index_col = 0)
+
+        nj_net = fill_in_tree(nj_net, cm)
+
+        nj_net = tree_collapse(nj_net)
+
+        cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
+
+        #rdict = {}
+        for n in nj_net:
+            #spl = n.split("_")
+            #nn = Node('state-node', spl[0].split("|"), is_target = False)
+            #if len(spl) > 1:
+            #    nn.pid = spl[1] 
+            if n.char_string in cm_lookup.keys():
+                n.is_target = True
+                #nn.name = cm_lookup[spl[0]]
+            # rdict[n] = nn
+
+
+        if outfp is None:
+            outfp = name.replace('true', 'nj')
+        pic.dump(nj_net, open(outfp, 'wb'))
+        # Phylo.write(tree, out, 'newick')
 
         os.system("rm " + infile)
         os.system("rm " + fn)
@@ -278,18 +319,28 @@ def main():
         if verbose:
             print('Running Camin-Sokal Max Parsimony Algorithm on ' + str(len(target_nodes_uniq)) + " Unique Cells")
 
+
+        samples_to_cells = {}
+        indices = []
+        for i, n in zip(range(len(target_nodes_uniq)), target_nodes_uniq):
+            samples_to_cells["s" + str(i)] = n.name
+            indices.append(n.name)
+            n.name = str(i)
+
         infile = ''.join(name.split(".")[:-1]) + '_cs_infile.txt'
         fn = ''.join(name.split(".")[:-1]) + '_cs_phylo.txt'
         weights_fn = ''.join(name.split(".")[:-1]) + "_cs_weights.txt"
-        write_leaves_to_charmat(target_nodes_original_network_uniq, fn)
+        write_leaves_to_charmat(target_nodes_uniq, fn)
 
         script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
-        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
+        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile 
         pi = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(pi.pid, 0)
 
         weights = construct_weights(infile, weights_fn)
 
+        os.system("touch outfile")
+        os.system("touch outtree")
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'
@@ -329,6 +380,33 @@ def main():
         cmd += " < " + responses + " > screenout"
         p2 = subprocess.Popen(cmd, shell=True)
         pid, ecode = os.waitpid(p2.pid, 0)
+
+        newick_str = ""
+        with open(consense_outtree, "r") as f:
+            for l in f:
+                l = l.strip()
+                newick_str += l
+
+        cm = pd.read_csv(fn, sep='\t', index_col = 0)
+        cm.index = indices
+
+        cs_net = newick_to_network(newick_str)
+
+        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
+
+        cs_net = fill_in_tree(cs_net, cm)
+
+        cs_net = tree_collapse(cs_net)
+
+        cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
+
+        for n in cs_net:
+            if n.char_string in cm_lookup.keys():
+                n.is_target = True
+
+        if outfp is None:
+            outfp = name.replace('true', 'cs')
+        pic.dump(cs_net, open(outfp, 'wb'))
 
         os.system("rm " + outfile)
         os.system("rm " + responses)
