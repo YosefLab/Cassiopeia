@@ -30,7 +30,8 @@ requirements = [
         'scipy >= 1.2.0',
         "python-Levenshtein",
         'nbconvert >= 5.4.0',
-        'nbformat >= 4.4.0'
+        'nbformat >= 4.4.0',
+        'hits'
 ]
 
 
@@ -42,10 +43,7 @@ cmdclass = {'build_ext': build_ext}
 to_cythonize = [Extension("Cassiopeia.TreeSolver.lineage_solver.solver_utils", ["Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
                 Extension("Cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["Cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
                 Extension("Cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["Cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
-                Extension("Cassiopeia.ProcessingPipeline.process.collapse_cython", ["Cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"]), 
-                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/fastq_cython.pyx"]),
-                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.adapters_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/adapters_cython.pyx"]),
-                Extension("Cassiopeia.ProcessingPipeline.process.sequencing.sw_cython", ["Cassiopeia/ProcessingPipeline/process/sequencing/sw_cython.pyx"])]
+                Extension("Cassiopeia.ProcessingPipeline.process.collapse_cython", ["Cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
 
 setup(
         name="Cassiopeia",
@@ -80,6 +78,6 @@ setup(
         packages=find_packages(),
         keywords="scLT",
         url="https://github.com/YosefLab/Cassiopeia",
-        version='0.0.1',
+        version='1.0.0',
         zip_safe=False,
 )

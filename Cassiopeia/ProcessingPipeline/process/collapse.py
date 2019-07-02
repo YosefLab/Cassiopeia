@@ -20,9 +20,8 @@ import pysam
 
 import networkx as nx
 
-
-from Cassiopeia.ProcessingPipeline.process.sequencing import fastq, utilities, sw, sam
-from Cassiopeia.ProcessingPipeline.process.sequencing import annotation as annotation_module
+from hits import fastq, utilities, sw, sam
+from hits import annotation as annotation_module
 
 from .collapse_cython import hq_mismatches_from_seed, hq_hamming_distance, hamming_distance_matrix, register_corrections
 
@@ -161,7 +160,7 @@ def sort_cellranger_bam(bam_fn, sorted_fn, sort_key, filter_func, show_progress=
 
     als = bam_fh
 
-    relevant = list(filter(filter_func, als))
+    relevant = filter(filter_func, als)
 
     max_read_length = 0
     total_reads_out = 0
