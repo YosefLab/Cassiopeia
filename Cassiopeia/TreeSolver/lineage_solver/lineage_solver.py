@@ -213,7 +213,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		graph.add_node(node_name_dict[root])
 		return graph, root, pid
 
-	potential_network_priors = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
+	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
 
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:
@@ -221,6 +221,8 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		subgraph = nx.relabel_nodes(subgraph, node_name_dict)
 		print("Max Neighborhood Exceeded", flush=True)
 		return subgraph, root, pid
+
+	print("Potential Graph built with maximum LCA of " + str(lca_dist) + " (pid: " + str(pid) + "). Proceeding to solver.")
 
 	for l in potential_network_priors.selfloop_edges():
 		potential_network_priors.remove_edge(l[0], l[1])

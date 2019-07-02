@@ -38,6 +38,7 @@ def score_triplets(true_network, reconstructed_network, modified = True, min_siz
 
     return tot_tp
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("true_net", type=str)

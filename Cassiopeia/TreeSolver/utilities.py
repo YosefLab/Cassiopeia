@@ -79,10 +79,10 @@ def tree_collapse(tree):
 	return new_graph
 
 def find_parent(node_list):
-	
 	parent = []
-	#if isinstance(node_list[0], Node):
-	#	node_list = [n.get_character_string() for n in node_list]
+	if isinstance(node_list[0], Node):
+		node_list = [n.get_character_string() for n in node_list]
+
 
 	num_char = len(node_list[0].split("|"))
 	for x in range(num_char):
@@ -92,14 +92,14 @@ def find_parent(node_list):
 		for n in node_list:
 			if n.split("|")[x] != state:
 				inherited = False
-					
+			
 		if not inherited:
 			parent.append("0")
 			
 		else: 
 			parent.append(state)
 	
-	return "|".join(parent)
+	return Node('state-node', parent, is_target=False)
 
 def fill_in_tree(tree, cm = None):
 	
@@ -108,11 +108,13 @@ def fill_in_tree(tree, cm = None):
 	for n in tree.nodes:
 		if cm is None:
 			if '|' in n:
-				rndct[n] = n.split("_")[0]
+				rndct[n] = Node('state-node', n.split("_")[0].split('|'), is_target = False)
 		else:
 			if n in cm.index.values:
-				rndct[n] = "|".join([str(k) for k in cm.loc[n].values])
-	
+				rndct[n] = Node('state-node', [str(k) for k in cm.loc[n].values], is_target = True)
+			else:
+				rndct[n] = Node('state-node', '', is_target=False)
+
 	tree = nx.relabel_nodes(tree, rndct)
 	
 	root = [n for n in tree if tree.in_degree(n) == 0][0]
@@ -120,7 +122,7 @@ def fill_in_tree(tree, cm = None):
 	# run dfs and reconstruct states 
 	anc_dct = {}
 	for n in tqdm(nx.dfs_postorder_nodes(tree, root)):
-		if '|' not in n:
+		if '|' not in n.char_string or len(n.char_string) == 0:
 			children = list(tree[n].keys())
 			for c in range(len(children)):
 				if children[c] in anc_dct:

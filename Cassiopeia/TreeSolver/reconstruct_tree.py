@@ -12,11 +12,17 @@ import pickle as pic
 from pathlib import Path
 
 import argparse
+from tqdm import tqdm
 
-import Bio.Phylo as Phylo
-from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
+# import Bio.Phylo as Phylo
+# from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
+# from Bio import AlignIO
+# from Bio.Align import MultipleSeqAlignment
+from skbio import DistanceMatrix
+from skbio.tree import nj
+from numba import jit
+import scipy as sp
+
 import networkx as nx
 
 import sys
@@ -28,8 +34,7 @@ from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import *
 from Cassiopeia.TreeSolver.Node import Node
 from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
-
-# from Cassiopeia.TreeSolver import Node, Cassiopeia_Tree
+import Cassiopeia.TreeSolver.data_pipeline as dp
 
 import Cassiopeia as sclt
 
@@ -57,19 +62,42 @@ def write_leaves_to_charmat(target_nodes, fn):
                 f.write("\t" + c)
             f.write("\n")
 
-def unique_alignments(aln):
-
-    new_aln = []
-    obs = []
-    for a in aln:
+def pairwise_dist(s1, s2, priors=None):
+    
+    d = 0
+    num_present = 0
+    for i in range(len(s1)):
         
-        if a.seq in obs:
+        if s1[i] == '-' or s2[i] == '-':
             continue
         
-        new_aln.append(a)
-        obs.append(a.seq)
+        num_present += 1
 
-    return MultipleSeqAlignment(new_aln)
+        if s1[i] != s2[i]:
+            if s1[i] == '0' or s2[i] == '0':
+                d += 1
+            else:
+                d += 2
+    if num_present == 0:
+        return 0
+    
+    return d / num_present
+
+@jit(parallel=True)
+def compute_distance_mat(cm, C):
+        
+    dm = np.zeros(C * (C-1) // 2, dtype=float)
+    k = 0
+    for i in tqdm(range(C-1), desc = 'solving distance matrix'):
+        for j in range(i+1, C):
+            
+            s1 = cm[i,:]
+            s2 = cm[j,:]
+                
+            dm[k] = pairwise_dist(s1, s2)   
+            k += 1
+    
+    return dm
 
 def read_mutation_map(mmap):
     """
@@ -275,48 +303,66 @@ def main():
     elif args.neighbor_joining:
 
 
-        cm.drop_duplicates(inplace=True) 
+        # cm.drop_duplicates(inplace=True) 
 
         if verbose:
-            print("Running Neighbor-Joining on " + str(cm.shape[0]) + " Unique Cells")
+            print("Running Neighbor-Joining on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
-        fn = stem + "phylo.txt"
-        infile = stem + "infile.txt"
+        # fn = stem + "phylo.txt"
+        # infile = stem + "infile.txt"
         
-        cm.to_csv(fn, sep='\t')
+        # cm.to_csv(fn, sep='\t')
         
-        script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
-        cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
-        p = subprocess.Popen(cmd, shell=True)
-        pid, ecode = os.waitpid(p.pid, 0)
+        # script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
+        # cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
+        # p = subprocess.Popen(cmd, shell=True)
+        # pid, ecode = os.waitpid(p.pid, 0)
         
-        aln = AlignIO.read(infile, "phylip-relaxed")
+        # aln = AlignIO.read(infile, "phylip-relaxed")
 
-        calculator = DistanceCalculator('identity')
-        constructor = DistanceTreeConstructor(calculator, 'nj')
-        tree = constructor.build_tree(aln)
+        # calculator = DistanceCalculator('identity')
+        # constructor = DistanceTreeConstructor(calculator, 'nj')
+        # tree = constructor.build_tree(aln)
 
-        tree.root_at_midpoint()
+        dm = compute_distance_mat(cm_uniq.values.astype(np.str), cm_uniq.shape[0])
+        
+        ids = cm_uniq.index 
+        dm = sp.spatial.distance.squareform(dm)
 
-        nj_net = Phylo.to_networkx(tree)
+        dm = DistanceMatrix(dm, ids)
 
-        # convert labels to characters for writing to file 
-        i = 0
-        for n in nj_net:
+        newick_str = nj(dm, result_constructor=str)
 
-            if n.name is None:
-                n.name = "internal" + str(i)
-                i += 1
+        tree = dp.newick_to_network(newick_str)
+
+        nj_net = fill_in_tree(tree, cm_uniq)
+        nj_net = tree_collapse(nj_net)
+
+        #nj_net = tree_collapse(nj_net)
+        #print("num targets: ", len([n for n in nj_net if n.is_target]))
+
+       
+        # tree.root_at_midpoint()
+
+        # nj_net = Phylo.to_networkx(tree)
+
+        # # convert labels to characters for writing to file 
+        # i = 0
+        # for n in nj_net:
+
+        #     if n.name is None:
+        #         n.name = "internal" + str(i)
+        #         i += 1
 
       
-        # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: x.name, list(nj_net.nodes()))
-        c2strdict = dict(zip(list(nj_net.nodes()), c2str))
-        nj_net = nx.relabel_nodes(nj_net, c2strdict)
+        # # convert labels to strings, not Bio.Phylo.Clade objects
+        # c2str = map(lambda x: x.name, list(nj_net.nodes()))
+        # c2strdict = dict(zip(list(nj_net.nodes()), c2str))
+        # nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
-        nj_net = fill_in_tree(nj_net, cm)
+        # nj_net = fill_in_tree(nj_net, cm)
 
-        nj_net = tree_collapse(nj_net)
+        # nj_net = tree_collapse(nj_net)
 
         out_stem = "".join(out_fp.split(".")[:-1])
 
@@ -324,9 +370,8 @@ def main():
         for n in nj_net: 
             if n.char_string in cm_lookup:
                 n.is_target = True
-            #rdict[n] = nn
-
-        #state_tree = nx.relabel_nodes(nj_net, rdict)
+            else:
+                n.is_target = False
 
         state_tree = nj_net
         ret_tree =  Cassiopeia_Tree(method='neighbor-joining', network=state_tree, name='Cassiopeia_state_tree')
@@ -421,7 +466,7 @@ def main():
                 newick_str += l
 
         #tree = Phylo.parse(consense_outtree, "newick").next()
-        tree = newick_to_network(newick_str)
+        tree = dp.newick_to_network(newick_str)
 
         #tree.rooted = True
         #cs_net = tree_collapse(tree)

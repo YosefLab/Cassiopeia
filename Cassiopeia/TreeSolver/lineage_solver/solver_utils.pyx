@@ -131,6 +131,8 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 	cdef int neighbor_mod
 
+	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " (pid: " + str(pid) + ")")
+
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
@@ -142,13 +144,14 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 		source_nodes = samples
 		neighbor_mod = max_neighbor_dist
-		print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
-		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
+		max_width = 0
+		#print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
+		#print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		while len(source_nodes) != 1:
 
 			if len(source_nodes) > int(max_neighborhood_size):
-				print("Max Neighborhood Exceeded, Returning Network")
-				return prev_network
+				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
+				return prev_network, max_neighbor_dist - 1
 
 			temp_source_nodes = list()
 			for i in range(0, len(source_nodes)-1):
@@ -193,21 +196,22 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 				temp_source_nodes = list(np.unique(temp_source_nodes))
 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
-					return prev_network
+					return prev_network, max_neighbor_dist
 
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:
 					neighbor_mod *= 3
 
 			source_nodes = temp_source_nodes
+			max_width = max(max_width, len(source_nodes))
 
-			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
-
+		
+		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
 		prev_network = initial_network
 		if flag:
-			return prev_network
+			return prev_network, max_neighbor_dist - 1
 
-	return initial_network
+	return initial_network, max_neighbor_dist
 
 
 def get_sources_of_graph(tree):
