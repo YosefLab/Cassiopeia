@@ -33,6 +33,7 @@ Installation
 
 5. Install the package using the following commands:
     * ``python3.6 setup.py build``
+    * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 setup.py bdist_wheel``
     * ``python3.6 -m pip install . --user``
     
