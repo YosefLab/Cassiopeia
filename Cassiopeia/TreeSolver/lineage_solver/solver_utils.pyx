@@ -131,28 +131,29 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 	cdef int neighbor_mod
 
+	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " (pid: " + str(pid) + ")")
+
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
 	for max_neighbor_dist in range(0, 14):
 		initial_network = nx.DiGraph()
-		samples = set(samples)
+		samples = np.unique((samples))
 		for sample in samples:
 			initial_network.add_node(sample)
 
-		samples = list(samples)
-
 		source_nodes = samples
 		neighbor_mod = max_neighbor_dist
-		print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
-		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
+		max_width = 0
+		#print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
+		#print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
 		while len(source_nodes) != 1:
 
-			print(len(source_nodes), int(max_neighborhood_size), len(source_nodes) > int(max_neighborhood_size))
 			if len(source_nodes) > int(max_neighborhood_size):
-				print("Max Neighborhood Exceeded, Returning Network")
-				return prev_network
-			temp_source_nodes = set()
+				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
+				return prev_network, max_neighbor_dist - 1
+
+			temp_source_nodes = list()
 			for i in range(0, len(source_nodes)-1):
 				sample = source_nodes[i]
 				top_parents = []
@@ -180,7 +181,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
-							temp_source_nodes.add(parent)
+							temp_source_nodes.append(parent)
 
 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
@@ -189,29 +190,28 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
 
 				for parent, sample_2 in lst:
-					#if parent != sample_2:
 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
-					#if parent != sample:
 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
-					temp_source_nodes.add(parent)
+					temp_source_nodes.append(parent)
+
+				temp_source_nodes = list(np.unique(temp_source_nodes))
 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
-					return prev_network
+					return prev_network, max_neighbor_dist - 1
+
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:
 					neighbor_mod *= 3
-			source_nodes = list(temp_source_nodes)
-			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
 
-		#print('testing isomporpic!')
-		#if prev_network is not None and nx.graph_edit_distance(prev_network, initial_network) == 0:
-		#if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
-		#	return prev_network
+			source_nodes = temp_source_nodes
+			max_width = max(max_width, len(source_nodes))
 
+		
+		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
 		prev_network = initial_network
 		if flag:
-			return prev_network
+			return prev_network, max_neighbor_dist - 1
 
-	return initial_network
+	return initial_network, max_neighbor_dist
 
 
 def get_sources_of_graph(tree):

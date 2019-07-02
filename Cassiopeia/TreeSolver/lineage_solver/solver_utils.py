@@ -1,7 +1,10 @@
 import networkx as nx
 import numpy as np
 
-def node_parent(x, y):
+from Cassiopeia.TreeSolver import Node
+
+
+def node_parent(n1, n2):
 	"""
 	Given two nodes, finds the latest common ancestor
 
@@ -12,15 +15,17 @@ def node_parent(x, y):
 	:return:
 		Returns latest common ancestor of x and y
 	"""
+	x, y = n1.get_character_string(), n2.get_character_string()
 
 	parr = []
 	if '_' in x:
 		x = ''.join(x.split("_")[:-1])
 	if '_' in y:
 		y = ''.join(y.split("_")[:-1])
+
 	x_list = x.split('|')
 	y_list = y.split('|')
-	for i in range(0,len(x_list)):
+	for i in range(0, len(x_list)):
 		if x_list[i] == y_list[i]:
 			parr.append(x_list[i])
 		elif x_list[i] == '-':
@@ -30,9 +35,12 @@ def node_parent(x, y):
 		else:
 			parr.append('0')
 
-	return '|'.join(parr)
+	parent_node = Node("internal", parr, is_target=False)
 
-def get_edge_length(x,y,priors=None):
+	return parent_node
+
+
+def get_edge_length(n1, n2, priors=None):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
 
@@ -47,6 +55,9 @@ def get_edge_length(x,y,priors=None):
 	:return:
 		Length of edge if valid transition, else -1
 	"""
+
+	x, y = n1.get_character_string(), n2.get_character_string()
+
 	count = 0
 	if '_' in x:
 		x = ''.join(x.split("_")[:-1])
@@ -56,21 +67,22 @@ def get_edge_length(x,y,priors=None):
 	y_list = y.split('|')
 
 	for i in range(0, len(x_list)):
-			if x_list[i] == y_list[i]:
-					pass
-			elif y_list[i] == "-":
-					count += 0
+		if x_list[i] == y_list[i]:
+			pass
+		elif y_list[i] == "-":
+			count += 0
 
-			elif x_list[i] == '0':
-				if not priors:
-					count += 1
-				else:
-					count += -np.log(priors[i][str(y_list[i])])
+		elif x_list[i] == '0':
+			if not priors:
+				count += 1
 			else:
-				return -1
+				count += -np.log(priors[i][str(y_list[i])])
+		else:
+			return -1
 	return count
 
-def mutations_from_parent_to_child(parent, child):
+
+def mutations_from_parent_to_child(p_node, c_node):
 	"""
 	Creates a string label describing the mutations taken from  a parent to a child
 	:param parent: A node in the form 'Ch1|Ch2|....|Chn'
@@ -78,6 +90,9 @@ def mutations_from_parent_to_child(parent, child):
 	:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....
 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
 	"""
+
+	parent, child = p_node.get_character_string(), c_node.get_character_string()
+
 	if '_' in parent:
 		parent = ''.join(parent.split("_")[:-1])
 	if '_' in child:
@@ -92,6 +107,7 @@ def mutations_from_parent_to_child(parent, child):
 
 	return " , ".join(mutations)
 
+
 def root_finder(target_nodes):
 	"""
 	Given a list of targets_nodes, return the least common ancestor of all nodes
@@ -101,13 +117,15 @@ def root_finder(target_nodes):
 	:return:
 		The least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'
 	"""
-	np = target_nodes[0]
+
+	n = target_nodes[0]
 	for sample in target_nodes:
-		np = node_parent(sample, np)
+		n = node_parent(sample, n)
 
-	return np
+	return n
 
-def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):
+
+def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size=10000, priors=None, pid=-1):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -127,11 +145,21 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	:return:
 		A graph, which contains a tree which explains the data with minimal parsimony
 	"""
+	# print "Initial Sample Size:", len(set(samples))
+
+	cdef
+	int
+	neighbor_mod
+	cdef
+	int
+	max_dist
 
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
-	for max_neighbor_dist in range(0, 14):
+	max_dist = len(samples[0].get_character_vec())
+
+	for max_neighbor_dist in range(0, min(max_dist, 14)):
 		initial_network = nx.DiGraph()
 		samples = set(samples)
 		for sample in samples:
@@ -141,25 +169,40 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 		source_nodes = samples
 		neighbor_mod = max_neighbor_dist
-		print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
+		char_string_edges = []
+		char_strings_to_node = dict(zip([s.get_character_string() for s in samples], samples))
+
+		print("\nNum Neighbors considered: " + str(max_neighbor_dist) + ", pid = " + str(pid))
 		print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
+
 		while len(source_nodes) != 1:
 
-			print(len(source_nodes), int(max_neighborhood_size), len(source_nodes) > int(max_neighborhood_size))
 			if len(source_nodes) > int(max_neighborhood_size):
 				print("Max Neighborhood Exceeded, Returning Network")
 				return prev_network
+
 			temp_source_nodes = set()
-			for i in range(0, len(source_nodes)-1):
+			for i in range(0, len(source_nodes) - 1):
+
 				sample = source_nodes[i]
 				top_parents = []
 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
 				muts_to_s1, muts_to_s2 = {}, {}
+
 				for j in range(i + 1, len(source_nodes)):
 					sample_2 = source_nodes[j]
-					if sample != sample_2:
+
+					if sample.get_character_string() != sample_2.get_character_string():
 
 						parent = node_parent(sample, sample_2)
+
+						# if parent already exists, we need to find it
+						if parent.get_character_string() in list(char_strings_to_node.keys()):
+							parent = char_strings_to_node[parent.get_character_string()]
+
+						if parent != root:
+							parent.pid = pid
+
 						edge_length_p_s1 = get_edge_length(parent, sample)
 						edge_length_p_s2 = get_edge_length(parent, sample_2)
 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
@@ -170,27 +213,41 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
 
-						#Check this cutoff
+						# Check this cutoff
 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
 
 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
 
-							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
-							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
+							if parent.get_character_string() != sample_2.get_character_string() and (parent.get_character_string(), sample_2.get_character_string()) not in char_string_edges:
+								initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+								char_string_edges.append((parent.get_character_string(), sample_2.get_character_string()))
+
+							if parent.get_character_string() != sample.get_character_string() and (parent.get_character_string(), sample.get_character_string()) not in char_string_edges:
+								initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
+								char_string_edges.append((parent.get_character_string(), sample.get_character_string()))
+
 							temp_source_nodes.add(parent)
+							char_strings_to_node[parent.get_character_string()] = parent
 
 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
 
-				min_distance = min(top_parents, key = lambda k: k[0])[0]
+				min_distance = min(top_parents, key=lambda k: k[0])[0]
 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
 
 				for parent, sample_2 in lst:
-					#if parent != sample_2:
-					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
-					#if parent != sample:
-					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
-					temp_source_nodes.add(parent)
+
+					if parent.get_character_string() != sample_2.get_character_string() and (parent.get_character_string(), sample_2.get_character_string()) not in char_string_edges:
+						initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
+						char_string_edges.append((parent.get_character_string(), sample_2.get_character_string()))
+
+					if parent.get_character_string() != sample.get_character_string() and (parent.get_character_string(), sample.get_character_string()) not in char_string_edges:
+						initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
+						char_string_edges.append((parent.get_character_string(), sample.get_character_string()))
+
+					if parent.get_character_string() not in [n.get_character_string() for n in temp_source_nodes]:
+						temp_source_nodes.add(parent)
+
 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
 					return prev_network
 			if len(source_nodes) > len(temp_source_nodes):
@@ -199,8 +256,10 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 			source_nodes = list(temp_source_nodes)
 			print("Next layer number of nodes: " + str(len(source_nodes)) + " - pid = " + str(pid))
 
-		if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
-			return prev_network
+		# print('testing isomporpic!')
+		# if prev_network is not None and nx.graph_edit_distance(prev_network, initial_network) == 0:
+		# if prev_network is not None and nx.is_isomorphic(prev_network, initial_network):
+		#	return prev_network
 
 		prev_network = initial_network
 		if flag:
@@ -218,4 +277,4 @@ def get_sources_of_graph(tree):
 	:return:
 		Leaves of the corresponding Tree
 	"""
-	return [x for x in tree.nodes() if tree.in_degree(x)==0 ]
+	return [x for x in tree.nodes() if tree.in_degree(x) == 0]

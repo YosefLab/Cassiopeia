@@ -14,47 +14,7 @@ import networkx as nx
 from collections import defaultdict
 import pylab
 
-def post_process_tree(G):
-    """
-    Given a networkx graph in the form of a tree, assign sample identities to character states.
-
-    :param graph: Networkx Graph as a tree
-    :return: postprocessed tree as a Networkx object
-    """
-
-    new_nodes = []
-    new_edges = []
-
-    for n in G.nodes:
-        spl = n.split("_")
-        if len(spl) > 2:
-            name = "_".join(spl[1:-1])
-            new_nodes.append(name)
-            new_edges.append((n, name))
-
-    G.add_nodes_from(new_nodes)
-    G.add_edges_from(new_edges)
-
-    return G
-
-def tree_collapse(graph):
-    """
-    Given a networkx graph in the form of a tree, collapse two nodes togethor if there are no mutations seperating the two nodes
-        :param graph: Networkx Graph as a tree
-        :return: Collapsed tree as a Networkx object
-    """
-
-    new_network = nx.DiGraph()
-    for edge in graph.edges():
-        if edge[0].split('_')[0] == edge[1].split('_')[0]:
-            if graph.out_degree(edge[1]) != 0:
-                for node in graph.successors(edge[1]):
-                    new_network.add_edge(edge[0], node)
-            else:
-                new_network.add_edge(edge[0], edge[1])
-        else:
-            new_network.add_edge(edge[0], edge[1])
-    return new_network
+from Cassiopeia.TreeSolver.Node import Node
 
 def get_max_depth(G, root):
     """
@@ -100,7 +60,7 @@ def extend_dummy_branches(G, max_depth):
         while G.nodes[n]["depth"] < max_depth:
 
             d = G.nodes[n]["depth"]
-            new_node = str(n) + "-" + str(new_node_iter)
+            new_node = Node('state-node', n.get_character_vec())
             parents = list(G.predecessors(n))
             for p in parents:
                 G.remove_edge(p, n)
@@ -407,7 +367,7 @@ def assign_meta(G, meta):
     metadict = {}
 
     for l in leaves:
-        G.nodes[l]['meta'] = meta.loc[l]
+        G.nodes[l]['meta'] = meta.loc[l.name]
 
     return G
 

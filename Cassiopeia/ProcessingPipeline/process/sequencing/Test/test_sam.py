@@ -1,6 +1,6 @@
 import unittest
 import pysam
-import Sequencing.sam as sam
+import Cassiopeia.ProcessingPipeline.process.sequencing.sam as sam
 
 MATCH = sam.BAM_CMATCH
 DEL = sam.BAM_CDEL

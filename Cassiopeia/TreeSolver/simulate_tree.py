@@ -16,19 +16,20 @@ import argparse
 
 from Cassiopeia.TreeSolver import *
 from Cassiopeia.TreeSolver.lineage_solver import *
-from Cassiopeia.TreeSolver.simulation_tools import *
+from Cassiopeia.TreeSolver.simulation_tools.dataset_generation import *
 
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("out_fp", type=str, help="Output file path")
-    parser.add_argument('--subsample_percentage', default=0.4, help="Percentage of cells to sample from final pool")
-    parser.add_argument("--depth", "-d", default=10, help='Depth of Tree to Simulate')
+    parser.add_argument('--subsample_percentage', default=0.4, type = float, help="Percentage of cells to sample from final pool")
+    parser.add_argument("--depth", "-d", default=10, type = int, help='Depth of Tree to Simulate')
     parser.add_argument('--dropout_rate', "-dr", default=None, help="Dictionary of dropout rates per character")
-    parser.add_argument("--num_characters", "-c", default=40, help='Number of characters to simulate')
-    parser.add_argument("--num_states", "-s", default=10, help="Number of states to simulate")
-    parser.add_argument("--mutation_rate", '-m', default=0.025, help="Mutation rate, assumed to be constant across all characters")
+    parser.add_argument("--num_characters", "-c", default=40, type = int, help='Number of characters to simulate')
+    parser.add_argument("--num_states", "-s", default=10, type = int, help="Number of states to simulate")
+    parser.add_argument("--mutation_rate", '-m', default=0.025, type = float, help="Mutation rate, assumed to be constant across all characters")
     parser.add_argument("--allele_table", default=None, help="Optional alleletable to provide, where parameters will be estimated from")
+    parser.add_argument("--mutation_map", default={}, help="Probabilities of mutating to each state. Given as a nested dictionary.")
 
     args = parser.parse_args()
     output_file = args.out_fp
@@ -39,7 +40,7 @@ def main():
     dropout_rates = args.dropout_rate
     mutation_rate = args.mutation_rate
     allele_table = args.allele_table
-
+    prior_probabilities = args.mutation_map
 
     if allele_table is not None:
         at = pd.read_csv(allele_table, sep='\t')
@@ -60,27 +61,27 @@ def main():
         number_of_states = np.median(nunique_chars)
         
     no_mut_rate = 1 - mutation_rate
-    prior_probabilities = {}
-    for i in range(0, number_of_characters):
-	sampled_probabilities = sorted([np.random.negative_binomial(5,.5) for _ in range(1,number_of_states)])
-	prior_probabilities[i] = {'0': no_mut_rate}
-	total = np.sum(sampled_probabilities)
-	for j in range(1, number_of_states):
-		prior_probabilities[i][str(j)] = (mutation_rate)*sampled_probabilities[j-1]/(1.0 * total)
-
-    with open("prior_probs.txt", "w") as f:
-        
+    if len(prior_probabilities) == 0:
         for i in range(0, number_of_characters):
-            f.write(str(i))
-
+            sampled_probabilities = sorted([np.random.negative_binomial(5,.5) for _ in range(1,number_of_states)])
+            prior_probabilities[i] = {'0': no_mut_rate}
+            total = np.sum(sampled_probabilities)
             for j in range(1, number_of_states):
-                f.write("\t" + str(prior_probabilities[i][str(j)]))
+                prior_probabilities[i][str(j)] = (mutation_rate)*sampled_probabilities[j-1]/(1.0 * total)
+
+        with open("prior_probs.txt", "w") as f:
+        
+            for i in range(0, number_of_characters):
+                f.write(str(i))
+
+                for j in range(1, number_of_states):
+                    f.write("\t" + str(prior_probabilities[i][str(j)]))
+
+                f.write("\n")
 
             f.write("\n")
 
-        f.write("\n")
-
-    if dropout_rate is not None:
+    if dropout_rates is not None:
         dropouts = pd.read_csv(dropout_rate, sep='\t', index_col = 0) 
 
     else:
@@ -102,11 +103,12 @@ def main():
         else:
             data_dropout_rates[i] = float(dropouts.iloc[i])
 
-    dropout_prob_map = {i: np.random.choice(data_dropout_rates.values()) for i in range(0,number_of_characters)}
+    dropout_prob_map = {i: np.random.choice(list(data_dropout_rates.values())) for i in range(0,number_of_characters)}
 
     # Generate simulated network
-    true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map,characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
-    pic.dump(true_network, open(output_file, "wb"))
+    true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map, characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
+    tree = Cassiopeia_Tree('simulated', network=true_network)
+    pic.dump(tree, open(output_file, "wb"))
 
 #target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
 

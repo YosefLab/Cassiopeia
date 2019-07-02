@@ -12,11 +12,17 @@ import pickle as pic
 from pathlib import Path
 
 import argparse
+from tqdm import tqdm
 
-import Bio.Phylo as Phylo
-from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
+# import Bio.Phylo as Phylo
+# from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
+# from Bio import AlignIO
+# from Bio.Align import MultipleSeqAlignment
+from skbio import DistanceMatrix
+from skbio.tree import nj
+from numba import jit
+import scipy as sp
+
 import networkx as nx
 
 import sys
@@ -24,7 +30,11 @@ import os
 
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.simulation_tools import *
+from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import *
+from Cassiopeia.TreeSolver.Node import Node
+from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
+import Cassiopeia.TreeSolver.data_pipeline as dp
 
 import Cassiopeia as sclt
 
@@ -36,7 +46,7 @@ def write_leaves_to_charmat(target_nodes, fn):
     needed to run camin-sokal.
     """
 
-    number_of_characters = len(target_nodes[0].split("|"))
+    number_of_characters = len(target_nodes[0].char_string.split("|"))
     with open(fn, "w") as f:
 
         f.write("cellBC")
@@ -45,26 +55,49 @@ def write_leaves_to_charmat(target_nodes, fn):
         f.write("\n")
 
         for n in target_nodes:
-            charstring, sname = n.split("_")
+            charstring, sname = n.char_string, n.name
             f.write(sname)
             chars = charstring.split("|")
             for c in chars:
                 f.write("\t" + c)
             f.write("\n")
 
-def unique_alignments(aln):
-
-    new_aln = []
-    obs = []
-    for a in aln:
+def pairwise_dist(s1, s2, priors=None):
+    
+    d = 0
+    num_present = 0
+    for i in range(len(s1)):
         
-        if a.seq in obs:
+        if s1[i] == '-' or s2[i] == '-':
             continue
         
-        new_aln.append(a)
-        obs.append(a.seq)
+        num_present += 1
 
-    return MultipleSeqAlignment(new_aln)
+        if s1[i] != s2[i]:
+            if s1[i] == '0' or s2[i] == '0':
+                d += 1
+            else:
+                d += 2
+    if num_present == 0:
+        return 0
+    
+    return d / num_present
+
+@jit(parallel=True)
+def compute_distance_mat(cm, C):
+        
+    dm = np.zeros(C * (C-1) // 2, dtype=float)
+    k = 0
+    for i in tqdm(range(C-1), desc = 'solving distance matrix'):
+        for j in range(i+1, C):
+            
+            s1 = cm[i,:]
+            s2 = cm[j,:]
+                
+            dm[k] = pairwise_dist(s1, s2)   
+            k += 1
+    
+    return dm
 
 def read_mutation_map(mmap):
     """
@@ -89,20 +122,20 @@ def construct_weights(phy, weights_fn, write=True):
 
     abund = df.apply(lambda x: len(x[x=="1"]) / len(x), axis=1)
     
-    labund = np.array(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund))
-    labund[labund == 0] = labund.min()
+    labund = np.array(list(map(lambda x: float(-1 * np.log2(x)) if x > 1 else x, abund)))
+    labund[labund == 0] = np.min(labund)
 
     # scale linearly to range for phylip weights
     _min = 0
     _max = 35
 
-    scaled = (_max - _min) / (labund.max() - labund.min()) * (labund - labund.max()) + _max
-    scaled = map(lambda x: int(x), scaled)
+    scaled = (_max - _min) / (np.max(labund) - np.min(labund)) * (labund - np.max(labund))+ _max
+    scaled = list(map(lambda x: int(x), scaled))
 
     weights_range = [str(i) for i in range(10)] + [l for l in ascii_uppercase]
     weights_dict = dict(zip(range(36), weights_range))
 
-    scaled = map(lambda x: weights_dict[x], scaled)
+    scaled = list(map(lambda x: weights_dict[x], scaled))
 
     if write:
         with open(weights_fn, "w") as f:
@@ -123,6 +156,7 @@ def main():
     parser.add_argument("char_fp", type = str, help="character_matrix")
     parser.add_argument("out_fp", type=str, help="output file name")
     parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
+    parser.add_argument("--neighbor_joining_weighted", action='store_true', default=False)
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
@@ -148,9 +182,10 @@ def main():
 
     stem = ''.join(char_fp.split(".")[:-1])
 
-    cm = pd.read_csv(char_fp, sep='\t', index_col=0)
+    cm = pd.read_csv(char_fp, sep='\t', index_col=0, dtype=str)
     cm_uniq = cm.drop_duplicates(inplace=False)
 
+    cm_lookup = list(cm.apply(lambda x: "|".join(x.values), axis=1))
     newick = ""
 
     prior_probs = None
@@ -160,27 +195,31 @@ def main():
 
     if args.greedy:
 
-        target_nodes = list(cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1))
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
 
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
+        #string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+        #target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probs)
         
+        net = reconstructed_network_greedy.get_network()
+
+        root = [n for n in net if net.in_degree(n) == 0][0]
         # score parsimony
         score = 0
-        for e in reconstructed_network_greedy.edges():
-            score += get_edge_length(e[0], e[1])
+        for e in nx.dfs_edges(net, source=root):
+            score += e[0].get_edit_distance(e[1])
            
         print("Parsimony: " + str(score))
         
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
-        newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        #newick = convert_network_to_newick_format(reconstructed_network_greedy) 
+        newick = reconstructed_network_greedy.get_newick()
 
         with open(out_fp, "w") as f:
             f.write(newick)
@@ -190,15 +229,15 @@ def main():
 
     elif args.hybrid:
 
-        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print('Running Hybrid Algorithm on ' + str(len(target_nodes)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization') 
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
+        #string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+        #target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
 
         print("running algorithm...")
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size)
@@ -206,23 +245,23 @@ def main():
         if verbose:
             print("Scoring Parsimony...")
             
+        net = reconstructed_network_hybrid.get_network()
         # score parsimony
-        score = 0
-        for e in reconstructed_network_hybrid.edges():
-            score += get_edge_length(e[0], e[1])
+        #score = 0
+        #for e in net.edges():
+        #    score += get_edge_length(e[0], e[1])
            
-        if verbose:
-            print("Parsimony: " + str(score))
+        #print("Parsimony: " + str(score))
+        
+        newick = reconstructed_network_hybrid.get_newick()
+        #if verbose:
+        #    print("Parsimony: " + str(score))
         
         if verbose:
             print("Writing the tree to output...")
 
-        #reconstructed_network_hybrid = nx.relabel_nodes(reconstructed_network_hybrid, string_to_sample)
-
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_hybrid, open(out_stem + ".pkl", "wb")) 
-
-        newick = convert_network_to_newick_format(reconstructed_network_hybrid) 
 
         with open(out_fp, "w") as f:
             f.write(newick)
@@ -230,46 +269,47 @@ def main():
 
     elif args.ilp:
 
-        target_nodes = cm_uniq.astype(str).apply(lambda x: '|'.join(x), axis=1)
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
             print("Running ILP Algorithm on " + str(len(target_nodes)) + " Unique Cells")
             print("Paramters: ILP allowed " + str(time_limit) + "s to complete optimization")
 
-        string_to_sample = dict(zip(target_nodes, cm_uniq.index))
-
-        target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
-
         reconstructed_network_ilp = solve_lineage_instance(target_nodes, method="ilp", prior_probabilities=prior_probs, time_limit=time_limit, max_neighborhood_size=max_neighborhood_size)
 
+        net = reconstructed_network_ilp.get_network()
+
+        root = [n for n in net if net.in_degree(n) == 0][0]
         # score parsimony
         score = 0
-        for e in reconstructed_network_ilp.edges():
-            score += get_edge_length(e[0], e[1])
+        for e in nx.dfs_edges(net, source=root):
+            score += e[0].get_edit_distance(e[1])
            
         print("Parsimony: " + str(score))
         
-        #reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
-        newick = convert_network_to_newick_format(reconstructed_network_ilp) 
-
-        with open(out_fp, "w") as f:
-            f.write(newick)
+        newick = reconstructed_network_ilp.get_newick()
+        if verbose:
+            print("Parsimony: " + str(score))
+        
+        if verbose:
+            print("Writing the tree to output...")
 
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_ilp, open(out_stem + ".pkl", "wb")) 
 
+        with open(out_fp, "w") as f:
+            f.write(newick)
+
+
     elif args.neighbor_joining:
 
-
-        cm.drop_duplicates(inplace=True) 
-
         if verbose:
-            print("Running Neighbor-Joining on " + str(cm.shape[0]) + " Unique Cells")
+            print("Running Neighbor-Joining on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
         fn = stem + "phylo.txt"
         infile = stem + "infile.txt"
         
-        cm.to_csv(fn, sep='\t')
+        cm_uniq.to_csv(fn, sep='\t')
         
         script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
         cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile + " --relaxed" 
@@ -281,7 +321,7 @@ def main():
         calculator = DistanceCalculator('identity')
         constructor = DistanceTreeConstructor(calculator, 'nj')
         tree = constructor.build_tree(aln)
-
+       
         tree.root_at_midpoint()
 
         nj_net = Phylo.to_networkx(tree)
@@ -300,36 +340,77 @@ def main():
         c2strdict = dict(zip(list(nj_net.nodes()), c2str))
         nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
-        #nj_net = tree_collapse(nj_net)
+        nj_net = fill_in_tree(nj_net, cm)
 
-        out_stem = "".join(out_fp.split(".")[:-1])
+        nj_net = tree_collapse(nj_net)
+
+        Phylo.write(tree, out_fp, 'newick')
         pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
 
         newick = convert_network_to_newick_format(nj_net)
 
         with open(out_fp, "w") as f:
-            f.write(newick)
+           f.write(newick)
 
         os.system("rm " + infile)
         os.system("rm " + fn)
 
+    elif args.neighbor_joining_weighted:
+
+        if verbose:
+            print("Running Neighbor-Joining with Weighted Scoring on " + str(cm_uniq.shape[0]) + " Unique Cells")
+
+        dm = compute_distance_mat(cm_uniq.values.astype(np.str), cm_uniq.shape[0])
+        
+        ids = cm_uniq.index 
+        dm = sp.spatial.distance.squareform(dm)
+
+        dm = DistanceMatrix(dm, ids)
+
+        newick_str = nj(dm, result_constructor=str)
+
+        tree = dp.newick_to_network(newick_str)
+
+        nj_net = fill_in_tree(tree, cm_uniq)
+        nj_net = tree_collapse(nj_net)
+
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+
+        rdict = {}
+        for n in nj_net: 
+            if n.char_string in cm_lookup:
+                n.is_target = True
+            else:
+                n.is_target = False
+
+        state_tree = nj_net
+        ret_tree =  Cassiopeia_Tree(method='neighbor-joining', network=state_tree, name='Cassiopeia_state_tree')
+
+        pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
+
+        newick = ret_tree.get_newick()
+
+        with open(out_fp, "w") as f:
+            f.write(newick)
+
     elif args.camin_sokal:
         
-        cells = cm.index
+        cells = cm_uniq.index
         samples = [("s" + str(i)) for i in range(len(cells))]
         samples_to_cells = dict(zip(samples, cells))
         
-        cm.index = list(range(len(cells)))
+        cm_uniq.index = list(range(len(cells)))
         
         if verbose:
-            print("Running Camin-Sokal on " + str(cm.shape[0]) + " Unique Cells")
+            print("Running Camin-Sokal on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
 
         infile = stem + 'infile.txt'
         fn = stem + "phylo.txt"
         weights_fn = stem + "weights.txt"
         
-        cm.to_csv(fn, sep='\t')
+        cm_uniq.to_csv(fn, sep='\t')
 
         script = (SCLT_PATH / 'TreeSolver' / 'binarize_multistate_charmat.py')
         cmd =  "python3.6 " + str(script) +  " " + fn + " " + infile
@@ -337,6 +418,9 @@ def main():
         pid, ecode = os.waitpid(p.pid, 0)
 
         weights = construct_weights(infile, weights_fn)
+
+        os.system("touch outfile")
+        os.system("touch outtree")
 
         outfile = stem + 'outfile.txt'
         outtree = stem + 'outtree.txt'
@@ -382,18 +466,37 @@ def main():
                 newick_str += l
 
         #tree = Phylo.parse(consense_outtree, "newick").next()
-        tree = newick_to_network(newick_str)
+        tree = dp.newick_to_network(newick_str)
+
         #tree.rooted = True
         #cs_net = tree_collapse(tree)
         #cs_net = Phylo.to_networkx(tree)
 
-        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
+        cs_net = nx.relabel_nodes(tree, samples_to_cells)
+
+        cs_net = fill_in_tree(cs_net, cm)
+
+        cs_net = tree_collapse(cs_net)
 
         out_stem = "".join(out_fp.split(".")[:-1])
 
-        pic.dump(cs_net, open(out_stem + ".pkl", "wb"))
+        rdict = {}
+        for n in cs_net:
+            spl = n.split("_")
+            nn = Node('state-node', spl[0].split("|"), is_target = False)
+            if len(spl) > 1:
+                nn.pid = spl[1] 
+            if spl[0] in cm.index.values:
+                nn.is_target = True
+            rdict[n] = nn
 
-        newick = convert_network_to_newick_format(cs_net)
+        state_tree = nx.relabel_nodes(cs_net, rdict)
+
+        ret_tree =  Cassiopeia_Tree(method='camin-sokal', network=state_tree, name='Cassiopeia_state_tree')
+
+        pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
+
+        newick = ret_tree.get_newick()
 
         with open(out_fp, "w") as f:
             f.write(newick)

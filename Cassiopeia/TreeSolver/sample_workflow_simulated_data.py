@@ -6,7 +6,7 @@ from lineage_solver.lineage_solver import solve_lineage_instance
 from lineage_solver.solution_evaluation_metrics import cci_score
 from simulation_tools.dataset_generation import generate_simulated_full_tree
 from simulation_tools.simulation_utils import get_leaves_of_tree
-from simulation_tools.validation import check_triplets_correct
+from simulation_tools.validation import check_triplets_correct2
 from data_pipeline import convert_network_to_newick_format
 
 # Generate mutation probabilities
