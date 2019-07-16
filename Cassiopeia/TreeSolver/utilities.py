@@ -28,17 +28,6 @@ def tree_collapse(tree):
 
 	new_graph = nx.relabel_nodes(graph, new)
 
-	# root = [n for n in graph if graph.in_degree(n) == 0][0]
-	# dct = {}
-	# for n in tqdm(nx.dfs_postorder_nodes(graph, root)):
-	# 	pred = list(graph.predecessors(n))
-	# 	if len(pred) > 0:
-	# 		pred = pred[0]
-	# 		if pred.char_string == n.char_string:
-	# 			dct[n] = pred
-
-	# new_graph = nx.relabel_nodes(graph, new)
-
 	dct = defaultdict(str)
 	while len(dct) != len(new_graph.nodes()):
 		for node in new_graph:

@@ -100,7 +100,7 @@ def convert_network_to_newick_format(graph):
 
 	def _to_newick_str(g, node):
 		is_leaf = g.out_degree(node) == 0
-		if node.name == 'internal':
+		if node.name == 'internal' or node.name == 'state-node':
 			_name = node.get_character_string()
 		else:
 			_name = node.name
@@ -173,6 +173,9 @@ def get_indel_props(at, group_var = ['intBC']):
 
 	:param at:
 		The allele table pandas DataFrame
+	:param group_var:
+		Columns by which to group and count indels. This will effectively serve as the denominator when calculating the 
+		frequenceis (i.e. N intBCs or M * N_m for M lineage groups and N_m intBCs per lineage groups if you group by intBC and LG)
 	:return:
 		An M x 2 pandas DataFrame mapping all M mutations to the frequency and raw counts
 		of how many intBC this mutation appeared on.
@@ -362,7 +365,7 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r 
 	:param write:
 		Write out to file. This requires `out_fp` to be specified as well. (Default = True)
 	:return:
-		None if write is specified. If not, return an N x C character matrix as a pandas DataFrame, the
+		None if write is specified. If not, this returns three items: return an N x C character matrix as a pandas DataFrame, the
 		mutation map, and the indel to character state mapping. If writing out to file,
 		the mutation and indel to character state mappings are also saved as pickle
 		files.

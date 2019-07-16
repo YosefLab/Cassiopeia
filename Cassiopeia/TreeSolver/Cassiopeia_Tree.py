@@ -8,6 +8,24 @@ import random
 import copy
 
 class Cassiopeia_Tree:
+	"""
+	An abstract class for all nodes in a tree. Unless created manually, these nodes are created in Cassiopeia.TreeSolver.lineage_solver.solver_utils in the `node_parent`
+	function. If the node parent already exists (tested by checking for equality with respect to the character states and process id) then we do not create a new node.
+
+	Attributes:
+		- name: name of node (this will either be some internal identifier or the cellBC)
+		- char_vec: the array of character states, ordered by character.
+		- char_string: a string representation of the char_vec, delimited by '|'. Used for quick comparisons between node character states.
+		- pid: process id (useful for disambiguating between identical character states traversed on different parts of the tree)
+		- is_target: boolean value indicating whether or not these nodes are targets or not.
+
+	Methods:
+		- get_character_string: utility function for getting character string
+		- get_name: utility for getting the name of the node
+		- get_character_vec: utility for getting the character vector
+		- get_edit_distance: calculate the edit distance between two nodes
+	
+	"""
 
 	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None):
 
@@ -56,6 +74,53 @@ class Cassiopeia_Tree:
 			self.network = newick_to_network(self.newick)
 
 		return [n for n in self.network if n.is_target]
+
+	def collapse_edges(self):
+
+
+		def _collapse(graph, edges_to_collapse):
+		
+			new_network = nx.DiGraph()
+			root = [n for n in graph if graph.in_degree(n) == 0][0]
+			for n in nx.dfs_postorder_nodes(graph, source=root):
+				if n == root:
+					continue
+				edge = (list(graph.predecessors(n))[0], n)
+				if edge[0].get_character_vec() == edge[1].get_character_vec():
+					for p in graph.predecessors(edge[0]):
+						new_network.add_edge(p, edge[1])
+				else:
+					new_network.add_edge(edge[0], edge[1])
+
+			return new_network
+
+		def find_edges_to_collapse(graph):
+			edges = []
+			source = [n for n in graph if graph.in_degree(n) == 0][0]
+
+			for e in nx.dfs_edges(graph, source=source):
+				if e[0].get_character_vec() == e[1].get_character_vec():
+					edges.append(e)
+			return edges[::-1]
+
+		net = self.network
+		root = [n for n in net if net.in_degree(n) == 0][0]
+
+		edges_to_collapse = find_edges_to_collapse(net)
+		while len(edges_to_collapse) > 0:
+			net = _collapse(net)
+			edges_to_collapse = find_edges_to_collapse(net)
+
+		to_remove = []
+		for n in net.nodes:
+			if net.in_degree(n) == 0 and n != root:
+				to_remove.append(n)
+
+		net.remove_nodes_from(to_remove)
+
+		self.network = net
+		self.newick = convert_network_to_newick_format(self.network)
+
 
 	def post_process(self, cm = None):
 

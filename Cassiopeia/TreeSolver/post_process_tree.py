@@ -122,7 +122,7 @@ def assign_samples_to_charstrings(G, cm):
         if n.get_character_string() in cm['lookup'].values and n.is_target:
             n.is_target = False
             sub_cm  = cm.loc[cm["lookup"] == n.get_character_string()]
-            _nodes = sub_cm.apply(lambda x: Node(x.name, x.values, is_target=True), axis=1)
+            _nodes = sub_cm.apply(lambda x: Node(x.name, x.values[:-1], is_target=True), axis=1) # make sure to do up to [:-1] b/c you don't want the lookup in your character vec
             for new_node in _nodes:
                 new_nodes.append(new_node)
                 new_edges.append((n, new_node))

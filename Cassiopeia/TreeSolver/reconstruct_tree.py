@@ -14,10 +14,10 @@ from pathlib import Path
 import argparse
 from tqdm import tqdm
 
-# import Bio.Phylo as Phylo
-# from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
-# from Bio import AlignIO
-# from Bio.Align import MultipleSeqAlignment
+import Bio.Phylo as Phylo
+from Bio.Phylo.TreeConstruction import DistanceCalculator, ParsimonyScorer, DistanceTreeConstructor
+from Bio import AlignIO
+from Bio.Align import MultipleSeqAlignment
 from skbio import DistanceMatrix
 from skbio.tree import nj
 from numba import jit
@@ -73,18 +73,31 @@ def pairwise_dist(s1, s2, priors=None):
         
         num_present += 1
 
+        if priors:
+            if s1[i] == s2[i] and (s1[i] != '0'):
+                d += np.log(priors[i][str(s1[i])])
+
         if s1[i] != s2[i]:
             if s1[i] == '0' or s2[i] == '0':
-                d += 1
+                if priors:
+                    if s1[i] != '0':
+                        d -= np.log(priors[i][str(s1[i])])
+                    else:
+                        d -= np.log(priors[i][str(s2[i])])
+                else:
+                    d += 1
             else:
-                d += 2
+                if priors:
+                    d -= (np.log(priors[i][str(s1[i])]) + np.log(priors[i][str(s2[i])]))
+                else:
+                    d += 2
     if num_present == 0:
         return 0
     
     return d / num_present
 
 @jit(parallel=True)
-def compute_distance_mat(cm, C):
+def compute_distance_mat(cm, C, priors=None):
         
     dm = np.zeros(C * (C-1) // 2, dtype=float)
     k = 0
@@ -94,7 +107,7 @@ def compute_distance_mat(cm, C):
             s1 = cm[i,:]
             s2 = cm[j,:]
                 
-            dm[k] = pairwise_dist(s1, s2)   
+            dm[k] = pairwise_dist(s1, s2, priors=priors)   
             k += 1
     
     return dm
@@ -280,6 +293,7 @@ def main():
         net = reconstructed_network_ilp.get_network()
 
         root = [n for n in net if net.in_degree(n) == 0][0]
+
         # score parsimony
         score = 0
         for e in nx.dfs_edges(net, source=root):
@@ -360,7 +374,7 @@ def main():
         if verbose:
             print("Running Neighbor-Joining with Weighted Scoring on " + str(cm_uniq.shape[0]) + " Unique Cells")
 
-        dm = compute_distance_mat(cm_uniq.values.astype(np.str), cm_uniq.shape[0])
+        dm = compute_distance_mat(cm_uniq.values.astype(np.str), cm_uniq.shape[0], priors=prior_probs)
         
         ids = cm_uniq.index 
         dm = sp.spatial.distance.squareform(dm)
@@ -372,20 +386,21 @@ def main():
         tree = dp.newick_to_network(newick_str)
 
         nj_net = fill_in_tree(tree, cm_uniq)
-        nj_net = tree_collapse(nj_net)
-
-
+        # nj_net = tree_collapse(nj_net)
+        
         out_stem = "".join(out_fp.split(".")[:-1])
 
         rdict = {}
         for n in nj_net: 
-            if n.char_string in cm_lookup:
+            if nj_net.out_degree(n) == 0 and n.char_string in cm_lookup:
                 n.is_target = True
             else:
                 n.is_target = False
 
         state_tree = nj_net
         ret_tree =  Cassiopeia_Tree(method='neighbor-joining', network=state_tree, name='Cassiopeia_state_tree')
+
+        #ret_tree.collapse_edges()
 
         pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
 

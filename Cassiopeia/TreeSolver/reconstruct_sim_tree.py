@@ -20,6 +20,11 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 import networkx as nx
 
+from skbio import DistanceMatrix
+from skbio.tree import nj
+
+import scipy as sp
+
 import sys
 import os
 
@@ -31,9 +36,61 @@ from Cassiopeia.TreeSolver.simulation_tools.simulation_utils import *
 from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from Cassiopeia.TreeSolver import Cassiopeia_Tree, Node
 
+from numba import jit
+
 import Cassiopeia as sclt
 
 SCLT_PATH = Path(sclt.__path__[0])
+
+@jit(parallel=True)
+def compute_distance_mat(cm, C, priors=None):
+        
+    dm = np.zeros(C * (C-1) // 2, dtype=float)
+    k = 0
+    for i in range(C-1):
+        for j in range(i+1, C):
+            
+            s1 = cm[i]
+            s2 = cm[j]
+            
+            dm[k] = pairwise_dist(s1, s2, priors)   
+            k += 1
+    
+    return dm
+
+def pairwise_dist(s1, s2, priors=None):
+    
+    d = 0
+    num_present = 0
+    for i in range(len(s1)):
+        
+        if s1[i] == '-' or s2[i] == '-':
+            continue
+        
+        num_present += 1
+
+        if priors:
+            if s1[i] == s2[i]:
+                d += np.log(priors[i][str(s1[i])])
+
+        if s1[i] != s2[i]:
+            if s1[i] == '0' or s2[i] == '0':
+                if priors:
+                    if s1[i] != '0':
+                        d -= np.log(priors[i][str(s1[i])])
+                    else:
+                        d -= np.log(priors[i][str(s2[i])])
+                else:
+                    d += 1
+            else:
+                if priors:
+                    d -= (np.log(priors[i][str(s1[i])]) + np.log(priors[i][str(s2[i])]))
+                else:
+                    d += 2
+    if num_present == 0:
+        return 0
+    
+    return d / num_present
 
 def write_leaves_to_charmat(target_nodes, fn):
     """
@@ -139,6 +196,7 @@ def main():
     parser.add_argument("netfp", type = str, help="character_matrix")
     parser.add_argument("typ", type=str, help="category of stress test")
     parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
+    parser.add_argument("--neighbor_joining_weighted", action='store_true', default=False)
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
@@ -313,6 +371,42 @@ def main():
 
         os.system("rm " + infile)
         os.system("rm " + fn)
+
+    elif args.neighbor_joining_weighted:
+
+        if verbose:
+            print("Running Neighbor-Joining with Weighted Scoring on " + str(len(target_nodes_uniq)) + " Unique Cells")
+
+        target_node_charstrings = np.array([t.get_character_vec() for t in target_nodes_uniq])
+        dm = compute_distance_mat(target_node_charstrings, len(target_node_charstrings), priors=prior_probs)
+        
+        ids = [t.name for t in target_nodes_uniq]
+        cm_uniq = pd.DataFrame(target_node_charstrings)
+        cm_uniq.index = ids
+        dm = sp.spatial.distance.squareform(dm)
+
+        dm = DistanceMatrix(dm, ids)
+
+        newick_str = nj(dm, result_constructor=str)
+
+        tree = newick_to_network(newick_str)
+
+        nj_net = fill_in_tree(tree, cm_uniq)
+        nj_net = tree_collapse(nj_net)
+
+        cm_lookup = dict(zip(list(cm_uniq.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm_uniq.index.values))
+
+        rdict = {}
+        for n in nj_net: 
+            if n.char_string in cm_lookup:
+                n.is_target = True
+            else:
+                n.is_target = False
+
+        if outfp is None:
+            outfp = name.replace('true', 'nj_weighted')
+        pic.dump(nj_net, open(outfp, 'wb'))
+
 
     elif args.camin_sokal:
 

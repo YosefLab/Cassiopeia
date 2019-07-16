@@ -38,7 +38,7 @@ class Node:
 	def get_character_vec(self):
 		return self.char_vec
 
-	def get_edit_distance(self, node2, priors=None):
+	def get_mut_length(self, node2, priors=None):
 
 		cs1, cs2 = self.get_character_string(), node2.get_character_string()
 		x_list, y_list = cs1.split("|"), cs2.split("|")
@@ -46,7 +46,7 @@ class Node:
 		count = 0
 		for i in range(0, len(x_list)):
 			if x_list[i] == y_list[i]:
-				pass
+				continue
 			elif y_list[i] == "-":
 				count += 0
 
@@ -58,6 +58,54 @@ class Node:
 			else:
 				return -1
 		return count
+
+	def get_modified_similarity(self, node2, priors=None):
+
+		cs1, cs2 = self.get_character_string(), node2.get_character_string()
+		x_list, y_list = cs1.split("|"), cs2.split("|")
+		
+		count = 0
+		num_present = 0
+		for i in range(0, len(x_list)):
+
+			if x_list[i] == '-' or x_list[i] == '-':
+				count += 1
+				continue
+
+			num_present += 1
+			if x_list[i] == y_list[i]:
+				if priors:
+					count += priors[i][str(y_list[i])] * priors[i][str(x_list[i])]
+				else:
+					count += 2
+
+			else:
+				count += 0
+
+		if num_present == 0:
+			return 0
+			
+		return count / num_present
+
+	def get_edit_distance(self, node2):
+
+		cs1, cs2 = self.get_character_vec(), node2.get_character_vec()
+
+		count = 0
+		num_present = 0
+
+		for i in range(0, len(cs1)):
+			if cs1[i] == '-' or cs2[i] == '-':
+				continue
+		
+			num_present += 1
+			if cs1[i] != cs2[i]:
+				count += 1
+
+		if num_present == 0:
+			return 0
+
+		return count / num_present
 
 	def __print__(self):
 
