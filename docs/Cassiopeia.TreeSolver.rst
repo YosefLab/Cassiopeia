@@ -48,7 +48,7 @@ Cassiopeia_Tree
 __________________
 
 .. automodule:: Cassiopeia.TreeSolver.Cassiopeia_Tree
-    :members: __init__, dump_network, dump_newick, find_triplet_structure, generate_triplet, get_leaves, get_network, get_newick, get_targets, post_process, score_parsimony
+    :members: 
     :undoc-members: 
     :show-inheritance:
 
