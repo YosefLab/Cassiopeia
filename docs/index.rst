@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcom to Cassiopeia's Documentation
+Welcome to Cassiopeia's Documentation
 ======================================
 
 .. toctree::

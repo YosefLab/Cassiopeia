@@ -8,7 +8,7 @@ Lineage Solving Entry Points
 __________________________________________________________________
 
 .. automodule:: Cassiopeia.TreeSolver.lineage_solver.lineage_solver
-    :members:
+    :members: solve_lineage_instance, find_good_gurobi_subgraph, clean_ilp_network
     :undoc-members:
     :show-inheritance:
 
@@ -32,8 +32,24 @@ Solver Utilities
 __________________________________________________________________
 
 .. automodule:: Cassiopeia.TreeSolver.lineage_solver.solver_utils
+    :members: node_parent, get_edge_length, root_finder, build_potential_graph_from_base_graph, get_sources_of_graph
+    :undoc-members:
+    :show-inheritance:
+
+Node
+__________________
+
+.. automodule:: Cassiopeia.TreeSolver.Node
     :members:
     :undoc-members:
+    :show-inheritance:
+
+Cassiopeia_Tree
+__________________
+
+.. automodule:: Cassiopeia.TreeSolver.Cassiopeia_Tree
+    :members: __init__, dump_network, dump_newick, find_triplet_structure, generate_triplet, get_leaves, get_network, get_newick, get_targets, post_process, score_parsimony
+    :undoc-members: 
     :show-inheritance:
 
 Post-Processing Trees

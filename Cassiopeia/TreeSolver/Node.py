@@ -2,8 +2,7 @@ import hashlib
 
 class Node:
 	"""
-	An abstract class for all nodes in a tree. Unless created manually, these nodes are created in Cassiopeia.TreeSolver.lineage_solver.solver_utils in the `node_parent`
-	function. If the node parent already exists (tested by checking for equality with respect to the character states and process id) then we do not create a new node.
+	An abstract class for all nodes in a tree. 
 
 	Attributes:
 		- name: name of node (this will either be some internal identifier or the cellBC)
@@ -21,6 +20,26 @@ class Node:
 	"""
 
 	def __init__(self, name, character_vec = [], is_target = True, pid = None):
+		"""
+		Initiate a new Node.
+
+		:param name:
+			Name of the node
+		:param character_vec:
+			A list of character states, of length C. All Nodes in a tree should have the same number of characters.
+		:param char_string:
+			A string concatenation of the character vector, deliminted by "|"
+		:param pid:
+			Process ID, necessary for discriminating nodes with identical state that can appear on both sides of the tree. The process 
+			ID is generated from the internal node that serves as the root of an ILP run. 
+		:param is_target:
+			Boolean that discriminiates between target and non-target Nodes.
+
+		:return:
+			None.
+
+		"""
+
 
 		self.name = name
 		self.char_vec = [str(c) for c in character_vec]
@@ -30,15 +49,47 @@ class Node:
 
 
 	def get_character_string(self):
+		"""
+		Utility to get the character string.
+
+		:return:
+			The character string, delimited by "|"
+		"""
+
 		return self.char_string
 
 	def get_name(self):
+		"""
+		Utility to get the name of the node.
+
+		:return:
+			Name of the node (str).
+		"""
+
 		return self.name
 
 	def get_character_vec(self):
+		"""
+		Utility to get the character vector. 
+
+		:return:
+			A list of strings corresponding to the state of each character.
+		"""
+
 		return self.char_vec
 
 	def get_mut_length(self, node2, priors=None):
+		"""
+		Utility to calculate the number of mutations separating two nodes from one another
+
+		:param node2:
+			Node to compare against.
+		:param priors:
+			A dictionary representing the priors of each character state.
+		:return:
+			A count of the number of mutations separating the nodes.
+
+		"""
 
 		cs1, cs2 = self.get_character_string(), node2.get_character_string()
 		x_list, y_list = cs1.split("|"), cs2.split("|")
@@ -60,6 +111,21 @@ class Node:
 		return count
 
 	def get_modified_similarity(self, node2, priors=None):
+		"""
+		Score the 'modified' similarity, where the following holds:
+
+			- If the two states match, add 2
+			- If one state is '0' and ther other is not, add 1
+			- Else, add 0.
+
+		:param node2:
+			Node to compare to.
+		:param priors:
+			A dictionary storing the prior probability of each character state arising. This is used to weight node states in agreement.
+
+		:return:
+			A score, normalized by the number of characters that were observed in both nodes.
+		"""
 
 		cs1, cs2 = self.get_character_string(), node2.get_character_string()
 		x_list, y_list = cs1.split("|"), cs2.split("|")
@@ -88,6 +154,16 @@ class Node:
 		return count / num_present
 
 	def get_edit_distance(self, node2):
+		"""
+		Get the edit distance of the two nodes. Similar to get_mut_length() but instead normalizes by the number of characters shared
+		between the two nodes, and does not take into account priors. 
+
+		:param node2:
+			Node to compare.
+
+		:return:
+			An float representing the edit distance.
+		"""
 
 		cs1, cs2 = self.get_character_vec(), node2.get_character_vec()
 
@@ -111,51 +187,6 @@ class Node:
 
 		print(self.name, self.char_string)
 
-	# def __eq__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) == (other.char_string, other.pid)
-	# 	return False
-
-	# def __ne__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) != (other.char_string, other.pid)
-	# 	return False
-
-	# def __gt__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) > (other.char_string, other.pid)
-
-	# 	raise Exception("Both items must be Nodes.")
-
-	# def __ge__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) >= (other.char_string, other.pid)
-
-	# 	raise Exception("Both items must be Nodes.")
-
-	# def __lt__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) < (other.char_string, other.pid)
-
-	# 	raise Exception("Both items must be Nodes.")
-
-	# def __le__(self, other):
-
-	# 	if isinstance(other, Node):
-	# 		return (self.char_string, self.pid) <= (other.char_string, other.pid)
-
-	# 	raise Exception("Both items must be Nodes.")
-
-
-	# def __hash__(self):
-
-	# 	#return hash((self.pid, self.get_character_string()))
-	# 	return int(hashlib.md5((self.get_character_string() +  "_" + self.name + "_" + str(self.pid)).encode('utf-8')).hexdigest(), 16)
 
 
 

@@ -9,25 +9,48 @@ import copy
 
 class Cassiopeia_Tree:
 	"""
-	An abstract class for all nodes in a tree. Unless created manually, these nodes are created in Cassiopeia.TreeSolver.lineage_solver.solver_utils in the `node_parent`
-	function. If the node parent already exists (tested by checking for equality with respect to the character states and process id) then we do not create a new node.
+	An abstract class for trees used in Cassiopeia. Basically a wrapper for a networkx file and a newick string that can be used to interface
+	with other applications. 
 
 	Attributes:
-		- name: name of node (this will either be some internal identifier or the cellBC)
-		- char_vec: the array of character states, ordered by character.
-		- char_string: a string representation of the char_vec, delimited by '|'. Used for quick comparisons between node character states.
-		- pid: process id (useful for disambiguating between identical character states traversed on different parts of the tree)
-		- is_target: boolean value indicating whether or not these nodes are targets or not.
+		- method: the algorithm used to reconstruct this tree.
+		- name: name of the tree
+		- network: a networkx object representing the tree
+		- newick: the newick string corresponding to the tree.
+		- cm: the character matrix used as input to the tree solver. 
 
 	Methods:
-		- get_character_string: utility function for getting character string
-		- get_name: utility for getting the name of the node
-		- get_character_vec: utility for getting the character vector
-		- get_edit_distance: calculate the edit distance between two nodes
+		- dump_network: write out networkx object to a .pkl file
+		- dump_newick: write out the newick file as text
+		- get_network: retrieve the networkx object
+		- get_newick: retrieve the newick text as a string
+		- get_targets: get target nodes in tree
+		- post_process: post-process the tree by adding cells with same allele onto tree; also make depth uniform and remove non-sample leaves.
+		- score_parsimony: get the parsimony of the tree.
+		- generate_triplet: obtain a random triplet from the tree.
+		- find_triplet_structure: find the mrca of the triplet (used to score triplets)
+		- get_leaves: get the leaves of the tree.
 	
 	"""
 
 	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None):
+		"""
+		Initialize the Cassiopeia_Tree object.
+
+		:param method:
+			Algorithm used to reconstruct the tree
+		:param name:
+			Name of the tree.
+		:param network:
+			Networkx object representing the tree.
+		:param newick:
+			Newick string for tree.
+		:param character_matrix:
+			character matrix used as input for reconstructing the tree.
+
+		:return: 
+			None
+		"""
 
 		assert network is not None or newick is not None
 
@@ -40,6 +63,14 @@ class Cassiopeia_Tree:
 		self.cm = character_matrix
 
 	def dump_network(self, output_name):
+		"""
+		Write network as a pickle file.
+
+		:param output_name:
+			File path to write to.
+		:return:
+			None
+		"""
 
 		if not self.network:
 			self.network = newick_to_network(self.newick)
@@ -47,6 +78,14 @@ class Cassiopeia_Tree:
 		pic.dump(self.network, open(output_name, "wb"))
 
 	def dump_newick(self, output_name):
+		"""
+		Write newick string to text.
+
+		:param output_name:
+			File path to write to.
+		:return:
+			None
+		"""
 
 		if not self.newick:
 			self.newick = convert_network_to_newick_format(self.network)
@@ -55,6 +94,12 @@ class Cassiopeia_Tree:
 			f.write(self.newick)
 
 	def get_network(self):
+		"""
+		Get networkx object. 
+
+		:return:
+			Networkx object. 
+		"""
 
 		if not self.network:
 			self.network = newick_to_network(self.newick)
@@ -62,6 +107,12 @@ class Cassiopeia_Tree:
 		return self.network
 
 	def get_newick(self):
+		"""
+		Get newick string. 
+
+		:return:
+			Newick string.
+		"""
 
 		if not self.newick:
 			self.newick = convert_network_to_newick_format(self.network)
@@ -69,6 +120,12 @@ class Cassiopeia_Tree:
 		return self.newick 
 
 	def get_targets(self):
+		"""
+		Get targets of tree (as determined by Node.is_target boolean).
+
+		:return:
+			List of target Nodes. 
+		"""
 
 		if not self.network:
 			self.network = newick_to_network(self.newick)
@@ -123,6 +180,15 @@ class Cassiopeia_Tree:
 
 
 	def post_process(self, cm = None):
+		"""
+		Post process the tree by:
+			- adding in non-unique samples as leaves
+			- pruning off leaves that are not targets
+			- Adding 'dummy' edges to make the depth of the tree uniform.
+
+		:return:
+			A Cassiopeia_Tree that is post-processed. 
+		"""
 
 		if cm is not None:
 			self.cm = cm
@@ -141,6 +207,15 @@ class Cassiopeia_Tree:
 		return Cassiopeia_Tree(self.method, network=G)
 
 	def score_parsimony(self, cm = None):
+		"""
+		Score the parsimony of the tree.
+	
+		:param cm:
+			Character matrix, if the Cassiopeia_Tree object does not already have one stored.
+
+		:return:
+			An integer representing the number of mutations in the tree.
+		"""
 
 		if cm is not None:
 			self.cm = cm
@@ -166,6 +241,16 @@ class Cassiopeia_Tree:
 		return score
 
 	def generate_triplet(self, targets = None):
+		"""
+		Generate a random triplet of targets in the tree. 
+
+		:param targets:
+			Targets to choose from. If this is None, select randomly from the leaves of the tree (these should be
+			targets themselves).
+		
+		:return: 
+			A list of Nodes corresponding to the triplet. 
+		"""
 
 		if targets is None:
 		
@@ -181,6 +266,15 @@ class Cassiopeia_Tree:
 		return [a, b, c]
 
 	def find_triplet_structure(self, triplet):
+		"""
+		Find the structure of the triplet -- i.e. are A and B more closely related to one another or B and C?
+
+		:param triplet:
+			A list of Nodes (length = 3)
+		
+		:return: 
+			The structure of the triplet and the minimum number of ancestors that overlap between each Node in the triplet.
+		"""
 
 		a, b, c = None, None, None
 
