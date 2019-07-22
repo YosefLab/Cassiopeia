@@ -13,7 +13,7 @@ my $outfile = $ARGV[1];
 
 open(OFILE,">$outfile");
 
-print OFILE "cellBC\tUMI\tintBC\treadCount\tcigar\tAS\tNM\tr1\tr2\tr3\ttargetSite\treadName\tr1.old\tr2.old\tr3.old\n";
+print OFILE "cellBC\tUMI\tintBC\treadCount\tcigar\tAS\tNM\tr1\tr2\tr3\ttargetSite\treadName\tr1_no_context\tr2_no_context\tr3_no_context\n";
 
 my $totalReads = 0;
 my $noBCReads = 0;
@@ -52,7 +52,7 @@ while(<IN>) {
 	#print STDERR "$CO\n";
 	#print STDERR "$r1Cigar, $r2Cigar, $r3Cigar, $r1Cigar_old, $r2Cigar_old, $r3Cigar_old\n";
 
-	print OFILE "$cellBC\t$UR\t$intBC\t$readCount\t$cigar\t$AS\t$NM\t$r1Cigar\t$r2Cigar\t$r3Cigar\t$seq\t$qname\t$r1Cigar_old\t$r2Cigar_old\t$r3Cigar_old\n";
+	print OFILE "$cellBC\t$UR\t$intBC\t$readCount\t$cigar\t$AS\t$NM\t$r1Cigar\t$r2Cigar\t$r3Cigar\t$seq\t$qname\t$r1Cigar_no_context\t$r2Cigar_no_context\t$r3Cigar_no_context\n";
 	$totalReads+=$readCount;
 	$totalUMIs+=1;
 	if ($intBC eq "NC") {

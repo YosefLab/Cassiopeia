@@ -358,10 +358,21 @@ def main():
 
         nj_net = tree_collapse(nj_net)
 
-        Phylo.write(tree, out_fp, 'newick')
-        pic.dump(nj_net, open(out_stem + ".pkl", "wb")) 
+        rdict = {}
+        for n in nj_net: 
+            if nj_net.out_degree(n) == 0 and n.char_string in cm_lookup:
+                n.is_target = True
+            else:
+                n.is_target = False
 
-        newick = convert_network_to_newick_format(nj_net)
+        state_tree = nj_net
+        ret_tree =  Cassiopeia_Tree(method='neighbor-joining', network=state_tree, name='Cassiopeia_state_tree')
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+
+        pic.dump(ret_tree, open(out_stem + ".pkl", "wb")) 
+
+        newick = dp.convert_network_to_newick_format(nj_net)
 
         with open(out_fp, "w") as f:
            f.write(newick)
@@ -495,23 +506,26 @@ def main():
 
         out_stem = "".join(out_fp.split(".")[:-1])
 
-        rdict = {}
+        # rdict = {}
         for n in cs_net:
-            spl = n.split("_")
-            nn = Node('state-node', spl[0].split("|"), is_target = False)
-            if len(spl) > 1:
-                nn.pid = spl[1] 
-            if spl[0] in cm.index.values:
-                nn.is_target = True
-            rdict[n] = nn
+            if n.char_string in cm_lookup:
+                n.is_target = True
+            # spl = n.split("_")
+            # nn = Node('state-node', spl[0].split("|"), is_target = False)
+            # if len(spl) > 1:
+            #     nn.pid = spl[1] 
+            # if spl[0] in cm.index.values:
+            #     nn.is_target = True
+            # rdict[n] = nn
 
-        state_tree = nx.relabel_nodes(cs_net, rdict)
-
+        # state_tree = nx.relabel_nodes(cs_net, rdict)
+        state_tree = cs_net
         ret_tree =  Cassiopeia_Tree(method='camin-sokal', network=state_tree, name='Cassiopeia_state_tree')
 
         pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
 
-        newick = ret_tree.get_newick()
+        newick = dp.convert_network_to_newick_format(state_tree)
+        # newick = ret_tree.get_newick()
 
         with open(out_fp, "w") as f:
             f.write(newick)

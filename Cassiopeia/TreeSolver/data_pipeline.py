@@ -205,7 +205,7 @@ def get_indel_props(at, group_var = ['intBC']):
 	return_df.index.name = "indel"
 	return return_df
 
-def process_allele_table(cm, old_r = False, mutation_map=None):
+def process_allele_table(cm, no_context = False, mutation_map=None):
 	"""
 	Given an alleletable, create a character strings and lineage-specific mutation maps.
 	A character string for a cell consists of a summary of all mutations observed at each
@@ -215,7 +215,7 @@ def process_allele_table(cm, old_r = False, mutation_map=None):
 
 	:param cm:
 		The allele table pandas DataFrame.
-	:param old_r:
+	:param no_context:
 		Do not use sequence context when identifying unique indels. (Default = False)
 	:param mutation_map:
 		A specification of the indel formation probabilities, in the form of a pandas
@@ -232,10 +232,10 @@ def process_allele_table(cm, old_r = False, mutation_map=None):
 	filtered_samples = defaultdict(OrderedDict)
 	for sample in cm.index:
 		cell = cm.loc[sample, "cellBC"]
-		if old_r:
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1.old']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2.old']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3.old']
+		if no_context:
+			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1_no_context']
+			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2_no_context']
+			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3_no_context']
 		else:
 			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1']
 			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2']
@@ -349,7 +349,7 @@ def write_to_charmat(string_sample_values, out_fp):
 
 			f.write("\n")
 
-def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r = False, write=True):
+def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_context = False, write=True):
 	"""
 	Wrapper function for creating character matrices out of allele tables.
 
@@ -360,7 +360,7 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r 
 	:param mutation_map:
 		Mutation map as a pandas DataFrame. This can be created with the
 		`get_indel_props` function. (Default = None)
-	:param old_r:
+	:param no_context:
 		Do not use sequence context when calling character states (Default = False)
 	:param write:
 		Write out to file. This requires `out_fp` to be specified as well. (Default = True)
@@ -372,7 +372,7 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r 
 	"""
 
 
-	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, old_r = old_r, mutation_map=mutation_map)
+	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, no_context = no_context, mutation_map=mutation_map)
 
 	if write:
 
@@ -392,7 +392,7 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, old_r 
 	else:
 		return string_to_cm(character_matrix_values), prior_probs, indel_to_charstate
 
-def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
+def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=True):
 	"""
 	Wrapper function for creating lineage profiles out of allele tables. These are
 	identical in concept to character matrices but retain their mutation identities
@@ -402,7 +402,7 @@ def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
 		Allele table as a pandas DataFrame.
 	:param out_fp:
 		Output file path, only necessary when write = True (Default = None)
-	:param old_r:
+	:param no_context:
 		Do not use sequence context when calling character states (Default = False)
 	:param write:
 		Write out to file. This requires `out_fp` to be specified as well. (Default = True)
@@ -410,8 +410,8 @@ def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
 		None if write is specified. If not, return an N x C lineage profile as a pandas DataFrame.
 	"""
 
-	if old_r:
-		g = lg.groupby(["cellBC", "intBC"]).agg({"r1.old": "unique", "r2.old": "unique", "r3.old": "unique"})
+	if no_context:
+		g = lg.groupby(["cellBC", "intBC"]).agg({"r1_no_context": "unique", "r2_no_context": "unique", "r3_no_context": "unique"})
 	else:
 		g = lg.groupby(["cellBC", "intBC"]).agg({"r1": "unique", "r2": "unique", "r3": "unique"})
 
@@ -422,8 +422,8 @@ def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
 	for i in intbcs:
 		i1 += [i]*3
 
-	if old_r:
-		i2 = ["r1.old", "r2.old", "r3.old"] * len(intbcs)
+	if no_context:
+		i2 = ["r1_no_context", "r2_no_context", "r3_no_context"] * len(intbcs)
 	else:
 		i2 = ["r1", "r2", "r3"] * len(intbcs)
 
@@ -433,8 +433,8 @@ def alleletable_to_lineage_profile(lg, out_fp=None, old_r = False, write=True):
 
 	for j in tqdm(g.index, desc="filling in multiindex table"):
 		vals = map(lambda x: x[0], g.loc[j])
-		if old_r:
-			allele_piv.loc[j[0]][j[1], "r1.old"], allele_piv.loc[j[0]][j[1], "r2.old"], allele_piv.loc[j[0]][j[1], "r3.old"] = vals
+		if no_context:
+			allele_piv.loc[j[0]][j[1], "r1_no_context"], allele_piv.loc[j[0]][j[1], "r2_no_context"], allele_piv.loc[j[0]][j[1], "r3_no_context"] = vals
 		else:
 			allele_piv.loc[j[0]][j[1], "r1"], allele_piv.loc[j[0]][j[1], "r2"], allele_piv.loc[j[0]][j[1], "r3"] = vals
 

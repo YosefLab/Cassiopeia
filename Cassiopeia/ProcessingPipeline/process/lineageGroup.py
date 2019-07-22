@@ -423,7 +423,7 @@ def filteredLG2AT(filtered_lgs):
 
     final_df = pd.concat(filtered_lgs)
 
-    final_df = final_df.groupby(["cellBC", "intBC", "allele", "r1", "r2", "r3", "r1.old", "r2.old", "r3.old", "lineageGrp"], as_index=False).agg({"UMI": "count", "readCount": "sum"})
+    final_df = final_df.groupby(["cellBC", "intBC", "allele", "r1", "r2", "r3", "r1_no_context", "r2_no_context", "r3_no_context", "lineageGrp"], as_index=False).agg({"UMI": "count", "readCount": "sum"})
 
     final_df["Sample"] = final_df.apply(lambda x: x.cellBC.split(".")[0], axis=1)
 

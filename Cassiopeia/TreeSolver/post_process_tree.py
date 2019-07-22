@@ -213,7 +213,7 @@ def post_process_tree(G, cm, alg):
     """
 
     
-    if alg in ['greedy', 'hybrid', 'ilp', 'neighbor-joining', 'nj']:
+    if alg in ['greedy', 'hybrid', 'ilp', 'neighbor-joining', 'nj', 'camin-sokal', 'cs']:
         G = assign_samples_to_charstrings(G, cm)
         G = prune_and_clean_leaves(G)
 
