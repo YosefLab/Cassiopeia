@@ -67,6 +67,79 @@ def tree_collapse(tree):
 
 	return new_graph
 
+def tree_collapse2(tree, source):
+
+	collapsing = True
+
+	to_remove = []
+	while collapsing:
+		newNodes = []
+
+		collapsing = False
+
+		for c in tree.successors(source):
+
+			if c.char_string == source.char_string and tree.out_degree(c) > 0:
+
+				newNodes += [c2 for c2 in tree.successors(c)]
+				to_remove.append(c)
+
+				collapsing = True
+
+			else:
+				newNodes.append(c)
+
+	tree.remove_nodes_from(to_remove)
+	tree.add_edges_from([(source, n) for n in newNodes])
+
+	for c in tree.successors(source):
+		tree_collapse2(tree, c)
+
+
+
+def tree_collapse2(tree): 
+
+	def collapse_decision(phy): 
+
+		_leaves = [n for n in phy if phy.out_degree(n) == 0]
+
+		for l in _leaves:
+			for a in nx.ancestors(phy, l):
+				if a.char_string == l.char_string:
+					return True
+
+		return False
+
+	while collapse_decision(tree):
+
+		_leaves = [n for n in tree if tree.out_degree(n) == 0]
+		to_remove = []
+		edges_to_add = []
+		for l in _leaves:
+
+			for a in nx.ancestors(tree, l):
+				if a.char_string == l.char_string:
+
+					if a in to_remove:
+						continue
+
+					to_remove.append(a)
+
+					desc_of_a = tree.successors(a)
+					anc_of_a = nx.ancestors(tree, a)
+
+
+					edges_to_add += [(l, d) for d in desc_of_a if d != l]
+					edges_to_add += [(a2, l) for a2 in anc_of_a]
+
+		tree.remove_nodes_from(to_remove)
+		tree.add_edges_from(edges_to_add)
+
+		tree.remove_edges_from(tree.selfloop_edges())
+
+	return tree
+
+
 def find_parent(node_list):
 	parent = []
 	if isinstance(node_list[0], Node):

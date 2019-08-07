@@ -285,7 +285,7 @@ def sample_chisq_test(G, metavals, depth=0):
     #print(csq_table)
 
     # screen table before passing it to the test - make sure all variables passed the zero filter
-    if np.any(np.sum(csq_table, axis=1) == 0) or len(csq_table) == 0:
+    if np.any(np.sum(csq_table, axis=1) == 0) or np.any(np.sum(csq_table, axis=0) == 0) or len(csq_table) == 0:
         return 0, 0, 1, csq_table.shape[0]
 
     chisq = stats.chi2_contingency(csq_table)

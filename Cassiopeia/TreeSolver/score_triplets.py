@@ -49,6 +49,7 @@ def main():
     parser.add_argument('--num_trials', '-n', type=int, default=50000, help="Number of tripelts to sample & compare")
     parser.add_argument("--param", type=int, default=0)
     parser.add_argument("--run", type=int, default=0)
+    parser.add_argument("--depth_thresh", type = int, default=20)
 
     args = parser.parse_args()
 
@@ -60,6 +61,7 @@ def main():
     num_trials = args.num_trials
     param = args.param
     run = args.run
+    d_thresh = args.depth_thresh
 
     try:
         name = true_netfp.split("/")[-1]
@@ -86,7 +88,7 @@ def main():
         rtree = reconstructed_network
     else:
         rtree = Cassiopeia_Tree('simulated', network = reconstructed_network)
-    tot_tp = score_triplets(stree, rtree, number_of_trials=num_trials, modified = modified)
+    tot_tp = score_triplets(stree, rtree, number_of_trials=num_trials, modified = modified, min_size_depth = d_thresh)
 
     print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
 

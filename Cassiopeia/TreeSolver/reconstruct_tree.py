@@ -30,7 +30,7 @@ import os
 
 from Cassiopeia.TreeSolver.lineage_solver import *
 from Cassiopeia.TreeSolver.simulation_tools import *
-from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
+from Cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse2
 from Cassiopeia.TreeSolver import *
 from Cassiopeia.TreeSolver.Node import Node
 from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
@@ -356,7 +356,7 @@ def main():
 
         nj_net = fill_in_tree(nj_net, cm)
 
-        nj_net = tree_collapse(nj_net)
+        # nj_net = tree_collapse2(nj_net)
 
         rdict = {}
         for n in nj_net: 
@@ -397,7 +397,7 @@ def main():
         tree = dp.newick_to_network(newick_str)
 
         nj_net = fill_in_tree(tree, cm_uniq)
-        # nj_net = tree_collapse(nj_net)
+        #nj_net = tree_collapse2(nj_net)
         
         out_stem = "".join(out_fp.split(".")[:-1])
 
@@ -502,7 +502,7 @@ def main():
 
         cs_net = fill_in_tree(cs_net, cm)
 
-        cs_net = tree_collapse(cs_net)
+        #cs_net = tree_collapse2(cs_net)
 
         out_stem = "".join(out_fp.split(".")[:-1])
 
@@ -546,7 +546,7 @@ def main():
         #cm.index = list(range(len(cells)))
         
         if verbose:
-            print("Running Camin-Sokal on " + str(cm.shape[0]) + " Unique Cells")
+            print("Running Maximum Likelihood on " + str(cm.shape[0]) + " Unique Cells")
 
         infile = stem + 'infile.txt'
         fn = stem + "phylo.txt"

@@ -236,7 +236,7 @@ class Cassiopeia_Tree:
 
 		score = 0
 		for e in nx.dfs_edges(net, source=root):
-			score += e[0].get_edit_distance(e[1])
+			score += e[0].get_mut_length(e[1])
 
 		return score
 
