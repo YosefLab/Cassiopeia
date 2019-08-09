@@ -69,6 +69,7 @@ def generate_simulated_full_tree(mutation_prob_map, variable_dropout_prob_map, c
 
 	state_tree = nx.relabel_nodes(network, rdict)
 
+	state_tree = Cassiopeia_Tree('simulated', network = state_tree)
 
 	return state_tree
 
@@ -113,7 +114,8 @@ def generate_simulated_ivlt_experiment(mutation_prob_map, variable_dropout_prob_
 	for node in subsampled_population_for_removal:
 		network.remove_node(node_to_string(node))
 
-	return network
+	tree = Cassiopeia_Tree('simulated', network = network)
+	return tree
 
 
 

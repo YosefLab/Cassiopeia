@@ -16,9 +16,20 @@ from Cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
 def score_triplets(true_network, reconstructed_network, modified = True, min_size_depth = 20, number_of_trials = 50000):
 
+    if isinstance(true_network, Cassiopeia_Tree):
+        stree = true_network
+    else:
+        stree = Cassiopeia_Tree('simulated', network = true_network)
+
+    if isinstance(reconstructed_network, Cassiopeia_Tree):
+        rtree = reconstructed_network
+    else:
+        rtree = Cassiopeia_Tree('simulated', network = reconstructed_network)
+
     tot_tp = 0
     if modified:
-        correct_class, freqs = check_triplets_correct(true_network, reconstructed_network,
+
+        correct_class, freqs = check_triplets_correct(stree, rtree,
                                 number_of_trials=number_of_trials, dict_return=True)
 
         num_consid = 0
@@ -34,7 +45,7 @@ def score_triplets(true_network, reconstructed_network, modified = True, min_siz
 
     else:
 
-        tot_tp = check_triplets_correct(true_network, reconstructed_network, number_of_trials = number_of_trials)
+        tot_tp = check_triplets_correct(stree, rtree, number_of_trials = number_of_trials)
 
     return tot_tp
 
@@ -79,15 +90,6 @@ def main():
     true_network = pic.load(open(true_netfp, "rb"))
     reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
 
-    if isinstance(true_network, Cassiopeia_Tree):
-        stree = true_network
-    else:
-        stree = Cassiopeia_Tree('simulated', network = true_network)
-
-    if isinstance(reconstructed_network, Cassiopeia_Tree):
-        rtree = reconstructed_network
-    else:
-        rtree = Cassiopeia_Tree('simulated', network = reconstructed_network)
     tot_tp = score_triplets(stree, rtree, number_of_trials=num_trials, modified = modified, min_size_depth = d_thresh)
 
     print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))

@@ -261,7 +261,7 @@ def main():
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
 
-        net = reconstructed_network_greedy.get_network()
+        net = reconstructed_network_greedy
 
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
@@ -278,7 +278,7 @@ def main():
 
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        net = reconstructed_network_hybrid.get_network()
+        net = reconstructed_network_hybrid
 
         if outfp is None:
             outfp = name.replace('true', 'hybrid')
@@ -294,7 +294,7 @@ def main():
         reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, 
                                     time_limit=time_limit, max_neighborhood_size = max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        net = reconstructed_network_ilp.get_network()
+        net = reconstructed_network_ilp
         # reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
         if outfp is None:
             outfp = name.replace('true', 'ilp')
@@ -363,7 +363,7 @@ def main():
                 #nn.name = cm_lookup[spl[0]]
             # rdict[n] = nn
 
-
+        nj_net = Cassiopeia_Tree('neighbor-joining', network = cs_net)
         if outfp is None:
             outfp = name.replace('true', 'nj')
         pic.dump(nj_net, open(outfp, 'wb'))
@@ -403,6 +403,7 @@ def main():
             else:
                 n.is_target = False
 
+        nj_net = Cassiopeia_Tree('neighbor-joining', network = cs_net)
         if outfp is None:
             outfp = name.replace('true', 'nj_weighted')
         pic.dump(nj_net, open(outfp, 'wb'))
@@ -498,6 +499,7 @@ def main():
             if n.char_string in cm_lookup.keys():
                 n.is_target = True
 
+        cs_net = Cassiopeia_Tree('camin-sokal', network = cs_net)
         if outfp is None:
             outfp = name.replace('true', 'cs')
         pic.dump(cs_net, open(outfp, 'wb'))

@@ -106,62 +106,6 @@ def main():
     dropout_prob_map = {i: np.random.choice(list(data_dropout_rates.values())) for i in range(0,number_of_characters)}
 
     # Generate simulated network
-    true_network = generate_simulated_full_tree(prior_probabilities, dropout_prob_map, characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
-    tree = Cassiopeia_Tree('simulated', network=true_network)
+    tree = generate_simulated_full_tree(prior_probabilities, dropout_prob_map, characters=number_of_characters, subsample_percentage=subsample_percentage, depth=depth)
+    # tree = Cassiopeia_Tree('simulated', network=true_network)
     pic.dump(tree, open(output_file, "wb"))
-
-#target_nodes_original_network = get_leaves_of_tree(true_network, clip_identifier=False)
-
-#k = map(lambda x: "s" + x.split("_")[-1], target_nodes_original_network)
-#s_to_char = dict(zip(k, target_nodes))
-
-#with open("phylo.txt", "w") as f:
-
-#    f.write("cellBC")
-#    for i in range(number_of_characters):
-#        f.write("\t" + str(i))
-#    f.write("\n")
-
-#    for n in target_nodes_original_network:
-#        charstring, sname = n.split("_")
-#        f.write(sname)
-#        chars = charstring.split("|")
-#        for c in chars:
-#            f.write("\t" + c)
-#        f.write("\n")
-
-#print("Simulation written to " + output_file)
-
-#print "CCI complexity of reconstruction: ", cci_score(target_nodes)
-
-# Hybrid solution
-#reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probabilities)
-#reconstructed_network_hybrid = solve_lineage_instance(target_nodes, method="hybrid", hybrid_subset_cutoff=100, time_limit=1000)
-
-# run camin-sokal
-#os.system("python2 binarize_multistate_charmat.py phylo.txt infile") 
-# run phylip mix with camin-sokal
-#inputs = [b"R", b"P", b"Y", b"R"]
-#parent, fd = fork()
-#if not parent:
-#    os.execv("~/software/phylip-3.697/exe/mix")
-
-#for each in inputs:
-#    os.write(fd, each+b'\n')
-#    sleep(0.5)
-
-#tree = Phylo.parse("outtree", "newick").next()
-#cs_net = net = Phylo.to_networkx(tree)
-
-# convert labels to strings, not Bio.Phylo.Clade objects
-#c2str = map(lambda x: str(x), cs_net.nodes())
-#c2strdict = dict(zip(cs_net.nodes(), c2str))
-#cs_net = nx.relabel_nodes(cs_net, c2strdict)
-
-# convert labels to characters for triplets correct analysis
-#cs_net = nx.relabel_nodes(cs_net, s_to_char)
-
-
-#print "Number of triplets correct greedy: ", check_triplets_correct(true_network, reconstructed_network_greedy)
-#print "Number of triplets correct hybrid: ", check_triplets_correct(true_network, reconstructed_network_hybrid)
-#print "Camin-Sokal triplets correct: ", check_triplets_correct(true_network, cs_net)
