@@ -7,11 +7,11 @@ import scipy as sp
 import pylab
 from matplotlib import colors, colorbar
 from scipy import cluster
-import rpy2
-import rpy2.robjects as robjects
-from rpy2.robjects.packages import importr
+#import rpy2
+#import rpy2.robjects as robjects
+#from rpy2.robjects.packages import importr
 from tqdm import tqdm
-from rpy2.robjects import r, numpy2ri
+#from rpy2.robjects import r, numpy2ri
 import time
 import yaml
 import networkx as nx

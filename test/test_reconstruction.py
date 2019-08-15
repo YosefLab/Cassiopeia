@@ -2,7 +2,10 @@ import networkx as nx
 from Cassiopeia.TreeSolver import Node
 import Cassiopeia.TreeSolver.lineage_solver as ls 
 import Cassiopeia.TreeSolver.simulation_tools.simulation_utils as sim_utils
+import Cassiopeia as sclt
+from pathlib import Path
 import pickle as pic
+SCLT_PATH = Path(sclt.__path__[0])
 
 import os
 import sys
@@ -217,8 +220,8 @@ def test_ilp_parallel_evo():
 
 def test_on_sim_greedy():
 
-	stree = pic.load(open("sim_net.pkl", "rb"))
-	leaves = sim_utils.get_leaves_of_tree(stree)
+	stree = pic.load(open("test/data/sim_net.pkl", "rb"))
+	leaves = stree.get_leaves()
 
 	target_nodes = []
 	for l in leaves:
@@ -248,8 +251,8 @@ def test_on_sim_greedy():
 def test_on_sim_hybrid():
 
 
-	stree = pic.load(open("sim_net.pkl", "rb"))
-	leaves = sim_utils.get_leaves_of_tree(stree)
+	stree = pic.load(open("test/data/sim_net.pkl", "rb"))
+	leaves = stree.get_leaves()
 
 	target_nodes = []
 	for l in leaves:
