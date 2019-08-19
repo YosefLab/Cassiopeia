@@ -10,7 +10,7 @@ source:
 
 build:
   number: 0
-  script: "{{ PYTHON }} setup.py build; {{ PYTHON }} setup.py build_ext --inplace; {{ PYTHON }} setup.py bdist_wheel; {{ PYTHON }} -m pip install . --user --ignore-installed -vv "
+  script: "{{ PYTHON }} setup.py build; {{ PYTHON }} setup.py build_ext --inplace; {{ PYTHON }} setup.py bdist_wheel; {{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
 
 requirements:
   host:
@@ -25,7 +25,7 @@ test:
   imports:
     - cassiopeia
     - cassiopeia.ProcessingPipeline
-    - cassipoeia.TreeSolver
+    - cassiopeia.TreeSolver
 #   imports:
 #     - numpy
 #     - cassiopeia
