@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import Cassiopeia
 
-autodoc_mock_imports = ["Cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", 
-                        "Cassiopeia.ProcessingPipeline.process.collapse",
+autodoc_mock_imports = ["cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", 
+                        "cassiopeia.ProcessingPipeline.process.collapse",
                         "gurobipy"]
 
 # -- Project information -----------------------------------------------------
@@ -30,9 +30,9 @@ copyright = u'2019, Matthew Jones, Alex Khodaverdian, Jeffrey Quinn'
 author = u'Matthew Jones, Alex Khodaverdian, Jeffrey Quinn'
 
 # The short X.Y version
-version = Cassiopeia.__version__
+version = cassiopeia.__version__
 # The full version, including alpha/beta/rc tags
-release = Cassiopeia.__version__
+release = cassiopeia.__version__
 
 
 # -- General configuration ---------------------------------------------------

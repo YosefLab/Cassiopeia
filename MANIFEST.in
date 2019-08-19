@@ -1,2 +1,2 @@
-include Cassiopeia/ProcessingPipeline/process/*.pl
+include cassiopeia/ProcessingPipeline/process/*.pl
 recursive-include cython *

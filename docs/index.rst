@@ -18,8 +18,8 @@ Welcome to Cassiopeia's Documentation
    :maxdepth: 1
    :caption: Package Reference
 
-   Cassiopeia.TreeSolver
-   Cassiopeia.ProcessingPipeline
+   cassiopeia.TreeSolver
+   cassiopeia.ProcessingPipeline
 
 
 
