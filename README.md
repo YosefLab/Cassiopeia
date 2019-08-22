@@ -34,7 +34,6 @@ Installation
 5. You can install the package from pip via ``python3.6 -m pip install --user cassiopeia-lineage``. One of Cassiopeia's dependencies, pysam, requires HTSLib to be installed. You can read about pysam's requirements [here](https://pysam.readthedocs.io/en/latest/installation.html#requirements).
 
 Else, if you're installing the package from source (i.e. after cloning from github), use the following:
-
     * ``python3.6 setup.py build``
     * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 setup.py bdist_wheel``
