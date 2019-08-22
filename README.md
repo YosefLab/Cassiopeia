@@ -38,7 +38,7 @@ Installation
     * ``python3.6 -m pip install . --user``
     
     
-To verify that it installed correctly, try using the package in a python session: ``import Cassiopeia``. Then, to make sure that the command-line tools work, try ``reconstruct-lineage -h`` and confirm that you get the usage details.
+To verify that it installed correctly, try using the package in a python session: ``import cassiopeia``. Then, to make sure that the command-line tools work, try ``reconstruct-lineage -h`` and confirm that you get the usage details.
 
 Command Line Tools
 -------------------
@@ -48,7 +48,6 @@ In addition to allowing users to use Cassiopeia from a python session, we provid
 - `reconstruct-lineage`: Reconstructs a lineage from a provided character matrix (consisting of cells x characters where each element is the observed state of that character in that cell).
 - `post-process-tree`: Post-process trees after reconstructing to assign sample identities back to leaves of the tree and removing any leaves that don't correspond to a sample in the character matrix.
 - `stress-test`: Conduct stress testing on a given simulated tree. Writes out a new tree file after inferring a tree from the unique leaves of the "true", simulated tree.
-- `simulate-tree`: Simulate a tree.
 - `call-lineages`: Perform lineage group calling from a molecule table.
 - `filter-molecule-table`: Perform molecule table filtering. 
 
