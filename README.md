@@ -35,9 +35,8 @@ Installation
 
 6. Ensure the Cython is installed. You can do this via ``python3.6 pip install --user cython``. 
 
-7. You can install the package from pip via ``python3.6 -m pip install --user cassiopeia-lineage``.  Else, if you're installing the package from source (i.e. after cloning from github), use the following:
+7. While we get pip working, it's best to first clone the package and then follow these instructions:
     * ``python3.6 setup.py build``
-    * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 setup.py bdist_wheel``
     * ``python3.6 -m pip install . --user``
     
