@@ -3,8 +3,8 @@
 
 from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
-#from Cython.Build import cythonize
-#from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 
 
 with open("README.md") as readme_file:
@@ -38,7 +38,7 @@ requirements = [
 
 author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn, Jeffrey Hussmann, Michelle Chan"
 
-# cmdclass = {'build_ext': build_ext}
+cmdclass = {'build_ext': build_ext}
 
 # files to wrap with cython
 to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
@@ -47,12 +47,9 @@ to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", [
                 Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
 
 setup(
-        name="cassiopeia-lineage",
-        ext_package='cassiopeia',
-        # ext_modules=cythonize(to_cythonize),
-        ext_modules=to_cythonize,
-        # cmdclass=cmdclass,
-        setup_requires=['cython', 'numpy'],
+        name="cassiopeia",
+        ext_modules=cythonize(to_cythonize),
+        cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main',
                                 'reconstruct-lineage = cassiopeia.TreeSolver.reconstruct_tree:main',
@@ -74,7 +71,6 @@ setup(
             "Operating System :: POSIX :: Linux",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
         ],
-        python_requires='>=3.6',
         long_description=readme + "\n\n", 
         description="Single Cell Lineage Reconstruction with Cas9-Enabled Lineage Recorders",
         install_requires=requirements,
