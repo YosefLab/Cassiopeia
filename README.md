@@ -31,7 +31,11 @@ Installation
     
 4. Make sure that Emboss is properly configurd and installed; oftentimes users may see a "command not found" error when attempting to align with the `align_sequences` function we have provided. This is most likely due to the fact that you have not properly added the binary file to your path variable. For details on how to download, configure, and install the Emboss package, refer to this [tutorial](http://emboss.open-bio.org/html/adm/ch01s01.html).
 
-5. You can install the package from pip via ``python3.6 -m pip install --user cassiopeia-lineage``. One of Cassiopeia's dependencies, pysam, requires HTSLib to be installed. You can read about pysam's requirements [here](https://pysam.readthedocs.io/en/latest/installation.html#requirements). Else, if you're installing the package from source (i.e. after cloning from github), use the following:
+5. One of Cassiopeia's dependencies, pysam, requires HTSLib to be installed. You can read about pysam's requirements [here](https://pysam.readthedocs.io/en/latest/installation.html#requirements).
+
+6. Ensure the Cython is installed. You can do this via ``python3.6 pip install --user cython``. 
+
+5. You can install the package from pip via ``python3.6 -m pip install --user cassiopeia-lineage``.  Else, if you're installing the package from source (i.e. after cloning from github), use the following:
     * ``python3.6 setup.py build``
     * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 setup.py bdist_wheel``
