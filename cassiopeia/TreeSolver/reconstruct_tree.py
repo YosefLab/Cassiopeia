@@ -33,7 +33,7 @@ from cassiopeia.TreeSolver.simulation_tools import *
 from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse2
 from cassiopeia.TreeSolver import *
 from cassiopeia.TreeSolver.Node import Node
-from assiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
+from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 import cassiopeia.TreeSolver.data_pipeline as dp
 
 import cassiopeia as sclt

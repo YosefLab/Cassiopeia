@@ -54,7 +54,7 @@ class Cassiopeia_Tree:
 
 		assert network is not None or newick is not None
 
-		assert method in ['greedy', 'hybrid', 'ilp', 'cassiopeia', 'camin-sokal', 'neighbor-joining', 'simulated']
+		assert method in ['greedy', 'hybrid', 'ilp', 'cassiopeia', 'camin-sokal', 'neighbor-joining', 'simulated', 'from_newick']
 
 		self.name = name
 		self.method = method

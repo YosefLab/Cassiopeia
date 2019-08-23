@@ -12,6 +12,7 @@ import pylab
 import math
 
 import pickle as pic
+from cassiopeia.TreeSolver.Node import Node
 
 # from .Cassiopeia_Tree import Cassiopeia_Tree
 # from .Node import Node
@@ -112,7 +113,7 @@ def convert_network_to_newick_format(graph):
 
 	return to_newick_str(graph, [node for node in graph if graph.in_degree(node) == 0][0])
 
-def newick_to_network(newick_filepath, f=1):
+def newick_to_network(newick_filepath, cm, f=1):
 	"""
 	Given a file path to a newick file, convert to a directed graph.
 
@@ -124,42 +125,35 @@ def newick_to_network(newick_filepath, f=1):
 	"""
 
 	G = nx.DiGraph()    # the new graph
+	cm_lookup = cm.apply(lambda x: '|'.join(x.values), axis=1)
 
 	try:
 		tree = Tree(newick_filepath, format=f)
 	except:
 		tree = Tree(newick_filepath)
 
-	# relabel empty-labeled nodes
-	i = 1
-	if tree.name == "" or tree.name == "state-node":
-		tree.name = "state-node" + str(i)
-		i += 1
+	# Create dict from ete3 node to cassiopeia.Node
+	e2cass = {}
+	for n in tree.traverse('postorder'):
+		if "|" in n.name:
+			nn = Node('state-node', n.name.split("|"))
+		else:
+			nn = Node(n.name, [])
 
-	for n in tree:
-		if n.name == '' or n.name == "state-node":
-			n.name = "state-node" + str(i)
-			i += 1
+		if n.is_leaf() and nn.char_string in cm_lookup:
+			nn.is_target = True
+			
+		e2cass[n] = nn
+		G.add_node(nn)
 
-	nodes = [n.name for n in tree] + [tree.name]
+	for p in tree.traverse('postorder'):
 
-	G.add_nodes_from(nodes)
-
-	parent_stack = [tree]
-	visited = []
-	while len(parent_stack) > 0:
-
-		p = parent_stack.pop(0)
-		visited.append(p)
+		pn = e2cass[p]
 
 		for c in p.children:
-			if c.name  == '' or c.name == "state-node":
-				c.name = "state-node" + str(i)
-				i += 1
-			if c not in visited:
-				parent_stack.append(c)
+			cn = e2cass[c]
 
-			G.add_edge(p.name, c.name)
+			G.add_edge(pn, cn)
 
 	return G
 

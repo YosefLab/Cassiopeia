@@ -44,8 +44,7 @@ def prune_and_clean_leaves(G):
         _leaves = [n for n in G if G.out_degree(n) == 0]
 
         for n in _leaves:
-            # if we have this case, where the leaf doesn't have a sample label in the name, we need to remove this path
-            #if "target" not in n:
+            # we detect leaves that are not targets by the `is_target` attribute.
             if not n.is_target:
                 nodes_to_remove.append(n)
 
@@ -67,8 +66,6 @@ def prune_and_clean_leaves(G):
     #         node_dict[n] = nn
 
     # G = nx.relabel_nodes(G, node_dict)
-
-    node_dict2 = {}
     for n in G.nodes:
        # spl = n.split("_")
         if n.is_target:
@@ -81,11 +78,14 @@ def prune_and_clean_leaves(G):
             # else we must add an extra 'redundant' leaf here
             if G.out_degree(n) != 0:
             #    node_dict2[n] = name
-                n.is_target = False
-                new_node = Node(n.name, n.get_character_vec(), is_target=True)
+                if n.name == 'state-node':
+                    n.is_target = False
+                else:
+                    n.is_target = False
+                    new_node = Node(n.name, n.get_character_vec(), is_target=True)
             # else:
-                new_nodes.append(new_node)
-                new_edges.append((n, new_node))
+                    new_nodes.append(new_node)
+                    new_edges.append((n, new_node))
 
     G.add_nodes_from(new_nodes)
     G.add_edges_from(new_edges)
@@ -115,7 +115,8 @@ def assign_samples_to_charstrings(G, cm):
 
     root = [n for n in G if G.in_degree(n) == 0][0]
 
-    cm["lookup"] = cm.astype(str).apply(lambda x: "|".join(x), axis=1)
+    if 'lookup' not in cm.columns:
+        cm["lookup"] = cm.astype(str).apply(lambda x: "|".join(x), axis=1)
 
     for n in G:
 
@@ -123,6 +124,8 @@ def assign_samples_to_charstrings(G, cm):
             n.is_target = False
             sub_cm  = cm.loc[cm["lookup"] == n.get_character_string()]
             _nodes = sub_cm.apply(lambda x: Node(x.name, x.values[:-1], is_target=True), axis=1) # make sure to do up to [:-1] b/c you don't want the lookup in your character vec
+            if len(_nodes) == 0:
+                continue
             for new_node in _nodes:
                 new_nodes.append(new_node)
                 new_edges.append((n, new_node))
@@ -166,7 +169,9 @@ def add_redundant_leaves(G, cm):
     """
 
     # create lookup value for duplicates
-    cm["lookup"] = cm.astype('str').apply('|'.join, axis=1)
+    if 'lookup' not in cm.columns:
+        cm["lookup"] = cm.astype('str').apply('|'.join, axis=1)
+
     net_nodes = np.intersect1d(cm.index, [n.name for n in G])
 
     uniq = cm.loc[net_nodes]
@@ -213,9 +218,9 @@ def post_process_tree(G, cm, alg):
     """
 
     
-    if alg in ['greedy', 'hybrid', 'ilp', 'neighbor-joining', 'nj', 'camin-sokal', 'cs']:
-        G = assign_samples_to_charstrings(G, cm)
-        G = prune_and_clean_leaves(G)
+    # if alg in ['greedy', 'hybrid', 'ilp', 'neighbor-joining', 'nj', 'camin-sokal', 'cs']:
+    G = assign_samples_to_charstrings(G, cm)
+    G = prune_and_clean_leaves(G)
 
     G = add_redundant_leaves(G, cm)
 

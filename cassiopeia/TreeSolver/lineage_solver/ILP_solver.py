@@ -1,9 +1,14 @@
-from gurobipy import *
 import networkx
 import time as python_time
 from os import sys
 import datetime
+import warnings
+import importlib
 
+try:
+	from gurobipy import *
+except ModuleNotFoundError:
+	warnings.warn("No module called gurobipy found. ILP solver will exit automatically if used.")
 
 
 def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
@@ -18,6 +23,9 @@ def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
     :param time_limit: time limit for the run in seconds
     :return: an optimal subgraph containing the path(s) if the solution is Optimal, else None
     """
+
+    gur_spec = importlib.util.find_spec("gurobipy")
+    assert gur_spec is not None
 
     start_time = python_time.time()
 
