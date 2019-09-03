@@ -3,8 +3,8 @@
 
 from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
-#from Cython.Build import cythonize
-#from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 
 
 with open("README.md") as readme_file:
@@ -38,25 +38,25 @@ requirements = [
 
 author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn, Jeffrey Hussmann, Michelle Chan"
 
-# cmdclass = {'build_ext': build_ext}
+cmdclass = {'build_ext': build_ext}
 
 # files to wrap with cython
-# to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
-#                Extension("cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
-#                Extension("cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
-#                Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
-to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
-               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
-               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
-               Extension("ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
+to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
+                Extension("cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
+                Extension("cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
+                Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
+#to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
+#               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
+#               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
+#               Extension("ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
                 
 
 setup(
         name="cassiopeia-lineage",
-        #ext_modules=cythonize(to_cythonize),
-        ext_modules=to_cythonize,
+        ext_modules=cythonize(to_cythonize),
+        #ext_modules=to_cythonize,
         setup_requires=['cython', 'numpy'],
-        # cmdclass=cmdclass,
+        cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main',
                                 'reconstruct-lineage = cassiopeia.TreeSolver.reconstruct_tree:main',
