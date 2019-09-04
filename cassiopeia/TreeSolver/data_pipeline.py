@@ -137,8 +137,10 @@ def newick_to_network(newick_filepath, cm, f=1):
 	for n in tree.traverse('postorder'):
 		if "|" in n.name:
 			nn = Node('state-node', n.name.split("|"))
-		else:
+		elif n.name != '':
 			nn = Node(n.name, [])
+		else:
+			nn = Node('state-node', [])
 
 		if n.is_leaf() and nn.char_string in cm_lookup:
 			nn.is_target = True

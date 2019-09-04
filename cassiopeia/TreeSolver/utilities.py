@@ -100,8 +100,8 @@ def fill_in_tree(tree, cm = None):
 			if '|' in n:
 				rndct[n] = Node('state-node', n.split("_")[0].split('|'), is_target = False)
 		else:
-			if n in cm.index.values:
-				rndct[n] = Node('state-node', [str(k) for k in cm.loc[n].values], is_target = True)
+			if n.name in cm.index.values:
+				rndct[n] = Node('state-node', [str(k) for k in cm.loc[n.name].values], is_target = True)
 			else:
 				rndct[n] = Node('state-node', '', is_target=False)
 

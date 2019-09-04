@@ -30,7 +30,7 @@ import os
 
 from cassiopeia.TreeSolver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools import *
-from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse2
+from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
 from cassiopeia.TreeSolver import *
 from cassiopeia.TreeSolver.Node import Node
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
@@ -394,7 +394,7 @@ def main():
 
         newick_str = nj(dm, result_constructor=str)
 
-        tree = dp.newick_to_network(newick_str)
+        tree = dp.newick_to_network(newick_str, cm_uniq)
 
         nj_net = fill_in_tree(tree, cm_uniq)
         #nj_net = tree_collapse2(nj_net)
