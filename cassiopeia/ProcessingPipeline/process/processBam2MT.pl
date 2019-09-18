@@ -45,7 +45,7 @@ while(<IN>) {
 	my @COSplit = split(/:/, $COStr); # Information containing all allele infomration
 	my $CO = join(":", @COSplit[2..$#COSplit]);
 
-	my ($intBC, $r1Cigar, $r2Cigar, $r3Cigar, $r1Cigar_old, $r2Cigar_old, $r3Cigar_old) = split(/;/, $CO);
+	my ($intBC, $r1Cigar, $r2Cigar, $r3Cigar, $r1Cigar_no_context, $r2Cigar_no_context, $r3Cigar_no_context) = split(/;/, $CO);
 	#print STDERR "COStr: $COStr\n";
 	#print STDERR "URStr: $URStr\n";
 	#print STDERR "ARStr: $ARStr\n";
