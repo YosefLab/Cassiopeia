@@ -18,7 +18,7 @@ from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from cassiopeia.TreeSolver.Node import Node
 
 def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, 
-							seed=None, num_iter=-1):
+							seed=None, num_iter=-1, weighted_ilp = False):
 	"""
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
 	accounting the given target nodes
@@ -82,7 +82,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	if method == "ilp":
 
 
-		subgraph, r, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size, seed = seed, num_iter=num_iter)
+		subgraph, r, pid = find_good_gurobi_subgraph(master_root, target_nodes, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size, seed = seed, num_iter=num_iter, weighted = weighted_ilp)
 		clean_ilp_network(subgraph)
 
 		rdict = {}
@@ -114,7 +114,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 		# so the composition step doesn't get confused when trying to join to the root.
 		network = nx.relabel_nodes(network, node_name_dict)
 
-		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, None, time_limit, 1, max_neighborhood_size, seed, num_iter) for root, targets in target_sets]
+		futures = [executor.submit(find_good_gurobi_subgraph, root, targets, node_name_dict, prior_probabilities, time_limit, 1, max_neighborhood_size, seed, num_iter, weighted_ilp) for root, targets in target_sets]
 		concurrent.futures.wait(futures)
 		for future in futures:
 			res, r, pid = future.result()
@@ -182,7 +182,7 @@ def reraise_with_stack(func):
 	return wrapped
 
 @reraise_with_stack
-def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size, seed=None, num_iter=-1):
+def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size, seed=None, num_iter=-1, weighted = False):
 	"""
 	Sub-Function used for multi-threading in hybrid method
 
@@ -204,6 +204,9 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		Optimal ilp subgraph for a given subset of nodes in the time limit allowed.
 	"""
 
+	if weighted:
+		assert prior_probabilities is not None
+
 	pid = hashlib.md5(root.encode('utf-8')).hexdigest()
 
 	print("Started new thread for: " + str(root) + " (num targets = " + str(len(targets)) + ") , pid = " + str(pid), flush=True)
@@ -213,7 +216,7 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		graph.add_node(node_name_dict[root])
 		return graph, root, pid
 
-	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid)
+	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid, weighted=weighted)
 
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:

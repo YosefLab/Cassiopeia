@@ -32,7 +32,7 @@ def node_parent(x, y):
 
 	return '|'.join(parr)
 
-def get_edge_length(x,y,priors=None):
+def get_edge_length(x,y,priors=None, weighted=False):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
 
@@ -62,7 +62,7 @@ def get_edge_length(x,y,priors=None):
 					count += 0
 
 			elif x_list[i] == '0':
-				if not priors:
+				if not weighted:
 					count += 1
 				else:
 					count += -np.log(priors[i][str(y_list[i])])
@@ -107,7 +107,7 @@ def root_finder(target_nodes):
 
 	return np
 
-def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):
+def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -177,7 +177,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 						#Check this cutoff
 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
 
-							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
+							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
 
 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])

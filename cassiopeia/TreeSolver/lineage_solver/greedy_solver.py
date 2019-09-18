@@ -5,6 +5,8 @@ import hashlib
 
 from .solver_utils import root_finder
 
+GREEDY_EPSILON = 0.33 # minimum similarity a node needs to have to be assigned to a group on a split.
+
 def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targets=[]):
 	"""
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
@@ -58,11 +60,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 			char = node_list[i]
 			if char != '0' and char != '-':
 				character_mutation_mapping[(str(i), char)] += 1
-                        #if char != '0':
-                        #    if char == "-":
-                        #        character_mutation_mapping[(str(i), char)] -= 1
-                        #    else:
-                        #        character_mutation_mapping[(str(i), char)] += 1
+
 
 	# Choosing the best mutation to split on (ie character and state)
 	character, state = 0, 0
@@ -135,7 +133,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 		avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
 		avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
 
-		if avg_left_split_score < avg_right_split_score:
+		if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
 			right_split_temp.append(node)
 		else:
 			left_split_temp.append(node)
@@ -146,7 +144,6 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	# Add character, state that split occurred to already considered mutations
 	considered.add((str(character), state))
 	G = nx.DiGraph()
-	#splitter = str(character) + " " + str(state) + " (" + uniq + ")"
 	splitter = root
 
 	# Recursively build left side of network (ie side that did not mutation at the character with the specific state)
@@ -188,9 +185,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 			G = nx.relabel_nodes(G, rename_dict)
 
 	G = nx.compose(G, right_network)
-	# if right_root not in right_split and right_root in targets:
-	# 	right_root = right_root + "_unique"
-	#for node in right_nodes:
+
 	if root != right_root:
 		if not priors:
 			G.add_edge(splitter, right_root, weight=1, label = str(character) + ": 0 -> " + str(state))

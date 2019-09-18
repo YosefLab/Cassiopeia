@@ -3,12 +3,12 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "name": "Cassiopeia.TreeSolver.lineage_solver.solver_utils",
+        "name": "cassiopeia.TreeSolver.lineage_solver.solver_utils",
         "sources": [
-            "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"
+            "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"
         ]
     },
-    "module_name": "Cassiopeia.TreeSolver.lineage_solver.solver_utils"
+    "module_name": "cassiopeia.TreeSolver.lineage_solver.solver_utils"
 }
 END: Cython Metadata */
 
@@ -617,8 +617,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__Cassiopeia__TreeSolver__lineage_solver__solver_utils
-#define __PYX_HAVE_API__Cassiopeia__TreeSolver__lineage_solver__solver_utils
+#define __PYX_HAVE__cassiopeia__TreeSolver__lineage_solver__solver_utils
+#define __PYX_HAVE_API__cassiopeia__TreeSolver__lineage_solver__solver_utils
 /* Early includes */
 #ifdef _OPENMP
 #include <omp.h>
@@ -827,7 +827,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx",
+  "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx",
 };
 
 /*--- Type declarations ---*/
@@ -1312,12 +1312,12 @@ static int __Pyx_check_binary_version(void);
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 
-/* Module declarations from 'Cassiopeia.TreeSolver.lineage_solver.solver_utils' */
-#define __Pyx_MODULE_NAME "Cassiopeia.TreeSolver.lineage_solver.solver_utils"
-extern int __pyx_module_is_main_Cassiopeia__TreeSolver__lineage_solver__solver_utils;
-int __pyx_module_is_main_Cassiopeia__TreeSolver__lineage_solver__solver_utils = 0;
+/* Module declarations from 'cassiopeia.TreeSolver.lineage_solver.solver_utils' */
+#define __Pyx_MODULE_NAME "cassiopeia.TreeSolver.lineage_solver.solver_utils"
+extern int __pyx_module_is_main_cassiopeia__TreeSolver__lineage_solver__solver_utils;
+int __pyx_module_is_main_cassiopeia__TreeSolver__lineage_solver__solver_utils = 0;
 
-/* Implementation of 'Cassiopeia.TreeSolver.lineage_solver.solver_utils' */
+/* Implementation of 'cassiopeia.TreeSolver.lineage_solver.solver_utils' */
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_min;
 static const char __pyx_k_[] = "_";
@@ -1374,6 +1374,7 @@ static const char __pyx_k_add_edge[] = "add_edge";
 static const char __pyx_k_add_node[] = "add_node";
 static const char __pyx_k_networkx[] = "networkx";
 static const char __pyx_k_sample_2[] = "sample_2";
+static const char __pyx_k_weighted[] = "weighted";
 static const char __pyx_k_in_degree[] = "in_degree";
 static const char __pyx_k_max_width[] = "max_width";
 static const char __pyx_k_mutations[] = "mutations";
@@ -1407,14 +1408,12 @@ static const char __pyx_k_mutations_from_parent_to_child[] = "mutations_from_par
 static const char __pyx_k_Estimating_potential_graph_with[] = "Estimating potential graph with maximum neighborhood size of ";
 static const char __pyx_k_build_potential_graph_from_base[] = "build_potential_graph_from_base_graph.<locals>.<lambda>";
 static const char __pyx_k_completed_with_a_neighborhood_s[] = " completed with a neighborhood size of ";
-static const char __pyx_k_Cassiopeia_TreeSolver_lineage_so[] = "Cassiopeia.TreeSolver.lineage_solver.solver_utils";
 static const char __pyx_k_Max_Neighborhood_Exceeded_Return[] = "Max Neighborhood Exceeded, Returning Network (pid: ";
+static const char __pyx_k_cassiopeia_TreeSolver_lineage_so[] = "cassiopeia.TreeSolver.lineage_solver.solver_utils";
 static const char __pyx_k_build_potential_graph_from_base_2[] = "build_potential_graph_from_base_graph";
-static const char __pyx_k_Cassiopeia_TreeSolver_lineage_so_2[] = "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx";
+static const char __pyx_k_cassiopeia_TreeSolver_lineage_so_2[] = "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx";
 static PyObject *__pyx_n_s_;
 static PyObject *__pyx_kp_s_0;
-static PyObject *__pyx_n_s_Cassiopeia_TreeSolver_lineage_so;
-static PyObject *__pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2;
 static PyObject *__pyx_n_s_DiGraph;
 static PyObject *__pyx_kp_s_Estimating_potential_graph_with;
 static PyObject *__pyx_kp_s_LCA_Distance;
@@ -1430,6 +1429,8 @@ static PyObject *__pyx_n_s_add_edge;
 static PyObject *__pyx_n_s_add_node;
 static PyObject *__pyx_n_s_build_potential_graph_from_base;
 static PyObject *__pyx_n_s_build_potential_graph_from_base_2;
+static PyObject *__pyx_n_s_cassiopeia_TreeSolver_lineage_so;
+static PyObject *__pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2;
 static PyObject *__pyx_n_s_child;
 static PyObject *__pyx_n_s_child_list;
 static PyObject *__pyx_n_s_cline_in_traceback;
@@ -1498,17 +1499,18 @@ static PyObject *__pyx_n_s_top_parents;
 static PyObject *__pyx_n_s_tree;
 static PyObject *__pyx_n_s_unique;
 static PyObject *__pyx_n_s_weight;
+static PyObject *__pyx_n_s_weighted;
 static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_x_list;
 static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_y_list;
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y); /* proto */
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors); /* proto */
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child); /* proto */
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /* proto */
 static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_k); /* proto */
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid); /* proto */
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_tree); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_tree); /* proto */
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
 static PyObject *__pyx_int_10000;
@@ -1528,7 +1530,7 @@ static PyObject *__pyx_codeobj__19;
 static PyObject *__pyx_codeobj__21;
 /* Late includes */
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
  * import numpy as np
  * 
  * def node_parent(x, y):             # <<<<<<<<<<<<<<
@@ -1537,10 +1539,10 @@ static PyObject *__pyx_codeobj__21;
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent[] = "\n\tGiven two nodes, finds the latest common ancestor\n\n\t:param x:\n\t\tSample x in string format no identifier\n\t:param y:\n\t\tSample x in string format no identifier\n\t:return:\n\t\tReturns latest common ancestor of x and y\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent = {"node_parent", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent[] = "\n\tGiven two nodes, finds the latest common ancestor\n\n\t:param x:\n\t\tSample x in string format no identifier\n\t:param y:\n\t\tSample x in string format no identifier\n\t:return:\n\t\tReturns latest common ancestor of x and y\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent = {"node_parent", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_x = 0;
   PyObject *__pyx_v_y = 0;
   PyObject *__pyx_r = 0;
@@ -1588,18 +1590,18 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("node_parent", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 4, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.node_parent", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.node_parent", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(__pyx_self, __pyx_v_x, __pyx_v_y);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(__pyx_self, __pyx_v_x, __pyx_v_y);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y) {
   PyObject *__pyx_v_parr = NULL;
   PyObject *__pyx_v_x_list = NULL;
   PyObject *__pyx_v_y_list = NULL;
@@ -1619,7 +1621,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_x);
   __Pyx_INCREF(__pyx_v_y);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":16
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":16
  * 	"""
  * 
  * 	parr = []             # <<<<<<<<<<<<<<
@@ -1631,7 +1633,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_parr = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":17
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":17
  * 
  * 	parr = []
  * 	if '_' in x:             # <<<<<<<<<<<<<<
@@ -1642,7 +1644,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":18
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":18
  * 	parr = []
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -1675,7 +1677,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_x, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":17
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":17
  * 
  * 	parr = []
  * 	if '_' in x:             # <<<<<<<<<<<<<<
@@ -1684,7 +1686,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":19
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":19
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
@@ -1695,7 +1697,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":20
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":20
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -1728,7 +1730,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_y, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":19
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":19
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
@@ -1737,7 +1739,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":21
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":21
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')             # <<<<<<<<<<<<<<
@@ -1764,7 +1766,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_x_list = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":22
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":22
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')             # <<<<<<<<<<<<<<
@@ -1791,7 +1793,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_y_list = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":23
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":23
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')
  * 	for i in range(0,len(x_list)):             # <<<<<<<<<<<<<<
@@ -1803,7 +1805,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":24
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":24
  * 	y_list = y.split('|')
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
@@ -1821,7 +1823,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_2) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":25
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":25
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
@@ -1833,7 +1835,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 25, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":24
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":24
  * 	y_list = y.split('|')
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
@@ -1843,7 +1845,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])
  * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
@@ -1856,7 +1858,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_2) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":27
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":27
  * 			parr.append(x_list[i])
  * 		elif x_list[i] == '-':
  * 			parr.append(y_list[i])             # <<<<<<<<<<<<<<
@@ -1868,7 +1870,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 27, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])
  * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
@@ -1878,7 +1880,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
  * 		elif x_list[i] == '-':
  * 			parr.append(y_list[i])
  * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
@@ -1891,7 +1893,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_2) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":29
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":29
  * 			parr.append(y_list[i])
  * 		elif y_list[i] == '-':
  * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
@@ -1903,7 +1905,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 29, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
  * 		elif x_list[i] == '-':
  * 			parr.append(y_list[i])
  * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
@@ -1913,7 +1915,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":31
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":31
  * 			parr.append(x_list[i])
  * 		else:
  * 			parr.append('0')             # <<<<<<<<<<<<<<
@@ -1926,12 +1928,12 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_L7:;
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":33
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":33
  * 			parr.append('0')
  * 
  * 	return '|'.join(parr)             # <<<<<<<<<<<<<<
  * 
- * def get_edge_length(x,y,priors=None):
+ * def get_edge_length(x,y,priors=None, weighted=False):
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_5 = __Pyx_PyString_Join(__pyx_kp_s__4, __pyx_v_parr); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
@@ -1940,7 +1942,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
  * import numpy as np
  * 
  * def node_parent(x, y):             # <<<<<<<<<<<<<<
@@ -1953,7 +1955,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.node_parent", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.node_parent", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_parr);
@@ -1966,33 +1968,37 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length[] = "\n\tGiven two nodes, if x is a parent of y, returns the edge length between x and y, else -1\n\n\t:param x:\n\t\tSample x in string format no identifier\n\t:param y:\n\t\tSample x in string format no identifier\n\t:param priors:\n\t\tA nested dictionary containing prior probabilities for [character][state] mappings\n\t\twhere characters are in the form of integers, and states are in the form of strings,\n\t\tand values are the probability of mutation from the '0' state.\n\t:return:\n\t\tLength of edge if valid transition, else -1\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length = {"get_edge_length", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length[] = "\n\tGiven two nodes, if x is a parent of y, returns the edge length between x and y, else -1\n\n\t:param x:\n\t\tSample x in string format no identifier\n\t:param y:\n\t\tSample x in string format no identifier\n\t:param priors:\n\t\tA nested dictionary containing prior probabilities for [character][state] mappings\n\t\twhere characters are in the form of integers, and states are in the form of strings,\n\t\tand values are the probability of mutation from the '0' state.\n\t:return:\n\t\tLength of edge if valid transition, else -1\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length = {"get_edge_length", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_x = 0;
   PyObject *__pyx_v_y = 0;
   PyObject *__pyx_v_priors = 0;
+  PyObject *__pyx_v_weighted = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_edge_length (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_priors,0};
-    PyObject* values[3] = {0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_priors,&__pyx_n_s_weighted,0};
+    PyObject* values[4] = {0,0,0,0};
     values[2] = ((PyObject *)Py_None);
+    values[3] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
         CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
@@ -2011,7 +2017,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 3, 1); __PYX_ERR(0, 35, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 4, 1); __PYX_ERR(0, 35, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -2019,12 +2025,20 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_priors);
           if (value) { values[2] = value; kw_args--; }
         }
+        CYTHON_FALLTHROUGH;
+        case  3:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weighted);
+          if (value) { values[3] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
         if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_edge_length") < 0)) __PYX_ERR(0, 35, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
         CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
@@ -2036,23 +2050,24 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_v_x = values[0];
     __pyx_v_y = values[1];
     __pyx_v_priors = values[2];
+    __pyx_v_weighted = values[3];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 35, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 35, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.get_edge_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.get_edge_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(__pyx_self, __pyx_v_x, __pyx_v_y, __pyx_v_priors);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(__pyx_self, __pyx_v_x, __pyx_v_y, __pyx_v_priors, __pyx_v_weighted);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted) {
   PyObject *__pyx_v_count = NULL;
   PyObject *__pyx_v_x_list = NULL;
   PyObject *__pyx_v_y_list = NULL;
@@ -2073,7 +2088,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_x);
   __Pyx_INCREF(__pyx_v_y);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":50
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":50
  * 		Length of edge if valid transition, else -1
  * 	"""
  * 	count = 0             # <<<<<<<<<<<<<<
@@ -2083,7 +2098,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_int_0);
   __pyx_v_count = __pyx_int_0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":51
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":51
  * 	"""
  * 	count = 0
  * 	if '_' in x:             # <<<<<<<<<<<<<<
@@ -2094,7 +2109,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":52
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":52
  * 	count = 0
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -2127,7 +2142,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_x, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":51
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":51
  * 	"""
  * 	count = 0
  * 	if '_' in x:             # <<<<<<<<<<<<<<
@@ -2136,7 +2151,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
@@ -2147,7 +2162,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":54
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":54
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -2180,7 +2195,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_y, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
@@ -2189,7 +2204,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":55
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":55
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')             # <<<<<<<<<<<<<<
@@ -2216,7 +2231,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_x_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":56
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":56
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')             # <<<<<<<<<<<<<<
@@ -2243,7 +2258,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_y_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":58
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":58
  * 	y_list = y.split('|')
  * 
  * 	for i in range(0, len(x_list)):             # <<<<<<<<<<<<<<
@@ -2255,7 +2270,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":59
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":59
  * 
  * 	for i in range(0, len(x_list)):
  * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
@@ -2275,7 +2290,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
  * 			if x_list[i] == y_list[i]:
  * 					pass
  * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
@@ -2288,7 +2303,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_1) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":62
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":62
  * 					pass
  * 			elif y_list[i] == "-":
  * 					count += 0             # <<<<<<<<<<<<<<
@@ -2300,7 +2315,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
  * 			if x_list[i] == y_list[i]:
  * 					pass
  * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
@@ -2310,11 +2325,11 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
  * 					count += 0
  * 
  * 			elif x_list[i] == '0':             # <<<<<<<<<<<<<<
- * 				if not priors:
+ * 				if not weighted:
  * 					count += 1
  */
     __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
@@ -2323,20 +2338,20 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_1) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
  * 
  * 			elif x_list[i] == '0':
- * 				if not priors:             # <<<<<<<<<<<<<<
+ * 				if not weighted:             # <<<<<<<<<<<<<<
  * 					count += 1
  * 				else:
  */
-      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_priors); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_weighted); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
       __pyx_t_2 = ((!__pyx_t_1) != 0);
       if (__pyx_t_2) {
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":66
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":66
  * 			elif x_list[i] == '0':
- * 				if not priors:
+ * 				if not weighted:
  * 					count += 1             # <<<<<<<<<<<<<<
  * 				else:
  * 					count += -np.log(priors[i][str(y_list[i])])
@@ -2346,17 +2361,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
  * 
  * 			elif x_list[i] == '0':
- * 				if not priors:             # <<<<<<<<<<<<<<
+ * 				if not weighted:             # <<<<<<<<<<<<<<
  * 					count += 1
  * 				else:
  */
         goto __pyx_L8;
       }
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":68
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":68
  * 					count += 1
  * 				else:
  * 					count += -np.log(priors[i][str(y_list[i])])             # <<<<<<<<<<<<<<
@@ -2407,17 +2422,17 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       }
       __pyx_L8:;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
  * 					count += 0
  * 
  * 			elif x_list[i] == '0':             # <<<<<<<<<<<<<<
- * 				if not priors:
+ * 				if not weighted:
  * 					count += 1
  */
       goto __pyx_L7;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":70
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":70
  * 					count += -np.log(priors[i][str(y_list[i])])
  * 			else:
  * 				return -1             # <<<<<<<<<<<<<<
@@ -2433,7 +2448,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_L7:;
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":71
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":71
  * 			else:
  * 				return -1
  * 	return count             # <<<<<<<<<<<<<<
@@ -2445,10 +2460,10 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_r = __pyx_v_count;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
@@ -2460,7 +2475,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_9);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.get_edge_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.get_edge_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_count);
@@ -2473,7 +2488,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
  * 	return count
  * 
  * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
@@ -2482,10 +2497,10 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child[] = "\n\tCreates a string label describing the mutations taken from  a parent to a child\n\t:param parent: A node in the form 'Ch1|Ch2|....|Chn'\n\t:param child: A node in the form 'Ch1|Ch2|....|Chn'\n\t:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....\n\twhere Ch1 is the character, and S1 is the state that Ch1 mutaated into\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child = {"mutations_from_parent_to_child", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child[] = "\n\tCreates a string label describing the mutations taken from  a parent to a child\n\t:param parent: A node in the form 'Ch1|Ch2|....|Chn'\n\t:param child: A node in the form 'Ch1|Ch2|....|Chn'\n\t:return: A comma seperated string in the form Ch1: 0-> S1, Ch2: 0-> S2....\n\twhere Ch1 is the character, and S1 is the state that Ch1 mutaated into\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child = {"mutations_from_parent_to_child", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_parent = 0;
   PyObject *__pyx_v_child = 0;
   PyObject *__pyx_r = 0;
@@ -2533,18 +2548,18 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("mutations_from_parent_to_child", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 73, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.mutations_from_parent_to_child", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.mutations_from_parent_to_child", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(__pyx_self, __pyx_v_parent, __pyx_v_child);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(__pyx_self, __pyx_v_parent, __pyx_v_child);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child) {
   PyObject *__pyx_v_parent_list = NULL;
   PyObject *__pyx_v_child_list = NULL;
   PyObject *__pyx_v_mutations = NULL;
@@ -2564,7 +2579,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_parent);
   __Pyx_INCREF(__pyx_v_child);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":81
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":81
  * 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
  * 	"""
  * 	if '_' in parent:             # <<<<<<<<<<<<<<
@@ -2575,7 +2590,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":82
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":82
  * 	"""
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -2608,7 +2623,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_parent, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":81
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":81
  * 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
  * 	"""
  * 	if '_' in parent:             # <<<<<<<<<<<<<<
@@ -2617,7 +2632,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:             # <<<<<<<<<<<<<<
@@ -2628,7 +2643,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":84
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":84
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:
  * 		child = ''.join(child.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -2661,7 +2676,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_child, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:             # <<<<<<<<<<<<<<
@@ -2670,7 +2685,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":86
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":86
  * 		child = ''.join(child.split("_")[:-1])
  * 
  * 	parent_list = parent.split("_")[0].split('|')             # <<<<<<<<<<<<<<
@@ -2718,7 +2733,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_parent_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":87
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":87
  * 
  * 	parent_list = parent.split("_")[0].split('|')
  * 	child_list = child.split("_")[0].split('|')             # <<<<<<<<<<<<<<
@@ -2766,7 +2781,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_child_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":88
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":88
  * 	parent_list = parent.split("_")[0].split('|')
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []             # <<<<<<<<<<<<<<
@@ -2778,7 +2793,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_mutations = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":89
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":89
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
@@ -2842,7 +2857,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):
  * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
@@ -2871,7 +2886,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_L8_bool_binop_done:;
     if (__pyx_t_1) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
  * 	for i in range(0, len(parent_list)):
  * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))             # <<<<<<<<<<<<<<
@@ -2907,7 +2922,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_mutations, __pyx_t_6); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 91, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):
  * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
@@ -2916,7 +2931,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":89
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":89
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
@@ -2926,7 +2941,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":93
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":93
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  * 	return " , ".join(mutations)             # <<<<<<<<<<<<<<
@@ -2940,7 +2955,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
  * 	return count
  * 
  * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
@@ -2954,7 +2969,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.mutations_from_parent_to_child", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.mutations_from_parent_to_child", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_parent_list);
@@ -2968,7 +2983,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
  * 	return " , ".join(mutations)
  * 
  * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
@@ -2977,21 +2992,21 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder[] = "\n\tGiven a list of targets_nodes, return the least common ancestor of all nodes\n\n\t:param target_nodes:\n\t\tA list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'\n\t:return:\n\t\tThe least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder = {"root_finder", (PyCFunction)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, METH_O, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder[] = "\n\tGiven a list of targets_nodes, return the least common ancestor of all nodes\n\n\t:param target_nodes:\n\t\tA list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'\n\t:return:\n\t\tThe least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder = {"root_finder", (PyCFunction)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, METH_O, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("root_finder (wrapper)", 0);
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(__pyx_self, ((PyObject *)__pyx_v_target_nodes));
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(__pyx_self, ((PyObject *)__pyx_v_target_nodes));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
   PyObject *__pyx_v_np = NULL;
   PyObject *__pyx_v_sample = NULL;
   PyObject *__pyx_r = NULL;
@@ -3006,7 +3021,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("root_finder", 0);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":104
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":104
  * 		The least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'
  * 	"""
  * 	np = target_nodes[0]             # <<<<<<<<<<<<<<
@@ -3018,7 +3033,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_np = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":105
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":105
  * 	"""
  * 	np = target_nodes[0]
  * 	for sample in target_nodes:             # <<<<<<<<<<<<<<
@@ -3067,7 +3082,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":106
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":106
  * 	np = target_nodes[0]
  * 	for sample in target_nodes:
  * 		np = node_parent(sample, np)             # <<<<<<<<<<<<<<
@@ -3124,7 +3139,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_np, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":105
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":105
  * 	"""
  * 	np = target_nodes[0]
  * 	for sample in target_nodes:             # <<<<<<<<<<<<<<
@@ -3134,19 +3149,19 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":108
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":108
  * 		np = node_parent(sample, np)
  * 
  * 	return np             # <<<<<<<<<<<<<<
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_np);
   __pyx_r = __pyx_v_np;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
  * 	return " , ".join(mutations)
  * 
  * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
@@ -3161,7 +3176,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.root_finder", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.root_finder", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_np);
@@ -3171,37 +3186,41 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph[] = "\n\tGiven a series of samples, or target nodes, creates a tree which contains potential\n\tancestors for the given samples.\n\n\tFirst, a directed graph is constructed, by considering all pairs of samples, and checking\n\tif a sample can be a possible parent of another sample\n\tThen we all pairs of nodes with in-degree 0 and < a certain edit distance away\n\tfrom one another, and add their least common ancestor as a parent to these two nodes. This is done\n\tuntil only one possible ancestor remains\n\n\t:param samples:\n\t\tA list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'\n\t:param priors\n\t\tA nested dictionary containing prior probabilities for [character][state] mappings\n\t\twhere characters are in the form of integers, and states are in the form of strings,\n\t\tand values are the probability of mutation from the '0' state.\n\t:return:\n\t\tA graph, which contains a tree which explains the data with minimal parsimony\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph = {"build_potential_graph_from_base_graph", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph[] = "\n\tGiven a series of samples, or target nodes, creates a tree which contains potential\n\tancestors for the given samples.\n\n\tFirst, a directed graph is constructed, by considering all pairs of samples, and checking\n\tif a sample can be a possible parent of another sample\n\tThen we all pairs of nodes with in-degree 0 and < a certain edit distance away\n\tfrom one another, and add their least common ancestor as a parent to these two nodes. This is done\n\tuntil only one possible ancestor remains\n\n\t:param samples:\n\t\tA list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'\n\t:param priors\n\t\tA nested dictionary containing prior probabilities for [character][state] mappings\n\t\twhere characters are in the form of integers, and states are in the form of strings,\n\t\tand values are the probability of mutation from the '0' state.\n\t:return:\n\t\tA graph, which contains a tree which explains the data with minimal parsimony\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph = {"build_potential_graph_from_base_graph", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_samples = 0;
   CYTHON_UNUSED PyObject *__pyx_v_root = 0;
   PyObject *__pyx_v_max_neighborhood_size = 0;
   PyObject *__pyx_v_priors = 0;
   PyObject *__pyx_v_pid = 0;
+  PyObject *__pyx_v_weighted = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("build_potential_graph_from_base_graph (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_samples,&__pyx_n_s_root,&__pyx_n_s_max_neighborhood_size,&__pyx_n_s_priors,&__pyx_n_s_pid,0};
-    PyObject* values[5] = {0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_samples,&__pyx_n_s_root,&__pyx_n_s_max_neighborhood_size,&__pyx_n_s_priors,&__pyx_n_s_pid,&__pyx_n_s_weighted,0};
+    PyObject* values[6] = {0,0,0,0,0,0};
     values[2] = ((PyObject *)__pyx_int_10000);
     values[3] = ((PyObject *)Py_None);
     values[4] = ((PyObject *)__pyx_int_neg_1);
+    values[5] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+        CYTHON_FALLTHROUGH;
         case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
         CYTHON_FALLTHROUGH;
         case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
@@ -3224,7 +3243,7 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_root)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 5, 1); __PYX_ERR(0, 110, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 6, 1); __PYX_ERR(0, 110, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -3244,12 +3263,20 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_pid);
           if (value) { values[4] = value; kw_args--; }
         }
+        CYTHON_FALLTHROUGH;
+        case  5:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weighted);
+          if (value) { values[5] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
         if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "build_potential_graph_from_base_graph") < 0)) __PYX_ERR(0, 110, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+        CYTHON_FALLTHROUGH;
         case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
         CYTHON_FALLTHROUGH;
         case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
@@ -3267,23 +3294,24 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_v_max_neighborhood_size = values[2];
     __pyx_v_priors = values[3];
     __pyx_v_pid = values[4];
+    __pyx_v_weighted = values[5];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 110, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 110, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(__pyx_self, __pyx_v_samples, __pyx_v_root, __pyx_v_max_neighborhood_size, __pyx_v_priors, __pyx_v_pid);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(__pyx_self, __pyx_v_samples, __pyx_v_root, __pyx_v_max_neighborhood_size, __pyx_v_priors, __pyx_v_pid, __pyx_v_weighted);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":189
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":189
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]             # <<<<<<<<<<<<<<
@@ -3292,9 +3320,9 @@ static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda(PyObject *__pyx_self, PyObject *__pyx_v_k); /*proto*/
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda = {"lambda", (PyCFunction)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, METH_O, 0};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda(PyObject *__pyx_self, PyObject *__pyx_v_k) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda(PyObject *__pyx_self, PyObject *__pyx_v_k); /*proto*/
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda = {"lambda", (PyCFunction)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, METH_O, 0};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda(PyObject *__pyx_self, PyObject *__pyx_v_k) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("lambda (wrapper)", 0);
@@ -3320,7 +3348,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self,
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph.lambda", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph.lambda", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3328,15 +3356,15 @@ static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self,
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted) {
   int __pyx_v_neighbor_mod;
   PyObject *__pyx_v_prev_network = NULL;
   int __pyx_v_flag;
@@ -3384,7 +3412,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_RefNannySetupContext("build_potential_graph_from_base_graph", 0);
   __Pyx_INCREF(__pyx_v_samples);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":134
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":134
  * 	cdef int neighbor_mod
  * 
  * 	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
@@ -3411,7 +3439,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":136
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":136
  * 	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " (pid: " + str(pid) + ")")
  * 
  * 	neighbor_mod = 0             # <<<<<<<<<<<<<<
@@ -3420,7 +3448,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   __pyx_v_neighbor_mod = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":137
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":137
  * 
  * 	neighbor_mod = 0
  * 	prev_network = None             # <<<<<<<<<<<<<<
@@ -3430,7 +3458,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(Py_None);
   __pyx_v_prev_network = Py_None;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":138
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":138
  * 	neighbor_mod = 0
  * 	prev_network = None
  * 	flag = False             # <<<<<<<<<<<<<<
@@ -3439,7 +3467,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   __pyx_v_flag = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":139
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":139
  * 	prev_network = None
  * 	flag = False
  * 	for max_neighbor_dist in range(0, 14):             # <<<<<<<<<<<<<<
@@ -3452,7 +3480,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_XDECREF_SET(__pyx_v_max_neighbor_dist, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":140
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":140
  * 	flag = False
  * 	for max_neighbor_dist in range(0, 14):
  * 		initial_network = nx.DiGraph()             # <<<<<<<<<<<<<<
@@ -3482,7 +3510,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_XDECREF_SET(__pyx_v_initial_network, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":141
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":141
  * 	for max_neighbor_dist in range(0, 14):
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))             # <<<<<<<<<<<<<<
@@ -3512,7 +3540,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_samples, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))
  * 		for sample in samples:             # <<<<<<<<<<<<<<
@@ -3561,7 +3589,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":143
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":143
  * 		samples = np.unique((samples))
  * 		for sample in samples:
  * 			initial_network.add_node(sample)             # <<<<<<<<<<<<<<
@@ -3587,7 +3615,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))
  * 		for sample in samples:             # <<<<<<<<<<<<<<
@@ -3597,7 +3625,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":145
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":145
  * 			initial_network.add_node(sample)
  * 
  * 		source_nodes = samples             # <<<<<<<<<<<<<<
@@ -3607,7 +3635,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_v_samples);
     __Pyx_XDECREF_SET(__pyx_v_source_nodes, __pyx_v_samples);
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 
  * 		source_nodes = samples
  * 		neighbor_mod = max_neighbor_dist             # <<<<<<<<<<<<<<
@@ -3617,7 +3645,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_v_max_neighbor_dist); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L1_error)
     __pyx_v_neighbor_mod = __pyx_t_8;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":147
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":147
  * 		source_nodes = samples
  * 		neighbor_mod = max_neighbor_dist
  * 		max_width = 0             # <<<<<<<<<<<<<<
@@ -3627,7 +3655,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_XDECREF_SET(__pyx_v_max_width, __pyx_int_0);
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":150
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":150
  * 		#print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
  * 		#print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
  * 		while len(source_nodes) != 1:             # <<<<<<<<<<<<<<
@@ -3639,7 +3667,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = ((__pyx_t_5 != 1) != 0);
       if (!__pyx_t_9) break;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":152
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":152
  * 		while len(source_nodes) != 1:
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):             # <<<<<<<<<<<<<<
@@ -3658,7 +3686,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       if (__pyx_t_9) {
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":153
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":153
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):
  * 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
@@ -3676,7 +3704,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 153, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":154
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":154
  * 			if len(source_nodes) > int(max_neighborhood_size):
  * 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
  * 				return prev_network, max_neighbor_dist - 1             # <<<<<<<<<<<<<<
@@ -3698,7 +3726,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __pyx_t_3 = 0;
         goto __pyx_L0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":152
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":152
  * 		while len(source_nodes) != 1:
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):             # <<<<<<<<<<<<<<
@@ -3707,7 +3735,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       }
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":156
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":156
  * 				return prev_network, max_neighbor_dist - 1
  * 
  * 			temp_source_nodes = list()             # <<<<<<<<<<<<<<
@@ -3719,7 +3747,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_XDECREF_SET(__pyx_v_temp_source_nodes, ((PyObject*)__pyx_t_3));
       __pyx_t_3 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":157
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":157
  * 
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):             # <<<<<<<<<<<<<<
@@ -3783,7 +3811,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":158
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":158
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):
  * 				sample = source_nodes[i]             # <<<<<<<<<<<<<<
@@ -3795,7 +3823,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":159
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":159
  * 			for i in range(0, len(source_nodes)-1):
  * 				sample = source_nodes[i]
  * 				top_parents = []             # <<<<<<<<<<<<<<
@@ -3807,7 +3835,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_top_parents, ((PyObject*)__pyx_t_3));
         __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":160
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":160
  * 				sample = source_nodes[i]
  * 				top_parents = []
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}             # <<<<<<<<<<<<<<
@@ -3823,7 +3851,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_p_to_s2_lengths, ((PyObject*)__pyx_t_2));
         __pyx_t_2 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":161
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":161
  * 				top_parents = []
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}             # <<<<<<<<<<<<<<
@@ -3839,7 +3867,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_muts_to_s2, ((PyObject*)__pyx_t_3));
         __pyx_t_3 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":162
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":162
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):             # <<<<<<<<<<<<<<
@@ -3905,7 +3933,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_2);
           __pyx_t_2 = 0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":163
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":163
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]             # <<<<<<<<<<<<<<
@@ -3917,7 +3945,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_XDECREF_SET(__pyx_v_sample_2, __pyx_t_2);
           __pyx_t_2 = 0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":164
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":164
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]
  * 					if sample != sample_2:             # <<<<<<<<<<<<<<
@@ -3929,7 +3957,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           if (__pyx_t_9) {
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":166
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":166
  * 					if sample != sample_2:
  * 
  * 						parent = node_parent(sample, sample_2)             # <<<<<<<<<<<<<<
@@ -3986,7 +4014,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_2);
             __pyx_t_2 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":167
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":167
  * 
  * 						parent = node_parent(sample, sample_2)
  * 						edge_length_p_s1 = get_edge_length(parent, sample)             # <<<<<<<<<<<<<<
@@ -4043,7 +4071,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s1, __pyx_t_2);
             __pyx_t_2 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":168
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":168
  * 						parent = node_parent(sample, sample_2)
  * 						edge_length_p_s1 = get_edge_length(parent, sample)
  * 						edge_length_p_s2 = get_edge_length(parent, sample_2)             # <<<<<<<<<<<<<<
@@ -4100,7 +4128,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2, __pyx_t_2);
             __pyx_t_2 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":169
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":169
  * 						edge_length_p_s1 = get_edge_length(parent, sample)
  * 						edge_length_p_s2 = get_edge_length(parent, sample_2)
  * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))             # <<<<<<<<<<<<<<
@@ -4123,7 +4151,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_top_parents, __pyx_t_3); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 169, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":171
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":171
  * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
  * 
  * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)             # <<<<<<<<<<<<<<
@@ -4189,7 +4217,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":172
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":172
  * 
  * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
  * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)             # <<<<<<<<<<<<<<
@@ -4255,7 +4283,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":174
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":174
  * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
  * 
  * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1             # <<<<<<<<<<<<<<
@@ -4273,7 +4301,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_3, __pyx_v_edge_length_p_s1) < 0)) __PYX_ERR(0, 174, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":175
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":175
  * 
  * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
  * 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2             # <<<<<<<<<<<<<<
@@ -4291,12 +4319,12 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_3, __pyx_v_edge_length_p_s2) < 0)) __PYX_ERR(0, 175, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":178
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":178
  * 
  * 						#Check this cutoff
  * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:             # <<<<<<<<<<<<<<
  * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
  */
             __pyx_t_3 = PyNumber_Add(__pyx_v_edge_length_p_s1, __pyx_v_edge_length_p_s2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 178, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
@@ -4309,10 +4337,10 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
             if (__pyx_t_9) {
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":180
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":180
  * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
  * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)             # <<<<<<<<<<<<<<
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)             # <<<<<<<<<<<<<<
  * 
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
  */
@@ -4332,22 +4360,22 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               }
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_2)) {
-                PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors};
-                __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 3+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 180, __pyx_L1_error)
+                PyObject *__pyx_temp[5] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors, __pyx_v_weighted};
+                __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 4+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
                 __Pyx_GOTREF(__pyx_t_13);
               } else
               #endif
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
-                PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors};
-                __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 3+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 180, __pyx_L1_error)
+                PyObject *__pyx_temp[5] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors, __pyx_v_weighted};
+                __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_8, 4+__pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
                 __Pyx_GOTREF(__pyx_t_13);
               } else
               #endif
               {
-                __pyx_t_12 = PyTuple_New(3+__pyx_t_8); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 180, __pyx_L1_error)
+                __pyx_t_12 = PyTuple_New(4+__pyx_t_8); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_12);
                 if (__pyx_t_3) {
                   __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -4361,6 +4389,9 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
                 __Pyx_INCREF(__pyx_v_priors);
                 __Pyx_GIVEREF(__pyx_v_priors);
                 PyTuple_SET_ITEM(__pyx_t_12, 2+__pyx_t_8, __pyx_v_priors);
+                __Pyx_INCREF(__pyx_v_weighted);
+                __Pyx_GIVEREF(__pyx_v_weighted);
+                PyTuple_SET_ITEM(__pyx_t_12, 3+__pyx_t_8, __pyx_v_weighted);
                 __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_12, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_13);
                 __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
@@ -4382,22 +4413,22 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               }
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_12)) {
-                PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors};
-                __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_8, 3+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
+                PyObject *__pyx_temp[5] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted};
+                __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_8, 4+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
                 __Pyx_GOTREF(__pyx_t_2);
               } else
               #endif
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_12)) {
-                PyObject *__pyx_temp[4] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors};
-                __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_8, 3+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
+                PyObject *__pyx_temp[5] = {__pyx_t_3, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted};
+                __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_8, 4+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
                 __Pyx_GOTREF(__pyx_t_2);
               } else
               #endif
               {
-                __pyx_t_15 = PyTuple_New(3+__pyx_t_8); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 180, __pyx_L1_error)
+                __pyx_t_15 = PyTuple_New(4+__pyx_t_8); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_15);
                 if (__pyx_t_3) {
                   __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -4411,6 +4442,9 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
                 __Pyx_INCREF(__pyx_v_priors);
                 __Pyx_GIVEREF(__pyx_v_priors);
                 PyTuple_SET_ITEM(__pyx_t_15, 2+__pyx_t_8, __pyx_v_priors);
+                __Pyx_INCREF(__pyx_v_weighted);
+                __Pyx_GIVEREF(__pyx_v_weighted);
+                PyTuple_SET_ITEM(__pyx_t_15, 3+__pyx_t_8, __pyx_v_weighted);
                 __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_15, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_2);
                 __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
@@ -4421,8 +4455,8 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2_priors, __pyx_t_2);
               __pyx_t_2 = 0;
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":182
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":182
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
  * 
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])             # <<<<<<<<<<<<<<
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
@@ -4461,7 +4495,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
               __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":183
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":183
  * 
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])             # <<<<<<<<<<<<<<
@@ -4501,7 +4535,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":184
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":184
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
  * 							temp_source_nodes.append(parent)             # <<<<<<<<<<<<<<
@@ -4510,7 +4544,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
               __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 184, __pyx_L1_error)
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":186
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":186
  * 							temp_source_nodes.append(parent)
  * 
  * 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors             # <<<<<<<<<<<<<<
@@ -4528,7 +4562,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_15, __pyx_v_edge_length_p_s1_priors) < 0)) __PYX_ERR(0, 186, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":187
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":187
  * 
  * 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors             # <<<<<<<<<<<<<<
@@ -4546,16 +4580,16 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_15, __pyx_v_edge_length_p_s2_priors) < 0)) __PYX_ERR(0, 187, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":178
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":178
  * 
  * 						#Check this cutoff
  * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:             # <<<<<<<<<<<<<<
  * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors), get_edge_length(parent, sample_2, priors)
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
  */
             }
 
-            /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":164
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":164
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]
  * 					if sample != sample_2:             # <<<<<<<<<<<<<<
@@ -4564,7 +4598,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
           }
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":162
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":162
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):             # <<<<<<<<<<<<<<
@@ -4574,7 +4608,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         }
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":189
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":189
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]             # <<<<<<<<<<<<<<
@@ -4588,7 +4622,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_v_top_parents);
         __pyx_t_15 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 189, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_13 = __Pyx_CyFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, 0, __pyx_n_s_build_potential_graph_from_base, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so, __pyx_d, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 189, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_CyFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, 0, __pyx_n_s_build_potential_graph_from_base, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so, __pyx_d, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 189, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         if (PyDict_SetItem(__pyx_t_15, __pyx_n_s_key, __pyx_t_13) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -4602,7 +4636,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_min_distance, __pyx_t_15);
         __pyx_t_15 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":190
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":190
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]             # <<<<<<<<<<<<<<
@@ -4649,7 +4683,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_lst, ((PyObject*)__pyx_t_15));
         __pyx_t_15 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":192
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":192
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
  * 
  * 				for parent, sample_2 in lst:             # <<<<<<<<<<<<<<
@@ -4716,7 +4750,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_XDECREF_SET(__pyx_v_sample_2, __pyx_t_7);
           __pyx_t_7 = 0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":193
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":193
  * 
  * 				for parent, sample_2 in lst:
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])             # <<<<<<<<<<<<<<
@@ -4768,7 +4802,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":194
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":194
  * 				for parent, sample_2 in lst:
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
  * 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])             # <<<<<<<<<<<<<<
@@ -4820,7 +4854,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":195
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":195
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
  * 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
  * 					temp_source_nodes.append(parent)             # <<<<<<<<<<<<<<
@@ -4829,7 +4863,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
           __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 195, __pyx_L1_error)
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":192
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":192
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
  * 
  * 				for parent, sample_2 in lst:             # <<<<<<<<<<<<<<
@@ -4839,7 +4873,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         }
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":197
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":197
  * 					temp_source_nodes.append(parent)
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))             # <<<<<<<<<<<<<<
@@ -4872,7 +4906,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_DECREF_SET(__pyx_v_temp_source_nodes, ((PyObject*)__pyx_t_7));
         __pyx_t_7 = 0;
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":198
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":198
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:             # <<<<<<<<<<<<<<
@@ -4901,7 +4935,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __pyx_L24_bool_binop_done:;
         if (__pyx_t_9) {
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":199
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":199
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
  * 					return prev_network, max_neighbor_dist - 1             # <<<<<<<<<<<<<<
@@ -4924,7 +4958,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           goto __pyx_L0;
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":198
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":198
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:             # <<<<<<<<<<<<<<
@@ -4933,7 +4967,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
         }
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":157
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":157
  * 
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):             # <<<<<<<<<<<<<<
@@ -4943,7 +4977,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":201
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":201
  * 					return prev_network, max_neighbor_dist - 1
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):             # <<<<<<<<<<<<<<
@@ -4955,7 +4989,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_9 = ((__pyx_t_5 > __pyx_t_10) != 0);
       if (__pyx_t_9) {
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:             # <<<<<<<<<<<<<<
@@ -4970,7 +5004,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
         if (__pyx_t_9) {
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":203
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":203
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:
  * 					neighbor_mod *= 3             # <<<<<<<<<<<<<<
@@ -4979,7 +5013,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
           __pyx_v_neighbor_mod = (__pyx_v_neighbor_mod * 3);
 
-          /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:             # <<<<<<<<<<<<<<
@@ -4988,7 +5022,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
         }
 
-        /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":201
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":201
  * 					return prev_network, max_neighbor_dist - 1
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):             # <<<<<<<<<<<<<<
@@ -4997,7 +5031,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       }
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":205
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":205
  * 					neighbor_mod *= 3
  * 
  * 			source_nodes = temp_source_nodes             # <<<<<<<<<<<<<<
@@ -5007,7 +5041,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_INCREF(__pyx_v_temp_source_nodes);
       __Pyx_DECREF_SET(__pyx_v_source_nodes, __pyx_v_temp_source_nodes);
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":206
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":206
  * 
  * 			source_nodes = temp_source_nodes
  * 			max_width = max(max_width, len(source_nodes))             # <<<<<<<<<<<<<<
@@ -5040,7 +5074,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_15 = 0;
     }
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":209
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":209
  * 
  * 
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
@@ -5076,7 +5110,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     if (__Pyx_PrintOne(0, __pyx_t_7) < 0) __PYX_ERR(0, 209, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":210
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":210
  * 
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
  * 		prev_network = initial_network             # <<<<<<<<<<<<<<
@@ -5086,7 +5120,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_v_initial_network);
     __Pyx_DECREF_SET(__pyx_v_prev_network, __pyx_v_initial_network);
 
-    /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5096,7 +5130,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_t_9 = (__pyx_v_flag != 0);
     if (__pyx_t_9) {
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":212
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":212
  * 		prev_network = initial_network
  * 		if flag:
  * 			return prev_network, max_neighbor_dist - 1             # <<<<<<<<<<<<<<
@@ -5118,7 +5152,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_15 = 0;
       goto __pyx_L0;
 
-      /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5128,7 +5162,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
   }
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":214
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":214
  * 			return prev_network, max_neighbor_dist - 1
  * 
  * 	return initial_network, max_neighbor_dist             # <<<<<<<<<<<<<<
@@ -5150,10 +5184,10 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_15 = 0;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
@@ -5167,7 +5201,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_12);
   __Pyx_XDECREF(__pyx_t_13);
   __Pyx_XDECREF(__pyx_t_15);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_prev_network);
@@ -5199,7 +5233,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5208,21 +5242,21 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph(PyObject *__pyx_self, PyObject *__pyx_v_tree); /*proto*/
-static char __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph[] = "\n\tReturns all nodes with in-degree zero\n\n\t:param tree:\n\t\tnetworkx tree\n\t:return:\n\t\tLeaves of the corresponding Tree\n\t";
-static PyMethodDef __pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph = {"get_sources_of_graph", (PyCFunction)__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, METH_O, __pyx_doc_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph};
-static PyObject *__pyx_pw_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph(PyObject *__pyx_self, PyObject *__pyx_v_tree) {
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph(PyObject *__pyx_self, PyObject *__pyx_v_tree); /*proto*/
+static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph[] = "\n\tReturns all nodes with in-degree zero\n\n\t:param tree:\n\t\tnetworkx tree\n\t:return:\n\t\tLeaves of the corresponding Tree\n\t";
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph = {"get_sources_of_graph", (PyCFunction)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, METH_O, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph(PyObject *__pyx_self, PyObject *__pyx_v_tree) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_sources_of_graph (wrapper)", 0);
-  __pyx_r = __pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(__pyx_self, ((PyObject *)__pyx_v_tree));
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(__pyx_self, ((PyObject *)__pyx_v_tree));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_tree) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_tree) {
   PyObject *__pyx_v_x = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -5236,7 +5270,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("get_sources_of_graph", 0);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":226
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":226
  * 		Leaves of the corresponding Tree
  * 	"""
  * 	return [x for x in tree.nodes() if tree.in_degree(x)==0 ]             # <<<<<<<<<<<<<<
@@ -5334,7 +5368,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5349,7 +5383,7 @@ static PyObject *__pyx_pf_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_AddTraceback("Cassiopeia.TreeSolver.lineage_solver.solver_utils.get_sources_of_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.get_sources_of_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_x);
@@ -5406,8 +5440,6 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_, __pyx_k_, sizeof(__pyx_k_), 0, 0, 1, 1},
   {&__pyx_kp_s_0, __pyx_k_0, sizeof(__pyx_k_0), 0, 0, 1, 0},
-  {&__pyx_n_s_Cassiopeia_TreeSolver_lineage_so, __pyx_k_Cassiopeia_TreeSolver_lineage_so, sizeof(__pyx_k_Cassiopeia_TreeSolver_lineage_so), 0, 0, 1, 1},
-  {&__pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_k_Cassiopeia_TreeSolver_lineage_so_2, sizeof(__pyx_k_Cassiopeia_TreeSolver_lineage_so_2), 0, 0, 1, 0},
   {&__pyx_n_s_DiGraph, __pyx_k_DiGraph, sizeof(__pyx_k_DiGraph), 0, 0, 1, 1},
   {&__pyx_kp_s_Estimating_potential_graph_with, __pyx_k_Estimating_potential_graph_with, sizeof(__pyx_k_Estimating_potential_graph_with), 0, 0, 1, 0},
   {&__pyx_kp_s_LCA_Distance, __pyx_k_LCA_Distance, sizeof(__pyx_k_LCA_Distance), 0, 0, 1, 0},
@@ -5423,6 +5455,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_add_node, __pyx_k_add_node, sizeof(__pyx_k_add_node), 0, 0, 1, 1},
   {&__pyx_n_s_build_potential_graph_from_base, __pyx_k_build_potential_graph_from_base, sizeof(__pyx_k_build_potential_graph_from_base), 0, 0, 1, 1},
   {&__pyx_n_s_build_potential_graph_from_base_2, __pyx_k_build_potential_graph_from_base_2, sizeof(__pyx_k_build_potential_graph_from_base_2), 0, 0, 1, 1},
+  {&__pyx_n_s_cassiopeia_TreeSolver_lineage_so, __pyx_k_cassiopeia_TreeSolver_lineage_so, sizeof(__pyx_k_cassiopeia_TreeSolver_lineage_so), 0, 0, 1, 1},
+  {&__pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_k_cassiopeia_TreeSolver_lineage_so_2, sizeof(__pyx_k_cassiopeia_TreeSolver_lineage_so_2), 0, 0, 1, 0},
   {&__pyx_n_s_child, __pyx_k_child, sizeof(__pyx_k_child), 0, 0, 1, 1},
   {&__pyx_n_s_child_list, __pyx_k_child_list, sizeof(__pyx_k_child_list), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
@@ -5491,6 +5525,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_tree, __pyx_k_tree, sizeof(__pyx_k_tree), 0, 0, 1, 1},
   {&__pyx_n_s_unique, __pyx_k_unique, sizeof(__pyx_k_unique), 0, 0, 1, 1},
   {&__pyx_n_s_weight, __pyx_k_weight, sizeof(__pyx_k_weight), 0, 0, 1, 1},
+  {&__pyx_n_s_weighted, __pyx_k_weighted, sizeof(__pyx_k_weighted), 0, 0, 1, 1},
   {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_x_list, __pyx_k_x_list, sizeof(__pyx_k_x_list), 0, 0, 1, 1},
   {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
@@ -5509,7 +5544,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":18
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":18
  * 	parr = []
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])             # <<<<<<<<<<<<<<
@@ -5520,7 +5555,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_slice__3);
   __Pyx_GIVEREF(__pyx_slice__3);
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
  * import numpy as np
  * 
  * def node_parent(x, y):             # <<<<<<<<<<<<<<
@@ -5530,21 +5565,21 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__10 = PyTuple_Pack(6, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_parr, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_node_parent, 4, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_node_parent, 4, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 4, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
-  __pyx_tuple__12 = PyTuple_Pack(7, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_priors, __pyx_n_s_count, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(8, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_priors, __pyx_n_s_weighted, __pyx_n_s_count, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_edge_length, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_edge_length, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 35, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
  * 	return count
  * 
  * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
@@ -5554,9 +5589,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__14 = PyTuple_Pack(6, __pyx_n_s_parent, __pyx_n_s_child, __pyx_n_s_parent_list, __pyx_n_s_child_list, __pyx_n_s_mutations, __pyx_n_s_i); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_mutations_from_parent_to_child, 73, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_mutations_from_parent_to_child, 73, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 73, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
  * 	return " , ".join(mutations)
  * 
  * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
@@ -5566,21 +5601,21 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__16 = PyTuple_Pack(3, __pyx_n_s_target_nodes, __pyx_n_s_np, __pyx_n_s_sample); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_root_finder, 95, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_root_finder, 95, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 95, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
-  __pyx_tuple__18 = PyTuple_Pack(30, __pyx_n_s_samples, __pyx_n_s_root, __pyx_n_s_max_neighborhood_size, __pyx_n_s_priors, __pyx_n_s_pid, __pyx_n_s_neighbor_mod, __pyx_n_s_prev_network, __pyx_n_s_flag, __pyx_n_s_max_neighbor_dist, __pyx_n_s_initial_network, __pyx_n_s_sample, __pyx_n_s_source_nodes, __pyx_n_s_max_width, __pyx_n_s_temp_source_nodes, __pyx_n_s_i, __pyx_n_s_top_parents, __pyx_n_s_p_to_s1_lengths, __pyx_n_s_p_to_s2_lengths, __pyx_n_s_muts_to_s1, __pyx_n_s_muts_to_s2, __pyx_n_s_j, __pyx_n_s_sample_2, __pyx_n_s_parent, __pyx_n_s_edge_length_p_s1, __pyx_n_s_edge_length_p_s2, __pyx_n_s_edge_length_p_s1_priors, __pyx_n_s_edge_length_p_s2_priors, __pyx_n_s_min_distance, __pyx_n_s_lst, __pyx_n_s_s); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_tuple__18 = PyTuple_Pack(31, __pyx_n_s_samples, __pyx_n_s_root, __pyx_n_s_max_neighborhood_size, __pyx_n_s_priors, __pyx_n_s_pid, __pyx_n_s_weighted, __pyx_n_s_neighbor_mod, __pyx_n_s_prev_network, __pyx_n_s_flag, __pyx_n_s_max_neighbor_dist, __pyx_n_s_initial_network, __pyx_n_s_sample, __pyx_n_s_source_nodes, __pyx_n_s_max_width, __pyx_n_s_temp_source_nodes, __pyx_n_s_i, __pyx_n_s_top_parents, __pyx_n_s_p_to_s1_lengths, __pyx_n_s_p_to_s2_lengths, __pyx_n_s_muts_to_s1, __pyx_n_s_muts_to_s2, __pyx_n_s_j, __pyx_n_s_sample_2, __pyx_n_s_parent, __pyx_n_s_edge_length_p_s1, __pyx_n_s_edge_length_p_s2, __pyx_n_s_edge_length_p_s1_priors, __pyx_n_s_edge_length_p_s2_priors, __pyx_n_s_min_distance, __pyx_n_s_lst, __pyx_n_s_s); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__18);
   __Pyx_GIVEREF(__pyx_tuple__18);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(5, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_build_potential_graph_from_base_2, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(6, 0, 31, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_build_potential_graph_from_base_2, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 110, __pyx_L1_error)
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5590,7 +5625,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__20 = PyTuple_Pack(2, __pyx_n_s_tree, __pyx_n_s_x); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__20);
   __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_sources_of_graph, 217, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_sources_of_graph, 217, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -5843,14 +5878,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main_Cassiopeia__TreeSolver__lineage_solver__solver_utils) {
+  if (__pyx_module_is_main_cassiopeia__TreeSolver__lineage_solver__solver_utils) {
     if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "Cassiopeia.TreeSolver.lineage_solver.solver_utils")) {
-      if (unlikely(PyDict_SetItemString(modules, "Cassiopeia.TreeSolver.lineage_solver.solver_utils", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "cassiopeia.TreeSolver.lineage_solver.solver_utils")) {
+      if (unlikely(PyDict_SetItemString(modules, "cassiopeia.TreeSolver.lineage_solver.solver_utils", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -5871,7 +5906,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":1
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":1
  * import networkx as nx             # <<<<<<<<<<<<<<
  * import numpy as np
  * 
@@ -5881,7 +5916,7 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_nx, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":2
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":2
  * import networkx as nx
  * import numpy as np             # <<<<<<<<<<<<<<
  * 
@@ -5892,79 +5927,79 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":4
  * import numpy as np
  * 
  * def node_parent(x, y):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, finds the latest common ancestor
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_node_parent, __pyx_t_1) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_edge_length, __pyx_t_1) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
  * 	return count
  * 
  * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Creates a string label describing the mutations taken from  a parent to a child
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mutations_from_parent_to_child, __pyx_t_1) < 0) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
  * 	return " , ".join(mutations)
  * 
  * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a list of targets_nodes, return the least common ancestor of all nodes
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_root_finder, __pyx_t_1) < 0) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_build_potential_graph_from_base_2, __pyx_t_1) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Returns all nodes with in-degree zero
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10Cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_Cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_sources_of_graph, __pyx_t_1) < 0) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "Cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":1
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":1
  * import networkx as nx             # <<<<<<<<<<<<<<
  * import numpy as np
  * 
@@ -5981,11 +6016,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init Cassiopeia.TreeSolver.lineage_solver.solver_utils", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init cassiopeia.TreeSolver.lineage_solver.solver_utils", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_CLEAR(__pyx_m);
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init Cassiopeia.TreeSolver.lineage_solver.solver_utils");
+    PyErr_SetString(PyExc_ImportError, "init cassiopeia.TreeSolver.lineage_solver.solver_utils");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();

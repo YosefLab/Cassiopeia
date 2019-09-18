@@ -124,3 +124,16 @@ def fill_in_tree(tree, cm = None):
 	tree.remove_edges_from(tree.selfloop_edges())
 
 	return tree
+
+def modify_character_matrix(cm, method = 'leave_one_out', modulo = 3):
+
+	cms = []
+	if method == 'leave_one_out':
+		columns = cm.columns
+		for i in range(0, len(columns), modulo):
+			to_drop = [columns[i+k] for k in range(modulo)]
+			_cm = cm.copy()
+			_cm.drop(columns = to_drop, inplace=True)
+			cms.append(_cm)
+
+	return cms
