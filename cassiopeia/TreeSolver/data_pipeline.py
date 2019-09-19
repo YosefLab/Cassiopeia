@@ -388,6 +388,38 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_con
 	else:
 		return string_to_cm(character_matrix_values), prior_probs, indel_to_charstate
 
+def leave_one_out(at, mutation_map=None):
+
+	intbcs = at['intBC'].unique()
+	samples = []
+	for i in intbcs:
+
+		character_matrix_values, priors_probs, indel_to_charstate = process_allele_table(at[at['intBC'] != i], mutation_map = mutation_map)
+		samples.append((string_to_cm(character_matrix_values), prior_probs, indel_to_charstate))
+
+	return samples
+
+def create_boostrap(cm, priors=None, B = 100):
+
+	boot_samples = []
+	columns = list(range(len(cm.columns)))
+	M = len(columns)
+
+	for i in tqdm(range(B), desc="Creating bootstrap samples"):
+		
+		chars = np.random.choice(columns, M, replace=True)
+		b_sample = cm.iloc[:, chars]
+
+		new_priors = None
+		if priors is not None:
+			new_priors = defaultdict(dict)
+			for n, m in zip(range(M), chars):
+				new_priors[n] = priors[m]
+
+		boot_samples.append((b_sample, new_priors))
+	
+	return boot_samples
+
 def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=True):
 	"""
 	Wrapper function for creating lineage profiles out of allele tables. These are
