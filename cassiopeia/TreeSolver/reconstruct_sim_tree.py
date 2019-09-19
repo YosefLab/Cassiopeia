@@ -194,7 +194,6 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("netfp", type = str, help="character_matrix")
-    parser.add_argument("typ", type=str, help="category of stress test")
     parser.add_argument("-nj", "--neighbor-joining", action="store_true", default=False)
     parser.add_argument("--neighbor_joining_weighted", action='store_true', default=False)
     parser.add_argument("--ilp", action="store_true", default=False)
@@ -216,7 +215,6 @@ def main():
 
     netfp = args.netfp
     outfp = args.out_fp
-    t = args.typ
     verbose = args.verbose
 
     cutoff = args.cutoff
