@@ -141,6 +141,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	right_split += right_split_temp
 	left_split += left_split_temp
 
+	print("Entropy of right_split: " + str(compute_entropy_of_split(right_split)))
 	# Add character, state that split occurred to already considered mutations
 	considered.add((str(character), state))
 	G = nx.DiGraph()
@@ -194,3 +195,24 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 
 
 	return G, left_subproblems + right_subproblems
+
+def compute_entropy_of_split(cells):
+
+	C = len(cells[0].split("|"))
+	N = len(cells)
+
+	entropies = []
+	for c in range(C):
+		counts_per_state = defaultdict(int)
+
+		for cell in cells:
+			state = cell.split("|")[c]
+			counts_per_state[state] += 1
+		
+		# convert counts to frequencies
+		counts_per_state = dict([(k, v / N) for k, v in counts_per_state.items()])
+
+		ent = -1 * np.sum([p * np.log(p) for p in counts_per_state.values()])
+		entropies.append(ent)
+	
+	return np.mean(entropies)
