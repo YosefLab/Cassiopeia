@@ -38,6 +38,7 @@ Installation
 7. While we get pip working, it's best to first clone the package and then follow these instructions:
     * ``python3.6 setup.py build``
     * ``python3.6 setup.py bdist_wheel``
+    * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 -m pip install . --user``
     
     
