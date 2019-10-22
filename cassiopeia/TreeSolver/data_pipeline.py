@@ -90,7 +90,7 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
 
 	return samples_as_string
 
-def convert_network_to_newick_format(graph):
+def convert_network_to_newick_format(graph, include_support = False):
 	"""
 	Given a networkx network, converts to proper Newick format.
 
@@ -105,8 +105,12 @@ def convert_network_to_newick_format(graph):
 			_name = node.get_character_string()
 		else:
 			_name = node.name
+		if include_support:
+			return '%s' % (_name,) + '[' + str(node.support) + ']' if is_leaf else (
+						'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + _name + '[' + str(node.support) + "]")
+
 		return '%s' % (_name,) if is_leaf else (
-					'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + _name)
+						'(' + ','.join(_to_newick_str(g, child) for child in g.successors(node)) + ')' + _name)
 
 	def to_newick_str(g, root=0):  # 0 assumed to be the root
 		return _to_newick_str(g, root) + ';'
@@ -201,7 +205,7 @@ def get_indel_props(at, group_var = ['intBC']):
 	return_df.index.name = "indel"
 	return return_df
 
-def process_allele_table(cm, no_context = False, mutation_map=None):
+def process_allele_table(cm, no_context = False, mutation_map=None, to_drop = None):
 	"""
 	Given an alleletable, create a character strings and lineage-specific mutation maps.
 	A character string for a cell consists of a summary of all mutations observed at each
@@ -228,14 +232,23 @@ def process_allele_table(cm, no_context = False, mutation_map=None):
 	filtered_samples = defaultdict(OrderedDict)
 	for sample in cm.index:
 		cell = cm.loc[sample, "cellBC"]
-		if no_context:
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1_no_context']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2_no_context']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3_no_context']
-		else:
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_1'] = cm.loc[sample, 'r1']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_2'] = cm.loc[sample, 'r2']
-			filtered_samples[cell][cm.loc[sample, 'intBC'] + '_3'] = cm.loc[sample, 'r3']
+		intBC = cm.loc[sample, 'intBC']
+		cut_sites = ['_r1', '_r2', '_r3']
+
+		to_add = []
+		i = 1
+		for c in cut_sites:
+			if intBC + c not in to_drop:
+				if no_context:
+					to_add.append(('intBC', c, 'r' + str(i) + '_no_context'))
+				else:
+					to_add.append(('intBC', c, 'r' + str(i)))
+
+			i += 1
+
+		for ent in to_add:
+			filtered_samples[cell][cm.loc[sample, ent[0]] + ent[1]] = cm.loc[sample, ent[2]]
+	
 
 	samples_as_string = defaultdict(str)
 	allele_counter = defaultdict(OrderedDict)
@@ -345,7 +358,7 @@ def write_to_charmat(string_sample_values, out_fp):
 
 			f.write("\n")
 
-def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_context = False, write=True):
+def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_context = False, write=True, to_drop = []):
 	"""
 	Wrapper function for creating character matrices out of allele tables.
 
@@ -360,6 +373,8 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_con
 		Do not use sequence context when calling character states (Default = False)
 	:param write:
 		Write out to file. This requires `out_fp` to be specified as well. (Default = True)
+	:param to_drop:
+		List of Target Sites to omit (Default = [])
 	:return:
 		None if write is specified. If not, this returns three items: return an N x C character matrix as a pandas DataFrame, the
 		mutation map, and the indel to character state mapping. If writing out to file,
@@ -368,7 +383,7 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_con
 	"""
 
 
-	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, no_context = no_context, mutation_map=mutation_map)
+	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, no_context = no_context, mutation_map=mutation_map, to_drop = to_drop)
 
 	if write:
 
@@ -420,7 +435,7 @@ def create_boostrap(cm, priors=None, B = 100):
 	
 	return boot_samples
 
-def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=True):
+def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=True, to_drop = []):
 	"""
 	Wrapper function for creating lineage profiles out of allele tables. These are
 	identical in concept to character matrices but retain their mutation identities
@@ -434,6 +449,8 @@ def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=Tr
 		Do not use sequence context when calling character states (Default = False)
 	:param write:
 		Write out to file. This requires `out_fp` to be specified as well. (Default = True)
+	:param to_drop:
+		List of Target Sites to omit (Default = [])
 	:return:
 		None if write is specified. If not, return an N x C lineage profile as a pandas DataFrame.
 	"""
@@ -474,6 +491,9 @@ def alleletable_to_lineage_profile(lg, out_fp=None, no_context = False, write=Tr
 
 	# collapse column names here
 	lineage_profile.columns = ["_".join(tup).rstrip("_") for tup in lineage_profile.columns.values]
+
+	# remove those that are specified to be removed
+	lineage_profile.drop(columns = to_drop, inplace=True)
 
 	if write:
 			if out_fp is None:

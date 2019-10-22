@@ -23,9 +23,9 @@ def node_parent(x, y):
 	for i in range(0,len(x_list)):
 		if x_list[i] == y_list[i]:
 			parr.append(x_list[i])
-		elif x_list[i] == '-':
+		elif x_list[i] == '-' or x_list[i] == 'H':
 			parr.append(y_list[i])
-		elif y_list[i] == '-':
+		elif y_list[i] == '-' or y_list[i] == 'H':
 			parr.append(x_list[i])
 		else:
 			parr.append('0')
@@ -58,7 +58,7 @@ def get_edge_length(x,y,priors=None, weighted=False):
 	for i in range(0, len(x_list)):
 			if x_list[i] == y_list[i]:
 					pass
-			elif y_list[i] == "-":
+			elif y_list[i] == "-" or y_list[i] == 'H':
 					count += 0
 
 			elif x_list[i] == '0':
@@ -87,7 +87,7 @@ def mutations_from_parent_to_child(parent, child):
 	child_list = child.split("_")[0].split('|')
 	mutations = []
 	for i in range(0, len(parent_list)):
-		if parent_list[i] != child_list[i] and child_list[i] != '-':
+		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
 
 	return " , ".join(mutations)

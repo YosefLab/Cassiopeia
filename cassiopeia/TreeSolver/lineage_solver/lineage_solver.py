@@ -7,6 +7,7 @@ import functools
 import multiprocessing
 import networkx as nx
 import numpy as np
+import pandas as pd
 import traceback
 import hashlib
 from collections import defaultdict
@@ -18,7 +19,7 @@ from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from cassiopeia.TreeSolver.Node import Node
 
 def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, 
-							seed=None, num_iter=-1, weighted_ilp = False):
+							seed=None, num_iter=-1, weighted_ilp = False, fuzzy=False):
 	"""
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
 	accounting the given target nodes
@@ -104,7 +105,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	if method == "hybrid":
 
 
-		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff)
+		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff, fuzzy=fuzzy)
 
 		print("Using " + str(min(multiprocessing.cpu_count(), threads)) + " threads, " + str(multiprocessing.cpu_count()) + " available.", flush=True)
 		executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), threads))
@@ -147,7 +148,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 		return Cassiopeia_Tree(method="hybrid", network=state_tree, name="Cassiopeia_state_tree")
 
 	if method == "greedy":
-		graph = greedy_build(target_nodes, priors=prior_probabilities, cutoff=-1, targets=target_nodes)[0]
+		graph = greedy_build(target_nodes, priors=prior_probabilities, cutoff=-1, targets=target_nodes, fuzzy = fuzzy)[0]
 
 		rdict = {}
 		for n in graph:
@@ -216,7 +217,38 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		graph.add_node(node_name_dict[root])
 		return graph, root, pid
 
-	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets, root, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid, weighted=weighted)
+	# "prune" unique alleles
+	if root not in targets:
+		targets.append(root)
+	cp = pd.DataFrame(np.array([t.split("|") for t in targets]))
+
+	counts = cp.apply(lambda x: np.unique(x, return_counts=True), axis=0).values
+	unique_alleles = list(map(lambda x: x[0][np.where(x[1] == 1)] if len(np.where(x[1] == 1)) > 0 else None, counts))
+
+	for uniq, col  in zip(unique_alleles, cp.columns):
+		if len(uniq) == 0:
+			continue
+		filt = list(map(lambda x: x in uniq and x != '-', cp[col].values))
+		cp.loc[filt, col] = '0'
+	
+	pruned_to_orig = defaultdict(list)
+	for i in range(cp.shape[0]):
+		pruned = "|".join(cp.iloc[i,:].values)
+		if pruned != targets[i]:
+			pruned_to_orig[pruned].append(targets[i])
+
+	cp.drop_duplicates(inplace=True)
+
+	lroot = root.split("|")
+	for i, uniq in zip(range(len(unique_alleles)), unique_alleles):
+		if lroot[i] != '-' and lroot[i] in uniq:
+			lroot[i] = '0'
+	proot = '|'.join(lroot)
+
+	targets_pruned = list(cp.apply(lambda x: '|'.join(x.values), axis=1).values)
+
+	# approximate potential graph
+	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets_pruned, proot, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid, weighted=weighted)
 
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:
@@ -237,9 +269,9 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	assert len(encoder) == len(decoder)
 
 	_potential_network = nx.relabel_nodes(potential_network_priors, encoder)
-	_targets = map(lambda x: encoder[x], targets)
+	_targets = list(map(lambda x: encoder[x], targets_pruned))
 
-	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[root], _targets)
+	model, edge_variables = generate_mSteiner_model(_potential_network, encoder[proot], _targets)
 	subgraph = solve_steiner_instance(model, _potential_network, edge_variables, MIPGap=.01, detailed_output=False, time_limit=time_limit, num_threads = num_threads, seed=seed, num_iter=num_iter)[0]
 
 	subgraph = nx.relabel_nodes(subgraph, decoder)
@@ -251,6 +283,10 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 	for r in subgraph_roots:
 		if r != root:
 			subgraph.remove_node(r)
+
+	# add back in de-pruned leaves
+	for k, v in pruned_to_orig.items():
+		subgraph.add_edges_from([(k, n) for n in v])
 
 	node_name_dict_cleaned = {}
 	for n in node_name_dict.keys():

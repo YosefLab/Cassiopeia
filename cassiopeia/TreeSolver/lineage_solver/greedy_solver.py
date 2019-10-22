@@ -5,9 +5,9 @@ import hashlib
 
 from .solver_utils import root_finder
 
-GREEDY_EPSILON = 0.33 # minimum similarity a node needs to have to be assigned to a group on a split.
+GREEDY_EPSILON = 0.2 # minimum similarity a node needs to have to be assigned to a group on a split.
 
-def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targets=[]):
+def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targets=[], fuzzy=False):
 	"""
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
 	This algorithm chooses splits within the tree based on which mutation occurs most frequently,
@@ -58,7 +58,9 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 		node_list = node.split("_")[0].split('|')
 		for i in range(0, len(node_list)):
 			char = node_list[i]
-			if char != '0' and char != '-':
+
+			# you can't split on a missing value or a 'None' state
+			if char != '0' and char != '-' and char != 'H':
 				character_mutation_mapping[(str(i), char)] += 1
 
 
@@ -72,20 +74,24 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 			for j in priors[i].keys():
 				min_prior = min(min_prior, priors[i][j])
 
+	epsilon = 0
 	for i,j in character_mutation_mapping:
 		if not (i,j) in considered:
+
+			if fuzzy:
+				epsilon = np.random.normal()
+
 			if not priors:
-				if max_cost < character_mutation_mapping[(i, j)]:
+				if max_cost < (character_mutation_mapping[(i, j)] + epsilon):
 					max_cost = character_mutation_mapping[(i, j)]
 					character, state = i, j
 			else:
 				if j not in priors[int(i)]:
 					priors[int(i)][j] = min_prior
-				if max_cost < -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]:
+				if max_cost < (-np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)] + epsilon):
 					max_cost = -np.log(priors[int(i)][j]) * character_mutation_mapping[(i, j)]
 					character, state = i, j
 	character = int(character)
-
 
 	# If there is no good split left, stop the process and return a graph with the remainder of nodes
 	if character == 0 and state == 0:
@@ -118,20 +124,27 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 		right_split_score = 0
 		left_split_score = 0
 		node_list = node.split('|')
-		num_not_missing = len([n for n in node_list if n != "-"])
+		# num_not_missing = len([n for n in node_list if n != "-"])
 		for i in range(0, len(node_list)):
-			if node_list[i] != '0' and node_list[i] != '-':
-				for node_2 in left_split:
-					node2_list = node_2.split('|')
-					if node_list[i] == node2_list[i]:
-						left_split_score += 1
-				for node_2 in right_split:
-					node2_list = node_2.split('|')
-					if node_list[i] == node2_list[i]:
-						right_split_score += 1
 
-		avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
-		avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
+			for node_2 in left_split:
+				node2_list = node_2.split("|")
+				if node_list[i] == node2_list:
+					left_split_score += 2
+				if node_list[i] == '0' or node2_list[i] == '0':
+					left_split_score += 1
+
+			for node_2 in right_split:
+				node2_list = node_2.split('|')
+				if node_list[i] == node2_list:
+					right_split_score += 2
+				if node_list[i] == '0' or node2_list[i] == '0':
+					right_split_score += 1
+
+		#avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
+		#avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
+		avg_left_split_score = left_split_score / float(len(left_split) + 1)
+		avg_right_split_score = right_split_score / float(len(right_split) + 1)
 
 		if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
 			right_split_temp.append(node)
@@ -141,7 +154,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	right_split += right_split_temp
 	left_split += left_split_temp
 
-	print("Entropy of right_split: " + str(compute_entropy_of_split(right_split)))
+	# print("Entropy of right_split: " + str(compute_entropy_of_split(right_split)))
 	# Add character, state that split occurred to already considered mutations
 	considered.add((str(character), state))
 	G = nx.DiGraph()

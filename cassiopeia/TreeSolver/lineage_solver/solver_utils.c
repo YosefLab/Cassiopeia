@@ -1334,6 +1334,7 @@ static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_min;
 static const char __pyx_k_[] = "_";
 static const char __pyx_k_0[] = "0";
+static const char __pyx_k_H[] = "H";
 static const char __pyx_k_i[] = "i";
 static const char __pyx_k_j[] = "j";
 static const char __pyx_k_s[] = "s";
@@ -1428,6 +1429,7 @@ static PyObject *__pyx_n_s_;
 static PyObject *__pyx_kp_s_0;
 static PyObject *__pyx_n_s_DiGraph;
 static PyObject *__pyx_kp_s_Estimating_potential_graph_with;
+static PyObject *__pyx_n_s_H;
 static PyObject *__pyx_kp_s_LCA_Distance;
 static PyObject *__pyx_kp_s_Max_Neighborhood_Exceeded_Return;
 static PyObject *__pyx_kp_s__2;
@@ -1822,7 +1824,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
  * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  */
     __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
@@ -1839,7 +1841,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  * 			parr.append(y_list[i])
  */
       __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
@@ -1852,7 +1854,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	for i in range(0,len(x_list)):
  * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
  * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  */
       goto __pyx_L7;
     }
@@ -1860,21 +1862,32 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':
  */
     __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 26, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 26, __pyx_L1_error)
+    __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 26, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (!__pyx_t_3) {
+    } else {
+      __pyx_t_2 = __pyx_t_3;
+      goto __pyx_L8_bool_binop_done;
+    }
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 26, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_n_s_H, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 26, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_2 = __pyx_t_3;
+    __pyx_L8_bool_binop_done:;
     if (__pyx_t_2) {
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":27
  * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  * 			parr.append(y_list[i])             # <<<<<<<<<<<<<<
- * 		elif y_list[i] == '-':
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':
  * 			parr.append(x_list[i])
  */
       __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 27, __pyx_L1_error)
@@ -1885,29 +1898,40 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 		if x_list[i] == y_list[i]:
  * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':
  */
       goto __pyx_L7;
     }
 
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 			parr.append(x_list[i])
  * 		else:
  */
     __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 28, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 28, __pyx_L1_error)
+    __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 28, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (!__pyx_t_3) {
+    } else {
+      __pyx_t_2 = __pyx_t_3;
+      goto __pyx_L10_bool_binop_done;
+    }
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 28, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_n_s_H, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 28, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_2 = __pyx_t_3;
+    __pyx_L10_bool_binop_done:;
     if (__pyx_t_2) {
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":29
  * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':
  * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
  * 		else:
  * 			parr.append('0')
@@ -1918,9 +1942,9 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
- * 		elif x_list[i] == '-':
+ * 		elif x_list[i] == '-' or x_list[i] == 'H':
  * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 		elif y_list[i] == '-' or y_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 			parr.append(x_list[i])
  * 		else:
  */
@@ -2287,7 +2311,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	for i in range(0, len(x_list)):
  * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
  * 					pass
- * 			elif y_list[i] == "-":
+ * 			elif y_list[i] == "-" or y_list[i] == 'H':
  */
     __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 59, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -2305,19 +2329,30 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
  * 			if x_list[i] == y_list[i]:
  * 					pass
- * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
+ * 			elif y_list[i] == "-" or y_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 					count += 0
  * 
  */
     __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (!__pyx_t_2) {
+    } else {
+      __pyx_t_1 = __pyx_t_2;
+      goto __pyx_L8_bool_binop_done;
+    }
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_n_s_H, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_t_1 = __pyx_t_2;
+    __pyx_L8_bool_binop_done:;
     if (__pyx_t_1) {
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":62
  * 					pass
- * 			elif y_list[i] == "-":
+ * 			elif y_list[i] == "-" or y_list[i] == 'H':
  * 					count += 0             # <<<<<<<<<<<<<<
  * 
  * 			elif x_list[i] == '0':
@@ -2330,7 +2365,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
  * 			if x_list[i] == y_list[i]:
  * 					pass
- * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
+ * 			elif y_list[i] == "-" or y_list[i] == 'H':             # <<<<<<<<<<<<<<
  * 					count += 0
  * 
  */
@@ -2380,7 +2415,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 					count += 1
  * 				else:
  */
-        goto __pyx_L8;
+        goto __pyx_L10;
       }
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":68
@@ -2432,7 +2467,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
         __pyx_t_5 = 0;
       }
-      __pyx_L8:;
+      __pyx_L10:;
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
  * 					count += 0
@@ -2798,7 +2833,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []             # <<<<<<<<<<<<<<
  * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
  */
   __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -2809,7 +2844,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  */
   __pyx_t_7 = PyObject_Length(__pyx_v_parent_list); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 89, __pyx_L1_error)
@@ -2872,7 +2907,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':             # <<<<<<<<<<<<<<
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  */
@@ -2894,13 +2929,22 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_6, __pyx_kp_s__5, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 90, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (__pyx_t_2) {
+    } else {
+      __pyx_t_1 = __pyx_t_2;
+      goto __pyx_L8_bool_binop_done;
+    }
+    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_6, __pyx_n_s_H, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_1 = __pyx_t_2;
     __pyx_L8_bool_binop_done:;
     if (__pyx_t_1) {
 
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
  * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))             # <<<<<<<<<<<<<<
  * 
  * 	return " , ".join(mutations)
@@ -2937,7 +2981,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':             # <<<<<<<<<<<<<<
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  */
@@ -2947,7 +2991,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []
  * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
  * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  */
   }
@@ -5454,6 +5498,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_0, __pyx_k_0, sizeof(__pyx_k_0), 0, 0, 1, 0},
   {&__pyx_n_s_DiGraph, __pyx_k_DiGraph, sizeof(__pyx_k_DiGraph), 0, 0, 1, 1},
   {&__pyx_kp_s_Estimating_potential_graph_with, __pyx_k_Estimating_potential_graph_with, sizeof(__pyx_k_Estimating_potential_graph_with), 0, 0, 1, 0},
+  {&__pyx_n_s_H, __pyx_k_H, sizeof(__pyx_k_H), 0, 0, 1, 1},
   {&__pyx_kp_s_LCA_Distance, __pyx_k_LCA_Distance, sizeof(__pyx_k_LCA_Distance), 0, 0, 1, 0},
   {&__pyx_kp_s_Max_Neighborhood_Exceeded_Return, __pyx_k_Max_Neighborhood_Exceeded_Return, sizeof(__pyx_k_Max_Neighborhood_Exceeded_Return), 0, 0, 1, 0},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},

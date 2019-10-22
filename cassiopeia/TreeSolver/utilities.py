@@ -1,10 +1,16 @@
 from collections import defaultdict
 import networkx as nx
 import random
+import numpy as np
+
+from skbio.tree import TreeNode, majority_rule
+from io import StringIO
 
 from tqdm import tqdm
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from cassiopeia.TreeSolver.Node import Node
+from cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
+from cassiopeia.TreeSolver.lineage_solver.solver_utils import node_parent
 
 def tree_collapse(tree):
 	"""
@@ -67,6 +73,57 @@ def tree_collapse(tree):
 
 	return new_graph
 
+def tree_collapse2(tree):
+    """
+    Given a networkx graph in the form of a tree, collapse two nodes together if there are no mutations seperating the two nodes
+
+    :param graph: Networkx Graph as a tree
+    :return: Collapsed tree as a Networkx object
+    """
+    if isinstance(tree, Cassiopeia_Tree):
+        graph = tree.get_network()
+    else:
+        graph = tree
+    
+    
+    leaves = [n for n in graph if graph.out_degree(n) == 0]
+    for l in leaves:
+        
+        # traverse up beginning at leaf 
+        parent = list(graph.predecessors(l))[0]
+        pair = (parent, l)
+        
+        root = [n for n in graph if graph.in_degree(n) == 0][0] # need to reinstantiate root, in case we reassigned it
+        
+        is_root = False
+        while not is_root:
+            
+            u, v = pair[0], pair[1]
+            if u == root:
+                is_root = True
+                    
+            if u.get_character_string() == v.get_character_string():
+                
+                # replace u with v
+                children_of_parent = graph.successors(u)
+                
+                if not is_root:
+                    new_parent = list(graph.predecessors(u))[0]
+                    
+                graph.remove_node(u) #removes parent node
+                for c in children_of_parent:
+                    if c != v:
+                        graph.add_edge(v, c)
+                
+                if not is_root:
+                    graph.add_edge(new_parent, v)
+                    pair = (new_parent, v)
+                
+            else: 
+                if not is_root:
+                    pair = (list(graph.predecessors(u))[0], u)
+                    
+    return graph
 
 def find_parent(node_list):
 	parent = []
@@ -124,3 +181,32 @@ def fill_in_tree(tree, cm = None):
 	tree.remove_edges_from(tree.selfloop_edges())
 
 	return tree
+
+def find_consensus_tree(trees, character_matrix, cutoff = 0.5):
+
+	_trees = [TreeNode.read(StringIO(convert_network_to_newick_format(t.network))) for t in trees]
+	np.random.shuffle(_trees)
+	consensus = majority_rule(_trees, cutoff=cutoff)[0]
+	G = nx.DiGraph()
+
+	# Create dict from scikit bio TreeNode to cassiopeia.Node
+	e2cass = {}
+	for n in consensus.postorder():
+		if n.name is not None:
+			nn = Node(n.name, character_matrix.loc[n.name].values, is_target = True, support = n.support)
+		else:
+			nn = Node('state-node', [], support = n.support)
+
+		e2cass[n] = nn
+		G.add_node(nn)
+
+	for p in consensus.traverse('postorder'):
+
+		pn = e2cass[p]
+
+		for c in p.children:
+			cn = e2cass[c]
+
+			G.add_edge(pn, cn)
+
+	return G
