@@ -2,6 +2,7 @@ from collections import defaultdict
 import networkx as nx
 import random
 import numpy as np
+import scipy as sp
 
 from skbio.tree import TreeNode, majority_rule
 from io import StringIO
@@ -210,3 +211,65 @@ def find_consensus_tree(trees, character_matrix, cutoff = 0.5):
 			G.add_edge(pn, cn)
 
 	return G
+
+def get_modified_hamming_dist(n1, n2):
+
+	x_list, y_list = n1.split("_")[0].split("|"), n2.split("_")[0].split("|")
+		
+	count = 0
+	for i in range(0, len(x_list)):
+		
+		if x_list[i] == y_list[i]:
+			count += 0
+
+		elif x_list == '-' or y_list[i] == '-':
+			count += 0
+
+		elif x_list == '0' or y_list[i] == '0':
+			count += 1
+
+		else:
+			count += 2
+
+	return count
+
+def compute_pairwise_edit_dists(nodes, verbose=True):
+
+	edit_dist = []
+	_leaves = nodes
+	n_targets = len(_leaves)
+		
+	all_pairs = []
+	pair_names = []
+	for i1 in tqdm(range(len(_leaves)), desc = "Creating pairs to compare"):
+		l1 = _leaves[i1]
+		for i2 in range(i1+1, len(_leaves)):
+			l2 = _leaves[i2]
+
+			all_pairs.append((l1, l2))
+
+	for p in all_pairs:
+
+		edit_dist.append(get_modified_hamming_dist(p[0], p[1]))
+
+	return np.array(edit_dist), all_pairs 
+
+def find_neighbors(target_nodes, n_neighbors = 10):
+
+	edit_dists, all_pairs = compute_pairwise_edit_dists(target_nodes)
+	ds = sp.spatial.distance.squareform(edit_dists)
+
+	sample_range = np.arange(ds.shape[0])[:, None]
+	indices = np.argpartition(ds, n_neighbors-1, axis=1)[:, :n_neighbors]
+	indices = indices[sample_range, np.argsort(ds[sample_range, indices])]
+	distances = ds[sample_range, indices]
+
+	# create neighbors dict
+	neighbors = {}
+	dists = {}
+	for i, inds in zip(range(len(indices)), indices):
+		n = target_nodes[i]
+		neighbors[n] = [target_nodes[j] for j in inds]
+		dists[n] = [d for d in distances[i]]
+
+	return neighbors, dists

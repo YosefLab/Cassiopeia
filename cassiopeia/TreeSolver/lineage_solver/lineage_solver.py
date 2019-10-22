@@ -17,6 +17,7 @@ from .ILP_solver import generate_mSteiner_model, solve_steiner_instance
 from .solver_utils import build_potential_graph_from_base_graph
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 from cassiopeia.TreeSolver.Node import Node
+from cassiopeia.TreeSolver.utilities import find_neighbors
 
 def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hybrid', threads=8, hybrid_subset_cutoff=200, time_limit=1800, max_neighborhood_size=10000, 
 							seed=None, num_iter=-1, weighted_ilp = False, fuzzy=False):
@@ -54,6 +55,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	if seed is not None:
 		np.random.seed(seed)
 		random.seed(seed)
+
 	# Account for possible cases where the state was not observed in the frequency table, thus we
 	# set the value of this prior probability to the minimum probability observed
 	character_mutation_mapping = defaultdict(int)
@@ -104,8 +106,10 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 	if method == "hybrid":
 
+		print("Computing neighbors for imputing missing values...")
+		neighbors, distances = find_neighbors(target_nodes)
 
-		network, target_sets = greedy_build(target_nodes, priors=prior_probabilities, cutoff=hybrid_subset_cutoff, fuzzy=fuzzy)
+		network, target_sets = greedy_build(target_nodes, neighbors, distances, priors=prior_probabilities, cutoff=hybrid_subset_cutoff, fuzzy=fuzzy)
 
 		print("Using " + str(min(multiprocessing.cpu_count(), threads)) + " threads, " + str(multiprocessing.cpu_count()) + " available.", flush=True)
 		executor = concurrent.futures.ProcessPoolExecutor(min(multiprocessing.cpu_count(), threads))
@@ -148,7 +152,11 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 		return Cassiopeia_Tree(method="hybrid", network=state_tree, name="Cassiopeia_state_tree")
 
 	if method == "greedy":
-		graph = greedy_build(target_nodes, priors=prior_probabilities, cutoff=-1, targets=target_nodes, fuzzy = fuzzy)[0]
+
+		print("Computing neighbors for imputing missing values...")		
+		neighbors, distances = find_neighbors(target_nodes)
+
+		graph = greedy_build(target_nodes, neighbors, distances, priors=prior_probabilities, cutoff=-1, targets=target_nodes, fuzzy = fuzzy)[0]
 
 		rdict = {}
 		for n in graph:

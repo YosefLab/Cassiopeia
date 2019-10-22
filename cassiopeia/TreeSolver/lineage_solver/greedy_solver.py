@@ -7,7 +7,7 @@ from .solver_utils import root_finder
 
 GREEDY_EPSILON = 0.2 # minimum similarity a node needs to have to be assigned to a group on a split.
 
-def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targets=[], fuzzy=False):
+def greedy_build(nodes, knn_neighbors, knn_distances, priors=None, cutoff=200, considered=set(), uniq='', targets=[], fuzzy=False):
 	"""
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
 	This algorithm chooses splits within the tree based on which mutation occurs most frequently,
@@ -17,6 +17,10 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 
 	:param nodes:
 		A list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'
+	:param knn_neighbors:
+		A dictionary storing for each node its closest neighbors
+	:param knn_distances:
+		A dictionary storing for each node the allele distances to its closest neighbors. These should be modified allele distances
 	:param priors:
 		A nested dictionary containing prior probabilities for [character][state] mappings
 		where characters are in the form of integers, and states are in the form of strings,
@@ -121,38 +125,73 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 	# Seperates all nodes with NA in the character chosen to be split upon
 	# Puts in right split or left split based on which list shares more mutated characters with this string
 	for node in NA_chars:
+
 		right_split_score = 0
 		left_split_score = 0
-		node_list = node.split('|')
-		# num_not_missing = len([n for n in node_list if n != "-"])
-		for i in range(0, len(node_list)):
 
-			for node_2 in left_split:
-				node2_list = node_2.split("|")
-				if node_list[i] == node2_list:
-					left_split_score += 2
-				if node_list[i] == '0' or node2_list[i] == '0':
-					left_split_score += 1
+		for neighbor in knn_neighbors[node]:
+			if neighbor in right_split:
+				right_split_score += 1
+			else:
+				# if the neighbor isn't in the right split, by default we prefer to put it
+				# into the left split
+				left_split_score += 1
 
-			for node_2 in right_split:
-				node2_list = node_2.split('|')
-				if node_list[i] == node2_list:
-					right_split_score += 2
-				if node_list[i] == '0' or node2_list[i] == '0':
-					right_split_score += 1
+		avg_right_split_score = right_split_score / len(knn_neighbors[node])
+		avg_left_split_score = left_split_score / len(knn_neighbors[node])
 
-		#avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
-		#avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
-		avg_left_split_score = left_split_score / float(len(left_split) + 1)
-		avg_right_split_score = right_split_score / float(len(right_split) + 1)
-
-		if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
-			right_split_temp.append(node)
+		if avg_right_split_score > avg_left_split_score and avg_right_split_score > GREEDY_EPSILON:
+			right_split.append(node)
+			print('added to right_split')
 		else:
-			left_split_temp.append(node)
+			left_split.append(node)
+			print('added to left split')
 
-	right_split += right_split_temp
-	left_split += left_split_temp
+		# right_split_score = 0
+		# left_split_score = 0
+		# node_list = node.split('|')
+		# num_not_missing = len([n for n in node_list if n != "-"])
+		# for i in range(0, len(node_list)):
+		# 	if node_list[i] != '0' and node_list[i] != '-':
+		# 		for node_2 in left_split:
+		# 			node2_list = node_2.split('|')
+		# 			if node_list[i] == node2_list[i]:
+		# 				left_split_score += 1
+		# 		for node_2 in right_split:
+		# 			node2_list = node_2.split('|')
+		# 			if node_list[i] == node2_list[i]:
+		# 				right_split_score += 1
+
+		# avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
+		# avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
+					
+		# for i in range(0, len(node_list)):
+
+		# 	for node_2 in left_split:
+		# 		node2_list = node_2.split("|")
+		# 		if node_list[i] == node2_list:
+		# 			left_split_score += 2
+		# 		if node_list[i] == '0' or node2_list[i] == '0':
+		# 			left_split_score += 1
+
+		# 	for node_2 in right_split:
+		# 		node2_list = node_2.split('|')
+		# 		if node_list[i] == node2_list:
+		# 			right_split_score += 2
+		# 		if node_list[i] == '0' or node2_list[i] == '0':
+		# 			right_split_score += 1
+
+		
+		#avg_left_split_score = left_split_score / float(len(left_split) + 1)
+		#avg_right_split_score = right_split_score / float(len(right_split) + 1)
+
+		# if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
+		# 	right_split_temp.append(node)
+		# else:
+		# 	left_split_temp.append(node)
+
+	# right_split += right_split_temp
+	# left_split += left_split_temp
 
 	# print("Entropy of right_split: " + str(compute_entropy_of_split(right_split)))
 	# Add character, state that split occurred to already considered mutations
@@ -169,7 +208,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 		# if left_root not in left_split and left_root in targets:
 		# 	left_root = left_root + "_unique"
 
-		left_network, left_subproblems = greedy_build(left_split, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
+		left_network, left_subproblems = greedy_build(left_split, knn_neighbors, knn_distances, priors, cutoff, considered.copy(), uniq + "0", targets=targets)
 
 		left_nodes = [node for node in left_network.nodes() if left_network.in_degree(node) == 0]
 		dup_dict = {}
@@ -182,7 +221,7 @@ def greedy_build(nodes, priors=None, cutoff=200, considered=set(), uniq='', targ
 			G.add_edge(splitter, left_root, weight=0, label="None")
 
 	# Recursively build right side of network
-	right_network, right_subproblems = greedy_build(right_split, priors, cutoff, considered.copy(), uniq + "1", targets=targets)
+	right_network, right_subproblems = greedy_build(right_split, knn_neighbors, knn_distances, priors, cutoff, considered.copy(), uniq + "1", targets=targets)
 	right_nodes = [node for node in right_network.nodes() if right_network.in_degree(node) == 0]
 	right_root = root_finder(right_split)
 

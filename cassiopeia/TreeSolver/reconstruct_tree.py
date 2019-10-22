@@ -126,12 +126,8 @@ def main():
         target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
 
         if verbose:
-            print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Cells")
-
-
-        #string_to_sample = dict(zip(target_nodes, cm_uniq.index))
-
-        #target_nodes = list(map(lambda x, n: x + "_" + n, target_nodes, cm_uniq.index))
+            print('Read in ' + str(cm.shape[0]) + " Cells")
+            print('Running Greedy Algorithm on ' + str(len(target_nodes)) + " Unique States")
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes, method="greedy", prior_probabilities=prior_probs)
         
@@ -145,9 +141,6 @@ def main():
            
         print("Parsimony: " + str(score))
 
-        
-        #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
-        #newick = convert_network_to_newick_format(reconstructed_network_greedy) 
         newick = reconstructed_network_greedy.get_newick()
 
         with open(out_fp, "w") as f:
