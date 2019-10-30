@@ -222,10 +222,10 @@ def get_modified_hamming_dist(n1, n2):
 		if x_list[i] == y_list[i]:
 			count += 0
 
-		elif x_list == '-' or y_list[i] == '-':
+		elif x_list[i] == '-' or y_list[i] == '-' or x_list[i] == 'H' or y_list[i] == 'H':
 			count += 0
 
-		elif x_list == '0' or y_list[i] == '0':
+		elif x_list[i] == '0' or y_list[i] == '0':
 			count += 1
 
 		else:
@@ -248,7 +248,7 @@ def compute_pairwise_edit_dists(nodes, verbose=True):
 
 			all_pairs.append((l1, l2))
 
-	for p in all_pairs:
+	for p in tqdm(all_pairs, desc = 'Computing modified hamming distances'):
 
 		edit_dist.append(get_modified_hamming_dist(p[0], p[1]))
 

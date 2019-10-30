@@ -136,6 +136,9 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
+
+	potential_graph_diagnostic = {}
+
 	for max_neighbor_dist in range(0, 14):
 		initial_network = nx.DiGraph()
 		samples = np.unique((samples))
@@ -204,14 +207,15 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 			source_nodes = temp_source_nodes
 			max_width = max(max_width, len(source_nodes))
-
 		
 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
+		potential_graph_diagnostic[max_neighbor_dist] = max_width
+		
 		prev_network = initial_network
 		if flag:
 			return prev_network, max_neighbor_dist - 1
 
-	return initial_network, max_neighbor_dist
+	return initial_network, max_neighbor_dist, potential_graph_diagnostic
 
 
 def get_sources_of_graph(tree):

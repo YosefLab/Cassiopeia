@@ -100,8 +100,6 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 
 		state_tree = nx.relabel_nodes(subgraph, rdict)
 
-
-
 		return Cassiopeia_Tree(method="ilp", network=state_tree, name="Cassiopeia_state_tree")
 
 	if method == "hybrid":
@@ -154,7 +152,7 @@ def solve_lineage_instance(_target_nodes, prior_probabilities = None, method='hy
 	if method == "greedy":
 
 		print("Computing neighbors for imputing missing values...")		
-		neighbors, distances = find_neighbors(target_nodes)
+		neighbors, distances = find_neighbors(target_nodes, n_neighbors = 50)
 
 		graph = greedy_build(target_nodes, neighbors, distances, priors=prior_probabilities, cutoff=-1, targets=target_nodes, fuzzy = fuzzy)[0]
 
@@ -189,6 +187,42 @@ def reraise_with_stack(func):
 								"is\n%s\n" % traceback_str)
 
 	return wrapped
+
+def prune_unique_alleles(root, targets):
+
+	# "prune" unique alleles
+	if root not in targets:
+		targets.append(root)
+	cp = pd.DataFrame(np.array([t.split("|") for t in targets]))
+
+	counts = cp.apply(lambda x: np.unique(x, return_counts=True), axis=0).values
+	unique_alleles = list(map(lambda x: x[0][np.where(x[1] == 1)] if len(np.where(x[1] == 1)) > 0 else None, counts))
+
+	for uniq, col  in zip(unique_alleles, cp.columns):
+		if len(uniq) == 0:
+			continue
+		filt = list(map(lambda x: x in uniq and x != '-', cp[col].values))
+		cp.loc[filt, col] = '0'
+	
+	pruned_to_orig = defaultdict(list)
+	for i in range(cp.shape[0]):
+		pruned = "|".join(cp.iloc[i,:].values)
+		if pruned != targets[i]:
+			pruned_to_orig[pruned].append(targets[i])
+
+	cp.drop_duplicates(inplace=True)
+
+	lroot = root.split("|")
+	for i, uniq in zip(range(len(unique_alleles)), unique_alleles):
+		if lroot[i] != '-' and lroot[i] in uniq:
+			lroot[i] = '0'
+	proot = '|'.join(lroot)
+
+	pruned_to_orig[proot] = root
+
+	targets_pruned = list(cp.apply(lambda x: '|'.join(x.values), axis=1).values)
+
+	return proot, targets_pruned, pruned_to_orig
 
 @reraise_with_stack
 def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities, time_limit, num_threads, max_neighborhood_size, seed=None, num_iter=-1, weighted = False):
@@ -225,38 +259,10 @@ def find_good_gurobi_subgraph(root, targets, node_name_dict, prior_probabilities
 		graph.add_node(node_name_dict[root])
 		return graph, root, pid
 
-	# "prune" unique alleles
-	if root not in targets:
-		targets.append(root)
-	cp = pd.DataFrame(np.array([t.split("|") for t in targets]))
-
-	counts = cp.apply(lambda x: np.unique(x, return_counts=True), axis=0).values
-	unique_alleles = list(map(lambda x: x[0][np.where(x[1] == 1)] if len(np.where(x[1] == 1)) > 0 else None, counts))
-
-	for uniq, col  in zip(unique_alleles, cp.columns):
-		if len(uniq) == 0:
-			continue
-		filt = list(map(lambda x: x in uniq and x != '-', cp[col].values))
-		cp.loc[filt, col] = '0'
+	proot, targets_pruned, pruned_to_orig = prune_unique_alleles(root, targets)
 	
-	pruned_to_orig = defaultdict(list)
-	for i in range(cp.shape[0]):
-		pruned = "|".join(cp.iloc[i,:].values)
-		if pruned != targets[i]:
-			pruned_to_orig[pruned].append(targets[i])
-
-	cp.drop_duplicates(inplace=True)
-
-	lroot = root.split("|")
-	for i, uniq in zip(range(len(unique_alleles)), unique_alleles):
-		if lroot[i] != '-' and lroot[i] in uniq:
-			lroot[i] = '0'
-	proot = '|'.join(lroot)
-
-	targets_pruned = list(cp.apply(lambda x: '|'.join(x.values), axis=1).values)
-
 	# approximate potential graph
-	potential_network_priors, lca_dist = build_potential_graph_from_base_graph(targets_pruned, proot, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid, weighted=weighted)
+	potential_network_priors, lca_dist, graph_sizes = build_potential_graph_from_base_graph(targets_pruned, proot, priors=prior_probabilities, max_neighborhood_size=max_neighborhood_size, pid = pid, weighted=weighted)
 
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:

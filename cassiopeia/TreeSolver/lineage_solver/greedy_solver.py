@@ -116,7 +116,7 @@ def greedy_build(nodes, knn_neighbors, knn_distances, priors=None, cutoff=200, c
 		node_list = node.split('|')
 		if node_list[character] == state:
 			right_split.append(node)
-		elif node_list[character] == '-':
+		elif node_list[character] == '-' or node_list[character] == 'H':
 			NA_chars.append(node)
 		else:
 			left_split.append(node)
@@ -129,41 +129,44 @@ def greedy_build(nodes, knn_neighbors, knn_distances, priors=None, cutoff=200, c
 		right_split_score = 0
 		left_split_score = 0
 
-		for neighbor in knn_neighbors[node]:
-			if neighbor in right_split:
-				right_split_score += 1
-			else:
-				# if the neighbor isn't in the right split, by default we prefer to put it
-				# into the left split
-				left_split_score += 1
+		# for n_i, neighbor in zip(range(len(knn_neighbors[node])), knn_neighbors[node]):
+		# 	if neighbor in right_split:
+		# 		right_split_score += 1
+		# 		# right_split_score += np.exp(-1 * knn_distances[node][n_i] / 0.1**2)
+		# 	if neighbor in left_split:
+		# 		# if the neighbor isn't in the right split, by default we prefer to put it
+		# 		# into the left split
+		# 		left_split_score += 1
+		# 		#left_split_score += np.exp(-1 * knn_distances[node][n_i] / 0.1**2)
 
-		avg_right_split_score = right_split_score / len(knn_neighbors[node])
-		avg_left_split_score = left_split_score / len(knn_neighbors[node])
+		# #normfact = np.sum([np.exp(knn_distances[node][n_i]) for n_i in range(len(knn_neighbors[node]))])
+		# avg_right_split_score = right_split_score / len(knn_neighbors[node])
+		# avg_left_split_score = left_split_score / len(knn_neighbors[node])
+		# #avg_right_split_score = right_split_score / normfact
+		# #avg_left_split_score = left_split_score / normfact
 
-		if avg_right_split_score > avg_left_split_score and avg_right_split_score > GREEDY_EPSILON:
-			right_split.append(node)
-			print('added to right_split')
-		else:
-			left_split.append(node)
-			print('added to left split')
+		# if avg_right_split_score > avg_left_split_score:
+		# 	right_split.append(node)
+		# else:
+		# 	left_split.append(node)
 
-		# right_split_score = 0
-		# left_split_score = 0
-		# node_list = node.split('|')
-		# num_not_missing = len([n for n in node_list if n != "-"])
-		# for i in range(0, len(node_list)):
-		# 	if node_list[i] != '0' and node_list[i] != '-':
-		# 		for node_2 in left_split:
-		# 			node2_list = node_2.split('|')
-		# 			if node_list[i] == node2_list[i]:
-		# 				left_split_score += 1
-		# 		for node_2 in right_split:
-		# 			node2_list = node_2.split('|')
-		# 			if node_list[i] == node2_list[i]:
-		# 				right_split_score += 1
+		right_split_score = 0
+		left_split_score = 0
+		node_list = node.split('|')
+		num_not_missing = len([n for n in node_list if n != "-" and n != 'H'])
+		for i in range(0, len(node_list)):
+			if node_list[i] != '0' and node_list[i] != '-':
+				for node_2 in left_split:
+					node2_list = node_2.split('|')
+					if node_list[i] == node2_list[i]:
+						left_split_score += 1
+				for node_2 in right_split:
+					node2_list = node_2.split('|')
+					if node_list[i] == node2_list[i]:
+						right_split_score += 1
 
-		# avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
-		# avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
+		avg_left_split_score = left_split_score / float(len(left_split) * num_not_missing + 1)
+		avg_right_split_score = right_split_score / float(len(right_split) * num_not_missing + 1)
 					
 		# for i in range(0, len(node_list)):
 
@@ -182,13 +185,13 @@ def greedy_build(nodes, knn_neighbors, knn_distances, priors=None, cutoff=200, c
 		# 			right_split_score += 1
 
 		
-		#avg_left_split_score = left_split_score / float(len(left_split) + 1)
-		#avg_right_split_score = right_split_score / float(len(right_split) + 1)
+		avg_left_split_score = left_split_score / float(len(left_split) + 1)
+		avg_right_split_score = right_split_score / float(len(right_split) + 1)
 
-		# if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
-		# 	right_split_temp.append(node)
-		# else:
-		# 	left_split_temp.append(node)
+		if avg_left_split_score < avg_right_split_score and avg_right_split_score > GREEDY_EPSILON:
+			right_split_temp.append(node)
+		else:
+			left_split_temp.append(node)
 
 	# right_split += right_split_temp
 	# left_split += left_split_temp

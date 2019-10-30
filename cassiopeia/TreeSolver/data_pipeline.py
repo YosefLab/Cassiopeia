@@ -205,7 +205,7 @@ def get_indel_props(at, group_var = ['intBC']):
 	return_df.index.name = "indel"
 	return return_df
 
-def process_allele_table(cm, no_context = False, mutation_map=None, to_drop = None):
+def process_allele_table(cm, no_context = False, mutation_map=None, to_drop = None, allele_rep_thresh = 1.0):
 	"""
 	Given an alleletable, create a character strings and lineage-specific mutation maps.
 	A character string for a cell consists of a summary of all mutations observed at each
@@ -253,11 +253,27 @@ def process_allele_table(cm, no_context = False, mutation_map=None, to_drop = No
 	samples_as_string = defaultdict(str)
 	allele_counter = defaultdict(OrderedDict)
 
-	intbc_uniq = []
+	_intbc_uniq = []
+	allele_dist = defaultdict(list)
 	for s in filtered_samples:
 		for key in filtered_samples[s]:
-			if key not in intbc_uniq:
-				intbc_uniq.append(key)
+			if key not in _intbc_uniq:
+				_intbc_uniq.append(key)
+			allele_dist[key].append(filtered_samples[s][key])
+
+	# remove intBCs that are not diverse enough
+	intbc_uniq = []
+	dropped = []
+	for key in allele_dist.keys():
+
+		props = np.unique(allele_dist[key], return_counts = True)[1]
+		props = props / len(allele_dist[key])
+		if np.any(props > allele_rep_thresh):
+			dropped.append(key)
+		else:
+			intbc_uniq.append(key)
+
+	print("Dropping the following intBCs due to lack of diversity with threshold " + str(allele_rep_thresh) + ": " + str(dropped))
 
 	prior_probs = defaultdict(dict)
 	indel_to_charstate = defaultdict(dict)
@@ -358,7 +374,7 @@ def write_to_charmat(string_sample_values, out_fp):
 
 			f.write("\n")
 
-def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_context = False, write=True, to_drop = []):
+def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_context = False, write=True, to_drop = [], allele_rep_thresh = 1.0):
 	"""
 	Wrapper function for creating character matrices out of allele tables.
 
@@ -383,7 +399,8 @@ def alleletable_to_character_matrix(at, out_fp=None, mutation_map = None, no_con
 	"""
 
 
-	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, no_context = no_context, mutation_map=mutation_map, to_drop = to_drop)
+	character_matrix_values, prior_probs, indel_to_charstate = process_allele_table(at, no_context = no_context,
+																mutation_map=mutation_map, to_drop = to_drop, allele_rep_thresh = allele_rep_thresh)
 
 	if write:
 

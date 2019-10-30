@@ -76,6 +76,11 @@ def main():
 
     try:
         name = true_netfp.split("/")[-1]
+        #name = name.split(".")[0]
+        #run = name.split('-')
+        #run = run[1]
+        #param = run[0].split("_")[-1]
+        
         spl = name.split("_")
         param = spl[-3]
         run = spl[-1].split(".")[0]
@@ -90,7 +95,7 @@ def main():
     true_network = pic.load(open(true_netfp, "rb"))
     reconstructed_network = pic.load(open(reconstructed_fp, "rb"), encoding = "latin1")
 
-    tot_tp = score_triplets(stree, rtree, number_of_trials=num_trials, modified = modified, min_size_depth = d_thresh)
+    tot_tp = score_triplets(true_network, reconstructed_network, number_of_trials=num_trials, modified = modified, min_size_depth = d_thresh)
 
     print(str(param) + "\t" + str(run) + "\t" + str(tot_tp) + "\t" + alg  + "\t" + t + "\t" + str(0))
 
