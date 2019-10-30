@@ -193,8 +193,8 @@ def greedy_build(nodes, knn_neighbors, knn_distances, priors=None, cutoff=200, c
 		else:
 			left_split_temp.append(node)
 
-	# right_split += right_split_temp
-	# left_split += left_split_temp
+	right_split += right_split_temp
+	left_split += left_split_temp
 
 	# print("Entropy of right_split: " + str(compute_entropy_of_split(right_split)))
 	# Add character, state that split occurred to already considered mutations
