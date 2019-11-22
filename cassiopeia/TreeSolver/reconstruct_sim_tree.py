@@ -259,7 +259,7 @@ def main():
 
         reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
 
-        net = reconstructed_network_greedy
+        net = reconstructed_network_greedy[0]
 
         #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
@@ -276,7 +276,7 @@ def main():
 
         reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        net = reconstructed_network_hybrid
+        net = reconstructed_network_hybrid[0]
 
         if outfp is None:
             outfp = name.replace('true', 'hybrid')
@@ -292,7 +292,7 @@ def main():
         reconstructed_network_ilp = solve_lineage_instance(target_nodes_uniq, method="ilp", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, 
                                     time_limit=time_limit, max_neighborhood_size = max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
-        net = reconstructed_network_ilp
+        net = reconstructed_network_ilp[0]
         # reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
         if outfp is None:
             outfp = name.replace('true', 'ilp')
