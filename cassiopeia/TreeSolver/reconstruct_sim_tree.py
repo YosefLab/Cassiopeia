@@ -210,6 +210,7 @@ def main():
     parser.add_argument("--max_neighborhood_size", type=str, default=3000)
     parser.add_argument("--out_fp", type=str, default=None, help="optional output file")
     parser.add_argument("--seed", type = int, default = None, help="Random seed for ILP solver")
+    parser.add_argument("--num_neighbors", default = 10)
 
     args = parser.parse_args()
 
@@ -223,6 +224,8 @@ def main():
     num_threads = args.num_threads
     max_neighborhood_size = args.max_neighborhood_size
     seed = args.seed
+
+    n_neighbors = args.num_neighbors
 
     if seed is not None:
         random.seed(seed)
@@ -257,7 +260,7 @@ def main():
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
-        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
+        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, n_neighbors = n_neighbors, method="greedy", prior_probabilities=prior_probs)
 
         net = reconstructed_network_greedy
 
@@ -274,7 +277,7 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  n_neighbors = n_neighbors, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
         net = reconstructed_network_hybrid
 

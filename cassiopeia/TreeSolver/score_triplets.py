@@ -14,7 +14,7 @@ import argparse
 from cassiopeia.TreeSolver.simulation_tools.validation import check_triplets_correct
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
-def score_triplets(true_network, reconstructed_network, modified = True, min_size_depth = 20, number_of_trials = 50000):
+def score_triplets(true_network, reconstructed_network, modified = True, min_size_depth = 20, number_of_trials = 50000, collapse_true_net = True):
 
     if isinstance(true_network, Cassiopeia_Tree):
         stree = true_network
@@ -30,7 +30,7 @@ def score_triplets(true_network, reconstructed_network, modified = True, min_siz
     if modified:
 
         correct_class, freqs = check_triplets_correct(stree, rtree,
-                                number_of_trials=number_of_trials, dict_return=True)
+                                number_of_trials=number_of_trials, dict_return=True, collapse_true_net = collapse_true_net)
 
         num_consid = 0
         for k in correct_class.keys():

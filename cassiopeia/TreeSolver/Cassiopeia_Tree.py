@@ -3,9 +3,14 @@ import networkx as nx
 
 from cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
 from cassiopeia.TreeSolver.post_process_tree import post_process_tree
+from cassiopeia.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
 import random
+import numpy as np
 
 import copy
+
+from tqdm import tqdm
+import hashlib
 
 class Cassiopeia_Tree:
 	"""
@@ -18,6 +23,7 @@ class Cassiopeia_Tree:
 		- network: a networkx object representing the tree
 		- newick: the newick string corresponding to the tree.
 		- cm: the character matrix used as input to the tree solver. 
+		- alternative_solutions: a list of networkx objects, each of which corresponds to an alternative solution
 
 	Methods:
 		- dump_network: write out networkx object to a .pkl file
@@ -33,7 +39,7 @@ class Cassiopeia_Tree:
 	
 	"""
 
-	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None):
+	def __init__(self, method, name = None, network = None, newick = None, character_matrix = None, alternative_solutions = None, base_network = None):
 		"""
 		Initialize the Cassiopeia_Tree object.
 
@@ -47,6 +53,8 @@ class Cassiopeia_Tree:
 			Newick string for tree.
 		:param character_matrix:
 			character matrix used as input for reconstructing the tree.
+		:param alternative_solutions:
+			a list of alternative solutions (each of which is a networkx object)
 
 		:return: 
 			None
@@ -61,6 +69,8 @@ class Cassiopeia_Tree:
 		self.network = network
 		self.newick = newick
 		self.cm = character_matrix
+		self.alternative_solutions = alternative_solutions
+		self.base_network = base_network
 
 	def dump_network(self, output_name):
 		"""
@@ -240,6 +250,17 @@ class Cassiopeia_Tree:
 
 		return score
 
+	def score_likelihood(self, priors):
+
+		net = self.network
+		root = [n for n in net if net.in_degree(n) == 0][0]
+
+		score = 0
+		for e in nx.dfs_edges(net, source=root):
+			score += e[0].get_mut_length(e[1], priors=priors)
+
+		return score
+
 	def generate_triplet(self, targets = None):
 		"""
 		Generate a random triplet of targets in the tree. 
@@ -318,12 +339,75 @@ class Cassiopeia_Tree:
 
 		tree = self.network
 
-		source = [x for x in tree.nodes() if tree.in_degree(x)==0][0]
+		return [n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1] 
+		# source = [x for x in tree.nodes() if tree.in_degree(x)==0][0]
+		
+		# max_depth = max(nx.shortest_path_length(tree,source,node) for node in tree.nodes())
+		# shortest_paths = nx.shortest_path_length(tree,source)
 
-		max_depth = max(nx.shortest_path_length(tree,source,node) for node in tree.nodes())
-		shortest_paths = nx.shortest_path_length(tree,source)
+		# return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]
 
-		return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]
+	def sample_alternative_solutions(self, maximum_alt_solutions = 100):
 
+		alt_solutions = []
+
+		target_charstrings = [(n.char_string, n.pid) for n in self.network if n.is_target]
+
+		num_solutions = np.prod([len(self.alternative_solutions[r]) for r in self.alternative_solutions.keys()])
+
+		num_considered_solutions = 0
+		sol_identifiers = []  # keep track of solutions already sampled
+
+		# we'll sample maximum_alt_solutions from the set of possible solutions
+		pbar = tqdm(
+			total=maximum_alt_solutions, desc="Enumerating alternative solutions"
+		)
+
+		while num_considered_solutions < min(num_solutions, maximum_alt_solutions):
+
+			current_sol = []
+			for r in self.alternative_solutions.keys():
+				res_list = self.alternative_solutions[r]
+				current_sol.append(np.random.choice(len(res_list)))
+
+			if tuple(current_sol) not in sol_identifiers:
+				
+				new_network = self.base_network.copy()
+
+				for i, r in zip(current_sol, self.alternative_solutions.keys()):
+
+					sub_net = self.alternative_solutions[r][i]
+
+					# reattach alternative solution
+					r_parent = None
+					r_parents = [p for p in self.base_network.predecessors(r)]
+					if len(r_parents) > 0:
+						r_parent = r_parents[0]
+					
+					rn = [n for n in sub_net if sub_net.in_degree(n) == 0][0]
+					
+					new_network.add_edges_from(sub_net.edges(data=True))
+					new_network.add_nodes_from(sub_net.nodes(data=True))
+
+					if r_parent != None:
+						new_network.add_edge(r_parent, rn)
+				
+				# assign targets
+				seen_charstrings = [n.char_string for n in self.base_network if n.is_target]
+				for n in new_network:
+					
+					if (n.char_string, n.pid) in target_charstrings and n.char_string not in seen_charstrings:
+						n.is_target = True
+						seen_charstrings.append(n.char_string)
+
+				alt_solutions.append(new_network)
+
+				sol_identifiers.append(tuple(current_sol))
+				num_considered_solutions += 1
+
+				pbar.update(1)  # update progress bar
+
+		return alt_solutions
+		
 
 

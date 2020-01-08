@@ -1,5 +1,7 @@
 import networkx as nx
 import numpy as np
+from collections import OrderedDict
+import sys
 
 def node_parent(x, y):
 	"""
@@ -23,9 +25,9 @@ def node_parent(x, y):
 	for i in range(0,len(x_list)):
 		if x_list[i] == y_list[i]:
 			parr.append(x_list[i])
-		elif x_list[i] == '-' or x_list[i] == 'H':
+		elif x_list[i] == '-':
 			parr.append(y_list[i])
-		elif y_list[i] == '-' or y_list[i] == 'H':
+		elif y_list[i] == '-':
 			parr.append(x_list[i])
 		else:
 			parr.append('0')
@@ -58,7 +60,7 @@ def get_edge_length(x,y,priors=None, weighted=False):
 	for i in range(0, len(x_list)):
 			if x_list[i] == y_list[i]:
 					pass
-			elif y_list[i] == "-" or y_list[i] == 'H':
+			elif y_list[i] == "-":
 					count += 0
 
 			elif x_list[i] == '0':
@@ -87,7 +89,7 @@ def mutations_from_parent_to_child(parent, child):
 	child_list = child.split("_")[0].split('|')
 	mutations = []
 	for i in range(0, len(parent_list)):
-		if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != 'H':
+		if parent_list[i] != child_list[i] and child_list[i] != '-':
 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
 
 	return " , ".join(mutations)
@@ -107,7 +109,7 @@ def root_finder(target_nodes):
 
 	return np
 
-def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False):
+def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -130,16 +132,25 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		#print "Initial Sample Size:", len(set(samples))
 
 	cdef int neighbor_mod
+	cdef int max_neighbor_dist
 
-	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " (pid: " + str(pid) + ")")
 
 	neighbor_mod = 0
 	prev_network = None
 	flag = False
 
 	potential_graph_diagnostic = {}
+	prev_widths = []
 
-	for max_neighbor_dist in range(0, 14):
+	if lca_dist is None:
+		lca_dist = 13
+
+	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " with lca distance of " + str(lca_dist) + " (pid: " + str(pid) + ")")
+	sys.stdout.flush()
+
+	max_neighbor_dist = 0
+	while max_neighbor_dist < (lca_dist+1):	 
+	#for max_neighbor_dist in _set:
 		initial_network = nx.DiGraph()
 		samples = np.unique((samples))
 		for sample in samples:
@@ -148,13 +159,13 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		source_nodes = samples
 		neighbor_mod = max_neighbor_dist
 		max_width = 0
-		#print("Num Neighbors considered: " + str(max_neighbor_dist), ", pid = " + str(pid))
-		#print("Number of initial extrapolated pairs:" + str(len(source_nodes)) + ", pid = " + str(pid))
+
 		while len(source_nodes) != 1:
 
 			if len(source_nodes) > int(max_neighborhood_size):
 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
-				return prev_network, max_neighbor_dist - 1
+				sys.stdout.flush()
+				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 			temp_source_nodes = list()
 			for i in range(0, len(source_nodes)-1):
@@ -199,7 +210,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 				temp_source_nodes = list(np.unique(temp_source_nodes))
 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
-					return prev_network, max_neighbor_dist - 1
+					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 			if len(source_nodes) > len(temp_source_nodes):
 				if neighbor_mod == max_neighbor_dist:
@@ -208,12 +219,23 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 			source_nodes = temp_source_nodes
 			max_width = max(max_width, len(source_nodes))
 		
+		max_width = max(max_width, len(source_nodes))
 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
+		sys.stdout.flush()
+
+		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
+			max_neighbor_dist += 5
+		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
+			max_neighbor_dist += 3
+		else:
+			max_neighbor_dist += 1
+		
 		potential_graph_diagnostic[max_neighbor_dist] = max_width
+		prev_widths.append(max_width)
 		
 		prev_network = initial_network
 		if flag:
-			return prev_network, max_neighbor_dist - 1
+			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 	return initial_network, max_neighbor_dist, potential_graph_diagnostic
 

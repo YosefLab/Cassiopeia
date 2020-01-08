@@ -85,7 +85,6 @@ def run_nj_naive(cm_uniq, stem, verbose = True):
 
     # nj_net = tree_collapse2(nj_net)
 
-    rdict = {}
     for n in nj_net: 
         if nj_net.out_degree(n) == 0 and n.char_string in cm_lookup:
             n.is_target = True
@@ -120,10 +119,10 @@ def run_nj_weighted(cm_uniq, prior_probs = None, verbose = True):
 
     nj_net = fill_in_tree(tree, cm_uniq)
 
-    rdict = {}
     for n in nj_net: 
         if nj_net.out_degree(n) == 0 and n.char_string in cm_lookup:
             n.is_target = True
+            n.name = 'state-node'
         else:
             n.is_target = False
 
@@ -138,7 +137,7 @@ def run_camin_sokal(cm_uniq, stem, verbose = True):
     samples = [("s" + str(i)) for i in range(len(cells))]
     samples_to_cells = dict(zip(samples, cells))
 
-    cm_lookup = list(cm_uniq.apply(lambda x: "|".join(x.values), axis=1))
+    cm_lookup = cm_uniq.apply(lambda x: "|".join(x.values), axis=1)
     
     cm_uniq.index = list(range(len(cells)))
     
@@ -207,15 +206,23 @@ def run_camin_sokal(cm_uniq, stem, verbose = True):
             newick_str += l
 
     tree = dp.newick_to_network(newick_str, cm_uniq)
+    for n in tree:
+        if n.name in samples_to_cells:
+            n.char_string = cm_lookup.loc[samples_to_cells[n.name]]
+            n.name = 'state-node'
+            n.is_target = True
+        else:
+            n.is_target = False
 
-    cs_net = nx.relabel_nodes(tree, samples_to_cells)
+    cs_net = tree
+    # cs_net = nx.relabel_nodes(tree, samples_to_cells)
 
-    #cs_net = fill_in_tree(cs_net, cm_uniq)
+    # cs_net = fill_in_tree(cs_net, cm_uniq)
     
     # rdict = {}
-    for n in cs_net:
-        if n.char_string in cm_lookup:
-            n.is_target = True
+    # for n in cs_net:
+    #     if n.char_string in cm_lookup:
+    #         n.is_target = True
 
     state_tree = cs_net
     ret_tree =  Cassiopeia_Tree(method='camin-sokal', network=state_tree, name='Cassiopeia_state_tree')
