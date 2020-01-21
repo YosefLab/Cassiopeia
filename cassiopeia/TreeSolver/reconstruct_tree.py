@@ -95,6 +95,8 @@ def main():
     parser.add_argument("--multinomial_greedy", action="store_true", default=False)
     parser.add_argument("--num_neighbors", default=10)
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
+    parser.add_argument("--greedy_missing_data_mode", default = 'lookahead', type = str)
+    parser.add_argument("--greedy_lookahead_depth", default = 3, type = int)
 
     args = parser.parse_args()
 
@@ -110,6 +112,11 @@ def main():
     num_alt_soln = args.num_alternative_solutions
 
     max_neighborhood_size = args.max_neighborhood_size
+
+    missing_data_mode = args.greedy_missing_data_mode
+    lookahead_depth = args.greedy_lookahead_depth
+    if missing_data_mode not in ['knn', 'lookahead', 'avg', 'modified_avg']:
+        raise Exception("Greedy missing data mode not recognized")
 
     stem = "".join(char_fp.split(".")[:-1])
 
@@ -155,6 +162,8 @@ def main():
             fuzzy=fuzzy,
             probabilistic=probabilistic,
             n_neighbors=n_neighbors,
+            missing_data_mode=missing_data_mode,
+            lookahead_depth=lookahead_depth
         )
 
         net = reconstructed_network_greedy.get_network()
@@ -209,6 +218,8 @@ def main():
             probabilistic=probabilistic,
             n_neighbors=n_neighbors,
             maximum_alt_solutions=num_alt_soln,
+            missing_data_mode = missing_data_mode,
+            lookahead_depth = lookahead_depth
         )
 
         net = reconstructed_network_hybrid.get_network()

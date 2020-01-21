@@ -45,6 +45,8 @@ def solve_lineage_instance(
 	maximum_alt_solutions=100,
 	greedy_minimum_allele_rep=1.0,
 	n_neighbors=10,
+	missing_data_mode = 'lookahead',
+	lookahead_depth = 3
 ):
 	"""
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
@@ -141,8 +143,11 @@ def solve_lineage_instance(
 
 	if method == "hybrid":
 
-		print("Computing neighbors for imputing missing values...")
-		neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+		neighbors, distances = None, None
+		if missing_data_mode == 'knn':
+			print("Computing neighbors for imputing missing values...")
+			neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+
 		network, target_sets = greedy_build(
 			target_nodes,
 			neighbors,
@@ -152,6 +157,8 @@ def solve_lineage_instance(
 			fuzzy=fuzzy,
 			probabilistic=probabilistic,
 			minimum_allele_rep=greedy_minimum_allele_rep,
+			missing_data_mode=missing_data_mode,
+			lookahead_depth=lookahead_depth
 		)
 
 		print(
@@ -353,8 +360,10 @@ def solve_lineage_instance(
 
 	if method == "greedy":
 
-		print("Computing neighbors for imputing missing values...")
-		neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+		neighbors, distances = None, None
+		if missing_data_mode == 'knn':	
+			print("Computing neighbors for imputing missing values...")
+			neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
 
 		graph = greedy_build(
 			target_nodes,
@@ -365,6 +374,8 @@ def solve_lineage_instance(
 			fuzzy=fuzzy,
 			probabilistic=probabilistic,
 			minimum_allele_rep=greedy_minimum_allele_rep,
+			missing_data_mode=missing_data_mode,
+			lookahead_depth=lookahead_depth
 		)[0]
 
 		rdict = {}
