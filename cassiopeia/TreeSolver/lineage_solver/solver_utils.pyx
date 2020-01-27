@@ -213,7 +213,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 		
 		prev_network = initial_network
 		if flag:
-			return prev_network, max_neighbor_dist - 1
+			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 	return initial_network, max_neighbor_dist, potential_graph_diagnostic
 
