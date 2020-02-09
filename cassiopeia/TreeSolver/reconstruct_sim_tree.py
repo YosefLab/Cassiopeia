@@ -30,10 +30,9 @@ import os
 
 import argparse
 
-from cassiopeia.TreeSolver.lineage_solver import *
-from cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format, newick_to_network
+from cassiopeia.TreeSolver.lineage_solver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools.simulation_utils import *
-from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
+from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse, tree_collapse2, convert_network_to_newick_format, newick_to_network
 from cassiopeia.TreeSolver import Cassiopeia_Tree, Node
 
 from numba import jit
@@ -198,7 +197,12 @@ def main():
     parser.add_argument("--neighbor_joining_weighted", action='store_true', default=False)
     parser.add_argument("--ilp", action="store_true", default=False)
     parser.add_argument("--hybrid", action="store_true", default=False)
-    parser.add_argument("--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm")
+    parser.add_argument(
+        "--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm"
+    )
+    parser.add_argument(
+        "--hybrid_lca_mode", action='store_true', help='Use LCA distances to transition in hybrid mode, instead of number of cells'
+    )
     parser.add_argument("--time_limit", type=int, default=-1, help="Time limit for ILP convergence")
     parser.add_argument("--iter_limit", type = int, default = -1, help="Max number of iterations for ILP solver")
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
@@ -210,7 +214,6 @@ def main():
     parser.add_argument("--max_neighborhood_size", type=str, default=3000)
     parser.add_argument("--out_fp", type=str, default=None, help="optional output file")
     parser.add_argument("--seed", type = int, default = None, help="Random seed for ILP solver")
-    parser.add_argument("--num_neighbors", default = 10)
 
     args = parser.parse_args()
 
@@ -218,14 +221,18 @@ def main():
     outfp = args.out_fp
     verbose = args.verbose
 
-    cutoff = args.cutoff
+    lca_mode = args.hybrid_lca_mode
+    if lca_mode:
+        lca_cutoff = args.cutoff
+        cell_cutoff = None
+    else:
+        cell_cutoff = args.cutoff 
+        lca_cutoff = None
     time_limit = args.time_limit
     iter_limit = args.iter_limit
     num_threads = args.num_threads
     max_neighborhood_size = args.max_neighborhood_size
     seed = args.seed
-
-    n_neighbors = args.num_neighbors
 
     if seed is not None:
         random.seed(seed)
@@ -260,11 +267,9 @@ def main():
         if verbose:
             print('Running Greedy Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
 
-        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, n_neighbors = n_neighbors, method="greedy", prior_probabilities=prior_probs)
+        reconstructed_network_greedy = solve_lineage_instance(target_nodes_uniq, method="greedy", prior_probabilities=prior_probs)
 
         net = reconstructed_network_greedy
-
-        #reconstructed_network_greedy = nx.relabel_nodes(reconstructed_network_greedy, string_to_sample)
 
         if outfp is None:
             outfp = name.replace('true', 'greedy')
@@ -277,7 +282,8 @@ def main():
             print('Running Hybrid Algorithm on ' + str(len(target_nodes_uniq)) + " Cells")
             print('Parameters: ILP on sets of ' + str(cutoff) + ' cells ' + str(time_limit) + 's to complete optimization')
 
-        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  n_neighbors = n_neighbors, method="hybrid", hybrid_subset_cutoff=cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
+        reconstructed_network_hybrid = solve_lineage_instance(target_nodes_uniq,  method="hybrid", hybrid_cell_cutoff=cell_cutoff,
+            hybrid_lca_cutoff=lca_cutoff, prior_probabilities=prior_probs, time_limit=time_limit, threads=num_threads, max_neighborhood_size=max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
         net = reconstructed_network_hybrid
 
@@ -296,7 +302,6 @@ def main():
                                     time_limit=time_limit, max_neighborhood_size = max_neighborhood_size, seed = seed, num_iter=iter_limit)
 
         net = reconstructed_network_ilp
-        # reconstructed_network_ilp = nx.relabel_nodes(reconstructed_network_ilp, string_to_sample)
         if outfp is None:
             outfp = name.replace('true', 'ilp')
         pic.dump(net, open(outfp, 'wb'))
@@ -306,7 +311,6 @@ def main():
 
         if verbose:
             print("Running Neighbor-Joining on " + str(len(target_nodes_uniq)) + " Unique Cells")
-
 
         infile = ''.join(name.split(".")[:-1]) + 'infile.txt'
         fn = ''.join(name.split(".")[:-1]) + 'phylo.txt'
@@ -333,38 +337,36 @@ def main():
 
         # convert labels to characters for writing to file 
         i = 0
+        rndict = {}
         for n in nj_net:
-
+            
             if n.name is None:
-                n.name = "internal" + str(i)
-                i += 1
+                rndict[n] = Node('state-node', [])
+                # n.name = "internal" + str(i)
+                # i += 1
+            else:
+                rndict[n] = Node(n.name, [])
+        
+        nj_net = nx.relabel_nodes(nj_net, rndict)
 
-      
         # convert labels to strings, not Bio.Phylo.Clade objects
-        c2str = map(lambda x: x.name, list(nj_net.nodes()))
-        c2strdict = dict(zip(list(nj_net.nodes()), c2str))
-        nj_net = nx.relabel_nodes(nj_net, c2strdict)
+        # c2str = map(lambda x: x.name, list(nj_net.nodes()))
+        # c2strdict = dict(zip(list(nj_net.nodes()), c2str))
+        # nj_net = nx.relabel_nodes(nj_net, c2strdict)
 
         cm = pd.read_csv(fn, sep='\t', index_col = 0)
 
+        cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
+        
         nj_net = fill_in_tree(nj_net, cm)
 
         nj_net = tree_collapse(nj_net)
-
-        cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
-
-        #rdict = {}
+        
         for n in nj_net:
-            #spl = n.split("_")
-            #nn = Node('state-node', spl[0].split("|"), is_target = False)
-            #if len(spl) > 1:
-            #    nn.pid = spl[1] 
             if n.char_string in cm_lookup.keys():
                 n.is_target = True
-                #nn.name = cm_lookup[spl[0]]
-            # rdict[n] = nn
 
-        nj_net = Cassiopeia_Tree('neighbor-joining', network = cs_net)
+        nj_net = Cassiopeia_Tree('neighbor-joining', network = nj_net)
         if outfp is None:
             outfp = name.replace('true', 'nj')
         pic.dump(nj_net, open(outfp, 'wb'))
@@ -390,7 +392,7 @@ def main():
 
         newick_str = nj(dm, result_constructor=str)
 
-        tree = newick_to_network(newick_str)
+        tree = newick_to_network(newick_str, cm_uniq)
 
         nj_net = fill_in_tree(tree, cm_uniq)
         nj_net = tree_collapse(nj_net)
@@ -404,7 +406,7 @@ def main():
             else:
                 n.is_target = False
 
-        nj_net = Cassiopeia_Tree('neighbor-joining', network = cs_net)
+        nj_net = Cassiopeia_Tree('neighbor-joining', network = nj_net)
         if outfp is None:
             outfp = name.replace('true', 'nj_weighted')
         pic.dump(nj_net, open(outfp, 'wb'))
@@ -483,16 +485,18 @@ def main():
                 l = l.strip()
                 newick_str += l
 
-        cm = pd.read_csv(fn, sep='\t', index_col = 0)
+        cm = pd.read_csv(fn, sep='\t', index_col = 0, dtype=str)
         cm.index = indices
 
-        cs_net = newick_to_network(newick_str)
+        cs_net = newick_to_network(newick_str, cm)
 
-        cs_net = nx.relabel_nodes(cs_net, samples_to_cells)
+        for n in cs_net:
+            if n.name in samples_to_cells:
+                n.name = samples_to_cells[n.name]
 
         cs_net = fill_in_tree(cs_net, cm)
 
-        cs_net = tree_collapse(cs_net)
+        cs_net = tree_collapse2(cs_net)
 
         cm_lookup = dict(zip(list(cm.apply(lambda x: "|".join([str(k) for k in x.values]), axis=1)), cm.index.values))
 

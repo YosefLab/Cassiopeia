@@ -31,11 +31,10 @@ import os
 
 from cassiopeia.TreeSolver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools import *
-from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
+from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse, convert_network_to_newick_format
 from cassiopeia.TreeSolver import *
 from cassiopeia.TreeSolver.Node import Node
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
-import cassiopeia.TreeSolver.data_pipeline as dp
 from cassiopeia.TreeSolver.alternative_algorithms import (
     run_nj_weighted,
     run_nj_naive,
@@ -79,6 +78,9 @@ def main():
         "--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm"
     )
     parser.add_argument(
+        "--hybrid_lca_mode", action='store_true', help='Use LCA distances to transition in hybrid mode, instead of number of cells'
+    )
+    parser.add_argument(
         "--time_limit", type=int, default=1500, help="Time limit for ILP convergence"
     )
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
@@ -104,7 +106,13 @@ def main():
     out_fp = args.out_fp
     verbose = args.verbose
 
-    cutoff = args.cutoff
+    lca_mode = args.hybrid_lca_mode
+    if lca_mode:
+        lca_cutoff = args.cutoff
+        cell_cutoff = None
+    else:
+        cell_cutoff = args.cutoff 
+        lca_cutoff = None
     time_limit = args.time_limit
     num_threads = args.num_threads
 
@@ -191,13 +199,22 @@ def main():
 
         if verbose:
             print("Running Hybrid Algorithm on " + str(len(target_nodes)) + " Cells")
-            print(
-                "Parameters: ILP on sets of "
-                + str(cutoff)
-                + " cells "
-                + str(time_limit)
-                + "s to complete optimization"
-            )
+            if lca_mode:
+                print(
+                    "Parameters: ILP on sets of cells with a maximum LCA distance of "
+                    + str(lca_cutoff)
+                    + " with "
+                    + str(time_limit)
+                    + "s to complete optimization"
+                )
+            else:
+                print(
+                    "Parameters: ILP on sets of "
+                    + str(cell_cutoff)
+                    + " cells with "
+                    + str(time_limit)
+                    + "s to complete optimization"
+                )
 
         # string_to_sample = dict(zip(target_nodes, cm_uniq.index))
 
@@ -207,7 +224,8 @@ def main():
         reconstructed_network_hybrid, potential_graph_sizes = solve_lineage_instance(
             target_nodes,
             method="hybrid",
-            hybrid_subset_cutoff=cutoff,
+            hybrid_cell_cutoff=cell_cutoff,
+            hybrid_lca_cutoff=lca_cutoff,
             prior_probabilities=prior_probs,
             time_limit=time_limit,
             threads=num_threads,
@@ -249,7 +267,7 @@ def main():
                 plt.plot(x, y)
             except:
                 continue
-        plt.xlim(0, int(cutoff))
+        # plt.xlim(0, int(cutoff))
         plt.xlabel("LCA Distance")
         plt.ylabel("Size of Potential Graph")
         plt.savefig(out_stem + "_potentialgraphsizes.pdf")
@@ -320,7 +338,7 @@ def main():
                 plt.plot(x, y)
             except:
                 continue
-        plt.xlim(0, int(cutoff))
+        # plt.xlim(0, int(cutoff))
         plt.xlabel("LCA Distance")
         plt.ylabel("Size of Potential Graph")
         plt.savefig(out_stem + "_potentialgraphsizes.pdf")
@@ -358,7 +376,7 @@ def main():
 
         pic.dump(ret_tree, open(out_stem + ".pkl", "wb"))
 
-        newick = dp.convert_network_to_newick_format(ret_tree.get_network())
+        newick = convert_network_to_newick_format(ret_tree.get_network())
         # newick = ret_tree.get_newick()
 
         with open(out_fp, "w") as f:

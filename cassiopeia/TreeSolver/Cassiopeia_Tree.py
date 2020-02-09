@@ -1,7 +1,7 @@
 import pickle as pic
 import networkx as nx
 
-from cassiopeia.TreeSolver.data_pipeline import convert_network_to_newick_format
+from cassiopeia.TreeSolver.utilities import convert_network_to_newick_format
 from cassiopeia.TreeSolver.post_process_tree import post_process_tree
 from cassiopeia.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
 import random

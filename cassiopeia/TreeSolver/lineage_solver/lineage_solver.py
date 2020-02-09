@@ -33,7 +33,8 @@ def solve_lineage_instance(
 	prior_probabilities=None,
 	method="hybrid",
 	threads=8,
-	hybrid_subset_cutoff=200,
+	hybrid_cell_cutoff=200,
+	hybrid_lca_cutoff=None,
 	time_limit=1800,
 	max_neighborhood_size=10000,
 	seed=None,
@@ -74,6 +75,9 @@ def solve_lineage_instance(
 	:return:
 		A reconstructed subgraph representing the nodes
 	"""
+
+	if method == 'hybrid':
+		assert hybrid_cell_cutoff is None or hybrid_lca_cutoff is None, ("You can only use one type of cutoff in Hybrid")
 
 	target_nodes = [n.get_character_string() + "_" + n.name for n in _target_nodes]
 
@@ -153,7 +157,8 @@ def solve_lineage_instance(
 			neighbors,
 			distances,
 			priors=prior_probabilities,
-			cutoff=hybrid_subset_cutoff,
+			cell_cutoff=hybrid_cell_cutoff,
+			lca_cutoff=hybrid_lca_cutoff,
 			fuzzy=fuzzy,
 			probabilistic=probabilistic,
 			minimum_allele_rep=greedy_minimum_allele_rep,
@@ -370,7 +375,8 @@ def solve_lineage_instance(
 			neighbors,
 			distances,
 			priors=prior_probabilities,
-			cutoff=-1,
+			cell_cutoff=-1,
+			lca_cutoff = None,
 			fuzzy=fuzzy,
 			probabilistic=probabilistic,
 			minimum_allele_rep=greedy_minimum_allele_rep,
@@ -585,13 +591,13 @@ def find_good_gurobi_subgraph(
 		max_neighborhood_size=max_neighborhood_size,
 		pid=pid,
 		weighted=weighted,
-		lca_dist=max_lca,
+		# lca_dist=max_lca,
 	)
 
 	# network was too large to compute, so just run greedy on it
 	if potential_network_priors is None:
 		neighbors, distances = find_neighbors(targets, n_neighbors=n_neighbors)
-		subgraph = greedy_build(targets, neighbors, distances, priors=prior_probabilities, cutoff=-1)[0]
+		subgraph = greedy_build(targets, neighbors, distances, priors=prior_probabilities, cell_cutoff=-1)[0]
 		subgraph = nx.relabel_nodes(subgraph, node_name_dict)
 		print("Max Neighborhood Exceeded", flush=True)
 		return [subgraph], root, pid, graph_sizes

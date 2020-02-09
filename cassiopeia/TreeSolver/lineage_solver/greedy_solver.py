@@ -5,8 +5,6 @@ import hashlib
 
 from .solver_utils import root_finder, get_edge_length
 
-GREEDY_EPSILON = 0.33 # minimum similarity a node needs to have to be assigned to a group on a split.
-
 def find_split(nodes, priors=None, considered=set(), fuzzy=False, probabilistic=False, minimum_allele_rep = 1.0):
 
 	# Tracks frequency of states for each character in nodes
@@ -278,7 +276,8 @@ def greedy_build(
 	knn_neighbors,
 	knn_distances,
 	priors=None,
-	cutoff=200,
+	cell_cutoff=200,
+	lca_cutoff=None,
 	considered=set(),
 	uniq="",
 	targets=[],
@@ -327,14 +326,21 @@ def greedy_build(
 	G = nx.DiGraph()
 
 	root = root_finder(nodes)
-	distances = [get_edge_length(root, t) for t in nodes]
+	if lca_cutoff is not None:
+		distances = [get_edge_length(root, t) for t in nodes]
 
 	# Base case check for recursion, returns a graph with one node corresponding to the root of the remaining nodes
-	#if len(nodes) <= cutoff or len(nodes) == 1:
-	if max(distances) <= cutoff or len(nodes) == 1:
-		root = root_finder(nodes)
-		G.add_node(root)
-		return G, [[root, nodes]]
+	if lca_cutoff is not None:
+		if max(distances) <= lca_cutoff or len(nodes) == 1:
+			root = root_finder(nodes)
+			G.add_node(root)
+			return G, [[root, nodes]]
+	else:
+		if len(nodes) <= cell_cutoff or len(nodes) == 1:
+			root = root_finder(nodes)
+			G.add_node(root)
+			return G, [[root, nodes]]
+	
 
 	character, state = find_split(nodes, priors=priors, considered=considered.copy(), fuzzy=fuzzy, probabilistic=probabilistic, minimum_allele_rep=minimum_allele_rep)
 		
@@ -348,10 +354,12 @@ def greedy_build(
 					G.add_edge(root, nodes[i])
 		return G, []
 
-	left_split, right_split = perform_split(nodes, character, state, knn_neighbors, knn_distances, considered.copy(), missing_data_mode, lookahead_depth)
-	
 	# Add character, state that split occurred to already considered mutations
 	considered.add((str(character), state))
+
+	left_split, right_split = perform_split(nodes, character, state, knn_neighbors, knn_distances, considered.copy(), missing_data_mode, lookahead_depth)
+	
+	# Create new graph for storing results
 	G = nx.DiGraph()
 	splitter = root
 
@@ -367,7 +375,8 @@ def greedy_build(
 			knn_neighbors,
 			knn_distances,
 			priors,
-			cutoff,
+			cell_cutoff,
+			lca_cutoff,
 			considered.copy(),
 			uniq + "0",
 			targets,
@@ -398,7 +407,8 @@ def greedy_build(
 		knn_neighbors,
 		knn_distances,
 		priors,
-		cutoff,
+		cell_cutoff,
+		lca_cutoff,
 		considered.copy(),
 		uniq + "1",
 		targets,

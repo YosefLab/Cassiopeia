@@ -15,7 +15,7 @@ import os
 import argparse
 
 from cassiopeia.TreeSolver import *
-from cassiopeia.TreeSolver.lineage_solver import *
+from cassiopeia.TreeSolver.lineages_solver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools.dataset_generation import *
 
 def main():

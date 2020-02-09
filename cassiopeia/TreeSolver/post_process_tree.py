@@ -16,7 +16,7 @@ import pylab
 
 import copy
 
-from .data_pipeline import *
+from cassiopeia.TreeSolver.utilities import *
 from cassiopeia.TreeSolver.Node import Node
 
 def prune_and_clean_leaves(G):
