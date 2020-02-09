@@ -164,7 +164,6 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 			if len(source_nodes) > int(max_neighborhood_size):
 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
-				sys.stdout.flush()
 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 			temp_source_nodes = list()

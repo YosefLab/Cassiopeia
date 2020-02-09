@@ -31,7 +31,11 @@ import os
 
 from cassiopeia.TreeSolver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools import *
-from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse, convert_network_to_newick_format
+from cassiopeia.TreeSolver.utilities import (
+    fill_in_tree,
+    tree_collapse,
+    convert_network_to_newick_format,
+)
 from cassiopeia.TreeSolver import *
 from cassiopeia.TreeSolver.Node import Node
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
@@ -78,7 +82,9 @@ def main():
         "--cutoff", type=int, default=80, help="Cutoff for ILP during Hybrid algorithm"
     )
     parser.add_argument(
-        "--hybrid_lca_mode", action='store_true', help='Use LCA distances to transition in hybrid mode, instead of number of cells'
+        "--hybrid_lca_mode",
+        action="store_true",
+        help="Use LCA distances to transition in hybrid mode, instead of number of cells",
     )
     parser.add_argument(
         "--time_limit", type=int, default=1500, help="Time limit for ILP convergence"
@@ -97,8 +103,8 @@ def main():
     parser.add_argument("--multinomial_greedy", action="store_true", default=False)
     parser.add_argument("--num_neighbors", default=10)
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
-    parser.add_argument("--greedy_missing_data_mode", default = 'lookahead', type = str)
-    parser.add_argument("--greedy_lookahead_depth", default = 3, type = int)
+    parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
+    parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
 
     args = parser.parse_args()
 
@@ -111,7 +117,7 @@ def main():
         lca_cutoff = args.cutoff
         cell_cutoff = None
     else:
-        cell_cutoff = args.cutoff 
+        cell_cutoff = args.cutoff
         lca_cutoff = None
     time_limit = args.time_limit
     num_threads = args.num_threads
@@ -123,7 +129,7 @@ def main():
 
     missing_data_mode = args.greedy_missing_data_mode
     lookahead_depth = args.greedy_lookahead_depth
-    if missing_data_mode not in ['knn', 'lookahead', 'avg', 'modified_avg']:
+    if missing_data_mode not in ["knn", "lookahead", "avg", "modified_avg"]:
         raise Exception("Greedy missing data mode not recognized")
 
     stem = "".join(char_fp.split(".")[:-1])
@@ -171,11 +177,11 @@ def main():
             probabilistic=probabilistic,
             n_neighbors=n_neighbors,
             missing_data_mode=missing_data_mode,
-            lookahead_depth=lookahead_depth
+            lookahead_depth=lookahead_depth,
         )
 
         net = reconstructed_network_greedy.get_network()
-        
+
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_greedy, open(out_stem + ".pkl", "wb"))
 
@@ -183,7 +189,6 @@ def main():
 
         with open(out_fp, "w") as f:
             f.write(newick)
-
 
         root = [n for n in net if net.in_degree(n) == 0][0]
         # score parsimony
@@ -236,8 +241,8 @@ def main():
             probabilistic=probabilistic,
             n_neighbors=n_neighbors,
             maximum_alt_solutions=num_alt_soln,
-            missing_data_mode = missing_data_mode,
-            lookahead_depth = lookahead_depth
+            missing_data_mode=missing_data_mode,
+            lookahead_depth=lookahead_depth,
         )
 
         net = reconstructed_network_hybrid.get_network()
