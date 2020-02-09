@@ -8,7 +8,7 @@ from cassiopeia.TreeSolver.lineage_solver.solver_utils import node_parent
 from cassiopeia.TreeSolver.utilities import tree_collapse
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
-def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False):
+def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=10000, dict_return=False, collapse_true_net = True):
 	"""
 	Given a simulated tree and a reconstructed tree, calculate the percentage of triplets that have
 	the same structure in both trees via random sampling of triplets
@@ -28,7 +28,10 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 	targets_original_network = [n for n in simulated_tree.get_leaves()]
 	correct_classifications = defaultdict(int)
 	frequency_of_triplets = defaultdict(int)
-	simulated_tree = tree_collapse(simulated_tree)
+
+	if collapse_true_net:
+		simulated_tree = tree_collapse(simulated_tree)
+	
 	#reconstructed_tree = tree_collapse(reconstructed_tree)
 
 	# NEW

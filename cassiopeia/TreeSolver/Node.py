@@ -1,4 +1,5 @@
 import hashlib 
+import numpy as np
 
 class Node:
 	"""

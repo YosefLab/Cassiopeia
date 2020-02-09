@@ -28,10 +28,9 @@ import networkx as nx
 import sys
 import os
 
-from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse
+from cassiopeia.TreeSolver.utilities import fill_in_tree, tree_collapse, newick_to_network
 from cassiopeia.TreeSolver.Node import Node
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
-import cassiopeia.TreeSolver.data_pipeline as dp
 
 import cassiopeia as sclt
 
@@ -81,7 +80,7 @@ def run_nj_naive(cm_uniq, stem, verbose = True):
     #c2strdict = dict(zip(list(nj_net.nodes()), c2str))
     nj_net = nx.relabel_nodes(nj_net, rndict)
 
-    nj_net = fill_in_tree(nj_net, cm_uniq)
+    # nj_net = fill_in_tree(nj_net, cm_uniq)
 
     # nj_net = tree_collapse2(nj_net)
 
@@ -116,14 +115,14 @@ def run_nj_weighted(cm_uniq, prior_probs = None, verbose = True):
 
     newick_str = nj(dm, result_constructor=str)
 
-    tree = dp.newick_to_network(newick_str, cm_uniq)
+    tree = newick_to_network(newick_str, cm_uniq)
 
     nj_net = fill_in_tree(tree, cm_uniq)
 
-    rdict = {}
     for n in nj_net: 
         if nj_net.out_degree(n) == 0 and n.char_string in cm_lookup:
             n.is_target = True
+            n.name = 'state-node'
         else:
             n.is_target = False
 
@@ -133,6 +132,8 @@ def run_nj_weighted(cm_uniq, prior_probs = None, verbose = True):
     return ret_tree
 
 def run_camin_sokal(cm_uniq, stem, verbose = True):
+
+    stem = stem.split("/")[-1]
 
     cells = cm_uniq.index
     samples = [("s" + str(i)) for i in range(len(cells))]
@@ -228,6 +229,7 @@ def run_camin_sokal(cm_uniq, stem, verbose = True):
     os.system("rm " + fn)
 
     return ret_tree
+
 
 def write_leaves_to_charmat(target_nodes, fn):
     """

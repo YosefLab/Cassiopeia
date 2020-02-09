@@ -12,7 +12,7 @@ with open("README.md") as readme_file:
 
 
 requirements = [
-        "numpy > 1.0, < 1.17",
+        "numpy > 1.17",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
         "networkx >= 2.0",
@@ -44,7 +44,8 @@ cmdclass = {'build_ext': build_ext}
 to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
                 Extension("cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
                 Extension("cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
-                Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
+                Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"]),
+                Extension("cassiopeia.TreeSolver.utilities", ['cassiopeia/TreeSolver/utilities.pyx'])] 
 #to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
 #               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
 #               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 

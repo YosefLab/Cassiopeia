@@ -1,3 +1,13 @@
+Updates (Feb. 9, 2020)
+========
+
+We have some updated features in our most current release:
+
+- **LCA-based Hybrid Switching**: we've found mixed results in using cell-number-based cutoffs in Cassiopeia-Hybrid and have thus started using the distance to the latest-common-ancestor (LCA) of a given group of cells as a determining factor for transitioning between Greedy and ILP. We recommend using values between 10 and 20. You can control this parameter with the `hybrid_lca_mode`, which will interpret the `cutoff` parameter as an LCA distance.
+- **Additional approaches for missing data handling**: in our Cassiopeia-Greedy approach (which Hybrid also uses), we now support different modes for missing data handling: (1) we've added a K-nearest-neighbor approach which classifies cells with missing data based on where it's K-closest 'friends' were assigne; and (2) a lookahead approach where we use future Greedy splits to assign cells with missing data. You can specify which mode you'd like to use with the `greedy_missing_data_mode` which can either be `knn`, `avg`, or `lookahead`.  
+
+As a reminder, you can look at all parameters that `reconstruct-lineage` and `stress-test` allow by using the `-h` flag.
+
 
 Cassiopeia
 ============
@@ -37,7 +47,6 @@ Installation
 
 7. While we get pip working, it's best to first clone the package and then follow these instructions:
     * ``python3.6 setup.py build``
-    * ``python3.6 setup.py bdist_wheel``
     * ``python3.6 setup.py build_ext --inplace``
     * ``python3.6 -m pip install . --user``
     
