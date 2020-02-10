@@ -29,7 +29,7 @@ import networkx as nx
 import sys
 import os
 
-from cassiopeia.TreeSolver.lineage_solver import *
+from cassiopeia.TreeSolver.lineage_solver.lineage_solver import *
 from cassiopeia.TreeSolver.simulation_tools import *
 from cassiopeia.TreeSolver.utilities import (
     fill_in_tree,

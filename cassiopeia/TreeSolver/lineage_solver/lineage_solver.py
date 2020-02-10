@@ -470,8 +470,6 @@ def prune_unique_alleles(root, targets):
 
     targets_pruned = list(set(targets_pruned))
 
-    print("pruned sets: ", len(targets_pruned), len(pruned_to_orig), len(targets))
-
     return proot, targets_pruned, pruned_to_orig
 
 
@@ -496,8 +494,6 @@ def post_process_ILP(
 
     # remove spurious roots left in the solution
     subgraph_roots = [n for n in subgraph if subgraph.in_degree(n) == 0]
-    print(subgraph_roots, str(pid), flush=True)
-    print(root + " pid: " + str(pid), flush=True)
     while len(subgraph_roots) > 1:
         for r in subgraph_roots:
             if r != root:

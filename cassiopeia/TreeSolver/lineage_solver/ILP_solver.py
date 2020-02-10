@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 
 
 def solve_steiner_instance(model, graph, edge_variables, detailed_output=True,
-						   MIPGap = .15, num_threads = 1, time_limit = -1, seed = None, num_iter = -1):
+						   MIPGap = .01, num_threads = 1, time_limit = -1, seed = None, num_iter = -1):
     """
     Given a Steienr Tree problem instance, returns a minimum weight subgraph that satisfies the demands.
 

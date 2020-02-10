@@ -828,9 +828,10 @@ def lineage_profile_to_charmat(lp, mutation_map=None):
     cols_to_num = dict(zip(lp.columns, range(lp.shape[1])))
 
     mut_counter = dict(zip(lp.columns, [0] * lp.shape[1]))
-    mut_to_state = dict(zip(lp.columns, [{}] * lp.shape[1]))
+    mut_to_state = defaultdict(dict)
 
     for col in cols_to_unique.keys():
+
         for _it in cols_to_unique[col]:
             if (type(_it) != str and np.isnan(_it)) or _it == "NC":
                 mut_to_state[col][_it] = "-"
@@ -839,10 +840,9 @@ def lineage_profile_to_charmat(lp, mutation_map=None):
                 mut_to_state[col][_it] = "0"
 
             else:
-
                 mut_to_state[col][_it] = mut_counter[col] + 1
                 mut_counter[col] += 1
-
+                
                 if mutation_map is not None:
                     c = cols_to_num[col]
                     prob = np.mean(mutation_map.loc[_it]["freq"])
