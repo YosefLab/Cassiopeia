@@ -403,7 +403,7 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
     return samples_as_string
 
 
-def convert_network_to_newick_format(graph, use_intermediate_names=False):
+def convert_network_to_newick_format(graph, use_intermediate_names=True):
     """
 	Given a networkx network, converts to proper Newick format.
 
