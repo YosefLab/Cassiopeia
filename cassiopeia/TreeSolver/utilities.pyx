@@ -61,7 +61,7 @@ def tree_collapse(tree):
                         dct[node] = node_parent(dct[succ[0]], dct[succ[1]])
 
     new_graph = nx.relabel_nodes(new_graph, dct)
-    new_graph.remove_edges_from(new_graph.selfloop_edges())
+    new_graph.remove_edges_from(nx.selfloop_edges(new_graph))
 
     final_dct = {}
     for n in new_graph:
@@ -190,7 +190,7 @@ def fill_in_tree(tree, cm=None):
 
     tree = nx.relabel_nodes(tree, anc_dct)
 
-    tree.remove_edges_from(tree.selfloop_edges())
+    tree.remove_edges_from(nx.selfloop_edges(tree.selfloop_edges()))
 
     return tree
 

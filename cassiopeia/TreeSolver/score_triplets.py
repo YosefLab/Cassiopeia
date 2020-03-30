@@ -74,18 +74,18 @@ def main():
     run = args.run
     d_thresh = args.depth_thresh
 
-    try:
-        name = true_netfp.split("/")[-1]
-        #name = name.split(".")[0]
-        #run = name.split('-')
-        #run = run[1]
-        #param = run[0].split("_")[-1]
+    # try:
+    #     name = true_netfp.split("/")[-1]
+    #     #name = name.split(".")[0]
+    #     #run = name.split('-')
+    #     #run = run[1]
+    #     #param = run[0].split("_")[-1]
         
-        spl = name.split("_")
-        param = spl[-3]
-        run = spl[-1].split(".")[0]
-    except:
-        print("No extra information provided regarding parameters and run; assuming param and run are 0")
+    #     spl = name.split("_")
+    #     param = spl[-3]
+    #     run = spl[-1].split(".")[0]
+    # except:
+    #     print("No extra information provided regarding parameters and run; assuming param and run are 0")
 
     name2 = reconstructed_fp.split("/")[-1]
     spl2 = name2.split("_")

@@ -1,0 +1,9 @@
+[console_scripts]
+call-lineages = cassiopeia.ProcessingPipeline.process.lineageGroup:main
+filter-molecule-table = cassiopeia.ProcessingPipeline.process.filterMoleculeTables:main
+post-process-tree = cassiopeia.TreeSolver.post_process_tree:main
+reconstruct-lineage = cassiopeia.TreeSolver.reconstruct_tree:main
+scLT = cassiopeia.__main__:main
+simulate-tree = cassiopeia.TreeSolver.simulate_tree:main
+stress-test = cassiopeia.TreeSolver.reconstruct_sim_tree:main
+

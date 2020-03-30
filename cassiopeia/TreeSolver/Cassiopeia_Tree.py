@@ -339,13 +339,13 @@ class Cassiopeia_Tree:
 
 		tree = self.network
 
-		return [n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1] 
-		# source = [x for x in tree.nodes() if tree.in_degree(x)==0][0]
+		# return [n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1] 
+		source = [x for x in tree.nodes() if tree.in_degree(x)==0][0]
 		
-		# max_depth = max(nx.shortest_path_length(tree,source,node) for node in tree.nodes())
-		# shortest_paths = nx.shortest_path_length(tree,source)
+		max_depth = max(nx.shortest_path_length(tree,source,node) for node in tree.nodes())
+		shortest_paths = nx.shortest_path_length(tree,source)
 
-		# return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]
+		return [x for x in tree.nodes() if tree.out_degree(x)==0 and tree.in_degree(x) == 1 and shortest_paths[x] == max_depth]
 
 	def sample_alternative_solutions(self, maximum_alt_solutions = 100):
 
