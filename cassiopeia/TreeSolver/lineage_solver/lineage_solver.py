@@ -48,6 +48,7 @@ def solve_lineage_instance(
     n_neighbors=10,
     missing_data_mode="lookahead",
     lookahead_depth=3,
+    split_on_heritable=False
 ):
     """
 	Aggregated lineage solving method, which given a set of target nodes, will find the maximum parsimony tree
@@ -166,6 +167,7 @@ def solve_lineage_instance(
             minimum_allele_rep=greedy_minimum_allele_rep,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            split_on_heritable=split_on_heritable
         )
 
         print(
@@ -387,6 +389,7 @@ def solve_lineage_instance(
             minimum_allele_rep=greedy_minimum_allele_rep,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            split_on_heritable=split_on_heritable
         )[0]
 
         rdict = {}
