@@ -247,6 +247,7 @@ def main():
             maximum_alt_solutions=num_alt_soln,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            split_on_heritable=split_on_heritable
         )
 
         net = reconstructed_network_hybrid.get_network()
