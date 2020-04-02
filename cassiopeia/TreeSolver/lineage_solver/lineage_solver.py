@@ -99,7 +99,7 @@ def solve_lineage_instance(
     target_nodes = [n.split("_")[0] for n in target_nodes]
 
     # target_nodes = list(set(target_nodes))
-    master_root = root_finder(target_nodes)
+    master_root = root_finder(target_nodes, split_on_heritable)
     if method == "ilp":
 
         subgraphs, r, pid, graph_sizes = find_good_gurobi_subgraph(
@@ -114,6 +114,7 @@ def solve_lineage_instance(
             num_iter=num_iter,
             weighted=weighted_ilp,
             n_neighbors=n_neighbors,
+            split_on_heritable = split_on_heritable
         )
 
         subgraph = subgraphs[0]
@@ -153,7 +154,7 @@ def solve_lineage_instance(
         neighbors, distances = None, None
         if missing_data_mode == "knn":
             print("Computing neighbors for imputing missing values...")
-            neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+            neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors, split_on_heritable = split_on_heritable)
 
         network, target_sets = greedy_build(
             target_nodes,
@@ -201,6 +202,7 @@ def solve_lineage_instance(
                 num_iter,
                 weighted_ilp,
                 n_neighbors,
+                split_on_heritable = split_on_heritable
             )
             for root, targets in target_sets
         ]
@@ -375,8 +377,10 @@ def solve_lineage_instance(
         neighbors, distances = None, None
         if missing_data_mode == "knn":
             print("Computing neighbors for imputing missing values...")
-            neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+            neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors, split_on_heritable = split_on_heritable)
 
+        print("lineage_solver")
+        print(split_on_heritable)
         graph = greedy_build(
             target_nodes,
             neighbors,
@@ -478,17 +482,17 @@ def prune_unique_alleles(root, targets):
 
 @reraise_with_stack
 def post_process_ILP(
-    subgraph, root, pruned_to_orig, proot, targets, node_name_dict, pid
+    subgraph, root, pruned_to_orig, proot, targets, node_name_dict, pid, split_on_heritable = False
 ):
 
     # add back in de-pruned leaves
     for k, v in pruned_to_orig.items():
         for n in v:
-            subgraph.add_edge(k, n, weight=get_edge_length(k, n))
+            subgraph.add_edge(k, n, weight=get_edge_length(k, n, split_on_heritable = split_on_heritable))
 
     if proot != root:
         # add edge from real root to pruned root
-        subgraph.add_edge(root, proot, weight=get_edge_length(root, proot))
+        subgraph.add_edge(root, proot, weight=get_edge_length(root, proot, split_on_heritable = split_on_heritable))
 
         if subgraph.has_edge(proot, root):
             subgraph.remove_edge(proot, root)
@@ -529,6 +533,7 @@ def find_good_gurobi_subgraph(
     num_iter=-1,
     weighted=False,
     n_neighbors=10,
+    split_on_heritable = False
 ):
     """
 	Sub-Function used for multi-threading in hybrid method
@@ -573,9 +578,9 @@ def find_good_gurobi_subgraph(
 
     proot, targets_pruned, pruned_to_orig = prune_unique_alleles(root, targets)
 
-    lca = root_finder(targets_pruned)
+    lca = root_finder(targets_pruned, split_on_heritable = split_on_heritable)
 
-    distances = [get_edge_length(lca, t) for t in targets_pruned]
+    distances = [get_edge_length(lca, t, split_on_heritable = split_on_heritable) for t in targets_pruned]
     widths = [0]
     for i in range(len(distances)):
         for j in range(i, len(distances)):
@@ -596,6 +601,7 @@ def find_good_gurobi_subgraph(
         pid=pid,
         weighted=weighted,
         lca_dist=max_lca,
+        split_on_heritable = split_on_heritable
     )
 
     # network was too large to compute, so just run greedy on it
@@ -649,7 +655,7 @@ def find_good_gurobi_subgraph(
         subgraph = nx.relabel_nodes(subgraph, decoder)
 
         subgraph = subgraph = post_process_ILP(
-            subgraph, root, pruned_to_orig, proot, targets, node_name_dict, pid
+            subgraph, root, pruned_to_orig, proot, targets, node_name_dict, pid, split_on_heritable = split_on_heritable
         )
 
         all_subgraphs.append(subgraph)

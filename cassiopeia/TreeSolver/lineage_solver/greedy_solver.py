@@ -447,19 +447,19 @@ def greedy_build(
     # G models the network that is returned recursively
     G = nx.DiGraph()
 
-    root = root_finder(nodes)
+    root = root_finder(nodes, split_on_heritable = split_on_heritable)
     if lca_cutoff is not None:
-        distances = [get_edge_length(root, t) for t in nodes]
+        distances = [get_edge_length(root, t, split_on_heritable = split_on_heritable) for t in nodes]
 
     # Base case check for recursion, returns a graph with one node corresponding to the root of the remaining nodes
     if lca_cutoff is not None:
         if max(distances) <= lca_cutoff or len(nodes) == 1:
-            root = root_finder(nodes)
+            root = root_finder(nodes, split_on_heritable = split_on_heritable)
             G.add_node(root)
             return G, [[root, nodes]]
     else:
         if len(nodes) <= cell_cutoff or len(nodes) == 1:
-            root = root_finder(nodes)
+            root = root_finder(nodes, split_on_heritable = split_on_heritable)
             G.add_node(root)
             return G, [[root, nodes]]
 
@@ -507,7 +507,7 @@ def greedy_build(
     left_subproblems = []
     left_network = None
     if len(left_split) != 0:
-        left_root = root_finder(left_split)
+        left_root = root_finder(left_split, split_on_heritable = split_on_heritable)
 
         left_network, left_subproblems = greedy_build(
             left_split,
@@ -562,7 +562,7 @@ def greedy_build(
     right_nodes = [
         node for node in right_network.nodes() if right_network.in_degree(node) == 0
     ]
-    right_root = root_finder(right_split)
+    right_root = root_finder(right_split, split_on_heritable = split_on_heritable)
 
     dup_dict = {}
     for n in right_network:

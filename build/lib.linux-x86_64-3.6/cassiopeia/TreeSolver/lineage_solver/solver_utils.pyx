@@ -3,7 +3,7 @@ import numpy as np
 from collections import OrderedDict
 import sys
 
-def node_parent(x, y):
+def node_parent(x, y, split_on_heritable = False):
 	"""
 	Given two nodes, finds the latest common ancestor
 
@@ -22,19 +22,31 @@ def node_parent(x, y):
 		y = ''.join(y.split("_")[:-1])
 	x_list = x.split('|')
 	y_list = y.split('|')
-	for i in range(0,len(x_list)):
-		if x_list[i] == y_list[i]:
-			parr.append(x_list[i])
-		elif x_list[i] == '-':
-			parr.append(y_list[i])
-		elif y_list[i] == '-':
-			parr.append(x_list[i])
-		else:
-			parr.append('0')
+
+	if split_on_heritable:
+		for i in range(0,len(x_list)):
+			if x_list[i] == y_list[i]:
+				parr.append(x_list[i])
+			elif x_list[i] == '-':
+				parr.append(y_list[i])
+			elif y_list[i] == '-':
+				parr.append(x_list[i])
+			else:
+				parr.append('0')
+	else:
+		for i in range(0,len(x_list)):
+			if x_list[i] == y_list[i]:
+				parr.append(x_list[i])
+			elif x_list[i] == '-' or x_list[i] == '*':
+				parr.append(y_list[i])
+			elif y_list[i] == '-' or y_list[i] == '*':
+				parr.append(x_list[i])
+			else:
+				parr.append('0')
 
 	return '|'.join(parr)
 
-def get_edge_length(x,y,priors=None, weighted=False):
+def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
 
@@ -57,22 +69,37 @@ def get_edge_length(x,y,priors=None, weighted=False):
 	x_list = x.split('|')
 	y_list = y.split('|')
 
-	for i in range(0, len(x_list)):
-			if x_list[i] == y_list[i]:
-					pass
-			elif y_list[i] == "-":
-					count += 0
+	if split_on_heritable:
+		for i in range(0, len(x_list)):
+				if x_list[i] == y_list[i]:
+						pass
+				elif y_list[i] == "-":
+						count += 0
 
-			elif x_list[i] == '0':
-				if not weighted:
-					count += 1
+				elif x_list[i] == '0':
+					if not weighted:
+						count += 1
+					else:
+						count += -np.log(priors[i][str(y_list[i])])
 				else:
-					count += -np.log(priors[i][str(y_list[i])])
-			else:
-				return -1
+					return -1
+	else:
+		for i in range(0, len(x_list)):
+				if x_list[i] == y_list[i]:
+						pass
+				elif y_list[i] == "-" or y_list[i] == "*":
+						count += 0
+
+				elif x_list[i] == '0':
+					if not weighted:
+						count += 1
+					else:
+						count += -np.log(priors[i][str(y_list[i])])
+				else:
+					return -1
 	return count
 
-def mutations_from_parent_to_child(parent, child):
+def mutations_from_parent_to_child(parent, child, split_on_heritable = False):
 	"""
 	Creates a string label describing the mutations taken from  a parent to a child
 	:param parent: A node in the form 'Ch1|Ch2|....|Chn'
@@ -88,13 +115,19 @@ def mutations_from_parent_to_child(parent, child):
 	parent_list = parent.split("_")[0].split('|')
 	child_list = child.split("_")[0].split('|')
 	mutations = []
-	for i in range(0, len(parent_list)):
-		if parent_list[i] != child_list[i] and child_list[i] != '-':
-			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+
+	if split_on_heritable:
+		for i in range(0, len(parent_list)):
+			if parent_list[i] != child_list[i] and child_list[i] != '-':
+				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+	else:
+		for i in range(0, len(parent_list)):
+			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':
+				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
 
 	return " , ".join(mutations)
 
-def root_finder(target_nodes):
+def root_finder(target_nodes, split_on_heritable = False):
 	"""
 	Given a list of targets_nodes, return the least common ancestor of all nodes
 
@@ -104,12 +137,13 @@ def root_finder(target_nodes):
 		The least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'
 	"""
 	np = target_nodes[0]
+
 	for sample in target_nodes:
-		np = node_parent(sample, np)
+		np = node_parent(sample, np, split_on_heritable = split_on_heritable)
 
 	return np
 
-def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):
+def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
@@ -176,13 +210,16 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 					sample_2 = source_nodes[j]
 					if sample != sample_2:
 
-						parent = node_parent(sample, sample_2)
-						edge_length_p_s1 = get_edge_length(parent, sample)
-						edge_length_p_s2 = get_edge_length(parent, sample_2)
+						if split_on_heritable:
+							parent = node_parent(sample, sample_2, split_on_heritable = split_on_heritable)
+						else:
+							parent = node_parent(sample, sample_2)
+						edge_length_p_s1 = get_edge_length(parent, sample, split_on_heritable = split_on_heritable)
+						edge_length_p_s2 = get_edge_length(parent, sample_2, split_on_heritable = split_on_heritable)
 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
 
-						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
-						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
+						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample, split_on_heritable = split_on_heritable)
+						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2, split_on_heritable = split_on_heritable)
 
 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
@@ -190,7 +227,7 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 						#Check this cutoff
 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
 
-							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
+							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted, split_on_heritable = split_on_heritable), get_edge_length(parent, sample_2, priors, weighted, split_on_heritable)
 
 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])

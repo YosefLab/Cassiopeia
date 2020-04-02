@@ -105,7 +105,7 @@ def main():
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
     parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
     parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
-    parser.add_argument("--split_on_heritable", default=False)
+    parser.add_argument("--split_on_heritable", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -171,6 +171,8 @@ def main():
                 + " Unique States"
             )
 
+        print("reconstruct_tree")
+        print(split_on_heritable)
         reconstructed_network_greedy, potential_graph_sizes = solve_lineage_instance(
             target_nodes,
             method="greedy",

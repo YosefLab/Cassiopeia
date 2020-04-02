@@ -105,6 +105,7 @@ def main():
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
     parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
     parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
+    parser.add_argument("--split_on_heritable", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -131,6 +132,8 @@ def main():
     lookahead_depth = args.greedy_lookahead_depth
     if missing_data_mode not in ["knn", "lookahead", "avg", "modified_avg"]:
         raise Exception("Greedy missing data mode not recognized")
+
+    split_on_heritable = args.split_on_heritable
 
     stem = "".join(char_fp.split(".")[:-1])
 
@@ -168,6 +171,8 @@ def main():
                 + " Unique States"
             )
 
+        print("reconstruct_tree")
+        print(split_on_heritable)
         reconstructed_network_greedy, potential_graph_sizes = solve_lineage_instance(
             target_nodes,
             method="greedy",
@@ -178,6 +183,7 @@ def main():
             n_neighbors=n_neighbors,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            split_on_heritable=split_on_heritable
         )
 
         net = reconstructed_network_greedy.get_network()
@@ -243,6 +249,7 @@ def main():
             maximum_alt_solutions=num_alt_soln,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            split_on_heritable=split_on_heritable
         )
 
         net = reconstructed_network_hybrid.get_network()

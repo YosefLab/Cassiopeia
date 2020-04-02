@@ -13,6 +13,7 @@ def find_split(
     fuzzy=False,
     probabilistic=False,
     minimum_allele_rep=1.0,
+    split_on_heritable=False
 ):
 
     # Tracks frequency of states for each character in nodes
@@ -27,18 +28,31 @@ def find_split(
         for i in range(0, len(node_list)):
             char = node_list[i]
 
-            if char == "-":
-                missing_value_prop[str(i)] += 1.0 / len(nodes)
+            if split_on_heritable:
+                if char == "-":
+                    missing_value_prop[str(i)] += 1.0 / len(nodes)
+            else:
+                if char == "-" or char == "*":
+                    missing_value_prop[str(i)] += 1.0 / len(nodes)
 
             if (str(i), char) not in considered:
                 # you can't split on a missing value or a 'None' state
-                if char != "0" and char != "-":
-                    if priors:
-                        character_mutation_mapping[(str(i), char)] -= np.log(
-                            priors[int(i)][char]
-                        )
-                    else:
-                        character_mutation_mapping[(str(i), char)] += 1
+                if split_on_heritable:
+                    if char != "0" and char != "-":
+                        if priors:
+                            character_mutation_mapping[(str(i), char)] -= np.log(
+                                priors[int(i)][char]
+                            )
+                        else:
+                            character_mutation_mapping[(str(i), char)] += 1
+                else:
+                    if char != "0" and char != "-" and char != "*":
+                        if priors:
+                            character_mutation_mapping[(str(i), char)] -= np.log(
+                                priors[int(i)][char]
+                            )
+                        else:
+                            character_mutation_mapping[(str(i), char)] += 1
 
     # Choosing the best mutation to split on (ie character and state)
     character, state = 0, 0
@@ -93,6 +107,7 @@ def classify_missing_value(
     lookahead_depth=3,
     left_states=[],
     right_states=[],
+    split_on_heritable=False
 ):
     """
 	Classifies a cell with a missing value as belonging in the left split or the right split of a character split. This function will return a 
@@ -158,17 +173,30 @@ def classify_missing_value(
     elif mode == "avg":
 
         node_list = node.split("|")
-        num_not_missing = len([n for n in node_list if n != "-"])
-        for i in range(0, len(node_list)):
-            if node_list[i] != "0" and node_list[i] != "-":
-                for node_2 in left_split:
-                    node2_list = node_2.split("|")
-                    if node_list[i] == node2_list[i]:
-                        left_split_score += 1
-                for node_2 in right_split:
-                    node2_list = node_2.split("|")
-                    if node_list[i] == node2_list[i]:
-                        right_split_score += 1
+        if split_on_heritable:
+            num_not_missing = len([n for n in node_list if n != "-"])
+            for i in range(0, len(node_list)):
+                if node_list[i] != "0" and node_list[i] != "-":
+                    for node_2 in left_split:
+                        node2_list = node_2.split("|")
+                        if node_list[i] == node2_list[i]:
+                            left_split_score += 1
+                    for node_2 in right_split:
+                        node2_list = node_2.split("|")
+                        if node_list[i] == node2_list[i]:
+                            right_split_score += 1
+        else:
+            num_not_missing = len([n for n in node_list if (n != "-" and n != "*")])
+            for i in range(0, len(node_list)):
+                if node_list[i] != "0" and node_list[i] != "-" and node_list[i] != "*":
+                    for node_2 in left_split:
+                        node2_list = node_2.split("|")
+                        if node_list[i] == node2_list[i]:
+                            left_split_score += 1
+                    for node_2 in right_split:
+                        node2_list = node_2.split("|")
+                        if node_list[i] == node2_list[i]:
+                            right_split_score += 1
 
         avg_left_split_score = left_split_score / float(
             len(left_split) * num_not_missing + 1
@@ -233,6 +261,7 @@ def perform_split(
     considered,
     missing_data_mode="lookahead",
     lookahead_depth=3,
+    split_on_heritable=False
 ):
     """
 	Performs a split on a given character and state, separating the set of targets into two mutually exclusive groups based on the 
@@ -254,14 +283,24 @@ def perform_split(
     # Right split is where nodes with the mutation go, everyone else goes to left split or NA chars
     left_split, right_split, NA_chars = [], [], []
 
-    for node in nodes:
-        node_list = node.split("|")
-        if node_list[character] == state:
-            right_split.append(node)
-        elif node_list[character] == "-":
-            NA_chars.append(node)
-        else:
-            left_split.append(node)
+    if split_on_heritable:
+        for node in nodes:
+            node_list = node.split("|")
+            if node_list[character] == state:
+                right_split.append(node)
+            elif node_list[character] == "-":
+                NA_chars.append(node)
+            else:
+                left_split.append(node)
+    else:
+        for node in nodes:
+            node_list = node.split("|")
+            if node_list[character] == state:
+                right_split.append(node)
+            elif node_list[character] == "-" or node_list[character] == "*":
+                NA_chars.append(node)
+            else:
+                left_split.append(node)
 
     # order NA_chars by "strongest" candidates for imputation
     if missing_data_mode == "knn":
@@ -282,10 +321,10 @@ def perform_split(
     if missing_data_mode == "lookahead":
 
         left_states = look_ahead_helper(
-            left_split, lookahead_depth, dict(), considered.copy()
+            left_split, lookahead_depth, dict(), considered.copy(), split_on_heritable
         )
         right_states = look_ahead_helper(
-            right_split, lookahead_depth, dict(), considered.copy()
+            right_split, lookahead_depth, dict(), considered.copy(), split_on_heritable
         )
 
     # Seperates all nodes with NA in the character chosen to be split upon
@@ -312,7 +351,7 @@ def perform_split(
     return left_split, right_split
 
 
-def look_ahead_helper(targets, depth, splits, considered):
+def look_ahead_helper(targets, depth, splits, considered, split_on_heritable):
 
     if depth == 0 or len(targets) == 1 or len(targets) == 0:
         splits_temp = splits.copy()
@@ -322,19 +361,31 @@ def look_ahead_helper(targets, depth, splits, considered):
         splits[character] = state
         considered.add((str(character), state))
         left_split, right_split, NA_chars = [], [], []
-        for node in targets:
-            node_list = node.split("|")
-            if node_list[character] == state:
-                right_split.append(node)
-            elif node_list[character] == "-" or node_list[character] == "H":
-                NA_chars.append(node)
-            else:
-                left_split.append(node)
+        
+        if split_on_heritable:
+            for node in targets:
+                node_list = node.split("|")
+                if node_list[character] == state:
+                    right_split.append(node)
+                elif node_list[character] == "-":
+                    NA_chars.append(node)
+                else:
+                    left_split.append(node)
+        else:
+            for node in targets:
+                node_list = node.split("|")
+                if node_list[character] == state:
+                    right_split.append(node)
+                elif node_list[character] == "-" or node_list[character] == "*":
+                    NA_chars.append(node)
+                else:
+                    left_split.append(node)
+
         left_states = look_ahead_helper(
-            left_split, depth - 1, splits.copy(), considered.copy()
+            left_split, depth - 1, splits.copy(), considered.copy(), split_on_heritable
         )
         right_states = look_ahead_helper(
-            right_split, depth - 1, splits.copy(), considered.copy()
+            right_split, depth - 1, splits.copy(), considered.copy(), split_on_heritable
         )
 
         right_states.update(left_states)
@@ -356,6 +407,7 @@ def greedy_build(
     minimum_allele_rep=1.0,
     missing_data_mode="lookahead",
     lookahead_depth=3,
+    split_on_heritable=False
 ):
     """
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
@@ -395,19 +447,19 @@ def greedy_build(
     # G models the network that is returned recursively
     G = nx.DiGraph()
 
-    root = root_finder(nodes)
+    root = root_finder(nodes, split_on_heritable = split_on_heritable)
     if lca_cutoff is not None:
-        distances = [get_edge_length(root, t) for t in nodes]
+        distances = [get_edge_length(root, t, split_on_heritable = split_on_heritable) for t in nodes]
 
     # Base case check for recursion, returns a graph with one node corresponding to the root of the remaining nodes
     if lca_cutoff is not None:
         if max(distances) <= lca_cutoff or len(nodes) == 1:
-            root = root_finder(nodes)
+            root = root_finder(nodes, split_on_heritable = split_on_heritable)
             G.add_node(root)
             return G, [[root, nodes]]
     else:
         if len(nodes) <= cell_cutoff or len(nodes) == 1:
-            root = root_finder(nodes)
+            root = root_finder(nodes, split_on_heritable = split_on_heritable)
             G.add_node(root)
             return G, [[root, nodes]]
 
@@ -418,6 +470,7 @@ def greedy_build(
         fuzzy=fuzzy,
         probabilistic=probabilistic,
         minimum_allele_rep=minimum_allele_rep,
+        split_on_heritable=split_on_heritable
     )
 
     # If there is no good split left, stop the process and return a graph with the remainder of nodes
@@ -442,6 +495,7 @@ def greedy_build(
         considered.copy(),
         missing_data_mode,
         lookahead_depth,
+        split_on_heritable=split_on_heritable
     )
 
     # Create new graph for storing results
@@ -453,7 +507,7 @@ def greedy_build(
     left_subproblems = []
     left_network = None
     if len(left_split) != 0:
-        left_root = root_finder(left_split)
+        left_root = root_finder(left_split, split_on_heritable = split_on_heritable)
 
         left_network, left_subproblems = greedy_build(
             left_split,
@@ -470,6 +524,7 @@ def greedy_build(
             minimum_allele_rep,
             missing_data_mode,
             lookahead_depth,
+            split_on_heritable
         )
 
         left_nodes = [
@@ -502,11 +557,12 @@ def greedy_build(
         minimum_allele_rep,
         missing_data_mode,
         lookahead_depth,
+        split_on_heritable
     )
     right_nodes = [
         node for node in right_network.nodes() if right_network.in_degree(node) == 0
     ]
-    right_root = root_finder(right_split)
+    right_root = root_finder(right_split, split_on_heritable = split_on_heritable)
 
     dup_dict = {}
     for n in right_network:

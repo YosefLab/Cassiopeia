@@ -1337,12 +1337,13 @@ static const char __pyx_k_y[] = "y";
 static const char __pyx_k__2[] = "";
 static const char __pyx_k__4[] = "|";
 static const char __pyx_k__5[] = "-";
-static const char __pyx_k__6[] = ": ";
-static const char __pyx_k__7[] = "->";
-static const char __pyx_k__8[] = " , ";
-static const char __pyx_k__9[] = ")";
+static const char __pyx_k__6[] = "*";
+static const char __pyx_k__7[] = ": ";
+static const char __pyx_k__8[] = "->";
+static const char __pyx_k__9[] = " , ";
 static const char __pyx_k_np[] = "np";
 static const char __pyx_k_nx[] = "nx";
+static const char __pyx_k__10[] = ")";
 static const char __pyx_k_end[] = "end";
 static const char __pyx_k_key[] = "key";
 static const char __pyx_k_log[] = "log";
@@ -1414,6 +1415,7 @@ static const char __pyx_k_edge_length_p_s2[] = "edge_length_p_s2";
 static const char __pyx_k_max_neighbor_dist[] = "max_neighbor_dist";
 static const char __pyx_k_temp_source_nodes[] = "temp_source_nodes";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_split_on_heritable[] = "split_on_heritable";
 static const char __pyx_k_get_sources_of_graph[] = "get_sources_of_graph";
 static const char __pyx_k_with_lca_distance_of[] = " with lca distance of ";
 static const char __pyx_k_max_neighborhood_size[] = "max_neighborhood_size";
@@ -1435,6 +1437,7 @@ static PyObject *__pyx_kp_s_Estimating_potential_graph_with;
 static PyObject *__pyx_kp_s_LCA_Distance;
 static PyObject *__pyx_kp_s_Max_Neighborhood_Exceeded_Return;
 static PyObject *__pyx_n_s_OrderedDict;
+static PyObject *__pyx_kp_s__10;
 static PyObject *__pyx_kp_s__2;
 static PyObject *__pyx_kp_s__4;
 static PyObject *__pyx_kp_s__5;
@@ -1514,6 +1517,7 @@ static PyObject *__pyx_n_s_sample_2;
 static PyObject *__pyx_n_s_samples;
 static PyObject *__pyx_n_s_source_nodes;
 static PyObject *__pyx_n_s_split;
+static PyObject *__pyx_n_s_split_on_heritable;
 static PyObject *__pyx_n_s_stdout;
 static PyObject *__pyx_n_s_sys;
 static PyObject *__pyx_n_s_target_nodes;
@@ -1529,12 +1533,12 @@ static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_x_list;
 static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_y_list;
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y); /* proto */
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted); /* proto */
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child); /* proto */
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_split_on_heritable); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted, PyObject *__pyx_v_split_on_heritable); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child, PyObject *__pyx_v_split_on_heritable); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes, PyObject *__pyx_v_split_on_heritable); /* proto */
 static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_k); /* proto */
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted, PyObject *__pyx_v_lca_dist); /* proto */
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted, PyObject *__pyx_v_lca_dist, PyObject *__pyx_v_split_on_heritable); /* proto */
 static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_10get_sources_of_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_tree); /* proto */
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
@@ -1542,24 +1546,24 @@ static PyObject *__pyx_int_13;
 static PyObject *__pyx_int_10000;
 static PyObject *__pyx_int_neg_1;
 static PyObject *__pyx_slice__3;
-static PyObject *__pyx_tuple__10;
-static PyObject *__pyx_tuple__12;
-static PyObject *__pyx_tuple__14;
-static PyObject *__pyx_tuple__16;
-static PyObject *__pyx_tuple__18;
-static PyObject *__pyx_tuple__20;
-static PyObject *__pyx_codeobj__11;
-static PyObject *__pyx_codeobj__13;
-static PyObject *__pyx_codeobj__15;
-static PyObject *__pyx_codeobj__17;
-static PyObject *__pyx_codeobj__19;
-static PyObject *__pyx_codeobj__21;
+static PyObject *__pyx_tuple__11;
+static PyObject *__pyx_tuple__13;
+static PyObject *__pyx_tuple__15;
+static PyObject *__pyx_tuple__17;
+static PyObject *__pyx_tuple__19;
+static PyObject *__pyx_tuple__21;
+static PyObject *__pyx_codeobj__12;
+static PyObject *__pyx_codeobj__14;
+static PyObject *__pyx_codeobj__16;
+static PyObject *__pyx_codeobj__18;
+static PyObject *__pyx_codeobj__20;
+static PyObject *__pyx_codeobj__22;
 /* Late includes */
 
 /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":6
  * import sys
  * 
- * def node_parent(x, y):             # <<<<<<<<<<<<<<
+ * def node_parent(x, y, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, finds the latest common ancestor
  */
@@ -1571,16 +1575,20 @@ static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solve
 static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_1node_parent(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_x = 0;
   PyObject *__pyx_v_y = 0;
+  PyObject *__pyx_v_split_on_heritable = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("node_parent (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,0};
-    PyObject* values[2] = {0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_split_on_heritable,0};
+    PyObject* values[3] = {0,0,0};
+    values[2] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -1597,37 +1605,48 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("node_parent", 1, 2, 2, 1); __PYX_ERR(0, 6, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("node_parent", 0, 2, 3, 1); __PYX_ERR(0, 6, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_on_heritable);
+          if (value) { values[2] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
         if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "node_parent") < 0)) __PYX_ERR(0, 6, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
-      goto __pyx_L5_argtuple_error;
     } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
     }
     __pyx_v_x = values[0];
     __pyx_v_y = values[1];
+    __pyx_v_split_on_heritable = values[2];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("node_parent", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 6, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("node_parent", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 6, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.node_parent", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(__pyx_self, __pyx_v_x, __pyx_v_y);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(__pyx_self, __pyx_v_x, __pyx_v_y, __pyx_v_split_on_heritable);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_node_parent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_split_on_heritable) {
   PyObject *__pyx_v_parr = NULL;
   PyObject *__pyx_v_x_list = NULL;
   PyObject *__pyx_v_y_list = NULL;
@@ -1770,7 +1789,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')             # <<<<<<<<<<<<<<
  * 	y_list = y.split('|')
- * 	for i in range(0,len(x_list)):
+ * 
  */
   __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
@@ -1796,8 +1815,8 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')             # <<<<<<<<<<<<<<
- * 	for i in range(0,len(x_list)):
- * 		if x_list[i] == y_list[i]:
+ * 
+ * 	if split_on_heritable:
  */
   __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_y, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
@@ -1819,159 +1838,339 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_v_y_list = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":25
- * 	x_list = x.split('|')
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 	y_list = y.split('|')
- * 	for i in range(0,len(x_list)):             # <<<<<<<<<<<<<<
- * 		if x_list[i] == y_list[i]:
- * 			parr.append(x_list[i])
+ * 
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:
  */
-  __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 25, __pyx_L1_error)
-  __pyx_t_7 = __pyx_t_6;
-  for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
-    __pyx_v_i = __pyx_t_8;
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_split_on_heritable); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 26, __pyx_L1_error)
+  if (__pyx_t_2) {
+
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":27
+ * 
+ * 	if split_on_heritable:
+ * 		for i in range(0,len(x_list)):             # <<<<<<<<<<<<<<
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
+ */
+    __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 27, __pyx_L1_error)
+    __pyx_t_7 = __pyx_t_6;
+    for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+      __pyx_v_i = __pyx_t_8;
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
+ * 	if split_on_heritable:
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-':
+ */
+      __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 28, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = PyObject_RichCompare(__pyx_t_1, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 28, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 28, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_2) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":29
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])             # <<<<<<<<<<<<<<
+ * 			elif x_list[i] == '-':
+ * 				parr.append(y_list[i])
+ */
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 29, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 29, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
+ * 	if split_on_heritable:
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-':
+ */
+        goto __pyx_L8;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":30
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-':
+ */
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 30, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 30, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_2) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":31
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-':
+ * 				parr.append(y_list[i])             # <<<<<<<<<<<<<<
+ * 			elif y_list[i] == '-':
+ * 				parr.append(x_list[i])
+ */
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 31, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":30
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-':
+ */
+        goto __pyx_L8;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":32
+ * 			elif x_list[i] == '-':
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			else:
+ */
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 32, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_2) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":33
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-':
+ * 				parr.append(x_list[i])             # <<<<<<<<<<<<<<
+ * 			else:
+ * 				parr.append('0')
+ */
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 33, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":32
+ * 			elif x_list[i] == '-':
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-':             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			else:
+ */
+        goto __pyx_L8;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
+ * 				parr.append(x_list[i])
+ * 			else:
+ * 				parr.append('0')             # <<<<<<<<<<<<<<
+ * 	else:
+ * 		for i in range(0,len(x_list)):
+ */
+      /*else*/ {
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_kp_s_0); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 35, __pyx_L1_error)
+      }
+      __pyx_L8:;
+    }
 
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
  * 	y_list = y.split('|')
- * 	for i in range(0,len(x_list)):
- * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
- * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
+ * 
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:
  */
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyObject_RichCompare(__pyx_t_1, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 26, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_2) {
+    goto __pyx_L5;
+  }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":27
- * 	for i in range(0,len(x_list)):
- * 		if x_list[i] == y_list[i]:
- * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
- * 		elif x_list[i] == '-':
- * 			parr.append(y_list[i])
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":37
+ * 				parr.append('0')
+ * 	else:
+ * 		for i in range(0,len(x_list)):             # <<<<<<<<<<<<<<
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
  */
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 27, __pyx_L1_error)
+  /*else*/ {
+    __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 37, __pyx_L1_error)
+    __pyx_t_7 = __pyx_t_6;
+    for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+      __pyx_v_i = __pyx_t_8;
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":38
+ * 	else:
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
+ */
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 38, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 27, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_1 = PyObject_RichCompare(__pyx_t_5, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 38, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      if (__pyx_t_2) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":26
- * 	y_list = y.split('|')
- * 	for i in range(0,len(x_list)):
- * 		if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
- * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":39
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])             # <<<<<<<<<<<<<<
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
+ * 				parr.append(y_list[i])
  */
-      goto __pyx_L7;
-    }
+        __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_1); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 39, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
- * 		if x_list[i] == y_list[i]:
- * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
- * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":38
+ * 	else:
+ * 		for i in range(0,len(x_list)):
+ * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
  */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 28, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 28, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_2) {
+        goto __pyx_L11;
+      }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":29
- * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':
- * 			parr.append(y_list[i])             # <<<<<<<<<<<<<<
- * 		elif y_list[i] == '-':
- * 			parr.append(x_list[i])
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":40
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-' or x_list[i] == '*':             # <<<<<<<<<<<<<<
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-' or y_list[i] == '*':
  */
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 29, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 29, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 40, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      if (!__pyx_t_3) {
+      } else {
+        __pyx_t_2 = __pyx_t_3;
+        goto __pyx_L12_bool_binop_done;
+      }
+      __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_kp_s__6, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 40, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_2 = __pyx_t_3;
+      __pyx_L12_bool_binop_done:;
+      if (__pyx_t_2) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":28
- * 		if x_list[i] == y_list[i]:
- * 			parr.append(x_list[i])
- * 		elif x_list[i] == '-':             # <<<<<<<<<<<<<<
- * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":41
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
+ * 				parr.append(y_list[i])             # <<<<<<<<<<<<<<
+ * 			elif y_list[i] == '-' or y_list[i] == '*':
+ * 				parr.append(x_list[i])
  */
-      goto __pyx_L7;
-    }
+        __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_1); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 41, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":30
- * 		elif x_list[i] == '-':
- * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
- * 			parr.append(x_list[i])
- * 		else:
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":40
+ * 			if x_list[i] == y_list[i]:
+ * 				parr.append(x_list[i])
+ * 			elif x_list[i] == '-' or x_list[i] == '*':             # <<<<<<<<<<<<<<
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-' or y_list[i] == '*':
  */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 30, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 30, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_2) {
+        goto __pyx_L11;
+      }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":31
- * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':
- * 			parr.append(x_list[i])             # <<<<<<<<<<<<<<
- * 		else:
- * 			parr.append('0')
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":42
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-' or y_list[i] == '*':             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			else:
  */
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 31, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 42, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 42, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      if (!__pyx_t_3) {
+      } else {
+        __pyx_t_2 = __pyx_t_3;
+        goto __pyx_L14_bool_binop_done;
+      }
+      __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 42, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_3 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_kp_s__6, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 42, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_2 = __pyx_t_3;
+      __pyx_L14_bool_binop_done:;
+      if (__pyx_t_2) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":30
- * 		elif x_list[i] == '-':
- * 			parr.append(y_list[i])
- * 		elif y_list[i] == '-':             # <<<<<<<<<<<<<<
- * 			parr.append(x_list[i])
- * 		else:
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":43
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-' or y_list[i] == '*':
+ * 				parr.append(x_list[i])             # <<<<<<<<<<<<<<
+ * 			else:
+ * 				parr.append('0')
  */
-      goto __pyx_L7;
-    }
+        __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_t_1); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 43, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":33
- * 			parr.append(x_list[i])
- * 		else:
- * 			parr.append('0')             # <<<<<<<<<<<<<<
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":42
+ * 			elif x_list[i] == '-' or x_list[i] == '*':
+ * 				parr.append(y_list[i])
+ * 			elif y_list[i] == '-' or y_list[i] == '*':             # <<<<<<<<<<<<<<
+ * 				parr.append(x_list[i])
+ * 			else:
+ */
+        goto __pyx_L11;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":45
+ * 				parr.append(x_list[i])
+ * 			else:
+ * 				parr.append('0')             # <<<<<<<<<<<<<<
  * 
  * 	return '|'.join(parr)
  */
-    /*else*/ {
-      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_kp_s_0); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 33, __pyx_L1_error)
+      /*else*/ {
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_parr, __pyx_kp_s_0); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 45, __pyx_L1_error)
+      }
+      __pyx_L11:;
     }
-    __pyx_L7:;
   }
+  __pyx_L5:;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":35
- * 			parr.append('0')
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":47
+ * 				parr.append('0')
  * 
  * 	return '|'.join(parr)             # <<<<<<<<<<<<<<
  * 
- * def get_edge_length(x,y,priors=None, weighted=False):
+ * def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_5 = __Pyx_PyString_Join(__pyx_kp_s__4, __pyx_v_parr); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 35, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_r = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_1 = __Pyx_PyString_Join(__pyx_kp_s__4, __pyx_v_parr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 
   /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":6
  * import sys
  * 
- * def node_parent(x, y):             # <<<<<<<<<<<<<<
+ * def node_parent(x, y, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, finds the latest common ancestor
  */
@@ -1994,10 +2193,10 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":37
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":49
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
@@ -2011,18 +2210,22 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   PyObject *__pyx_v_y = 0;
   PyObject *__pyx_v_priors = 0;
   PyObject *__pyx_v_weighted = 0;
+  PyObject *__pyx_v_split_on_heritable = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_edge_length (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_priors,&__pyx_n_s_weighted,0};
-    PyObject* values[4] = {0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_priors,&__pyx_n_s_weighted,&__pyx_n_s_split_on_heritable,0};
+    PyObject* values[5] = {0,0,0,0,0};
     values[2] = ((PyObject *)Py_None);
     values[3] = ((PyObject *)Py_False);
+    values[4] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
         case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
         CYTHON_FALLTHROUGH;
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
@@ -2043,7 +2246,7 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 4, 1); __PYX_ERR(0, 37, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 5, 1); __PYX_ERR(0, 49, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -2057,12 +2260,20 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weighted);
           if (value) { values[3] = value; kw_args--; }
         }
+        CYTHON_FALLTHROUGH;
+        case  4:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_on_heritable);
+          if (value) { values[4] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_edge_length") < 0)) __PYX_ERR(0, 37, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_edge_length") < 0)) __PYX_ERR(0, 49, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
         case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
         CYTHON_FALLTHROUGH;
         case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
@@ -2077,23 +2288,24 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_v_y = values[1];
     __pyx_v_priors = values[2];
     __pyx_v_weighted = values[3];
+    __pyx_v_split_on_heritable = values[4];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 37, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_edge_length", 0, 2, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 49, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.get_edge_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(__pyx_self, __pyx_v_x, __pyx_v_y, __pyx_v_priors, __pyx_v_weighted);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(__pyx_self, __pyx_v_x, __pyx_v_y, __pyx_v_priors, __pyx_v_weighted, __pyx_v_split_on_heritable);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_2get_edge_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_x, PyObject *__pyx_v_y, PyObject *__pyx_v_priors, PyObject *__pyx_v_weighted, PyObject *__pyx_v_split_on_heritable) {
   PyObject *__pyx_v_count = NULL;
   PyObject *__pyx_v_x_list = NULL;
   PyObject *__pyx_v_y_list = NULL;
@@ -2114,7 +2326,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_x);
   __Pyx_INCREF(__pyx_v_y);
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":52
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
  * 		Length of edge if valid transition, else -1
  * 	"""
  * 	count = 0             # <<<<<<<<<<<<<<
@@ -2124,25 +2336,25 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_int_0);
   __pyx_v_count = __pyx_int_0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
  * 	"""
  * 	count = 0
  * 	if '_' in x:             # <<<<<<<<<<<<<<
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:
  */
-  __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_x, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_x, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":54
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":66
  * 	count = 0
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])             # <<<<<<<<<<<<<<
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2156,19 +2368,19 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_n_s_);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF_SET(__pyx_v_x, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":53
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":65
  * 	"""
  * 	count = 0
  * 	if '_' in x:             # <<<<<<<<<<<<<<
@@ -2177,25 +2389,25 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":55
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":67
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')
  */
-  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_y, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_y, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 67, __pyx_L1_error)
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":56
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":68
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])             # <<<<<<<<<<<<<<
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_y, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_y, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 68, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2209,19 +2421,19 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_n_s_);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 56, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 68, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 56, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF_SET(__pyx_v_y, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":55
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":67
  * 	if '_' in x:
  * 		x = ''.join(x.split("_")[:-1])
  * 	if '_' in y:             # <<<<<<<<<<<<<<
@@ -2230,14 +2442,14 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":57
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":69
  * 	if '_' in y:
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')             # <<<<<<<<<<<<<<
  * 	y_list = y.split('|')
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_x, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2251,20 +2463,20 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_kp_s__4) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_kp_s__4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_x_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":58
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":70
  * 		y = ''.join(y.split("_")[:-1])
  * 	x_list = x.split('|')
  * 	y_list = y.split('|')             # <<<<<<<<<<<<<<
  * 
- * 	for i in range(0, len(x_list)):
+ * 	if split_on_heritable:
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_y, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_y, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2278,218 +2490,442 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_kp_s__4) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_kp_s__4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_y_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":60
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":72
  * 	y_list = y.split('|')
  * 
- * 	for i in range(0, len(x_list)):             # <<<<<<<<<<<<<<
- * 			if x_list[i] == y_list[i]:
- * 					pass
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0, len(x_list)):
+ * 				if x_list[i] == y_list[i]:
  */
-  __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 60, __pyx_L1_error)
-  __pyx_t_7 = __pyx_t_6;
-  for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
-    __pyx_v_i = __pyx_t_8;
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_split_on_heritable); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 72, __pyx_L1_error)
+  if (__pyx_t_1) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":61
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
  * 
- * 	for i in range(0, len(x_list)):
- * 			if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
- * 					pass
- * 			elif y_list[i] == "-":
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(x_list)):             # <<<<<<<<<<<<<<
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
  */
-    __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyObject_RichCompare(__pyx_t_3, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_1) {
-      goto __pyx_L7;
-    }
+    __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 73, __pyx_L1_error)
+    __pyx_t_7 = __pyx_t_6;
+    for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+      __pyx_v_i = __pyx_t_8;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":63
- * 			if x_list[i] == y_list[i]:
- * 					pass
- * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
- * 					count += 0
- * 
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":74
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(x_list)):
+ * 				if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 						pass
+ * 				elif y_list[i] == "-":
  */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_1) {
+      __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 74, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = PyObject_RichCompare(__pyx_t_3, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 74, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 74, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_1) {
+        goto __pyx_L8;
+      }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":64
- * 					pass
- * 			elif y_list[i] == "-":
- * 					count += 0             # <<<<<<<<<<<<<<
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":76
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
+ * 				elif y_list[i] == "-":             # <<<<<<<<<<<<<<
+ * 						count += 0
  * 
- * 			elif x_list[i] == '0':
  */
-      __pyx_t_5 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_0, 0, 1, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 76, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
-      __pyx_t_5 = 0;
+      __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 76, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_1) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":63
- * 			if x_list[i] == y_list[i]:
- * 					pass
- * 			elif y_list[i] == "-":             # <<<<<<<<<<<<<<
- * 					count += 0
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":77
+ * 						pass
+ * 				elif y_list[i] == "-":
+ * 						count += 0             # <<<<<<<<<<<<<<
  * 
+ * 				elif x_list[i] == '0':
  */
-      goto __pyx_L7;
-    }
-
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":66
- * 					count += 0
- * 
- * 			elif x_list[i] == '0':             # <<<<<<<<<<<<<<
- * 				if not weighted:
- * 					count += 1
- */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 66, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (__pyx_t_1) {
-
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":67
- * 
- * 			elif x_list[i] == '0':
- * 				if not weighted:             # <<<<<<<<<<<<<<
- * 					count += 1
- * 				else:
- */
-      __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_weighted); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 67, __pyx_L1_error)
-      __pyx_t_2 = ((!__pyx_t_1) != 0);
-      if (__pyx_t_2) {
-
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":68
- * 			elif x_list[i] == '0':
- * 				if not weighted:
- * 					count += 1             # <<<<<<<<<<<<<<
- * 				else:
- * 					count += -np.log(priors[i][str(y_list[i])])
- */
-        __pyx_t_5 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 68, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_0, 0, 1, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 77, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":67
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":76
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
+ * 				elif y_list[i] == "-":             # <<<<<<<<<<<<<<
+ * 						count += 0
  * 
- * 			elif x_list[i] == '0':
- * 				if not weighted:             # <<<<<<<<<<<<<<
- * 					count += 1
- * 				else:
  */
         goto __pyx_L8;
       }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":70
- * 					count += 1
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":79
+ * 						count += 0
+ * 
+ * 				elif x_list[i] == '0':             # <<<<<<<<<<<<<<
+ * 					if not weighted:
+ * 						count += 1
+ */
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 79, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_5, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 79, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      if (__pyx_t_1) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":80
+ * 
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:             # <<<<<<<<<<<<<<
+ * 						count += 1
+ * 					else:
+ */
+        __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_weighted); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 80, __pyx_L1_error)
+        __pyx_t_2 = ((!__pyx_t_1) != 0);
+        if (__pyx_t_2) {
+
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":81
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:
+ * 						count += 1             # <<<<<<<<<<<<<<
+ * 					else:
+ * 						count += -np.log(priors[i][str(y_list[i])])
+ */
+          __pyx_t_5 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 81, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
+          __pyx_t_5 = 0;
+
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":80
+ * 
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:             # <<<<<<<<<<<<<<
+ * 						count += 1
+ * 					else:
+ */
+          goto __pyx_L9;
+        }
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
+ * 						count += 1
+ * 					else:
+ * 						count += -np.log(priors[i][str(y_list[i])])             # <<<<<<<<<<<<<<
  * 				else:
- * 					count += -np.log(priors[i][str(y_list[i])])             # <<<<<<<<<<<<<<
- * 			else:
- * 				return -1
+ * 					return -1
+ */
+        /*else*/ {
+          __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_priors, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_9);
+          __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+          __pyx_t_9 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_t_10); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_9);
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_10 = NULL;
+          if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+            __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_3);
+            if (likely(__pyx_t_10)) {
+              PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+              __Pyx_INCREF(__pyx_t_10);
+              __Pyx_INCREF(function);
+              __Pyx_DECREF_SET(__pyx_t_3, function);
+            }
+          }
+          __pyx_t_5 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_10, __pyx_t_9) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_9);
+          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+          if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+          __pyx_t_3 = PyNumber_Negative(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __pyx_t_5 = PyNumber_InPlaceAdd(__pyx_v_count, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+          __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
+          __pyx_t_5 = 0;
+        }
+        __pyx_L9:;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":79
+ * 						count += 0
+ * 
+ * 				elif x_list[i] == '0':             # <<<<<<<<<<<<<<
+ * 					if not weighted:
+ * 						count += 1
+ */
+        goto __pyx_L8;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":85
+ * 						count += -np.log(priors[i][str(y_list[i])])
+ * 				else:
+ * 					return -1             # <<<<<<<<<<<<<<
+ * 	else:
+ * 		for i in range(0, len(x_list)):
  */
       /*else*/ {
-        __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_log); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_priors, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_10);
-        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        __pyx_t_9 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_t_10); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __pyx_t_10 = NULL;
-        if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
-          __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_3);
-          if (likely(__pyx_t_10)) {
-            PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
-            __Pyx_INCREF(__pyx_t_10);
-            __Pyx_INCREF(function);
-            __Pyx_DECREF_SET(__pyx_t_3, function);
-          }
-        }
-        __pyx_t_5 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_10, __pyx_t_9) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_9);
-        __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_5);
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __pyx_t_3 = PyNumber_Negative(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_5 = PyNumber_InPlaceAdd(__pyx_v_count, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 70, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_5);
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_5);
-        __pyx_t_5 = 0;
+        __Pyx_XDECREF(__pyx_r);
+        __Pyx_INCREF(__pyx_int_neg_1);
+        __pyx_r = __pyx_int_neg_1;
+        goto __pyx_L0;
       }
       __pyx_L8:;
-
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":66
- * 					count += 0
- * 
- * 			elif x_list[i] == '0':             # <<<<<<<<<<<<<<
- * 				if not weighted:
- * 					count += 1
- */
-      goto __pyx_L7;
     }
 
     /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":72
- * 					count += -np.log(priors[i][str(y_list[i])])
- * 			else:
- * 				return -1             # <<<<<<<<<<<<<<
+ * 	y_list = y.split('|')
+ * 
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0, len(x_list)):
+ * 				if x_list[i] == y_list[i]:
+ */
+    goto __pyx_L5;
+  }
+
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":87
+ * 					return -1
+ * 	else:
+ * 		for i in range(0, len(x_list)):             # <<<<<<<<<<<<<<
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
+ */
+  /*else*/ {
+    __pyx_t_6 = PyObject_Length(__pyx_v_x_list); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_7 = __pyx_t_6;
+    for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
+      __pyx_v_i = __pyx_t_8;
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":88
+ * 	else:
+ * 		for i in range(0, len(x_list)):
+ * 				if x_list[i] == y_list[i]:             # <<<<<<<<<<<<<<
+ * 						pass
+ * 				elif y_list[i] == "-" or y_list[i] == "*":
+ */
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_9 = PyObject_RichCompare(__pyx_t_5, __pyx_t_3, Py_EQ); __Pyx_XGOTREF(__pyx_t_9); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_9); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      if (__pyx_t_2) {
+        goto __pyx_L12;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
+ * 				elif y_list[i] == "-" or y_list[i] == "*":             # <<<<<<<<<<<<<<
+ * 						count += 0
+ * 
+ */
+      __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 90, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_9, __pyx_kp_s__5, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 90, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      if (!__pyx_t_1) {
+      } else {
+        __pyx_t_2 = __pyx_t_1;
+        goto __pyx_L13_bool_binop_done;
+      }
+      __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 90, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_1 = (__Pyx_PyString_Equals(__pyx_t_9, __pyx_kp_s__6, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 90, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_2 = __pyx_t_1;
+      __pyx_L13_bool_binop_done:;
+      if (__pyx_t_2) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
+ * 						pass
+ * 				elif y_list[i] == "-" or y_list[i] == "*":
+ * 						count += 0             # <<<<<<<<<<<<<<
+ * 
+ * 				elif x_list[i] == '0':
+ */
+        __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_0, 0, 1, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 91, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_9);
+        __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_9);
+        __pyx_t_9 = 0;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
+ * 				if x_list[i] == y_list[i]:
+ * 						pass
+ * 				elif y_list[i] == "-" or y_list[i] == "*":             # <<<<<<<<<<<<<<
+ * 						count += 0
+ * 
+ */
+        goto __pyx_L12;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":93
+ * 						count += 0
+ * 
+ * 				elif x_list[i] == '0':             # <<<<<<<<<<<<<<
+ * 					if not weighted:
+ * 						count += 1
+ */
+      __pyx_t_9 = __Pyx_GetItemInt(__pyx_v_x_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_9, __pyx_kp_s_0, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      if (__pyx_t_2) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":94
+ * 
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:             # <<<<<<<<<<<<<<
+ * 						count += 1
+ * 					else:
+ */
+        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_weighted); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 94, __pyx_L1_error)
+        __pyx_t_1 = ((!__pyx_t_2) != 0);
+        if (__pyx_t_1) {
+
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:
+ * 						count += 1             # <<<<<<<<<<<<<<
+ * 					else:
+ * 						count += -np.log(priors[i][str(y_list[i])])
+ */
+          __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_v_count, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 95, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_9);
+          __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_9);
+          __pyx_t_9 = 0;
+
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":94
+ * 
+ * 				elif x_list[i] == '0':
+ * 					if not weighted:             # <<<<<<<<<<<<<<
+ * 						count += 1
+ * 					else:
+ */
+          goto __pyx_L15;
+        }
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":97
+ * 						count += 1
+ * 					else:
+ * 						count += -np.log(priors[i][str(y_list[i])])             # <<<<<<<<<<<<<<
+ * 				else:
+ * 					return -1
+ */
+        /*else*/ {
+          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_log); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+          __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_priors, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __pyx_t_10 = __Pyx_GetItemInt(__pyx_v_y_list, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_10);
+          __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_10); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_10 = __Pyx_PyObject_GetItem(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_10);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __pyx_t_4 = NULL;
+          if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
+            __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+            if (likely(__pyx_t_4)) {
+              PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+              __Pyx_INCREF(__pyx_t_4);
+              __Pyx_INCREF(function);
+              __Pyx_DECREF_SET(__pyx_t_5, function);
+            }
+          }
+          __pyx_t_9 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_4, __pyx_t_10) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_10);
+          __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_9);
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __pyx_t_5 = PyNumber_Negative(__pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_5);
+          __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+          __pyx_t_9 = PyNumber_InPlaceAdd(__pyx_v_count, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 97, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_9);
+          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+          __Pyx_DECREF_SET(__pyx_v_count, __pyx_t_9);
+          __pyx_t_9 = 0;
+        }
+        __pyx_L15:;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":93
+ * 						count += 0
+ * 
+ * 				elif x_list[i] == '0':             # <<<<<<<<<<<<<<
+ * 					if not weighted:
+ * 						count += 1
+ */
+        goto __pyx_L12;
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":99
+ * 						count += -np.log(priors[i][str(y_list[i])])
+ * 				else:
+ * 					return -1             # <<<<<<<<<<<<<<
  * 	return count
  * 
  */
-    /*else*/ {
-      __Pyx_XDECREF(__pyx_r);
-      __Pyx_INCREF(__pyx_int_neg_1);
-      __pyx_r = __pyx_int_neg_1;
-      goto __pyx_L0;
+      /*else*/ {
+        __Pyx_XDECREF(__pyx_r);
+        __Pyx_INCREF(__pyx_int_neg_1);
+        __pyx_r = __pyx_int_neg_1;
+        goto __pyx_L0;
+      }
+      __pyx_L12:;
     }
-    __pyx_L7:;
   }
+  __pyx_L5:;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":73
- * 			else:
- * 				return -1
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":100
+ * 				else:
+ * 					return -1
  * 	return count             # <<<<<<<<<<<<<<
  * 
- * def mutations_from_parent_to_child(parent, child):
+ * def mutations_from_parent_to_child(parent, child, split_on_heritable = False):
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_count);
   __pyx_r = __pyx_v_count;
   goto __pyx_L0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":37
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":49
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
@@ -2514,10 +2950,10 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":75
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":102
  * 	return count
  * 
- * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
+ * def mutations_from_parent_to_child(parent, child, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Creates a string label describing the mutations taken from  a parent to a child
  */
@@ -2529,16 +2965,20 @@ static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solve
 static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_parent = 0;
   PyObject *__pyx_v_child = 0;
+  PyObject *__pyx_v_split_on_heritable = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("mutations_from_parent_to_child (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_parent,&__pyx_n_s_child,0};
-    PyObject* values[2] = {0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_parent,&__pyx_n_s_child,&__pyx_n_s_split_on_heritable,0};
+    PyObject* values[3] = {0,0,0};
+    values[2] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -2555,37 +2995,48 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_child)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("mutations_from_parent_to_child", 1, 2, 2, 1); __PYX_ERR(0, 75, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("mutations_from_parent_to_child", 0, 2, 3, 1); __PYX_ERR(0, 102, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_on_heritable);
+          if (value) { values[2] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "mutations_from_parent_to_child") < 0)) __PYX_ERR(0, 75, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "mutations_from_parent_to_child") < 0)) __PYX_ERR(0, 102, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
-      goto __pyx_L5_argtuple_error;
     } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
     }
     __pyx_v_parent = values[0];
     __pyx_v_child = values[1];
+    __pyx_v_split_on_heritable = values[2];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("mutations_from_parent_to_child", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 75, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("mutations_from_parent_to_child", 0, 2, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 102, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.mutations_from_parent_to_child", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(__pyx_self, __pyx_v_parent, __pyx_v_child);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(__pyx_self, __pyx_v_parent, __pyx_v_child, __pyx_v_split_on_heritable);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_4mutations_from_parent_to_child(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_parent, PyObject *__pyx_v_child, PyObject *__pyx_v_split_on_heritable) {
   PyObject *__pyx_v_parent_list = NULL;
   PyObject *__pyx_v_child_list = NULL;
   PyObject *__pyx_v_mutations = NULL;
@@ -2605,25 +3056,25 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_parent);
   __Pyx_INCREF(__pyx_v_child);
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
  * 	"""
  * 	if '_' in parent:             # <<<<<<<<<<<<<<
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:
  */
-  __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_parent, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_parent, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":84
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":111
  * 	"""
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])             # <<<<<<<<<<<<<<
  * 	if '_' in child:
  * 		child = ''.join(child.split("_")[:-1])
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parent, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_parent, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2637,19 +3088,19 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_n_s_);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF_SET(__pyx_v_parent, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":83
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
  * 	where Ch1 is the character, and S1 is the state that Ch1 mutaated into
  * 	"""
  * 	if '_' in parent:             # <<<<<<<<<<<<<<
@@ -2658,25 +3109,25 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":85
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:             # <<<<<<<<<<<<<<
  * 		child = ''.join(child.split("_")[:-1])
  * 
  */
-  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_child, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_, __pyx_v_child, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":86
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":113
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:
  * 		child = ''.join(child.split("_")[:-1])             # <<<<<<<<<<<<<<
  * 
  * 	parent_list = parent.split("_")[0].split('|')
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_child, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_child, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -2690,19 +3141,19 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_n_s_);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 86, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetSlice(__pyx_t_3, 0, -1L, NULL, NULL, &__pyx_slice__3, 0, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Join(__pyx_kp_s__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF_SET(__pyx_v_child, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":85
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
  * 	if '_' in parent:
  * 		parent = ''.join(parent.split("_")[:-1])
  * 	if '_' in child:             # <<<<<<<<<<<<<<
@@ -2711,14 +3162,14 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":88
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":115
  * 		child = ''.join(child.split("_")[:-1])
  * 
  * 	parent_list = parent.split("_")[0].split('|')             # <<<<<<<<<<<<<<
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parent, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_parent, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_6 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -2732,13 +3183,13 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_n_s_);
   __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 88, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 88, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -2753,20 +3204,20 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_kp_s__4) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_kp_s__4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_parent_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":89
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":116
  * 
  * 	parent_list = parent.split("_")[0].split('|')
  * 	child_list = child.split("_")[0].split('|')             # <<<<<<<<<<<<<<
  * 	mutations = []
- * 	for i in range(0, len(parent_list)):
+ * 
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_child, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_child, __pyx_n_s_split); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_6 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -2780,13 +3231,13 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_4 = (__pyx_t_6) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_6, __pyx_n_s_) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_n_s_);
   __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_4, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_split); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -2801,190 +3252,370 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_3 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_5, __pyx_kp_s__4) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_kp_s__4);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_child_list = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":90
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":117
  * 	parent_list = parent.split("_")[0].split('|')
  * 	child_list = child.split("_")[0].split('|')
  * 	mutations = []             # <<<<<<<<<<<<<<
- * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 
+ * 	if split_on_heritable:
  */
-  __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_v_mutations = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
- * 	child_list = child.split("_")[0].split('|')
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":119
  * 	mutations = []
- * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':
  */
-  __pyx_t_7 = PyObject_Length(__pyx_v_parent_list); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 91, __pyx_L1_error)
-  __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 91, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_INCREF(__pyx_int_0);
-  __Pyx_GIVEREF(__pyx_int_0);
-  PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_int_0);
-  __Pyx_GIVEREF(__pyx_t_3);
-  PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
-  __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
-    __pyx_t_4 = __pyx_t_3; __Pyx_INCREF(__pyx_t_4); __pyx_t_7 = 0;
-    __pyx_t_8 = NULL;
-  } else {
-    __pyx_t_7 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 91, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_8 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 91, __pyx_L1_error)
-  }
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  for (;;) {
-    if (likely(!__pyx_t_8)) {
-      if (likely(PyList_CheckExact(__pyx_t_4))) {
-        if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_4)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 91, __pyx_L1_error)
-        #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        #endif
-      } else {
-        if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
-        #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 91, __pyx_L1_error)
-        #else
-        __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-        #endif
-      }
-    } else {
-      __pyx_t_3 = __pyx_t_8(__pyx_t_4);
-      if (unlikely(!__pyx_t_3)) {
-        PyObject* exc_type = PyErr_Occurred();
-        if (exc_type) {
-          if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 91, __pyx_L1_error)
-        }
-        break;
-      }
-      __Pyx_GOTREF(__pyx_t_3);
-    }
-    __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_3);
-    __pyx_t_3 = 0;
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_split_on_heritable); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 119, __pyx_L1_error)
+  if (__pyx_t_1) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":92
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":120
+ * 
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ */
+    __pyx_t_7 = PyObject_Length(__pyx_v_parent_list); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 120, __pyx_L1_error)
+    __pyx_t_3 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_int_0);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (likely(PyList_CheckExact(__pyx_t_3)) || PyTuple_CheckExact(__pyx_t_3)) {
+      __pyx_t_4 = __pyx_t_3; __Pyx_INCREF(__pyx_t_4); __pyx_t_7 = 0;
+      __pyx_t_8 = NULL;
+    } else {
+      __pyx_t_7 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_8 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 120, __pyx_L1_error)
+    }
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    for (;;) {
+      if (likely(!__pyx_t_8)) {
+        if (likely(PyList_CheckExact(__pyx_t_4))) {
+          if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_4)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 120, __pyx_L1_error)
+          #else
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          #endif
+        } else {
+          if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_7); __Pyx_INCREF(__pyx_t_3); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 120, __pyx_L1_error)
+          #else
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_4, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          #endif
+        }
+      } else {
+        __pyx_t_3 = __pyx_t_8(__pyx_t_4);
+        if (unlikely(!__pyx_t_3)) {
+          PyObject* exc_type = PyErr_Occurred();
+          if (exc_type) {
+            if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+            else __PYX_ERR(0, 120, __pyx_L1_error)
+          }
+          break;
+        }
+        __Pyx_GOTREF(__pyx_t_3);
+      }
+      __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_3);
+      __pyx_t_3 = 0;
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":121
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 	else:
+ */
+      __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_6 = PyObject_RichCompare(__pyx_t_3, __pyx_t_5, Py_NE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L9_bool_binop_done;
+      }
+      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_6, __pyx_kp_s__5, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L9_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":122
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))             # <<<<<<<<<<<<<<
+ * 	else:
+ * 		for i in range(0, len(parent_list)):
+ */
+        __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_5 = PyNumber_Add(__pyx_t_6, __pyx_kp_s__7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_6 = PyNumber_Add(__pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_3 = PyNumber_Add(__pyx_t_6, __pyx_kp_s__8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_mutations, __pyx_t_6); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 122, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":121
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 	else:
+ */
+      }
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":120
+ * 
+ * 	if split_on_heritable:
+ * 		for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ */
+    }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":119
  * 	mutations = []
- * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 
+ * 	if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-':
+ */
+    goto __pyx_L5;
+  }
+
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":124
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 	else:
+ * 		for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ */
+  /*else*/ {
+    __pyx_t_7 = PyObject_Length(__pyx_v_parent_list); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(0, 124, __pyx_L1_error)
+    __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_int_0);
+    __Pyx_GIVEREF(__pyx_t_4);
+    PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_4);
+    __pyx_t_4 = 0;
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_6, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
+      __pyx_t_6 = __pyx_t_4; __Pyx_INCREF(__pyx_t_6); __pyx_t_7 = 0;
+      __pyx_t_8 = NULL;
+    } else {
+      __pyx_t_7 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 124, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_8 = Py_TYPE(__pyx_t_6)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 124, __pyx_L1_error)
+    }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    for (;;) {
+      if (likely(!__pyx_t_8)) {
+        if (likely(PyList_CheckExact(__pyx_t_6))) {
+          if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_6)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_4 = PyList_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 124, __pyx_L1_error)
+          #else
+          __pyx_t_4 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          #endif
+        } else {
+          if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_6)) break;
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_7); __Pyx_INCREF(__pyx_t_4); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 124, __pyx_L1_error)
+          #else
+          __pyx_t_4 = PySequence_ITEM(__pyx_t_6, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          #endif
+        }
+      } else {
+        __pyx_t_4 = __pyx_t_8(__pyx_t_6);
+        if (unlikely(!__pyx_t_4)) {
+          PyObject* exc_type = PyErr_Occurred();
+          if (exc_type) {
+            if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
+            else __PYX_ERR(0, 124, __pyx_L1_error)
+          }
+          break;
+        }
+        __Pyx_GOTREF(__pyx_t_4);
+      }
+      __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_4);
+      __pyx_t_4 = 0;
+
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":125
+ * 	else:
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':             # <<<<<<<<<<<<<<
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = PyObject_RichCompare(__pyx_t_3, __pyx_t_5, Py_NE); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (__pyx_t_2) {
-    } else {
+      __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __pyx_t_3 = PyObject_RichCompare(__pyx_t_4, __pyx_t_5, Py_NE); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L14_bool_binop_done;
+      }
+      __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_3, __pyx_kp_s__5, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L14_bool_binop_done;
+      }
+      __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_3, __pyx_kp_s__6, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_1 = __pyx_t_2;
-      goto __pyx_L8_bool_binop_done;
-    }
-    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_2 = (__Pyx_PyString_Equals(__pyx_t_6, __pyx_kp_s__5, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 92, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_1 = __pyx_t_2;
-    __pyx_L8_bool_binop_done:;
-    if (__pyx_t_1) {
+      __pyx_L14_bool_binop_done:;
+      if (__pyx_t_1) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":93
- * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))             # <<<<<<<<<<<<<<
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":126
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))             # <<<<<<<<<<<<<<
  * 
  * 	return " , ".join(mutations)
  */
-      __pyx_t_6 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_5 = PyNumber_Add(__pyx_t_6, __pyx_kp_s__6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = PyNumber_Add(__pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = PyNumber_Add(__pyx_t_6, __pyx_kp_s__7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = PyNumber_Add(__pyx_t_3, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_mutations, __pyx_t_6); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = PyNumber_Add(__pyx_t_3, __pyx_kp_s__7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_parent_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_3 = PyNumber_Add(__pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+        __pyx_t_4 = PyNumber_Add(__pyx_t_3, __pyx_kp_s__8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_4);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_3 = __Pyx_PyObject_GetItem(__pyx_v_child_list, __pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __pyx_t_3 = PyNumber_Add(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_mutations, __pyx_t_3); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 126, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":92
- * 	mutations = []
- * 	for i in range(0, len(parent_list)):
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':             # <<<<<<<<<<<<<<
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":125
+ * 	else:
+ * 		for i in range(0, len(parent_list)):
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':             # <<<<<<<<<<<<<<
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  */
-    }
+      }
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":91
- * 	child_list = child.split("_")[0].split('|')
- * 	mutations = []
- * 	for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
- * 		if parent_list[i] != child_list[i] and child_list[i] != '-':
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":124
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+ * 	else:
+ * 		for i in range(0, len(parent_list)):             # <<<<<<<<<<<<<<
+ * 			if parent_list[i] != child_list[i] and child_list[i] != '-' and child_list[i] != '*':
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  */
+    }
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_L5:;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":95
- * 			mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":128
+ * 				mutations.append(str(i) + ": " + str(parent_list[i]) + "->" + str(child_list[i]))
  * 
  * 	return " , ".join(mutations)             # <<<<<<<<<<<<<<
  * 
- * def root_finder(target_nodes):
+ * def root_finder(target_nodes, split_on_heritable = False):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = __Pyx_PyString_Join(__pyx_kp_s__8, __pyx_v_mutations); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 95, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_r = __pyx_t_4;
-  __pyx_t_4 = 0;
+  __pyx_t_6 = __Pyx_PyString_Join(__pyx_kp_s__9, __pyx_v_mutations); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_r = __pyx_t_6;
+  __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":75
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":102
  * 	return count
  * 
- * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
+ * def mutations_from_parent_to_child(parent, child, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Creates a string label describing the mutations taken from  a parent to a child
  */
@@ -3009,30 +3640,82 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":97
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":130
  * 	return " , ".join(mutations)
  * 
- * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
+ * def root_finder(target_nodes, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a list of targets_nodes, return the least common ancestor of all nodes
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes); /*proto*/
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static char __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder[] = "\n\tGiven a list of targets_nodes, return the least common ancestor of all nodes\n\n\t:param target_nodes:\n\t\tA list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'\n\t:return:\n\t\tThe least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'\n\t";
-static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder = {"root_finder", (PyCFunction)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, METH_O, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder};
-static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
+static PyMethodDef __pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder = {"root_finder", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, METH_VARARGS|METH_KEYWORDS, __pyx_doc_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder};
+static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_target_nodes = 0;
+  PyObject *__pyx_v_split_on_heritable = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("root_finder (wrapper)", 0);
-  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(__pyx_self, ((PyObject *)__pyx_v_target_nodes));
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_target_nodes,&__pyx_n_s_split_on_heritable,0};
+    PyObject* values[2] = {0,0};
+    values[1] = ((PyObject *)Py_False);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_target_nodes)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_on_heritable);
+          if (value) { values[1] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "root_finder") < 0)) __PYX_ERR(0, 130, __pyx_L3_error)
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+    }
+    __pyx_v_target_nodes = values[0];
+    __pyx_v_split_on_heritable = values[1];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("root_finder", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 130, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.root_finder", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(__pyx_self, __pyx_v_target_nodes, __pyx_v_split_on_heritable);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_6root_finder(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target_nodes, PyObject *__pyx_v_split_on_heritable) {
   PyObject *__pyx_v_np = NULL;
   PyObject *__pyx_v_sample = NULL;
   PyObject *__pyx_r = NULL;
@@ -3043,53 +3726,52 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
-  int __pyx_t_7;
-  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_7 = NULL;
   __Pyx_RefNannySetupContext("root_finder", 0);
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":106
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":139
  * 		The least common ancestor of all target nodes, in the form 'Ch1|Ch2|....|Chn'
  * 	"""
  * 	np = target_nodes[0]             # <<<<<<<<<<<<<<
+ * 
  * 	for sample in target_nodes:
- * 		np = node_parent(sample, np)
  */
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_target_nodes, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_target_nodes, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_np = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":107
- * 	"""
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":141
  * 	np = target_nodes[0]
+ * 
  * 	for sample in target_nodes:             # <<<<<<<<<<<<<<
- * 		np = node_parent(sample, np)
+ * 		np = node_parent(sample, np, split_on_heritable = split_on_heritable)
  * 
  */
   if (likely(PyList_CheckExact(__pyx_v_target_nodes)) || PyTuple_CheckExact(__pyx_v_target_nodes)) {
     __pyx_t_1 = __pyx_v_target_nodes; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_target_nodes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_target_nodes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 107, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -3099,7 +3781,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 107, __pyx_L1_error)
+          else __PYX_ERR(0, 141, __pyx_L1_error)
         }
         break;
       }
@@ -3108,89 +3790,60 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":108
- * 	np = target_nodes[0]
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
+ * 
  * 	for sample in target_nodes:
- * 		np = node_parent(sample, np)             # <<<<<<<<<<<<<<
+ * 		np = node_parent(sample, np, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
  * 
  * 	return np
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_node_parent); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_node_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = NULL;
-    __pyx_t_7 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_5);
-      if (likely(__pyx_t_6)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-        __Pyx_INCREF(__pyx_t_6);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_5, function);
-        __pyx_t_7 = 1;
-      }
-    }
-    #if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(__pyx_t_5)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_v_sample, __pyx_v_np};
-      __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_GOTREF(__pyx_t_4);
-    } else
-    #endif
-    #if CYTHON_FAST_PYCCALL
-    if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
-      PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_v_sample, __pyx_v_np};
-      __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_GOTREF(__pyx_t_4);
-    } else
-    #endif
-    {
-      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 108, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      if (__pyx_t_6) {
-        __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
-      }
-      __Pyx_INCREF(__pyx_v_sample);
-      __Pyx_GIVEREF(__pyx_v_sample);
-      PyTuple_SET_ITEM(__pyx_t_8, 0+__pyx_t_7, __pyx_v_sample);
-      __Pyx_INCREF(__pyx_v_np);
-      __Pyx_GIVEREF(__pyx_v_np);
-      PyTuple_SET_ITEM(__pyx_t_8, 1+__pyx_t_7, __pyx_v_np);
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    }
+    __Pyx_INCREF(__pyx_v_sample);
+    __Pyx_GIVEREF(__pyx_v_sample);
+    PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_v_sample);
+    __Pyx_INCREF(__pyx_v_np);
+    __Pyx_GIVEREF(__pyx_v_np);
+    PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_np);
+    __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 142, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF_SET(__pyx_v_np, __pyx_t_4);
-    __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF_SET(__pyx_v_np, __pyx_t_7);
+    __pyx_t_7 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":107
- * 	"""
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":141
  * 	np = target_nodes[0]
+ * 
  * 	for sample in target_nodes:             # <<<<<<<<<<<<<<
- * 		np = node_parent(sample, np)
+ * 		np = node_parent(sample, np, split_on_heritable = split_on_heritable)
  * 
  */
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":110
- * 		np = node_parent(sample, np)
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":144
+ * 		np = node_parent(sample, np, split_on_heritable = split_on_heritable)
  * 
  * 	return np             # <<<<<<<<<<<<<<
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_np);
   __pyx_r = __pyx_v_np;
   goto __pyx_L0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":97
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":130
  * 	return " , ".join(mutations)
  * 
- * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
+ * def root_finder(target_nodes, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a list of targets_nodes, return the least common ancestor of all nodes
  */
@@ -3201,7 +3854,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_7);
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.root_finder", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -3212,10 +3865,10 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
@@ -3232,21 +3885,25 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   PyObject *__pyx_v_pid = 0;
   PyObject *__pyx_v_weighted = 0;
   PyObject *__pyx_v_lca_dist = 0;
+  PyObject *__pyx_v_split_on_heritable = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("build_potential_graph_from_base_graph (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_samples,&__pyx_n_s_root,&__pyx_n_s_max_neighborhood_size,&__pyx_n_s_priors,&__pyx_n_s_pid,&__pyx_n_s_weighted,&__pyx_n_s_lca_dist,0};
-    PyObject* values[7] = {0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_samples,&__pyx_n_s_root,&__pyx_n_s_max_neighborhood_size,&__pyx_n_s_priors,&__pyx_n_s_pid,&__pyx_n_s_weighted,&__pyx_n_s_lca_dist,&__pyx_n_s_split_on_heritable,0};
+    PyObject* values[8] = {0,0,0,0,0,0,0,0};
     values[2] = ((PyObject *)__pyx_int_10000);
     values[3] = ((PyObject *)Py_None);
     values[4] = ((PyObject *)__pyx_int_neg_1);
     values[5] = ((PyObject *)Py_False);
     values[6] = ((PyObject *)Py_None);
+    values[7] = ((PyObject *)Py_False);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
+        CYTHON_FALLTHROUGH;
         case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
         CYTHON_FALLTHROUGH;
         case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
@@ -3273,7 +3930,7 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_root)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 7, 1); __PYX_ERR(0, 112, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 8, 1); __PYX_ERR(0, 146, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
@@ -3305,12 +3962,20 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_lca_dist);
           if (value) { values[6] = value; kw_args--; }
         }
+        CYTHON_FALLTHROUGH;
+        case  7:
+        if (kw_args > 0) {
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_split_on_heritable);
+          if (value) { values[7] = value; kw_args--; }
+        }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "build_potential_graph_from_base_graph") < 0)) __PYX_ERR(0, 112, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "build_potential_graph_from_base_graph") < 0)) __PYX_ERR(0, 146, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
+        CYTHON_FALLTHROUGH;
         case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
         CYTHON_FALLTHROUGH;
         case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
@@ -3334,23 +3999,24 @@ static PyObject *__pyx_pw_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_v_pid = values[4];
     __pyx_v_weighted = values[5];
     __pyx_v_lca_dist = values[6];
+    __pyx_v_split_on_heritable = values[7];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 112, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("build_potential_graph_from_base_graph", 0, 2, 8, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 146, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(__pyx_self, __pyx_v_samples, __pyx_v_root, __pyx_v_max_neighborhood_size, __pyx_v_priors, __pyx_v_pid, __pyx_v_weighted, __pyx_v_lca_dist);
+  __pyx_r = __pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(__pyx_self, __pyx_v_samples, __pyx_v_root, __pyx_v_max_neighborhood_size, __pyx_v_priors, __pyx_v_pid, __pyx_v_weighted, __pyx_v_lca_dist, __pyx_v_split_on_heritable);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":239
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]             # <<<<<<<<<<<<<<
@@ -3378,7 +4044,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self,
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("lambda", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_k, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_k, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3395,15 +4061,15 @@ static PyObject *__pyx_lambda_funcdef_lambda(CYTHON_UNUSED PyObject *__pyx_self,
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
 
-static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted, PyObject *__pyx_v_lca_dist) {
+static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_8build_potential_graph_from_base_graph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_samples, CYTHON_UNUSED PyObject *__pyx_v_root, PyObject *__pyx_v_max_neighborhood_size, PyObject *__pyx_v_priors, PyObject *__pyx_v_pid, PyObject *__pyx_v_weighted, PyObject *__pyx_v_lca_dist, PyObject *__pyx_v_split_on_heritable) {
   int __pyx_v_neighbor_mod;
   int __pyx_v_max_neighbor_dist;
   PyObject *__pyx_v_prev_network = NULL;
@@ -3444,8 +4110,8 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   Py_ssize_t __pyx_t_9;
   PyObject *(*__pyx_t_10)(PyObject *);
   PyObject *__pyx_t_11 = NULL;
-  int __pyx_t_12;
-  PyObject *__pyx_t_13 = NULL;
+  PyObject *__pyx_t_12 = NULL;
+  int __pyx_t_13;
   int __pyx_t_14;
   PyObject *__pyx_t_15 = NULL;
   PyObject *(*__pyx_t_16)(PyObject *);
@@ -3453,7 +4119,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(__pyx_v_samples);
   __Pyx_INCREF(__pyx_v_lca_dist);
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":138
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":172
  * 
  * 
  * 	neighbor_mod = 0             # <<<<<<<<<<<<<<
@@ -3462,7 +4128,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   __pyx_v_neighbor_mod = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":139
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":173
  * 
  * 	neighbor_mod = 0
  * 	prev_network = None             # <<<<<<<<<<<<<<
@@ -3472,7 +4138,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_INCREF(Py_None);
   __pyx_v_prev_network = Py_None;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":140
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":174
  * 	neighbor_mod = 0
  * 	prev_network = None
  * 	flag = False             # <<<<<<<<<<<<<<
@@ -3481,31 +4147,31 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   __pyx_v_flag = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":142
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":176
  * 	flag = False
  * 
  * 	potential_graph_diagnostic = {}             # <<<<<<<<<<<<<<
  * 	prev_widths = []
  * 
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_potential_graph_diagnostic = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":143
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":177
  * 
  * 	potential_graph_diagnostic = {}
  * 	prev_widths = []             # <<<<<<<<<<<<<<
  * 
  * 	if lca_dist is None:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_prev_widths = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":145
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":179
  * 	prev_widths = []
  * 
  * 	if lca_dist is None:             # <<<<<<<<<<<<<<
@@ -3516,7 +4182,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":180
  * 
  * 	if lca_dist is None:
  * 		lca_dist = 13             # <<<<<<<<<<<<<<
@@ -3526,7 +4192,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_int_13);
     __Pyx_DECREF_SET(__pyx_v_lca_dist, __pyx_int_13);
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":145
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":179
  * 	prev_widths = []
  * 
  * 	if lca_dist is None:             # <<<<<<<<<<<<<<
@@ -3535,55 +4201,55 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":148
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":182
  * 		lca_dist = 13
  * 
  * 	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " with lca distance of " + str(lca_dist) + " (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
  * 	sys.stdout.flush()
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = PyNumber_Add(__pyx_kp_s_Estimating_potential_graph_with, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_4 = PyNumber_Add(__pyx_kp_s_Estimating_potential_graph_with, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Add(__pyx_t_4, __pyx_kp_s_with_lca_distance_of); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Add(__pyx_t_4, __pyx_kp_s_with_lca_distance_of); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_lca_dist); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_lca_dist); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_pid_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_4 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_pid_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyNumber_Add(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Add(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_kp_s__9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_kp_s__10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (__Pyx_PrintOne(0, __pyx_t_5) < 0) __PYX_ERR(0, 148, __pyx_L1_error)
+  if (__Pyx_PrintOne(0, __pyx_t_5) < 0) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":149
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":183
  * 
  * 	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " with lca distance of " + str(lca_dist) + " (pid: " + str(pid) + ")")
  * 	sys.stdout.flush()             # <<<<<<<<<<<<<<
  * 
  * 	max_neighbor_dist = 0
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_sys); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_stdout); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_stdout); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_flush); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_flush); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -3598,12 +4264,12 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_5 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":151
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":185
  * 	sys.stdout.flush()
  * 
  * 	max_neighbor_dist = 0             # <<<<<<<<<<<<<<
@@ -3612,7 +4278,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
   __pyx_v_max_neighbor_dist = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":152
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":186
  * 
  * 	max_neighbor_dist = 0
  * 	while max_neighbor_dist < (lca_dist+1):             # <<<<<<<<<<<<<<
@@ -3620,27 +4286,27 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 		initial_network = nx.DiGraph()
  */
   while (1) {
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_lca_dist, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_lca_dist, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = PyObject_RichCompare(__pyx_t_5, __pyx_t_1, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_4 = PyObject_RichCompare(__pyx_t_5, __pyx_t_1, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (!__pyx_t_3) break;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":154
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":188
  * 	while max_neighbor_dist < (lca_dist+1):
  * 	#for max_neighbor_dist in _set:
  * 		initial_network = nx.DiGraph()             # <<<<<<<<<<<<<<
  * 		samples = np.unique((samples))
  * 		for sample in samples:
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_nx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_nx); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_DiGraph); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_DiGraph); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 188, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_1 = NULL;
@@ -3655,22 +4321,22 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_4 = (__pyx_t_1) ? __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_1) : __Pyx_PyObject_CallNoArg(__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 154, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 188, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF_SET(__pyx_v_initial_network, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":155
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":189
  * 	#for max_neighbor_dist in _set:
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))             # <<<<<<<<<<<<<<
  * 		for sample in samples:
  * 			initial_network.add_node(sample)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 189, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_unique); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_unique); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -3685,13 +4351,13 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_4 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_5, __pyx_v_samples) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_samples);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF_SET(__pyx_v_samples, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":156
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":190
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))
  * 		for sample in samples:             # <<<<<<<<<<<<<<
@@ -3702,26 +4368,26 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_4 = __pyx_v_samples; __Pyx_INCREF(__pyx_t_4); __pyx_t_6 = 0;
       __pyx_t_7 = NULL;
     } else {
-      __pyx_t_6 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_samples); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_6 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_samples); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 190, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_7 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 156, __pyx_L1_error)
+      __pyx_t_7 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 190, __pyx_L1_error)
     }
     for (;;) {
       if (likely(!__pyx_t_7)) {
         if (likely(PyList_CheckExact(__pyx_t_4))) {
           if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_4)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_1 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 156, __pyx_L1_error)
+          __pyx_t_1 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 190, __pyx_L1_error)
           #else
-          __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+          __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
           #endif
         } else {
           if (__pyx_t_6 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 156, __pyx_L1_error)
+          __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 190, __pyx_L1_error)
           #else
-          __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+          __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_1);
           #endif
         }
@@ -3731,7 +4397,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 156, __pyx_L1_error)
+            else __PYX_ERR(0, 190, __pyx_L1_error)
           }
           break;
         }
@@ -3740,14 +4406,14 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":157
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":191
  * 		samples = np.unique((samples))
  * 		for sample in samples:
  * 			initial_network.add_node(sample)             # <<<<<<<<<<<<<<
  * 
  * 		source_nodes = samples
  */
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_node); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_node); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 191, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_8 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
@@ -3761,12 +4427,12 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       }
       __pyx_t_1 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_8, __pyx_v_sample) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_sample);
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":156
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":190
  * 		initial_network = nx.DiGraph()
  * 		samples = np.unique((samples))
  * 		for sample in samples:             # <<<<<<<<<<<<<<
@@ -3776,7 +4442,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":159
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":193
  * 			initial_network.add_node(sample)
  * 
  * 		source_nodes = samples             # <<<<<<<<<<<<<<
@@ -3786,7 +4452,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_v_samples);
     __Pyx_XDECREF_SET(__pyx_v_source_nodes, __pyx_v_samples);
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":160
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":194
  * 
  * 		source_nodes = samples
  * 		neighbor_mod = max_neighbor_dist             # <<<<<<<<<<<<<<
@@ -3795,7 +4461,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
     __pyx_v_neighbor_mod = __pyx_v_max_neighbor_dist;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":161
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":195
  * 		source_nodes = samples
  * 		neighbor_mod = max_neighbor_dist
  * 		max_width = 0             # <<<<<<<<<<<<<<
@@ -3805,7 +4471,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_int_0);
     __Pyx_XDECREF_SET(__pyx_v_max_width, __pyx_int_0);
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":163
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":197
  * 		max_width = 0
  * 
  * 		while len(source_nodes) != 1:             # <<<<<<<<<<<<<<
@@ -3813,48 +4479,48 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 			if len(source_nodes) > int(max_neighborhood_size):
  */
     while (1) {
-      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 197, __pyx_L1_error)
       __pyx_t_3 = ((__pyx_t_6 != 1) != 0);
       if (!__pyx_t_3) break;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":165
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":199
  * 		while len(source_nodes) != 1:
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):             # <<<<<<<<<<<<<<
  * 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
  * 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  */
-      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 165, __pyx_L1_error)
-      __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 199, __pyx_L1_error)
+      __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 199, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_1 = __Pyx_PyNumber_Int(__pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyNumber_Int(__pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_5 = PyObject_RichCompare(__pyx_t_4, __pyx_t_1, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __pyx_t_5 = PyObject_RichCompare(__pyx_t_4, __pyx_t_1, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 199, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 199, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (__pyx_t_3) {
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":166
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":200
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):
  * 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
  * 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  */
-        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_1 = PyNumber_Add(__pyx_kp_s_Max_Neighborhood_Exceeded_Return, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
+        __pyx_t_1 = PyNumber_Add(__pyx_kp_s_Max_Neighborhood_Exceeded_Return, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_kp_s__9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L1_error)
+        __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_kp_s__10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (__Pyx_PrintOne(0, __pyx_t_5) < 0) __PYX_ERR(0, 166, __pyx_L1_error)
+        if (__Pyx_PrintOne(0, __pyx_t_5) < 0) __PYX_ERR(0, 200, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":167
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":201
  * 			if len(source_nodes) > int(max_neighborhood_size):
  * 				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
  * 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic             # <<<<<<<<<<<<<<
@@ -3862,9 +4528,9 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 			temp_source_nodes = list()
  */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_5 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 167, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 201, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_INCREF(__pyx_v_prev_network);
         __Pyx_GIVEREF(__pyx_v_prev_network);
@@ -3879,7 +4545,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __pyx_t_1 = 0;
         goto __pyx_L0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":165
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":199
  * 		while len(source_nodes) != 1:
  * 
  * 			if len(source_nodes) > int(max_neighborhood_size):             # <<<<<<<<<<<<<<
@@ -3888,29 +4554,29 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":169
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":203
  * 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  * 			temp_source_nodes = list()             # <<<<<<<<<<<<<<
  * 			for i in range(0, len(source_nodes)-1):
  * 				sample = source_nodes[i]
  */
-      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_XDECREF_SET(__pyx_v_temp_source_nodes, ((PyObject*)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":170
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":204
  * 
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):             # <<<<<<<<<<<<<<
  * 				sample = source_nodes[i]
  * 				top_parents = []
  */
-      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 170, __pyx_L1_error)
-      __pyx_t_1 = PyInt_FromSsize_t((__pyx_t_6 - 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 204, __pyx_L1_error)
+      __pyx_t_1 = PyInt_FromSsize_t((__pyx_t_6 - 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 170, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_INCREF(__pyx_int_0);
       __Pyx_GIVEREF(__pyx_int_0);
@@ -3918,16 +4584,16 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_GIVEREF(__pyx_t_1);
       PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_1);
       __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       if (likely(PyList_CheckExact(__pyx_t_1)) || PyTuple_CheckExact(__pyx_t_1)) {
         __pyx_t_5 = __pyx_t_1; __Pyx_INCREF(__pyx_t_5); __pyx_t_6 = 0;
         __pyx_t_7 = NULL;
       } else {
-        __pyx_t_6 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 170, __pyx_L1_error)
+        __pyx_t_6 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_7 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 170, __pyx_L1_error)
+        __pyx_t_7 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 204, __pyx_L1_error)
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       for (;;) {
@@ -3935,17 +4601,17 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           if (likely(PyList_CheckExact(__pyx_t_5))) {
             if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_5)) break;
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 170, __pyx_L1_error)
+            __pyx_t_1 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 204, __pyx_L1_error)
             #else
-            __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+            __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             #endif
           } else {
             if (__pyx_t_6 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 170, __pyx_L1_error)
+            __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_6); __Pyx_INCREF(__pyx_t_1); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 204, __pyx_L1_error)
             #else
-            __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+            __pyx_t_1 = PySequence_ITEM(__pyx_t_5, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_1);
             #endif
           }
@@ -3955,7 +4621,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
               if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-              else __PYX_ERR(0, 170, __pyx_L1_error)
+              else __PYX_ERR(0, 204, __pyx_L1_error)
             }
             break;
           }
@@ -3964,75 +4630,75 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":171
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":205
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):
  * 				sample = source_nodes[i]             # <<<<<<<<<<<<<<
  * 				top_parents = []
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  */
-        __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_source_nodes, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_v_source_nodes, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_XDECREF_SET(__pyx_v_sample, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":172
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":206
  * 			for i in range(0, len(source_nodes)-1):
  * 				sample = source_nodes[i]
  * 				top_parents = []             # <<<<<<<<<<<<<<
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}
  */
-        __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
+        __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_XDECREF_SET(__pyx_v_top_parents, ((PyObject*)__pyx_t_1));
         __pyx_t_1 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":173
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":207
  * 				sample = source_nodes[i]
  * 				top_parents = []
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}             # <<<<<<<<<<<<<<
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):
  */
-        __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 173, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_XDECREF_SET(__pyx_v_p_to_s1_lengths, ((PyObject*)__pyx_t_1));
         __pyx_t_1 = 0;
         __Pyx_XDECREF_SET(__pyx_v_p_to_s2_lengths, ((PyObject*)__pyx_t_4));
         __pyx_t_4 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":174
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":208
  * 				top_parents = []
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}             # <<<<<<<<<<<<<<
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]
  */
-        __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 208, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_XDECREF_SET(__pyx_v_muts_to_s1, ((PyObject*)__pyx_t_4));
         __pyx_t_4 = 0;
         __Pyx_XDECREF_SET(__pyx_v_muts_to_s2, ((PyObject*)__pyx_t_1));
         __pyx_t_1 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":175
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":209
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):             # <<<<<<<<<<<<<<
  * 					sample_2 = source_nodes[j]
  * 					if sample != sample_2:
  */
-        __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 209, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 175, __pyx_L1_error)
-        __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 209, __pyx_L1_error)
+        __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 209, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 209, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_GIVEREF(__pyx_t_1);
         PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_1);
@@ -4040,16 +4706,16 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_t_4);
         __pyx_t_1 = 0;
         __pyx_t_4 = 0;
-        __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_8, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 209, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         if (likely(PyList_CheckExact(__pyx_t_4)) || PyTuple_CheckExact(__pyx_t_4)) {
           __pyx_t_8 = __pyx_t_4; __Pyx_INCREF(__pyx_t_8); __pyx_t_9 = 0;
           __pyx_t_10 = NULL;
         } else {
-          __pyx_t_9 = -1; __pyx_t_8 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_9 = -1; __pyx_t_8 = PyObject_GetIter(__pyx_t_4); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 209, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
-          __pyx_t_10 = Py_TYPE(__pyx_t_8)->tp_iternext; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_10 = Py_TYPE(__pyx_t_8)->tp_iternext; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 209, __pyx_L1_error)
         }
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         for (;;) {
@@ -4057,17 +4723,17 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
             if (likely(PyList_CheckExact(__pyx_t_8))) {
               if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_8)) break;
               #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_4 = PyList_GET_ITEM(__pyx_t_8, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 175, __pyx_L1_error)
+              __pyx_t_4 = PyList_GET_ITEM(__pyx_t_8, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 209, __pyx_L1_error)
               #else
-              __pyx_t_4 = PySequence_ITEM(__pyx_t_8, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+              __pyx_t_4 = PySequence_ITEM(__pyx_t_8, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 209, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_4);
               #endif
             } else {
               if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_8)) break;
               #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_8, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 175, __pyx_L1_error)
+              __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_8, __pyx_t_9); __Pyx_INCREF(__pyx_t_4); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 209, __pyx_L1_error)
               #else
-              __pyx_t_4 = PySequence_ITEM(__pyx_t_8, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+              __pyx_t_4 = PySequence_ITEM(__pyx_t_8, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 209, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_4);
               #endif
             }
@@ -4077,7 +4743,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               PyObject* exc_type = PyErr_Occurred();
               if (exc_type) {
                 if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-                else __PYX_ERR(0, 175, __pyx_L1_error)
+                else __PYX_ERR(0, 209, __pyx_L1_error)
               }
               break;
             }
@@ -4086,474 +4752,90 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_4);
           __pyx_t_4 = 0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":176
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":210
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]             # <<<<<<<<<<<<<<
  * 					if sample != sample_2:
  * 
  */
-          __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_source_nodes, __pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 176, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_v_source_nodes, __pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 210, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_XDECREF_SET(__pyx_v_sample_2, __pyx_t_4);
           __pyx_t_4 = 0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":177
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]
  * 					if sample != sample_2:             # <<<<<<<<<<<<<<
  * 
- * 						parent = node_parent(sample, sample_2)
+ * 						if split_on_heritable:
  */
-          __pyx_t_4 = PyObject_RichCompare(__pyx_v_sample, __pyx_v_sample_2, Py_NE); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 177, __pyx_L1_error)
-          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 177, __pyx_L1_error)
+          __pyx_t_4 = PyObject_RichCompare(__pyx_v_sample, __pyx_v_sample_2, Py_NE); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 211, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           if (__pyx_t_3) {
 
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":179
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":213
  * 					if sample != sample_2:
  * 
- * 						parent = node_parent(sample, sample_2)             # <<<<<<<<<<<<<<
- * 						edge_length_p_s1 = get_edge_length(parent, sample)
- * 						edge_length_p_s2 = get_edge_length(parent, sample_2)
+ * 						if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 							parent = node_parent(sample, sample_2, split_on_heritable = split_on_heritable)
+ * 						else:
  */
-            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_node_parent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_11 = NULL;
-            __pyx_t_12 = 0;
-            if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-              __pyx_t_11 = PyMethod_GET_SELF(__pyx_t_1);
-              if (likely(__pyx_t_11)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-                __Pyx_INCREF(__pyx_t_11);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_1, function);
-                __pyx_t_12 = 1;
-              }
-            }
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_sample, __pyx_v_sample_2};
-              __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_sample, __pyx_v_sample_2};
-              __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            {
-              __pyx_t_13 = PyTuple_New(2+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 179, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_13);
-              if (__pyx_t_11) {
-                __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_11); __pyx_t_11 = NULL;
-              }
-              __Pyx_INCREF(__pyx_v_sample);
-              __Pyx_GIVEREF(__pyx_v_sample);
-              PyTuple_SET_ITEM(__pyx_t_13, 0+__pyx_t_12, __pyx_v_sample);
-              __Pyx_INCREF(__pyx_v_sample_2);
-              __Pyx_GIVEREF(__pyx_v_sample_2);
-              PyTuple_SET_ITEM(__pyx_t_13, 1+__pyx_t_12, __pyx_v_sample_2);
-              __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_13, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-            }
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_4);
-            __pyx_t_4 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":180
- * 
- * 						parent = node_parent(sample, sample_2)
- * 						edge_length_p_s1 = get_edge_length(parent, sample)             # <<<<<<<<<<<<<<
- * 						edge_length_p_s2 = get_edge_length(parent, sample_2)
- * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
- */
-            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_13 = NULL;
-            __pyx_t_12 = 0;
-            if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-              __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_1);
-              if (likely(__pyx_t_13)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-                __Pyx_INCREF(__pyx_t_13);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_1, function);
-                __pyx_t_12 = 1;
-              }
-            }
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_v_parent, __pyx_v_sample};
-              __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 180, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_v_parent, __pyx_v_sample};
-              __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 180, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            {
-              __pyx_t_11 = PyTuple_New(2+__pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 180, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_11);
-              if (__pyx_t_13) {
-                __Pyx_GIVEREF(__pyx_t_13); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_13); __pyx_t_13 = NULL;
-              }
-              __Pyx_INCREF(__pyx_v_parent);
-              __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_11, 0+__pyx_t_12, __pyx_v_parent);
-              __Pyx_INCREF(__pyx_v_sample);
-              __Pyx_GIVEREF(__pyx_v_sample);
-              PyTuple_SET_ITEM(__pyx_t_11, 1+__pyx_t_12, __pyx_v_sample);
-              __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_11, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 180, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-            }
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s1, __pyx_t_4);
-            __pyx_t_4 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":181
- * 						parent = node_parent(sample, sample_2)
- * 						edge_length_p_s1 = get_edge_length(parent, sample)
- * 						edge_length_p_s2 = get_edge_length(parent, sample_2)             # <<<<<<<<<<<<<<
- * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
- * 
- */
-            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_11 = NULL;
-            __pyx_t_12 = 0;
-            if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-              __pyx_t_11 = PyMethod_GET_SELF(__pyx_t_1);
-              if (likely(__pyx_t_11)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-                __Pyx_INCREF(__pyx_t_11);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_1, function);
-                __pyx_t_12 = 1;
-              }
-            }
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_parent, __pyx_v_sample_2};
-              __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_parent, __pyx_v_sample_2};
-              __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_4);
-            } else
-            #endif
-            {
-              __pyx_t_13 = PyTuple_New(2+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 181, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_13);
-              if (__pyx_t_11) {
-                __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_11); __pyx_t_11 = NULL;
-              }
-              __Pyx_INCREF(__pyx_v_parent);
-              __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_13, 0+__pyx_t_12, __pyx_v_parent);
-              __Pyx_INCREF(__pyx_v_sample_2);
-              __Pyx_GIVEREF(__pyx_v_sample_2);
-              PyTuple_SET_ITEM(__pyx_t_13, 1+__pyx_t_12, __pyx_v_sample_2);
-              __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_13, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-            }
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2, __pyx_t_4);
-            __pyx_t_4 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":182
- * 						edge_length_p_s1 = get_edge_length(parent, sample)
- * 						edge_length_p_s2 = get_edge_length(parent, sample_2)
- * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))             # <<<<<<<<<<<<<<
- * 
- * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
- */
-            __pyx_t_4 = PyNumber_Add(__pyx_v_edge_length_p_s1, __pyx_v_edge_length_p_s2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 182, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __Pyx_GIVEREF(__pyx_t_4);
-            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_4);
-            __Pyx_INCREF(__pyx_v_parent);
-            __Pyx_GIVEREF(__pyx_v_parent);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_parent);
-            __Pyx_INCREF(__pyx_v_sample_2);
-            __Pyx_GIVEREF(__pyx_v_sample_2);
-            PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_sample_2);
-            __pyx_t_4 = 0;
-            __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_top_parents, __pyx_t_1); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 182, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":184
- * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
- * 
- * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)             # <<<<<<<<<<<<<<
- * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
- * 
- */
-            __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_mutations_from_parent_to_child); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_13 = NULL;
-            __pyx_t_12 = 0;
-            if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-              __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_4);
-              if (likely(__pyx_t_13)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-                __Pyx_INCREF(__pyx_t_13);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_4, function);
-                __pyx_t_12 = 1;
-              }
-            }
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(__pyx_t_4)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_v_parent, __pyx_v_sample};
-              __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-              __Pyx_GOTREF(__pyx_t_1);
-            } else
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_v_parent, __pyx_v_sample};
-              __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-              __Pyx_GOTREF(__pyx_t_1);
-            } else
-            #endif
-            {
-              __pyx_t_11 = PyTuple_New(2+__pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 184, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_11);
-              if (__pyx_t_13) {
-                __Pyx_GIVEREF(__pyx_t_13); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_13); __pyx_t_13 = NULL;
-              }
-              __Pyx_INCREF(__pyx_v_parent);
-              __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_11, 0+__pyx_t_12, __pyx_v_parent);
-              __Pyx_INCREF(__pyx_v_sample);
-              __Pyx_GIVEREF(__pyx_v_sample);
-              PyTuple_SET_ITEM(__pyx_t_11, 1+__pyx_t_12, __pyx_v_sample);
-              __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_1);
-              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-            }
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_INCREF(__pyx_v_parent);
-            __Pyx_GIVEREF(__pyx_v_parent);
-            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
-            __Pyx_INCREF(__pyx_v_sample);
-            __Pyx_GIVEREF(__pyx_v_sample);
-            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample);
-            if (unlikely(PyDict_SetItem(__pyx_v_muts_to_s1, __pyx_t_4, __pyx_t_1) < 0)) __PYX_ERR(0, 184, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":185
- * 
- * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
- * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)             # <<<<<<<<<<<<<<
- * 
- * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
- */
-            __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_mutations_from_parent_to_child); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 185, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_11 = NULL;
-            __pyx_t_12 = 0;
-            if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-              __pyx_t_11 = PyMethod_GET_SELF(__pyx_t_4);
-              if (likely(__pyx_t_11)) {
-                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-                __Pyx_INCREF(__pyx_t_11);
-                __Pyx_INCREF(function);
-                __Pyx_DECREF_SET(__pyx_t_4, function);
-                __pyx_t_12 = 1;
-              }
-            }
-            #if CYTHON_FAST_PYCALL
-            if (PyFunction_Check(__pyx_t_4)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_parent, __pyx_v_sample_2};
-              __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_1);
-            } else
-            #endif
-            #if CYTHON_FAST_PYCCALL
-            if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-              PyObject *__pyx_temp[3] = {__pyx_t_11, __pyx_v_parent, __pyx_v_sample_2};
-              __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 2+__pyx_t_12); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
-              __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_GOTREF(__pyx_t_1);
-            } else
-            #endif
-            {
-              __pyx_t_13 = PyTuple_New(2+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 185, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_13);
-              if (__pyx_t_11) {
-                __Pyx_GIVEREF(__pyx_t_11); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_11); __pyx_t_11 = NULL;
-              }
-              __Pyx_INCREF(__pyx_v_parent);
-              __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_13, 0+__pyx_t_12, __pyx_v_parent);
-              __Pyx_INCREF(__pyx_v_sample_2);
-              __Pyx_GIVEREF(__pyx_v_sample_2);
-              PyTuple_SET_ITEM(__pyx_t_13, 1+__pyx_t_12, __pyx_v_sample_2);
-              __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_1);
-              __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-            }
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 185, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __Pyx_INCREF(__pyx_v_parent);
-            __Pyx_GIVEREF(__pyx_v_parent);
-            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
-            __Pyx_INCREF(__pyx_v_sample_2);
-            __Pyx_GIVEREF(__pyx_v_sample_2);
-            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample_2);
-            if (unlikely(PyDict_SetItem(__pyx_v_muts_to_s2, __pyx_t_4, __pyx_t_1) < 0)) __PYX_ERR(0, 185, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":187
- * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
- * 
- * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1             # <<<<<<<<<<<<<<
- * 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
- * 
- */
-            __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __Pyx_INCREF(__pyx_v_parent);
-            __Pyx_GIVEREF(__pyx_v_parent);
-            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_parent);
-            __Pyx_INCREF(__pyx_v_sample);
-            __Pyx_GIVEREF(__pyx_v_sample);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample);
-            if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_1, __pyx_v_edge_length_p_s1) < 0)) __PYX_ERR(0, 187, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":188
- * 
- * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
- * 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2             # <<<<<<<<<<<<<<
- * 
- * 						#Check this cutoff
- */
-            __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __Pyx_INCREF(__pyx_v_parent);
-            __Pyx_GIVEREF(__pyx_v_parent);
-            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_parent);
-            __Pyx_INCREF(__pyx_v_sample_2);
-            __Pyx_GIVEREF(__pyx_v_sample_2);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample_2);
-            if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_1, __pyx_v_edge_length_p_s2) < 0)) __PYX_ERR(0, 188, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":191
- * 
- * 						#Check this cutoff
- * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:             # <<<<<<<<<<<<<<
- * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
- */
-            __pyx_t_1 = PyNumber_Add(__pyx_v_edge_length_p_s1, __pyx_v_edge_length_p_s2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_neighbor_mod); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_13 = PyObject_RichCompare(__pyx_t_1, __pyx_t_4, Py_LT); __Pyx_XGOTREF(__pyx_t_13); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 191, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 191, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+            __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_split_on_heritable); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 213, __pyx_L1_error)
             if (__pyx_t_3) {
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":193
- * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":214
  * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)             # <<<<<<<<<<<<<<
- * 
- * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+ * 						if split_on_heritable:
+ * 							parent = node_parent(sample, sample_2, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
+ * 						else:
+ * 							parent = node_parent(sample, sample_2)
  */
-              __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+              __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_node_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 214, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_4);
-              __pyx_t_1 = NULL;
-              __pyx_t_12 = 0;
-              if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
-                __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_4);
-                if (likely(__pyx_t_1)) {
-                  PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
-                  __Pyx_INCREF(__pyx_t_1);
-                  __Pyx_INCREF(function);
-                  __Pyx_DECREF_SET(__pyx_t_4, function);
-                  __pyx_t_12 = 1;
-                }
-              }
-              #if CYTHON_FAST_PYCALL
-              if (PyFunction_Check(__pyx_t_4)) {
-                PyObject *__pyx_temp[5] = {__pyx_t_1, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors, __pyx_v_weighted};
-                __pyx_t_13 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 4+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-                __Pyx_GOTREF(__pyx_t_13);
-              } else
-              #endif
-              #if CYTHON_FAST_PYCCALL
-              if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
-                PyObject *__pyx_temp[5] = {__pyx_t_1, __pyx_v_parent, __pyx_v_sample, __pyx_v_priors, __pyx_v_weighted};
-                __pyx_t_13 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-__pyx_t_12, 4+__pyx_t_12); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-                __Pyx_GOTREF(__pyx_t_13);
-              } else
-              #endif
-              {
-                __pyx_t_11 = PyTuple_New(4+__pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_GOTREF(__pyx_t_11);
-                if (__pyx_t_1) {
-                  __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_1); __pyx_t_1 = NULL;
-                }
-                __Pyx_INCREF(__pyx_v_parent);
-                __Pyx_GIVEREF(__pyx_v_parent);
-                PyTuple_SET_ITEM(__pyx_t_11, 0+__pyx_t_12, __pyx_v_parent);
-                __Pyx_INCREF(__pyx_v_sample);
-                __Pyx_GIVEREF(__pyx_v_sample);
-                PyTuple_SET_ITEM(__pyx_t_11, 1+__pyx_t_12, __pyx_v_sample);
-                __Pyx_INCREF(__pyx_v_priors);
-                __Pyx_GIVEREF(__pyx_v_priors);
-                PyTuple_SET_ITEM(__pyx_t_11, 2+__pyx_t_12, __pyx_v_priors);
-                __Pyx_INCREF(__pyx_v_weighted);
-                __Pyx_GIVEREF(__pyx_v_weighted);
-                PyTuple_SET_ITEM(__pyx_t_11, 3+__pyx_t_12, __pyx_v_weighted);
-                __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_11, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_GOTREF(__pyx_t_13);
-                __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-              }
+              __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_1);
+              __Pyx_INCREF(__pyx_v_sample);
+              __Pyx_GIVEREF(__pyx_v_sample);
+              PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_sample);
+              __Pyx_INCREF(__pyx_v_sample_2);
+              __Pyx_GIVEREF(__pyx_v_sample_2);
+              PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample_2);
+              __pyx_t_11 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 214, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_11);
+              if (PyDict_SetItem(__pyx_t_11, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 214, __pyx_L1_error)
+              __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_1, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 214, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
               __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-              __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 193, __pyx_L1_error)
+              __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+              __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_12);
+              __pyx_t_12 = 0;
+
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":213
+ * 					if sample != sample_2:
+ * 
+ * 						if split_on_heritable:             # <<<<<<<<<<<<<<
+ * 							parent = node_parent(sample, sample_2, split_on_heritable = split_on_heritable)
+ * 						else:
+ */
+              goto __pyx_L16;
+            }
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":216
+ * 							parent = node_parent(sample, sample_2, split_on_heritable = split_on_heritable)
+ * 						else:
+ * 							parent = node_parent(sample, sample_2)             # <<<<<<<<<<<<<<
+ * 						edge_length_p_s1 = get_edge_length(parent, sample, split_on_heritable = split_on_heritable)
+ * 						edge_length_p_s2 = get_edge_length(parent, sample_2, split_on_heritable = split_on_heritable)
+ */
+            /*else*/ {
+              __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_node_parent); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 216, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_11);
               __pyx_t_1 = NULL;
-              __pyx_t_12 = 0;
+              __pyx_t_13 = 0;
               if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_11))) {
                 __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_11);
                 if (likely(__pyx_t_1)) {
@@ -4561,74 +4843,367 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
                   __Pyx_INCREF(__pyx_t_1);
                   __Pyx_INCREF(function);
                   __Pyx_DECREF_SET(__pyx_t_11, function);
-                  __pyx_t_12 = 1;
+                  __pyx_t_13 = 1;
                 }
               }
               #if CYTHON_FAST_PYCALL
               if (PyFunction_Check(__pyx_t_11)) {
-                PyObject *__pyx_temp[5] = {__pyx_t_1, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted};
-                __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_12, 4+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+                PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_v_sample, __pyx_v_sample_2};
+                __pyx_t_12 = __Pyx_PyFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_13, 2+__pyx_t_13); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 216, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-                __Pyx_GOTREF(__pyx_t_4);
+                __Pyx_GOTREF(__pyx_t_12);
               } else
               #endif
               #if CYTHON_FAST_PYCCALL
               if (__Pyx_PyFastCFunction_Check(__pyx_t_11)) {
-                PyObject *__pyx_temp[5] = {__pyx_t_1, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted};
-                __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_12, 4+__pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+                PyObject *__pyx_temp[3] = {__pyx_t_1, __pyx_v_sample, __pyx_v_sample_2};
+                __pyx_t_12 = __Pyx_PyCFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_13, 2+__pyx_t_13); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 216, __pyx_L1_error)
                 __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-                __Pyx_GOTREF(__pyx_t_4);
+                __Pyx_GOTREF(__pyx_t_12);
               } else
               #endif
               {
-                __pyx_t_15 = PyTuple_New(4+__pyx_t_12); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_GOTREF(__pyx_t_15);
+                __pyx_t_4 = PyTuple_New(2+__pyx_t_13); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
+                __Pyx_GOTREF(__pyx_t_4);
                 if (__pyx_t_1) {
-                  __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_1); __pyx_t_1 = NULL;
+                  __Pyx_GIVEREF(__pyx_t_1); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1); __pyx_t_1 = NULL;
+                }
+                __Pyx_INCREF(__pyx_v_sample);
+                __Pyx_GIVEREF(__pyx_v_sample);
+                PyTuple_SET_ITEM(__pyx_t_4, 0+__pyx_t_13, __pyx_v_sample);
+                __Pyx_INCREF(__pyx_v_sample_2);
+                __Pyx_GIVEREF(__pyx_v_sample_2);
+                PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_13, __pyx_v_sample_2);
+                __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_4, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 216, __pyx_L1_error)
+                __Pyx_GOTREF(__pyx_t_12);
+                __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+              }
+              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+              __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_12);
+              __pyx_t_12 = 0;
+            }
+            __pyx_L16:;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":217
+ * 						else:
+ * 							parent = node_parent(sample, sample_2)
+ * 						edge_length_p_s1 = get_edge_length(parent, sample, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
+ * 						edge_length_p_s2 = get_edge_length(parent, sample_2, split_on_heritable = split_on_heritable)
+ * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
+ */
+            __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 217, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 217, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample);
+            __Pyx_GIVEREF(__pyx_v_sample);
+            PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample);
+            __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 217, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_11, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_1);
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s1, __pyx_t_1);
+            __pyx_t_1 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":218
+ * 							parent = node_parent(sample, sample_2)
+ * 						edge_length_p_s1 = get_edge_length(parent, sample, split_on_heritable = split_on_heritable)
+ * 						edge_length_p_s2 = get_edge_length(parent, sample_2, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
+ * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
+ * 
+ */
+            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 218, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_1);
+            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 218, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample_2);
+            __Pyx_GIVEREF(__pyx_v_sample_2);
+            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample_2);
+            __pyx_t_11 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 218, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            if (PyDict_SetItem(__pyx_t_11, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 218, __pyx_L1_error)
+            __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 218, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2, __pyx_t_12);
+            __pyx_t_12 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":219
+ * 						edge_length_p_s1 = get_edge_length(parent, sample, split_on_heritable = split_on_heritable)
+ * 						edge_length_p_s2 = get_edge_length(parent, sample_2, split_on_heritable = split_on_heritable)
+ * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))             # <<<<<<<<<<<<<<
+ * 
+ * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample, split_on_heritable = split_on_heritable)
+ */
+            __pyx_t_12 = PyNumber_Add(__pyx_v_edge_length_p_s1, __pyx_v_edge_length_p_s2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 219, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __pyx_t_11 = PyTuple_New(3); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 219, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __Pyx_GIVEREF(__pyx_t_12);
+            PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_t_12);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample_2);
+            __Pyx_GIVEREF(__pyx_v_sample_2);
+            PyTuple_SET_ITEM(__pyx_t_11, 2, __pyx_v_sample_2);
+            __pyx_t_12 = 0;
+            __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_top_parents, __pyx_t_11); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 219, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":221
+ * 						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
+ * 
+ * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
+ * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2, split_on_heritable = split_on_heritable)
+ * 
+ */
+            __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_mutations_from_parent_to_child); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __pyx_t_12 = PyTuple_New(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample);
+            __Pyx_GIVEREF(__pyx_v_sample);
+            PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_sample);
+            __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 221, __pyx_L1_error)
+            __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_12, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_1);
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample);
+            __Pyx_GIVEREF(__pyx_v_sample);
+            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample);
+            if (unlikely(PyDict_SetItem(__pyx_v_muts_to_s1, __pyx_t_4, __pyx_t_1) < 0)) __PYX_ERR(0, 221, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":222
+ * 
+ * 						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample, split_on_heritable = split_on_heritable)
+ * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2, split_on_heritable = split_on_heritable)             # <<<<<<<<<<<<<<
+ * 
+ * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
+ */
+            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_mutations_from_parent_to_child); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_1);
+            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample_2);
+            __Pyx_GIVEREF(__pyx_v_sample_2);
+            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample_2);
+            __pyx_t_12 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
+            __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            __pyx_t_12 = PyTuple_New(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample_2);
+            __Pyx_GIVEREF(__pyx_v_sample_2);
+            PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_sample_2);
+            if (unlikely(PyDict_SetItem(__pyx_v_muts_to_s2, __pyx_t_12, __pyx_t_11) < 0)) __PYX_ERR(0, 222, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":224
+ * 						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2, split_on_heritable = split_on_heritable)
+ * 
+ * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1             # <<<<<<<<<<<<<<
+ * 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
+ * 
+ */
+            __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 224, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample);
+            __Pyx_GIVEREF(__pyx_v_sample);
+            PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample);
+            if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_11, __pyx_v_edge_length_p_s1) < 0)) __PYX_ERR(0, 224, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":225
+ * 
+ * 						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
+ * 						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2             # <<<<<<<<<<<<<<
+ * 
+ * 						#Check this cutoff
+ */
+            __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 225, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __Pyx_INCREF(__pyx_v_parent);
+            __Pyx_GIVEREF(__pyx_v_parent);
+            PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_v_parent);
+            __Pyx_INCREF(__pyx_v_sample_2);
+            __Pyx_GIVEREF(__pyx_v_sample_2);
+            PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample_2);
+            if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_11, __pyx_v_edge_length_p_s2) < 0)) __PYX_ERR(0, 225, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":228
+ * 
+ * 						#Check this cutoff
+ * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:             # <<<<<<<<<<<<<<
+ * 
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted, split_on_heritable = split_on_heritable), get_edge_length(parent, sample_2, priors, weighted, split_on_heritable)
+ */
+            __pyx_t_11 = PyNumber_Add(__pyx_v_edge_length_p_s1, __pyx_v_edge_length_p_s2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 228, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_11);
+            __pyx_t_12 = __Pyx_PyInt_From_int(__pyx_v_neighbor_mod); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 228, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __pyx_t_4 = PyObject_RichCompare(__pyx_t_11, __pyx_t_12, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 228, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 228, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+            if (__pyx_t_3) {
+
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":230
+ * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
+ * 
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted, split_on_heritable = split_on_heritable), get_edge_length(parent, sample_2, priors, weighted, split_on_heritable)             # <<<<<<<<<<<<<<
+ * 
+ * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+ */
+              __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_4);
+              __pyx_t_12 = PyTuple_New(4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 230, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __Pyx_INCREF(__pyx_v_parent);
+              __Pyx_GIVEREF(__pyx_v_parent);
+              PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_parent);
+              __Pyx_INCREF(__pyx_v_sample);
+              __Pyx_GIVEREF(__pyx_v_sample);
+              PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_sample);
+              __Pyx_INCREF(__pyx_v_priors);
+              __Pyx_GIVEREF(__pyx_v_priors);
+              PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_v_priors);
+              __Pyx_INCREF(__pyx_v_weighted);
+              __Pyx_GIVEREF(__pyx_v_weighted);
+              PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_v_weighted);
+              __pyx_t_11 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 230, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_11);
+              if (PyDict_SetItem(__pyx_t_11, __pyx_n_s_split_on_heritable, __pyx_v_split_on_heritable) < 0) __PYX_ERR(0, 230, __pyx_L1_error)
+              __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_12, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 230, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_1);
+              __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+              __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+              __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_n_s_get_edge_length); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 230, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __pyx_t_4 = NULL;
+              __pyx_t_13 = 0;
+              if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_12))) {
+                __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_12);
+                if (likely(__pyx_t_4)) {
+                  PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_12);
+                  __Pyx_INCREF(__pyx_t_4);
+                  __Pyx_INCREF(function);
+                  __Pyx_DECREF_SET(__pyx_t_12, function);
+                  __pyx_t_13 = 1;
+                }
+              }
+              #if CYTHON_FAST_PYCALL
+              if (PyFunction_Check(__pyx_t_12)) {
+                PyObject *__pyx_temp[6] = {__pyx_t_4, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted, __pyx_v_split_on_heritable};
+                __pyx_t_11 = __Pyx_PyFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_13, 5+__pyx_t_13); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 230, __pyx_L1_error)
+                __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+                __Pyx_GOTREF(__pyx_t_11);
+              } else
+              #endif
+              #if CYTHON_FAST_PYCCALL
+              if (__Pyx_PyFastCFunction_Check(__pyx_t_12)) {
+                PyObject *__pyx_temp[6] = {__pyx_t_4, __pyx_v_parent, __pyx_v_sample_2, __pyx_v_priors, __pyx_v_weighted, __pyx_v_split_on_heritable};
+                __pyx_t_11 = __Pyx_PyCFunction_FastCall(__pyx_t_12, __pyx_temp+1-__pyx_t_13, 5+__pyx_t_13); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 230, __pyx_L1_error)
+                __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+                __Pyx_GOTREF(__pyx_t_11);
+              } else
+              #endif
+              {
+                __pyx_t_15 = PyTuple_New(5+__pyx_t_13); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 230, __pyx_L1_error)
+                __Pyx_GOTREF(__pyx_t_15);
+                if (__pyx_t_4) {
+                  __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_4); __pyx_t_4 = NULL;
                 }
                 __Pyx_INCREF(__pyx_v_parent);
                 __Pyx_GIVEREF(__pyx_v_parent);
-                PyTuple_SET_ITEM(__pyx_t_15, 0+__pyx_t_12, __pyx_v_parent);
+                PyTuple_SET_ITEM(__pyx_t_15, 0+__pyx_t_13, __pyx_v_parent);
                 __Pyx_INCREF(__pyx_v_sample_2);
                 __Pyx_GIVEREF(__pyx_v_sample_2);
-                PyTuple_SET_ITEM(__pyx_t_15, 1+__pyx_t_12, __pyx_v_sample_2);
+                PyTuple_SET_ITEM(__pyx_t_15, 1+__pyx_t_13, __pyx_v_sample_2);
                 __Pyx_INCREF(__pyx_v_priors);
                 __Pyx_GIVEREF(__pyx_v_priors);
-                PyTuple_SET_ITEM(__pyx_t_15, 2+__pyx_t_12, __pyx_v_priors);
+                PyTuple_SET_ITEM(__pyx_t_15, 2+__pyx_t_13, __pyx_v_priors);
                 __Pyx_INCREF(__pyx_v_weighted);
                 __Pyx_GIVEREF(__pyx_v_weighted);
-                PyTuple_SET_ITEM(__pyx_t_15, 3+__pyx_t_12, __pyx_v_weighted);
-                __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_15, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
-                __Pyx_GOTREF(__pyx_t_4);
+                PyTuple_SET_ITEM(__pyx_t_15, 3+__pyx_t_13, __pyx_v_weighted);
+                __Pyx_INCREF(__pyx_v_split_on_heritable);
+                __Pyx_GIVEREF(__pyx_v_split_on_heritable);
+                PyTuple_SET_ITEM(__pyx_t_15, 4+__pyx_t_13, __pyx_v_split_on_heritable);
+                __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_15, NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 230, __pyx_L1_error)
+                __Pyx_GOTREF(__pyx_t_11);
                 __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               }
-              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s1_priors, __pyx_t_13);
-              __pyx_t_13 = 0;
-              __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2_priors, __pyx_t_4);
-              __pyx_t_4 = 0;
+              __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+              __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s1_priors, __pyx_t_1);
+              __pyx_t_1 = 0;
+              __Pyx_XDECREF_SET(__pyx_v_edge_length_p_s2_priors, __pyx_t_11);
+              __pyx_t_11 = 0;
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":195
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":232
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted, split_on_heritable = split_on_heritable), get_edge_length(parent, sample_2, priors, weighted, split_on_heritable)
  * 
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])             # <<<<<<<<<<<<<<
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
  * 							temp_source_nodes.append(parent)
  */
-              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              __pyx_t_13 = PyTuple_New(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_13);
+              __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 232, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_11);
+              __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_1);
               __Pyx_INCREF(__pyx_v_parent);
               __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_v_parent);
+              PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_parent);
               __Pyx_INCREF(__pyx_v_sample_2);
               __Pyx_GIVEREF(__pyx_v_sample_2);
-              PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_v_sample_2);
-              __pyx_t_11 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_11);
-              if (PyDict_SetItem(__pyx_t_11, __pyx_n_s_weight, __pyx_v_edge_length_p_s2_priors) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
-              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 195, __pyx_L1_error)
+              PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample_2);
+              __pyx_t_12 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 232, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_weight, __pyx_v_edge_length_p_s2_priors) < 0) __PYX_ERR(0, 232, __pyx_L1_error)
+              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 232, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_INCREF(__pyx_v_parent);
               __Pyx_GIVEREF(__pyx_v_parent);
@@ -4636,28 +5211,39 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_INCREF(__pyx_v_sample_2);
               __Pyx_GIVEREF(__pyx_v_sample_2);
               PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_v_sample_2);
-              __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s2, __pyx_t_15); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_1);
+              __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s2, __pyx_t_15); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 232, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_4);
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-              if (PyDict_SetItem(__pyx_t_11, __pyx_n_s_label, __pyx_t_1) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-              __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_1);
+              if (PyDict_SetItem(__pyx_t_12, __pyx_n_s_label, __pyx_t_4) < 0) __PYX_ERR(0, 232, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-              __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+              __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_1, __pyx_t_12); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 232, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_4);
               __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+              __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+              __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":196
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":233
  * 
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])             # <<<<<<<<<<<<<<
  * 							temp_source_nodes.append(parent)
  * 
  */
-              __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
+              __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 233, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_4);
+              __pyx_t_12 = PyTuple_New(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 233, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_12);
+              __Pyx_INCREF(__pyx_v_parent);
+              __Pyx_GIVEREF(__pyx_v_parent);
+              PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_parent);
+              __Pyx_INCREF(__pyx_v_sample);
+              __Pyx_GIVEREF(__pyx_v_sample);
+              PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_sample);
+              __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_1);
-              __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 196, __pyx_L1_error)
+              if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_weight, __pyx_v_edge_length_p_s1_priors) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
+              __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 233, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_11);
               __Pyx_INCREF(__pyx_v_parent);
               __Pyx_GIVEREF(__pyx_v_parent);
@@ -4665,46 +5251,35 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_INCREF(__pyx_v_sample);
               __Pyx_GIVEREF(__pyx_v_sample);
               PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample);
-              __pyx_t_13 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 196, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_13);
-              if (PyDict_SetItem(__pyx_t_13, __pyx_n_s_weight, __pyx_v_edge_length_p_s1_priors) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
-              __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 196, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_4);
-              __Pyx_INCREF(__pyx_v_parent);
-              __Pyx_GIVEREF(__pyx_v_parent);
-              PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
-              __Pyx_INCREF(__pyx_v_sample);
-              __Pyx_GIVEREF(__pyx_v_sample);
-              PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample);
-              __pyx_t_15 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s1, __pyx_t_4); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 196, __pyx_L1_error)
+              __pyx_t_15 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s1, __pyx_t_11); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 233, __pyx_L1_error)
+              __Pyx_GOTREF(__pyx_t_15);
+              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+              if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_label, __pyx_t_15) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
+              __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
+              __pyx_t_15 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_12, __pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 233, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-              if (PyDict_SetItem(__pyx_t_13, __pyx_n_s_label, __pyx_t_15) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
-              __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-              __pyx_t_15 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_11, __pyx_t_13); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 196, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_15);
+              __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-              __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-              __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":197
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":234
  * 							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
  * 							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
  * 							temp_source_nodes.append(parent)             # <<<<<<<<<<<<<<
  * 
  * 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
  */
-              __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 197, __pyx_L1_error)
+              __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 234, __pyx_L1_error)
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":199
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":236
  * 							temp_source_nodes.append(parent)
  * 
  * 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors             # <<<<<<<<<<<<<<
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
  * 
  */
-              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 199, __pyx_L1_error)
+              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 236, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_INCREF(__pyx_v_parent);
               __Pyx_GIVEREF(__pyx_v_parent);
@@ -4712,17 +5287,17 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_INCREF(__pyx_v_sample);
               __Pyx_GIVEREF(__pyx_v_sample);
               PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_v_sample);
-              if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_15, __pyx_v_edge_length_p_s1_priors) < 0)) __PYX_ERR(0, 199, __pyx_L1_error)
+              if (unlikely(PyDict_SetItem(__pyx_v_p_to_s1_lengths, __pyx_t_15, __pyx_v_edge_length_p_s1_priors) < 0)) __PYX_ERR(0, 236, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":200
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":237
  * 
  * 							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors             # <<<<<<<<<<<<<<
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]
  */
-              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 200, __pyx_L1_error)
+              __pyx_t_15 = PyTuple_New(2); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 237, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_15);
               __Pyx_INCREF(__pyx_v_parent);
               __Pyx_GIVEREF(__pyx_v_parent);
@@ -4730,28 +5305,28 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
               __Pyx_INCREF(__pyx_v_sample_2);
               __Pyx_GIVEREF(__pyx_v_sample_2);
               PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_v_sample_2);
-              if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_15, __pyx_v_edge_length_p_s2_priors) < 0)) __PYX_ERR(0, 200, __pyx_L1_error)
+              if (unlikely(PyDict_SetItem(__pyx_v_p_to_s2_lengths, __pyx_t_15, __pyx_v_edge_length_p_s2_priors) < 0)) __PYX_ERR(0, 237, __pyx_L1_error)
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":191
+              /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":228
  * 
  * 						#Check this cutoff
  * 						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:             # <<<<<<<<<<<<<<
  * 
- * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
+ * 							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted, split_on_heritable = split_on_heritable), get_edge_length(parent, sample_2, priors, weighted, split_on_heritable)
  */
             }
 
-            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":177
+            /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
  * 				for j in range(i + 1, len(source_nodes)):
  * 					sample_2 = source_nodes[j]
  * 					if sample != sample_2:             # <<<<<<<<<<<<<<
  * 
- * 						parent = node_parent(sample, sample_2)
+ * 						if split_on_heritable:
  */
           }
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":175
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":209
  * 				p_to_s1_lengths, p_to_s2_lengths = {}, {}
  * 				muts_to_s1, muts_to_s2 = {}, {}
  * 				for j in range(i + 1, len(source_nodes)):             # <<<<<<<<<<<<<<
@@ -4761,82 +5336,82 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         }
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":202
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":239
  * 							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]             # <<<<<<<<<<<<<<
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
  * 
  */
-        __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 202, __pyx_L1_error)
+        __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 239, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_INCREF(__pyx_v_top_parents);
         __Pyx_GIVEREF(__pyx_v_top_parents);
         PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_v_top_parents);
-        __pyx_t_15 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 202, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 239, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_13 = __Pyx_CyFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, 0, __pyx_n_s_build_potential_graph_from_base, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so, __pyx_d, NULL); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 202, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_13);
-        if (PyDict_SetItem(__pyx_t_15, __pyx_n_s_key, __pyx_t_13) < 0) __PYX_ERR(0, 202, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        __pyx_t_13 = __Pyx_PyObject_Call(__pyx_builtin_min, __pyx_t_8, __pyx_t_15); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 202, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_13);
+        __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_37build_potential_graph_from_base_graph_lambda, 0, __pyx_n_s_build_potential_graph_from_base, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so, __pyx_d, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        if (PyDict_SetItem(__pyx_t_15, __pyx_n_s_key, __pyx_t_1) < 0) __PYX_ERR(0, 239, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_min, __pyx_t_8, __pyx_t_15); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __pyx_t_15 = __Pyx_GetItemInt(__pyx_t_13, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 202, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 239, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_XDECREF_SET(__pyx_v_min_distance, __pyx_t_15);
         __pyx_t_15 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":203
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":240
  * 
  * 				min_distance = min(top_parents, key = lambda k: k[0])[0]
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]             # <<<<<<<<<<<<<<
  * 
  * 				for parent, sample_2 in lst:
  */
-        __pyx_t_15 = PyList_New(0); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 203, __pyx_L1_error)
+        __pyx_t_15 = PyList_New(0); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 240, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_13 = __pyx_v_top_parents; __Pyx_INCREF(__pyx_t_13); __pyx_t_9 = 0;
+        __pyx_t_1 = __pyx_v_top_parents; __Pyx_INCREF(__pyx_t_1); __pyx_t_9 = 0;
         for (;;) {
-          if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_13)) break;
+          if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_1)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_8 = PyList_GET_ITEM(__pyx_t_13, __pyx_t_9); __Pyx_INCREF(__pyx_t_8); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 203, __pyx_L1_error)
+          __pyx_t_8 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_9); __Pyx_INCREF(__pyx_t_8); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 240, __pyx_L1_error)
           #else
-          __pyx_t_8 = PySequence_ITEM(__pyx_t_13, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 203, __pyx_L1_error)
+          __pyx_t_8 = PySequence_ITEM(__pyx_t_1, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 240, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
           #endif
           __Pyx_XDECREF_SET(__pyx_v_s, __pyx_t_8);
           __pyx_t_8 = 0;
-          __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_s, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 203, __pyx_L1_error)
+          __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_s, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 240, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
-          __pyx_t_11 = PyObject_RichCompare(__pyx_t_8, __pyx_v_min_distance, Py_LE); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 203, __pyx_L1_error)
+          __pyx_t_12 = PyObject_RichCompare(__pyx_t_8, __pyx_v_min_distance, Py_LE); __Pyx_XGOTREF(__pyx_t_12); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 240, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 203, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_12); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 240, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           if (__pyx_t_3) {
-            __pyx_t_11 = __Pyx_GetItemInt(__pyx_v_s, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 203, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_11);
-            __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_s, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 203, __pyx_L1_error)
+            __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_s, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 240, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_s, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 240, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_8);
-            __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __Pyx_GIVEREF(__pyx_t_11);
-            PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_11);
+            __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 240, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            __Pyx_GIVEREF(__pyx_t_12);
+            PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_12);
             __Pyx_GIVEREF(__pyx_t_8);
-            PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_8);
-            __pyx_t_11 = 0;
+            PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_8);
+            __pyx_t_12 = 0;
             __pyx_t_8 = 0;
-            if (unlikely(__Pyx_ListComp_Append(__pyx_t_15, (PyObject*)__pyx_t_1))) __PYX_ERR(0, 203, __pyx_L1_error)
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+            if (unlikely(__Pyx_ListComp_Append(__pyx_t_15, (PyObject*)__pyx_t_4))) __PYX_ERR(0, 240, __pyx_L1_error)
+            __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           }
         }
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_XDECREF_SET(__pyx_v_lst, ((PyObject*)__pyx_t_15));
         __pyx_t_15 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":205
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
  * 
  * 				for parent, sample_2 in lst:             # <<<<<<<<<<<<<<
@@ -4847,72 +5422,72 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         for (;;) {
           if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_15)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_13 = PyList_GET_ITEM(__pyx_t_15, __pyx_t_9); __Pyx_INCREF(__pyx_t_13); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 205, __pyx_L1_error)
+          __pyx_t_1 = PyList_GET_ITEM(__pyx_t_15, __pyx_t_9); __Pyx_INCREF(__pyx_t_1); __pyx_t_9++; if (unlikely(0 < 0)) __PYX_ERR(0, 242, __pyx_L1_error)
           #else
-          __pyx_t_13 = PySequence_ITEM(__pyx_t_15, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 205, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
+          __pyx_t_1 = PySequence_ITEM(__pyx_t_15, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 242, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
           #endif
-          if ((likely(PyTuple_CheckExact(__pyx_t_13))) || (PyList_CheckExact(__pyx_t_13))) {
-            PyObject* sequence = __pyx_t_13;
+          if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
+            PyObject* sequence = __pyx_t_1;
             Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
             if (unlikely(size != 2)) {
               if (size > 2) __Pyx_RaiseTooManyValuesError(2);
               else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-              __PYX_ERR(0, 205, __pyx_L1_error)
+              __PYX_ERR(0, 242, __pyx_L1_error)
             }
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
             if (likely(PyTuple_CheckExact(sequence))) {
-              __pyx_t_1 = PyTuple_GET_ITEM(sequence, 0); 
+              __pyx_t_4 = PyTuple_GET_ITEM(sequence, 0); 
               __pyx_t_8 = PyTuple_GET_ITEM(sequence, 1); 
             } else {
-              __pyx_t_1 = PyList_GET_ITEM(sequence, 0); 
+              __pyx_t_4 = PyList_GET_ITEM(sequence, 0); 
               __pyx_t_8 = PyList_GET_ITEM(sequence, 1); 
             }
-            __Pyx_INCREF(__pyx_t_1);
+            __Pyx_INCREF(__pyx_t_4);
             __Pyx_INCREF(__pyx_t_8);
             #else
-            __pyx_t_1 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 205, __pyx_L1_error)
+            __pyx_t_4 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 242, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_4);
+            __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 242, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_8);
             #endif
-            __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           } else {
             Py_ssize_t index = -1;
-            __pyx_t_11 = PyObject_GetIter(__pyx_t_13); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 205, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_11);
-            __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-            __pyx_t_16 = Py_TYPE(__pyx_t_11)->tp_iternext;
-            index = 0; __pyx_t_1 = __pyx_t_16(__pyx_t_11); if (unlikely(!__pyx_t_1)) goto __pyx_L22_unpacking_failed;
-            __Pyx_GOTREF(__pyx_t_1);
-            index = 1; __pyx_t_8 = __pyx_t_16(__pyx_t_11); if (unlikely(!__pyx_t_8)) goto __pyx_L22_unpacking_failed;
+            __pyx_t_12 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 242, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_12);
+            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+            __pyx_t_16 = Py_TYPE(__pyx_t_12)->tp_iternext;
+            index = 0; __pyx_t_4 = __pyx_t_16(__pyx_t_12); if (unlikely(!__pyx_t_4)) goto __pyx_L23_unpacking_failed;
+            __Pyx_GOTREF(__pyx_t_4);
+            index = 1; __pyx_t_8 = __pyx_t_16(__pyx_t_12); if (unlikely(!__pyx_t_8)) goto __pyx_L23_unpacking_failed;
             __Pyx_GOTREF(__pyx_t_8);
-            if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_11), 2) < 0) __PYX_ERR(0, 205, __pyx_L1_error)
+            if (__Pyx_IternextUnpackEndCheck(__pyx_t_16(__pyx_t_12), 2) < 0) __PYX_ERR(0, 242, __pyx_L1_error)
             __pyx_t_16 = NULL;
-            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-            goto __pyx_L23_unpacking_done;
-            __pyx_L22_unpacking_failed:;
-            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+            goto __pyx_L24_unpacking_done;
+            __pyx_L23_unpacking_failed:;
+            __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
             __pyx_t_16 = NULL;
             if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-            __PYX_ERR(0, 205, __pyx_L1_error)
-            __pyx_L23_unpacking_done:;
+            __PYX_ERR(0, 242, __pyx_L1_error)
+            __pyx_L24_unpacking_done:;
           }
-          __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_1);
-          __pyx_t_1 = 0;
+          __Pyx_XDECREF_SET(__pyx_v_parent, __pyx_t_4);
+          __pyx_t_4 = 0;
           __Pyx_XDECREF_SET(__pyx_v_sample_2, __pyx_t_8);
           __pyx_t_8 = 0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":206
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":243
  * 
  * 				for parent, sample_2 in lst:
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])             # <<<<<<<<<<<<<<
  * 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
  * 					temp_source_nodes.append(parent)
  */
-          __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 206, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 243, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
           __Pyx_INCREF(__pyx_v_parent);
           __Pyx_GIVEREF(__pyx_v_parent);
@@ -4920,9 +5495,22 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_INCREF(__pyx_v_sample_2);
           __Pyx_GIVEREF(__pyx_v_sample_2);
           PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_v_sample_2);
-          __pyx_t_1 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 206, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_12 = PyTuple_New(2); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_12);
+          __Pyx_INCREF(__pyx_v_parent);
+          __Pyx_GIVEREF(__pyx_v_parent);
+          PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_v_parent);
+          __Pyx_INCREF(__pyx_v_sample_2);
+          __Pyx_GIVEREF(__pyx_v_sample_2);
+          PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_v_sample_2);
+          __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_p_to_s2_lengths, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_weight, __pyx_t_11) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 243, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_INCREF(__pyx_v_parent);
           __Pyx_GIVEREF(__pyx_v_parent);
@@ -4930,64 +5518,28 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_INCREF(__pyx_v_sample_2);
           __Pyx_GIVEREF(__pyx_v_sample_2);
           PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample_2);
-          __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_p_to_s2_lengths, __pyx_t_11); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_4);
+          __pyx_t_12 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s2, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-          if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_weight, __pyx_t_4) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_INCREF(__pyx_v_parent);
-          __Pyx_GIVEREF(__pyx_v_parent);
-          PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_parent);
-          __Pyx_INCREF(__pyx_v_sample_2);
-          __Pyx_GIVEREF(__pyx_v_sample_2);
-          PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample_2);
-          __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s2, __pyx_t_4); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_11);
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_label, __pyx_t_11) < 0) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-          __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_13, __pyx_t_8, __pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_11);
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+          if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_label, __pyx_t_12) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_8, __pyx_t_4); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 243, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":207
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":244
  * 				for parent, sample_2 in lst:
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
  * 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])             # <<<<<<<<<<<<<<
  * 					temp_source_nodes.append(parent)
  * 
  */
-          __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_11);
-          __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-          __Pyx_INCREF(__pyx_v_parent);
-          __Pyx_GIVEREF(__pyx_v_parent);
-          PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_parent);
-          __Pyx_INCREF(__pyx_v_sample);
-          __Pyx_GIVEREF(__pyx_v_sample);
-          PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample);
-          __pyx_t_8 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_8);
-          __pyx_t_13 = PyTuple_New(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          __Pyx_INCREF(__pyx_v_parent);
-          __Pyx_GIVEREF(__pyx_v_parent);
-          PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_v_parent);
-          __Pyx_INCREF(__pyx_v_sample);
-          __Pyx_GIVEREF(__pyx_v_sample);
-          PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_v_sample);
-          __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_p_to_s1_lengths, __pyx_t_13); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (PyDict_SetItem(__pyx_t_8, __pyx_n_s_weight, __pyx_t_4) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
+          __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_initial_network, __pyx_n_s_add_edge); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_12);
+          __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 244, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_INCREF(__pyx_v_parent);
           __Pyx_GIVEREF(__pyx_v_parent);
@@ -4995,28 +5547,51 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
           __Pyx_INCREF(__pyx_v_sample);
           __Pyx_GIVEREF(__pyx_v_sample);
           PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_v_sample);
-          __pyx_t_13 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s1, __pyx_t_4); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (PyDict_SetItem(__pyx_t_8, __pyx_n_s_label, __pyx_t_13) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __pyx_t_13 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_1, __pyx_t_8); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 207, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __pyx_t_8 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_8);
+          __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_INCREF(__pyx_v_parent);
+          __Pyx_GIVEREF(__pyx_v_parent);
+          PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_parent);
+          __Pyx_INCREF(__pyx_v_sample);
+          __Pyx_GIVEREF(__pyx_v_sample);
+          PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_sample);
+          __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_p_to_s1_lengths, __pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          if (PyDict_SetItem(__pyx_t_8, __pyx_n_s_weight, __pyx_t_11) < 0) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
+          __Pyx_INCREF(__pyx_v_parent);
+          __Pyx_GIVEREF(__pyx_v_parent);
+          PyTuple_SET_ITEM(__pyx_t_11, 0, __pyx_v_parent);
+          __Pyx_INCREF(__pyx_v_sample);
+          __Pyx_GIVEREF(__pyx_v_sample);
+          PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_sample);
+          __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_muts_to_s1, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+          if (PyDict_SetItem(__pyx_t_8, __pyx_n_s_label, __pyx_t_1) < 0) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_t_4, __pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":208
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":245
  * 					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
  * 					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
  * 					temp_source_nodes.append(parent)             # <<<<<<<<<<<<<<
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  */
-          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 208, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_temp_source_nodes, __pyx_v_parent); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 245, __pyx_L1_error)
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":205
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
  * 				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
  * 
  * 				for parent, sample_2 in lst:             # <<<<<<<<<<<<<<
@@ -5026,69 +5601,69 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         }
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":210
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":247
  * 					temp_source_nodes.append(parent)
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))             # <<<<<<<<<<<<<<
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
  * 					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  */
-        __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_n_s_np); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 210, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_13);
-        __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_13, __pyx_n_s_unique); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 210, __pyx_L1_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_unique); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 247, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        __pyx_t_13 = NULL;
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __pyx_t_1 = NULL;
         if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_8))) {
-          __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_8);
-          if (likely(__pyx_t_13)) {
+          __pyx_t_1 = PyMethod_GET_SELF(__pyx_t_8);
+          if (likely(__pyx_t_1)) {
             PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
-            __Pyx_INCREF(__pyx_t_13);
+            __Pyx_INCREF(__pyx_t_1);
             __Pyx_INCREF(function);
             __Pyx_DECREF_SET(__pyx_t_8, function);
           }
         }
-        __pyx_t_15 = (__pyx_t_13) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_13, __pyx_v_temp_source_nodes) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_v_temp_source_nodes);
-        __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 210, __pyx_L1_error)
+        __pyx_t_15 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_1, __pyx_v_temp_source_nodes) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_v_temp_source_nodes);
+        __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+        if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 247, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __pyx_t_8 = PySequence_List(__pyx_t_15); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 210, __pyx_L1_error)
+        __pyx_t_8 = PySequence_List(__pyx_t_15); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 247, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
         __Pyx_DECREF_SET(__pyx_v_temp_source_nodes, ((PyObject*)__pyx_t_8));
         __pyx_t_8 = 0;
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":248
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:             # <<<<<<<<<<<<<<
  * 					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  */
-        __pyx_t_9 = PyList_GET_SIZE(__pyx_v_temp_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 211, __pyx_L1_error)
-        __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 211, __pyx_L1_error)
+        __pyx_t_9 = PyList_GET_SIZE(__pyx_v_temp_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 248, __pyx_L1_error)
+        __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 248, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_15 = __Pyx_PyNumber_Int(__pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 211, __pyx_L1_error)
+        __pyx_t_15 = __Pyx_PyNumber_Int(__pyx_v_max_neighborhood_size); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 248, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_13 = PyObject_RichCompare(__pyx_t_8, __pyx_t_15, Py_GT); __Pyx_XGOTREF(__pyx_t_13); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 211, __pyx_L1_error)
+        __pyx_t_1 = PyObject_RichCompare(__pyx_t_8, __pyx_t_15, Py_GT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 248, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 211, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 248, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         if (__pyx_t_2) {
         } else {
           __pyx_t_3 = __pyx_t_2;
-          goto __pyx_L25_bool_binop_done;
+          goto __pyx_L26_bool_binop_done;
         }
-        __pyx_t_13 = PyObject_RichCompare(__pyx_v_prev_network, Py_None, Py_NE); __Pyx_XGOTREF(__pyx_t_13); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 211, __pyx_L1_error)
-        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 211, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+        __pyx_t_1 = PyObject_RichCompare(__pyx_v_prev_network, Py_None, Py_NE); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 248, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 248, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __pyx_t_3 = __pyx_t_2;
-        __pyx_L25_bool_binop_done:;
+        __pyx_L26_bool_binop_done:;
         if (__pyx_t_3) {
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":212
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":249
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
  * 					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic             # <<<<<<<<<<<<<<
@@ -5096,25 +5671,25 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 			if len(source_nodes) > len(temp_source_nodes):
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_13 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 212, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          __pyx_t_15 = PyTuple_New(3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 212, __pyx_L1_error)
+          __pyx_t_1 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __pyx_t_15 = PyTuple_New(3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 249, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_15);
           __Pyx_INCREF(__pyx_v_prev_network);
           __Pyx_GIVEREF(__pyx_v_prev_network);
           PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_v_prev_network);
-          __Pyx_GIVEREF(__pyx_t_13);
-          PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_t_13);
+          __Pyx_GIVEREF(__pyx_t_1);
+          PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_t_1);
           __Pyx_INCREF(__pyx_v_potential_graph_diagnostic);
           __Pyx_GIVEREF(__pyx_v_potential_graph_diagnostic);
           PyTuple_SET_ITEM(__pyx_t_15, 2, __pyx_v_potential_graph_diagnostic);
-          __pyx_t_13 = 0;
+          __pyx_t_1 = 0;
           __pyx_r = __pyx_t_15;
           __pyx_t_15 = 0;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
           goto __pyx_L0;
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":211
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":248
  * 
  * 				temp_source_nodes = list(np.unique(temp_source_nodes))
  * 				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:             # <<<<<<<<<<<<<<
@@ -5123,7 +5698,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
         }
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":170
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":204
  * 
  * 			temp_source_nodes = list()
  * 			for i in range(0, len(source_nodes)-1):             # <<<<<<<<<<<<<<
@@ -5133,19 +5708,19 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":214
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":251
  * 					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):             # <<<<<<<<<<<<<<
  * 				if neighbor_mod == max_neighbor_dist:
  * 					neighbor_mod *= 3
  */
-      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 214, __pyx_L1_error)
-      __pyx_t_9 = PyList_GET_SIZE(__pyx_v_temp_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_6 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 251, __pyx_L1_error)
+      __pyx_t_9 = PyList_GET_SIZE(__pyx_v_temp_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 251, __pyx_L1_error)
       __pyx_t_3 = ((__pyx_t_6 > __pyx_t_9) != 0);
       if (__pyx_t_3) {
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":215
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":252
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:             # <<<<<<<<<<<<<<
@@ -5155,7 +5730,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __pyx_t_3 = ((__pyx_v_neighbor_mod == __pyx_v_max_neighbor_dist) != 0);
         if (__pyx_t_3) {
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":216
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":253
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:
  * 					neighbor_mod *= 3             # <<<<<<<<<<<<<<
@@ -5164,7 +5739,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
           __pyx_v_neighbor_mod = (__pyx_v_neighbor_mod * 3);
 
-          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":215
+          /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":252
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):
  * 				if neighbor_mod == max_neighbor_dist:             # <<<<<<<<<<<<<<
@@ -5173,7 +5748,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
         }
 
-        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":214
+        /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":251
  * 					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  * 			if len(source_nodes) > len(temp_source_nodes):             # <<<<<<<<<<<<<<
@@ -5182,7 +5757,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       }
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":218
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":255
  * 					neighbor_mod *= 3
  * 
  * 			source_nodes = temp_source_nodes             # <<<<<<<<<<<<<<
@@ -5192,24 +5767,24 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __Pyx_INCREF(__pyx_v_temp_source_nodes);
       __Pyx_DECREF_SET(__pyx_v_source_nodes, __pyx_v_temp_source_nodes);
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":219
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":256
  * 
  * 			source_nodes = temp_source_nodes
  * 			max_width = max(max_width, len(source_nodes))             # <<<<<<<<<<<<<<
  * 
  * 		max_width = max(max_width, len(source_nodes))
  */
-      __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 219, __pyx_L1_error)
+      __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 256, __pyx_L1_error)
       __Pyx_INCREF(__pyx_v_max_width);
       __pyx_t_5 = __pyx_v_max_width;
-      __pyx_t_13 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 219, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
-      __pyx_t_8 = PyObject_RichCompare(__pyx_t_13, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 219, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 219, __pyx_L1_error)
+      __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_8 = PyObject_RichCompare(__pyx_t_1, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 256, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 256, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       if (__pyx_t_3) {
-        __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 219, __pyx_L1_error)
+        __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 256, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
         __pyx_t_15 = __pyx_t_8;
         __pyx_t_8 = 0;
@@ -5225,27 +5800,27 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       __pyx_t_5 = 0;
     }
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":221
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":258
  * 			max_width = max(max_width, len(source_nodes))
  * 
  * 		max_width = max(max_width, len(source_nodes))             # <<<<<<<<<<<<<<
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
  * 		sys.stdout.flush()
  */
-    __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_9 = PyObject_Length(__pyx_v_source_nodes); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 258, __pyx_L1_error)
     __Pyx_INCREF(__pyx_v_max_width);
     __pyx_t_5 = __pyx_v_max_width;
-    __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_8 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 258, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_13 = PyObject_RichCompare(__pyx_t_8, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_13); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 221, __pyx_L1_error)
+    __pyx_t_1 = PyObject_RichCompare(__pyx_t_8, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 221, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 258, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_3) {
-      __pyx_t_13 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 221, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
-      __pyx_t_15 = __pyx_t_13;
-      __pyx_t_13 = 0;
+      __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_9); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      __pyx_t_15 = __pyx_t_1;
+      __pyx_t_1 = 0;
     } else {
       __Pyx_INCREF(__pyx_t_5);
       __pyx_t_15 = __pyx_t_5;
@@ -5257,58 +5832,58 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_DECREF_SET(__pyx_v_max_width, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":222
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":259
  * 
  * 		max_width = max(max_width, len(source_nodes))
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")             # <<<<<<<<<<<<<<
  * 		sys.stdout.flush()
  * 
  */
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_15 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_5); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_t_5); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = PyNumber_Add(__pyx_kp_s_LCA_Distance, __pyx_t_15); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_5 = PyNumber_Add(__pyx_kp_s_LCA_Distance, __pyx_t_15); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    __pyx_t_15 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_completed_with_a_neighborhood_s); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_15 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_completed_with_a_neighborhood_s); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_max_width); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_max_width); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_13 = PyNumber_Add(__pyx_t_15, __pyx_t_5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 222, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
+    __pyx_t_1 = PyNumber_Add(__pyx_t_15, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = PyNumber_Add(__pyx_t_13, __pyx_kp_s_pid_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __pyx_t_5 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_pid_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-    __pyx_t_13 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 222, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
-    __pyx_t_15 = PyNumber_Add(__pyx_t_5, __pyx_t_13); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_pid); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_15 = PyNumber_Add(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-    __pyx_t_13 = PyNumber_Add(__pyx_t_15, __pyx_kp_s__9); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 222, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = PyNumber_Add(__pyx_t_15, __pyx_kp_s__10); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    if (__Pyx_PrintOne(0, __pyx_t_13) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":223
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":260
  * 		max_width = max(max_width, len(source_nodes))
  * 		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
  * 		sys.stdout.flush()             # <<<<<<<<<<<<<<
  * 
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_15, __pyx_n_s_sys); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 223, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_15, __pyx_n_s_sys); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 260, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_15, __pyx_n_s_stdout); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 223, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_15, __pyx_n_s_stdout); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 260, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_flush); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 223, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_flush); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 260, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_5 = NULL;
@@ -5321,49 +5896,49 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         __Pyx_DECREF_SET(__pyx_t_15, function);
       }
     }
-    __pyx_t_13 = (__pyx_t_5) ? __Pyx_PyObject_CallOneArg(__pyx_t_15, __pyx_t_5) : __Pyx_PyObject_CallNoArg(__pyx_t_15);
+    __pyx_t_1 = (__pyx_t_5) ? __Pyx_PyObject_CallOneArg(__pyx_t_15, __pyx_t_5) : __Pyx_PyObject_CallNoArg(__pyx_t_15);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 223, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 260, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":225
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":262
  * 		sys.stdout.flush()
  * 
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:             # <<<<<<<<<<<<<<
  * 			max_neighbor_dist += 5
  * 		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
  */
-    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_prev_widths); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 225, __pyx_L1_error)
+    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_prev_widths); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 262, __pyx_L1_error)
     __pyx_t_2 = ((__pyx_t_9 > 2) != 0);
     if (__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
-      goto __pyx_L30_bool_binop_done;
+      goto __pyx_L31_bool_binop_done;
     }
-    __pyx_t_13 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 225, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
-    __pyx_t_15 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_13, Py_EQ); __Pyx_XGOTREF(__pyx_t_15); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 225, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_15); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 225, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 262, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_15 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_15); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 262, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_15); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 262, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
     if (__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
-      goto __pyx_L30_bool_binop_done;
+      goto __pyx_L31_bool_binop_done;
     }
-    __pyx_t_15 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -2L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 225, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -2L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 262, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
-    __pyx_t_13 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_15, Py_EQ); __Pyx_XGOTREF(__pyx_t_13); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 225, __pyx_L1_error)
+    __pyx_t_1 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_15, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 262, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_13); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 225, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 262, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_3 = __pyx_t_2;
-    __pyx_L30_bool_binop_done:;
+    __pyx_L31_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":226
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":263
  * 
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
  * 			max_neighbor_dist += 5             # <<<<<<<<<<<<<<
@@ -5372,41 +5947,41 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       __pyx_v_max_neighbor_dist = (__pyx_v_max_neighbor_dist + 5);
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":225
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":262
  * 		sys.stdout.flush()
  * 
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:             # <<<<<<<<<<<<<<
  * 			max_neighbor_dist += 5
  * 		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
  */
-      goto __pyx_L29;
+      goto __pyx_L30;
     }
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":227
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":264
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
  * 			max_neighbor_dist += 5
  * 		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:             # <<<<<<<<<<<<<<
  * 			max_neighbor_dist += 3
  * 		else:
  */
-    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_prev_widths); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 227, __pyx_L1_error)
+    __pyx_t_9 = PyList_GET_SIZE(__pyx_v_prev_widths); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 264, __pyx_L1_error)
     __pyx_t_2 = ((__pyx_t_9 > 1) != 0);
     if (__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
-      goto __pyx_L33_bool_binop_done;
+      goto __pyx_L34_bool_binop_done;
     }
-    __pyx_t_13 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 227, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_13);
-    __pyx_t_15 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_13, Py_EQ); __Pyx_XGOTREF(__pyx_t_15); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 227, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_15); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 227, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_prev_widths, -1L, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_15 = PyObject_RichCompare(__pyx_v_max_width, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_15); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 264, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_15); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 264, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
     __pyx_t_3 = __pyx_t_2;
-    __pyx_L33_bool_binop_done:;
+    __pyx_L34_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":228
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":265
  * 			max_neighbor_dist += 5
  * 		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
  * 			max_neighbor_dist += 3             # <<<<<<<<<<<<<<
@@ -5415,17 +5990,17 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  */
       __pyx_v_max_neighbor_dist = (__pyx_v_max_neighbor_dist + 3);
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":227
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":264
  * 		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
  * 			max_neighbor_dist += 5
  * 		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:             # <<<<<<<<<<<<<<
  * 			max_neighbor_dist += 3
  * 		else:
  */
-      goto __pyx_L29;
+      goto __pyx_L30;
     }
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":230
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":267
  * 			max_neighbor_dist += 3
  * 		else:
  * 			max_neighbor_dist += 1             # <<<<<<<<<<<<<<
@@ -5435,30 +6010,30 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     /*else*/ {
       __pyx_v_max_neighbor_dist = (__pyx_v_max_neighbor_dist + 1);
     }
-    __pyx_L29:;
+    __pyx_L30:;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":232
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":269
  * 			max_neighbor_dist += 1
  * 
  * 		potential_graph_diagnostic[max_neighbor_dist] = max_width             # <<<<<<<<<<<<<<
  * 		prev_widths.append(max_width)
  * 
  */
-    __pyx_t_15 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 232, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 269, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_15);
-    if (unlikely(PyDict_SetItem(__pyx_v_potential_graph_diagnostic, __pyx_t_15, __pyx_v_max_width) < 0)) __PYX_ERR(0, 232, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_potential_graph_diagnostic, __pyx_t_15, __pyx_v_max_width) < 0)) __PYX_ERR(0, 269, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":233
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":270
  * 
  * 		potential_graph_diagnostic[max_neighbor_dist] = max_width
  * 		prev_widths.append(max_width)             # <<<<<<<<<<<<<<
  * 
  * 		prev_network = initial_network
  */
-    __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_prev_widths, __pyx_v_max_width); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 233, __pyx_L1_error)
+    __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_prev_widths, __pyx_v_max_width); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 270, __pyx_L1_error)
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":235
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":272
  * 		prev_widths.append(max_width)
  * 
  * 		prev_network = initial_network             # <<<<<<<<<<<<<<
@@ -5468,7 +6043,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __Pyx_INCREF(__pyx_v_initial_network);
     __Pyx_DECREF_SET(__pyx_v_prev_network, __pyx_v_initial_network);
 
-    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":236
+    /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":273
  * 
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5478,7 +6053,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     __pyx_t_3 = (__pyx_v_flag != 0);
     if (__pyx_t_3) {
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":237
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":274
  * 		prev_network = initial_network
  * 		if flag:
  * 			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic             # <<<<<<<<<<<<<<
@@ -5486,24 +6061,24 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 	return initial_network, max_neighbor_dist, potential_graph_diagnostic
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_15 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 237, __pyx_L1_error)
+      __pyx_t_15 = __Pyx_PyInt_From_long((__pyx_v_max_neighbor_dist - 1)); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 274, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_15);
-      __pyx_t_13 = PyTuple_New(3); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 237, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
+      __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
       __Pyx_INCREF(__pyx_v_prev_network);
       __Pyx_GIVEREF(__pyx_v_prev_network);
-      PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_v_prev_network);
+      PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_prev_network);
       __Pyx_GIVEREF(__pyx_t_15);
-      PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_15);
+      PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_15);
       __Pyx_INCREF(__pyx_v_potential_graph_diagnostic);
       __Pyx_GIVEREF(__pyx_v_potential_graph_diagnostic);
-      PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_v_potential_graph_diagnostic);
+      PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_potential_graph_diagnostic);
       __pyx_t_15 = 0;
-      __pyx_r = __pyx_t_13;
-      __pyx_t_13 = 0;
+      __pyx_r = __pyx_t_1;
+      __pyx_t_1 = 0;
       goto __pyx_L0;
 
-      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":236
+      /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":273
  * 
  * 		prev_network = initial_network
  * 		if flag:             # <<<<<<<<<<<<<<
@@ -5513,7 +6088,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
   }
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":239
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":276
  * 			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
  * 
  * 	return initial_network, max_neighbor_dist, potential_graph_diagnostic             # <<<<<<<<<<<<<<
@@ -5521,28 +6096,28 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_initial_network)) { __Pyx_RaiseUnboundLocalError("initial_network"); __PYX_ERR(0, 239, __pyx_L1_error) }
-  __pyx_t_13 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 239, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_13);
-  __pyx_t_15 = PyTuple_New(3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 239, __pyx_L1_error)
+  if (unlikely(!__pyx_v_initial_network)) { __Pyx_RaiseUnboundLocalError("initial_network"); __PYX_ERR(0, 276, __pyx_L1_error) }
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_max_neighbor_dist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_15 = PyTuple_New(3); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_15);
   __Pyx_INCREF(__pyx_v_initial_network);
   __Pyx_GIVEREF(__pyx_v_initial_network);
   PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_v_initial_network);
-  __Pyx_GIVEREF(__pyx_t_13);
-  PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_t_13);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_15, 1, __pyx_t_1);
   __Pyx_INCREF(__pyx_v_potential_graph_diagnostic);
   __Pyx_GIVEREF(__pyx_v_potential_graph_diagnostic);
   PyTuple_SET_ITEM(__pyx_t_15, 2, __pyx_v_potential_graph_diagnostic);
-  __pyx_t_13 = 0;
+  __pyx_t_1 = 0;
   __pyx_r = __pyx_t_15;
   __pyx_t_15 = 0;
   goto __pyx_L0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
@@ -5554,7 +6129,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_11);
-  __Pyx_XDECREF(__pyx_t_13);
+  __Pyx_XDECREF(__pyx_t_12);
   __Pyx_XDECREF(__pyx_t_15);
   __Pyx_AddTraceback("cassiopeia.TreeSolver.lineage_solver.solver_utils.build_potential_graph_from_base_graph", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
@@ -5590,7 +6165,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   return __pyx_r;
 }
 
-/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
+/* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":279
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5627,15 +6202,15 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("get_sources_of_graph", 0);
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":251
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":288
  * 		Leaves of the corresponding Tree
  * 	"""
  * 	return [x for x in tree.nodes() if tree.in_degree(x)==0 ]             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_nodes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -5649,16 +6224,16 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   }
   __pyx_t_2 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_5 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 288, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 288, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -5666,17 +6241,17 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 251, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 288, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 288, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 251, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) __PYX_ERR(0, 288, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 288, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -5686,7 +6261,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 251, __pyx_L1_error)
+          else __PYX_ERR(0, 288, __pyx_L1_error)
         }
         break;
       }
@@ -5694,7 +6269,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __Pyx_XDECREF_SET(__pyx_v_x, __pyx_t_2);
     __pyx_t_2 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_in_degree); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_in_degree); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 288, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_7 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -5708,16 +6283,16 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
     }
     __pyx_t_2 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_7, __pyx_v_x) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_x);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 251, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 288, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_t_2, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_t_2, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 288, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_8 < 0)) __PYX_ERR(0, 288, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_8) {
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_x))) __PYX_ERR(0, 251, __pyx_L1_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_x))) __PYX_ERR(0, 288, __pyx_L1_error)
     }
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -5725,7 +6300,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_14lineage_solver_12solver_ut
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":279
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
@@ -5802,6 +6377,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_LCA_Distance, __pyx_k_LCA_Distance, sizeof(__pyx_k_LCA_Distance), 0, 0, 1, 0},
   {&__pyx_kp_s_Max_Neighborhood_Exceeded_Return, __pyx_k_Max_Neighborhood_Exceeded_Return, sizeof(__pyx_k_Max_Neighborhood_Exceeded_Return), 0, 0, 1, 0},
   {&__pyx_n_s_OrderedDict, __pyx_k_OrderedDict, sizeof(__pyx_k_OrderedDict), 0, 0, 1, 1},
+  {&__pyx_kp_s__10, __pyx_k__10, sizeof(__pyx_k__10), 0, 0, 1, 0},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},
   {&__pyx_kp_s__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 0, 1, 0},
   {&__pyx_kp_s__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 0, 1, 0},
@@ -5881,6 +6457,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_samples, __pyx_k_samples, sizeof(__pyx_k_samples), 0, 0, 1, 1},
   {&__pyx_n_s_source_nodes, __pyx_k_source_nodes, sizeof(__pyx_k_source_nodes), 0, 0, 1, 1},
   {&__pyx_n_s_split, __pyx_k_split, sizeof(__pyx_k_split), 0, 0, 1, 1},
+  {&__pyx_n_s_split_on_heritable, __pyx_k_split_on_heritable, sizeof(__pyx_k_split_on_heritable), 0, 0, 1, 1},
   {&__pyx_n_s_stdout, __pyx_k_stdout, sizeof(__pyx_k_stdout), 0, 0, 1, 1},
   {&__pyx_n_s_sys, __pyx_k_sys, sizeof(__pyx_k_sys), 0, 0, 1, 1},
   {&__pyx_n_s_target_nodes, __pyx_k_target_nodes, sizeof(__pyx_k_target_nodes), 0, 0, 1, 1},
@@ -5899,8 +6476,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 25, __pyx_L1_error)
-  __pyx_builtin_min = __Pyx_GetBuiltinName(__pyx_n_s_min); if (!__pyx_builtin_min) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_builtin_min = __Pyx_GetBuiltinName(__pyx_n_s_min); if (!__pyx_builtin_min) __PYX_ERR(0, 239, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -5924,74 +6501,74 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":6
  * import sys
  * 
- * def node_parent(x, y):             # <<<<<<<<<<<<<<
+ * def node_parent(x, y, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, finds the latest common ancestor
  */
-  __pyx_tuple__10 = PyTuple_Pack(6, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_parr, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_node_parent, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(7, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_split_on_heritable, __pyx_n_s_parr, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_node_parent, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 6, __pyx_L1_error)
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":37
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":49
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
-  __pyx_tuple__12 = PyTuple_Pack(8, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_priors, __pyx_n_s_weighted, __pyx_n_s_count, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(4, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_edge_length, 37, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(9, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_priors, __pyx_n_s_weighted, __pyx_n_s_split_on_heritable, __pyx_n_s_count, __pyx_n_s_x_list, __pyx_n_s_y_list, __pyx_n_s_i); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(5, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_edge_length, 49, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 49, __pyx_L1_error)
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":75
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":102
  * 	return count
  * 
- * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
+ * def mutations_from_parent_to_child(parent, child, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Creates a string label describing the mutations taken from  a parent to a child
  */
-  __pyx_tuple__14 = PyTuple_Pack(6, __pyx_n_s_parent, __pyx_n_s_child, __pyx_n_s_parent_list, __pyx_n_s_child_list, __pyx_n_s_mutations, __pyx_n_s_i); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 75, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_mutations_from_parent_to_child, 75, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_tuple__15 = PyTuple_Pack(7, __pyx_n_s_parent, __pyx_n_s_child, __pyx_n_s_split_on_heritable, __pyx_n_s_parent_list, __pyx_n_s_child_list, __pyx_n_s_mutations, __pyx_n_s_i); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__15);
+  __Pyx_GIVEREF(__pyx_tuple__15);
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(3, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_mutations_from_parent_to_child, 102, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 102, __pyx_L1_error)
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":97
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":130
  * 	return " , ".join(mutations)
  * 
- * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
+ * def root_finder(target_nodes, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a list of targets_nodes, return the least common ancestor of all nodes
  */
-  __pyx_tuple__16 = PyTuple_Pack(3, __pyx_n_s_target_nodes, __pyx_n_s_np, __pyx_n_s_sample); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 97, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_root_finder, 97, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(4, __pyx_n_s_target_nodes, __pyx_n_s_split_on_heritable, __pyx_n_s_np, __pyx_n_s_sample); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
+  __Pyx_GIVEREF(__pyx_tuple__17);
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_root_finder, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 130, __pyx_L1_error)
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
-  __pyx_tuple__18 = PyTuple_Pack(34, __pyx_n_s_samples, __pyx_n_s_root, __pyx_n_s_max_neighborhood_size, __pyx_n_s_priors, __pyx_n_s_pid, __pyx_n_s_weighted, __pyx_n_s_lca_dist, __pyx_n_s_neighbor_mod, __pyx_n_s_max_neighbor_dist, __pyx_n_s_prev_network, __pyx_n_s_flag, __pyx_n_s_potential_graph_diagnostic, __pyx_n_s_prev_widths, __pyx_n_s_initial_network, __pyx_n_s_sample, __pyx_n_s_source_nodes, __pyx_n_s_max_width, __pyx_n_s_temp_source_nodes, __pyx_n_s_i, __pyx_n_s_top_parents, __pyx_n_s_p_to_s1_lengths, __pyx_n_s_p_to_s2_lengths, __pyx_n_s_muts_to_s1, __pyx_n_s_muts_to_s2, __pyx_n_s_j, __pyx_n_s_sample_2, __pyx_n_s_parent, __pyx_n_s_edge_length_p_s1, __pyx_n_s_edge_length_p_s2, __pyx_n_s_edge_length_p_s1_priors, __pyx_n_s_edge_length_p_s2_priors, __pyx_n_s_min_distance, __pyx_n_s_lst, __pyx_n_s_s); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 112, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(7, 0, 34, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_build_potential_graph_from_base_2, 112, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_tuple__19 = PyTuple_Pack(35, __pyx_n_s_samples, __pyx_n_s_root, __pyx_n_s_max_neighborhood_size, __pyx_n_s_priors, __pyx_n_s_pid, __pyx_n_s_weighted, __pyx_n_s_lca_dist, __pyx_n_s_split_on_heritable, __pyx_n_s_neighbor_mod, __pyx_n_s_max_neighbor_dist, __pyx_n_s_prev_network, __pyx_n_s_flag, __pyx_n_s_potential_graph_diagnostic, __pyx_n_s_prev_widths, __pyx_n_s_initial_network, __pyx_n_s_sample, __pyx_n_s_source_nodes, __pyx_n_s_max_width, __pyx_n_s_temp_source_nodes, __pyx_n_s_i, __pyx_n_s_top_parents, __pyx_n_s_p_to_s1_lengths, __pyx_n_s_p_to_s2_lengths, __pyx_n_s_muts_to_s1, __pyx_n_s_muts_to_s2, __pyx_n_s_j, __pyx_n_s_sample_2, __pyx_n_s_parent, __pyx_n_s_edge_length_p_s1, __pyx_n_s_edge_length_p_s2, __pyx_n_s_edge_length_p_s1_priors, __pyx_n_s_edge_length_p_s2_priors, __pyx_n_s_min_distance, __pyx_n_s_lst, __pyx_n_s_s); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__19);
+  __Pyx_GIVEREF(__pyx_tuple__19);
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(8, 0, 35, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_build_potential_graph_from_base_2, 146, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 146, __pyx_L1_error)
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":279
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Returns all nodes with in-degree zero
  */
-  __pyx_tuple__20 = PyTuple_Pack(2, __pyx_n_s_tree, __pyx_n_s_x); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 242, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_sources_of_graph, 242, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_tuple__21 = PyTuple_Pack(2, __pyx_n_s_tree, __pyx_n_s_x); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__21);
+  __Pyx_GIVEREF(__pyx_tuple__21);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_TreeSolver_lineage_so_2, __pyx_n_s_get_sources_of_graph, 279, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -6320,7 +6897,7 @@ if (!__Pyx_RefNanny) {
  * from collections import OrderedDict
  * import sys             # <<<<<<<<<<<<<<
  * 
- * def node_parent(x, y):
+ * def node_parent(x, y, split_on_heritable = False):
  */
   __pyx_t_2 = __Pyx_Import(__pyx_n_s_sys, 0, -1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -6330,7 +6907,7 @@ if (!__Pyx_RefNanny) {
   /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":6
  * import sys
  * 
- * def node_parent(x, y):             # <<<<<<<<<<<<<<
+ * def node_parent(x, y, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, finds the latest common ancestor
  */
@@ -6339,64 +6916,64 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_node_parent, __pyx_t_2) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":37
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":49
  * 	return '|'.join(parr)
  * 
- * def get_edge_length(x,y,priors=None, weighted=False):             # <<<<<<<<<<<<<<
+ * def get_edge_length(x,y,priors=None, weighted=False, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_3get_edge_length, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_edge_length, __pyx_t_2) < 0) __PYX_ERR(0, 37, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_edge_length, __pyx_t_2) < 0) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":75
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":102
  * 	return count
  * 
- * def mutations_from_parent_to_child(parent, child):             # <<<<<<<<<<<<<<
+ * def mutations_from_parent_to_child(parent, child, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Creates a string label describing the mutations taken from  a parent to a child
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_5mutations_from_parent_to_child, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_mutations_from_parent_to_child, __pyx_t_2) < 0) __PYX_ERR(0, 75, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_mutations_from_parent_to_child, __pyx_t_2) < 0) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":97
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":130
  * 	return " , ".join(mutations)
  * 
- * def root_finder(target_nodes):             # <<<<<<<<<<<<<<
+ * def root_finder(target_nodes, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a list of targets_nodes, return the least common ancestor of all nodes
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_7root_finder, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_root_finder, __pyx_t_2) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_root_finder, __pyx_t_2) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":112
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":146
  * 	return np
  * 
- * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None):             # <<<<<<<<<<<<<<
+ * def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size = 10000, priors=None, pid=-1, weighted = False, lca_dist = None, split_on_heritable = False):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Given a series of samples, or target nodes, creates a tree which contains potential
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_9build_potential_graph_from_base_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_build_potential_graph_from_base_2, __pyx_t_2) < 0) __PYX_ERR(0, 112, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_build_potential_graph_from_base_2, __pyx_t_2) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":242
+  /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":279
  * 
  * 
  * def get_sources_of_graph(tree):             # <<<<<<<<<<<<<<
  * 	"""
  * 	Returns all nodes with in-degree zero
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10cassiopeia_10TreeSolver_14lineage_solver_12solver_utils_11get_sources_of_graph, NULL, __pyx_n_s_cassiopeia_TreeSolver_lineage_so); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_sources_of_graph, __pyx_t_2) < 0) __PYX_ERR(0, 242, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_sources_of_graph, __pyx_t_2) < 0) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx":1

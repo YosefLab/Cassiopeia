@@ -250,31 +250,49 @@ def find_consensus_tree(trees, character_matrix, cutoff=0.5):
     return G
 
 
-def get_modified_hamming_dist(n1, n2):
+def get_modified_hamming_dist(n1, n2, split_on_heritable = False):
 
     x_list, y_list = n1.split("_")[0].split("|"), n2.split("_")[0].split("|")
 
     count = 0
-    for i in range(0, len(x_list)):
 
-        if x_list[i] == y_list[i]:
-            count += 0
+    if split_on_heritable:
+        for i in range(0, len(x_list)):
 
-        elif (
-            x_list[i] == "-" or y_list[i] == "-" or x_list[i] == "H" or y_list[i] == "H"
-        ):
-            count += 0
+            if x_list[i] == y_list[i]:
+                count += 0
 
-        elif x_list[i] == "0" or y_list[i] == "0":
-            count += 1
+            elif (
+                x_list[i] == "-" or y_list[i] == "-"
+            ):
+                count += 0
 
-        else:
-            count += 2
+            elif x_list[i] == "0" or y_list[i] == "0":
+                count += 1
+
+            else:
+                count += 2
+    else:
+        for i in range(0, len(x_list)):
+
+            if x_list[i] == y_list[i]:
+                count += 0
+
+            elif (
+                x_list[i] == "-" or y_list[i] == "-" or x_list[i] == "*" or y_list[i] == "*"
+            ):
+                count += 0
+
+            elif x_list[i] == "0" or y_list[i] == "0":
+                count += 1
+
+            else:
+                count += 2
 
     return count
 
 
-def compute_pairwise_edit_dists(nodes, verbose=True):
+def compute_pairwise_edit_dists(nodes, verbose=True, split_on_heritable = False):
 
     edit_dist = []
     _leaves = nodes
@@ -289,14 +307,14 @@ def compute_pairwise_edit_dists(nodes, verbose=True):
 
     for p in tqdm(all_pairs, desc="Computing modified hamming distances"):
 
-        edit_dist.append(get_modified_hamming_dist(p[0], p[1]))
+        edit_dist.append(get_modified_hamming_dist(p[0], p[1], split_on_heritable))
 
     return np.array(edit_dist), all_pairs
 
 
-def find_neighbors(target_nodes, n_neighbors=10):
+def find_neighbors(target_nodes, n_neighbors=10, split_on_heritable = False):
 
-    edit_dists, all_pairs = compute_pairwise_edit_dists(target_nodes)
+    edit_dists, all_pairs = compute_pairwise_edit_dists(target_nodes, split_on_heritable)
     ds = sp.spatial.distance.squareform(edit_dists)
 
     sample_range = np.arange(ds.shape[0])[:, None]
