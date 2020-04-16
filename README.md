@@ -1,3 +1,21 @@
+Updates (April 16, 2020)
+=========================
+
+We now introduce FitchCount algorithm in Cassiopeia's Analysis module. Briefly, FitchCount is an efficient algorithm for aggreagating the number of state transitions across all optimal evolutionary histories (under the maximum parsimony criterion) given the states of the leaves are known. It builds on the Fitch-Hartigan algorithm for ancestral state assignment (i.e. the Small Parsimony Problem; Fitch 1971 & Hartigan 1973). 
+
+You can access the algorithm in `cassiopeia.Analysis.reconstruct_states` module with the `fitch_count` function. The function takes in a Networkx tree with a Pandas series mapping each leaf to a given state and returns a square count matrix `M` which summarizes the number of times a state flipped to any other state across all optimal solutions to the small parsimony problem as given by the Fitch-Hartigan algorithm. 
+
+You can invoke the algorithm as such:
+
+```python
+from cassiopeia.Analysis.reconstruct_states import fitch_count
+
+# tree is a networkx object over Cassiopeia Nodes
+M = reconstruct_states.fitch_count(tree, meta['tissue_sample')
+```
+
+We are in the process of putting together a notebook tutorial, so stay tuned!
+
 Updates (Feb. 9, 2020)
 ========
 
