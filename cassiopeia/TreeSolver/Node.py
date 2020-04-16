@@ -105,7 +105,7 @@ class Node:
 		for i in range(0, len(x_list)):
 			if x_list[i] == y_list[i]:
 				continue
-			elif y_list[i] == "-":
+			elif y_list[i] == "-" or x_list[i] == '-':
 				count += 0
 
 			elif x_list[i] == '0':

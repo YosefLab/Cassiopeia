@@ -98,10 +98,10 @@ def main():
     parser.add_argument("--num_threads", type=int, default=1)
     parser.add_argument("--max_neighborhood_size", type=int, default=10000)
     parser.add_argument("--weighted_ilp", "-w", action="store_true", default=False)
-    parser.add_argument("--greedy_min_allele_rep", type=float, default=1.0)
+    parser.add_argument("--greedy_max_missing_rep", type=float, default=1.0)
     parser.add_argument("--fuzzy_greedy", action="store_true", default=False)
     parser.add_argument("--multinomial_greedy", action="store_true", default=False)
-    parser.add_argument("--num_neighbors", default=10)
+    parser.add_argument("--num_neighbors", default=10, type=int)
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
     parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
     parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
@@ -387,54 +387,10 @@ def main():
         with open(out_fp, "w") as f:
             f.write(newick)
 
-    elif alg == "--max-likelihood" or alg == "-ml":
-
-        # cells = cm.index
-        # samples = [("s" + str(i)) for i in range(len(cells))]
-        # samples_to_cells = dict(zip(samples, cells))
-
-        # cm.index = list(range(len(cells)))
-
-        if verbose:
-            print("Running Maximum Likelihood on " + str(cm.shape[0]) + " Unique Cells")
-
-        infile = stem + "infile.txt"
-        fn = stem + "phylo.txt"
-
-        cm.to_csv(fn, sep="\t")
-
-        script = SCLT_PATH / "TreeSolver" / "binarize_multistate_charmat.py"
-        cmd = "python3.6 " + str(script) + " " + fn + " " + infile + " --relaxed"
-        p = subprocess.Popen(cmd, shell=True)
-        pid, ecode = os.waitpid(p.pid, 0)
-
-        os.system("/home/mattjones/software/FastTreeMP < " + infile + " > " + out_fp)
-
-        tree = Phylo.parse(out_fp, "newick").next()
-
-        ml_net = Phylo.to_networkx(tree)
-
-        i = 0
-        for n in ml_net:
-            if n.name is None:
-                n.name = "internal" + str(i)
-                i += 1
-
-        c2str = map(lambda x: str(x), ml_net.nodes())
-        c2strdict = dict(zip(ml_net.nodes(), c2str))
-        ml_net = nx.relabel_nodes(ml_net, c2strdict)
-
-        out_stem = "".join(out_fp.split(".")[:-1])
-
-        pic.dump(ml_net, open(out_stem + ".pkl", "wb"))
-
-        os.system("rm " + infile)
-        os.system("rm " + fn)
-
     else:
 
         raise Exception(
-            "Please choose an algorithm from the list: greedy, hybrid, ilp, nj, max-likelihood, or camin-sokal"
+            "Please choose an algorithm from the list: greedy, hybrid, ilp, nj, weighted neighbor joining, or camin-sokal"
         )
 
 

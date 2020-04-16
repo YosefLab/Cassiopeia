@@ -39,7 +39,9 @@ from cassiopeia.TreeSolver.utilities import (
     convert_network_to_newick_format,
     newick_to_network,
 )
-from cassiopeia.TreeSolver import Cassiopeia_Tree, Node
+
+from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
+from cassiopeia.TreeSolver.Node import Node
 
 from numba import jit
 

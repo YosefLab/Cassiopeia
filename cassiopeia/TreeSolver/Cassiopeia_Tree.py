@@ -144,7 +144,6 @@ class Cassiopeia_Tree:
 
 	def collapse_edges(self):
 
-
 		def _collapse(graph, edges_to_collapse):
 		
 			new_network = nx.DiGraph()

@@ -1,8 +1,8 @@
 import networkx as nx
-from Cassiopeia.TreeSolver import Node
-import Cassiopeia.TreeSolver.lineage_solver as ls 
-import Cassiopeia.TreeSolver.simulation_tools.simulation_utils as sim_utils
-import Cassiopeia as sclt
+from cassiopeia.TreeSolver import Node
+import cassiopeia.TreeSolver.lineage_solver as ls 
+import cassiopeia.TreeSolver.simulation_tools.simulation_utils as sim_utils
+import cassiopeia as sclt
 from pathlib import Path
 import pickle as pic
 SCLT_PATH = Path(sclt.__path__[0])

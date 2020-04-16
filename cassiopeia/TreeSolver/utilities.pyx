@@ -31,10 +31,10 @@ def tree_collapse(tree):
     new = {}
     for node in graph.nodes():
 
-        if isinstance(node, Node):
-            new[node] = node.char_string
-        else:
+        if isinstance(node, str):
             new[node] = node.split("_")[0]
+        else:
+            new[node] = node.char_string
 
     new_graph = nx.relabel_nodes(graph, new)
 
@@ -261,7 +261,7 @@ def get_modified_hamming_dist(n1, n2):
             count += 0
 
         elif (
-            x_list[i] == "-" or y_list[i] == "-" or x_list[i] == "H" or y_list[i] == "H"
+            x_list[i] == "-" or y_list[i] == "-"
         ):
             count += 0
 
@@ -403,7 +403,7 @@ def read_and_process_data(filename, lineage_group=None, intBC_minimum_appearance
     return samples_as_string
 
 
-def convert_network_to_newick_format(graph, use_intermediate_names=False):
+def convert_network_to_newick_format(graph, use_intermediate_names=True):
     """
 	Given a networkx network, converts to proper Newick format.
 

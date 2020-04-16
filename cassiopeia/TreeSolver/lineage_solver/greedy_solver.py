@@ -326,7 +326,7 @@ def look_ahead_helper(targets, depth, splits, considered):
             node_list = node.split("|")
             if node_list[character] == state:
                 right_split.append(node)
-            elif node_list[character] == "-" or node_list[character] == "H":
+            elif node_list[character] == "-":
                 NA_chars.append(node)
             else:
                 left_split.append(node)

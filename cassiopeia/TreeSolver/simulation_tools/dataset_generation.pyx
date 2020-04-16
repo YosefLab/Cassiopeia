@@ -91,7 +91,7 @@ def generate_simulated_full_tree(
     return state_tree
 
 
-def generate_simulated_experiment_plasticisity(
+def generate_simulated_experiment_plasticity(
     mutation_prob_map,
     variable_dropout_prob_map,
     characters=10,
@@ -101,7 +101,8 @@ def generate_simulated_experiment_plasticisity(
     max_mu = 0.3, # maximum rate of change
     min_alpha = 0.0, # minimum rate of change
     depth = 11, # depth of tree, or number of time steps
-    beta = 0, # extinction rate 
+    beta = 0, # extinction rate,
+    transition_matrix = None, #transition matrix
 ):
 
     mu = max_mu*np.random.random() # probability of change per time-step (between 0 and 0.3)
@@ -113,7 +114,7 @@ def generate_simulated_experiment_plasticisity(
     current_depth = [Node('state-node', character_vec=["0" for _ in range(0, characters)])]
     # current_depth = [[["0" for _ in range(0, characters)], "0"]]
     network.add_node(current_depth[0])
-    network.node[current_depth[0]]["meta"] = sample_list[0]
+    network.node[current_depth[0]]["meta"] = np.random.choice(sample_list)
     uniq = 1
 
     for i in tqdm(range(0, depth), desc="Generating cells at each level in tree"):
@@ -134,11 +135,19 @@ def generate_simulated_experiment_plasticisity(
                     )
 
                     if np.random.random() < mu:
-                        temp_sample_list = sample_list.copy()
-                        temp_sample_list.remove(network.node[node]['meta'])
-                        trans = np.random.choice(temp_sample_list)
-                        network.node[child_node]['meta'] = trans
-                        n_transitions += 1
+
+                        if transition_matrix is None:
+                            temp_sample_list = sample_list.copy()
+                            temp_sample_list.remove(network.node[node]['meta'])
+                            trans = np.random.choice(temp_sample_list)
+                            network.node[child_node]['meta'] = trans
+                            n_transitions += 1
+                        else:
+                            curr_meta = network.node[node]['meta']
+                            probs = transition_matrix.loc[curr_meta].values
+                            trans = np.random.choice(transition_matrix.columns, p = probs)
+                            network.node[child_node]['meta'] = trans
+                            n_transitions += 1
 
                     else: 
                         network.node[child_node]['meta'] = network.node[node]['meta']
@@ -148,28 +157,6 @@ def generate_simulated_experiment_plasticisity(
                 temp_current_depth.append(node)
                 
         current_depth = temp_current_depth
-
-    # # subsample nodes
-    # subsampled_population_for_removal = random.sample(
-    #     current_depth, int((1 - subsample_percentage) * len(current_depth))
-    # )
-
-    # print('removing ' + str(len(subsampled_population_for_removal)) + ' during subsampling of ' + str(len(current_depth)) + ' cells')
-
-    # # subsample leaves
-    # for node in subsampled_population_for_removal:
-    #     network.remove_node(node)
-
-    # # check back edges that don't lead to a leaf
-    # targets = get_leaves_of_tree(network)
-    # all_leaves = [n for n in network if network.out_degree(n) == 0]
-    # for l in all_leaves:
-    #     if l not in targets:
-    #         node = l
-    #         while network.out_degree(node) == 0:
-    #             parent = list(network.predecessors(node))[0]
-    #             network.remove_node(node)
-    #             node = parent
 
     # rename nodes for easy lookup later 
     i = 0
@@ -183,6 +170,61 @@ def generate_simulated_experiment_plasticisity(
     }
 
     tree = Cassiopeia_Tree("simulated", network=network)
+    return tree, params
+
+def overlay_markov_chain(tree,
+    sample_list = ['A'], # set of possible labels for each cell
+    max_mu = 0.3, # maximum rate of change
+):
+        
+    mu = max_mu*np.random.random()
+    
+    root = [n for n in tree if tree.in_degree(n) == 0][0]
+    
+    # pre-process tree such that only leaves are 
+    max_depth = max(nx.shortest_path_length(tree, root, node) for node in tree.nodes())
+    shortest_paths = nx.shortest_path_length(tree, root)
+    
+    _leaves = [n for n in tree if tree.out_degree(n) == 0]
+    for l in _leaves:
+
+        if shortest_paths[l] < max_depth:
+            
+            n = l
+            while tree.out_degree(n) < 1:
+                parent = list(tree.predecessors(n))[0]
+                tree.remove_node(n)
+                n = parent
+                    
+    n_transitions = 0
+    
+    tree.node[root]["meta"] = np.random.choice(sample_list)
+    
+    for e in nx.dfs_edges(tree, source=root):
+        
+        if np.random.random() < mu:
+            
+            temp_sample_list = sample_list.copy()
+            temp_sample_list.remove(tree.node[e[0]]['meta'])
+            trans = np.random.choice(temp_sample_list)
+            tree.node[e[1]]['meta'] = trans
+            
+            n_transitions += 1
+        else:
+            tree.node[e[1]]['meta'] = tree.node[e[0]]['meta']
+            
+    
+    # relabel nodes
+    rndict = {}
+    for n in tree.nodes:
+        rndict[n] = Node(n.name, n.get_character_vec())
+    tree = nx.relabel_nodes(tree, rndict)
+    
+    params = {'mu': mu, 
+            'N': len([n for n in tree if tree.out_degree(n) == 0])
+    }
+
+    tree = Cassiopeia_Tree("simulated", network=tree)
     return tree, params
 
 

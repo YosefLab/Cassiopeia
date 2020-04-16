@@ -5,6 +5,7 @@ import random
 from tqdm import tqdm
 
 from cassiopeia.TreeSolver.lineage_solver.solver_utils import node_parent
+from cassiopeia.TreeSolver.simulation_tools.simulation_utils import get_leaves_of_tree
 from cassiopeia.TreeSolver.utilities import tree_collapse
 from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
 
@@ -25,7 +26,8 @@ def check_triplets_correct(simulated_tree, reconstructed_tree, number_of_trials=
 	"""
 
 	success_rate = 0
-	targets_original_network = [n for n in simulated_tree.get_leaves()]
+	targets_original_network = [n for n in get_leaves_of_tree(simulated_tree.network)]
+	# targets_original_network = [n for n in simulated_tree.get_leaves()]
 	correct_classifications = defaultdict(int)
 	frequency_of_triplets = defaultdict(int)
 
