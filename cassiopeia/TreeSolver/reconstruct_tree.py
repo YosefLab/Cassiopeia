@@ -152,7 +152,7 @@ def main():
             "If you'd like to use weighted ILP reconstructions, you need to provide a mutation map (i.e. prior probabilities)"
         )
 
-    greedy_min_allele_rep = args.greedy_min_allele_rep
+    greedy_min_allele_rep = args.greedy_max_missing_rep
     fuzzy = args.fuzzy_greedy
     probabilistic = args.multinomial_greedy
 
