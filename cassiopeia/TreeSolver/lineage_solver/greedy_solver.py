@@ -5,6 +5,25 @@ import hashlib
 
 from .solver_utils import root_finder, get_edge_length
 
+def find_split_compat(nodes, cg, priors=None, considered=set()):
+    
+    cm = create_cm(nodes)
+
+    uniq_counts = np.apply_along_axis(get_unique_counts, 0, cm)
+    scores = get_scores(uniq_counts, cg, considered.copy())
+    
+    character, state = 0, 0
+    max_cost = -np.inf
+    
+    for char, lst in zip(range(len(scores)), scores):
+        for (j, score) in lst:
+                
+            if max_cost < score:
+                character, state = char, j
+                max_cost = score
+
+    character = int(character)
+    return character,state
 
 def find_split(
     nodes,
@@ -89,7 +108,7 @@ def classify_missing_value(
     knn_distances,
     theta=0.1,
     kernel=True,
-    mode="knn",
+    mode="avg",
     lookahead_depth=3,
     left_states=[],
     right_states=[],
@@ -109,9 +128,9 @@ def classify_missing_value(
 	:param knn_distances:
 		A dictionary storing for each node the allele distances to its closest neighbors. These should be modified allele distances
 	:param theta:
-		Width of the Gaussian Kernel used to smooth the KNN distances. Only used if kernel = True and mode = 'knn' (default)
+		Width of the Gaussian Kernel used to smooth the KNN distances. Only used if kernel = True and mode = 'avg' (default)
 	:param kernel:
-		Apply a Guassian kernel to smooth the KNN distances. Only used if mode = 'knn' (default)
+		Apply a Guassian kernel to smooth the KNN distances. Only used if mode = 'knn'
 	:param mode:
 		Choose a mode to classify negative cells:
 			- 'knn': assign based on a k-nearest-neighbor approach
@@ -356,6 +375,8 @@ def greedy_build(
     minimum_allele_rep=1.0,
     missing_data_mode="lookahead",
     lookahead_depth=3,
+    splitting_method = 'individual',
+    compat_graph = None
 ):
     """
 	Greedy algorithm which finds a probable mutation subgraph for given nodes.
@@ -411,14 +432,22 @@ def greedy_build(
             G.add_node(root)
             return G, [[root, nodes]]
 
-    character, state = find_split(
-        nodes,
-        priors=priors,
-        considered=considered.copy(),
-        fuzzy=fuzzy,
-        probabilistic=probabilistic,
-        minimum_allele_rep=minimum_allele_rep,
-    )
+    if splitting_method == 'individual':
+        character, state = find_split(
+            nodes,
+            priors=priors,
+            considered=considered.copy(),
+            fuzzy=fuzzy,
+            probabilistic=probabilistic,
+            minimum_allele_rep=minimum_allele_rep,
+        )
+    elif splitting_method == "compatibility":
+        if compat_graph is None:
+            cm = create_cm(nodes)
+            compat_graph = create_compat_graph(cm)
+        character, state = find_split_compat(nodes, priors=priors, considered=considered.copy(), cg = compat_graph)
+    else:
+        raise Exception("Specify an acceptable splitting method.")
 
     # If there is no good split left, stop the process and return a graph with the remainder of nodes
     if character == 0 and state == 0:
@@ -443,6 +472,11 @@ def greedy_build(
         missing_data_mode,
         lookahead_depth,
     )
+
+    if compat_graph:
+        cg_left, cg_right = update_compat_graph(character, state, left_split, right_split, compat_graph, priors)
+    else:
+        cg_left, cg_right = None, None
 
     # Create new graph for storing results
     G = nx.DiGraph()
@@ -470,6 +504,8 @@ def greedy_build(
             minimum_allele_rep,
             missing_data_mode,
             lookahead_depth,
+            splitting_method,
+            cg_left
         )
 
         left_nodes = [
@@ -502,6 +538,8 @@ def greedy_build(
         minimum_allele_rep,
         missing_data_mode,
         lookahead_depth,
+        splitting_method,
+        cg_right
     )
     right_nodes = [
         node for node in right_network.nodes() if right_network.in_degree(node) == 0
@@ -563,3 +601,92 @@ def compute_entropy_of_split(cells):
         entropies.append(ent)
 
     return np.mean(entropies)
+
+def create_cm(nodes):
+    
+    vecs = [n.split("|") for n in nodes]
+    
+    cm = np.array(vecs)
+    return cm
+
+def create_compat_graph(cm, priors = None): 
+    # create directional compatibility graph for checking lower bound of greedy split risk 
+    
+    cg = nx.DiGraph()
+    for j1 in range(cm.shape[1]):
+        
+        for s1 in np.unique(cm[:, j1]):
+            
+            if s1 == '-' or s1 == '0':
+                continue
+                
+            rowi = np.where(cm[:,j1] == s1)[0]
+            
+            for j2 in range(cm.shape[1]):
+                
+                if j1 == j2:
+                    continue
+                
+                for s2 in np.unique(cm[:, j2]):
+                    
+                    if s2 == '-' or s2 == '0':
+                        continue
+                        
+                    rowi2 = np.where(cm[:, j2] == s2)[0]
+                    
+                    if len(np.intersect1d(rowi, rowi2)) > 0 and len(np.setdiff1d(rowi2, rowi)) == 0:
+                        if priors:
+                            w = -1 * np.log(priors[j2][s2]) * len(rowi2)
+                        else:
+                            w = len(rowi2)
+                        cg.add_edge(str(j1) + "-" + s1, str(j2) + "-" + s2, weight=w)
+
+    return cg
+                        
+                    
+
+def get_unique_counts(x):
+    vals, counts = np.unique(x, return_counts = True)
+    
+    return zip(vals, counts)
+
+def get_scores(uniq_list, compat_graph, considered):
+    
+    scores = []
+    for char, col in zip(range(len(uniq_list)), uniq_list):
+        nitem = []
+        for state, score in col:
+            
+            if (str(char), state) in considered:
+                continue
+            
+            if state != '0' and state != '-':
+                nitem.append((state, score + get_risk(char, state, compat_graph)))
+        scores.append(nitem)
+    
+    return scores
+
+def get_risk(char, state, compat_graph, gamma = 0.5): 
+    
+    # return weighted sum of out edges
+    val = 0
+    for e in compat_graph.out_edges(str(char) + "-" + state):
+         val += compat_graph[e[0]][e[1]]['weight']
+    return val
+
+
+
+def update_compat_graph(character, state, left_split, right_split, cg, priors):
+    
+    split = str(character) + "-" + state
+    
+    cg_l, cg_r = cg.copy(), cg.copy()
+    
+    cm_r = create_cm(right_split)
+    cg_r = create_compat_graph(cm_r, priors)
+    if len(left_split) > 1:
+        cm_l = create_cm(left_split)
+        cg_l = create_compat_graph(cm_l, priors)
+
+    return cg_l, cg_r
+    

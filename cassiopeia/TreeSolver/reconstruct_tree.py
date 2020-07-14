@@ -105,6 +105,8 @@ def main():
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
     parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
     parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
+    parser.add_argument("--greedy_no_priors", action='store_true', default=False)
+    parser.add_argument("--greedy_splitting", default='individual', type=str)
 
     args = parser.parse_args()
 
@@ -147,6 +149,14 @@ def main():
         prior_probs = read_mutation_map(args.mutation_map)
 
     weighted_ilp = args.weighted_ilp
+    use_greedy_priors = (not args.greedy_no_priors)
+    greedy_splitting = args.greedy_splitting
+
+    if greedy_splitting not in ['individual', 'compatibility']:
+        raise Exception(
+            "Please specify one of the following for greedy splitting: 'individual', 'compatibility'."
+        )
+
     if prior_probs is None and weighted_ilp:
         raise Exception(
             "If you'd like to use weighted ILP reconstructions, you need to provide a mutation map (i.e. prior probabilities)"
@@ -178,6 +188,8 @@ def main():
             n_neighbors=n_neighbors,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            greedy_include_priors = use_greedy_priors,
+            greedy_splitting = greedy_splitting,
         )
 
         net = reconstructed_network_greedy.get_network()
@@ -243,6 +255,8 @@ def main():
             maximum_alt_solutions=num_alt_soln,
             missing_data_mode=missing_data_mode,
             lookahead_depth=lookahead_depth,
+            greedy_include_priors = use_greedy_priors,
+            greedy_splitting = greedy_splitting,
         )
 
         net = reconstructed_network_hybrid.get_network()
