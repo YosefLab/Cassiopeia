@@ -148,94 +148,93 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	print("Estimating potential graph with maximum neighborhood size of " + str(max_neighborhood_size) + " with lca distance of " + str(lca_dist) + " (pid: " + str(pid) + ")")
 	sys.stdout.flush()
 
-	# max_neighbor_dist = 0
-	max_neighbor_dist = lca_dist
-	# while max_neighbor_dist < (lca_dist+1):	 
-	#for max_neighbor_dist in _set:
-	initial_network = nx.DiGraph()
-	samples = np.unique((samples))
-	for sample in samples:
-		initial_network.add_node(sample)
+	max_neighbor_dist = 0
+	# max_neighbor_dist = lca_dist
+	while max_neighbor_dist < (lca_dist+1):	 
+		initial_network = nx.DiGraph()
+		samples = np.unique((samples))
+		for sample in samples:
+			initial_network.add_node(sample)
 
-	source_nodes = samples
-	neighbor_mod = max_neighbor_dist
-	max_width = 0
+		source_nodes = samples
+		neighbor_mod = max_neighbor_dist
+		max_width = 0
 
-	while len(source_nodes) != 1:
+		while len(source_nodes) != 1:
 
-		if len(source_nodes) > int(max_neighborhood_size):
-			print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
-			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
-
-		temp_source_nodes = list()
-		for i in range(0, len(source_nodes)-1):
-			sample = source_nodes[i]
-			top_parents = []
-			p_to_s1_lengths, p_to_s2_lengths = {}, {}
-			muts_to_s1, muts_to_s2 = {}, {}
-			for j in range(i + 1, len(source_nodes)):
-				sample_2 = source_nodes[j]
-				if sample != sample_2:
-
-					parent = node_parent(sample, sample_2)
-					edge_length_p_s1 = get_edge_length(parent, sample)
-					edge_length_p_s2 = get_edge_length(parent, sample_2)
-					top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
-
-					muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
-					muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
-
-					p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
-					p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
-
-					#Check this cutoff
-					if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
-
-						edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
-
-						initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
-						initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
-						temp_source_nodes.append(parent)
-
-						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
-						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
-
-			min_distance = min(top_parents, key = lambda k: k[0])[0]
-			lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
-
-			for parent, sample_2 in lst:
-				initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
-				initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
-				temp_source_nodes.append(parent)
-
-			temp_source_nodes = list(np.unique(temp_source_nodes))
-			if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
+			if len(source_nodes) > int(max_neighborhood_size):
+				print("Max Neighborhood Exceeded, Returning Network (pid: " + str(pid) + ")")
 				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
-		if len(source_nodes) > len(temp_source_nodes):
-			if neighbor_mod == max_neighbor_dist:
-				neighbor_mod *= 3
+			temp_source_nodes = list()
+			for i in range(0, len(source_nodes)-1):
+				sample = source_nodes[i]
+				top_parents = []
+				p_to_s1_lengths, p_to_s2_lengths = {}, {}
+				muts_to_s1, muts_to_s2 = {}, {}
+				for j in range(i + 1, len(source_nodes)):
+					sample_2 = source_nodes[j]
+					if sample != sample_2:
 
-		source_nodes = temp_source_nodes
-		max_width = max(max_width, len(source_nodes))
-		
-		max_width = max(max_width, len(source_nodes))
-		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
-		sys.stdout.flush()
+						parent = node_parent(sample, sample_2)
+						edge_length_p_s1 = get_edge_length(parent, sample)
+						edge_length_p_s2 = get_edge_length(parent, sample_2)
+						top_parents.append((edge_length_p_s1 + edge_length_p_s2, parent, sample_2))
 
-		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
-			max_neighbor_dist += 5
-		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
-			max_neighbor_dist += 3
-		else:
-			max_neighbor_dist += 1
-		
-		potential_graph_diagnostic[max_neighbor_dist] = max_width
-		prev_widths.append(max_width)
-		
-		prev_network = initial_network
-		if flag:
-			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
+						muts_to_s1[(parent, sample)] = mutations_from_parent_to_child(parent, sample)
+						muts_to_s2[(parent, sample_2)] = mutations_from_parent_to_child(parent, sample_2)
+
+						p_to_s1_lengths[(parent, sample)] = edge_length_p_s1
+						p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2
+
+						#Check this cutoff
+						if edge_length_p_s1 + edge_length_p_s2 < neighbor_mod:
+
+							edge_length_p_s1_priors, edge_length_p_s2_priors = get_edge_length(parent, sample, priors, weighted), get_edge_length(parent, sample_2, priors, weighted)
+
+							initial_network.add_edge(parent, sample_2, weight=edge_length_p_s2_priors, label=muts_to_s2[(parent, sample_2)])
+							initial_network.add_edge(parent, sample, weight=edge_length_p_s1_priors, label=muts_to_s1[(parent, sample)])
+							temp_source_nodes.append(parent)
+
+							p_to_s1_lengths[(parent, sample)] = edge_length_p_s1_priors
+							p_to_s2_lengths[(parent, sample_2)] = edge_length_p_s2_priors
+
+				min_distance = min(top_parents, key = lambda k: k[0])[0]
+				lst = [(s[1], s[2]) for s in top_parents if s[0] <= min_distance]
+
+				for parent, sample_2 in lst:
+					initial_network.add_edge(parent, sample_2, weight=p_to_s2_lengths[(parent, sample_2)], label=muts_to_s2[(parent, sample_2)])
+					initial_network.add_edge(parent, sample, weight=p_to_s1_lengths[(parent, sample)], label=muts_to_s1[(parent, sample)])
+					temp_source_nodes.append(parent)
+
+				temp_source_nodes = list(np.unique(temp_source_nodes))
+				if len(temp_source_nodes) > int(max_neighborhood_size) and prev_network != None:
+					return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
+
+			if len(source_nodes) > len(temp_source_nodes):
+				if neighbor_mod == max_neighbor_dist:
+					neighbor_mod *= 3
+
+			source_nodes = temp_source_nodes
+			max_width = max(max_width, len(source_nodes))
+			
+			max_width = max(max_width, len(source_nodes))
+			print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
+			sys.stdout.flush()
+
+			if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
+				max_neighbor_dist += 5
+			elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
+				max_neighbor_dist += 3
+			else:
+				max_neighbor_dist += 1
+			
+			potential_graph_diagnostic[max_neighbor_dist] = max_width
+			prev_widths.append(max_width)
+			
+			prev_network = initial_network
+			if flag:
+				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 	return initial_network, max_neighbor_dist, potential_graph_diagnostic
 
