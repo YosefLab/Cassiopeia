@@ -5312,7 +5312,6 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
   int __pyx_t_14;
   Py_ssize_t __pyx_t_15;
   Py_ssize_t __pyx_t_16;
-  PyObject *__pyx_t_17 = NULL;
   __Pyx_RefNannySetupContext("fill_in_tree", 0);
   __Pyx_INCREF(__pyx_v_tree);
 
@@ -6157,7 +6156,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
  * 
  *     tree = nx.relabel_nodes(tree, anc_dct)             # <<<<<<<<<<<<<<
  * 
- *     tree.remove_edges_from(nx.selfloop_edges(tree.selfloop_edges()))
+ *     tree.remove_edges_from(nx.selfloop_edges(tree))
  */
   __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_nx); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
@@ -6215,7 +6214,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
   /* "cassiopeia/TreeSolver/utilities.pyx":193
  *     tree = nx.relabel_nodes(tree, anc_dct)
  * 
- *     tree.remove_edges_from(nx.selfloop_edges(tree.selfloop_edges()))             # <<<<<<<<<<<<<<
+ *     tree.remove_edges_from(nx.selfloop_edges(tree))             # <<<<<<<<<<<<<<
  * 
  *     return tree
  */
@@ -6226,36 +6225,18 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
   __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_selfloop_edges); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_tree, __pyx_n_s_selfloop_edges); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 193, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_17 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_9))) {
-    __pyx_t_17 = PyMethod_GET_SELF(__pyx_t_9);
-    if (likely(__pyx_t_17)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_9);
-      __Pyx_INCREF(__pyx_t_17);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_9, function);
-    }
-  }
-  __pyx_t_10 = (__pyx_t_17) ? __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_t_17) : __Pyx_PyObject_CallNoArg(__pyx_t_9);
-  __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
-  if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 193, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = NULL;
+  __pyx_t_10 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_8))) {
-    __pyx_t_9 = PyMethod_GET_SELF(__pyx_t_8);
-    if (likely(__pyx_t_9)) {
+    __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_8);
+    if (likely(__pyx_t_10)) {
       PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
-      __Pyx_INCREF(__pyx_t_9);
+      __Pyx_INCREF(__pyx_t_10);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_8, function);
     }
   }
-  __pyx_t_1 = (__pyx_t_9) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_9, __pyx_t_10) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+  __pyx_t_1 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_10, __pyx_v_tree) : __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_v_tree);
+  __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
   if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -6278,7 +6259,7 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cassiopeia/TreeSolver/utilities.pyx":195
- *     tree.remove_edges_from(nx.selfloop_edges(tree.selfloop_edges()))
+ *     tree.remove_edges_from(nx.selfloop_edges(tree))
  * 
  *     return tree             # <<<<<<<<<<<<<<
  * 
@@ -6305,7 +6286,6 @@ static PyObject *__pyx_pf_10cassiopeia_10TreeSolver_9utilities_6fill_in_tree(CYT
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_17);
   __Pyx_AddTraceback("cassiopeia.TreeSolver.utilities.fill_in_tree", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;

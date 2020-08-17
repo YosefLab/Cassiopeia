@@ -90,6 +90,7 @@ def main():
         "--time_limit", type=int, default=1500, help="Time limit for ILP convergence"
     )
     parser.add_argument("--greedy", "-g", action="store_true", default=False)
+    parser.add_argument("--greedy_heritable", "-gh", action="store_true", default=False)
     parser.add_argument("--camin-sokal", "-cs", action="store_true", default=False)
     parser.add_argument(
         "--verbose", action="store_true", default=False, help="output verbosity"
@@ -105,6 +106,7 @@ def main():
     parser.add_argument("--num_alternative_solutions", default=100, type=int)
     parser.add_argument("--greedy_missing_data_mode", default="lookahead", type=str)
     parser.add_argument("--greedy_lookahead_depth", default=3, type=int)
+    parser.add_argument("--heritable_depth", default=0, type=int)
     parser.add_argument("--split_on_heritable", action="store_true", default=False)
 
     args = parser.parse_args()
@@ -130,6 +132,7 @@ def main():
 
     missing_data_mode = args.greedy_missing_data_mode
     lookahead_depth = args.greedy_lookahead_depth
+    heritable_depth = args.heritable_depth
     if missing_data_mode not in ["knn", "lookahead", "avg", "modified_avg"]:
         raise Exception("Greedy missing data mode not recognized")
 
@@ -171,8 +174,6 @@ def main():
                 + " Unique States"
             )
 
-        print("reconstruct_tree")
-        print(split_on_heritable)
         reconstructed_network_greedy, potential_graph_sizes = solve_lineage_instance(
             target_nodes,
             method="greedy",
@@ -190,6 +191,50 @@ def main():
 
         out_stem = "".join(out_fp.split(".")[:-1])
         pic.dump(reconstructed_network_greedy, open(out_stem + ".pkl", "wb"))
+
+        newick = reconstructed_network_greedy.get_newick()
+
+        with open(out_fp, "w") as f:
+            f.write(newick)
+
+        root = [n for n in net if net.in_degree(n) == 0][0]
+        # score parsimony
+        score = 0
+        for e in nx.dfs_edges(net, source=root):
+            score += e[0].get_mut_length(e[1])
+
+        print("Parsimony: " + str(score))
+
+    elif args.greedy_heritable:
+    
+        target_nodes = list(cm_uniq.apply(lambda x: Node(x.name, x.values), axis=1))
+
+        if verbose:
+            print("Read in " + str(cm.shape[0]) + " Cells")
+            print(
+                "Running Greedy Heritable Algorithm on "
+                + str(len(target_nodes))
+                + " Unique States"
+            )
+
+        reconstructed_network_greedy, h_drops, potential_graph_sizes = solve_lineage_instance(
+            target_nodes,
+            method="greedy_heritable",
+            prior_probabilities=prior_probs,
+            greedy_minimum_allele_rep=greedy_min_allele_rep,
+            fuzzy=fuzzy,
+            probabilistic=probabilistic,
+            n_neighbors=n_neighbors,
+            missing_data_mode=missing_data_mode,
+            lookahead_depth=lookahead_depth,
+            heritable_depth=heritable_depth
+        )
+
+        net = reconstructed_network_greedy.get_network()
+
+        out_stem = "".join(out_fp.split(".")[:-1])
+        pic.dump(reconstructed_network_greedy, open(out_stem + ".pkl", "wb"))
+        pic.dump(h_drops, open(out_stem + "_hdrops.pkl", "wb"))
 
         newick = reconstructed_network_greedy.get_newick()
 

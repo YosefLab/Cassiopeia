@@ -44,11 +44,14 @@ cassiopeia/TreeSolver/utilities.c
 cassiopeia/TreeSolver/lineage_solver/ILP_solver.py
 cassiopeia/TreeSolver/lineage_solver/__init__.py
 cassiopeia/TreeSolver/lineage_solver/greedy_solver.py
+cassiopeia/TreeSolver/lineage_solver/greedy_solver_heritable.py
 cassiopeia/TreeSolver/lineage_solver/lineage_solver.py
 cassiopeia/TreeSolver/lineage_solver/solution_evaluation_metrics.py
 cassiopeia/TreeSolver/lineage_solver/solver_utils.c
 cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx
+cassiopeia/TreeSolver/simulation_tools/Yule_utils.py
 cassiopeia/TreeSolver/simulation_tools/__init__.py
+cassiopeia/TreeSolver/simulation_tools/birthdeath_utils.py
 cassiopeia/TreeSolver/simulation_tools/dataset_generation.c
 cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx
 cassiopeia/TreeSolver/simulation_tools/simulation_utils.py

@@ -285,7 +285,7 @@ def pairwise_dist(s1, s2, priors=None):
     if num_present == 0:
         return 0
     
-    return d / num_present
+    return (d*len(s1)/num_present)
 
 @jit(parallel=True)
 def compute_distance_mat(cm, C, priors=None):

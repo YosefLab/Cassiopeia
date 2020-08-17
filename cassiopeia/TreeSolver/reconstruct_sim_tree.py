@@ -97,7 +97,7 @@ def pairwise_dist(s1, s2, priors=None):
     if num_present == 0:
         return 0
 
-    return d / num_present
+    return (d*len(s1)/num_present)
 
 
 def write_leaves_to_charmat(target_nodes, fn):

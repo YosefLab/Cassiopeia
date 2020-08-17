@@ -174,7 +174,7 @@ def classify_missing_value(
 
         node_list = node.split("|")
         if split_on_heritable:
-            num_not_missing = len([n for n in node_list if n != "-"])
+            num_not_missing = len([n for n in node_list if n != "-"]) #redundant, used in both scores
             for i in range(0, len(node_list)):
                 if node_list[i] != "0" and node_list[i] != "-":
                     for node_2 in left_split:
@@ -343,6 +343,7 @@ def perform_split(
             lookahead_depth=lookahead_depth,
             left_states=left_states,
             right_states=right_states,
+            split_on_heritable=split_on_heritable
         ):
             right_split.append(node)
         else:
@@ -472,6 +473,8 @@ def greedy_build(
         minimum_allele_rep=minimum_allele_rep,
         split_on_heritable=split_on_heritable
     )
+    # print(curr_depth, heritable_depth)
+    print(character, state)
 
     # If there is no good split left, stop the process and return a graph with the remainder of nodes
     if character == 0 and state == 0:

@@ -343,6 +343,7 @@ def perform_split(
             lookahead_depth=lookahead_depth,
             left_states=left_states,
             right_states=right_states,
+            split_on_heritable=split_on_heritable
         ):
             right_split.append(node)
         else:

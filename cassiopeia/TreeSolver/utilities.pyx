@@ -190,7 +190,7 @@ def fill_in_tree(tree, cm=None):
 
     tree = nx.relabel_nodes(tree, anc_dct)
 
-    tree.remove_edges_from(nx.selfloop_edges(tree.selfloop_edges()))
+    tree.remove_edges_from(nx.selfloop_edges(tree))
 
     return tree
 

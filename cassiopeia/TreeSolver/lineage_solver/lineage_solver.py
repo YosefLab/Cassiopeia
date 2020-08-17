@@ -15,6 +15,7 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from cassiopeia.TreeSolver.lineage_solver.greedy_solver import root_finder, greedy_build
+from cassiopeia.TreeSolver.lineage_solver.greedy_solver_heritable import greedy_build_heritable
 from cassiopeia.TreeSolver.lineage_solver.ILP_solver import (
     generate_mSteiner_model,
     solve_steiner_instance,
@@ -48,6 +49,7 @@ def solve_lineage_instance(
     n_neighbors=10,
     missing_data_mode="lookahead",
     lookahead_depth=3,
+    heritable_depth=0,
     split_on_heritable=False
 ):
     """
@@ -379,8 +381,6 @@ def solve_lineage_instance(
             print("Computing neighbors for imputing missing values...")
             neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors, split_on_heritable = split_on_heritable)
 
-        print("lineage_solver")
-        print(split_on_heritable)
         graph = greedy_build(
             target_nodes,
             neighbors,
@@ -412,6 +412,52 @@ def solve_lineage_instance(
             Cassiopeia_Tree(
                 method="greedy", network=state_tree, name="Cassiopeia_state_tree"
             ),
+            None,
+        )
+
+    if method == "greedy_heritable":
+
+        neighbors, distances = None, None
+        if missing_data_mode == "knn":
+            print("Computing neighbors for imputing missing values...")
+            neighbors, distances = find_neighbors(target_nodes, n_neighbors=n_neighbors)
+
+        h_drops = {}
+
+        graph = greedy_build_heritable(
+            target_nodes,
+            neighbors,
+            distances,
+            h_drops,
+            priors=prior_probabilities,
+            cell_cutoff=-1,
+            lca_cutoff=None,
+            fuzzy=fuzzy,
+            probabilistic=probabilistic,
+            minimum_allele_rep=greedy_minimum_allele_rep,
+            missing_data_mode=missing_data_mode,
+            lookahead_depth=lookahead_depth,
+            heritable_depth=heritable_depth,
+            curr_depth=0
+        )[0]
+
+        rdict = {}
+        for n in graph:
+            spl = n.split("_")
+            nn = Node("state-node", spl[0].split("|"), is_target=False)
+            if len(spl) > 1:
+                nn.pid = spl[1]
+            if spl[0] in node_name_dict and len(spl) == 1:
+                nn.is_target = True
+            rdict[n] = nn
+
+        state_tree = nx.relabel_nodes(graph, rdict)
+
+        return (
+            Cassiopeia_Tree(
+                method="greedy_heritable", network=state_tree, name="Cassiopeia_state_tree"
+            ),
+            h_drops,
             None,
         )
 
@@ -622,7 +668,7 @@ def find_good_gurobi_subgraph(
         + "). Proceeding to solver."
     )
 
-    for l in potential_network_priors.selfloop_edges():
+    for l in nx.selfloop_edges(potential_network_priors):
         potential_network_priors.remove_edge(l[0], l[1])
 
     nodes = list(potential_network_priors.nodes())
