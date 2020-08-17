@@ -6,7 +6,6 @@ import sys
 def node_parent(x, y):
 	"""
 	Given two nodes, finds the latest common ancestor
-
 	:param x:
 		Sample x in string format no identifier
 	:param y:
@@ -37,7 +36,6 @@ def node_parent(x, y):
 def get_edge_length(x,y,priors=None, weighted=False):
 	"""
 	Given two nodes, if x is a parent of y, returns the edge length between x and y, else -1
-
 	:param x:
 		Sample x in string format no identifier
 	:param y:
@@ -97,7 +95,6 @@ def mutations_from_parent_to_child(parent, child):
 def root_finder(target_nodes):
 	"""
 	Given a list of targets_nodes, return the least common ancestor of all nodes
-
 	:param target_nodes:
 		A list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'
 	:return:
@@ -113,13 +110,11 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	"""
 	Given a series of samples, or target nodes, creates a tree which contains potential
 	ancestors for the given samples.
-
 	First, a directed graph is constructed, by considering all pairs of samples, and checking
 	if a sample can be a possible parent of another sample
 	Then we all pairs of nodes with in-degree 0 and < a certain edit distance away
 	from one another, and add their least common ancestor as a parent to these two nodes. This is done
 	until only one possible ancestor remains
-
 	:param samples:
 		A list of target nodes, where each node is in the form 'Ch1|Ch2|....|Chn'
 	:param priors
@@ -149,7 +144,6 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 	sys.stdout.flush()
 
 	max_neighbor_dist = 0
-	# max_neighbor_dist = lca_dist
 	while max_neighbor_dist < (lca_dist+1):	 
 		initial_network = nx.DiGraph()
 		samples = np.unique((samples))
@@ -217,24 +211,24 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 
 			source_nodes = temp_source_nodes
 			max_width = max(max_width, len(source_nodes))
-			
-			max_width = max(max_width, len(source_nodes))
-			print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
-			sys.stdout.flush()
+		
+		max_width = max(max_width, len(source_nodes))
+		print("LCA Distance " + str(max_neighbor_dist) + " completed with a neighborhood size of " + str(max_width) + " (pid: " + str(pid) + ")")
+		sys.stdout.flush()
 
-			if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
-				max_neighbor_dist += 5
-			elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
-				max_neighbor_dist += 3
-			else:
-				max_neighbor_dist += 1
-			
-			potential_graph_diagnostic[max_neighbor_dist] = max_width
-			prev_widths.append(max_width)
-			
-			prev_network = initial_network
-			if flag:
-				return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
+		if len(prev_widths) > 2 and max_width == prev_widths[-1] and max_width == prev_widths[-2]:
+			max_neighbor_dist += 5
+		elif len(prev_widths) > 1 and max_width == prev_widths[-1]:
+			max_neighbor_dist += 3
+		else:
+			max_neighbor_dist += 1
+		
+		potential_graph_diagnostic[max_neighbor_dist] = max_width
+		prev_widths.append(max_width)
+		
+		prev_network = initial_network
+		if flag:
+			return prev_network, max_neighbor_dist - 1, potential_graph_diagnostic
 
 	return initial_network, max_neighbor_dist, potential_graph_diagnostic
 
@@ -242,7 +236,6 @@ def build_potential_graph_from_base_graph(samples, root, max_neighborhood_size =
 def get_sources_of_graph(tree):
 	"""
 	Returns all nodes with in-degree zero
-
 	:param tree:
 		networkx tree
 	:return:

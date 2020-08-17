@@ -288,8 +288,6 @@ def solve_lineage_instance(
         for r in alt_solutions.keys():
             soln_list = []
 
-            # get original target char strings
-            # sub_targets = [n.char_string for n in state_tree.successors(r) if n.is_target]
             for res in alt_solutions[r]:
 
                 rdict = {}
@@ -308,61 +306,6 @@ def solve_lineage_instance(
             alt_solutions[r] = soln_list
 
             pbar.update(1)  # update progress bar
-
-        # iterate through all possible solutions
-        # alt_solutions = []
-
-        # if num_solutions > 1:
-
-        # 	num_considered_solutions = 0
-        # 	sol_identifiers = []  # keep track of solutions already sampled
-
-        # 	# we'll sample maximum_alt_solutions from the set of possible solutions
-        # 	pbar = tqdm(
-        # 		total=maximum_alt_solutions, desc="Enumerating alternative solutions"
-        # 	)
-        # 	while num_considered_solutions < min(num_solutions, maximum_alt_solutions):
-
-        # 		current_sol = []
-        # 		for res_list in all_res:
-        # 			current_sol.append(np.random.choice(len(res_list)))
-
-        # 		if tuple(current_sol) not in sol_identifiers:
-
-        # 			new_network = base_network.copy()
-        # 			for i in range(len(current_sol)):
-        # 				res_list = all_res[i]
-        # 				net = res_list[current_sol[i]]
-        # 				new_network = nx.compose(new_network, net)
-
-        # 			rdict = {}
-        # 			target_seen = []
-        # 			for n in new_network:
-        # 				spl = n.split("_")
-        # 				nn = Node("state-node", spl[0].split("|"), is_target=False)
-
-        # 				if len(spl) == 2:
-        # 					if "target" in n and n not in target_seen:
-        # 						nn.is_target = True
-
-        # 				if len(spl) > 2:
-        # 					if 'target' in n and n not in target_seen:
-        # 						nn.is_target = True
-        # 					nn.pid = spl[-1]
-
-        # 				if nn.is_target:
-        # 					target_seen.append(nn.char_string)
-
-        # 				rdict[n] = nn
-
-        # 			new_network = nx.relabel_nodes(new_network, rdict)
-
-        # 			alt_solutions.append(new_network)
-
-        # 			sol_identifiers.append(tuple(current_sol))
-        # 			num_considered_solutions += 1
-
-        # 			pbar.update(1)  # update progress bar
 
         return (
             Cassiopeia_Tree(
