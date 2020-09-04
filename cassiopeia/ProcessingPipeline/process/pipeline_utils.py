@@ -392,53 +392,6 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
 
 
 
-def filterCellBCs(data, umi_per_cellBC_thresh, avg_reads_per_UMI_thresh):
-    """
-    Filter out cell barcodes that have too few UMIs or too few reads/UMI
-
-    :param data:
-        Molecule table
-    :param umi_per_cellBC_thresh:
-        Minimum number of UMIs per cellBC allowed.
-    :param avg_reads_per_UMI_thresh:
-        Minimum average number of reads per UMI allowed. 
-    :return:
-        A filtered dataset and a stat dictionary storing how many cells/UMIs were filtered/kept.
-    """
-
-    tooFewUMI_UMI = []
-    cellBC2nM = {}
-
-    # Create a cell-filter dictionary for hash lookup later on when filling
-    # in the table
-    cell_filter = {}
-
-    for n, group in tqdm(data.groupby(["cellBC"])):
-        umi_per_cellBC_n = group.shape[0]
-        reads_per_cellBC_n = group.agg({"readCount":'sum'}).readCount
-        avg_reads_per_UMI_n = float(reads_per_cellBC_n)/float(umi_per_cellBC_n)
-        if (umi_per_cellBC_n <= umi_per_cellBC_thresh) or (avg_reads_per_UMI_n <= avg_reads_per_UMI_thresh):
-            cell_filter[n] = "bad"
-            tooFewUMI_UMI.append(group.shape[0])
-        else:
-            cell_filter[n] = "good"
-            cellBC2nM[n] = group.shape[0]
-
-    # apply the filter using the hash table created above
-    data["status"] = data["cellBC"].map(cell_filter)
-
-    # count how many cells/umi's passed the filter for logging purposes
-    status = cell_filter.values()
-    tooFewUMI_cellBC = len(status) - len(np.where(status == "good")[0])
-    tooFewUMI_UMI = np.sum(tooFewUMI_UMI)
-    goodumis = data[(data["status"] == "good")].shape[0]
-
-    # return filtered data table
-    n_data = data[(data["status"] == "good")]
-
-    stat_dict = {"cells_kept": len(n_data["cellBC"].unique()), "num_umi_kept": goodumis, "cells_removed": tooFewUMI_cellBC, "num_umi_removed": tooFewUMI_UMI}
-
-    return n_data, stat_dict
 
 def resolveSequences(moleculetable, outputdir):
     """
