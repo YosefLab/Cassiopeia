@@ -9,7 +9,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 
-def filterCellBCs(
+def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
