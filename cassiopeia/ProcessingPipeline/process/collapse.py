@@ -205,6 +205,7 @@ def sort_cellranger_bam(bam_fn, sorted_fn, sort_key, filter_func, show_progress=
 
     with open(yaml_fn, "w") as f:
         f.write(yaml.dump(stats, default_flow_style=False))
+    #yaml_fn.write_text(yaml.dump(stats, default_flow_style=False))
 
 def error_correct_UMIs(cell_group, sampleID, max_UMI_distance=1):
 

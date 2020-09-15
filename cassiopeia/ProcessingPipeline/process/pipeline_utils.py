@@ -51,7 +51,6 @@ def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_di
         None; output table is written to file.
     """
 
-
     base_dir = Path(base_dir)
     sorted_fn = Path('.'.join(str(base_dir / fn).split(".")[:-1]) + "_sorted.bam")
 
