@@ -23,11 +23,11 @@ def setup(output_directory_location):
         os.mkdir(output_directory_location)
 
     logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.log"),
+        filename=os.path.join(output_directory_location, 'preprocess.log'),
         level=logging.INFO,
     )
     logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.err"),
+        filename=os.path.join(output_directory_location, 'preprocess.err'),
         level=logging.ERROR,
     )
 
@@ -36,14 +36,14 @@ def main():
 
     # --------------- Create Argument Parser & Read in Arguments -------------- #
     parser = argparse.ArgumentParser()
-    parser.add_argument("bam", type=str, help="Specify a BAM file to process.")
+    parser.add_argument('bam', type=str, help='Specify a BAM file to process.')
     parser.add_argument(
-        "output_directory",
+        'output_directory',
         type=str,
-        help="Specify an output directory to store results.",
+        help='Specify an output directory to store results.',
     )
     parser.add_argument(
-        "config", type=str, help="Specify a config file for analysis."
+        'config', type=str, help='Specify a config file for analysis.'
     )
 
     args = parser.parse_args()
@@ -52,7 +52,7 @@ def main():
     output_directory = args.output_directory
     config_filepath = args.config
 
-    setup(output_directory)
+    setup(output_directory) ##feed into base_dir
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
@@ -64,5 +64,5 @@ def main():
     # etc
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
