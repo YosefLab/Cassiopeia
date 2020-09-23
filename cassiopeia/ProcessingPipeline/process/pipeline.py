@@ -3,17 +3,17 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
-import os
 
 import logging
-import time
-
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
+import pysam
+import time
+
 from tqdm.auto import tqdm
 from pathlib import Path
-import pysam
 
 from cassiopeia.ProcessingPipeline.process import UMI_utils
 
@@ -82,7 +82,9 @@ def resolve_UMI_sequence(
 
         # more commonly - many sequences for a given UMI
         else:
-            group_sort = group.sort_values("readCount", ascending=False).reset_index()
+            group_sort = group.sort_values(
+                "readCount", ascending=False
+            ).reset_index()
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -105,7 +107,9 @@ def resolve_UMI_sequence(
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[molecule_table["filter"] == False].copy()
+    filt_molecule_table = molecule_table[
+        molecule_table["filter"] == False
+    ].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -116,7 +120,9 @@ def resolve_UMI_sequence(
     plt.ylabel("Total Reads")
     plt.xlabel("Number Reads for Picked Sequence")
     plt.title("Total vs. Top Reads for Picked Sequence")
-    plt.savefig(os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png"))
+    plt.savefig(
+        os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
+    )
     plt.close()
 
     h = plt.figure(figsize=(14, 10))
@@ -124,14 +130,12 @@ def resolve_UMI_sequence(
     plt.ylabel("Number Reads for Second Best Sequence")
     plt.xlabel("Number Reads for Picked Sequence")
     plt.title("Second Best vs. Top Reads for Picked Sequence")
-    plt.savefig(os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png"))
+    plt.savefig(
+        os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
+    )
     plt.close()
 
     return filt_molecule_table
-
-
-CELL_BC_TAG = "CB"
-UMI_TAG = "UR"
 
 
 def collapseUMIs(
@@ -145,28 +149,37 @@ def collapseUMIs(
 ):
     """Collapses close UMIs together from a bam file.
 
-    On a basic level, it aggregates together identical reads to count how many times a UMI was read.
-    Also, it performs basic error correction, allowing UMIs to be collapsed together which differ by at most a certain number of high quality
-    mismatches and indels in the sequence read itself. Writes out a dataframe of the collapsed UMIs table.
+    On a basic level, it aggregates together identical or close reads to count 
+    how many times a UMI was read. Performs basic error correction, allowing 
+    UMIs to be collapsed together which differ by at most a certain number of 
+    high quality mismatches and indels in the sequence read itself. Writes out 
+    a dataframe of the collapsed UMIs table.
 
     Args:
-          out_dir: The output directory where the sorted bam directory, the collapsed bam directory, and the final collapsed table are written to.
-          bam_file_name: File path of the bam_file. Just the bam file name can be specified if the bam already exists in the output directory.
-          max_hq_mismatches: A threshold specifying the maximum number of high quality mismatches between the seqeunces of 2 aligned segments to be collapsed.
-          max_indels: A threshold specifying the maximum number of differing indels allowed between the sequences of 2 aligned segments to be collapsed.
-          n_threads: Number of threads used. Currently only supports single threaded use.
-          show_progress: Allow progress bar to be shown.
-          force_sort: Specify whether to sort the initial bam directory, regardless of if the sorted file already exists.
+        out_dir: The output directory where the sorted bam directory, the
+          collapsed bam directory, and the final collapsed table are written to.
+        bam_file_name: File path of the bam_file. Just the bam file name can be
+          specified if the bam already exists in the output directory.
+        max_hq_mismatches: A threshold specifying the max number of high quality
+          mismatches between the seqeunces of 2 aligned segments to be collapsed.
+        max_indels: A threshold specifying the maximum number of differing indels
+          allowed between the sequences of 2 aligned segments to be collapsed.
+        n_threads: Number of threads used. Currently only supports single
+          threaded use.
+        show_progress: Allow progress bar to be shown.
+        force_sort: Specify whether to sort the initial bam directory, regardless
+          of if the sorted file already exists.
 
     Returns:
-          None; output table is written to file, which can then be read in as a dataframe.
+        None; output table is written to file.
     """
 
     logging.info("Collapsing UMI sequences...")
 
     t0 = time.time()
 
-    # pathing written such that the bam file that is being converted does not have to exist currently in the output directory
+    # pathing written such that the bam file that is being converted does not
+    # have to exist currently in the output directory
     if out_dir[-1] == "/":
         out_dir = out_dir[:-1]
     sorted_file_name = Path(
@@ -176,15 +189,10 @@ def collapseUMIs(
         + "_sorted.bam"
     )
 
-    sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
-    filter_func = lambda al: al.has_tag(CELL_BC_TAG)
-
     if force_sort or not sorted_file_name.exists():
         max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
             bam_file_name,
             str(sorted_file_name),
-            sort_key,
-            filter_func,
             show_progress=show_progress,
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))
@@ -207,29 +215,42 @@ def collapseUMIs(
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
 
 
-def convertBam2DF(data_fp: str, out_fp: str):
+def convertBam2DF(
+    data_fp: str, out_fp: str, create_pd: bool = False
+) -> pd.DataFrame:
     """Converts a BAM file to a dataframe.
 
-    Saves the contents of a BAM file to a tab-delimited table saved to a text file. Rows represent alignments with relevant fields
-    such as the CellBC, UMI, read count, sequence, and sequence qualities.
+    Saves the contents of a BAM file to a tab-delimited table saved to a text
+    file. Rows represent alignments with relevant fields such as the CellBC,
+    UMI, read count, sequence, and sequence qualities.
 
     Args:
-        data_fp: The input filepath for the BAM file to be converted.
-        out_fp: The output filepath specifying where the resulting dataframe is to be stored and its name.
+      data_fp: The input filepath for the BAM file to be converted.
+      out_fp: The output filepath specifying where the resulting dataframe is to
+        be stored and its name.
+      create_pd: Specifies whether to generate and return a pd.Dataframe.
 
     Returns:
-        None, output saved to file.
+      If create_pd: a pd.Dataframe containing the BAM information.
+      Else: None, output saved to file
 
     """
     f = open(out_fp, "w")
     f.write("cellBC\tUMI\treadCount\tgrpFlag\tseq\tqual\treadName\n")
 
-    bam_fh = pysam.AlignmentFile(data_fp, ignore_truncation=True, check_sq=False)
-    for al in bam_fh.fetch(until_eof=True):
+    als = []
+
+    bam_fh = pysam.AlignmentFile(
+        data_fp, ignore_truncation=True, check_sq=False
+    )
+    for al in bam_fh:
         cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
-        # seq represented as an array of unsigned chars, not the ASCII-encoded format that are found in the typical SAM formatting
-        seq = al.query_alignment_sequence
-        qual = al.query_alignment_qualities
+        seq = al.query_sequence
+        qual = al.query_qualities
+        # Pysam qualities are represented as an array of unsigned chars,
+        # so they are converted to the ASCII-encoded format that are found 
+        # in the typical SAM formatting. 
+        encode_qual = "".join(map(lambda x: chr(x + 33), qual))
         f.write(
             cellBC
             + "\t"
@@ -241,9 +262,38 @@ def convertBam2DF(data_fp: str, out_fp: str):
             + "\t"
             + seq
             + "\t"
-            + str(qual)
+            + encode_qual
             + "\t"
             + al.query_name
             + "\n"
         )
+
+        if create_pd:
+            als.append(
+                [
+                    cellBC,
+                    UMI,
+                    int(readCount),
+                    grpFlag,
+                    seq,
+                    encode_qual,
+                    al.query_name,
+                ]
+            )
+
     f.close()
+
+    if create_pd:
+        df = pd.DataFrame(als)
+        df = df.rename(
+            columns={
+                0: "cellBC",
+                1: "UMI",
+                2: "readCount",
+                3: "grpFlag",
+                4: "seq",
+                5: "qual",
+                6: "readName",
+            }
+        )
+        return df
