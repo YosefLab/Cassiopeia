@@ -116,44 +116,6 @@ def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=
 
     convert_bam_to_moleculeTable(ec_fh, mt_fh)
 
-
-def align_sequences(ref, queries, outfile, gapopen=20, gapextend=1, ref_format="fasta", query_format="fastq", out_format="sam"):
-    """
-    Aligns many queries to a single reference sequence using EMBOSS water. By default, we assume the reference is in FASTA format, the queries 
-    are all in FASTQ format, and that the output format will be a SAM file. The output file is automatically written.
-
-    :param ref:
-        File path to the reference sequence.
-    :param queries:
-        Queries, provided as a dataframe output from the `pickSeq` function. This will automatically be converted to a FASTQ file.
-    :param gapopen:
-        Gap open penalty.
-    :param gapextend:
-        Gap extension penalty.
-    :param ref_format:
-        Format of reference sequence.
-    :param query_format:
-        Format of query seqeunces.
-    :param out_format:
-        Output file format.
-    :return:
-        None. 
-    """
-
-    queries_fastq = str(Path(queries).with_suffix(".fastq"))
-    collapseDF2Fastq(queries, queries_fastq)  
-
-    cmd = "water -asequence " + ref + " -sformat1 " + ref_format  + " -bsequence " + queries_fastq + " -sformat2 " + query_format + " -gapopen " + str(gapopen) + " -gapextend " + str(gapextend) + " -outfile " + outfile + " -aformat3 " + out_format
-
-    cmd = cmd.split(" ")
-
-    subprocess.check_output(cmd)
-
-    with open(outfile, "r+") as f:
-        content = f.read()
-        f.seek(0,0)
-        f.write(SAM_HEADER_PCT48 + "\n" + content)
-
 def call_indels(alignments, ref, output, context=True):
     """
     Given many alignments, we extract the indels by comparing the CIGAR strings in the alignments to the reference sequence. 
