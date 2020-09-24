@@ -72,7 +72,7 @@ filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 
 
 def sort_cellranger_bam(
-    bam_fn: str,
+    bam_fp: str,
     sorted_fn: str,
     sort_key: Callable[[pysam.AlignedSegment], str] = sort_key,
     filter_func: Callable[[pysam.AlignedSegment], str] = filter_func,
@@ -85,7 +85,7 @@ def sort_cellranger_bam(
     chunks, filtering relevant aligned sequences with a specified key.
 
     Args:
-      bam_fn: The file name of the BAM to be sorted.
+      bam_fp: The file path of the BAM to be sorted.
       sorted_fn: The file name of the output BAM after sorting.
       sort_key: A function specifying the key by which to sort the aligned sequences.
       filter_func: A function specifying the key by which to filter out
@@ -98,7 +98,7 @@ def sort_cellranger_bam(
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
-    bam_fh = pysam.AlignmentFile(str(bam_fn))
+    bam_fh = pysam.AlignmentFile(str(bam_fp))
 
     relevant = filter(filter_func, bam_fh)
 

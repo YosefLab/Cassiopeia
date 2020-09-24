@@ -140,7 +140,7 @@ def resolve_UMI_sequence(
 
 def collapseUMIs(
     out_dir: str,
-    bam_file_name: str,
+    bam_fp: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     n_threads: int = 1,
@@ -185,13 +185,13 @@ def collapseUMIs(
     sorted_file_name = Path(
         out_dir
         + "/"
-        + ".".join(bam_file_name.split("/")[-1].split(".")[:-1])
+        + ".".join(bam_fp.split("/")[-1].split(".")[:-1])
         + "_sorted.bam"
     )
 
     if force_sort or not sorted_file_name.exists():
         max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
-            bam_file_name,
+            bam_fp,
             str(sorted_file_name),
             show_progress=show_progress,
         )
@@ -297,3 +297,29 @@ def convertBam2DF(
             }
         )
         return df
+
+def collapseDF2fastq(data_fp, out_fp):
+    df = pd.read_csv(data_fp, sep = "\t")
+    f = open(out_fp, "w")
+    for i, row in df.iterrows():
+        cellBC = row[0]
+        UMI = row[1]
+        readCount = row[2]
+        seq = row[4]
+        qual = row[5]
+        f.write(
+            "@" 
+            + cellBC
+            + "_"
+            + UMI
+            + "_"
+            + str(readCount)
+            + "\n"
+            + seq
+            + "\n"
+            + "+"
+            + "\n"
+            + qual
+            + "\n"
+        )
+    f.close()
