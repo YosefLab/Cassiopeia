@@ -56,7 +56,7 @@ class TestResolveUMISequence(unittest.TestCase):
     )
 
   def test_resolve_umi(self):
-
+    
     resolved_mt = pipeline.resolve_UMI_sequence(
         self.collapsed_umi_table, ".", min_umi_per_cell=1, plot=False
     )

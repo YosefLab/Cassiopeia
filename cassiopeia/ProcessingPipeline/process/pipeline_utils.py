@@ -51,7 +51,6 @@ def collapseUMIs(base_dir, fn, max_hq_mismatches = 3, max_indels = 2, max_UMI_di
         None; output table is written to file.
     """
 
-
     base_dir = Path(base_dir)
     sorted_fn = Path('.'.join(str(base_dir / fn).split(".")[:-1]) + "_sorted.bam")
 
@@ -117,42 +116,6 @@ def errorCorrectUMIs(input_fn, _id, log_file, max_UMI_distance=2, show_progress=
 
     convert_bam_to_moleculeTable(ec_fh, mt_fh)
 
-
-def collapseBam2DF(data_fp, out_fp):
-    """
-    Collapses a BAM file to a Dataframe. 
-
-    :param data_fp:
-        BAM file input.
-    :param out_fp:
-        Filepath for output DataFrame.
-    :return:
-        None.
-    """
-
-    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseBam2dataFrame.pl')
-
-    cmd = "perl " + str(perl_script) + " " + data_fp + " " + out_fp 
-    p = subprocess.Popen(cmd, shell=True)
-    pid, ecode = os.waitpid(p.pid, 0)
-
-
-def collapseDF2Fastq(data_fp, out_fp):
-    """
-    Collapses a DataFrame to a FASTQ file.
-
-    :param data_fp:
-        Dataframe input file.
-    :param out_fp:
-        Filepath for output FASTQ file.
-    :return:
-        None.
-    """
-
-    perl_script = (SCLT_PATH / 'ProcessingPipeline' / 'process' / 'collapseDF2fastq.pl')
-    cmd = "perl " + str(perl_script) + " " + data_fp + " " + out_fp
-
-    p = subprocess.check_output(cmd, shell=True)
 
 def align_sequences(ref, queries, outfile, gapopen=20, gapextend=1, ref_format="fasta", query_format="fastq", out_format="sam"):
     """
@@ -389,120 +352,3 @@ def call_lineage_groups(mt, out_fp, outputdir, cell_umi_filter=10, min_cluster_p
 
     print(" ".join(args))
     subprocess.check_output(args)
-
-
-
-
-def resolveSequences(moleculetable, outputdir):
-    """
-    Pick most abundant sequence from a set of equivalent reads (i.e. same cellBC and UMI)
-    Output a single sequence per unique cellBC-UMI pair
-
-    :param moleculetable:
-        Moleculetable relating cellBCs to UMIs and reads.
-    :param outputdir:
-        Output directory to store plots and logs.
-    :return:
-        A molecule table with unique mappings between cellBC-UMI pairs and sequences.
-    """
-
-    mt_filter = {}
-    total_numReads = {}
-    top_reads = {}
-    second_reads = {}
-    first_reads = {}
-
-    for n, group in tqdm(moleculetable.groupby(["cellBC", "UMI"])):
-        if group.shape[0] == 1:
-            good_readName = group["readName"].iloc[0]
-            mt_filter[good_readName] = "good"
-            total_numReads[good_readName] = group["readCount"]
-            top_reads[good_readName] = group["readCount"]
-            # second_reads[good_readName] = group["readCount"]
-        else:
-            group_sort = group.sort_values("readCount", ascending=False).reset_index()
-            good_readName = group_sort["readName"].iloc[0]
-            mt_filter[good_readName] = "good" # add the first entry (highest readCount) to "good"
-        
-            total_numReads[good_readName] = group_sort["readCount"].sum()
-            top_reads[good_readName] = group_sort["readCount"].iloc[0]
-            second_reads[good_readName] = group_sort["readCount"].iloc[1]
-            first_reads[good_readName] = group_sort["readCount"].iloc[0]
-
-            for i in range(1,group.shape[0]):
-                bad_readName = group_sort["readName"].iloc[i]
-                mt_filter[bad_readName] = "bad" # add the rest of the entry(ies) (lowest readCount(s)) to "bad"
-
-    # apply the filter using the hash table created above
-    moleculetable["status"] = moleculetable["readName"].map(mt_filter)
-
-    # filter based on status & reindex
-    n_moleculetable = moleculetable[(moleculetable["status"] == "good")]
-
-    h = plt.figure(figsize=(14, 10))
-    plt.plot(top_reads.values(), total_numReads.values(), "r.")
-    plt.ylabel("Total Reads")
-    plt.xlabel("Number Reads for Picked Sequence")
-    plt.title("Total vs. Top Reads for Picked Sequence")
-    plt.savefig(outputdir + "/total_vs_top_reads_pickSeq.png")
-    plt.close()
-    
-    h = plt.figure(figsize=(14, 10))
-    plt.plot(first_reads.values(), second_reads.values(), "r.")
-    plt.ylabel("Number Reads for Second Best Sequence")
-    plt.xlabel("Number Reads for Picked Sequence")
-    plt.title("Second Best vs. Top Reads for Picked Sequence")
-    plt.savefig(outputdir + "/second_vs_top_reads_pickSeq.png")
-    plt.close()
-
-    return n_moleculetable
-
-def pickSeq(moltable, out_fp, outputdir, cell_umi_thresh = 10, avg_reads_per_UMI_thresh = 2.0, save_output=False): 
-    """
-    Procedure for filtering out UMIs and cellBCs and then resolving sequences with the `resolveSequences` function.
-
-    :param moltable:
-        Moleculetable relating cellBCs to UMIs and reads.
-    :param out_fp:
-        Output file name.
-    :param outputdir:
-        Output directory for logs, new molecule tables, and plots.
-    :param avg_reads_per_UMI_thresh:
-        Minimum average number of reads per UMI allowed. 
-    :param cell_umi_thresh:
-        Minimum number of UMIs per cell allowed.
-    :param save_output:
-        Write new molecule table to file.
-    :return:
-        A molecule table with unique mappings between cellBC-UMI pairs and sequences if save_output is false. Else None.
-    """
-
-    # Log time
-    t0 = time.time()
-
-    print(">>> READING DATA IN...")
-    # read in allele table and apply desired transformmtions
-    mt = pd.read_csv(moltable, sep='\t')
-
-    print(">>> PLOTTING EQUIVALENCE CLASS READS...")
-    equivClass_group = mt.groupby(["cellBC", "UMI"]).agg({"grpFlag": 'count'}).sort_values('grpFlag', ascending=False).reset_index()
-
-    h = plt.figure(figsize=(8,5))
-    ax = plt.hist(equivClass_group["grpFlag"], bins=range(1,equivClass_group["grpFlag"].max()))
-    t = plt.title("Unique Seqs per cellBC+UMI")
-    yax = plt.yscale('log', basey=10)
-    plt.xlabel("Number of Unique Seqs")
-    plt.ylabel("Count (Log)")
-    plt.savefig(outputdir + "/" + "seqs_per_equivClass.png")
-
-    print(">>> RESOLVING CONFLICTING SEQUENCES...")
-    mt = resolveSequences(mt, outputdir)
-
-    print(">>> FILTERING CELL BARCODES...")
-    mt = filterCellBCs(mt, cell_umi_thresh, avg_reads_per_UMI_thresh)[0]
-
-    if save_output:
-        mt.to_csv(out_fp, sep='\t')
-        return
-
-    return mt
