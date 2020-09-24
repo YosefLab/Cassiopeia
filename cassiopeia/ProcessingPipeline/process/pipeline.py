@@ -3,20 +3,21 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
+import os
+import time
 
 from typing import Optional
 
+from Bio import SeqIO
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
 import pysam
 from skbio import alignment
-import time
 
-from tqdm.auto import tqdm
 from pathlib import Path
+from tqdm.auto import tqdm
 
 from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
