@@ -2,12 +2,19 @@
 Tests for the UMI Collapsing module in pipeline.py
 """
 import unittest
+unittest.TestLoader.sortTestMethodsUsing = None
+
+
+import time
 
 import pandas as pd
 from pathlib import Path
 import pysam
+
+
 from cassiopeia.ProcessingPipeline.process import pipeline
 from cassiopeia.ProcessingPipeline.process import UMI_utils
+from cassiopeia.ProcessingPipeline.process import utilities
 
 
 class TestConvertBam2DF(unittest.TestCase):
@@ -24,13 +31,21 @@ class TestConvertBam2DF(unittest.TestCase):
             ".collapsed.bam"
         )
 
-    def test_sort_bam(self):
-        max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
+        _, _ = UMI_utils.sort_cellranger_bam(
             self.test_file,
             str(self.sorted_file_name),
             show_progress=False,
         )
 
+        UMI_utils.form_collapsed_clusters(
+            str(self.sorted_file_name),
+            max_hq_mismatches=3,
+            max_indels=2,
+            show_progress=False,
+        )
+
+    def test_sort_bam(self):
+        
         sorted_bam = pysam.AlignmentFile(
             self.sorted_file_name, "rb", check_sq=False
         )
@@ -49,12 +64,6 @@ class TestConvertBam2DF(unittest.TestCase):
         self.assertEqual(expected_UMI, UMIs[7])
 
     def test_collapse_bam(self):
-        UMI_utils.form_collapsed_clusters(
-            str(self.sorted_file_name),
-            max_hq_mismatches=3,
-            max_indels=2,
-            show_progress=False,
-        )
 
         collapsed_bam = pysam.AlignmentFile(
             self.collapsed_file_name, "rb", check_sq=False
@@ -84,7 +93,7 @@ class TestConvertBam2DF(unittest.TestCase):
         collapsed_df_file_name = self.sorted_file_name.with_suffix(
             ".collapsed.txt"
         )
-        ret = pipeline.convertBam2DF(
+        ret = utilities.convertBam2DF(
             str(self.collapsed_file_name),
             str(collapsed_df_file_name),
             create_pd=True,
