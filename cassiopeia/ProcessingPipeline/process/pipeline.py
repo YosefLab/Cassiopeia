@@ -4,12 +4,15 @@ data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
 
+from typing import Optional
+
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
 import pysam
+from skbio import alignment
 import time
 
 from tqdm.auto import tqdm
@@ -226,8 +229,9 @@ def collapseUMIs(
 
 
 def align_sequences(
-    ref_filepath: str,
     queries: pd.DataFrame,
+    ref_filepath: Optional[str] = None,
+    ref: Optional[str] = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
 ) -> pd.DataFrame:
@@ -239,9 +243,12 @@ def align_sequences(
     output consists of the best alignment score and the CIGAR string storing the
     indel locations in the query sequence.
 
+    TODO(mattjones315): Parallelize?
+
     Args:
-        ref_filepath: Filepath to the reference FASTA.
         queries: Dataframe storing a list of sequences to align.
+        ref_filepath: Filepath to the reference FASTA.
+        ref: Reference sequence.
         gapopen: Gap open penalty
         gapextend: Gap extension penalty
     
@@ -250,8 +257,12 @@ def align_sequences(
         and original query sequence.
     """
 
+    assert ref or ref_filepath
+
     alignment_dictionary = {}
-    ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
+
+    if ref_filepath:
+        ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
 
     logging.info("Beginning alignment to reference...")
     t0 = time.time()
@@ -280,7 +291,7 @@ def align_sequences(
 
     logging.info(f"Finished aligning in {final_time - t0}.")
     logging.info(
-        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0])}"
+        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0]})"
     )
 
     alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
@@ -292,5 +303,7 @@ def align_sequences(
         "AlignmentScore",
         "Seq",
     ]
+    alignment_df.index.name = 'readName'
+    alignment_df.reset_index(inplace=True)
 
     return alignment_df
