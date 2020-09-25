@@ -54,6 +54,7 @@ class TestResolveUMISequence(unittest.TestCase):
             "UMI",
             "AlignmentScore",
             "CIGAR",
+            "QueryBegin",
             "Seq",
             "readName",
             "ReadCount",

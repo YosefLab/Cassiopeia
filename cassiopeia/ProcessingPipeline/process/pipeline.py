@@ -6,7 +6,7 @@ is mainly invoked by cassiopeia_preprocess.py.
 import os
 import time
 
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from Bio import SeqIO
 import logging
@@ -22,6 +22,7 @@ from tqdm.auto import tqdm
 from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
 from cassiopeia.ProcessingPipeline.process import utilities
+from cassiopeia.ProcessingPipeline.process import alignment_utilities
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 
@@ -284,6 +285,7 @@ def align_sequences(
             query.UMI,
             query.readCount,
             aln.cigar,
+            aln.query_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
         )
@@ -301,10 +303,82 @@ def align_sequences(
         "UMI",
         "ReadCount",
         "CIGAR",
+        "QueryBegin",
         "AlignmentScore",
         "Seq",
     ]
-    alignment_df.index.name = 'readName'
+    alignment_df.index.name = "readName"
     alignment_df.reset_index(inplace=True)
 
     return alignment_df
+
+
+def call_indels(
+    alignments: pd.DataFrame,
+    ref_filepath: Optional[str] = None,
+    ref: Optional[str] = None,
+    context: bool = True,
+    barcode_interval: Tuple[int, int] = (20, 34),
+    cutsite_locations: List[int] = [112, 166, 220],
+    cutsite_width: int = 12,
+) -> pd.DataFrame:
+    """Call indels from CIGAR strings.
+
+    Given many alignments, we extract the indels by comparing the CIGAR strings
+    of each alignment to the reference sequence. 
+
+    Args:
+        alignments: Alignments provided in dataframe
+        ref_filepath: Filepath to the ference sequence
+        ref: Nucleotide sequence of the reference
+        context: Include sequence context around indels
+        barcode_interval: Interval in reference corresponding to the integration
+            barcode
+        cutsite_locations: A list of all cutsite positions in the reference
+        cutsite_width: Number of nucleotides left and right of cutsite location
+            that indels can appear in.
+
+    Returns:
+        A dataframe mapping each sequence alignment to the called indels.
+    """
+
+    assert ref or ref_filepath
+
+    alignment_to_indel = {}
+
+    if ref_filepath:
+        ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
+
+    logging.info("Calling indels...")
+    t0 = time.time()
+
+    for _, row in tqdm(
+        alignments.iterrows(),
+        total=alignments.shape[0],
+        desc="Parsing CIGAR strings into indels",
+    ):
+
+        alignment_to_indel[row.readName] = alignment_utilities.parse_cigar(
+            row.CIGAR,
+            row.Seq,
+            ref,
+            barcode_interval,
+            cutsite_locations,
+            cutsite_width,
+        )
+
+    indel_df = pd.DataFrame.from_dict(
+        alignment_to_indel,
+        columns=["r{i}" for i in range(len(cutsite_locations))],
+    )
+    indel_df["allele"] = indel_df.apply(
+        lambda x: "".join([str(i) for i in x.values]), axis=1
+    )
+
+    alignments.set_index("readName", inplace=True)
+
+    alignments = alignments.join(indel_df)
+
+    alignments.reset_index(inplace=True)
+
+    return alignments
