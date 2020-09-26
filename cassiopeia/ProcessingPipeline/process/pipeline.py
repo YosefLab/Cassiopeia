@@ -313,7 +313,7 @@ def align_sequences(
     return alignment_df
 
 
-def call_indels(
+def call_alleles(
     alignments: pd.DataFrame,
     ref_filepath: Optional[str] = None,
     ref: Optional[str] = None,
@@ -345,6 +345,7 @@ def call_indels(
     assert ref or ref_filepath
 
     alignment_to_indel = {}
+    alignment_to_intBC = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
@@ -358,7 +359,7 @@ def call_indels(
         desc="Parsing CIGAR strings into indels",
     ):
 
-        alignment_to_indel[row.readName] = alignment_utilities.parse_cigar(
+        intBC, indels = alignment_utilities.parse_cigar(
             row.CIGAR,
             row.Seq,
             ref,
@@ -367,6 +368,9 @@ def call_indels(
             cutsite_width,
         )
 
+        alignment_to_indel[row.readName] = indels
+        alignment_to_intBC[row.readName] = intBC
+
     indel_df = pd.DataFrame.from_dict(
         alignment_to_indel,
         columns=["r{i}" for i in range(len(cutsite_locations))],
@@ -374,6 +378,7 @@ def call_indels(
     indel_df["allele"] = indel_df.apply(
         lambda x: "".join([str(i) for i in x.values]), axis=1
     )
+    indel_df['intBC'] = indel_df.index.map(alignment_to_intBC)
 
     alignments.set_index("readName", inplace=True)
 
@@ -381,4 +386,7 @@ def call_indels(
 
     alignments.reset_index(inplace=True)
 
+    final_time = time.time()
+
+    logging.info(f"Finished calling alleles in {final_time - t0}s")
     return alignments
