@@ -62,9 +62,10 @@ def main():
     pipeline.collapseUMIs(output_directory, bam_filepath)
 
     # Resolve Sequences
-    # pipeline.resolve_UMI_sequence()
+    pipeline.resolve_UMI_sequence()
 
-    # etc
+    # align sequences
+    pipeline.align_sequences()
 
 
 if __name__ == "__main__":

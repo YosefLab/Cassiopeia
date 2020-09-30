@@ -7,12 +7,13 @@ errorCorrectUMIs functions.
 import array
 import heapq
 import numpy as np
+import pandas as pd
 import pysam
 import os
 import yaml
 import subprocess
 
-from collections import namedtuple, Counter
+from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
 from tqdm.auto import tqdm
 from typing import Callable, List
@@ -51,7 +52,7 @@ NUM_READS_TAG = "ZR"  # The tag denothing the field that records the UMI for
 CLUSTER_ID_TAG = "ZC"  # The tag denothing the field that records the cluster ID
 # for each annotated aligned segment represnting a cluster
 # of aligned segments.
-LOC_TAG = "BC"
+# LOC_TAG = "BC"
 
 N_Q = 2  # The default quality value indicating a consensus could not be reached
 # for a base in the sequence for the consensus aligned segment.
@@ -62,7 +63,7 @@ LOW_Q = 10  # The default low quality value when annotating the qualities in a
 
 cell_key = lambda al: al.get_tag(CELL_BC_TAG)
 UMI_key = lambda al: al.get_tag(UMI_TAG)
-loc_key = lambda al: (al.get_tag(LOC_TAG))
+# loc_key = lambda al: (al.get_tag(LOC_TAG))
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
@@ -202,9 +203,7 @@ def form_collapsed_clusters(
     ) as collapsed_fh:
         for cell_BC, cell_group in cell_groups:
             for UMI, UMI_group in utilities.group_by(cell_group, UMI_key):
-                clusters = form_clusters(
-                    UMI_group, max_read_length, max_hq_mismatches
-                )
+                clusters = form_clusters(UMI_group, max_read_length, max_hq_mismatches)
                 clusters = sorted(
                     clusters,
                     key=lambda c: c.get_tag(NUM_READS_TAG),
@@ -222,17 +221,12 @@ def form_collapsed_clusters(
                 not_collapsed = []
 
                 for other in rest:
-                    if other.get_tag(NUM_READS_TAG) == biggest.get_tag(
-                        NUM_READS_TAG
-                    ):
+                    if other.get_tag(NUM_READS_TAG) == biggest.get_tag(NUM_READS_TAG):
                         not_collapsed.append(other)
                     else:
                         indels, hq_mismatches = align_clusters(biggest, other)
 
-                        if (
-                            indels <= max_indels
-                            and hq_mismatches <= max_hq_mismatches
-                        ):
+                        if indels <= max_indels and hq_mismatches <= max_hq_mismatches:
                             biggest = merge_annotated_clusters(biggest, other)
                         else:
                             not_collapsed.append(other)
@@ -282,18 +276,16 @@ def form_clusters(
 
     else:
         seed = propose_seed(als, max_read_length)
-        near_seed, remaining = within_radius_of_seed(
-            seed, als, max_hq_mismatches
-        )
+        near_seed, remaining = within_radius_of_seed(seed, als, max_hq_mismatches)
 
         if len(near_seed) == 0:
             # didn't make progress, so give up
             clusters = [make_singleton_cluster(al) for al in als]
 
         else:
-            clusters = [
-                call_consensus(near_seed, max_read_length)
-            ] + form_clusters(remaining, max_read_length, max_hq_mismatches)
+            clusters = [call_consensus(near_seed, max_read_length)] + form_clusters(
+                remaining, max_read_length, max_hq_mismatches
+            )
 
     return clusters
 
@@ -317,9 +309,7 @@ def align_clusters(
 
     num_hq_mismatches = 0
     for q_i, t_i in al["mismatches"]:
-        if (first.query_qualities[q_i] > 20) and (
-            second.query_qualities[t_i] > 20
-        ):
+        if (first.query_qualities[q_i] > 20) and (second.query_qualities[t_i] > 20):
             num_hq_mismatches += 1
 
     indels = al["XO"]
@@ -473,9 +463,7 @@ def call_consensus(
     qs[ties] = N_Q
 
     consensus = pysam.AlignedSegment()
-    consensus.query_sequence = "".join(
-        utilities.base_order[i] for i in best_idxs
-    )
+    consensus.query_sequence = "".join(utilities.base_order[i] for i in best_idxs)
     consensus.query_qualities = array.array("B", qs)
     consensus.set_tag(NUM_READS_TAG, len(als), "i")
 
@@ -512,124 +500,111 @@ def merge_annotated_clusters(
 ####################Utils for Error Correcting UMIs#####################
 
 
-def error_correct_allUMIs(
-    sorted_fn, max_UMI_distance, sampleID, log_fh=None, show_progress=True
-):
+def correct_UMIs_in_group(
+    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2
+) -> pd.DataFrame:
+    """
+    Given a group of alignments, collapses UMIs that have close sequences.
 
-    collapsed_fn = sorted_fn.with_name(sorted_fn.stem + "_ec.bam")
-    log_fn = sorted_fn.with_name(sorted_fn.stem + "_umi_ec_log.txt")
+    Given a group of alignments (that share a cellBC and intBC if from
+    errorCorrectUMIs), determines which UMIs are to be merged into which.
+    For a given UMI, merges it into the UMI with the highest read count
+    that has a Hamming Distance <= max_UMI_distance. For a merge, removes the
+    less abundant UMI and adds its read count to the more abundant UMI.
+    If a UMI is to be merged into a UMI that itself will be merged, the
+    correction is propogated through.
 
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
+    Args:
+        input_df: Input DataFrame of alignments.
+        _id: Identification of sample.
+        max_UMI_distance: Maximum Hamming distance between UMIs
+            for error correction.
 
-    # group_by only works if sorted_als is already sorted by loc_key
-    allele_groups = utilities.group_by(sorted_als, loc_key)
+    Returns:
+        A DataFrame of error corrected UMIs within the grouping.
 
-    num_corrected = 0
-    total = 0
+    """
 
-    with pysam.AlignmentFile(
-        str(collapsed_fn), "wb", header=sorted_als.header
-    ) as collapsed_fh:
-        for allele_bc, allele_group in allele_groups:
-            if max_UMI_distance > 0:
-                allele_group, num_corr, tot, erstring = error_correct_UMIs(
-                    allele_group, sampleID, max_UMI_distance
-                )
-
-            for a in allele_group:
-                collapsed_fh.write(a)
-
-            # log_fh.write(error_corrections)
-            if log_fh is None:
-                print(erstring, end=" ")
-                sys.stdout.flush()
-            else:
-                with open(log_fh, "a") as f:
-                    f.write(erstring)
-
-            num_corrected += num_corr
-            total += tot
-
-    print(
-        str(num_corrected)
-        + " UMIs Corrected of "
-        + str(total)
-        + " ("
-        + str(round(float(num_corrected) / total, 5) * 100)
-        + "%)",
-        file=sys.stderr,
-    )
-
-
-def error_correct_UMIs(cell_group, sampleID, max_UMI_distance=1):
-
-    UMIs = [al.get_tag(UMI_TAG) for al in cell_group]
+    UMIs = list(cell_group["UMI"])
 
     ds = hamming_distance_matrix(UMIs)
 
     corrections = register_corrections(ds, max_UMI_distance, UMIs)
 
+    # Correcting inconsistent tie-breaking behavior. Propogates merges through
+    # all ties towards the most frequent UMIs.
+    tally = defaultdict(list)
+    for i, item in enumerate(list(cell_group["ReadCount"])):
+        tally[item].append(i)
+    dups = ((key, locs) for key, locs in tally.items() if len(locs) > 1)
+
+    for _, locs in dups:
+        for i in locs:
+            if UMIs[i] not in corrections.keys():
+                fin_rank = {}
+                for j in locs:
+                    if i == j:
+                        continue
+                    if (
+                        (UMIs[j] in corrections)
+                        and (corrections[UMIs[j]] != UMIs[i])
+                        and ds[i, j] <= max_UMI_distance
+                    ):
+                        to = corrections[UMIs[j]]
+                        while to in corrections:
+                            to = corrections[to]
+                        rank = UMIs.index(to)
+                        fin_rank[rank] = UMIs[j]
+                if fin_rank:
+                    corrections[UMIs[i]] = fin_rank[min(fin_rank)]
+
+    # Re-propogates merges
+    for from_, to in list(corrections.items()):
+        while to in corrections:
+            to = corrections[to]
+
+        corrections[from_] = to
+
     num_corrections = 0
-    corrected_group = []
+    corrected_group = pd.DataFrame()
     ec_string = ""
     total = 0
     corrected_names = []
-    for al in cell_group:
-        al_umi = al.get_tag(UMI_TAG)
-        for al2 in cell_group:
-            al2_umi = al2.get_tag(UMI_TAG)
-            # correction keys are 'from' and values are 'to'
-            # so correct al2 to al
+
+    if len(corrections) == 0:
+        return cell_group, 0, cell_group.shape[0], ""
+
+    for _, al in cell_group.iterrows():
+        al_umi = al["UMI"]
+        for _, al2 in cell_group.iterrows():
+            al2_umi = al2["UMI"]
+            # Keys are 'from' and values are 'to', so correct al2 to al
             if al2_umi in corrections.keys() and corrections[al2_umi] == al_umi:
 
-                bad_qname = al2.query_name
-                bad_nr = bad_qname.split("_")[-1]
-                qname = al.query_name
-                split_qname = qname.split("_")
-
-                prev_nr = split_qname[-1]
-
-                split_qname[-1] = str(int(split_qname[-1]) + int(bad_nr))
-                n_qname = "_".join(split_qname)
-
-                al.query_name = n_qname
+                bad_nr = al2["ReadCount"]
+                prev_nr = al["ReadCount"]
+                al["ReadCount"] = bad_nr + prev_nr
 
                 ec_string += (
-                    al2.get_tag(UMI_TAG)
-                    + "\t"
-                    + al.get_tag(UMI_TAG)
-                    + "\t"
-                    + al.get_tag(LOC_TAG)
-                    + "\t"
-                    + al.get_tag(CO_TAG)
-                    + "\t"
-                    + str(bad_nr)
-                    + "\t"
-                    + str(prev_nr)
-                    + "\t"
-                    + str(split_qname[-1])
-                    + "\t"
-                    + sampleID
-                    + "\n"
+                    f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
+                    + f"for a total of {bad_nr + prev_nr} reads.\n"
                 )
 
                 # update alignment if already seen
-                if al.get_tag(UMI_TAG) in list(
-                    map(lambda x: x.get_tag(UMI_TAG), corrected_group)
-                ):
-                    corrected_group.remove(al)
-
-                corrected_group.append(al)
+                if al["UMI"] in corrected_names:
+                    corrected_group = corrected_group[corrected_group["UMI"] != al_umi]
+                corrected_group = corrected_group.append(al)
 
                 num_corrections += 1
-                corrected_names.append(al2.get_tag(UMI_TAG))
-                corrected_names.append(al.get_tag(UMI_TAG))
+                corrected_names.append(al_umi)
+                corrected_names.append(al2_umi)
 
-    for al in cell_group:
+    for _, al in cell_group.iterrows():
 
-        # add alignments not touched during error correction back into the group to be written to file
-        if al.get_tag(UMI_TAG) not in corrected_names:
-            corrected_group.append(al)
+        # Add alignments not touched during error correction back into the group
+        # to be written to file.
+        if al["UMI"] not in corrected_names:
+            corrected_group = corrected_group.append(al)
 
     total = len(cell_group)
 

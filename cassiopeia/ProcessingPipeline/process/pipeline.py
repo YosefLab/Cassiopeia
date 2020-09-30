@@ -2,20 +2,31 @@
 This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
+TODO: richardyz98: Add file saving after every pipeline step, saving df to csv
 """
 
+import os
+import time
+
+from typing import Optional
+
+from Bio import SeqIO
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
 import pysam
-import time
+from skbio import alignment
 
-from tqdm.auto import tqdm
 from pathlib import Path
+from tqdm.auto import tqdm
 
+from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
+from cassiopeia.ProcessingPipeline.process import utilities
+
+DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
+progress = tqdm
 
 
 def resolve_UMI_sequence(
@@ -23,6 +34,7 @@ def resolve_UMI_sequence(
     output_directory: str,
     min_avg_reads_per_umi: float = 2.0,
     min_umi_per_cell: int = 10,
+    plot: bool = True,
 ) -> pd.DataFrame:
     """Resolve a consensus sequence for each UMI.
 
@@ -44,24 +56,25 @@ def resolve_UMI_sequence(
 
     t0 = time.time()
 
-    # -------------------- Plot # of sequences per UMI -------------------- #
-    equivClass_group = (
-        molecule_table.groupby(["cellBC", "UMI"])
-        .agg({"grpFlag": "count"})
-        .sort_values("grpFlag", ascending=False)
-        .reset_index()
-    )
+    if plot:
+        # -------------------- Plot # of sequences per UMI -------------------- #
+        equivClass_group = (
+            molecule_table.groupby(["cellBC", "UMI"])
+            .agg({"grpFlag": "count"})
+            .sort_values("grpFlag", ascending=False)
+            .reset_index()
+        )
 
-    _ = plt.figure(figsize=(8, 5))
-    plt.hist(
-        equivClass_group["grpFlag"],
-        bins=range(1, equivClass_group["grpFlag"].max()),
-    )
-    plt.title("Unique Seqs per cellBC+UMI")
-    plt.yscale("log", basey=10)
-    plt.xlabel("Number of Unique Seqs")
-    plt.ylabel("Count (Log)")
-    plt.savefig(os.path.join(output_directory, "seqs_per_equivClass.png"))
+        _ = plt.figure(figsize=(8, 5))
+        plt.hist(
+            equivClass_group["grpFlag"],
+            bins=range(1, equivClass_group["grpFlag"].max()),
+        )
+        plt.title("Unique Seqs per cellBC+UMI")
+        plt.yscale("log", basey=10)
+        plt.xlabel("Number of Unique Seqs")
+        plt.ylabel("Count (Log)")
+        plt.savefig(os.path.join(output_directory, "seqs_per_equivClass.png"))
 
     # ----------------- Select most abundant sequence ------------------ #
 
@@ -114,27 +127,31 @@ def resolve_UMI_sequence(
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
 
-    # ---------------- Plot Diagnositics after Resolving ---------------- #
-    h = plt.figure(figsize=(14, 10))
-    plt.plot(top_reads.values(), total_numReads.values(), "r.")
-    plt.ylabel("Total Reads")
-    plt.xlabel("Number Reads for Picked Sequence")
-    plt.title("Total vs. Top Reads for Picked Sequence")
-    plt.savefig(
-        os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
-    )
-    plt.close()
+    if plot:
+        # ---------------- Plot Diagnositics after Resolving ---------------- #
+        h = plt.figure(figsize=(14, 10))
+        plt.plot(top_reads.values(), total_numReads.values(), "r.")
+        plt.ylabel("Total Reads")
+        plt.xlabel("Number Reads for Picked Sequence")
+        plt.title("Total vs. Top Reads for Picked Sequence")
+        plt.savefig(
+            os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
+        )
+        plt.close()
 
-    h = plt.figure(figsize=(14, 10))
-    plt.plot(first_reads.values(), second_reads.values(), "r.")
-    plt.ylabel("Number Reads for Second Best Sequence")
-    plt.xlabel("Number Reads for Picked Sequence")
-    plt.title("Second Best vs. Top Reads for Picked Sequence")
-    plt.savefig(
-        os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
-    )
-    plt.close()
+        h = plt.figure(figsize=(14, 10))
+        plt.plot(first_reads.values(), second_reads.values(), "r.")
+        plt.ylabel("Number Reads for Second Best Sequence")
+        plt.xlabel("Number Reads for Picked Sequence")
+        plt.title("Second Best vs. Top Reads for Picked Sequence")
+        plt.savefig(
+            os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
+        )
+        plt.close()
 
+    filt_molecule_table = utilities.filter_cells(
+        filt_molecule_table, min_umi_per_cell, min_avg_reads_per_umi
+    )
     return filt_molecule_table
 
 
@@ -149,10 +166,10 @@ def collapseUMIs(
 ):
     """Collapses close UMIs together from a bam file.
 
-    On a basic level, it aggregates together identical or close reads to count 
-    how many times a UMI was read. Performs basic error correction, allowing 
-    UMIs to be collapsed together which differ by at most a certain number of 
-    high quality mismatches and indels in the sequence read itself. Writes out 
+    On a basic level, it aggregates together identical or close reads to count
+    how many times a UMI was read. Performs basic error correction, allowing
+    UMIs to be collapsed together which differ by at most a certain number of
+    high quality mismatches and indels in the sequence read itself. Writes out
     a dataframe of the collapsed UMIs table.
 
     Args:
@@ -191,9 +208,7 @@ def collapseUMIs(
 
     if force_sort or not sorted_file_name.exists():
         max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
-            bam_fp,
-            str(sorted_file_name),
-            show_progress=show_progress,
+            bam_fp, str(sorted_file_name), show_progress=show_progress
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))
         logging.info("Max read length of " + str(max_read_length))
@@ -210,116 +225,180 @@ def collapseUMIs(
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
-    convertBam2DF(str(collapsed_file_name), str(collapsed_df_file_name))
+    df = utilities.convertBam2DF(
+        str(collapsed_file_name), str(collapsed_df_file_name)
+    )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
+    return df
 
 
-def convertBam2DF(
-    data_fp: str, out_fp: str, create_pd: bool = False
+def align_sequences(
+    queries: pd.DataFrame,
+    ref_filepath: Optional[str] = None,
+    ref: Optional[str] = None,
+    gap_open_penalty: float = 20,
+    gap_extend_penalty: float = 1,
 ) -> pd.DataFrame:
-    """Converts a BAM file to a dataframe.
+    """Align reads to the TargetSite refernece.
 
-    Saves the contents of a BAM file to a tab-delimited table saved to a text
-    file. Rows represent alignments with relevant fields such as the CellBC,
-    UMI, read count, sequence, and sequence qualities.
+    Take in several queries store in a DataFrame mapping cellBC-UMIs to a
+    sequence of interest and align each to a reference sequence. The alignment
+    algorithm used is the Smith-Waterman local alignment algorithm. The desired
+    output consists of the best alignment score and the CIGAR string storing the
+    indel locations in the query sequence.
+
+    TODO(mattjones315): Parallelize?
 
     Args:
-      data_fp: The input filepath for the BAM file to be converted.
-      out_fp: The output filepath specifying where the resulting dataframe is to
-        be stored and its name.
-      create_pd: Specifies whether to generate and return a pd.Dataframe.
+        queries: Dataframe storing a list of sequences to align.
+        ref_filepath: Filepath to the reference FASTA.
+        ref: Reference sequence.
+        gapopen: Gap open penalty
+        gapextend: Gap extension penalty
 
     Returns:
-      If create_pd: a pd.Dataframe containing the BAM information.
-      Else: None, output saved to file
+        A dataframe mapping each sequence name to the CIGAR string, quality,
+        and original query sequence.
+    """
+
+    assert ref or ref_filepath
+
+    alignment_dictionary = {}
+
+    if ref_filepath:
+        ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
+
+    logging.info("Beginning alignment to reference...")
+    t0 = time.time()
+
+    for umi in queries.index:
+
+        query = queries.loc[umi]
+
+        aligner = alignment.StripedSmithWaterman(
+            query.seq,
+            substitution_matrix=DNA_SUBSTITUTION_MATRIX,
+            gap_open_penalty=gap_open_penalty,
+            gap_extend_penalty=gap_extend_penalty,
+        )
+        aln = aligner(ref)
+        alignment_dictionary[query.readName] = (
+            query.cellBC,
+            query.UMI,
+            query.readCount,
+            aln.cigar,
+            aln.optimal_alignment_score,
+            aln.query_sequence,
+            aln.target_begin,
+            aln.query_begin,
+        )
+
+    final_time = time.time()
+
+    logging.info(f"Finished aligning in {final_time - t0}.")
+    logging.info(
+        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0]})"
+    )
+
+    alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
+    alignment_df.columns = [
+        "cellBC",
+        "UMI",
+        "ReadCount",
+        "CIGAR",
+        "AlignmentScore",
+        "Seq",
+        "RefStart",
+        "QueryStart",
+    ]
+    alignment_df.index.name = "readName"
+    alignment_df.reset_index(inplace=True)
+
+    return alignment_df
+
+
+def errorCorrectUMIs(
+    input_df: pd.DataFrame,
+    _id: str,
+    max_UMI_distance: int = 2,
+    show_progress: bool = False,
+) -> pd.DataFrame:
+    """
+    Within cellBC-intBC pairs, collapses UMIs that have close sequences.
+
+    Error correct UMIs together within cellBC-intBC pairs. UMIs that have a
+    Hamming Distance between their sequences less than a threshold are
+    corrected towards whichever UMI is more abundant.
+
+    Args:
+        input_df: Input DataFrame of alignments.
+        _id: Identification of sample.
+        max_UMI_distance: Maximum Hamming distance between UMIs
+            for error correction.
+        show_progress: Allow a progress bar to be shown.
+
+    Returns:
+        A DataFrame of error corrected UMIs.
 
     """
-    f = open(out_fp, "w")
-    f.write("cellBC\tUMI\treadCount\tgrpFlag\tseq\tqual\treadName\n")
 
-    als = []
+    if (
+        len(
+            [
+                i
+                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
+                if i > 1
+            ]
+        )
+        > 0
+    ):
+        print("Non-unique cellBC-UMI pair exists, please resolve UMIs.")
+        return
 
-    bam_fh = pysam.AlignmentFile(
-        data_fp, ignore_truncation=True, check_sq=False
+    sorted_df = input_df.sort_values(
+        ["cellBC", "intBC", "ReadCount"], ascending=[True, True, False]
     )
-    for al in bam_fh:
-        cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
-        seq = al.query_sequence
-        qual = al.query_qualities
-        # Pysam qualities are represented as an array of unsigned chars,
-        # so they are converted to the ASCII-encoded format that are found 
-        # in the typical SAM formatting. 
-        encode_qual = "".join(map(lambda x: chr(x + 33), qual))
-        f.write(
-            cellBC
-            + "\t"
-            + UMI
-            + "\t"
-            + readCount
-            + "\t"
-            + grpFlag
-            + "\t"
-            + seq
-            + "\t"
-            + encode_qual
-            + "\t"
-            + al.query_name
-            + "\n"
-        )
 
-        if create_pd:
-            als.append(
-                [
-                    cellBC,
-                    UMI,
-                    int(readCount),
-                    grpFlag,
-                    seq,
-                    encode_qual,
-                    al.query_name,
-                ]
-            )
+    if max_UMI_distance == 0:
+        logging.info("Distance of 0 used, all alignments returned")
+        return sorted_df
 
-    f.close()
+    num_corrected = 0
+    total = 0
 
-    if create_pd:
-        df = pd.DataFrame(als)
-        df = df.rename(
-            columns={
-                0: "cellBC",
-                1: "UMI",
-                2: "readCount",
-                3: "grpFlag",
-                4: "seq",
-                5: "qual",
-                6: "readName",
-            }
-        )
-        return df
+    mol_table = pd.DataFrame()
 
-def collapseDF2fastq(data_fp, out_fp):
-    df = pd.read_csv(data_fp, sep = "\t")
-    f = open(out_fp, "w")
-    for i, row in df.iterrows():
-        cellBC = row[0]
-        UMI = row[1]
-        readCount = row[2]
-        seq = row[4]
-        qual = row[5]
-        f.write(
-            "@" 
-            + cellBC
-            + "_"
-            + UMI
-            + "_"
-            + str(readCount)
-            + "\n"
-            + seq
-            + "\n"
-            + "+"
-            + "\n"
-            + qual
-            + "\n"
-        )
-    f.close()
+    if show_progress:
+        sorted_df = progress(sorted_df, total=total, desc="Collapsing")
+
+    allele_groups = sorted_df.groupby(["cellBC", "intBC"])
+
+    for group in allele_groups:
+        allele_group = group[1]
+        (
+            allele_group,
+            num_corr,
+            tot,
+            erstring,
+        ) = UMI_utils.correct_UMIs_in_group(allele_group, _id, max_UMI_distance)
+        num_corrected += num_corr
+        total += tot
+
+        mol_table = mol_table.append(allele_group, sort=True)
+
+        logging.info(erstring)
+
+    logging.info(
+        f"{str(num_corrected)} UMIs Corrected of {str(total)}"
+        + f"({str(round(float(num_corrected) / total, 5) * 100)}%)"
+    )
+
+    mol_table["readName"] = mol_table.apply(
+        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
+    )
+
+    mol_table.set_index("readName", inplace=True)
+    mol_table.reset_index(inplace=True)
+
+    return mol_table
