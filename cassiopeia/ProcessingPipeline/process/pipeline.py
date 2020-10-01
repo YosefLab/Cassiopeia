@@ -2,7 +2,7 @@
 This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
-TODO: richardyz98: Add file saving after every pipeline step, saving df to csv
+TODO: richardyz98: Standardize logging outputs across all modules
 """
 
 import os
@@ -395,7 +395,7 @@ def errorCorrectUMIs(
     )
 
     mol_table["readName"] = mol_table.apply(
-        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
+        lambda xl: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
     )
 
     mol_table.set_index("readName", inplace=True)
