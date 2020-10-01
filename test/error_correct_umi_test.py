@@ -9,10 +9,10 @@ import pandas as pd
 from cassiopeia.ProcessingPipeline.process import pipeline
 
 
-class TestResolveUMISequence(unittest.TestCase):
+class TestErrorCorrectUMISequence(unittest.TestCase):
     def setUp(self):
 
-        self.queries = pd.DataFrame.from_dict(
+        self.multi_case = pd.DataFrame.from_dict(
             {
                 "cellBC": [
                     "A",
@@ -98,22 +98,28 @@ class TestResolveUMISequence(unittest.TestCase):
                 ],
             }
         )
-        self.queries["readName"] = self.queries.apply(
+        self.multi_case["readName"] = self.multi_case.apply(
             lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
         )
 
-        self.queries["allele"] = self.queries.apply(
+        self.multi_case["allele"] = self.multi_case.apply(
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
         self.adverse_tie_case = pd.DataFrame.from_dict(
             {
                 "cellBC": ["C", "C", "C", "C", "C", "C", "A", "A", "A", "A"],
-                "UMI": ["ACCCT", "AACCG", "AACTG", "AACCA", "AAGGA", "CACCT",
-                "CACCT",
-                "ACCCT",
-                "AAGGA",
-                "AACCA"
+                "UMI": [
+                    "ACCCT",
+                    "AACCG",
+                    "AACTG",
+                    "AACCA",
+                    "AAGGA",
+                    "CACCT",
+                    "CACCT",
+                    "ACCCT",
+                    "AAGGA",
+                    "AACCA",
                 ],
                 "ReadCount": [10, 10, 15, 10, 20, 10, 15, 10, 20, 10],
                 "Seq": [
@@ -132,22 +138,44 @@ class TestResolveUMISequence(unittest.TestCase):
                 "r1": ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
                 "r2": ["2", "2", "2", "2", "2", "2", "2", "2", "2", "2"],
                 "r3": ["3", "3", "3", "3", "3", "3", "3", "3", "3", "3"],
-                "AlignmentScore": ["20", "20", "20", "20", "20", "20", "20", "20", "20", "20"],
-                "CIGAR": ["NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA"],
+                "AlignmentScore": [
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                    "20",
+                ],
+                "CIGAR": [
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                    "NA",
+                ],
             }
         )
-        self.queries["readName"] = self.queries.apply(
+        self.adverse_tie_case["readName"] = self.adverse_tie_case.apply(
             lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
         )
 
-        self.queries["allele"] = self.queries.apply(
+        self.adverse_tie_case["allele"] = self.adverse_tie_case.apply(
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
     def test_format(self):
 
-        aln_df = pipeline.errorCorrectUMIs(
-            self.queries, "test", max_UMI_distance=1
+        aln_df = pipeline.error_correct_UMIs(
+            self.multi_case, "test", max_UMI_distance=1
         )
 
         expected_columns = [
@@ -168,20 +196,19 @@ class TestResolveUMISequence(unittest.TestCase):
 
     def test_zero_dist(self):
 
-        aln_df = pipeline.errorCorrectUMIs(
-            self.queries, "test", max_UMI_distance=0
+        aln_df = pipeline.error_correct_UMIs(
+            self.multi_case, "test", max_UMI_distance=0
         )
 
-        self.assertEqual(aln_df.shape[0], self.queries.shape[0])
+        self.assertEqual(aln_df.shape[0], self.multi_case.shape[0])
 
-        for cellBC in self.queries["cellBC"].unique():
+        for cellBC in self.multi_case["cellBC"].unique():
             self.assertIn(cellBC, aln_df["cellBC"].unique())
-
 
     def test_error_correct_two_dist(self):
 
-        aln_df = pipeline.errorCorrectUMIs(
-            self.queries, "test", max_UMI_distance=2
+        aln_df = pipeline.error_correct_UMIs(
+            self.multi_case, "test", max_UMI_distance=2
         )
 
         expected_alignments = {
@@ -207,16 +234,16 @@ class TestResolveUMISequence(unittest.TestCase):
 
     def test_adverse_tie_case(self):
 
-        aln_df = pipeline.errorCorrectUMIs(
+        aln_df = pipeline.error_correct_UMIs(
             self.adverse_tie_case, "test", max_UMI_distance=2
         )
 
         expected_alignments = {
-            "C_AAGGA_50": 50, 
+            "C_AAGGA_50": 50,
             "C_AACTG_25": 25,
             "A_AAGGA_30": 30,
-            "A_CACCT_25": 25
-            }
+            "A_CACCT_25": 25,
+        }
 
         for read_name in aln_df["readName"]:
 

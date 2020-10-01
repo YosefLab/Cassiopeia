@@ -203,7 +203,9 @@ def form_collapsed_clusters(
     ) as collapsed_fh:
         for cell_BC, cell_group in cell_groups:
             for UMI, UMI_group in utilities.group_by(cell_group, UMI_key):
-                clusters = form_clusters(UMI_group, max_read_length, max_hq_mismatches)
+                clusters = form_clusters(
+                    UMI_group, max_read_length, max_hq_mismatches
+                )
                 clusters = sorted(
                     clusters,
                     key=lambda c: c.get_tag(NUM_READS_TAG),
@@ -221,12 +223,17 @@ def form_collapsed_clusters(
                 not_collapsed = []
 
                 for other in rest:
-                    if other.get_tag(NUM_READS_TAG) == biggest.get_tag(NUM_READS_TAG):
+                    if other.get_tag(NUM_READS_TAG) == biggest.get_tag(
+                        NUM_READS_TAG
+                    ):
                         not_collapsed.append(other)
                     else:
                         indels, hq_mismatches = align_clusters(biggest, other)
 
-                        if indels <= max_indels and hq_mismatches <= max_hq_mismatches:
+                        if (
+                            indels <= max_indels
+                            and hq_mismatches <= max_hq_mismatches
+                        ):
                             biggest = merge_annotated_clusters(biggest, other)
                         else:
                             not_collapsed.append(other)
@@ -276,16 +283,18 @@ def form_clusters(
 
     else:
         seed = propose_seed(als, max_read_length)
-        near_seed, remaining = within_radius_of_seed(seed, als, max_hq_mismatches)
+        near_seed, remaining = within_radius_of_seed(
+            seed, als, max_hq_mismatches
+        )
 
         if len(near_seed) == 0:
             # didn't make progress, so give up
             clusters = [make_singleton_cluster(al) for al in als]
 
         else:
-            clusters = [call_consensus(near_seed, max_read_length)] + form_clusters(
-                remaining, max_read_length, max_hq_mismatches
-            )
+            clusters = [
+                call_consensus(near_seed, max_read_length)
+            ] + form_clusters(remaining, max_read_length, max_hq_mismatches)
 
     return clusters
 
@@ -309,7 +318,9 @@ def align_clusters(
 
     num_hq_mismatches = 0
     for q_i, t_i in al["mismatches"]:
-        if (first.query_qualities[q_i] > 20) and (second.query_qualities[t_i] > 20):
+        if (first.query_qualities[q_i] > 20) and (
+            second.query_qualities[t_i] > 20
+        ):
             num_hq_mismatches += 1
 
     indels = al["XO"]
@@ -463,7 +474,9 @@ def call_consensus(
     qs[ties] = N_Q
 
     consensus = pysam.AlignedSegment()
-    consensus.query_sequence = "".join(utilities.base_order[i] for i in best_idxs)
+    consensus.query_sequence = "".join(
+        utilities.base_order[i] for i in best_idxs
+    )
     consensus.query_qualities = array.array("B", qs)
     consensus.set_tag(NUM_READS_TAG, len(als), "i")
 
@@ -592,7 +605,9 @@ def correct_UMIs_in_group(
 
                 # update alignment if already seen
                 if al["UMI"] in corrected_names:
-                    corrected_group = corrected_group[corrected_group["UMI"] != al_umi]
+                    corrected_group = corrected_group[
+                        corrected_group["UMI"] != al_umi
+                    ]
                 corrected_group = corrected_group.append(al)
 
                 num_corrections += 1

@@ -95,9 +95,7 @@ def resolve_UMI_sequence(
 
         # more commonly - many sequences for a given UMI
         else:
-            group_sort = group.sort_values(
-                "readCount", ascending=False
-            ).reset_index()
+            group_sort = group.sort_values("readCount", ascending=False).reset_index()
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -120,9 +118,7 @@ def resolve_UMI_sequence(
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[
-        molecule_table["filter"] == False
-    ].copy()
+    filt_molecule_table = molecule_table[molecule_table["filter"] == False].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -134,9 +130,7 @@ def resolve_UMI_sequence(
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Total vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png"))
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
@@ -144,9 +138,7 @@ def resolve_UMI_sequence(
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Second Best vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png"))
         plt.close()
 
     filt_molecule_table = utilities.filter_cells(
@@ -200,10 +192,7 @@ def collapseUMIs(
     if out_dir[-1] == "/":
         out_dir = out_dir[:-1]
     sorted_file_name = Path(
-        out_dir
-        + "/"
-        + ".".join(bam_fp.split("/")[-1].split(".")[:-1])
-        + "_sorted.bam"
+        out_dir + "/" + ".".join(bam_fp.split("/")[-1].split(".")[:-1]) + "_sorted.bam"
     )
 
     if force_sort or not sorted_file_name.exists():
@@ -225,9 +214,7 @@ def collapseUMIs(
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
-    df = utilities.convertBam2DF(
-        str(collapsed_file_name), str(collapsed_df_file_name)
-    )
+    df = utilities.convertBam2DF(str(collapsed_file_name), str(collapsed_df_file_name))
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
     return df
@@ -318,11 +305,12 @@ def align_sequences(
     return alignment_df
 
 
-def errorCorrectUMIs(
+def error_correct_UMIs(
     input_df: pd.DataFrame,
     _id: str,
     max_UMI_distance: int = 2,
     show_progress: bool = False,
+    verbose: bool = False
 ) -> pd.DataFrame:
     """
     Within cellBC-intBC pairs, collapses UMIs that have close sequences.
@@ -337,31 +325,28 @@ def errorCorrectUMIs(
         max_UMI_distance: Maximum Hamming distance between UMIs
             for error correction.
         show_progress: Allow a progress bar to be shown.
+        verbose: Log every UMI correction.
 
     Returns:
         A DataFrame of error corrected UMIs.
 
     """
 
-    if (
-        len(
-            [
-                i
-                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
-                if i > 1
-            ]
-        )
-        > 0
-    ):
-        print("Non-unique cellBC-UMI pair exists, please resolve UMIs.")
-        return
+    assert (
+        len([i for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size() if i > 1])
+        == 0
+    ), "Non-unique cellBC-UMI pair exists, please resolve UMIs."
+
+    t0 = time.time()
+
+    logging.info("Beginning error correcting UMIs...")
 
     sorted_df = input_df.sort_values(
         ["cellBC", "intBC", "ReadCount"], ascending=[True, True, False]
     )
 
     if max_UMI_distance == 0:
-        logging.info("Distance of 0 used, all alignments returned")
+        logging.info("Distance of 0, no correction occured, all alignments returned")
         return sorted_df
 
     num_corrected = 0
@@ -374,8 +359,8 @@ def errorCorrectUMIs(
 
     allele_groups = sorted_df.groupby(["cellBC", "intBC"])
 
-    for group in allele_groups:
-        allele_group = group[1]
+    for fields, allele_group in allele_groups:
+        cellBC, intBC = fields
         (
             allele_group,
             num_corr,
@@ -387,18 +372,26 @@ def errorCorrectUMIs(
 
         mol_table = mol_table.append(allele_group, sort=True)
 
-        logging.info(erstring)
+        if verbose:
+            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
+            logging.info(erstring)
 
+    final_time = time.time()
+
+    logging.info(f"Finished error correcting UMIs in {final_time - t0}.")
     logging.info(
         f"{str(num_corrected)} UMIs Corrected of {str(total)}"
         + f"({str(round(float(num_corrected) / total, 5) * 100)}%)"
     )
 
     mol_table["readName"] = mol_table.apply(
-        lambda xl: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
+        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
     )
 
     mol_table.set_index("readName", inplace=True)
     mol_table.reset_index(inplace=True)
 
     return mol_table
+
+
+
