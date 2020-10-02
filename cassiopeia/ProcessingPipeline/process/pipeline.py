@@ -13,16 +13,15 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pysam
 from skbio import alignment
 
 from pathlib import Path
 from tqdm.auto import tqdm
 
+from cassiopeia.ProcessingPipeline.process import alignment_utilities
 from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
 from cassiopeia.ProcessingPipeline.process import utilities
-from cassiopeia.ProcessingPipeline.process import alignment_utilities
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 
