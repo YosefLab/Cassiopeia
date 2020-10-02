@@ -61,7 +61,7 @@ def filter_cells(
     filt_molecule_table.drop(columns = ['filter'], inplace=True)
     return filt_molecule_table
 
-def convertBam2DF(
+def convert_bam_to_df(
     data_fp: str, out_fp: str, create_pd: bool = False
 ) -> pd.DataFrame:
     """Converts a BAM file to a dataframe.
