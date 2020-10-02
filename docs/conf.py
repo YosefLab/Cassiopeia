@@ -17,10 +17,11 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import Cassiopeia
+import cassiopeia
 
 autodoc_mock_imports = ["cassiopeia.ProcessingPipeline.process.sequencing.fastq_cython", 
                         "cassiopeia.ProcessingPipeline.process.collapse",
+                        "cassiopeia.TreeSolver",
                         "gurobipy"]
 
 # -- Project information -----------------------------------------------------

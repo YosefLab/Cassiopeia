@@ -27,7 +27,7 @@ from cassiopeia.ProcessingPipeline.process import alignment_utilities
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 
 
-def resolve_UMI_sequence(
+def resolve_umi_sequence(
     molecule_table: pd.DataFrame,
     output_directory: str,
     min_avg_reads_per_umi: float = 2.0,
@@ -153,7 +153,7 @@ def resolve_UMI_sequence(
     return filt_molecule_table
 
 
-def collapseUMIs(
+def collapse_umis(
     out_dir: str,
     bam_file_name: str,
     max_hq_mismatches: int = 3,
@@ -223,7 +223,7 @@ def collapseUMIs(
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
-    utilities.convertBam2DF(
+    utilities.convert_bam_to_df(
         str(collapsed_file_name), str(collapsed_df_file_name)
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
@@ -286,6 +286,7 @@ def align_sequences(
             query.readCount,
             aln.cigar,
             aln.query_begin,
+            aln.target_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
         )
@@ -304,6 +305,7 @@ def align_sequences(
         "ReadCount",
         "CIGAR",
         "QueryBegin",
+        "ReferenceBegin"
         "AlignmentScore",
         "Seq",
     ]
@@ -317,10 +319,11 @@ def call_alleles(
     alignments: pd.DataFrame,
     ref_filepath: Optional[str] = None,
     ref: Optional[str] = None,
-    context: bool = True,
     barcode_interval: Tuple[int, int] = (20, 34),
     cutsite_locations: List[int] = [112, 166, 220],
     cutsite_width: int = 12,
+    context: bool = True,
+    context_size: int = 5,
 ) -> pd.DataFrame:
     """Call indels from CIGAR strings.
 
@@ -331,12 +334,14 @@ def call_alleles(
         alignments: Alignments provided in dataframe
         ref_filepath: Filepath to the ference sequence
         ref: Nucleotide sequence of the reference
-        context: Include sequence context around indels
         barcode_interval: Interval in reference corresponding to the integration
             barcode
         cutsite_locations: A list of all cutsite positions in the reference
         cutsite_width: Number of nucleotides left and right of cutsite location
             that indels can appear in.
+        context: Include sequence context around indels
+        context_size: Number of bases to the right and left to include as
+            context
 
     Returns:
         A dataframe mapping each sequence alignment to the called indels.
@@ -363,9 +368,13 @@ def call_alleles(
             row.CIGAR,
             row.Seq,
             ref,
+            row.ReferenceBegin,
+            row.QueryBegin,
             barcode_interval,
             cutsite_locations,
             cutsite_width,
+            context=context,
+            context_size=context_size,
         )
 
         alignment_to_indel[row.readName] = indels
@@ -373,8 +382,10 @@ def call_alleles(
 
     indel_df = pd.DataFrame.from_dict(
         alignment_to_indel,
-        columns=["r{i}" for i in range(len(cutsite_locations))],
+        orient='index',
+        columns = [f"r{i}" for i in range(1, len(cutsite_locations)+1)]
     )
+
     indel_df["allele"] = indel_df.apply(
         lambda x: "".join([str(i) for i in x.values]), axis=1
     )

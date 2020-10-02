@@ -13,7 +13,8 @@ def parse_cigar(
     cigar: str,
     seq: str,
     ref: str,
-    start_pos: int,
+    ref_start: int,
+    query_start: int,
     barcode_interval: Tuple[int, int],
     cutsites: List[int],
     cutsite_window: int = 0,
@@ -34,6 +35,8 @@ def parse_cigar(
         cigar: CIGAR string from the alignment
         seq: Query sequence
         ref: Reference sequence
+        ref_start: Position that alignment starts in the reference string
+        query_start: Position that alignment starts in the query string
         barcode_interval: Interval in refernece seqeunce that stores the
             integration barcode
         cutsites: A list of cutsite locations in the reference
@@ -57,8 +60,8 @@ def parse_cigar(
     intBC_length = barcode_interval[1] - barcode_interval[0]
 
     # set up two pointers to the reference and query, respectively
-    ref_pointer = start_pos
-    query_pointer = 0
+    ref_pointer = ref_start
+    query_pointer = query_start
     query_pad = 0
 
     cigar_chunks = re.findall("(\d+)?([A-Za-z])?", cigar)
@@ -94,7 +97,7 @@ def parse_cigar(
             for i, site in zip(range(len(cutsites)), cutsites):
 
                 if site >= pos_start and site <= pos_end and indels[i] == "":
-                    dist = site - start_pos
+                    dist = site - pos_start
                     loc = query_pointer + dist
 
                     if context:
@@ -148,11 +151,17 @@ def parse_cigar(
                         context_r = seq[
                             pos_start : (pos_start + context_size + length)
                         ]
+
+                        # when referencing the actual string, we say convert 
+                        # to 1-indexing for easier comparison
                         indels[
                             i
-                        ] += f"{context_l}[{ref_pointer}:{length}I]{context_r}"
+                        ] += f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
                     else:
-                        indels[i] += f"{ref_pointer}:{length}I"
+
+                        # when referencing the actual string, we say convert 
+                        # to 1-indexing for easier comparison
+                        indels[i] += f"{ref_pointer+1}:{length}I"
 
         elif _type == "D":
 
@@ -166,8 +175,6 @@ def parse_cigar(
                 query_pad = -1 * length
 
             for i, window in zip(range(len(cutsites)), cutsite_lims):
-
-                curr_indel = indels[i]
 
                 if (
                     (window[0] <= ref_pointer and ref_pointer <= window[1])
@@ -184,11 +191,15 @@ def parse_cigar(
                             query_pointer : (query_pointer + context_size)
                         ]
 
+                        # when referencing the actual string, we say convert 
+                        # to 1-indexing for easier comparison
                         indels[
                             i
-                        ] += f"{context_l}[{pos_start}:{length}D]{context_r}"
+                        ] += f"{context_l}[{pos_start+1}:{length}D]{context_r}"
                     else:
-                        indels[i] += f"{pos_start}:{length}D"
+                        # when referencing the actual string, we say convert 
+                        # to 1-indexing for easier comparison
+                        indels[i] += f"{pos_start+1}:{length}D"
 
         elif _type == "H":
             # Hard clip! Do nothing.

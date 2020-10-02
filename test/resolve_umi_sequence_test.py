@@ -57,7 +57,7 @@ class TestResolveUMISequence(unittest.TestCase):
 
   def test_resolve_umi(self):
     
-    resolved_mt = pipeline.resolve_UMI_sequence(
+    resolved_mt = pipeline.resolve_umi_sequence(
         self.collapsed_umi_table, ".", min_umi_per_cell=1, plot=False
     )
 
@@ -84,7 +84,7 @@ class TestResolveUMISequence(unittest.TestCase):
 
   def test_filter_by_reads(self):
 
-    resolved_mt = pipeline.resolve_UMI_sequence(
+    resolved_mt = pipeline.resolve_umi_sequence(
         self.collapsed_umi_table, ".", min_avg_reads_per_umi=30,
         min_umi_per_cell = 1, plot=False
     )

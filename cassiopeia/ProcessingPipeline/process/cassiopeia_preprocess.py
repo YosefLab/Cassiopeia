@@ -59,13 +59,22 @@ def main():
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
-    pipeline.collapseUMIs(output_directory, bam_filepath)
+    pipeline.collapse_umis(output_directory, bam_filepath)
 
     # Resolve Sequences
-    pipeline.resolve_UMI_sequence()
+    pipeline.resolve_umi_sequence()
 
     # align sequences
     pipeline.align_sequences()
+
+    # call alleles
+    pipeline.call_alleles()
+
+    # error correct umis
+
+    # filter molecule tables
+
+    # call lineages
 
 
 if __name__ == "__main__":

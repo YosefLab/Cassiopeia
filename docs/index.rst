@@ -15,7 +15,7 @@ Welcome to Cassiopeia's Documentation
    authors
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :caption: Package Reference
 
    cassiopeia.TreeSolver
