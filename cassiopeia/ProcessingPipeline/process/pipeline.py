@@ -24,7 +24,6 @@ from tqdm.auto import tqdm
 from cassiopeia.ProcessingPipeline.process import alignment_utilities
 from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
-from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import filter_utils
 from cassiopeia.ProcessingPipeline.process import utilities
 from cassiopeia.ProcessingPipeline.process import lineageGroup_utils as lg_utils
