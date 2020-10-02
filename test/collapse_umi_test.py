@@ -14,7 +14,7 @@ from cassiopeia.ProcessingPipeline.process import UMI_utils
 from cassiopeia.ProcessingPipeline.process import utilities
 
 
-class TestConvertBam2DF(unittest.TestCase):
+class TestCollapseUMIs(unittest.TestCase):
     def setUp(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self.test_file = dir_path + "/test.bam"

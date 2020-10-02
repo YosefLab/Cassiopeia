@@ -11,6 +11,7 @@ import time
 from typing import Optional
 
 from Bio import SeqIO
+from functools import partial
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,9 +22,11 @@ from skbio import alignment
 from pathlib import Path
 from tqdm.auto import tqdm
 
-from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
+from cassiopeia.ProcessingPipeline.process import constants
+from cassiopeia.ProcessingPipeline.process import filter_utils
 from cassiopeia.ProcessingPipeline.process import utilities
+from cassiopeia.ProcessingPipeline.process import lineageGroup_utils as lg_utils
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 progress = tqdm
@@ -95,7 +98,9 @@ def resolve_UMI_sequence(
 
         # more commonly - many sequences for a given UMI
         else:
-            group_sort = group.sort_values("readCount", ascending=False).reset_index()
+            group_sort = group.sort_values(
+                "readCount", ascending=False
+            ).reset_index()
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -118,7 +123,9 @@ def resolve_UMI_sequence(
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[molecule_table["filter"] == False].copy()
+    filt_molecule_table = molecule_table[
+        molecule_table["filter"] == False
+    ].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -130,7 +137,9 @@ def resolve_UMI_sequence(
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Total vs. Top Reads for Picked Sequence")
-        plt.savefig(os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png"))
+        plt.savefig(
+            os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
+        )
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
@@ -138,7 +147,9 @@ def resolve_UMI_sequence(
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Second Best vs. Top Reads for Picked Sequence")
-        plt.savefig(os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png"))
+        plt.savefig(
+            os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
+        )
         plt.close()
 
     filt_molecule_table = utilities.filter_cells(
@@ -147,7 +158,7 @@ def resolve_UMI_sequence(
     return filt_molecule_table
 
 
-def collapseUMIs(
+def collapse_UMIs(
     out_dir: str,
     bam_fp: str,
     max_hq_mismatches: int = 3,
@@ -192,7 +203,10 @@ def collapseUMIs(
     if out_dir[-1] == "/":
         out_dir = out_dir[:-1]
     sorted_file_name = Path(
-        out_dir + "/" + ".".join(bam_fp.split("/")[-1].split(".")[:-1]) + "_sorted.bam"
+        out_dir
+        + "/"
+        + ".".join(bam_fp.split("/")[-1].split(".")[:-1])
+        + "_sorted.bam"
     )
 
     if force_sort or not sorted_file_name.exists():
@@ -214,7 +228,9 @@ def collapseUMIs(
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
-    df = utilities.convertBam2DF(str(collapsed_file_name), str(collapsed_df_file_name))
+    df = utilities.convertBam2DF(
+        str(collapsed_file_name), str(collapsed_df_file_name)
+    )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
     return df
@@ -305,12 +321,12 @@ def align_sequences(
     return alignment_df
 
 
-def error_correct_UMIs(
+def error_correct_umis(
     input_df: pd.DataFrame,
     _id: str,
     max_UMI_distance: int = 2,
     show_progress: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> pd.DataFrame:
     """
     Within cellBC-intBC pairs, collapses UMIs that have close sequences.
@@ -333,7 +349,13 @@ def error_correct_UMIs(
     """
 
     assert (
-        len([i for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size() if i > 1])
+        len(
+            [
+                i
+                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
+                if i > 1
+            ]
+        )
         == 0
     ), "Non-unique cellBC-UMI pair exists, please resolve UMIs."
 
@@ -342,17 +364,19 @@ def error_correct_UMIs(
     logging.info("Beginning error correcting UMIs...")
 
     sorted_df = input_df.sort_values(
-        ["cellBC", "intBC", "ReadCount"], ascending=[True, True, False]
+        ["cellBC", "intBC", "ReadCount", "UMI"], ascending=[True, True, False]
     )
 
     if max_UMI_distance == 0:
-        logging.info("Distance of 0, no correction occured, all alignments returned")
+        logging.info(
+            "Distance of 0, no correction occured, all alignments returned"
+        )
         return sorted_df
 
     num_corrected = 0
     total = 0
 
-    mol_table = pd.DataFrame()
+    alignment_df = pd.DataFrame()
 
     if show_progress:
         sorted_df = progress(sorted_df, total=total, desc="Collapsing")
@@ -361,37 +385,30 @@ def error_correct_UMIs(
 
     for fields, allele_group in allele_groups:
         cellBC, intBC = fields
-        (
-            allele_group,
-            num_corr,
-            tot,
-            erstring,
-        ) = UMI_utils.correct_UMIs_in_group(allele_group, _id, max_UMI_distance)
+        if verbose:
+            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
+        (allele_group, num_corr, tot) = UMI_utils.correct_umis_in_group(
+            allele_group, _id, max_UMI_distance
+        )
         num_corrected += num_corr
         total += tot
 
-        mol_table = mol_table.append(allele_group, sort=True)
-
-        if verbose:
-            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
-            logging.info(erstring)
+        alignment_df = alignment_df.append(allele_group, sort=True)
 
     final_time = time.time()
 
     logging.info(f"Finished error correcting UMIs in {final_time - t0}.")
     logging.info(
-        f"{str(num_corrected)} UMIs Corrected of {str(total)}"
-        + f"({str(round(float(num_corrected) / total, 5) * 100)}%)"
+        f"{num_corrected} UMIs Corrected of {total}"
+        + f"({round(float(num_corrected) / total, 5) * 100}%)"
     )
 
-    mol_table["readName"] = mol_table.apply(
+    alignment_df["readName"] = alignment_df.apply(
         lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
     )
 
-    mol_table.set_index("readName", inplace=True)
-    mol_table.reset_index(inplace=True)
+    alignment_df.set_index("readName", inplace=True)
+    alignment_df.reset_index(inplace=True)
 
-    return mol_table
-
-
+    return alignment_df
 

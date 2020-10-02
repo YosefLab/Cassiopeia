@@ -6,12 +6,13 @@ errorCorrectUMIs functions.
 
 import array
 import heapq
+import logging
 import numpy as np
 import pandas as pd
 import pysam
 import os
-import yaml
 import subprocess
+import yaml
 
 from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
@@ -513,8 +514,8 @@ def merge_annotated_clusters(
 ####################Utils for Error Correcting UMIs#####################
 
 
-def correct_UMIs_in_group(
-    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2
+def correct_umis_in_group(
+    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2, verbose = False
 ) -> pd.DataFrame:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
@@ -526,6 +527,9 @@ def correct_UMIs_in_group(
     less abundant UMI and adds its read count to the more abundant UMI.
     If a UMI is to be merged into a UMI that itself will be merged, the
     correction is propogated through.
+
+    TODO: We have noticed that UMIs with ties in their read counts are
+    corrected and merged rather arbitrarily. We are looking into this.
 
     Args:
         input_df: Input DataFrame of alignments.
@@ -544,44 +548,8 @@ def correct_UMIs_in_group(
 
     corrections = register_corrections(ds, max_UMI_distance, UMIs)
 
-    # Correcting inconsistent tie-breaking behavior. Propogates merges through
-    # all ties towards the most frequent UMIs.
-    tally = defaultdict(list)
-    for i, item in enumerate(list(cell_group["ReadCount"])):
-        tally[item].append(i)
-    dups = ((key, locs) for key, locs in tally.items() if len(locs) > 1)
-
-    for _, locs in dups:
-        for i in locs:
-            if UMIs[i] not in corrections.keys():
-                fin_rank = {}
-                for j in locs:
-                    if i == j:
-                        continue
-                    if (
-                        (UMIs[j] in corrections)
-                        and (corrections[UMIs[j]] != UMIs[i])
-                        and ds[i, j] <= max_UMI_distance
-                    ):
-                        to = corrections[UMIs[j]]
-                        while to in corrections:
-                            to = corrections[to]
-                        rank = UMIs.index(to)
-                        fin_rank[rank] = UMIs[j]
-                if fin_rank:
-                    corrections[UMIs[i]] = fin_rank[min(fin_rank)]
-
-    # Re-propogates merges
-    for from_, to in list(corrections.items()):
-        while to in corrections:
-            to = corrections[to]
-
-        corrections[from_] = to
-
     num_corrections = 0
     corrected_group = pd.DataFrame()
-    ec_string = ""
-    total = 0
     corrected_names = []
 
     if len(corrections) == 0:
@@ -598,10 +566,11 @@ def correct_UMIs_in_group(
                 prev_nr = al["ReadCount"]
                 al["ReadCount"] = bad_nr + prev_nr
 
-                ec_string += (
-                    f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
-                    + f"for a total of {bad_nr + prev_nr} reads.\n"
-                )
+                if verbose:
+                    logging.info(
+                        f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
+                        + f"for a total of {bad_nr + prev_nr} reads."
+                    )
 
                 # update alignment if already seen
                 if al["UMI"] in corrected_names:
@@ -623,4 +592,4 @@ def correct_UMIs_in_group(
 
     total = len(cell_group)
 
-    return corrected_group, num_corrections, total, ec_string
+    return corrected_group, num_corrections, total

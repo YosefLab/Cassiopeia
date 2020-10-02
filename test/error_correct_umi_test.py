@@ -106,75 +106,9 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
-        self.adverse_tie_case = pd.DataFrame.from_dict(
-            {
-                "cellBC": ["C", "C", "C", "C", "C", "C", "A", "A", "A", "A"],
-                "UMI": [
-                    "ACCCT",
-                    "AACCG",
-                    "AACTG",
-                    "AACCA",
-                    "AAGGA",
-                    "CACCT",
-                    "CACCT",
-                    "ACCCT",
-                    "AAGGA",
-                    "AACCA",
-                ],
-                "ReadCount": [10, 10, 15, 10, 20, 10, 15, 10, 20, 10],
-                "Seq": [
-                    "AACCTTGG",
-                    "AACCTTGG",
-                    "AACCTTCC",
-                    "AACCTTGG",
-                    "AACCTTGG",
-                    "AACCTTGG",
-                    "AACCTTCC",
-                    "AACCTTGG",
-                    "AACCTTGG",
-                    "AACCTTGG",
-                ],
-                "intBC": ["Z", "Z", "Z", "Z", "Z", "Z", "Y", "Y", "Y", "Y"],
-                "r1": ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1"],
-                "r2": ["2", "2", "2", "2", "2", "2", "2", "2", "2", "2"],
-                "r3": ["3", "3", "3", "3", "3", "3", "3", "3", "3", "3"],
-                "AlignmentScore": [
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                    "20",
-                ],
-                "CIGAR": [
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                    "NA",
-                ],
-            }
-        )
-        self.adverse_tie_case["readName"] = self.adverse_tie_case.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
-        )
-
-        self.adverse_tie_case["allele"] = self.adverse_tie_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
-
     def test_format(self):
 
-        aln_df = pipeline.error_correct_UMIs(
+        aln_df = pipeline.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=1
         )
 
@@ -196,7 +130,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_zero_dist(self):
 
-        aln_df = pipeline.error_correct_UMIs(
+        aln_df = pipeline.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=0
         )
 
@@ -207,7 +141,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_error_correct_two_dist(self):
 
-        aln_df = pipeline.error_correct_UMIs(
+        aln_df = pipeline.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=2
         )
 
@@ -231,31 +165,6 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
                 ],
                 expected_readcount,
             )
-
-    def test_adverse_tie_case(self):
-
-        aln_df = pipeline.error_correct_UMIs(
-            self.adverse_tie_case, "test", max_UMI_distance=2
-        )
-
-        expected_alignments = {
-            "C_AAGGA_50": 50,
-            "C_AACTG_25": 25,
-            "A_AAGGA_30": 30,
-            "A_CACCT_25": 25,
-        }
-
-        for read_name in aln_df["readName"]:
-
-            expected_readcount = expected_alignments[read_name]
-
-            self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "ReadCount"].iloc[
-                    0
-                ],
-                expected_readcount,
-            )
-
 
 if __name__ == "__main__":
     unittest.main()
