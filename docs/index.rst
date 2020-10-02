@@ -3,29 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Cassiopeia's Documentation
-======================================
+========================
+Cassiopeia documentation
+========================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of single-cell lineage tracing data. The package is composed of three indepdent modules:
 
-   readme
-   contributing
-   authors
+* ``preprocess`` for processing sequencing Fastq data to character matrices
+* ``solver`` for performing tree inference
+* ``analysis`` for post-tree inference analysis
+
+If you find a model useful for your research, please consider citing Cassiopeia.
 
 .. toctree::
    :maxdepth: 3
-   :caption: Package Reference
+   :hidden:
+   :titlesonly:
 
-   cassiopeia.TreeSolver
-   cassiopeia.ProcessingPipeline
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   api/index
+   contributing
+   authors
+   references
