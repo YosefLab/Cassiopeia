@@ -1,6 +1,6 @@
 """ Top level for ProcessingPipeline development"""
 
-from . import pipeline
+from .pipeline import *
 
 __author__ = "Matt Jones, Jeffrey Quinn"
 __email__ = "mattjones315@berkeley.edu"

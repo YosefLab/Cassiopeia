@@ -1,11 +1,13 @@
-sphinx
+sphinx_rtd_theme>=0.3.1
+sphinx>=2.0.1
 nbsphinx
 sphinx-autodoc-typehints
+nbsphinx-link
 pandas
 networkx >= 2.0
 tqdm
 ete3
-numpy > 1.0, < 1.15
+numpy > 1.15
 matplotlib
 argparse
 Biopython
@@ -15,5 +17,9 @@ bokeh
 PyYAML
 Cython >= 0.29.2
 scipy
+scanpydoc>=0.4.5
+pydata-sphinx-theme>=0.4.0
 python-Levenshtein
 pathlib
+typing_extensions; python_version < '3.8'
+
