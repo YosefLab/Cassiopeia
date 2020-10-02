@@ -6,13 +6,15 @@ errorCorrectUMIs functions.
 
 import array
 import heapq
+import logging
 import numpy as np
+import pandas as pd
 import pysam
 import os
-import yaml
 import subprocess
+import yaml
 
-from collections import namedtuple, Counter
+from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
 from tqdm.auto import tqdm
 from typing import Callable, List
@@ -51,7 +53,7 @@ NUM_READS_TAG = "ZR"  # The tag denothing the field that records the UMI for
 CLUSTER_ID_TAG = "ZC"  # The tag denothing the field that records the cluster ID
 # for each annotated aligned segment represnting a cluster
 # of aligned segments.
-LOC_TAG = "BC"
+# LOC_TAG = "BC"
 
 N_Q = 2  # The default quality value indicating a consensus could not be reached
 # for a base in the sequence for the consensus aligned segment.
@@ -62,7 +64,7 @@ LOW_Q = 10  # The default low quality value when annotating the qualities in a
 
 cell_key = lambda al: al.get_tag(CELL_BC_TAG)
 UMI_key = lambda al: al.get_tag(UMI_TAG)
-loc_key = lambda al: (al.get_tag(LOC_TAG))
+# loc_key = lambda al: (al.get_tag(LOC_TAG))
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
@@ -72,7 +74,7 @@ filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 
 
 def sort_cellranger_bam(
-    bam_fn: str,
+    bam_fp: str,
     sorted_fn: str,
     sort_key: Callable[[pysam.AlignedSegment], str] = sort_key,
     filter_func: Callable[[pysam.AlignedSegment], str] = filter_func,
@@ -85,7 +87,7 @@ def sort_cellranger_bam(
     chunks, filtering relevant aligned sequences with a specified key.
 
     Args:
-      bam_fn: The file name of the BAM to be sorted.
+      bam_fp: The file path of the BAM to be sorted.
       sorted_fn: The file name of the output BAM after sorting.
       sort_key: A function specifying the key by which to sort the aligned sequences.
       filter_func: A function specifying the key by which to filter out
@@ -98,7 +100,7 @@ def sort_cellranger_bam(
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
-    bam_fh = pysam.AlignmentFile(str(bam_fn))
+    bam_fh = pysam.AlignmentFile(str(bam_fp))
 
     relevant = filter(filter_func, bam_fh)
 
@@ -512,125 +514,82 @@ def merge_annotated_clusters(
 ####################Utils for Error Correcting UMIs#####################
 
 
-def error_correct_allUMIs(
-    sorted_fn, max_UMI_distance, sampleID, log_fh=None, show_progress=True
-):
+def correct_umis_in_group(
+    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2, verbose = False
+) -> pd.DataFrame:
+    """
+    Given a group of alignments, collapses UMIs that have close sequences.
 
-    collapsed_fn = sorted_fn.with_name(sorted_fn.stem + "_ec.bam")
-    log_fn = sorted_fn.with_name(sorted_fn.stem + "_umi_ec_log.txt")
+    Given a group of alignments (that share a cellBC and intBC if from
+    errorCorrectUMIs), determines which UMIs are to be merged into which.
+    For a given UMI, merges it into the UMI with the highest read count
+    that has a Hamming Distance <= max_UMI_distance. For a merge, removes the
+    less abundant UMI and adds its read count to the more abundant UMI.
+    If a UMI is to be merged into a UMI that itself will be merged, the
+    correction is propogated through.
 
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
+    TODO: We have noticed that UMIs with ties in their read counts are
+    corrected and merged rather arbitrarily. We are looking into this.
 
-    # group_by only works if sorted_als is already sorted by loc_key
-    allele_groups = utilities.group_by(sorted_als, loc_key)
+    Args:
+        input_df: Input DataFrame of alignments.
+        _id: Identification of sample.
+        max_UMI_distance: Maximum Hamming distance between UMIs
+            for error correction.
 
-    num_corrected = 0
-    total = 0
+    Returns:
+        A DataFrame of error corrected UMIs within the grouping.
 
-    with pysam.AlignmentFile(
-        str(collapsed_fn), "wb", header=sorted_als.header
-    ) as collapsed_fh:
-        for allele_bc, allele_group in allele_groups:
-            if max_UMI_distance > 0:
-                allele_group, num_corr, tot, erstring = error_correct_UMIs(
-                    allele_group, sampleID, max_UMI_distance
-                )
+    """
 
-            for a in allele_group:
-                collapsed_fh.write(a)
-
-            # log_fh.write(error_corrections)
-            if log_fh is None:
-                print(erstring, end=" ")
-                sys.stdout.flush()
-            else:
-                with open(log_fh, "a") as f:
-                    f.write(erstring)
-
-            num_corrected += num_corr
-            total += tot
-
-    print(
-        str(num_corrected)
-        + " UMIs Corrected of "
-        + str(total)
-        + " ("
-        + str(round(float(num_corrected) / total, 5) * 100)
-        + "%)",
-        file=sys.stderr,
-    )
-
-
-def error_correct_UMIs(cell_group, sampleID, max_UMI_distance=1):
-
-    UMIs = [al.get_tag(UMI_TAG) for al in cell_group]
+    UMIs = list(cell_group["UMI"])
 
     ds = hamming_distance_matrix(UMIs)
 
     corrections = register_corrections(ds, max_UMI_distance, UMIs)
 
     num_corrections = 0
-    corrected_group = []
-    ec_string = ""
-    total = 0
+    corrected_group = pd.DataFrame()
     corrected_names = []
-    for al in cell_group:
-        al_umi = al.get_tag(UMI_TAG)
-        for al2 in cell_group:
-            al2_umi = al2.get_tag(UMI_TAG)
-            # correction keys are 'from' and values are 'to'
-            # so correct al2 to al
+
+    if len(corrections) == 0:
+        return cell_group, 0, cell_group.shape[0], ""
+
+    for _, al in cell_group.iterrows():
+        al_umi = al["UMI"]
+        for _, al2 in cell_group.iterrows():
+            al2_umi = al2["UMI"]
+            # Keys are 'from' and values are 'to', so correct al2 to al
             if al2_umi in corrections.keys() and corrections[al2_umi] == al_umi:
 
-                bad_qname = al2.query_name
-                bad_nr = bad_qname.split("_")[-1]
-                qname = al.query_name
-                split_qname = qname.split("_")
+                bad_nr = al2["ReadCount"]
+                prev_nr = al["ReadCount"]
+                al["ReadCount"] = bad_nr + prev_nr
 
-                prev_nr = split_qname[-1]
-
-                split_qname[-1] = str(int(split_qname[-1]) + int(bad_nr))
-                n_qname = "_".join(split_qname)
-
-                al.query_name = n_qname
-
-                ec_string += (
-                    al2.get_tag(UMI_TAG)
-                    + "\t"
-                    + al.get_tag(UMI_TAG)
-                    + "\t"
-                    + al.get_tag(LOC_TAG)
-                    + "\t"
-                    + al.get_tag(CO_TAG)
-                    + "\t"
-                    + str(bad_nr)
-                    + "\t"
-                    + str(prev_nr)
-                    + "\t"
-                    + str(split_qname[-1])
-                    + "\t"
-                    + sampleID
-                    + "\n"
-                )
+                if verbose:
+                    logging.info(
+                        f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
+                        + f"for a total of {bad_nr + prev_nr} reads."
+                    )
 
                 # update alignment if already seen
-                if al.get_tag(UMI_TAG) in list(
-                    map(lambda x: x.get_tag(UMI_TAG), corrected_group)
-                ):
-                    corrected_group.remove(al)
-
-                corrected_group.append(al)
+                if al["UMI"] in corrected_names:
+                    corrected_group = corrected_group[
+                        corrected_group["UMI"] != al_umi
+                    ]
+                corrected_group = corrected_group.append(al)
 
                 num_corrections += 1
-                corrected_names.append(al2.get_tag(UMI_TAG))
-                corrected_names.append(al.get_tag(UMI_TAG))
+                corrected_names.append(al_umi)
+                corrected_names.append(al2_umi)
 
-    for al in cell_group:
+    for _, al in cell_group.iterrows():
 
-        # add alignments not touched during error correction back into the group to be written to file
-        if al.get_tag(UMI_TAG) not in corrected_names:
-            corrected_group.append(al)
+        # Add alignments not touched during error correction back into the group
+        # to be written to file.
+        if al["UMI"] not in corrected_names:
+            corrected_group = corrected_group.append(al)
 
     total = len(cell_group)
 
-    return corrected_group, num_corrections, total, ec_string
+    return corrected_group, num_corrections, total

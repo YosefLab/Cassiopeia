@@ -2,13 +2,16 @@
 This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
+TODO: richardyz98: Standardize logging outputs across all modules
 """
+
 import os
 import time
 
 from typing import List, Optional, Tuple
 
 from Bio import SeqIO
+from functools import partial
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,9 +24,12 @@ from tqdm.auto import tqdm
 from cassiopeia.ProcessingPipeline.process import alignment_utilities
 from cassiopeia.ProcessingPipeline.process import constants
 from cassiopeia.ProcessingPipeline.process import UMI_utils
+from cassiopeia.ProcessingPipeline.process import filter_utils
 from cassiopeia.ProcessingPipeline.process import utilities
+from cassiopeia.ProcessingPipeline.process import lineageGroup_utils as lg_utils
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
+progress = tqdm
 
 
 def resolve_umi_sequence(
@@ -152,9 +158,9 @@ def resolve_umi_sequence(
     return filt_molecule_table
 
 
-def collapse_umis(
+def collapse_UMIs(
     out_dir: str,
-    bam_file_name: str,
+    bam_fp: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     n_threads: int = 1,
@@ -163,10 +169,10 @@ def collapse_umis(
 ):
     """Collapses close UMIs together from a bam file.
 
-    On a basic level, it aggregates together identical or close reads to count 
-    how many times a UMI was read. Performs basic error correction, allowing 
-    UMIs to be collapsed together which differ by at most a certain number of 
-    high quality mismatches and indels in the sequence read itself. Writes out 
+    On a basic level, it aggregates together identical or close reads to count
+    how many times a UMI was read. Performs basic error correction, allowing
+    UMIs to be collapsed together which differ by at most a certain number of
+    high quality mismatches and indels in the sequence read itself. Writes out
     a dataframe of the collapsed UMIs table.
 
     Args:
@@ -199,13 +205,13 @@ def collapse_umis(
     sorted_file_name = Path(
         out_dir
         + "/"
-        + ".".join(bam_file_name.split("/")[-1].split(".")[:-1])
+        + ".".join(bam_fp.split("/")[-1].split(".")[:-1])
         + "_sorted.bam"
     )
 
     if force_sort or not sorted_file_name.exists():
         max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
-            bam_file_name, str(sorted_file_name), show_progress=show_progress
+            bam_fp, str(sorted_file_name), show_progress=show_progress
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))
         logging.info("Max read length of " + str(max_read_length))
@@ -222,11 +228,13 @@ def collapse_umis(
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
+
     utilities.convert_bam_to_df(
         str(collapsed_file_name), str(collapsed_df_file_name)
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
+    return df
 
 
 def align_sequences(
@@ -252,7 +260,7 @@ def align_sequences(
         ref: Reference sequence.
         gapopen: Gap open penalty
         gapextend: Gap extension penalty
-    
+
     Returns:
         A dataframe mapping each sequence name to the CIGAR string, quality,
         and original query sequence.
@@ -288,6 +296,8 @@ def align_sequences(
             aln.target_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
+            aln.target_begin,
+            aln.query_begin,
         )
 
     final_time = time.time()
@@ -307,12 +317,104 @@ def align_sequences(
         "ReferenceBegin"
         "AlignmentScore",
         "Seq",
+        "RefStart",
+        "QueryStart",
     ]
     alignment_df.index.name = "readName"
     alignment_df.reset_index(inplace=True)
 
     return alignment_df
 
+def error_correct_umis(
+    input_df: pd.DataFrame,
+    _id: str,
+    max_UMI_distance: int = 2,
+    show_progress: bool = False,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Within cellBC-intBC pairs, collapses UMIs that have close sequences.
+
+    Error correct UMIs together within cellBC-intBC pairs. UMIs that have a
+    Hamming Distance between their sequences less than a threshold are
+    corrected towards whichever UMI is more abundant.
+
+    Args:
+        input_df: Input DataFrame of alignments.
+        _id: Identification of sample.
+        max_UMI_distance: Maximum Hamming distance between UMIs
+            for error correction.
+        show_progress: Allow a progress bar to be shown.
+        verbose: Log every UMI correction.
+
+    Returns:
+        A DataFrame of error corrected UMIs.
+
+    """
+
+    assert (
+        len(
+            [
+                i
+                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
+                if i > 1
+            ]
+        )
+        == 0
+    ), "Non-unique cellBC-UMI pair exists, please resolve UMIs."
+
+    t0 = time.time()
+
+    logging.info("Beginning error correcting UMIs...")
+
+    sorted_df = input_df.sort_values(
+        ["cellBC", "intBC", "ReadCount", "UMI"], ascending=[True, True, False]
+    )
+
+    if max_UMI_distance == 0:
+        logging.info(
+            "Distance of 0, no correction occured, all alignments returned"
+        )
+        return sorted_df
+
+    num_corrected = 0
+    total = 0
+
+    alignment_df = pd.DataFrame()
+
+    if show_progress:
+        sorted_df = progress(sorted_df, total=total, desc="Collapsing")
+
+    allele_groups = sorted_df.groupby(["cellBC", "intBC"])
+
+    for fields, allele_group in allele_groups:
+        cellBC, intBC = fields
+        if verbose:
+            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
+        (allele_group, num_corr, tot) = UMI_utils.correct_umis_in_group(
+            allele_group, _id, max_UMI_distance
+        )
+        num_corrected += num_corr
+        total += tot
+
+        alignment_df = alignment_df.append(allele_group, sort=True)
+
+    final_time = time.time()
+
+    logging.info(f"Finished error correcting UMIs in {final_time - t0}.")
+    logging.info(
+        f"{num_corrected} UMIs Corrected of {total}"
+        + f"({round(float(num_corrected) / total, 5) * 100}%)"
+    )
+
+    alignment_df["readName"] = alignment_df.apply(
+        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
+    )
+
+    alignment_df.set_index("readName", inplace=True)
+    alignment_df.reset_index(inplace=True)
+
+    return alignment_df
 
 def call_alleles(
     alignments: pd.DataFrame,

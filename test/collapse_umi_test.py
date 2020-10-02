@@ -2,11 +2,8 @@
 Tests for the UMI Collapsing module in pipeline.py
 """
 import unittest
-unittest.TestLoader.sortTestMethodsUsing = None
 
-
-import time
-
+import os
 import pandas as pd
 from pathlib import Path
 import pysam
@@ -17,11 +14,12 @@ from cassiopeia.ProcessingPipeline.process import UMI_utils
 from cassiopeia.ProcessingPipeline.process import utilities
 
 
-class TestConvertBam2DF(unittest.TestCase):
+class TestCollapseUMIs(unittest.TestCase):
     def setUp(self):
-        self.test_file = "test.bam"
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.test_file = dir_path + "/test.bam"
         sorted_file_name = Path(
-            "."
+            dir_path
             + "/"
             + ".".join(self.test_file.split("/")[-1].split(".")[:-1])
             + "_sorted.bam"
@@ -64,10 +62,10 @@ class TestConvertBam2DF(unittest.TestCase):
         self.assertEqual(expected_UMI, UMIs[7])
 
     def test_collapse_bam(self):
-
         collapsed_bam = pysam.AlignmentFile(
             self.collapsed_file_name, "rb", check_sq=False
         )
+
         cellBCs = []
         UMIs = []
         readCounts = []
