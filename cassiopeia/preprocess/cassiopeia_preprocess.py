@@ -3,7 +3,7 @@ Main logic behind Cassiopeia-preprocess.
 
 This file stores the main entry point for Cassiopeia-preprocess, and makes 
 heavy use of the high level functionality in
-cassiopeia.ProcessingPipeline.process.pipeline. Here, we assume that the user
+cassiopeia.preprocess.pipeline. Here, we assume that the user
 has already run CellRanger Count, or some equivalent, to obtain a BAM file that
 relates cell barcodes and UMIs to sequences.
 
@@ -11,14 +11,23 @@ TODO(mattjones315@): include invocation instructions & pipeline specifics.
 TODO(richardyz98@): create a .yml file including all necessary imports and 
 dependencies
 """
-import argparse
-import logging
 import os
+
+import argparse
+import configparser
+import logging
+from typing import Any, Dict
 
 import cassiopeia
 
 
-def setup(output_directory_location):
+def setup(output_directory_location: str) -> None:
+    """Setup environment for pipeline
+
+    Args:
+        output_directory_location: Where to look for, or start a new, output
+            directory
+    """
 
     if not os.path.isdir(output_directory_location):
         os.mkdir(output_directory_location)
@@ -31,6 +40,21 @@ def setup(output_directory_location):
         filename=os.path.join(output_directory_location, "preprocess.err"),
         level=logging.ERROR,
     )
+
+
+def parse_config(
+    config: configparser.ConfigParser, stage: str = "general"
+) -> Dict[str, Any]:
+    """Parse config for pipeline.
+
+    Args:
+        config: Configuration file
+        stage: Which stage to look for (this should be a key in the config file)
+
+    Returns:
+        A dictionary mapping parameters for the particular stage.
+    """
+    pass
 
 
 def main():
@@ -59,16 +83,16 @@ def main():
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
-    cassioeia.pp.collapse_umis(output_directory, bam_filepath)
+    cassiopeia.pp.collapse_umis(output_directory, bam_filepath)
 
     # Resolve Sequences
-    cassioeia.pp.resolve_umi_sequence()
+    cassiopeia.pp.resolve_umi_sequence()
 
     # align sequences
-    cassioeia.pp.align_sequences()
+    cassiopeia.pp.align_sequences()
 
     # call alleles
-    cassioeia.pp.call_alleles()
+    cassiopeia.pp.call_alleles()
 
     # error correct umis
 

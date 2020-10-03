@@ -164,7 +164,7 @@ def collapse_umis(
     n_threads: int = 1,
     show_progress: bool = True,
     force_sort: bool = True,
-):
+) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
 
     On a basic level, it aggregates together identical or close reads to count
@@ -227,11 +227,12 @@ def collapse_umis(
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
 
-    utilities.convert_bam_to_df(
-        str(collapsed_file_name), str(collapsed_df_file_name)
+    df = utilities.convert_bam_to_df(
+        str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True,
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
+    
     return df
 
 
