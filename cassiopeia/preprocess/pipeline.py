@@ -21,12 +21,10 @@ from skbio import alignment
 from pathlib import Path
 from tqdm.auto import tqdm
 
-from cassiopeia.ProcessingPipeline.process import alignment_utilities
-from cassiopeia.ProcessingPipeline.process import constants
-from cassiopeia.ProcessingPipeline.process import UMI_utils
-from cassiopeia.ProcessingPipeline.process import filter_utils
-from cassiopeia.ProcessingPipeline.process import utilities
-from cassiopeia.ProcessingPipeline.process import lineageGroup_utils as lg_utils
+from cassiopeia.preprocess import alignment_utilities
+from cassiopeia.preprocess import constants
+from cassiopeia.preprocess import UMI_utils
+from cassiopeia.preprocess import utilities
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 progress = tqdm
@@ -158,7 +156,7 @@ def resolve_umi_sequence(
     return filt_molecule_table
 
 
-def collapse_UMIs(
+def collapse_umis(
     out_dir: str,
     bam_fp: str,
     max_hq_mismatches: int = 3,
@@ -296,8 +294,6 @@ def align_sequences(
             aln.target_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
-            aln.target_begin,
-            aln.query_begin,
         )
 
     final_time = time.time()
@@ -314,12 +310,11 @@ def align_sequences(
         "ReadCount",
         "CIGAR",
         "QueryBegin",
-        "ReferenceBegin"
+        "ReferenceBegin",
         "AlignmentScore",
         "Seq",
-        "RefStart",
-        "QueryStart",
     ]
+
     alignment_df.index.name = "readName"
     alignment_df.reset_index(inplace=True)
 
@@ -368,7 +363,7 @@ def error_correct_umis(
     logging.info("Beginning error correcting UMIs...")
 
     sorted_df = input_df.sort_values(
-        ["cellBC", "intBC", "ReadCount", "UMI"], ascending=[True, True, False]
+        ["cellBC", "intBC", "ReadCount", "UMI"], ascending=[True, True, False, False]
     )
 
     if max_UMI_distance == 0:

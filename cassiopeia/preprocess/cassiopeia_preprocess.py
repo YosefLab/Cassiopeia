@@ -15,7 +15,7 @@ import argparse
 import logging
 import os
 
-from cassiopeia.ProcessingPipeline.process import pipeline
+import cassiopeia
 
 
 def setup(output_directory_location):
@@ -59,16 +59,16 @@ def main():
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
-    pipeline.collapse_umis(output_directory, bam_filepath)
+    cassioeia.pp.collapse_umis(output_directory, bam_filepath)
 
     # Resolve Sequences
-    pipeline.resolve_umi_sequence()
+    cassioeia.pp.resolve_umi_sequence()
 
     # align sequences
-    pipeline.align_sequences()
+    cassioeia.pp.align_sequences()
 
     # call alleles
-    pipeline.call_alleles()
+    cassioeia.pp.call_alleles()
 
     # error correct umis
 

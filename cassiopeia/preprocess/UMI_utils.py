@@ -3,7 +3,6 @@ This file contains all functions pertaining to UMI collapsing and preprocessing.
 Invoked through pipeline.py and supports the collapseUMIs and 
 errorCorrectUMIs functions. 
 """
-
 import array
 import heapq
 import logging
@@ -17,7 +16,7 @@ import yaml
 from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
 from tqdm.auto import tqdm
-from typing import Callable, List
+from typing import Callable, List, Tuple
 
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
@@ -516,12 +515,12 @@ def merge_annotated_clusters(
 
 def correct_umis_in_group(
     cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2, verbose = False
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
 
     Given a group of alignments (that share a cellBC and intBC if from
-    errorCorrectUMIs), determines which UMIs are to be merged into which.
+    error_correct_umis), determines which UMIs are to be merged into which.
     For a given UMI, merges it into the UMI with the highest read count
     that has a Hamming Distance <= max_UMI_distance. For a merge, removes the
     less abundant UMI and adds its read count to the more abundant UMI.
@@ -553,7 +552,7 @@ def correct_umis_in_group(
     corrected_names = []
 
     if len(corrections) == 0:
-        return cell_group, 0, cell_group.shape[0], ""
+        return cell_group, 0, cell_group.shape[0]
 
     for _, al in cell_group.iterrows():
         al_umi = al["UMI"]

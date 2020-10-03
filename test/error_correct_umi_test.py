@@ -6,8 +6,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from cassiopeia.ProcessingPipeline.process import pipeline
-
+import cassiopeia
 
 class TestErrorCorrectUMISequence(unittest.TestCase):
     def setUp(self):
@@ -108,7 +107,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_format(self):
 
-        aln_df = pipeline.error_correct_umis(
+        aln_df = cassiopeia.pp.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=1
         )
 
@@ -130,7 +129,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_zero_dist(self):
 
-        aln_df = pipeline.error_correct_umis(
+        aln_df = cassiopeia.pp.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=0
         )
 
@@ -141,7 +140,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_error_correct_two_dist(self):
 
-        aln_df = pipeline.error_correct_umis(
+        aln_df = cassiopeia.pp.error_correct_umis(
             self.multi_case, "test", max_UMI_distance=2
         )
 

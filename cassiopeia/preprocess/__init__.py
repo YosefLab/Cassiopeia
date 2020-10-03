@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Top level for ProcessingPipeline."""
-from .pipeline import *
+"""Top level for preprocess."""
 
-__author__ = "Matt Jones, Richard Zhang, Alex Khodaverdian"
-__email__ = "mattjones315@berkeley.edu"
-__version__ = "0.0.1"
+from .pipeline import align_sequences, call_alleles, collapse_umis, error_correct_umis, resolve_umi_sequence
+from .utilities import filter_cells
