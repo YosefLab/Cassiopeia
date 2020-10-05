@@ -19,43 +19,7 @@ import logging
 from typing import Any, Dict
 
 import cassiopeia
-
-
-def setup(output_directory_location: str) -> None:
-    """Setup environment for pipeline
-
-    Args:
-        output_directory_location: Where to look for, or start a new, output
-            directory
-    """
-
-    if not os.path.isdir(output_directory_location):
-        os.mkdir(output_directory_location)
-
-    logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.log"),
-        level=logging.INFO,
-    )
-    logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.err"),
-        level=logging.ERROR,
-    )
-
-
-def parse_config(
-    config: configparser.ConfigParser, stage: str = "general"
-) -> Dict[str, Any]:
-    """Parse config for pipeline.
-
-    Args:
-        config: Configuration file
-        stage: Which stage to look for (this should be a key in the config file)
-
-    Returns:
-        A dictionary mapping parameters for the particular stage.
-    """
-    pass
-
+from cassiopeia.pp import setup_utilities
 
 def main():
 
@@ -74,12 +38,15 @@ def main():
     )
 
     args = parser.parse_args()
-
-    bam_filepath = args.bam_file
-    output_directory = args.output_directory
+    
     config_filepath = args.config
+    
+    with open(config_filepath, 'r') as f:
+        pipeline_parameters = setup_utilities.parse_config(f.read())
 
-    setup(output_directory)  # feed into base_dir
+    # feed into base_dir
+    setup_utilities.setup(pipeline_parameters['general']['output_directory'])
+    
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
