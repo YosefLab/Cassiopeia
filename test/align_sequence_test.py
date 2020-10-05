@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from cassiopeia.ProcessingPipeline.process import pipeline
+import cassiopeia
 
 
 class TestResolveUMISequence(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestResolveUMISequence(unittest.TestCase):
 
     def test_alignment_dataframe_structure(self):
 
-        aln_df = pipeline.align_sequences(
+        aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
             gap_open_penalty=20,
@@ -55,16 +55,18 @@ class TestResolveUMISequence(unittest.TestCase):
             "AlignmentScore",
             "CIGAR",
             "QueryBegin",
+            "ReferenceBegin",
             "Seq",
             "readName",
             "ReadCount",
         ]
+
         for column in expected_columns:
             self.assertIn(column, aln_df.columns)
 
     def test_extremely_large_gap_open_penalty(self):
 
-        aln_df = pipeline.align_sequences(
+        aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
             gap_open_penalty=255,
@@ -80,7 +82,7 @@ class TestResolveUMISequence(unittest.TestCase):
 
     def test_default_alignment_works(self):
 
-        aln_df = pipeline.align_sequences(
+        aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
             gap_open_penalty=1,

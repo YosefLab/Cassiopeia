@@ -6,8 +6,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from cassiopeia.ProcessingPipeline.process import pipeline
-from cassiopeia.ProcessingPipeline.process import alignment_utilities
+import cassiopeia
+from cassiopeia.preprocess import alignment_utilities
 
 
 class TestCallAlleles(unittest.TestCase):
@@ -326,7 +326,7 @@ class TestCallAlleles(unittest.TestCase):
 
     def test_call_alleles_function(self):
 
-        molecule_table = pipeline.call_alleles(
+        molecule_table = cassiopeia.pp.call_alleles(
             self.alignment_dataframe,
             ref=self.basic_ref,
             barcode_interval=self.basic_barcode_interval,

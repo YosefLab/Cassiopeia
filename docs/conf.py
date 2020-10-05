@@ -1,7 +1,7 @@
 ##!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# scvi documentation build configuration file, created by
+# cassiopeia documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -18,14 +18,17 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+import os
 import sys
+import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
-import cassiopeia  # noqa
+import cassiopeia # noqa
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
 # -- General configuration ---------------------------------------------
 
@@ -37,13 +40,13 @@ needs_sphinx = "3.0"  # Nicer param docs
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "nbsphinx",
     "nbsphinx_link",
-    "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
-    "sphinx.ext.intersphinx",
     "sphinx.ext.autosummary",
     "scanpydoc.elegant_typehints",
     "scanpydoc.definition_list_typed_field",
@@ -70,9 +73,15 @@ autodoc_member_order = "bysource"
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
-napoleon_use_rtype = True  # having a separate entry generally helps readability
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
 napoleon_use_param = True
-napoleon_custom_sections = [("Params", "Parameters")]
+napoleon_use_rtype = True
+napoleon_type_aliases = None
 todo_include_todos = False
 numpydoc_show_class_members = False
 annotate_defaults = True  # scanpydoc option, look into why we need this
@@ -82,21 +91,11 @@ master_doc = "index"
 
 
 intersphinx_mapping = dict(
-    anndata=("https://anndata.readthedocs.io/en/stable/", None),
-    ipython=("https://ipython.readthedocs.io/en/stable/", None),
     matplotlib=("https://matplotlib.org/", None),
     numpy=("https://docs.scipy.org/doc/numpy/", None),
     pandas=("https://pandas.pydata.org/pandas-docs/stable/", None),
     python=("https://docs.python.org/3", None),
-    scipy=("https://docs.scipy.org/doc/scipy/reference/", None),
-    sklearn=("https://scikit-learn.org/stable/", None),
-    torch=("https://pytorch.org/docs/master/", None),
-    scanpy=("https://scanpy.readthedocs.io/en/stable/", None),
 )
-# qualname_overrides = {
-#     "scvi.data.dataset.GeneExpressionDataset": "scvi.data.GeneExpressionDataset"
-# }
-
 
 # General information about the project.
 project = u"cassiopeia"
@@ -144,20 +143,20 @@ html_theme = "pydata_sphinx_theme"
 #
 # html_theme_options = {}
 
-# html_logo = "_static/logo.png"
+html_logo = "_static/logo3.png"
 
 html_theme_options = {
     "github_url": "https://github.com/YosefLab/Cassiopeia",
     "twitter_url": "https://twitter.com/YosefLab",
     # "use_edit_page_button": True,
 }
-# html_context = dict(
-#     # display_github=True,  # Integrate GitHub
-#     github_user="YosefLab",  # Username
-#     github_repo="Cassiopeia",  # Repo name
-#     github_version="master",  # Version
-#     doc_path="docs/",  # Path in the checkout to the docs root
-# )
+html_context = dict(
+    # display_github=True,  # Integrate GitHub
+    github_user="YosefLab",  # Username
+    github_repo="Cassiopeia",  # Repo name
+    github_version="master",  # Version
+    doc_path="docs/",  # Path in the checkout to the docs root
+)
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -166,6 +165,9 @@ html_static_path = ["_static"]
 html_css_files = ["css/user_guide.css", "css/custom.css"]
 
 html_show_sphinx = False
+
+def setup(app):
+    app.warningiserror = on_rtd
 
 
 # -- Options for HTMLHelp output ---------------------------------------
@@ -212,7 +214,7 @@ latex_elements = {
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-# man_pages = [(master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)]
+man_pages = [(master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------

@@ -13,12 +13,11 @@ Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of
 * ``solver`` for performing tree inference
 * ``analysis`` for post-tree inference analysis
 
-If you find a model useful for your research, please consider citing Cassiopeia.
+If you find this useful for your research, please consider citing Cassiopeia.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :hidden:
-   :titlesonly:
 
    api/index
    contributing
