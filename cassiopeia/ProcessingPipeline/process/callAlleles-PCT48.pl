@@ -77,7 +77,9 @@ LINE: while(<IN>) {
 	my ($qname,$flag,$rname,$pos,$mapq,$cigar,$rnext,$pnext,$tlen,$seq,$qual,$ASStr,$NMStr) = split(/\t/,$_);
 	my ($cellBC,$UMI,$readCount) = split(/_/,$qname);
 	my $start = $pos;
+	$cigar = "13M";
 	my @cigarChunks = $cigar =~ m/\d+[MIDNSHP=X]/g;
+	print "CC: @cigarChunks\n";
 	my ($t,$i,$AS) = split(/:/,$ASStr); # alignment score
 	($t,$i,my $NM) = split(/:/,$NMStr); # alignment distance to reference
 
@@ -101,7 +103,7 @@ LINE: while(<IN>) {
 	#my $strippedSeq = $seq;
 	#
 
-	if ((length $seq) <= 20) {
+	if ((length $seq) <= 0) {
 		$seenBadBCs++;
 		$totalUMIs++;
 		$totalReads += $readCount;
@@ -133,7 +135,6 @@ LINE: while(<IN>) {
 				}
 				#print STDERR "$intBCLim[0] refItr:$refItr queryItr:$queryItr matchLen:$matchLen intBCOffset:$intBCOffset \n";
 			}
-			
 
 			if ($r1Cut >= $refItr && $r1Cut <= $refItrN && $r1Cigar eq ""){
 				my $dist = ($r1Cut - $refItr);
