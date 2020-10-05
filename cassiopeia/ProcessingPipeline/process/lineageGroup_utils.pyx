@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,11 +12,37 @@ from scipy import cluster
 #import rpy2.robjects as robjects
 #from rpy2.robjects.packages import importr
 from tqdm import tqdm
+from typing import Dict, List
 #from rpy2.robjects import r, numpy2ri
 import time
 import yaml
 
 sys.setrecursionlimit(10000)
+
+def generate_log_output(
+    df: pd.DataFrame, 
+    begin: bool = False
+):
+    """A function for the logging of the number of filtered elements.
+
+    Simple function that logs the number of total reads, the number of unique 
+    UMIs, and the number of unique cellBCs in a DataFrame of alignments. To be
+    run after a filtering step.
+
+    Args:
+        df: A DataFrame of alignments
+
+    Returns:
+        None, logs elements to log file
+    """
+    
+    if begin:
+        logging.info("Before filtering:")
+    else:
+        logging.info("After this filtering step:")
+        logging.info("# Reads: " + str(sum(df["ReadCount"])))
+        logging.info(f"# UMIs: {df.shape[0]}")
+        logging.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
 
 def maxOverlap(mat):
     """
@@ -61,19 +88,24 @@ def maxOverlap(mat):
             k += 1
     return dm
 
-def mapIntBCs(moleculetable, outputfile, outputdir, verbose=True):
-    """
-    Performs a procedure to cleanly assign one allele to each intBC/cellBC pairing
+def map_intbcs(
+    moleculetable: pd.DataFrame,
+    verbose: bool = False
+) -> pd.DataFrame:
+    """Performs a procedure to cleanly assign one allele to each intBC/cellBC 
+    pairing
 
-    :param moleculetable: Allele table to be analyzed.
-    :param outputdir: output directory file pmth
-    :return: cleaned moleculetable.
-    """
+    For each intBC/cellBC pairing, selects the most frequent allele and 
+    corrects the allele of all other alignments (reads) to that allele.
 
-    iBC_assign = {}
-    r1_assign = {}
-    r2_assign = {}
-    r3_assign = {}
+    Args: 
+        moleculetable: A DataFrame of alignments to be filtered
+        verbose: Indicates whether to log every correction and the number of
+            cellBCs and UMIs remaining after filtering
+
+    Returns
+        moleculetable: Cleaned moleculetable.
+    """
 
     # Have to drop out all intBCs that are NaN
     moleculetable = moleculetable.dropna(subset=["intBC"])
@@ -113,35 +145,52 @@ def mapIntBCs(moleculetable, outputfile, outputdir, verbose=True):
 
             if verbose:
                 for i in range(1, x1.shape[0]):
-                    with open(outputdir + "/log_pickalleles.txt", "a") as f:
-                        f.write(n + "\t" + x1.loc[i, "allele"] + "\t" + a + "\t")
-                        f.write(str(x1.loc[i, "UMI"]) + "\t" + str(x1.loc[0, "UMI"]) + "\n")
-
-
+                    logging.info(f"In group {n}, re-assigned allele " +  str(x1.loc[i, "allele"]) + f" to {a},"
+                    + " re-assigning UMI " + str(x1.loc[i, "UMI"]) + " to " + str(x1.loc[0, "UMI"]))
+                    # out_str += n + "\t" + x1.loc[i, "allele"] + "\t" + a + "\t"
+                    # out_str += str(x1.loc[i, "UMI"]) + "\t" + str(x1.loc[0, "UMI"]) + "\n"
 
     moleculetable["status"] = moleculetable["filter_column2"].map(filter_dict)
     moleculetable = moleculetable[(moleculetable["status"] == "good")]
     moleculetable.index = [i for i in range(moleculetable.shape[0])]
     moleculetable = moleculetable.drop(columns=["filter_column", "filter_column2", "allele_counter", "status"])
 
-
     # log results
     if verbose:
-        with open(outputdir + "/" + outputfile, "a") as f:
-
-            f.write("PICK ALLELES:\n")
-            f.write("# alleles removed: " + str(corrected) + "\n")
-            f.write("# UMIs affected (through removing alleles): " + str(numUMI_corrected) + "\n\n")
+        logging.info("Picking alleles:")
+        logging.info(f"# Alleles removed: {corrected}")
+        logging.info(f"# UMIs affected through removing alleles: {numUMI_corrected}")
+        generate_log_output(moleculetable)
 
     return moleculetable
 
-def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):
+def filter_intra_doublets(
+    molecule_table: pd.DataFrame, 
+    prop: float = 0.1, 
+    verbose: bool = False
+) -> pd.DataFrame:
+    """Filters a DataFrame for doublet cells that present too much conflicting
+    allele information within a clonal population.
+
+    For each cellBC, calculates the most common allele for each intBC by UMI 
+    count. Also calculates the proportion of UMIs of alleles that conflict
+    with the most common. If the proportion across all UMIs is > prop, filters
+    out alignments with that cellBC from the DataFrame.
+
+    Args: 
+        moleculetable: A DataFrame of alignments to be filtered
+        prop: A threshold representing the minimum proportion of conflicting
+        UMIs needed to filter out a cellBC from the DataFrame
+        verbose: Indicates whether to log the number of doublets filtered out
+        of the total number of cells
+
+    Returns
+        moleculetable: Cleaned moleculetable.
+    """
 
     doublet_list = []
     filter_dict = {}
-    for n, g in tqdm(MT.groupby(["cellBC"])):
-        conflicting_umi_count = 0
-        
+    for n, g in tqdm(molecule_table.groupby(["cellBC"])):
         x = g.groupby(["intBC", "allele"]).agg({"UMI": "count"}).sort_values("UMI", ascending=False).reset_index()
         xuniq = x.drop_duplicates(subset=["intBC"], keep = "first")
 
@@ -155,20 +204,46 @@ def filter_intra_doublets(MT, outputfile, outputdir, prop=0.1):
         else:
             filter_dict[n] = "good"
 
-    MT["status"] = MT["cellBC"].map(filter_dict)
+    molecule_table["status"] = molecule_table["cellBC"].map(filter_dict)
 
-    doublet_list = MT[(MT["status"] == "bad")]["cellBC"].unique()
+    doublet_list = molecule_table[(molecule_table["status"] == "bad")]["cellBC"].unique()
 
-    with open(outputdir + "/" + outputfile, "a") as f:
-           f.write("Filtered " + str(len(doublet_list)) + " Intra-Lineage Group Doublets of " + str(len(MT["cellBC"].unique())) + "\n")
+    if verbose: 
+        logging.info(f"Filtered {len(doublet_list)} Intra-Lineage Group Doublets of " + str(len(molecule_table["cellBC"].unique())))
 
-    MT = MT[(MT["status"] == "good")]
-    MT = MT.drop(columns = ["status"])
+    molecule_table = molecule_table[(molecule_table["status"] == "good")]
+    molecule_table = molecule_table.drop(columns = ["status"])
 
-    return MT
+    if verbose:
+        generate_log_output(molecule_table)
+
+    return molecule_table
 
 
-def get_intbc_sets(lgs, lg_names, thresh=None):
+def get_intbc_sets(
+    lgs: List[pd.DataFrame], 
+    lg_names: List[int], 
+    thresh: int = None
+) -> (Dict[int, List[str]], Dict[int, pd.DataFrame]):
+    """A simple function to return the intBC sets of each lineage group.
+
+    Given a list of lineage groups, returns the intBC set for that lineage 
+    group, i.e. the set of intBCs that the cells in the lineage group have.
+    If thresh is specified, also filters out intBCs with low proportions.
+
+    Args:
+        lgs: A list of alignment DataFrames, one representing each lineage
+            group
+        lg_names: A list of lineage group names
+        thresh: The minimum proportion of cells that have an intBC in each 
+            lineage group in order for that intBC to be included in the intBC 
+            set
+
+    Returns:
+        intbc_sets: A dictionary of the intBC sets of each lineage group
+        dropouts: A dictionary of the cell proportion of cells that do not 
+            have that intBC for each lineage group
+    """
 
     intbc_sets = {}
     dropouts = {}
@@ -183,28 +258,51 @@ def get_intbc_sets(lgs, lg_names, thresh=None):
             dropouts[n] = do
 
         else:
+            # Filter all intBCs whose cell proportion is < thresh
             intbcs = do[do < thresh].index
             intbc_sets[n] = intbcs
             dropouts[n] = do
 
     return intbc_sets, dropouts
 
-def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):
+def compute_lg_membership(
+    cell: pd.DataFrame,
+    intbc_sets: Dict[int, List[str]], 
+    lg_dropouts: Dict[int, pd.DataFrame])
+) -> Dict[int, float]:
+    """Calculates the kinship for the given cell for each lineage group.
+
+    Given a cell, for each lineage group, it calculates the intBC intersection
+    with that lineage group, weighted by the cell proportions that have each
+    intBC in that group. 
+
+    Args:
+        cell: A DataFrame containing alignments of a given cellBC
+        intbc_sets: A dictionary of the intBC sets of each lineage group
+        lg_dropouts: A dictionary of the cell proportion of cells that do not 
+            have that intBC for each lineage group
+    Returns:
+        lg_mem: A kinship score for each lineage group
+    """
     
     lg_mem = {}
+
+    # Get the intBC set for the cell
     ibcs = np.unique(cell["intBC"])
 
     for i in intbc_sets.keys():
 
         lg_do = lg_dropouts[i]
+        # Calculate the intersect
         intersect = np.intersect1d(ibcs, intbc_sets[i])
         if len(intersect) > 0:
-
+            # Calculate weighted intersection, normalized by the total cell proportions
             lg_mem[i] = np.sum(1 - lg_do[intersect]) / np.sum(1 - lg_do)
 
         else:
             lg_mem[i] = 0
 
+    # Normalize the membership values across linaege groups
     factor = 1.0 / np.sum(list(lg_mem.values()))
     for l in lg_mem:
         lg_mem[l] = lg_mem[l] * factor
@@ -212,7 +310,28 @@ def compute_lg_membership(cell, intbc_sets, lg_dropouts, scale_by_dropout=True):
     return lg_mem
 
 
-def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
+def filter_inter_doublets(
+    at: pd.DataFrame, 
+    rule: float = 0.35, 
+    verbose: bool = False
+) -> pd.DataFrame:
+    """Filters out cells whose kinship with their assigned lineage is low.
+    Essentially, filters out cells that have ambigious kinship across multiple
+    lineage groups. 
+
+    For every cell, calculates the kinship it has with its assigned lineage,
+    with kinship defined as the weighted proportion of intBCs it shares with
+    the intBC set for a lineage (see compute_lg_membership for more details
+    on the weighting). If that kinship is <= rule, then it is filtered out.
+
+    Args:
+        at: A DataFrame of alignments to be filtered
+        rule: The minimum kinship threshold which a cell needs to pass in order
+            to be included in the final DataFrame
+        verbose: Indicates whether to log the number of filtered cells
+    Returns:
+        A filtered DataFrame of alignments
+    """
 
     def filter_cell(cell, rule):
         true_lg = cell.loc["LG"]
@@ -226,10 +345,11 @@ def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
 
     ibc_sets, dropouts = get_intbc_sets(collapsed_lgs, lg_names)
 
+    # Calculate kinship for each lineage group for each cell
     mems = {}
     for n, g in tqdm(at.groupby("cellBC"), desc="Creating Membership DF"):
         lg = int(g["lineageGrp"].iloc[0])
-        mem = compute_lg_membership(g, ibc_sets, dropouts, scale_by_dropout = True)
+        mem = compute_lg_membership(g, ibc_sets, dropouts)
         mem["LG"] = lg
         mems[n] = mem
 
@@ -237,7 +357,7 @@ def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
 
     filter_dict = {}
 
-    for cell in tqdm(mem_df.index, desc="Identifying Inter doublets"):
+    for cell in tqdm(mem_df.index, desc="Identifying inter-doublets"):
         if filter_cell(mem_df.loc[cell], rule):
             filter_dict[cell] = "bad"
         else:
@@ -249,8 +369,8 @@ def filter_inter_doublets(at, outputfile, outputdir, rule=0.35):
     dl = len(at[at["status"] == "bad"]["cellBC"].unique())
     tot = len(at["cellBC"].unique())
 
-    with open(outputdir + "/" + outputfile, "a") as f:
-        f.write("Filtered " + str(dl) + " inter-doublets of " + str(tot) + " cells") 
+    if verbose:
+        logging.info(f"Filtered {dl} inter-doublets of {tot} cells") 
 
     return at_n.drop(columns=["status"])
 

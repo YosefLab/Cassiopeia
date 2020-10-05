@@ -54,7 +54,7 @@ def parse_cigar(
     ]
     indels = ["" for site in cutsites]
     uncut_indels = ["" for site in cutsites]
-    intBC = ""
+    intBC = "NC"
 
     ref_anchor = ref[barcode_interval[0] - 11 : barcode_interval[0]]
     intBC_length = barcode_interval[1] - barcode_interval[0]
@@ -64,7 +64,7 @@ def parse_cigar(
     query_pointer = query_start
     query_pad = 0
 
-    cigar_chunks = re.findall("(\d+)?([A-Za-z])?", cigar)
+    cigar_chunks = re.findall(r"(\d+)?([A-Za-z])?", cigar)
 
     for chunk in cigar_chunks:
 
@@ -213,7 +213,7 @@ def parse_cigar(
 
     if intBC == "NC" or len(intBC) < intBC_length:
 
-        anchor = seq[(barcode_interval[0] - 10) : barcode_interval[0]]
+        anchor = seq[(barcode_interval[0] - 11) : barcode_interval[0]]
         if anchor == ref_anchor:
             intBC = seq[barcode_interval[0] : barcode_interval[1]]
 
