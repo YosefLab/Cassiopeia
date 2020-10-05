@@ -16,6 +16,7 @@ from cassiopeia.pp import constants
 class UnspecifiedConfigParameterError(Exception):
     pass
 
+
 def setup(output_directory_location: str) -> None:
     """Setup environment for pipeline
 
@@ -37,7 +38,7 @@ def setup(output_directory_location: str) -> None:
     )
 
 
-def parse_config(config_string: str) -> Dict[str, Any]:
+def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     """Parse config for pipeline.
 
     Args:
@@ -58,8 +59,9 @@ def parse_config(config_string: str) -> Dict[str, Any]:
 
     parameters = {}
     for key in config:
-        parameters[key] = {k: ast.literal_eval(v) for k, v in config[key].items()}
-
+        parameters[key] = {
+            k: ast.literal_eval(v) for k, v in config[key].items()
+        }
 
     # ensure that minimum items are present in config
     minimum_parameters = [

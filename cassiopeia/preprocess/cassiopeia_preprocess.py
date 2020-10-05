@@ -21,6 +21,9 @@ from typing import Any, Dict
 import cassiopeia
 from cassiopeia.pp import setup_utilities
 
+STAGES = ["collapse", "resolve", "align", "call_alleles", "error_correct"]
+
+
 def main():
 
     # --------------- Create Argument Parser & Read in Arguments -------------- #
@@ -38,19 +41,23 @@ def main():
     )
 
     args = parser.parse_args()
-    
+
     config_filepath = args.config
-    
-    with open(config_filepath, 'r') as f:
+
+    with open(config_filepath, "r") as f:
         pipeline_parameters = setup_utilities.parse_config(f.read())
 
-    # feed into base_dir
-    setup_utilities.setup(pipeline_parameters['general']['output_directory'])
-    
+    # pull out general parameters
+    output_directory = pipeline_parameters["general"]["output_directory"]
+    data_filepath = pipeline_parameters["general"]["input_file"]
+    reference_filepath = pipeline_parameters["general"]["reference_filepath"]
+
+    # set up output directory
+    setup_utilities.setup(output_directory)
 
     # ---------------------- Run Pipeline ---------------------- #
     # Collapse UMIs
-    cassiopeia.pp.collapse_umis(output_directory, bam_filepath)
+    cassiopeia.pp.collapse_umis(output_directory, data_filepath)
 
     # Resolve Sequences
     cassiopeia.pp.resolve_umi_sequence()
