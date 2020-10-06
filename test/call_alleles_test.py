@@ -6,8 +6,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from cassiopeia.ProcessingPipeline.process import pipeline
-from cassiopeia.ProcessingPipeline.process import alignment_utilities
+import cassiopeia
+from cassiopeia.preprocess import alignment_utilities
 
 
 class TestCallAlleles(unittest.TestCase):
@@ -54,7 +54,7 @@ class TestCallAlleles(unittest.TestCase):
             }
         )
 
-        self.alignment_dataframe['readName'] = self.alignment_dataframe.apply(
+        self.alignment_dataframe["readName"] = self.alignment_dataframe.apply(
             lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.ReadCount), axis=1
         )
 
@@ -326,7 +326,7 @@ class TestCallAlleles(unittest.TestCase):
 
     def test_call_alleles_function(self):
 
-        molecule_table = pipeline.call_alleles(
+        molecule_table = cassiopeia.pp.call_alleles(
             self.alignment_dataframe,
             ref=self.basic_ref,
             barcode_interval=self.basic_barcode_interval,
@@ -335,31 +335,33 @@ class TestCallAlleles(unittest.TestCase):
             context=False,
         )
 
-        expected_columns = list(self.alignment_dataframe.columns) + ['r1', 'allele', 'intBC']
+        expected_columns = list(self.alignment_dataframe.columns) + [
+            "r1",
+            "allele",
+            "intBC",
+        ]
 
         for column in expected_columns:
             self.assertIn(column, molecule_table.columns)
 
         expected_indels = {
-            'A_ATC_10': 'None',
-            'A_TTG_20': '7:2D',
-            'B_ACC_10': 'None',
-            'C_CCA_10': '9:1I',
+            "A_ATC_10": "None",
+            "A_TTG_20": "7:2D",
+            "B_ACC_10": "None",
+            "C_CCA_10": "9:1I",
         }
 
         expected_intbcs = {
-            'A_ATC_10': 'GG',
-            'A_TTG_20': 'AT',
-            'B_ACC_10': 'CC',
-            'C_CCA_10': 'GA',
+            "A_ATC_10": "GG",
+            "A_TTG_20": "AT",
+            "B_ACC_10": "CC",
+            "C_CCA_10": "GA",
         }
 
         for _, row in molecule_table.iterrows():
 
             self.assertEqual(row.r1, expected_indels[row.readName])
             self.assertEqual(row.intBC, expected_intbcs[row.readName])
-
-        
 
 
 if __name__ == "__main__":

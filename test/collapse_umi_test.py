@@ -1,26 +1,27 @@
 """
 Tests for the UMI Collapsing module in pipeline.py
 """
+import os
 import unittest
 
-import os
 import pandas as pd
 from pathlib import Path
 import pysam
 
-
-from cassiopeia.ProcessingPipeline.process import pipeline
-from cassiopeia.ProcessingPipeline.process import UMI_utils
-from cassiopeia.ProcessingPipeline.process import utilities
+from cassiopeia.preprocess import UMI_utils
+from cassiopeia.preprocess import utilities
 
 
 class TestCollapseUMIs(unittest.TestCase):
     def setUp(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.test_file = dir_path + "/test.bam"
+        if not os.path.exists(dir_path + "/test_files"):
+            os.makedirs(dir_path + "/test_files")
+
+        self.test_file = dir_path + "/test_files/test.bam"
         sorted_file_name = Path(
             dir_path
-            + "/"
+            + "/test_files/"
             + ".".join(self.test_file.split("/")[-1].split(".")[:-1])
             + "_sorted.bam"
         )
@@ -43,7 +44,7 @@ class TestCollapseUMIs(unittest.TestCase):
         )
 
     def test_sort_bam(self):
-        
+
         sorted_bam = pysam.AlignmentFile(
             self.sorted_file_name, "rb", check_sq=False
         )
@@ -91,7 +92,7 @@ class TestCollapseUMIs(unittest.TestCase):
         collapsed_df_file_name = self.sorted_file_name.with_suffix(
             ".collapsed.txt"
         )
-        ret = utilities.convertBam2DF(
+        ret = utilities.convert_bam_to_df(
             str(self.collapsed_file_name),
             str(collapsed_df_file_name),
             create_pd=True,
