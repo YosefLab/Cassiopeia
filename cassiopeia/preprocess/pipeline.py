@@ -21,7 +21,6 @@ from skbio import alignment
 from pathlib import Path
 from tqdm.auto import tqdm
 
-
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import call_lineage_utils as cl_utils
 from cassiopeia.preprocess import constants
@@ -32,6 +31,7 @@ from cassiopeia.preprocess import utilities
 
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
+BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
 
 
@@ -115,92 +115,6 @@ def collapse_umis(
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
 
     return df
-
-
-def align_sequences(
-    queries: pd.DataFrame,
-    ref_filepath: Optional[str] = None,
-    ref: Optional[str] = None,
-    gap_open_penalty: float = 20,
-    gap_extend_penalty: float = 1,
-) -> pd.DataFrame:
-    """Align reads to the TargetSite refernece.
-
-    Take in several queries store in a DataFrame mapping cellBC-UMIs to a
-    sequence of interest and align each to a reference sequence. The alignment
-    algorithm used is the Smith-Waterman local alignment algorithm. The desired
-    output consists of the best alignment score and the CIGAR string storing the
-    indel locations in the query sequence.
-
-    TODO(mattjones315): Parallelize?
-
-    Args:
-        queries: Dataframe storing a list of sequences to align.
-        ref_filepath: Filepath to the reference FASTA.
-        ref: Reference sequence.
-        gapopen: Gap open penalty
-        gapextend: Gap extension penalty
-
-    Returns:
-        A dataframe mapping each sequence name to the CIGAR string, quality,
-        and original query sequence.
-    """
-
-    assert ref or ref_filepath
-
-    alignment_dictionary = {}
-
-    if ref_filepath:
-        ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
-
-    logging.info("Beginning alignment to reference...")
-    t0 = time.time()
-
-    for umi in queries.index:
-
-        query = queries.loc[umi]
-
-        aligner = alignment.StripedSmithWaterman(
-            query.seq,
-            substitution_matrix=DNA_SUBSTITUTION_MATRIX,
-            gap_open_penalty=gap_open_penalty,
-            gap_extend_penalty=gap_extend_penalty,
-        )
-        aln = aligner(ref)
-        alignment_dictionary[query.readName] = (
-            query.cellBC,
-            query.UMI,
-            query.readCount,
-            aln.cigar,
-            aln.query_begin,
-            aln.target_begin,
-            aln.optimal_alignment_score,
-            aln.query_sequence,
-        )
-
-    final_time = time.time()
-
-    logging.info(f"Finished aligning in {final_time - t0}.")
-    logging.info(
-        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0]})"
-    )
-
-    alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
-    alignment_df.columns = [
-        "cellBC",
-        "UMI",
-        "ReadCount",
-        "CIGAR",
-        "QueryBegin",
-        "ReferenceBegin",
-        "AlignmentScore",
-        "Seq",
-    ]
-
-    alignment_df.index.name = "readName"
-    alignment_df.reset_index(inplace=True)
-
-    return alignment_df
 
 
 def resolve_umi_sequence(
@@ -304,22 +218,22 @@ def resolve_umi_sequence(
     if plot:
         # ---------------- Plot Diagnositics after Resolving ---------------- #
         h = plt.figure(figsize=(14, 10))
-        plt.plot(top_reads.values(), total_numReads.values(), "r.")
+        plt.plot(list(top_reads.values()), list(total_numReads.values()), "r.")
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Total vs. Top Reads for Picked Sequence")
         plt.savefig(
-            os.path.join(output_directory, "/total_vs_top_reads_pickSeq.png")
+            os.path.join(output_directory, "total_vs_top_reads_pickSeq.png")
         )
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
-        plt.plot(first_reads.values(), second_reads.values(), "r.")
+        plt.plot(list(first_reads.values()), list(second_reads.values()), "r.")
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Second Best vs. Top Reads for Picked Sequence")
         plt.savefig(
-            os.path.join(output_directory + "/second_vs_top_reads_pickSeq.png")
+            os.path.join(output_directory + "second_vs_top_reads_pickSeq.png")
         )
         plt.close()
 
@@ -327,6 +241,92 @@ def resolve_umi_sequence(
         filt_molecule_table, min_umi_per_cell, min_avg_reads_per_umi
     )
     return filt_molecule_table
+
+
+def align_sequences(
+    queries: pd.DataFrame,
+    ref_filepath: Optional[str] = None,
+    ref: Optional[str] = None,
+    gap_open_penalty: float = 20,
+    gap_extend_penalty: float = 1,
+) -> pd.DataFrame:
+    """Align reads to the TargetSite refernece.
+
+    Take in several queries store in a DataFrame mapping cellBC-UMIs to a
+    sequence of interest and align each to a reference sequence. The alignment
+    algorithm used is the Smith-Waterman local alignment algorithm. The desired
+    output consists of the best alignment score and the CIGAR string storing the
+    indel locations in the query sequence.
+
+    TODO(mattjones315): Parallelize?
+
+    Args:
+        queries: Dataframe storing a list of sequences to align.
+        ref_filepath: Filepath to the reference FASTA.
+        ref: Reference sequence.
+        gapopen: Gap open penalty
+        gapextend: Gap extension penalty
+
+    Returns:
+        A dataframe mapping each sequence name to the CIGAR string, quality,
+        and original query sequence.
+    """
+
+    assert ref or ref_filepath
+
+    alignment_dictionary = {}
+
+    if ref_filepath:
+        ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
+
+    logging.info("Beginning alignment to reference...")
+    t0 = time.time()
+
+    for umi in queries.index:
+
+        query = queries.loc[umi]
+
+        aligner = alignment.StripedSmithWaterman(
+            query.seq,
+            substitution_matrix=DNA_SUBSTITUTION_MATRIX,
+            gap_open_penalty=gap_open_penalty,
+            gap_extend_penalty=gap_extend_penalty,
+        )
+        aln = aligner(ref)
+        alignment_dictionary[query.readName] = (
+            query.cellBC,
+            query.UMI,
+            query.ReadCount,
+            aln.cigar,
+            aln.query_begin,
+            aln.target_begin,
+            aln.optimal_alignment_score,
+            aln.query_sequence,
+        )
+
+    final_time = time.time()
+
+    logging.info(f"Finished aligning in {final_time - t0}.")
+    logging.info(
+        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0]})"
+    )
+
+    alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
+    alignment_df.columns = [
+        "cellBC",
+        "UMI",
+        "ReadCount",
+        "CIGAR",
+        "QueryBegin",
+        "ReferenceBegin",
+        "AlignmentScore",
+        "Seq",
+    ]
+
+    alignment_df.index.name = "readName"
+    alignment_df.reset_index(inplace=True)
+
+    return alignment_df
 
 
 def call_alleles(
@@ -592,7 +592,10 @@ def filter_alignments(
     logging.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
     if umi_read_thresh is None:
         R = filtered_df["ReadCount"]
-        umi_read_thresh = np.percentile(R, 99) // 10
+        if list(R):
+            umi_read_thresh = np.percentile(R, 99) // 10
+        else:
+            umi_read_thresh = 0
     filtered_df = filter_utils.filter_umis(
         filtered_df, readCountThresh=umi_read_thresh, verbose=verbose
     )
@@ -667,7 +670,7 @@ def filter_alignments(
         plt.ylabel("Frequency")
         plt.xlabel("Number of Reads")
         plt.title("Reads Per UMI")
-        plt.savefig(output_directory + "/reads_per_umi.png")
+        plt.savefig(os.path.join(output_directory, "reads_per_umi.png"))
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
@@ -679,7 +682,7 @@ def filter_alignments(
         plt.xscale("log", basex=10)
         plt.yscale("log", basey=10)
         plt.title("UMIs per CellBC")
-        plt.savefig(output_directory + "/umis_per_cellbc.png")
+        plt.savefig(os.path.join(output_directory, "umis_per_cellbc.png"))
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
@@ -691,7 +694,7 @@ def filter_alignments(
         plt.ylabel("Frequency")
         plt.xlabel("Number of UMIs")
         plt.title("UMIs per intBC")
-        plt.savefig(output_directory + "/umis_per_intbc.png")
+        plt.savefig(os.path.join(output_directory, "umis_per_intbc.png"))
         plt.close()
 
     final_time = time.time()
@@ -718,29 +721,31 @@ def call_lineage_groups(
     verbose: bool = False,
     plot: bool = False,
 ):
-    """Assigns cells represented as cellBCs to their clonal populations 
+    """Assigns cells represented as cellBCs to their clonal populations
     (lineage groups) based on the groups of intBCs they share.
 
-    Performs multiple rounds of filtering and assigning to lineage groups.
-    First, iteratively generates putative lineage groups by forming intBC groups
-    for each lineage group and then assigning cells based on how many intBCs
-    they share with each intBC group (kinship). Then it refines these putative 
-    groups by removing non-informative intBCs and reassigning cells through 
-    kinship. Then removes all inter-lineage doublets, defined as cells that
-    have relatively equal kinship scores across multiple lineages and whose
-    assignments are therefore ambigious. Finally, performs one more round of
-    filtering non-informative intBCs and cellBCs with low UMI counts before
-    returning a final table of lineage assignments, allele information, and
-    read and umi counts for each sample.
+    Performs multiple rounds of filtering and assigning to lineage groups:
+        1. Iteratively generates putative lineage groups by forming intBC
+        groups for each lineage group and then assigning cells based on how
+        many intBCs they share with each intBC group (kinship).
+        2. Refines these putative groups by removing non-informative intBCs
+        and reassigning cells through kinship.
+        3. Removes all inter-lineage doublets, defined as cells that have
+        relatively equal kinship scores across multiple lineages and whose
+        assignments are therefore ambigious.
+        4. Finally, performs one more round of filtering non-informative intBCs
+        and cellBCs with low UMI counts before returning a final table of
+        lineage assignments, allele information, and read and umi counts for
+        each sample.
 
     Args:
-        input_df: The alignment DataFrame to be annotated with lineage 
+        input_df: The alignment DataFrame to be annotated with lineage
             assignments
         out_fn: The file name of the final table
         output_directory: The folder to store the final table as well as plots
         cell_umi_filter: The threshold specifying the minimum number of UMIs a
             cell needs in order to not be filtered out
-        min_cluster_prop: The minimum cluster size in the putative lineage 
+        min_cluster_prop: The minimum cluster size in the putative lineage
             assignment step, as a proportion of the number of cells
         min_intbc_thresh: The threshold specifying the minimum proportion of
             cells in a lineage group that need to have an intBC in order for it
@@ -748,16 +753,16 @@ def call_lineage_groups(
             cells that share an intBC with the most frequence intBC in forming
             putative lineage groups
         inter_doublet_threshold: The threshold specifying the minimum proportion
-            of kinship a cell shares with its assigned lineage group out of all 
-            lineage groups for it not to be filtered out as an inter-lineage 
+            of kinship a cell shares with its assigned lineage group out of all
+            lineage groups for it not to be filtered out as an inter-lineage
             doublet
         kinship_thresh: Specifies the proportion of intBCs that a cell needs to
-            share with the intBC set of a lineage group such that it is 
+            share with the intBC set of a lineage group such that it is
             assigned to that lineage group in putative assignment
-        verbose: Indicates whether to log detailed information on filtering 
+        verbose: Indicates whether to log detailed information on filtering
             steps
         plot: Indicates whether to generate plots
-        
+
     Returns:
         None, saves output allele table to file.
 
@@ -852,8 +857,10 @@ def call_lineage_groups(
 
     if plot:
         logging.info("Producing Plots...")
-        at_pivot_I = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
-        at_pivot_I.fillna(value = 0, inplace=True)
+        at_pivot_I = pd.pivot_table(
+            at, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
+        )
+        at_pivot_I.fillna(value=0, inplace=True)
         at_pivot_I[at_pivot_I > 0] = 1
 
         logging.info("Producing pivot table heatmap...")

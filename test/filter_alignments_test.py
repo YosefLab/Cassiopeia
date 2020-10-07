@@ -139,9 +139,7 @@ class TestFilterAlignment(unittest.TestCase):
     def test_umi_and_cellbc_filter(self):
 
         aln_df = pipeline.filter_alignments(
-            self.base_filter_case,
-            ".",
-            cell_umi_thresh=2,
+            self.base_filter_case, ".", cell_umi_thresh=2
         )
 
         expected_alignments = {
@@ -179,11 +177,11 @@ class TestFilterAlignment(unittest.TestCase):
 
         for read_name in aln_df["readName"]:
 
-            expected_readcount = expected_alignments[read_name]
+            expected_allele = expected_alignments[read_name]
 
             self.assertEqual(
                 aln_df.loc[aln_df["readName"] == read_name, "allele"].iloc[0],
-                expected_readcount,
+                expected_allele,
             )
 
     def test_error_correct_intBC(self):
@@ -209,11 +207,11 @@ class TestFilterAlignment(unittest.TestCase):
 
         for read_name in aln_df["readName"]:
 
-            expected_readcount = expected_alignments[read_name]
+            expected_intbc = expected_alignments[read_name]
 
             self.assertEqual(
                 aln_df.loc[aln_df["readName"] == read_name, "intBC"].iloc[0],
-                expected_readcount,
+                expected_intbc,
             )
 
 

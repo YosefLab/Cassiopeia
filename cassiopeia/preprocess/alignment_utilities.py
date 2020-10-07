@@ -153,14 +153,16 @@ def parse_cigar(
                             pos_start : (pos_start + context_size + length)
                         ]
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[
                             i
-                        ] += f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
+                        ] += (
+                            f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
+                        )
                     else:
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[i] += f"{ref_pointer+1}:{length}I"
 
@@ -192,13 +194,13 @@ def parse_cigar(
                             query_pointer : (query_pointer + context_size)
                         ]
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[
                             i
                         ] += f"{context_l}[{pos_start+1}:{length}D]{context_r}"
                     else:
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[i] += f"{pos_start+1}:{length}D"
 

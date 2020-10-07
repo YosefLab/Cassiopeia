@@ -21,6 +21,8 @@ from typing import Callable, List, Tuple
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
 
+from cassiopeia.preprocess import constants
+
 from .collapse_cython import (
     hq_mismatches_from_seed,
     hq_hamming_distance,
@@ -38,32 +40,30 @@ cluster_fields = [
 ]
 cluster_Annotation = annotation_module.Annotation_factory(cluster_fields)
 
-# TODO(richardyz98@): add user specified bam file tags as an option to config files
+BAM_CONSTANTS = constants.BAM_CONSTANTS
 
-global CELL_BC_TAG, UMI_TAG, NUM_READS_TAG, CLUSTER_ID_TAG
-global LOC_TAG, N_Q, HIGH_Q, LOW_Q
+# The tag denoting the field that records the cellBC for each aligned segment.
+CELL_BC_TAG = BAM_CONSTANTS["CELL_BC_TAG"]
+# The tag denothing the field that records the UMI for each aligned segment.
+UMI_TAG = BAM_CONSTANTS["UMI_TAG"]
+# The tag denothing the field that records the UMI for each aligned segment.
+NUM_READS_TAG = BAM_CONSTANTS["NUM_READS_TAG"]
+# The tag denothing the field that records the cluster ID for each annotated
+# aligned segment representing a cluster of aligned segments.
+CLUSTER_ID_TAG = BAM_CONSTANTS["CLUSTER_ID_TAG"]
 
-CELL_BC_TAG = "CB"  # The tag denoting the field that records the cellBC for
-# each aligned segment.
-UMI_TAG = "UR"  # The tag denothing the field that records the UMI for each
+# The missing quality value indicating a consensus could not be reached for a
+# base in the sequence for the consensus aligned segment.
+N_Q = BAM_CONSTANTS["N_Q"]
+# The default high quality value when annotating the qualities in a consensus
 # aligned segment.
-NUM_READS_TAG = "ZR"  # The tag denothing the field that records the UMI for
-# each aligned segment.
-CLUSTER_ID_TAG = "ZC"  # The tag denothing the field that records the cluster ID
-# for each annotated aligned segment represnting a cluster
-# of aligned segments.
-# LOC_TAG = "BC"
-
-N_Q = 2  # The default quality value indicating a consensus could not be reached
-# for a base in the sequence for the consensus aligned segment.
-HIGH_Q = 31  # The default high quality value when annotating the qualities in a
-# consensus aligned segment.
-LOW_Q = 10  # The default low quality value when annotating the qualities in a
-# consensus aligned segment.
+HIGH_Q = BAM_CONSTANTS["HIGH_Q"]
+# The default low quality value when annotating the qualities in a consensus
+# aligned segment.
+LOW_Q = BAM_CONSTANTS["LOW_Q"]
 
 cell_key = lambda al: al.get_tag(CELL_BC_TAG)
 UMI_key = lambda al: al.get_tag(UMI_TAG)
-# loc_key = lambda al: (al.get_tag(LOC_TAG))
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
@@ -514,7 +514,10 @@ def merge_annotated_clusters(
 
 
 def correct_umis_in_group(
-    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2, verbose = False
+    cell_group: pd.DataFrame,
+    sampleID: str,
+    max_UMI_distance: int = 2,
+    verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.

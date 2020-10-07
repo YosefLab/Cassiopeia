@@ -247,7 +247,7 @@ def score_lineage_kinships(
         LGi = master_LGs[i]
         intBCsi = master_intBCs[LGi]
         dfi = pd.DataFrame(index=[LGi], columns=intBCsi, data=1)
-        dfLG2intBC = dfLG2intBC.append(dfi, "sort=False")
+        dfLG2intBC = dfLG2intBC.append(dfi)
 
     dfLG2intBC = dfLG2intBC.fillna(0)
 
@@ -274,9 +274,7 @@ def score_lineage_kinships(
     max_kinship_ind = dfCellBC2LG.idxmax(axis=1).to_frame()
     max_kinship_frame = max_kinship.to_frame()
 
-    max_kinship_LG = pd.concat(
-        [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    )
+    max_kinship_LG = pd.concat([max_kinship_frame, max_kinship_ind + 1], axis=1)
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     # max_kinship_LG_filt = max_kinship_LG[max_kinship_LG['maxOverlap'] >= 0.75]
@@ -429,7 +427,8 @@ def filtered_lineage_group_to_allele_table(
 
     return final_df
 
-def plot_overlap_heatmap(at_pivot_I, at, outputdir):
+
+def plot_overlap_heatmap(at_pivot_I, at, output_directory):
 
     # remove old plots
     plt.close()
@@ -442,35 +441,59 @@ def plot_overlap_heatmap(at_pivot_I, at, outputdir):
 
     at_pivot_I = at_pivot_I[flat_master]
 
-    h2 = plt.figure(figsize=(20,20))
-    axmat2 = h2.add_axes([0.3,0.1,0.6,0.8])
-    im2 = axmat2.matshow(at_pivot_I, aspect='auto', origin='upper')
+    h2 = plt.figure(figsize=(20, 20))
+    axmat2 = h2.add_axes([0.3, 0.1, 0.6, 0.8])
+    im2 = axmat2.matshow(at_pivot_I, aspect="auto", origin="upper")
 
-    plt.savefig(outputdir + "/clustered_intbc.png")
+    plt.savefig(os.path.join(output_directory, "clustered_intbc.png"))
     plt.close()
 
-def plot_overlap_heatmap_lg(at, at_pivot_I, outputdir):
 
-    if not os.path.exists(outputdir + "/lineageGrp_piv_heatmaps"):
-        os.makedirs(outputdir + "/lineageGrp_piv_heatmaps")
+def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
-    for n, lg_group in  tqdm(at.groupby("lineageGrp")):
+    if not os.path.exists(output_directory + "/lineageGrp_piv_heatmaps"):
+        os.makedirs(output_directory + "/lineageGrp_piv_heatmaps")
+
+    for n, lg_group in tqdm(at.groupby("lineageGrp")):
 
         plt.close()
 
         lg_group = add_cutsite_encoding(lg_group)
 
-        s_cmap = colors.ListedColormap(['grey', 'red', 'blue'], N=3)
+        s_cmap = colors.ListedColormap(["grey", "red", "blue"], N=3)
 
-        lg_group_pivot = pd.pivot_table(lg_group, index=["cellBC"], columns=["intBC"], values=['s1', 's2', 's3'], aggfunc=pylab.mean).T
-        lg_group_pivot2 = pd.pivot_table(lg_group,index=['cellBC'],columns=['intBC'],values='UMI',aggfunc=pylab.size)
+        lg_group_pivot = pd.pivot_table(
+            lg_group,
+            index=["cellBC"],
+            columns=["intBC"],
+            values=["s1", "s2", "s3"],
+            aggfunc=pylab.mean,
+        ).T
+        lg_group_pivot2 = pd.pivot_table(
+            lg_group,
+            index=["cellBC"],
+            columns=["intBC"],
+            values="UMI",
+            aggfunc=pylab.size,
+        )
 
-        cell_umi_count = lg_group.groupby(["cellBC"]).agg({"UMI": "count"}).sort_values(by="UMI")
-        n_unique_alleles = lg_group.groupby(["intBC"]).agg({"r1": "nunique", "r2": "nunique", "r3": "nunique"})
+        cell_umi_count = (
+            lg_group.groupby(["cellBC"])
+            .agg({"UMI": "count"})
+            .sort_values(by="UMI")
+        )
+        n_unique_alleles = lg_group.groupby(["intBC"]).agg(
+            {"r1": "nunique", "r2": "nunique", "r3": "nunique"}
+        )
 
         cellBCList = lg_group["cellBC"].unique()
 
-        col_order = lg_group_pivot2.dropna(axis=1, how="all").sum().sort_values(ascending=False,inplace=False).index
+        col_order = (
+            lg_group_pivot2.dropna(axis=1, how="all")
+            .sum()
+            .sort_values(ascending=False, inplace=False)
+            .index
+        )
 
         if len(col_order) < 2:
             continue
@@ -481,48 +504,73 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, outputdir):
 
         s3 = s3.loc[cell_umi_count.index]
 
-        s3_2 = lg_group_pivot2.dropna(axis=1, how="all").sum().sort_values(ascending=False, inplace=False)[col_order]
+        s3_2 = (
+            lg_group_pivot2.dropna(axis=1, how="all")
+            .sum()
+            .sort_values(ascending=False, inplace=False)[col_order]
+        )
 
         n_unique_alleles = n_unique_alleles.loc[col_order]
         s3_intBCs = col_order
         s3_cellBCs = s3.index.tolist()
 
-
         # Plot heatmap
-        h = plt.figure(figsize=(14,10))
+        h = plt.figure(figsize=(14, 10))
 
-        ax = h.add_axes([0.3, 0.1, 0.6, 0.8],frame_on=True)
-        im = ax.matshow(s3, aspect='auto', origin ="lower", cmap=s_cmap)
+        ax = h.add_axes([0.3, 0.1, 0.6, 0.8], frame_on=True)
+        im = ax.matshow(s3, aspect="auto", origin="lower", cmap=s_cmap)
 
-        axx1 = plt.xticks(range(1, len(col_order)*3, 3), col_order, rotation='vertical', family="monospace")
+        axx1 = plt.xticks(
+            range(1, len(col_order) * 3, 3),
+            col_order,
+            rotation="vertical",
+            family="monospace",
+        )
 
         ax3 = h.add_axes([0.2, 0.1, 0.1, 0.8], frame_on=True)
         plt.barh(range(s3.shape[0]), cell_umi_count["UMI"])
         plt.ylim([0, s3.shape[0]])
         ax3.autoscale(tight=True)
 
-
         axy0 = ax3.set_yticks(range(len(s3_cellBCs)))
-        axy1 = ax3.set_yticklabels(s3_cellBCs, family='monospace')
+        axy1 = ax3.set_yticklabels(s3_cellBCs, family="monospace")
 
-        w = (1/3)
+        w = 1 / 3
         x = np.arange(len(s3_intBCs))
-        ax2 = h.add_axes([0.3, 0, 0.6, 0.1], frame_on = False)
-        b1 = ax2.bar(x - w, n_unique_alleles["r1"], width = w, label="r1")
-        b2 = ax2.bar(x, n_unique_alleles["r2"], width = w, label="r2")
-        b3 = ax2.bar(x + w, n_unique_alleles["r3"], width = w, label='r3')
+        ax2 = h.add_axes([0.3, 0, 0.6, 0.1], frame_on=False)
+        b1 = ax2.bar(x - w, n_unique_alleles["r1"], width=w, label="r1")
+        b2 = ax2.bar(x, n_unique_alleles["r2"], width=w, label="r2")
+        b3 = ax2.bar(x + w, n_unique_alleles["r3"], width=w, label="r3")
         ax2.set_xlim([0, len(s3_intBCs)])
-        ax2.set_ylim(ymin=0, ymax=(max(n_unique_alleles["r1"].max(), n_unique_alleles["r2"].max(), n_unique_alleles["r3"].max()) + 10))
+        ax2.set_ylim(
+            ymin=0,
+            ymax=(
+                max(
+                    n_unique_alleles["r1"].max(),
+                    n_unique_alleles["r2"].max(),
+                    n_unique_alleles["r3"].max(),
+                )
+                + 10
+            ),
+        )
         ax2.set_xticks([])
         ax2.yaxis.tick_right()
         ax2.invert_yaxis()
         ax2.autoscale(tight=True)
         plt.legend()
 
-        #plt.gcf().subplots_adjust(bottom=0.15)
+        # plt.gcf().subplots_adjust(bottom=0.15)
         plt.tight_layout()
-        plt.savefig(outputdir + "/lineageGrp_piv_heatmaps/lg_" + str(int(n)) + "_piv_heatmap.png")
+        plt.savefig(
+            os.path.join(
+                output_directory,
+                "lineageGrp_piv_heatmaps/lg_"
+                + str(int(n))
+                + "_piv_heatmap.png",
+            )
+        )
         plt.close()
+
 
 def add_cutsite_encoding(lg_group):
 
@@ -530,27 +578,26 @@ def add_cutsite_encoding(lg_group):
     lg_group["s2"] = 0
     lg_group["s3"] = 0
 
-
     for i in lg_group.index:
         if lg_group.loc[i, "r1"] == "['None']":
-            lg_group.loc[i, "s1"] = .9
+            lg_group.loc[i, "s1"] = 0.9
         elif "D" in lg_group.loc[i, "r1"]:
             lg_group.loc[i, "s1"] = 1.9
-        elif 'I' in lg_group.loc[i, "r1"]:
-            lg_group.loc[i, 's1'] = 2.9
+        elif "I" in lg_group.loc[i, "r1"]:
+            lg_group.loc[i, "s1"] = 2.9
 
         if lg_group.loc[i, "r2"] == "['None']":
-            lg_group.loc[i, "s2"] = .9
+            lg_group.loc[i, "s2"] = 0.9
         elif "D" in lg_group.loc[i, "r2"]:
             lg_group.loc[i, "s2"] = 1.9
-        elif 'I' in lg_group.loc[i, "r2"]:
-            lg_group.loc[i, 's2'] = 2.9
+        elif "I" in lg_group.loc[i, "r2"]:
+            lg_group.loc[i, "s2"] = 2.9
 
         if lg_group.loc[i, "r3"] == "['None']":
-            lg_group.loc[i, "s3"] = .9
+            lg_group.loc[i, "s3"] = 0.9
         elif "D" in lg_group.loc[i, "r3"]:
             lg_group.loc[i, "s3"] = 1.9
-        elif 'I' in lg_group.loc[i, "r3"]:
-            lg_group.loc[i, 's3'] = 2.9
+        elif "I" in lg_group.loc[i, "r3"]:
+            lg_group.loc[i, "s3"] = 2.9
 
     return lg_group

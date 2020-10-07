@@ -21,7 +21,7 @@ def filter_cells(
         molecule_table: MoleculeTable to be filtered.
         min_umi_per_cell: Minimum number of UMIs per cell.
         min_avg_reads_per_umi: Minimum coverage (i.e. average) reads / UMI in a cell
-    
+
     Returns:
         A filtered MoleculeTable
     """
@@ -33,9 +33,9 @@ def filter_cells(
     # in the table
     cell_filter = {}
 
-    for n, group in tqdm(molecule_table.groupby(['cellBC'])):
+    for n, group in tqdm(molecule_table.groupby(["cellBC"])):
         umi_per_cellBC_n = group.shape[0]
-        reads_per_cellBC_n = group.agg({'readCount': 'sum'}).readCount
+        reads_per_cellBC_n = group.agg({"readCount": "sum"}).readCount
         avg_reads_per_UMI_n = float(reads_per_cellBC_n) / float(
             umi_per_cellBC_n
         )
@@ -49,17 +49,22 @@ def filter_cells(
             cellBC2nM[n] = group.shape[0]
 
     # apply the filter using the hash table created above
-    molecule_table['filter'] = molecule_table['cellBC'].map(cell_filter)
-    
-    n_umi_filt = molecule_table[molecule_table['filter'] == True].shape[0]
-    n_cells_filt = len(molecule_table.loc[molecule_table['filter'] == True, 'cellBC'].unique())
+    molecule_table["filter"] = molecule_table["cellBC"].map(cell_filter)
 
-    logging.info(f'Filtered out {n_umi_filt} UMIs.')
-    logging.info(f'Filtered out {n_cells_filt} cells.')
+    n_umi_filt = molecule_table[molecule_table["filter"] == True].shape[0]
+    n_cells_filt = len(
+        molecule_table.loc[molecule_table["filter"] == True, "cellBC"].unique()
+    )
 
-    filt_molecule_table = molecule_table[molecule_table['filter'] == False].copy()
-    filt_molecule_table.drop(columns = ['filter'], inplace=True)
+    logging.info(f"Filtered out {n_umi_filt} UMIs.")
+    logging.info(f"Filtered out {n_cells_filt} cells.")
+
+    filt_molecule_table = molecule_table[
+        molecule_table["filter"] == False
+    ].copy()
+    filt_molecule_table.drop(columns=["filter"], inplace=True)
     return filt_molecule_table
+
 
 def convert_bam_to_df(
     data_fp: str, out_fp: str, create_pd: bool = False
@@ -94,8 +99,8 @@ def convert_bam_to_df(
         seq = al.query_sequence
         qual = al.query_qualities
         # Pysam qualities are represented as an array of unsigned chars,
-        # so they are converted to the ASCII-encoded format that are found 
-        # in the typical SAM formatting. 
+        # so they are converted to the ASCII-encoded format that are found
+        # in the typical SAM formatting.
         encode_qual = "".join(map(lambda x: chr(x + 33), qual))
         f.write(
             cellBC

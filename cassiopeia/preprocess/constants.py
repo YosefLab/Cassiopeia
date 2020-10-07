@@ -39,4 +39,33 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "show_progress": False,
         "verbose": False,
     },
+    "filter": {
+        "cell_umi_thresh": 10,
+        "umi_read_thresh": None,
+        "intbc_prop_thresh": 0.5,
+        "intbc_umi_thresh": 10,
+        "intbc_dist_thresh": 1,
+        "doublet_threshold": 0.35,
+        "plot": True,
+        "verbose": False,
+    },
+    "call_lineages": {
+        "cell_umi_filter": 10,
+        "min_cluster_prop": 0.005,
+        "min_intbc_thresh": 0.05,
+        "inter_doublet_threshold": 0.35,
+        "kinship_thresh": 0.25,
+        "verbose": False,
+        "plot": True,
+    },
+}
+
+BAM_CONSTANTS = {
+    "CELL_BC_TAG": "CB",
+    "UMI_TAG": "UR",
+    "NUM_READS_TAG": "ZR",
+    "CLUSTER_ID_TAG": "ZC",
+    "N_Q": 2,
+    "HIGH_Q": 31,
+    "LOW_Q": 10,
 }
