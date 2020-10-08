@@ -30,7 +30,7 @@ class TestCallLineageGroup(unittest.TestCase):
                     "AAGGA",
                     "ACGTA",
                 ],
-                "ReadCount": [10, 30, 30, 40, 10, 110, 20, 15, 10, 10],
+                "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10, 10],
                 "Seq": ["NC"] * 10,
                 "intBC": [
                     "XX",
@@ -54,7 +54,7 @@ class TestCallLineageGroup(unittest.TestCase):
             }
         )
         self.basic_grouping["readName"] = self.basic_grouping.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.basic_grouping["allele"] = self.basic_grouping.apply(
@@ -65,7 +65,7 @@ class TestCallLineageGroup(unittest.TestCase):
             self.basic_grouping,
             "basic_grouping.csv",
             dir_path + "/test_files",
-            cell_umi_filter=0,
+            min_umi_per_cell=0,
             min_intbc_thresh=0.5,
         )
 
@@ -101,7 +101,7 @@ class TestCallLineageGroup(unittest.TestCase):
                     "CTGAT",
                     "CGGTA",
                 ],
-                "ReadCount": [
+                "readCount": [
                     10,
                     30,
                     30,
@@ -142,7 +142,7 @@ class TestCallLineageGroup(unittest.TestCase):
             }
         )
         self.reassign["readName"] = self.reassign.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.reassign["allele"] = self.reassign.apply(
@@ -153,7 +153,7 @@ class TestCallLineageGroup(unittest.TestCase):
             self.reassign,
             "reassign.csv",
             dir_path + "/test_files",
-            cell_umi_filter=0,
+            min_umi_per_cell=0,
             min_intbc_thresh=0.25,
             kinship_thresh=0.1,
         )
@@ -186,7 +186,7 @@ class TestCallLineageGroup(unittest.TestCase):
                     "CTGAT",
                     "CGGTA",
                 ],
-                "ReadCount": [30, 40, 10, 110, 20, 15, 10, 10, 10, 10, 10],
+                "readCount": [30, 40, 10, 110, 20, 15, 10, 10, 10, 10, 10],
                 "Seq": ["NC"] * 11,
                 "intBC": [
                     "XX",
@@ -211,7 +211,7 @@ class TestCallLineageGroup(unittest.TestCase):
             }
         )
         self.filter_and_reassign["readName"] = self.filter_and_reassign.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.filter_and_reassign["allele"] = self.filter_and_reassign.apply(
@@ -222,7 +222,7 @@ class TestCallLineageGroup(unittest.TestCase):
             self.filter_and_reassign,
             "filter_and_reassign.csv",
             dir_path + "/test_files",
-            cell_umi_filter=0,
+            min_umi_per_cell=0,
             min_intbc_thresh=0.5,
             kinship_thresh=0.1,
         )
@@ -255,7 +255,7 @@ class TestCallLineageGroup(unittest.TestCase):
                     "ACGTA",
                     "CAGTA",
                 ],
-                "ReadCount": [10, 30, 30, 40, 10, 110, 20, 15, 10, 10, 10],
+                "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10, 10, 10],
                 "Seq": ["NC"] * 11,
                 "intBC": [
                     "XX",
@@ -280,7 +280,7 @@ class TestCallLineageGroup(unittest.TestCase):
             }
         )
         self.doublet["readName"] = self.doublet.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.doublet["allele"] = self.doublet.apply(
@@ -291,7 +291,7 @@ class TestCallLineageGroup(unittest.TestCase):
             self.doublet,
             "doublet.csv",
             dir_path + "/test_files",
-            cell_umi_filter=1,
+            min_umi_per_cell=1,
             min_intbc_thresh=0.5,
             kinship_thresh=0.5,
             inter_doublet_threshold=0.6,
@@ -304,11 +304,9 @@ class TestCallLineageGroup(unittest.TestCase):
         )
 
         expected_columns = [
-            "readName",
             "cellBC",
             "UMI",
-            "readName",
-            "ReadCount",
+            "readCount",
             "intBC",
             "r1",
             "r2",
@@ -323,72 +321,94 @@ class TestCallLineageGroup(unittest.TestCase):
         aln_df = pd.read_csv(
             dir_path + "/test_files/basic_grouping.csv", sep="\t"
         )
-
-        expected_alignments = {
-            "A_AACCT_10": 1,
-            "B_AACCG_110": 1,
-            "C_AACTA_15": 2,
+        
+        expected_rows = {
+            ("A", "XX"): (1, 3),
+            ("B", "XX"): (1, 1),
+            ("C", "XZ"): (2, 1)
         }
 
-        for read_name in expected_alignments:
+        for pair in expected_rows:
 
-            expected_lineage = expected_alignments[read_name]
+            expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "lineageGrp"].iloc[
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
                     0
                 ],
-                expected_lineage,
+                expected_lineage[0],
+            )
+
+            self.assertEqual(
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
+                    0
+                ],
+                expected_lineage[1],
             )
 
     def test_doublet(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         aln_df = pd.read_csv(dir_path + "/test_files/doublet.csv", sep="\t")
-
+        
         samples = aln_df["Sample"]
         self.assertNotIn("C", samples)
         self.assertNotIn("F", samples)
 
-        expected_alignments = {
-            "A_AACCT_10": 1,
-            "B_AACCC_30": 1,
-            "D_AACTA_15": 2,
-            "E_ACGTA_10": 2,
+        expected_rows = {
+            ("A", "XX"): (1, 2),
+            ("B", "XX"): (1, 2),
+            ("D", "XY"): (2, 2),
+            ("E", "XY"): (2, 2)
         }
 
-        for read_name in expected_alignments:
+        for pair in expected_rows:
 
-            expected_lineage = expected_alignments[read_name]
+            expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "lineageGrp"].iloc[
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
                     0
                 ],
-                expected_lineage,
+                expected_lineage[0],
             )
+
+            self.assertEqual(
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
+                    0
+                ],
+                expected_lineage[1],
+            )
+
 
     def test_reassign(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         aln_df = pd.read_csv(dir_path + "/test_files/reassign.csv", sep="\t")
-
-        expected_alignments = {
-            "A_AACCT_10": 1,
-            "B_AACCC_30": 1,
-            "C_AACCG_110": 1,
-            "D_AACTA_15": 1,
-            "E_ACGTA_10": 1,
-            "F_CGGTA_10": 1,
+        
+        expected_rows = {
+            ("A", "XX"): (1, 2),
+            ("B", "XX"): (1, 2),
+            ("C", "XX"): (1, 2),
+            ("D", "XX"): (1, 1),
+            ("E", "XZ"): (1, 1),
+            ("F", "XZ"): (1, 3)
         }
 
-        for read_name in expected_alignments:
+        for pair in expected_rows:
 
-            expected_lineage = expected_alignments[read_name]
+            expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "lineageGrp"].iloc[
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
                     0
                 ],
-                expected_lineage,
+                expected_lineage[0],
+            )
+
+            self.assertEqual(
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
+                    0
+                ],
+                expected_lineage[1],
             )
 
     def test_filter_reassign(self):
@@ -397,30 +417,34 @@ class TestCallLineageGroup(unittest.TestCase):
             dir_path + "/test_files/filter_and_reassign.csv", sep="\t"
         )
 
-        rns = aln_df["readName"]
-        self.assertNotIn("C_AACCG_110", rns)
-        self.assertNotIn("D_AACTA_15", rns)
+        self.assertNotIn("YZ", aln_df["intBC"])
 
-        expected_alignments = {
-            "A_AACCC_30": 1,
-            "B_AACGT_40": 1,
-            "C_AACGC_10": 1,
-            "D_AACCT_20": 1,
-            "E_ACGTA_10": 2,
-            "F_CGGTA_10": 2,
+        expected_rows = {
+            ("A", "XX"): (1, 1),
+            ("B", "XX"): (1, 1),
+            ("C", "XX"): (1, 1),
+            ("D", "XX"): (1, 1),
+            ("E", "XZ"): (2, 2),
+            ("F", "XZ"): (2, 2)
         }
 
-        for read_name in expected_alignments:
+        for pair in expected_rows:
 
-            expected_lineage = expected_alignments[read_name]
+            expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "lineageGrp"].iloc[
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
                     0
                 ],
-                expected_lineage,
+                expected_lineage[0],
             )
 
+            self.assertEqual(
+                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
+                    0
+                ],
+                expected_lineage[1],
+            )
 
 if __name__ == "__main__":
     unittest.main()

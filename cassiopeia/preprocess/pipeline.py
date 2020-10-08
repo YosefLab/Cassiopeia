@@ -22,10 +22,9 @@ from pathlib import Path
 from tqdm.auto import tqdm
 
 from cassiopeia.preprocess import alignment_utilities
-from cassiopeia.preprocess import call_lineage_utils as cl_utils
 from cassiopeia.preprocess import constants
-from cassiopeia.preprocess import filter_utils
-from cassiopeia.preprocess import lineageGroup_utils as lg_utils
+from cassiopeia.preprocess import filter_utils as f_utils
+from cassiopeia.preprocess import lineage_utils as l_utils
 from cassiopeia.preprocess import UMI_utils
 from cassiopeia.preprocess import utilities
 
@@ -120,24 +119,29 @@ def collapse_umis(
 def resolve_umi_sequence(
     molecule_table: pd.DataFrame,
     output_directory: str,
-    min_avg_reads_per_umi: float = 2.0,
     min_umi_per_cell: int = 10,
+    min_avg_reads_per_umi: float = 2.0,
     plot: bool = True,
 ) -> pd.DataFrame:
     """Resolve a consensus sequence for each UMI.
 
-    This procedure will perform UMI and cellBC filtering on the basis of reads per
-    UMI and UMIs per cell and then assign the most abundant sequence to each UMI
-    if there is a set of conflicting sequences per UMI.
+    This procedure will perform UMI and cellBC filtering on the basis of reads
+    per UMI and UMIs per cell and then assign the most abundant sequence to
+    each UMI if there is a set of conflicting sequences per UMI.
 
     Args:
-      molecule_table: MoleculeTable to resolve
-      output_directory: Directory to store results
-      min_avg_reads_per_umi: Minimum covarage (i.e. average reads) per UMI allowed
-      min_umi_per_cell: Minimum number of UMIs per cell allowed
+        molecule_table: molecule table to resolve
+        output_directory: Directory to store results
+        min_umi_per_cell: The threshold specifying the minimum number of UMIs a
+            cell needs to not be filtered during filtering
+        min_avg_reads_per_umi: The threshold specifying the minimum coverage
+            (i.e. average) reads per UMI in a cell needed in order for that cell
+            not to be filtered during filtering
+        verbose: Indicates whether to log the number of cellBCs and UMIs
+            remaining after filtering
 
     Return:
-      A MoleculeTable with unique mappings between cellBC-UMI pairs.
+        A molecule table with unique mappings between cellBC-UMI pairs.
     """
 
     logging.info("Resolving UMI sequences...")
@@ -183,9 +187,7 @@ def resolve_umi_sequence(
 
         # more commonly - many sequences for a given UMI
         else:
-            group_sort = group.sort_values(
-                "readCount", ascending=False
-            ).reset_index()
+            group_sort = group.sort_values("readCount", ascending=False).reset_index()
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -208,9 +210,7 @@ def resolve_umi_sequence(
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[
-        molecule_table["filter"] == False
-    ].copy()
+    filt_molecule_table = molecule_table[molecule_table["filter"] == False].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -222,9 +222,7 @@ def resolve_umi_sequence(
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Total vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory, "total_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory, "total_vs_top_reads_pickSeq.png"))
         plt.close()
 
         h = plt.figure(figsize=(14, 10))
@@ -232,13 +230,13 @@ def resolve_umi_sequence(
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Second Best vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory + "second_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory + "second_vs_top_reads_pickSeq.png"))
         plt.close()
 
     filt_molecule_table = utilities.filter_cells(
-        filt_molecule_table, min_umi_per_cell, min_avg_reads_per_umi
+        filt_molecule_table,
+        min_umi_per_cell=min_umi_per_cell,
+        min_avg_reads_per_umi=min_avg_reads_per_umi,
     )
     return filt_molecule_table
 
@@ -261,14 +259,14 @@ def align_sequences(
     TODO(mattjones315): Parallelize?
 
     Args:
-        queries: Dataframe storing a list of sequences to align.
+        queries: DataFrame storing a list of sequences to align.
         ref_filepath: Filepath to the reference FASTA.
         ref: Reference sequence.
         gapopen: Gap open penalty
         gapextend: Gap extension penalty
 
     Returns:
-        A dataframe mapping each sequence name to the CIGAR string, quality,
+        A DataFrame mapping each sequence name to the CIGAR string, quality,
         and original query sequence.
     """
 
@@ -296,7 +294,7 @@ def align_sequences(
         alignment_dictionary[query.readName] = (
             query.cellBC,
             query.UMI,
-            query.ReadCount,
+            query.readCount,
             aln.cigar,
             aln.query_begin,
             aln.target_begin,
@@ -315,7 +313,7 @@ def align_sequences(
     alignment_df.columns = [
         "cellBC",
         "UMI",
-        "ReadCount",
+        "readCount",
         "CIGAR",
         "QueryBegin",
         "ReferenceBegin",
@@ -358,7 +356,7 @@ def call_alleles(
             context
 
     Returns:
-        A dataframe mapping each sequence alignment to the called indels.
+        A DataFrame mapping each sequence alignment to the called indels.
     """
 
     assert ref or ref_filepath
@@ -443,13 +441,7 @@ def error_correct_umis(
     """
 
     assert (
-        len(
-            [
-                i
-                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
-                if i > 1
-            ]
-        )
+        len([i for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size() if i > 1])
         == 0
     ), "Non-unique cellBC-UMI pair exists, please resolve UMIs."
 
@@ -458,14 +450,12 @@ def error_correct_umis(
     logging.info("Beginning error correcting UMIs...")
 
     sorted_df = input_df.sort_values(
-        ["cellBC", "intBC", "ReadCount", "UMI"],
+        ["cellBC", "intBC", "readCount", "UMI"],
         ascending=[True, True, False, False],
     )
 
     if max_UMI_distance == 0:
-        logging.info(
-            "Distance of 0, no correction occured, all alignments returned"
-        )
+        logging.info("Distance of 0, no correction occured, all alignments returned")
         return sorted_df
 
     num_corrected = 0
@@ -499,7 +489,7 @@ def error_correct_umis(
     )
 
     alignment_df["readName"] = alignment_df.apply(
-        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.ReadCount))]), axis=1
+        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.readCount))]), axis=1
     )
 
     alignment_df.set_index("readName", inplace=True)
@@ -508,10 +498,11 @@ def error_correct_umis(
     return alignment_df
 
 
-def filter_alignments(
+def filter_molecule_table(
     input_df: pd.DataFrame,
     output_directory: str,
-    cell_umi_thresh: int = 10,
+    min_umi_per_cell: int = 10,
+    min_avg_reads_per_umi: float = 2.0,
     umi_read_thresh: int = None,
     intbc_prop_thresh: float = 0.5,
     intbc_umi_thresh: int = 10,
@@ -521,23 +512,27 @@ def filter_alignments(
     verbose: bool = False,
 ) -> pd.DataFrame:
     """A wrapper function to perform multiple filtering and correcting steps
-    on a DataFrame of alignments (reads).
+    on a molecule table of cellBC-UMI pairs.
 
     Performs the following steps on the alignments in a DataFrame:
-        1. Filters out all alignments of a cellBC if the number of unique UMIs
-        in alignments with that cellBC <= cell_umi_thresh.
-        2. Filters out all alignments with a certain UMI if the read count of
-        that UMI <= umi_read_thresh.
+        1. Filters out cellBCs with <= min_umi_per_cell unique UMIs
+        2. Filters out UMIs with read count <= umi_read_thresh
         3. Error corrects intBCs by changing intBCs with low UMI counts to
-        intBCs with the same allele and a close sequence.
-        4. Filters out alignments of a cellBC if alignments in that cellBC
-        provide too much conflicting allele information.
+        intBCs with the same allele and a close sequence
+        4. Filters out cellBCs that contain too much conflicting allele
+        information as intra-lineage doublets
+        5. Choosing one allele for each cellBC-intBC pair, by selecting the
+        most common
 
     Args:
-        input_df: A DataFrame of alignments
+        input_df: A molecule table, i.e. cellBC-UMI pairs. Note that
+            each cellBC should only contain one instance of each UMI
         output_directory: The output directory path to store plots
-        cell_umi_thresh: A cell needs to have a higher UMI count than this
-            value to be kept (not filtered out)
+        min_umi_per_cell: A cell needs to have a higher UMI count than this
+            value to not be filtered out during filtering
+        min_avg_reads_per_umi: The threshold specifying the minimum coverage
+            (i.e. average) reads per UMI in a cell needed in order for that 
+            cell not to be filtered during filtering
         umi_read_thresh: A UMI needs to have a higher read count than this
             value to be kept (not filtered out)
         intbc_prop_thresh: For a intBC to be corrected to another, its
@@ -557,16 +552,16 @@ def filter_alignments(
             and correction step
 
     Returns:
-        A filtered and corrected DataFrame of alignments.
+        A filtered and corrected allele table of cellBC-UMI-allele groups
 
     """
 
     t0 = time.time()
     logging.info("Begin filtering reads...")
     input_df["status"] = "good"
-    input_df.sort_values("ReadCount", ascending=False)
+    input_df.sort_values("readCount", ascending=False)
     rc_profile, upi_profile, upc_profile = {}, {}, {}
-    lg_utils.generate_log_output(input_df, begin=True)
+    utilities.generate_log_output(input_df, begin=True)
 
     logging.info("Logging initial stats...")
     if plot:
@@ -574,29 +569,32 @@ def filter_alignments(
             rc_profile["Init"],
             upi_profile["Init"],
             upc_profile["Init"],
-        ) = filter_utils.record_stats(input_df)
+        ) = utilities.record_stats(input_df)
 
     logging.info(
-        f"Filtering out cell barcodes with fewer than {cell_umi_thresh} UMIs..."
+        f"Filtering out cell barcodes with fewer than {min_umi_per_cell} UMIs..."
     )
-    filtered_df = filter_utils.filter_cellbcs(
-        input_df, umiCountThresh=cell_umi_thresh, verbose=verbose
+    filtered_df = utilities.filter_cells(
+        input_df,
+        min_umi_per_cell=min_umi_per_cell,
+        min_avg_reads_per_umi=min_avg_reads_per_umi,
+        verbose=verbose,
     )
     if plot:
         (
             rc_profile["CellFilter"],
             upi_profile["CellFilter"],
             upc_profile["CellFilter"],
-        ) = filter_utils.record_stats(filtered_df)
+        ) = utilities.record_stats(filtered_df)
 
     logging.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
     if umi_read_thresh is None:
-        R = filtered_df["ReadCount"]
+        R = filtered_df["readCount"]
         if list(R):
             umi_read_thresh = np.percentile(R, 99) // 10
         else:
             umi_read_thresh = 0
-    filtered_df = filter_utils.filter_umis(
+    filtered_df = utilities.filter_umis(
         filtered_df, readCountThresh=umi_read_thresh, verbose=verbose
     )
 
@@ -605,11 +603,11 @@ def filter_alignments(
             rc_profile["Filtered_UMI"],
             upi_profile["Filtered_UMI"],
             upc_profile["Filtered_UMI"],
-        ) = filter_utils.record_stats(filtered_df)
+        ) = utilities.record_stats(filtered_df)
 
     if intbc_dist_thresh > 0:
         logging.info("Error correcting intBCs...")
-        filtered_df = filter_utils.error_correct_intbc(
+        filtered_df = utilities.error_correct_intbc(
             filtered_df,
             prop=intbc_prop_thresh,
             umiCountThresh=intbc_umi_thresh,
@@ -622,29 +620,32 @@ def filter_alignments(
             rc_profile["Process_intBC"],
             upi_profile["Process_intBC"],
             upc_profile["Process_intBC"],
-        ) = filter_utils.record_stats(filtered_df)
+        ) = utilities.record_stats(filtered_df)
 
     logging.info("Filtering cell barcodes one more time...")
-    filtered_df = filter_utils.filter_cellbcs(
-        filtered_df, umiCountThresh=cell_umi_thresh, verbose=verbose
+    filtered_df = utilities.filter_cells(
+        filtered_df,
+        min_umi_per_cell=min_umi_per_cell,
+        min_avg_reads_per_umi=min_avg_reads_per_umi,
+        verbose=verbose,
     )
 
     if doublet_threshold:
         logging.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
-        filtered_df = lg_utils.filter_intra_doublets(
+        filtered_df = f_utils.filter_intra_doublets(
             filtered_df, prop=doublet_threshold, verbose=verbose
         )
 
     logging.info("Mapping remaining intBC conflicts...")
-    filtered_df = lg_utils.map_intbcs(filtered_df, verbose=verbose)
+    filtered_df = f_utils.map_intbcs(filtered_df, verbose=verbose)
     if plot:
         (
             rc_profile["Final"],
             upi_profile["Final"],
             upc_profile["Final"],
-        ) = filter_utils.record_stats(filtered_df)
+        ) = utilities.record_stats(filtered_df)
 
     # Count total filtered cellBCs
     cellBC_count = 0
@@ -652,20 +653,12 @@ def filter_alignments(
         cellBC_count += 1
 
     if plot:
-        stages = [
-            "Init",
-            "CellFilter",
-            "Filtered_UMI",
-            "Process_intBC",
-            "Final",
-        ]
+        stages = ["Init", "CellFilter", "Filtered_UMI", "Process_intBC", "Final"]
 
         # Plot Read Per UMI Histogram
         h = plt.figure(figsize=(14, 10))
         for n in stages:
-            ax = plt.hist(
-                rc_profile[n], label=n, histtype="step", log=True, bins=200
-            )
+            ax = plt.hist(rc_profile[n], label=n, histtype="step", log=True, bins=200)
         plt.legend()
         plt.ylabel("Frequency")
         plt.xlabel("Number of Reads")
@@ -687,9 +680,7 @@ def filter_alignments(
 
         h = plt.figure(figsize=(14, 10))
         for n in stages:
-            ax = plt.hist(
-                upi_profile[n], label=n, histtype="step", log=True, bins=200
-            )
+            ax = plt.hist(upi_profile[n], label=n, histtype="step", log=True, bins=200)
         plt.legend()
         plt.ylabel("Frequency")
         plt.xlabel("Number of UMIs")
@@ -713,7 +704,8 @@ def call_lineage_groups(
     input_df: pd.DataFrame,
     out_fn: str,
     output_directory: str,
-    cell_umi_filter: int = 10,
+    min_umi_per_cell: int = 10,
+    min_avg_reads_per_umi: float = 2.0,
     min_cluster_prop: float = 0.005,
     min_intbc_thresh: float = 0.05,
     inter_doublet_threshold: float = 0.35,
@@ -739,12 +731,15 @@ def call_lineage_groups(
         each sample.
 
     Args:
-        input_df: The alignment DataFrame to be annotated with lineage
-            assignments
+        input_df: The allele table of cellBC-UMI-allele groups to be annotated
+            with lineage assignments
         out_fn: The file name of the final table
         output_directory: The folder to store the final table as well as plots
-        cell_umi_filter: The threshold specifying the minimum number of UMIs a
-            cell needs in order to not be filtered out
+        min_umi_per_cell: The threshold specifying the minimum number of UMIs a
+            cell needs in order to not be filtered during filtering
+        min_avg_reads_per_umi: The threshold specifying the minimum coverage
+            (i.e. average) reads per UMI in a cell needed in order for that 
+            cell not to be filtered during filtering
         min_cluster_prop: The minimum cluster size in the putative lineage
             assignment step, as a proportion of the number of cells
         min_intbc_thresh: The threshold specifying the minimum proportion of
@@ -765,8 +760,6 @@ def call_lineage_groups(
 
     Returns:
         None, saves output allele table to file.
-
-
     """
 
     t0 = time.time()
@@ -792,7 +785,7 @@ def call_lineage_groups(
 
     logging.info("Assigning initial lineage groups...")
     logging.info(f"Clustering with minimum cluster size {min_clust_size}...")
-    piv_assigned = cl_utils.assign_lineage_groups(
+    piv_assigned = l_utils.assign_lineage_groups(
         piv,
         min_clust_size,
         min_intbc_thresh=min_intbc_thresh,
@@ -800,55 +793,46 @@ def call_lineage_groups(
     )
 
     logging.info("Refining lineage groups...")
-    logging.info(
-        "Redefining lineage groups by removing low proportion intBCs..."
-    )
-    master_LGs, master_intBCs = cl_utils.filter_intbcs_lg_sets(
+    logging.info("Redefining lineage groups by removing low proportion intBCs...")
+    master_LGs, master_intBCs = l_utils.filter_intbcs_lg_sets(
         piv_assigned, min_intbc_thresh=min_intbc_thresh
     )
 
     logging.info("Reassigning cells to refined lineage groups by kinship...")
-    kinship_scores = cl_utils.score_lineage_kinships(
+    kinship_scores = l_utils.score_lineage_kinships(
         piv_assigned, master_LGs, master_intBCs
     )
 
     logging.info("Annotating alignment table with refined lineage groups...")
-    at = cl_utils.annotate_lineage_groups(
-        input_df, kinship_scores, master_intBCs
-    )
+    at = l_utils.annotate_lineage_groups(input_df, kinship_scores, master_intBCs)
     if inter_doublet_threshold:
         logging.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
-        at = lg_utils.filter_inter_doublets(
+        at = f_utils.filter_inter_doublets(
             at, rule=inter_doublet_threshold, verbose=verbose
         )
 
-    logging.info(
-        "Filtering out low proportion intBCs in finalized lineage groups..."
-    )
-    filtered_lgs = cl_utils.filter_intbcs_final_lineages(
+    logging.info("Filtering out low proportion intBCs in finalized lineage groups...")
+    filtered_lgs = l_utils.filter_intbcs_final_lineages(
         at, min_intbc_thresh=min_intbc_thresh
     )
-    at = cl_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
+
+    at = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
 
     if verbose:
         logging.info("Final lineage group assignments:")
         for n, g in at.groupby(["lineageGrp"]):
-            logging.info(
-                f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells"
-            )
+            logging.info(f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells")
 
     logging.info("Filtering out low UMI cell barcodes...")
-    at = filter_utils.filter_cellbcs(
+    at = utilities.filter_cells(
         at,
-        umiCountThresh=int(cell_umi_filter),
+        min_umi_per_cell=int(min_umi_per_cell),
+        min_avg_reads_per_umi=min_avg_reads_per_umi,
         verbose=verbose,
     )
-    at = at.drop(columns=["status"])
     at["lineageGrp"] = at["lineageGrp"].astype(int)
-    at.set_index("readName", inplace=True)
-    at.reset_index(inplace=True)
 
     final_time = time.time()
     logging.info(f"Finished filtering alignments in {final_time - t0}.")
@@ -864,7 +848,7 @@ def call_lineage_groups(
         at_pivot_I[at_pivot_I > 0] = 1
 
         logging.info("Producing pivot table heatmap...")
-        cl_utils.plot_overlap_heatmap(at_pivot_I, at, output_directory)
+        l_utils.plot_overlap_heatmap(at_pivot_I, at, output_directory)
 
         logging.info("Plotting filtered lineage group pivot table heatmap...")
-        cl_utils.plot_overlap_heatmap_lg(at, at_pivot_I, output_directory)
+        l_utils.plot_overlap_heatmap_lg(at, at_pivot_I, output_directory)

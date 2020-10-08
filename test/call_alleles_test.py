@@ -40,7 +40,7 @@ class TestCallAlleles(unittest.TestCase):
             {
                 "cellBC": ["A", "A", "B", "C"],
                 "UMI": ["ATC", "TTG", "ACC", "CCA"],
-                "ReadCount": [10, 20, 10, 10],
+                "readCount": [10, 20, 10, 10],
                 "CIGAR": ["10M", "6M2D2M", "10M", "8M1I2M"],
                 "QueryBegin": [0, 0, 0, 0],
                 "ReferenceBegin": [0, 0, 0, 0],
@@ -55,7 +55,7 @@ class TestCallAlleles(unittest.TestCase):
         )
 
         self.alignment_dataframe["readName"] = self.alignment_dataframe.apply(
-            lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.ReadCount), axis=1
+            lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.readCount), axis=1
         )
 
     def test_basic_cigar_string_match(self):

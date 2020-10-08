@@ -40,7 +40,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
                     "AACCT",
                     "AAGGG",
                 ],
-                "ReadCount": [20, 30, 30, 40, 50, 10, 10, 15, 10, 10, 10],
+                "readCount": [20, 30, 30, 40, 50, 10, 10, 15, 10, 10, 10],
                 "Seq": [
                     "AACCTTGG",
                     "AACCTTGG",
@@ -99,7 +99,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             }
         )
         self.multi_case["readName"] = self.multi_case.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.multi_case["allele"] = self.multi_case.apply(
@@ -119,7 +119,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             "CIGAR",
             "Seq",
             "readName",
-            "ReadCount",
+            "readCount",
             "intBC",
             "r1",
             "r2",
@@ -160,7 +160,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             expected_readcount = expected_alignments[read_name]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "ReadCount"].iloc[
+                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[
                     0
                 ],
                 expected_readcount,

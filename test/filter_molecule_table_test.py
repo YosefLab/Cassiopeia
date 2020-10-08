@@ -7,7 +7,7 @@ import cassiopeia
 from cassiopeia.preprocess import pipeline
 
 
-class TestFilterAlignment(unittest.TestCase):
+class TestFilterMoleculeTable(unittest.TestCase):
     def setUp(self):
 
         self.base_filter_case = pd.DataFrame.from_dict(
@@ -24,7 +24,7 @@ class TestFilterAlignment(unittest.TestCase):
                     "AAGGA",
                     "AACCT",
                 ],
-                "ReadCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
+                "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
                 "Seq": ["NC"] * 9,
                 "intBC": ["NC"] * 9,
                 "r1": ["1"] * 9,
@@ -37,7 +37,7 @@ class TestFilterAlignment(unittest.TestCase):
             }
         )
         self.base_filter_case["readName"] = self.base_filter_case.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.base_filter_case["allele"] = self.base_filter_case.apply(
@@ -58,7 +58,7 @@ class TestFilterAlignment(unittest.TestCase):
                     "AAGGA",
                     "ACGTA",
                 ],
-                "ReadCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
+                "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
                 "Seq": ["NC"] * 9,
                 "intBC": ["X", "X", "X", "X", "Z", "Z", "Z", "Z", "Z"],
                 "r1": ["1", "1", "2", "2", "1", "1", "1", "1", "1"],
@@ -71,7 +71,7 @@ class TestFilterAlignment(unittest.TestCase):
             }
         )
         self.doublets_case["readName"] = self.doublets_case.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.doublets_case["allele"] = self.doublets_case.apply(
@@ -92,7 +92,7 @@ class TestFilterAlignment(unittest.TestCase):
                     "AAGGA",
                     "ACGTA",
                 ],
-                "ReadCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
+                "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
                 "Seq": ["NC"] * 9,
                 "intBC": ["ZX", "XZ", "XZ", "ZZ", "XZ", "XZ", "ZZ", "ZZ", "ZZ"],
                 "r1": ["1", "1", "1", "1", "1", "1", "1", "1", "1"],
@@ -105,7 +105,7 @@ class TestFilterAlignment(unittest.TestCase):
             }
         )
         self.intBC_case["readName"] = self.intBC_case.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.ReadCount)]), axis=1
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
         self.intBC_case["allele"] = self.intBC_case.apply(
@@ -114,7 +114,7 @@ class TestFilterAlignment(unittest.TestCase):
 
     def test_format(self):
 
-        aln_df = pipeline.filter_alignments(
+        aln_df = pipeline.filter_molecule_table(
             self.base_filter_case, ".", cell_umi_thresh=2
         )
 
@@ -125,7 +125,7 @@ class TestFilterAlignment(unittest.TestCase):
             "CIGAR",
             "Seq",
             "readName",
-            "ReadCount",
+            "readCount",
             "intBC",
             "r1",
             "r2",
@@ -138,7 +138,7 @@ class TestFilterAlignment(unittest.TestCase):
 
     def test_umi_and_cellbc_filter(self):
 
-        aln_df = pipeline.filter_alignments(
+        aln_df = pipeline.filter_molecule_table(
             self.base_filter_case, ".", cell_umi_thresh=2
         )
 
@@ -153,7 +153,7 @@ class TestFilterAlignment(unittest.TestCase):
             expected_readcount = expected_alignments[read_name]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "ReadCount"].iloc[
+                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[
                     0
                 ],
                 expected_readcount,
@@ -161,7 +161,7 @@ class TestFilterAlignment(unittest.TestCase):
 
     def test_doublet_and_map(self):
 
-        aln_df = pipeline.filter_alignments(
+        aln_df = pipeline.filter_molecule_table(
             self.doublets_case,
             ".",
             cell_umi_thresh=1,
@@ -186,7 +186,7 @@ class TestFilterAlignment(unittest.TestCase):
 
     def test_error_correct_intBC(self):
 
-        aln_df = pipeline.filter_alignments(
+        aln_df = pipeline.filter_molecule_table(
             self.intBC_case,
             ".",
             cell_umi_thresh=1,
