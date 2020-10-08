@@ -2,7 +2,6 @@
 This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
-TODO: richardyz98: Standardize logging outputs across all modules
 """
 
 import os
@@ -23,7 +22,8 @@ from tqdm.auto import tqdm
 
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
-from cassiopeia.preprocess import filter_utils as f_utils
+from cassiopeia.preprocess import map_utils as m_utils
+from cassiopeia.preprocess import doublet_utils as d_utils
 from cassiopeia.preprocess import lineage_utils as l_utils
 from cassiopeia.preprocess import UMI_utils
 from cassiopeia.preprocess import utilities
@@ -39,7 +39,6 @@ def collapse_umis(
     bam_fp: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
-    n_threads: int = 1,
     show_progress: bool = True,
     force_sort: bool = True,
 ) -> pd.DataFrame:
@@ -60,8 +59,6 @@ def collapse_umis(
           mismatches between the seqeunces of 2 aligned segments to be collapsed.
         max_indels: A threshold specifying the maximum number of differing indels
           allowed between the sequences of 2 aligned segments to be collapsed.
-        n_threads: Number of threads used. Currently only supports single
-          threaded use.
         show_progress: Allow progress bar to be shown.
         force_sort: Specify whether to sort the initial bam directory, regardless
           of if the sorted file already exists.
@@ -132,11 +129,11 @@ def resolve_umi_sequence(
     Args:
         molecule_table: molecule table to resolve
         output_directory: Directory to store results
-        min_umi_per_cell: The threshold specifying the minimum number of UMIs a
-            cell needs to not be filtered during filtering
+        min_umi_per_cell: The threshold specifying the minimum number of UMIs
+            in a cell needed to be retained during filtering
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
-            (i.e. average) reads per UMI in a cell needed in order for that cell
-            not to be filtered during filtering
+            (i.e. average) reads per UMI in a cell needed for that cell to be
+            retained during filtering
         verbose: Indicates whether to log the number of cellBCs and UMIs
             remaining after filtering
 
@@ -343,8 +340,8 @@ def call_alleles(
     of each alignment to the reference sequence.
 
     Args:
-        alignments: Alignments provided in dataframe
-        ref_filepath: Filepath to the ference sequence
+        alignments: Alignments provided in DataFrame
+        ref_filepath: Filepath to the reference sequence
         ref: Nucleotide sequence of the reference
         barcode_interval: Interval in reference corresponding to the integration
             barcode
@@ -431,10 +428,10 @@ def error_correct_umis(
     Args:
         input_df: Input DataFrame of alignments.
         _id: Identification of sample.
-        max_UMI_distance: Maximum Hamming distance between UMIs
-            for error correction.
-        show_progress: Allow a progress bar to be shown.
-        verbose: Log every UMI correction.
+        max_UMI_distance: The threshold specifying the Maximum Hamming distance
+            between UMIs for one to be corrected to another.
+        show_progress: Indicates if a progress bar is to be shown.
+        verbose: Indicates whether to log every UMI correction.
 
     Returns:
         A DataFrame of error corrected UMIs.
@@ -503,7 +500,7 @@ def filter_molecule_table(
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    umi_read_thresh: int = None,
+    umi_read_thresh: int = -1,
     intbc_prop_thresh: float = 0.5,
     intbc_umi_thresh: int = 10,
     intbc_dist_thresh: int = 1,
@@ -521,31 +518,30 @@ def filter_molecule_table(
         intBCs with the same allele and a close sequence
         4. Filters out cellBCs that contain too much conflicting allele
         information as intra-lineage doublets
-        5. Choosing one allele for each cellBC-intBC pair, by selecting the
+        5. Chooses one allele for each cellBC-intBC pair, by selecting the
         most common
 
     Args:
         input_df: A molecule table, i.e. cellBC-UMI pairs. Note that
             each cellBC should only contain one instance of each UMI
         output_directory: The output directory path to store plots
-        min_umi_per_cell: A cell needs to have a higher UMI count than this
-            value to not be filtered out during filtering
+        min_umi_per_cell: The threshold specifying the minimum number of UMIs
+            in a cell needed to be retained during filtering
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed in order for that 
-            cell not to be filtered during filtering
-        umi_read_thresh: A UMI needs to have a higher read count than this
-            value to be kept (not filtered out)
-        intbc_prop_thresh: For a intBC to be corrected to another, its
-            proportion of the total UMI counts of both intBCs needs to be less
-            than this value
-        intbc_umi_thresh: An intBC needs to have less than this value in order
-            to be corrected to another
-        intbc_dist_thresh: An intBC needs to have the Levenshtein Distance
-            between its sequence and the sequence of another intBC to be
-            corrected to the other
-        doublet_threshold: A cell needs to have aproportion of alignments with
-            conflicting allele information less than this value to be kept.
-            Set to None to skip doublet detection
+            cell to be retained during filtering
+        umi_read_thresh: The threshold specifying the minimum read count needed
+            for a UMI to be retained during filtering. Set dynamically if value
+            is < 0
+        intbc_prop_thresh: The threshold specifying the maximum proportion of 
+            the total UMI counts for a intBC to be corrected to another
+        intbc_umi_thresh: The threshold specifying the maximum UMI count for 
+            an intBC needs to be corrected to another
+        intbc_dist_thresh: The threshold specifying the maximum Levenshtein 
+            Distance between sequences for an intBC to be corrected to another
+        doublet_threshold: The threshold specifying the maximum proportion of 
+            conflicting alleles information allowed to for an intBC to be
+            retained in doublet filtering. Set to None to skip doublet filtering
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
         verbose: Indicates whether to log detailed information on each filter
@@ -588,7 +584,7 @@ def filter_molecule_table(
         ) = utilities.record_stats(filtered_df)
 
     logging.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
-    if umi_read_thresh is None:
+    if umi_read_thresh < 0:
         R = filtered_df["readCount"]
         if list(R):
             umi_read_thresh = np.percentile(R, 99) // 10
@@ -634,12 +630,12 @@ def filter_molecule_table(
         logging.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
-        filtered_df = f_utils.filter_intra_doublets(
+        filtered_df = d_utils.filter_intra_doublets(
             filtered_df, prop=doublet_threshold, verbose=verbose
         )
 
     logging.info("Mapping remaining intBC conflicts...")
-    filtered_df = f_utils.map_intbcs(filtered_df, verbose=verbose)
+    filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
     if plot:
         (
             rc_profile["Final"],
@@ -744,16 +740,16 @@ def call_lineage_groups(
             assignment step, as a proportion of the number of cells
         min_intbc_thresh: The threshold specifying the minimum proportion of
             cells in a lineage group that need to have an intBC in order for it
-            to not be filtered out. Also specifies the minimum proportion of
-            cells that share an intBC with the most frequence intBC in forming
-            putative lineage groups
+            be retained during filtering. Also specifies the minimum proportion
+            of cells that share an intBC with the most frequent intBC in 
+            forming putative lineage groups
         inter_doublet_threshold: The threshold specifying the minimum proportion
             of kinship a cell shares with its assigned lineage group out of all
-            lineage groups for it not to be filtered out as an inter-lineage
-            doublet
-        kinship_thresh: Specifies the proportion of intBCs that a cell needs to
-            share with the intBC set of a lineage group such that it is
-            assigned to that lineage group in putative assignment
+            lineage groups for it to be retained during doublet filtering
+        kinship_thresh: The threshold specifying the minimum proportion of 
+            intBCs shared between a cell and the intBC set of a lineage group
+            needed to assign that cell to that lineage group in putative 
+            assignment
         verbose: Indicates whether to log detailed information on filtering
             steps
         plot: Indicates whether to generate plots
@@ -809,7 +805,7 @@ def call_lineage_groups(
         logging.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
-        at = f_utils.filter_inter_doublets(
+        at = d_utils.filter_inter_doublets(
             at, rule=inter_doublet_threshold, verbose=verbose
         )
 

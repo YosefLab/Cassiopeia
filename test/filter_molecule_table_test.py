@@ -115,7 +115,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
     def test_format(self):
 
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, ".", cell_umi_thresh=2
+            self.base_filter_case, ".", min_umi_per_cell=2
         )
 
         expected_columns = [
@@ -139,7 +139,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
     def test_umi_and_cellbc_filter(self):
 
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, ".", cell_umi_thresh=2
+            self.base_filter_case, ".", min_umi_per_cell=2
         )
 
         expected_alignments = {
@@ -164,7 +164,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
         aln_df = pipeline.filter_molecule_table(
             self.doublets_case,
             ".",
-            cell_umi_thresh=1,
+            min_umi_per_cell=1,
             umi_read_thresh=0,
             doublet_threshold=0.4,
         )
@@ -189,7 +189,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
         aln_df = pipeline.filter_molecule_table(
             self.intBC_case,
             ".",
-            cell_umi_thresh=1,
+            min_umi_per_cell=1,
             umi_read_thresh=0,
             doublet_threshold=None,
         )

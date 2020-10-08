@@ -43,7 +43,8 @@ cmdclass = {'build_ext': build_ext}
 # files to wrap with cython
 to_cythonize = [Extension("cassiopeia.solver.lineage_solver.solver_utils", ["cassiopeia/solver/lineage_solver/solver_utils.pyx"]),
                 Extension("cassiopeia.solver.simulation_tools.dataset_generation", ["cassiopeia/solver/simulation_tools/dataset_generation.pyx"]),
-                Extension("cassiopeia.preprocess.filter_utils", ["cassiopeia/preprocess/filter_utils.pyx"]), 
+                Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
+                Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
                 Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
                 Extension("cassiopeia.solver.utilities", ['cassiopeia/solver/utilities.pyx'])] 
 #to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
@@ -63,9 +64,7 @@ setup(
                                 'reconstruct-lineage = cassiopeia.solver.reconstruct_tree:main',
                                 'post-process-tree = cassiopeia.solver.post_process_tree:main',
                                 'stress-test = cassiopeia.solver.reconstruct_sim_tree:main',
-                                'simulate-tree = cassiopeia.solver.simulate_tree:main',
-                                'call-lineages = cassiopeia.preprocess.lineageGroup:main',
-                                'filter-molecule-table = cassiopeia.preprocess.filterMoleculeTables:main']
+                                'simulate-tree = cassiopeia.solver.simulate_tree:main']
             
         },
         author_email="mattjones315@berkeley.edu",

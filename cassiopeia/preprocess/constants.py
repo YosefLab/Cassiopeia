@@ -41,7 +41,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
     },
     "filter": {
         "cell_umi_thresh": 10,
-        "umi_read_thresh": None,
+        "umi_read_thresh": -1,
         "intbc_prop_thresh": 0.5,
         "intbc_umi_thresh": 10,
         "intbc_dist_thresh": 1,

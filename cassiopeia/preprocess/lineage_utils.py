@@ -111,11 +111,11 @@ def find_top_lg(
         PIV_noLG: A pivot table of the remaining unassigned cells
     """
 
-    # calculate sum of observed intBCs, identify top intBC
+    # Calculate sum of observed intBCs, identify top intBC
     intBC_sums = PIVOT_in.sum(0).sort_values(ascending=False)
     intBC_top = intBC_sums.index[0]
 
-    # take subset of PIVOT table that contain cells that have the top intBC
+    # Take subset of PIVOT table that contain cells that have the top intBC
     subPIVOT_in = PIVOT_in[PIVOT_in[intBC_top] > 0]
     subPIVOT_in_sums = subPIVOT_in.sum(0)
     ordered_intBCs2 = subPIVOT_in_sums.sort_values(
@@ -123,7 +123,7 @@ def find_top_lg(
     ).index.tolist()
     subPIVOT_in = subPIVOT_in[ordered_intBCs2]
 
-    # binarize
+    # Binarize
     subPIVOT_in[subPIVOT_in > 0] = 1
 
     # Define intBC set
@@ -153,17 +153,10 @@ def find_top_lg(
     PIV_LG["lineageGrp"] = iteration + 1
 
     # Print statements
-
     if verbose:
         logging.info(
             f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
         )
-
-    # # Plot distribution of kinship scores
-    # h4 = plt.figure(figsize=(15,10))
-    # ax4 = plt.hist(f_inset, bins=49, alpha=0.5, histtype='step')
-    # yax4 = plt.yscale('log', basey=10)
-    # plt.savefig(outputdir + "/kinship_scores.png")
 
     return PIV_LG, PIV_noLG
 
@@ -276,11 +269,6 @@ def score_lineage_kinships(
     max_kinship_LG = pd.concat([max_kinship_frame, max_kinship_ind + 1], axis=1)
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
-    # max_kinship_LG_filt = max_kinship_LG[max_kinship_LG['maxOverlap'] >= 0.75]
-
-    # with open(outputdir + "/lglog.txt", "a") as f:
-    #    f.write(str(max_kinship_LG.shape[0] - max_kinship_LG_filt.shape[0]) + " cells filtered by kinship\n")
-
     return max_kinship_LG
 
 
@@ -327,7 +315,6 @@ def annotate_lineage_groups(
     sorted_by_value = sorted(lg_sizes.items(), key=lambda kv: kv[1])[::-1]
 
     for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
-        # print(i, tup[0], float(i))
         rename_lg[tup[0]] = float(i)
 
     rename_lg[0] = 0.0
@@ -430,7 +417,7 @@ def filtered_lineage_group_to_allele_table(
 
 def plot_overlap_heatmap(at_pivot_I, at, output_directory):
 
-    # remove old plots
+    # Close old plots
     plt.close()
 
     flat_master = []
