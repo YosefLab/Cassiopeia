@@ -3,23 +3,24 @@ This file contains all functions pertaining to UMI collapsing and preprocessing.
 Invoked through pipeline.py and supports the collapseUMIs and 
 errorCorrectUMIs functions. 
 """
+import os
+
+from typing import Callable, List, Tuple
+
 import array
+from collections import Counter, defaultdict, namedtuple
 import heapq
+from hits import annotation as annotation_module
+from hits import fastq, utilities, sw, sam
 import logging
 import numpy as np
 import pandas as pd
-import pysam
-import os
-import subprocess
-import yaml
-
-from collections import Counter, defaultdict, namedtuple
 from pathlib import Path
-from tqdm.auto import tqdm
-from typing import Callable, List, Tuple
+import pysam
 
-from hits import annotation as annotation_module
-from hits import fastq, utilities, sw, sam
+from tqdm.auto import tqdm
+
+from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
     hq_mismatches_from_seed,
@@ -38,32 +39,30 @@ cluster_fields = [
 ]
 cluster_Annotation = annotation_module.Annotation_factory(cluster_fields)
 
-# TODO(richardyz98@): add user specified bam file tags as an option to config files
+BAM_CONSTANTS = constants.BAM_CONSTANTS
 
-global CELL_BC_TAG, UMI_TAG, NUM_READS_TAG, CLUSTER_ID_TAG
-global LOC_TAG, N_Q, HIGH_Q, LOW_Q
+# The tag denoting the field that records the cellBC for each aligned segment.
+CELL_BC_TAG = BAM_CONSTANTS["CELL_BC_TAG"]
+# The tag denothing the field that records the UMI for each aligned segment.
+UMI_TAG = BAM_CONSTANTS["UMI_TAG"]
+# The tag denothing the field that records the UMI for each aligned segment.
+NUM_READS_TAG = BAM_CONSTANTS["NUM_READS_TAG"]
+# The tag denothing the field that records the cluster ID for each annotated
+# aligned segment representing a cluster of aligned segments.
+CLUSTER_ID_TAG = BAM_CONSTANTS["CLUSTER_ID_TAG"]
 
-CELL_BC_TAG = "CB"  # The tag denoting the field that records the cellBC for
-# each aligned segment.
-UMI_TAG = "UR"  # The tag denothing the field that records the UMI for each
+# The missing quality value indicating a consensus could not be reached for a
+# base in the sequence for the consensus aligned segment.
+N_Q = BAM_CONSTANTS["N_Q"]
+# The default high quality value when annotating the qualities in a consensus
 # aligned segment.
-NUM_READS_TAG = "ZR"  # The tag denothing the field that records the UMI for
-# each aligned segment.
-CLUSTER_ID_TAG = "ZC"  # The tag denothing the field that records the cluster ID
-# for each annotated aligned segment represnting a cluster
-# of aligned segments.
-# LOC_TAG = "BC"
-
-N_Q = 2  # The default quality value indicating a consensus could not be reached
-# for a base in the sequence for the consensus aligned segment.
-HIGH_Q = 31  # The default high quality value when annotating the qualities in a
-# consensus aligned segment.
-LOW_Q = 10  # The default low quality value when annotating the qualities in a
-# consensus aligned segment.
+HIGH_Q = BAM_CONSTANTS["HIGH_Q"]
+# The default low quality value when annotating the qualities in a consensus
+# aligned segment.
+LOW_Q = BAM_CONSTANTS["LOW_Q"]
 
 cell_key = lambda al: al.get_tag(CELL_BC_TAG)
 UMI_key = lambda al: al.get_tag(UMI_TAG)
-# loc_key = lambda al: (al.get_tag(LOC_TAG))
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
@@ -86,16 +85,15 @@ def sort_cellranger_bam(
     chunks, filtering relevant aligned sequences with a specified key.
 
     Args:
-      bam_fp: The file path of the BAM to be sorted.
-      sorted_fn: The file name of the output BAM after sorting.
-      sort_key: A function specifying the key by which to sort the aligned sequences.
-      filter_func: A function specifying the key by which to filter out
-        irrelevant sequences.
-      show_progress: Allow progress bar to be shown.
+        bam_fp: The file path of the BAM to be sorted.
+        sorted_fn: The file name of the output BAM after sorting.
+        sort_key: A function specifying the key by which to sort the aligned sequences.
+        filter_func: A function specifying the key by which to filter out
+            irrelevant sequences.
+        show_progress: Allow progress bar to be shown.
 
     Returns:
-      max_read_length: The max read length and the
-      total_reads_out: The total number of relevant reads sorted.
+        The max read length and the the total number of relevant reads sorted.
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
@@ -171,13 +169,16 @@ def form_collapsed_clusters(
     different sequences that could not be resolved at this step.
 
     Args:
-      sorted_fn: The file name of the sorted BAM.
-      max_hq_mismatches: A threshold specifying the maximum number of high
-        quality mismatches between the seqeunces of 2 aligned segments to be
-        collapsed.
-      max_indels: A threshold specifying the maximum number of differing indels
-        allowed between the sequences of 2 aligned segments to be collapsed.
-      show_progress: Allow progress bar to be shown.
+        sorted_fn: The file name of the sorted BAM.
+        max_hq_mismatches: A threshold specifying the maximum number of high
+            quality mismatches between the seqeunces of 2 aligned segments to be
+            collapsed.
+        max_indels: A threshold specifying the maximum number of differing indels
+            allowed between the sequences of 2 aligned segments to be collapsed.
+        show_progress: Allow progress bar to be shown.
+
+    None:
+        Saves the sorted bam to file
     """
 
     collapsed_fn = ".".join(sorted_fn.split(".")[:-1]) + ".collapsed.bam"
@@ -264,15 +265,15 @@ def form_clusters(
     from the sequences. Then clusters on the remaining aligned segments.
 
     Args:
-      als: A list of aligned segments.
-      max_read_length: The maximimum read length in the dataset.
-      max_hq_mismatches: A threshold specifying the maximum number of high
-        quality mismatches between the seqeunces of 2 aligned segments to be
-        collapsed.
+        als: A list of aligned segments.
+        max_read_length: The maximimum read length in the dataset.
+        max_hq_mismatches: A threshold specifying the maximum number of high
+            quality mismatches between the seqeunces of 2 aligned segments to be
+            collapsed.
 
     Returns:
-      clusters: A list of annotated aligned segments representing the consensus
-        of each cluster.
+        A list of annotated aligned segments representing the consensus of each 
+        cluster.
     """
 
     if len(als) == 0:
@@ -306,12 +307,12 @@ def align_clusters(
       between the sequences of 2 aligned segments (reads).
 
     Args:
-      first: The first aligned segment.
-      second: The second aligned segment.
+        first: The first aligned segment.
+        second: The second aligned segment.
 
     Returns:
-      indels: The number of differing indels.
-      num_hq_mismatches: The number of high quality mismatches.
+        The number of differing indels and the number of high quality 
+        mismatches.
     """
 
     al = sw.global_alignment(first.query_sequence, second.query_sequence)
@@ -338,16 +339,15 @@ def within_radius_of_seed(
     sequence (Hamming Distance).
 
     Args:
-      seed: A specified sequence.
-      als: A list of aligned segments.
-      max_hq_mismatches: A threshold specifying the maximum number of high quality
-        mismatches between the seqeunces of 2 aligned segments to be collapsed.
+        seed: A specified sequence.
+        als: A list of aligned segments.
+        max_hq_mismatches: A threshold specifying the maximum number of high quality
+            mismatches between the seqeunces of 2 aligned segments to be collapsed.
 
     Returns:
-      near_seed: List of aligned segments with sequences that are within
-        radius of seed.
-      remaining: List of aligned segments with sequences that are not within
-        radius of seed.
+        A list of aligned segments with sequences that are within radius of seed 
+        and a list of aligned segments with sequences that are not within radius 
+        of seed.
     """
     seed_b = seed.encode()
     ds = [
@@ -379,11 +379,11 @@ def propose_seed(als: List[pysam.AlignedSegment], max_read_length: int) -> str:
     aligned segments if there is no most frequent sequence.
 
     Args:
-      als: A list of aligned segments.
-      max_read_length: the max read length in the sorted BAM.
+        als: A list of aligned segments.
+        max_read_length: the max read length in the sorted BAM.
 
     Returns:
-      seed: A sequence as the seed.
+        A sequence as the seed.
     """
     seq, count = Counter(al.query_sequence for al in als).most_common(1)[0]
 
@@ -403,11 +403,10 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
     aligned segment.
 
     Args:
-      al: The single aligned segment.
+        al: The single aligned segment.
 
     Returns:
-      singleton: A single annotated aligned segment representing the singleton
-        cluster.
+        A single annotated aligned segment representing the singleton cluster.
     """
     singleton = pysam.AlignedSegment()
     singleton.query_sequence = al.query_sequence
@@ -433,11 +432,11 @@ def call_consensus(
     that base.
 
     Args:
-      als: A list of aligned segments.
-      max_read_length: The max read length in the dataset.
+        als: A list of aligned segments.
+        max_read_length: The max read length in the dataset.
 
     Returns:
-      consensus: A consensus annotated aligned segment.
+        A consensus annotated aligned segment.
     """
     statistics = fastq.quality_and_complexity(
         als, max_read_length, alignments=True, min_q=30
@@ -492,11 +491,11 @@ def merge_annotated_clusters(
     smaller into the larger. Adds the read number of the 2nd cluster to the first.
 
     Args:
-      biggest: The larger of the 2 clusters, with a higher read number.
-      other: The smaller of the 2 clusters, with a lower read number.
+        biggest: The larger of the 2 clusters, with a higher read number.
+        other: The smaller of the 2 clusters, with a lower read number.
 
     Returns:
-      biggest: The annotated aligned segment representing the merged cluster.
+        The annotated aligned segment representing the merged cluster.
     """
 
     merged_id = biggest.get_tag(CLUSTER_ID_TAG)
@@ -514,7 +513,10 @@ def merge_annotated_clusters(
 
 
 def correct_umis_in_group(
-    cell_group: pd.DataFrame, sampleID: str, max_UMI_distance: int = 2, verbose = False
+    cell_group: pd.DataFrame,
+    sampleID: str,
+    max_UMI_distance: int = 2,
+    verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
@@ -538,7 +540,6 @@ def correct_umis_in_group(
 
     Returns:
         A DataFrame of error corrected UMIs within the grouping.
-
     """
 
     UMIs = list(cell_group["UMI"])
@@ -561,9 +562,9 @@ def correct_umis_in_group(
             # Keys are 'from' and values are 'to', so correct al2 to al
             if al2_umi in corrections.keys() and corrections[al2_umi] == al_umi:
 
-                bad_nr = al2["ReadCount"]
-                prev_nr = al["ReadCount"]
-                al["ReadCount"] = bad_nr + prev_nr
+                bad_nr = al2["readCount"]
+                prev_nr = al["readCount"]
+                al["readCount"] = bad_nr + prev_nr
 
                 if verbose:
                     logging.info(

@@ -40,7 +40,7 @@ class TestCallAlleles(unittest.TestCase):
             {
                 "cellBC": ["A", "A", "B", "C"],
                 "UMI": ["ATC", "TTG", "ACC", "CCA"],
-                "ReadCount": [10, 20, 10, 10],
+                "readCount": [10, 20, 10, 10],
                 "CIGAR": ["10M", "6M2D2M", "10M", "8M1I2M"],
                 "QueryBegin": [0, 0, 0, 0],
                 "ReferenceBegin": [0, 0, 0, 0],
@@ -54,8 +54,8 @@ class TestCallAlleles(unittest.TestCase):
             }
         )
 
-        self.alignment_dataframe['readName'] = self.alignment_dataframe.apply(
-            lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.ReadCount), axis=1
+        self.alignment_dataframe["readName"] = self.alignment_dataframe.apply(
+            lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.readCount), axis=1
         )
 
     def test_basic_cigar_string_match(self):
@@ -335,31 +335,33 @@ class TestCallAlleles(unittest.TestCase):
             context=False,
         )
 
-        expected_columns = list(self.alignment_dataframe.columns) + ['r1', 'allele', 'intBC']
+        expected_columns = list(self.alignment_dataframe.columns) + [
+            "r1",
+            "allele",
+            "intBC",
+        ]
 
         for column in expected_columns:
             self.assertIn(column, molecule_table.columns)
 
         expected_indels = {
-            'A_ATC_10': 'None',
-            'A_TTG_20': '7:2D',
-            'B_ACC_10': 'None',
-            'C_CCA_10': '9:1I',
+            "A_ATC_10": "None",
+            "A_TTG_20": "7:2D",
+            "B_ACC_10": "None",
+            "C_CCA_10": "9:1I",
         }
 
         expected_intbcs = {
-            'A_ATC_10': 'GG',
-            'A_TTG_20': 'AT',
-            'B_ACC_10': 'CC',
-            'C_CCA_10': 'GA',
+            "A_ATC_10": "GG",
+            "A_TTG_20": "AT",
+            "B_ACC_10": "CC",
+            "C_CCA_10": "GA",
         }
 
         for _, row in molecule_table.iterrows():
 
             self.assertEqual(row.r1, expected_indels[row.readName])
             self.assertEqual(row.intBC, expected_intbcs[row.readName])
-
-        
 
 
 if __name__ == "__main__":

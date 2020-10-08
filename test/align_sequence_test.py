@@ -58,7 +58,7 @@ class TestResolveUMISequence(unittest.TestCase):
             "ReferenceBegin",
             "Seq",
             "readName",
-            "ReadCount",
+            "readCount",
         ]
 
         for column in expected_columns:

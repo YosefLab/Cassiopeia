@@ -15,10 +15,13 @@ from cassiopeia.preprocess import utilities
 class TestCollapseUMIs(unittest.TestCase):
     def setUp(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.test_file = dir_path + "/test.bam"
+        if not os.path.exists(dir_path + "/test_files"):
+            os.makedirs(dir_path + "/test_files")
+
+        self.test_file = dir_path + "/test_files/test.bam"
         sorted_file_name = Path(
             dir_path
-            + "/"
+            + "/test_files/"
             + ".".join(self.test_file.split("/")[-1].split(".")[:-1])
             + "_sorted.bam"
         )
@@ -41,7 +44,7 @@ class TestCollapseUMIs(unittest.TestCase):
         )
 
     def test_sort_bam(self):
-        
+
         sorted_bam = pysam.AlignmentFile(
             self.sorted_file_name, "rb", check_sq=False
         )

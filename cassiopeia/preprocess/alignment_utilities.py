@@ -1,5 +1,6 @@
 """
 This file stores useful functions for dealing with alignments.
+Invoked through pipeline.py and supports the align_sequences function. 
 """
 import re
 from typing import List, Tuple
@@ -54,7 +55,7 @@ def parse_cigar(
     ]
     indels = ["" for site in cutsites]
     uncut_indels = ["" for site in cutsites]
-    intBC = ""
+    intBC = "NC"
 
     ref_anchor = ref[barcode_interval[0] - 11 : barcode_interval[0]]
     intBC_length = barcode_interval[1] - barcode_interval[0]
@@ -64,7 +65,7 @@ def parse_cigar(
     query_pointer = query_start
     query_pad = 0
 
-    cigar_chunks = re.findall("(\d+)?([A-Za-z])?", cigar)
+    cigar_chunks = re.findall(r"(\d+)?([A-Za-z])?", cigar)
 
     for chunk in cigar_chunks:
 
@@ -152,14 +153,16 @@ def parse_cigar(
                             pos_start : (pos_start + context_size + length)
                         ]
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[
                             i
-                        ] += f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
+                        ] += (
+                            f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
+                        )
                     else:
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[i] += f"{ref_pointer+1}:{length}I"
 
@@ -191,13 +194,13 @@ def parse_cigar(
                             query_pointer : (query_pointer + context_size)
                         ]
 
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[
                             i
                         ] += f"{context_l}[{pos_start+1}:{length}D]{context_r}"
                     else:
-                        # when referencing the actual string, we say convert 
+                        # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
                         indels[i] += f"{pos_start+1}:{length}D"
 
@@ -213,7 +216,7 @@ def parse_cigar(
 
     if intBC == "NC" or len(intBC) < intBC_length:
 
-        anchor = seq[(barcode_interval[0] - 10) : barcode_interval[0]]
+        anchor = seq[(barcode_interval[0] - 11) : barcode_interval[0]]
         if anchor == ref_anchor:
             intBC = seq[barcode_interval[0] : barcode_interval[1]]
 
