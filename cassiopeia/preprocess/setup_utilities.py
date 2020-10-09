@@ -10,7 +10,7 @@ import configparser
 import logging
 from typing import Any, Dict
 
-from cassiopeia.pp import constants
+from cassiopeia.preprocess import constants
 
 
 class UnspecifiedConfigParameterError(Exception):
@@ -76,4 +76,44 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
                 "output_directory, reference_filepath, and input_file"
             )
 
+    # we need to add some extra parameters from the "general" settings
+    parameters["collapse"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
+    parameters["resolve"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
+    
+    parameters["align"]["ref_filepath"] = parameters["general"]["reference_filepath"]
+    parameters["align"]["ref"] = None
+
+    parameters["call_alleles"]["ref_filepath"] = parameters["general"]["reference_filepath"]
+    parameters["call_alleles"]["ref"] = None
+
+    parameters["filter_molecule_table"]["output_directory"] = parameters[
+        "general"
+    ]["output_directory"]
+    parameters["call_lineages"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
+
     return parameters
+
+
+def create_pipeline(entry, _exit, stages):
+    """Create pipeline given an entry point.
+
+    Args:
+        entry: a string representing a stage in start at.
+        _exit: a string representing the stage to stop.
+        stages: a list of stages in order of the general pipeline.
+
+    Returns:
+        A list of procedures to run.
+    """
+
+    stage_names = list(stages.keys())
+    start = stage_names.index(entry)
+    end = stage_names.index(_exit)
+
+    return stage_names[start : (end + 1)]

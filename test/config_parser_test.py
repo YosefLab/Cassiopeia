@@ -8,6 +8,7 @@ import unittest
 import pandas as pd
 from pathlib import Path
 
+from cassiopeia.preprocess import cassiopeia_preprocess
 from cassiopeia.preprocess import constants
 from cassiopeia.preprocess import setup_utilities
 
@@ -30,6 +31,24 @@ class TestCollapseUMIs(unittest.TestCase):
             self.basic_config_string += f"[{key}]\n"
             for k, v in self.basic_config[key].items():
                 self.basic_config_string += f"{k} = {v}\n"
+
+        self.subset_config = {
+            "general": {
+                "output_directory": "'here'",
+                "reference_filepath": "'ref.fa'",
+                "input_file": "'input.txt'",
+                "entry": "'align'",
+                "exit": "'filter_molecule_table'",
+            },
+            "collapse": {"max_hq_mismatches": 5},
+            "call_alleles": {"barcode_interval": (10, 25)},
+        }
+
+        self.subset_config_string = ""
+        for key in self.subset_config:
+            self.subset_config_string += f"[{key}]\n"
+            for k, v in self.subset_config[key].items():
+                self.subset_config_string += f"{k} = {v}\n"
 
         self.failure_config = {
             "collapse": {"max_hq_mismatches": 5},
@@ -60,6 +79,11 @@ class TestCollapseUMIs(unittest.TestCase):
             parameters["call_alleles"]["barcode_interval"], (10, 25)
         )
 
+        self.assertIn("output_directory", parameters["collapse"].keys())
+        self.assertIn("output_directory", parameters["resolve"].keys())
+        self.assertIn("output_directory", parameters["filter_molecule_tables"].keys())
+        self.assertIn("output_directory", parameters["call_lineages"].keys())
+
     def test_unspecified_config_raises_error(self):
 
         self.assertRaises(
@@ -67,6 +91,53 @@ class TestCollapseUMIs(unittest.TestCase):
             setup_utilities.parse_config,
             self.failure_config_string,
         )
+
+    def test_pipeline_setup_correct(self):
+
+        parameters = setup_utilities.parse_config(self.basic_config_string)
+
+        entry_point = parameters["general"]["entry"]
+        exit_point = parameters["general"]["exit"]
+
+        pipeline_procedures = setup_utilities.create_pipeline(
+            entry_point, exit_point, cassiopeia_preprocess.STAGES
+        )
+
+        expected_procedures = [
+            "collapse",
+            "resolve",
+            "align",
+            "call_alleles",
+            "error_correct",
+            "filter_molecule_table",
+            "call_lineages",
+        ]
+
+        self.assertEqual(len(pipeline_procedures), len(expected_procedures))
+        for i in range(len(pipeline_procedures)):
+            self.assertEqual(pipeline_procedures[i], expected_procedures[i])
+
+    def test_subset_pipeline_setup_correct(self):
+
+        parameters = setup_utilities.parse_config(self.subset_config_string)
+
+        entry_point = parameters["general"]["entry"]
+        exit_point = parameters["general"]["exit"]
+
+        pipeline_procedures = setup_utilities.create_pipeline(
+            entry_point, exit_point, cassiopeia_preprocess.STAGES
+        )
+
+        expected_procedures = [
+            "align",
+            "call_alleles",
+            "error_correct",
+            "filter_molecule_table",
+        ]
+
+        self.assertEqual(len(pipeline_procedures), len(expected_procedures))
+        for i in range(len(pipeline_procedures)):
+            self.assertEqual(pipeline_procedures[i], expected_procedures[i])
 
 
 if __name__ == "__main__":

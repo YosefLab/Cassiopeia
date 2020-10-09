@@ -2,6 +2,16 @@
 Stores constants for the ProcessingPipeline module
 """
 
+BAM_CONSTANTS = {
+    "CELL_BC_TAG": "CB",
+    "UMI_TAG": "UR",
+    "NUM_READS_TAG": "ZR",
+    "CLUSTER_ID_TAG": "ZC",
+    "N_Q": 2,
+    "HIGH_Q": 31,
+    "LOW_Q": 10,
+}
+
 DNA_SUBSTITUTION_MATRIX = {
     "A": {"A": 5, "T": -4, "C": -4, "G": -4, "Z": 0, "N": 0},
     "T": {"A": -4, "T": 5, "C": -4, "G": -4, "Z": 0, "N": 0},
@@ -12,11 +22,10 @@ DNA_SUBSTITUTION_MATRIX = {
 }
 
 DEFAULT_PIPELINE_PARAMETERS = {
-    "general": {"stage": "'collapse'"},
+    "general": {"entry": "'collapse'", "exit": "'call_lineages'"},
     "collapse": {
         "max_hq_mismatches": 3,
         "max_indels": 2,
-        "n_threads": 1,
         "show_progress": True,
         "force_sort": True,
     },
@@ -39,7 +48,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "show_progress": False,
         "verbose": False,
     },
-    "filter": {
+    "filter_molecule_table": {
         "cell_umi_thresh": 10,
         "umi_read_thresh": -1,
         "intbc_prop_thresh": 0.5,
@@ -60,12 +69,4 @@ DEFAULT_PIPELINE_PARAMETERS = {
     },
 }
 
-BAM_CONSTANTS = {
-    "CELL_BC_TAG": "CB",
-    "UMI_TAG": "UR",
-    "NUM_READS_TAG": "ZR",
-    "CLUSTER_ID_TAG": "ZC",
-    "N_Q": 2,
-    "HIGH_Q": 31,
-    "LOW_Q": 10,
-}
+
