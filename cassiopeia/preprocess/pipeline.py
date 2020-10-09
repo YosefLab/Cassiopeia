@@ -35,8 +35,8 @@ progress = tqdm
 
 
 def collapse_umis(
-    output_directory: str,
     bam_fp: str,
+    output_directory: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     show_progress: bool = True,
@@ -51,10 +51,10 @@ def collapse_umis(
     a dataframe of the collapsed UMIs table.
 
     Args:
-        output_directory: The output directory where the sorted bam directory, the
-          collapsed bam directory, and the final collapsed table are written to.
         bam_file_name: File path of the bam_file. Just the bam file name can be
           specified if the bam already exists in the output directory.
+        output_directory: The output directory where the sorted bam directory, the
+          collapsed bam directory, and the final collapsed table are written to.
         max_hq_mismatches: A threshold specifying the max number of high quality
           mismatches between the seqeunces of 2 aligned segments to be collapsed.
         max_indels: A threshold specifying the maximum number of differing indels
@@ -64,9 +64,9 @@ def collapse_umis(
           of if the sorted file already exists.
 
     Returns:
-        None; output table is written to file.
+        A dataframe of collapsed reads.
     """
-
+    
     logging.info("Collapsing UMI sequences...")
 
     t0 = time.time()
@@ -508,18 +508,14 @@ def filter_molecule_table(
     plot: bool = False,
     verbose: bool = False,
 ) -> pd.DataFrame:
-    """A wrapper function to perform multiple filtering and correcting steps
-    on a molecule table of cellBC-UMI pairs.
+    """Filters and corrects a molecule table of cellBC-UMI pairs.
 
     Performs the following steps on the alignments in a DataFrame:
-        1. Filters out cellBCs with <= min_umi_per_cell unique UMIs
-        2. Filters out UMIs with read count <= umi_read_thresh
-        3. Error corrects intBCs by changing intBCs with low UMI counts to
-        intBCs with the same allele and a close sequence
-        4. Filters out cellBCs that contain too much conflicting allele
-        information as intra-lineage doublets
-        5. Chooses one allele for each cellBC-intBC pair, by selecting the
-        most common
+        1. Filters out cellBCs with less than <= `min_umi_per_cell` unique UMIs
+        2. Filters out UMIs with read count less than <= `umi_read_thresh`
+        3. Error corrects intBCs by changing intBCs with low UMI counts to intBCs with the same allele and a close sequence
+        4. Filters out cellBCs that contain too much conflicting allele information as intra-lineage doublets
+        5. Chooses one allele for each cellBC-intBC pair, by selecting the most common
 
     Args:
         input_df: A molecule table, i.e. cellBC-UMI pairs. Note that
@@ -709,18 +705,20 @@ def call_lineage_groups(
     verbose: bool = False,
     plot: bool = False,
 ):
-    """Assigns cells represented as cellBCs to their clonal populations
-    (lineage groups) based on the groups of intBCs they share.
+    """Assigns cells to their clonal populations.
 
     Performs multiple rounds of filtering and assigning to lineage groups:
         1. Iteratively generates putative lineage groups by forming intBC
         groups for each lineage group and then assigning cells based on how
         many intBCs they share with each intBC group (kinship).
+        
         2. Refines these putative groups by removing non-informative intBCs
         and reassigning cells through kinship.
+        
         3. Removes all inter-lineage doublets, defined as cells that have
         relatively equal kinship scores across multiple lineages and whose
         assignments are therefore ambigious.
+        
         4. Finally, performs one more round of filtering non-informative intBCs
         and cellBCs with low UMI counts before returning a final table of
         lineage assignments, allele information, and read and umi counts for

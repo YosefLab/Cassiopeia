@@ -61,6 +61,7 @@ setup(
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main',
+                                'cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main',
                                 'reconstruct-lineage = cassiopeia.solver.reconstruct_tree:main',
                                 'post-process-tree = cassiopeia.solver.post_process_tree:main',
                                 'stress-test = cassiopeia.solver.reconstruct_sim_tree:main',

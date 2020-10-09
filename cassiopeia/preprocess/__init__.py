@@ -8,5 +8,7 @@ from .pipeline import (
     collapse_umis,
     error_correct_umis,
     resolve_umi_sequence,
+    filter_molecule_table,
+    call_lineage_groups,
 )
 from .utilities import filter_cells
