@@ -50,7 +50,6 @@ def main():
     # pull out general parameters
     output_directory = pipeline_parameters["general"]["output_directory"]
     data_filepath = pipeline_parameters["general"]["input_file"]
-    reference_filepath = pipeline_parameters["general"]["reference_filepath"]
     entry_point = pipeline_parameters["general"]["entry"]
     exit_point = pipeline_parameters["general"]["exit"]
 
@@ -68,30 +67,7 @@ def main():
     for stage in pipeline_stages:
 
         procedure = STAGES[stage]
-        # print(procedure, data, pipeline_parameters[stage])
         data = procedure(data, **pipeline_parameters[stage])
-
-    # ---------------------- Run Pipeline ---------------------- #
-    # # Collapse UMIs
-    # pipeline.collapse_umis(output_directory, data_filepath)
-
-    # # Resolve Sequences
-    # pipeline.resolve_umi_sequence()
-
-    # # align sequences
-    # pipeline.align_sequences()
-
-    # # call alleles
-    # pipeline.call_alleles()
-
-    # # error correct umis
-    # pipeline.error_correct_umis()
-
-    # # filter molecule tables
-    # pipeline.filter_molecule_table()
-
-    # # call lineages
-    # pipeline.call_lineage_groups()
 
 
 if __name__ == "__main__":

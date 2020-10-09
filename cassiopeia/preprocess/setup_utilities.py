@@ -83,8 +83,13 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     parameters["resolve"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    
     parameters["align"]["ref_filepath"] = parameters["general"]["reference_filepath"]
     parameters["align"]["ref"] = None
+
+    parameters["call_alleles"]["ref_filepath"] = parameters["general"]["reference_filepath"]
+    parameters["call_alleles"]["ref"] = None
+
     parameters["filter_molecule_table"]["output_directory"] = parameters[
         "general"
     ]["output_directory"]
