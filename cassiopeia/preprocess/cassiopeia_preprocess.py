@@ -8,8 +8,6 @@ has already run CellRanger Count, or some equivalent, to obtain a BAM file that
 relates cell barcodes and UMIs to sequences.
 
 TODO(mattjones315@): include invocation instructions & pipeline specifics.
-TODO(richardyz98@): create a .yml file including all necessary imports and 
-dependencies
 """
 import os
 
@@ -69,6 +67,7 @@ def main():
     cassiopeia.pp.call_alleles()
 
     # error correct umis
+    
 
     # filter molecule tables
 
