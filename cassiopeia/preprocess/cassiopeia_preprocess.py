@@ -63,11 +63,17 @@ def main():
     else:
         data = pd.read_csv(data_filepath, sep="\t")
 
+    data_file_stem = ".".join(data_filepath.split("/")[-1].split(".")[:-1])
+    
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
 
         procedure = STAGES[stage]
         data = procedure(data, **pipeline_parameters[stage])
+        data.to_csv(
+            os.path.join(output_directory, data_file_stem + f".{stage}.txt"),
+            sep="\t",
+        )
 
 
 if __name__ == "__main__":
