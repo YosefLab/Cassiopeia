@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pylab
-from tqdm import tqdm
+import re
 
 sys.setrecursionlimit(10000)
 
@@ -47,8 +47,6 @@ def assign_lineage_groups(
         piv_assigned: A pivot table of cells labled with lineage group
             assignments
     """
-    ## Run LG Assign function
-
     # initiate output variables
     piv_assigned = pd.DataFrame()
 
@@ -189,7 +187,7 @@ def filter_intbcs_lg_sets(
 
     for i, PIV_i in PIV_assigned.groupby(["lineageGrp"]):
         PIVi_bin = PIV_i.copy()
-        # Drop the lineageGroup column
+        # Drop the lineageGrp column
         PIVi_bin = PIVi_bin.drop(["lineageGrp"], axis=1)
         PIVi_bin[PIVi_bin > 0] = 1
 
@@ -266,7 +264,9 @@ def score_lineage_kinships(
     max_kinship_ind = dfCellBC2LG.idxmax(axis=1).to_frame()
     max_kinship_frame = max_kinship.to_frame()
 
-    max_kinship_LG = pd.concat([max_kinship_frame, max_kinship_ind + 1], axis=1)
+    max_kinship_LG = pd.concat(
+        [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
+    )
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     return max_kinship_LG
@@ -280,18 +280,18 @@ def annotate_lineage_groups(
     """
     Assign cells in the allele table to a lineage group.
 
-    Takes in a DataFrame of alignments and a DataFrame identifying the chosen
+    Takes in an allele table and a DataFrame identifying the chosen
     lineage group for each cell and annotates the lineage groups in the
     original DataFrame.
 
     Args:
-        dfMT: A DataFrame of alignments
-        max_kinship_LG: A DataFrame with the max kinship lienage group for each
+        dfMT: An allele table of cellBC-UMI-allele groups
+        max_kinship_LG: A DataFrame with the max kinship lineage group for each
             cell, see documentation of score_lineage_kinships
         master_intBCs: A dictionary relating lineage group to its set of intBCs
 
     Returns:
-        Original DataFrame with annotated lineage group assignments for cells
+        Original allele table with annotated lineage group assignments for cells
     """
 
     dfMT["lineageGrp"] = 0
@@ -308,7 +308,6 @@ def annotate_lineage_groups(
     rename_lg = {}
 
     for n, g in dfMT.groupby(["lineageGrp"]):
-
         if n != 0:
             lg_sizes[n] = len(g["cellBC"].unique())
 
@@ -335,7 +334,7 @@ def filter_intbcs_final_lineages(
     of cells in that group that have that intBC is <= min_intbc_thresh.
 
     Args:
-        at: An alignment DataFrame annotated with final lineage groups
+        at: An allele table of cellBC-UMI-allele groups annotated with final lineage groups
         min_intbc_thresh: The proportion threshold by which to filter intBCs
             from each lineage group
     Returns:
@@ -352,7 +351,7 @@ def filter_intbcs_final_lineages(
 
     lgs = []
 
-    for i in tqdm(lineageGrps, desc="Filtering intBCs from final alignment"):
+    for i in lineageGrps:
 
         lg = at[at["lineageGrp"] == i]
         cells = lg["cellBC"].unique()
@@ -395,14 +394,13 @@ def filtered_lineage_group_to_allele_table(
         final_df: A final processed DataFrame with indel information
     """
 
-    final_df = pd.concat(filtered_lgs)
+    final_df = pd.concat(filtered_lgs, sort=True)
 
     grouping = []
     for i in final_df.columns:
-        if i[0] == "r" and i[1] != "e":
+        if bool(re.search(r"r\d", i)):
             grouping.append(i)
     grouping = ["cellBC", "intBC", "allele"] + grouping + ["lineageGrp"]
-    print(grouping)
 
     final_df = final_df.groupby(grouping, as_index=False).agg(
         {"UMI": "count", "readCount": "sum"}
@@ -415,7 +413,22 @@ def filtered_lineage_group_to_allele_table(
     return final_df
 
 
-def plot_overlap_heatmap(at_pivot_I, at, output_directory):
+def plot_overlap_heatmap(at, at_pivot_I, output_directory):
+    """Generates a plot showing the overlap of intBC sets, indicating clones.
+    
+    Generates a plot with cellBCs as the rows and intBCs as the columns. Shows
+    which intBCs are contained by which cells, with cells sharing a lot of 
+    overlap indicating that they might belong to the same clonal population.
+
+    Args:
+        at: An allele table of cellBC-UMI-allele groups
+        at_pivot_I: A pivot table of indicators indicating which cellBCs have
+            which UMIs
+        output_directory: The directory in which to store the plot
+
+    Returns:
+        None, plot is saved to output directory
+    """
 
     # Close old plots
     plt.close()
@@ -437,11 +450,33 @@ def plot_overlap_heatmap(at_pivot_I, at, output_directory):
 
 
 def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
+    """Generates a plot of the allele table.
 
-    if not os.path.exists(output_directory + "/lineageGrp_piv_heatmaps"):
-        os.makedirs(output_directory + "/lineageGrp_piv_heatmaps")
+    Generates a plot where the rows are cellBCs and the columns are cutsites
+    for the sequence of each intBC. Colors indicate the allele information
+    relative to the reference sequence, with red indicating a deletion, blue 
+    indicating an insertion, gray indicating an uncut site (matches the 
+    reference), and white indicating that intBC is not found in that cell. The 
+    bar chart on the left indicates the UMI count of each cellBC, and the bars 
+    on the bottom indicate the number of unique mutations observed at each 
+    cutsite.
 
-    for n, lg_group in tqdm(at.groupby("lineageGrp")):
+    Args:
+        at: An allele table of cellBC-UMI-allele groups
+        at_pivot_I: A pivot table of indicators indicating which cellBCs have
+            which UMIs
+        output_directory: The directory in which to store the plot
+
+    Returns:
+        None, plot is saved to output directory
+    """
+
+    if not os.path.exists(
+        os.join(output_directory, "/lineageGrp_piv_heatmaps")
+    ):
+        os.makedirs(os.join(output_directory, "/lineageGrp_piv_heatmaps"))
+
+    for n, lg_group in at.groupby("lineageGrp"):
 
         plt.close()
 
@@ -449,11 +484,13 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
         s_cmap = colors.ListedColormap(["grey", "red", "blue"], N=3)
 
+        values = [i for i in lg_group.columns if re.findall(r"s\d", i)]
+
         lg_group_pivot = pd.pivot_table(
             lg_group,
             index=["cellBC"],
             columns=["intBC"],
-            values=["s1", "s2", "s3"],
+            values=values,
             aggfunc=pylab.mean,
         ).T
         lg_group_pivot2 = pd.pivot_table(
@@ -469,11 +506,12 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
             .agg({"UMI": "count"})
             .sort_values(by="UMI")
         )
-        n_unique_alleles = lg_group.groupby(["intBC"]).agg(
-            {"r1": "nunique", "r2": "nunique", "r3": "nunique"}
-        )
 
-        cellBCList = lg_group["cellBC"].unique()
+        agg_dict = {}
+        for i in lg_group.columns:
+            if re.search(r"r\d", i):
+                agg_dict[i] = "nunique"
+        n_unique_alleles = lg_group.groupby(["intBC"]).agg(agg_dict)
 
         col_order = (
             lg_group_pivot2.dropna(axis=1, how="all")
@@ -491,11 +529,11 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
         s3 = s3.loc[cell_umi_count.index]
 
-        s3_2 = (
-            lg_group_pivot2.dropna(axis=1, how="all")
-            .sum()
-            .sort_values(ascending=False, inplace=False)[col_order]
-        )
+        # s3_2 = (
+        #     lg_group_pivot2.dropna(axis=1, how="all")
+        #     .sum()
+        #     .sort_values(ascending=False, inplace=False)[col_order]
+        # )
 
         n_unique_alleles = n_unique_alleles.loc[col_order]
         s3_intBCs = col_order
@@ -508,7 +546,7 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         im = ax.matshow(s3, aspect="auto", origin="lower", cmap=s_cmap)
 
         axx1 = plt.xticks(
-            range(1, len(col_order) * 3, 3),
+            range(1, len(col_order) * len(agg_dict), len(agg_dict)),
             col_order,
             rotation="vertical",
             family="monospace",
@@ -522,22 +560,19 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         axy0 = ax3.set_yticks(range(len(s3_cellBCs)))
         axy1 = ax3.set_yticklabels(s3_cellBCs, family="monospace")
 
-        w = 1 / 3
-        x = np.arange(len(s3_intBCs))
+        w = 1 / len(agg_dict)
+        x = np.arange(len(s3_intBCs)) - w * ((len(agg_dict) - 1) // 2)
         ax2 = h.add_axes([0.3, 0, 0.6, 0.1], frame_on=False)
-        b1 = ax2.bar(x - w, n_unique_alleles["r1"], width=w, label="r1")
-        b2 = ax2.bar(x, n_unique_alleles["r2"], width=w, label="r2")
-        b3 = ax2.bar(x + w, n_unique_alleles["r3"], width=w, label="r3")
+        for i in agg_dict.keys():
+            num = int(re.findall(r"\d", i)[0])
+            b = ax2.bar(
+                x + (num - 1) * w, n_unique_alleles[i], width=w, label=i
+            )
         ax2.set_xlim([0, len(s3_intBCs)])
         ax2.set_ylim(
             ymin=0,
             ymax=(
-                max(
-                    n_unique_alleles["r1"].max(),
-                    n_unique_alleles["r2"].max(),
-                    n_unique_alleles["r3"].max(),
-                )
-                + 10
+                max([n_unique_alleles[i].max() for i in agg_dict.keys()]) + 10
             ),
         )
         ax2.set_xticks([])
@@ -547,7 +582,7 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         plt.legend()
 
         # plt.gcf().subplots_adjust(bottom=0.15)
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(
             os.path.join(
                 output_directory,
@@ -560,31 +595,29 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
 
 def add_cutsite_encoding(lg_group):
+    """Adds the encoding for the mutation type at each cutsite for each cellBC.
 
-    lg_group["s1"] = 0
-    lg_group["s2"] = 0
-    lg_group["s3"] = 0
+    Args:
+        lg_group: A pivot table representing a lineage group
+
+    Returns:
+        A pivot table with cutsite encodings
+    """
+    cutsites = []
+
+    for i in lg_group.columns:
+        digit = re.findall(r"\d", i)
+        if digit:
+            cutsites.append(i)
+            lg_group["s" + digit[0]] = 0
 
     for i in lg_group.index:
-        if lg_group.loc[i, "r1"] == "['None']":
-            lg_group.loc[i, "s1"] = 0.9
-        elif "D" in lg_group.loc[i, "r1"]:
-            lg_group.loc[i, "s1"] = 1.9
-        elif "I" in lg_group.loc[i, "r1"]:
-            lg_group.loc[i, "s1"] = 2.9
-
-        if lg_group.loc[i, "r2"] == "['None']":
-            lg_group.loc[i, "s2"] = 0.9
-        elif "D" in lg_group.loc[i, "r2"]:
-            lg_group.loc[i, "s2"] = 1.9
-        elif "I" in lg_group.loc[i, "r2"]:
-            lg_group.loc[i, "s2"] = 2.9
-
-        if lg_group.loc[i, "r3"] == "['None']":
-            lg_group.loc[i, "s3"] = 0.9
-        elif "D" in lg_group.loc[i, "r3"]:
-            lg_group.loc[i, "s3"] = 1.9
-        elif "I" in lg_group.loc[i, "r3"]:
-            lg_group.loc[i, "s3"] = 2.9
+        for r in cutsites:
+            if lg_group.loc[i, r] == "['None']":
+                lg_group.loc[i, r.replace("r", "s")] = 0.9
+            elif "D" in lg_group.loc[i, r]:
+                lg_group.loc[i, r.replace("r", "s")] = 1.9
+            elif "I" in lg_group.loc[i, r]:
+                lg_group.loc[i, r.replace("r", "s")] = 2.9
 
     return lg_group

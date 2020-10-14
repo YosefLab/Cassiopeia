@@ -16,14 +16,12 @@ import pysam
 
 from tqdm.auto import tqdm
 
-def generate_log_output(
-    df: pd.DataFrame, 
-    begin: bool = False
-):
+
+def generate_log_output(df: pd.DataFrame, begin: bool = False):
     """A function for the logging of the number of filtered elements.
 
-    Simple function that logs the number of total reads, the number of unique 
-    UMIs, and the number of unique cellBCs in a DataFrame. 
+    Simple function that logs the number of total reads, the number of unique
+    UMIs, and the number of unique cellBCs in a DataFrame.
 
     Args:
         df: A DataFrame
@@ -31,7 +29,7 @@ def generate_log_output(
     Returns:
         None, logs elements to log file
     """
-    
+
     if begin:
         logging.info("Before filtering:")
     else:
@@ -45,7 +43,7 @@ def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> pd.DataFrame:
     """Filter out cell barcodes that have too few UMIs or too few reads/UMI
 
@@ -68,7 +66,7 @@ def filter_cells(
     # in the table
     cell_filter = {}
 
-    for n, group in tqdm(molecule_table.groupby(["cellBC"])):
+    for n, group in molecule_table.groupby(["cellBC"]):
         if group["UMI"].dtypes == object:
             umi_per_cellBC_n = group.shape[0]
         else:
@@ -93,8 +91,8 @@ def filter_cells(
         molecule_table.loc[molecule_table["filter"] == True, "cellBC"].unique()
     )
 
-    logging.info(f"Filtered out {n_umi_filt} UMIs.")
-    logging.info(f"Filtered out {n_cells_filt} cells.")
+    logging.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
+    logging.info(f"Filtered out {n_umi_filt} UMIs as a result.")
 
     filt_molecule_table = molecule_table[
         molecule_table["filter"] == False
@@ -119,7 +117,7 @@ def filter_umis(
 
     Args:
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
-        readCountThresh: The minimum read count needed for a UMI to not be 
+        readCountThresh: The minimum read count needed for a UMI to not be
             filtered
         verbose: Indicates whether to log the number of cellBCs and UMIs
             remaining after filtering
@@ -138,6 +136,7 @@ def filter_umis(
         generate_log_output(n_moleculetable)
 
     return n_moleculetable
+
 
 def error_correct_intbc(
     moleculetable: pd.DataFrame,
@@ -249,7 +248,7 @@ def record_stats(
 
     # Count UMI per intBC
     umi_per_ibc = np.array([])
-    for n, g in tqdm(moleculetable.groupby(["cellBC"]), desc="Recording stats"):
+    for n, g in moleculetable.groupby(["cellBC"]):
         x = g.groupby(["intBC"]).agg({"UMI": "nunique"})["UMI"]
         if x.shape[0] > 0:
             umi_per_ibc = np.concatenate([umi_per_ibc, np.array(x)])

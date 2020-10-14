@@ -76,7 +76,6 @@ def sort_cellranger_bam(
     sorted_fn: str,
     sort_key: Callable[[pysam.AlignedSegment], str] = sort_key,
     filter_func: Callable[[pysam.AlignedSegment], str] = filter_func,
-    show_progress: bool = False,
 ) -> (int, int):
     """Sorts aligned segments (representing a read) in the BAM file according
     to a specified key.
@@ -90,7 +89,6 @@ def sort_cellranger_bam(
         sort_key: A function specifying the key by which to sort the aligned sequences.
         filter_func: A function specifying the key by which to filter out
             irrelevant sequences.
-        show_progress: Allow progress bar to be shown.
 
     Returns:
         The max read length and the the total number of relevant reads sorted.
@@ -127,12 +125,11 @@ def sort_cellranger_bam(
     with pysam.AlignmentFile(str(sorted_fn), "wb", template=bam_fh) as fh:
         merged_chunks = heapq.merge(*chunk_fhs, key=sort_key)
 
-        if show_progress:
-            merged_chunks = progress(
-                merged_chunks,
-                total=total_reads_out,
-                desc="Merging sorted chunks",
-            )
+        merged_chunks = progress(
+            merged_chunks,
+            total=total_reads_out,
+            desc="Merging sorted chunks",
+        )
 
         for al in merged_chunks:
             fh.write(al)
@@ -150,7 +147,6 @@ def form_collapsed_clusters(
     sorted_fn: Callable[[pysam.AlignedSegment], str],
     max_hq_mismatches: int,
     max_indels: int,
-    show_progress: bool = False,
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
     sequences are close.
@@ -175,7 +171,6 @@ def form_collapsed_clusters(
             collapsed.
         max_indels: A threshold specifying the maximum number of differing indels
             allowed between the sequences of 2 aligned segments to be collapsed.
-        show_progress: Allow progress bar to be shown.
 
     None:
         Saves the sorted bam to file
@@ -194,8 +189,7 @@ def form_collapsed_clusters(
     # loop has destructively removed all alignments from the file object
     sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
 
-    if show_progress:
-        sorted_als = progress(sorted_als, total=total_reads, desc="Collapsing")
+    sorted_als = progress(sorted_als, total=total_reads, desc="Collapsing UMIs")
 
     cell_groups = utilities.group_by(sorted_als, cell_key)
 
@@ -272,7 +266,7 @@ def form_clusters(
             collapsed.
 
     Returns:
-        A list of annotated aligned segments representing the consensus of each 
+        A list of annotated aligned segments representing the consensus of each
         cluster.
     """
 
@@ -311,7 +305,7 @@ def align_clusters(
         second: The second aligned segment.
 
     Returns:
-        The number of differing indels and the number of high quality 
+        The number of differing indels and the number of high quality
         mismatches.
     """
 
@@ -345,8 +339,8 @@ def within_radius_of_seed(
             mismatches between the seqeunces of 2 aligned segments to be collapsed.
 
     Returns:
-        A list of aligned segments with sequences that are within radius of seed 
-        and a list of aligned segments with sequences that are not within radius 
+        A list of aligned segments with sequences that are within radius of seed
+        and a list of aligned segments with sequences that are not within radius
         of seed.
     """
     seed_b = seed.encode()
@@ -515,7 +509,7 @@ def merge_annotated_clusters(
 def correct_umis_in_group(
     cell_group: pd.DataFrame,
     sampleID: str,
-    max_UMI_distance: int = 2,
+    max_umi_distance: int = 2,
     verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
     """
@@ -524,7 +518,7 @@ def correct_umis_in_group(
     Given a group of alignments (that share a cellBC and intBC if from
     error_correct_umis), determines which UMIs are to be merged into which.
     For a given UMI, merges it into the UMI with the highest read count
-    that has a Hamming Distance <= max_UMI_distance. For a merge, removes the
+    that has a Hamming Distance <= max_umi_distance. For a merge, removes the
     less abundant UMI and adds its read count to the more abundant UMI.
     If a UMI is to be merged into a UMI that itself will be merged, the
     correction is propogated through.
@@ -535,7 +529,7 @@ def correct_umis_in_group(
     Args:
         input_df: Input DataFrame of alignments.
         _id: Identification of sample.
-        max_UMI_distance: Maximum Hamming distance between UMIs
+        max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 
     Returns:
@@ -546,7 +540,7 @@ def correct_umis_in_group(
 
     ds = hamming_distance_matrix(UMIs)
 
-    corrections = register_corrections(ds, max_UMI_distance, UMIs)
+    corrections = register_corrections(ds, max_umi_distance, UMIs)
 
     num_corrections = 0
     corrected_group = pd.DataFrame()

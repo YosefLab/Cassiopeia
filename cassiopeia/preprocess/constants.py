@@ -26,7 +26,6 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "collapse": {
         "max_hq_mismatches": 3,
         "max_indels": 2,
-        "show_progress": True,
         "force_sort": True,
     },
     "resolve": {
@@ -45,11 +44,11 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "error_correct": {
         "_id": "'batch1'",
         "max_umi_distance": 2,
-        "show_progress": False,
         "verbose": False,
     },
     "filter_molecule_table": {
-        "cell_umi_thresh": 10,
+        "min_umi_per_cell": 10,
+        "min_avg_reads_per_umi": 2.0,
         "umi_read_thresh": -1,
         "intbc_prop_thresh": 0.5,
         "intbc_umi_thresh": 10,
@@ -59,7 +58,8 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "verbose": False,
     },
     "call_lineages": {
-        "cell_umi_filter": 10,
+        "min_umi_per_cell": 10,
+        "min_avg_reads_per_umi": 2.0,
         "min_cluster_prop": 0.005,
         "min_intbc_thresh": 0.05,
         "inter_doublet_threshold": 0.35,
@@ -68,5 +68,3 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "plot": True,
     },
 }
-
-

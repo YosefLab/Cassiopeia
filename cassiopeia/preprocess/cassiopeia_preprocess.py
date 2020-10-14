@@ -8,8 +8,6 @@ has already run CellRanger Count, or some equivalent, to obtain a BAM file that
 relates cell barcodes and UMIs to sequences.
 
 TODO(mattjones315@): include invocation instructions & pipeline specifics.
-TODO(richardyz98@): create a .yml file including all necessary imports and 
-dependencies
 """
 import os
 
@@ -57,7 +55,9 @@ def main():
     setup_utilities.setup(output_directory)
 
     # create pipeline plan
-    pipeline_stages = setup_utilities.create_pipeline(entry_point, exit_point, STAGES)
+    pipeline_stages = setup_utilities.create_pipeline(
+        entry_point, exit_point, STAGES
+    )
     if entry_point == "collapse":
         data = data_filepath
     else:
