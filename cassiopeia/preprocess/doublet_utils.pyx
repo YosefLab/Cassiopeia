@@ -11,7 +11,6 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import pylab
-from tqdm import tqdm
 
 from cassiopeia.preprocess import utilities
 
@@ -42,7 +41,7 @@ def filter_intra_doublets(
 
     doublet_list = []
     filter_dict = {}
-    for n, g in tqdm(molecule_table.groupby(["cellBC"])):
+    for n, g in molecule_table.groupby(["cellBC"]):
         x = (
             g.groupby(["intBC", "allele"])
             .agg({"UMI": "count"})
@@ -218,7 +217,7 @@ def filter_inter_doublets(
 
     filter_dict = {}
 
-    for cell in tqdm(mem_df.index, desc="Identifying inter-doublets"):
+    for cell in mem_df.index:
         if filter_cell(mem_df.loc[cell], rule):
             filter_dict[cell] = "bad"
         else:

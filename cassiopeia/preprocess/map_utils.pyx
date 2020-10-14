@@ -11,7 +11,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import pylab
-from tqdm import tqdm
+
+from tqdm.auto import tqdm
 
 from cassiopeia.preprocess import utilities
 
@@ -56,7 +57,7 @@ def map_intbcs(
     corrected = 0
     numUMI_corrected = 0
     for n, group in tqdm(
-        moleculetable.groupby(["filter_column"]), desc="Mapping intBCs"
+        moleculetable.groupby(["filter_column"]), desc="Mapping alleles to intBCs"
     ):
 
         x1 = (

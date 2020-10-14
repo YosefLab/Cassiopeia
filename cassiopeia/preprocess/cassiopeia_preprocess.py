@@ -14,26 +14,26 @@ import os
 import argparse
 import configparser
 import logging
+import pandas as pd
 from typing import Any, Dict
 
-import cassiopeia
-from cassiopeia.pp import setup_utilities
+from cassiopeia.preprocess import pipeline, setup_utilities
 
-STAGES = ["collapse", "resolve", "align", "call_alleles", "error_correct"]
+STAGES = {
+    "collapse": pipeline.collapse_umis,
+    "resolve": pipeline.resolve_umi_sequence,
+    "align": pipeline.align_sequences,
+    "call_alleles": pipeline.call_alleles,
+    "error_correct": pipeline.error_correct_umis,
+    "filter_molecule_table": pipeline.filter_molecule_table,
+    "call_lineages": pipeline.call_lineage_groups,
+}
 
 
 def main():
 
     # --------------- Create Argument Parser & Read in Arguments -------------- #
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "bam_file", type=str, help="Specify a BAM file to process."
-    )
-    parser.add_argument(
-        "output_directory",
-        type=str,
-        help="Specify an output directory to store results.",
-    )
     parser.add_argument(
         "config", type=str, help="Specify a config file for analysis."
     )
@@ -48,30 +48,26 @@ def main():
     # pull out general parameters
     output_directory = pipeline_parameters["general"]["output_directory"]
     data_filepath = pipeline_parameters["general"]["input_file"]
-    reference_filepath = pipeline_parameters["general"]["reference_filepath"]
+    entry_point = pipeline_parameters["general"]["entry"]
+    exit_point = pipeline_parameters["general"]["exit"]
 
     # set up output directory
     setup_utilities.setup(output_directory)
 
+    # create pipeline plan
+    pipeline_stages = setup_utilities.create_pipeline(
+        entry_point, exit_point, STAGES
+    )
+    if entry_point == "collapse":
+        data = data_filepath
+    else:
+        data = pd.read_csv(data_filepath, sep="\t")
+
     # ---------------------- Run Pipeline ---------------------- #
-    # Collapse UMIs
-    cassiopeia.pp.collapse_umis(output_directory, data_filepath)
+    for stage in pipeline_stages:
 
-    # Resolve Sequences
-    cassiopeia.pp.resolve_umi_sequence()
-
-    # align sequences
-    cassiopeia.pp.align_sequences()
-
-    # call alleles
-    cassiopeia.pp.call_alleles()
-
-    # error correct umis
-    
-
-    # filter molecule tables
-
-    # call lineages
+        procedure = STAGES[stage]
+        data = procedure(data, **pipeline_parameters[stage])
 
 
 if __name__ == "__main__":

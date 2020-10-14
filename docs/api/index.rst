@@ -27,3 +27,5 @@ Filtering of cells and all main pipeline procedures.
    pp.error_correct_umis
    pp.filter_cells
    pp.resolve_umi_sequence
+   pp.filter_molecule_table
+   pp.call_lineage_groups

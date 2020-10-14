@@ -109,7 +109,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
     def test_format(self):
 
         aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, "test", max_UMI_distance=1
+            self.multi_case, "test", max_umi_distance=1
         )
 
         expected_columns = [
@@ -131,7 +131,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
     def test_zero_dist(self):
 
         aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, "test", max_UMI_distance=0
+            self.multi_case, "test", max_umi_distance=0
         )
 
         self.assertEqual(aln_df.shape[0], self.multi_case.shape[0])
@@ -142,7 +142,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
     def test_error_correct_two_dist(self):
 
         aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, "test", max_UMI_distance=2
+            self.multi_case, "test", max_umi_distance=2
         )
 
         expected_alignments = {
