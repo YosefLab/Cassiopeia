@@ -413,7 +413,22 @@ def filtered_lineage_group_to_allele_table(
     return final_df
 
 
-def plot_overlap_heatmap(at_pivot_I, at, output_directory):
+def plot_overlap_heatmap(at, at_pivot_I, output_directory):
+    """Generates a plot showing the overlap of intBC sets, indicating clones.
+    
+    Generates a plot with cellBCs as the rows and intBCs as the columns. Shows
+    which intBCs are contained by which cells, with cells sharing a lot of 
+    overlap indicating that they might belong to the same clonal population.
+
+    Args:
+        at: An allele table of cellBC-UMI-allele groups
+        at_pivot_I: A pivot table of indicators indicating which cellBCs have
+            which UMIs
+        output_directory: The directory in which to store the plot
+
+    Returns:
+        None, plot is saved to output directory
+    """
 
     # Close old plots
     plt.close()
@@ -435,6 +450,26 @@ def plot_overlap_heatmap(at_pivot_I, at, output_directory):
 
 
 def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
+    """Generates a plot of the allele table.
+
+    Generates a plot where the rows are cellBCs and the columns are cutsites
+    for the sequence of each intBC. Colors indicate the allele information
+    relative to the reference sequence, with red indicating a deletion, blue 
+    indicating an insertion, gray indicating an uncut site (matches the 
+    reference), and white indicating that intBC is not found in that cell. The 
+    bar chart on the left indicates the UMI count of each cellBC, and the bars 
+    on the bottom indicate the number of unique mutations observed at each 
+    cutsite.
+
+    Args:
+        at: An allele table of cellBC-UMI-allele groups
+        at_pivot_I: A pivot table of indicators indicating which cellBCs have
+            which UMIs
+        output_directory: The directory in which to store the plot
+
+    Returns:
+        None, plot is saved to output directory
+    """
 
     if not os.path.exists(
         os.join(output_directory, "/lineageGrp_piv_heatmaps")
@@ -560,6 +595,14 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
 
 def add_cutsite_encoding(lg_group):
+    """Adds the encoding for the mutation type at each cutsite for each cellBC.
+
+    Args:
+        lg_group: A pivot table representing a lineage group
+
+    Returns:
+        A pivot table with cutsite encodings
+    """
     cutsites = []
 
     for i in lg_group.columns:

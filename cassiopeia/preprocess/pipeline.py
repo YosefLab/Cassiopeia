@@ -880,7 +880,7 @@ def call_lineage_groups(
         at_pivot_I[at_pivot_I > 0] = 1
 
         logging.info("Producing pivot table heatmap...")
-        l_utils.plot_overlap_heatmap(at_pivot_I, at, output_directory)
+        l_utils.plot_overlap_heatmap(at, at_pivot_I, output_directory)
 
         logging.info("Plotting filtered lineage group pivot table heatmap...")
         l_utils.plot_overlap_heatmap_lg(at, at_pivot_I, output_directory)
