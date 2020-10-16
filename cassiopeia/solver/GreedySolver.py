@@ -40,9 +40,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         pass
 
     def find_split(self) -> Tuple[int, str]:
-        """Identifies a (character, mutation) pair on which to split.
+        """Identifies a (character, state) pair on which to split.
 
-        Identifies the most (character, mutation) pair that was most likely to
+        Identifies the most (character, state) pair that was most likely to
         have occurred earliest in the phylogeny. Without priors, this is simply
         the most frequently occurring mutation. With priors, this is is the most
         frequently occurring rare mutation (i.e. frequencies are weighted by a
@@ -52,11 +52,18 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def perform_split(
         self, samples: List[int], split: Tuple[int, str]
-    ) -> Tuple[nx.DiGraph, nx.DiGraph]:
-        """Performs a partition based on the (character, mutation) pair.
+    ) -> Tuple[List[int], List[int]]:
+        """Performs a partition based on the (character, state) pair.
         
-        Uses the (character, mutation) pair to split the list of samples into
+        Uses the (character, state) pair to split the list of samples into
         two partitions. In doing so, the procedure makes use of the missing
         data classifier passed into the class.
+
+        Args:
+            samples: A list of samples to partition
+            split: A (character, state) tuple to use as the character-split
+        
+        Returns:
+            A tuple of lists, representing the left and right partitions
         """
         pass
