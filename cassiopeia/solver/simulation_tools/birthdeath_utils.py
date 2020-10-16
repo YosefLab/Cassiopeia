@@ -6,10 +6,10 @@ import pickle as pic
 import random
 import scipy.stats as stats
 
-import cassiopeia.TreeSolver.simulation_tools.simulation_utils as sim_utils
-import cassiopeia.TreeSolver.simulation_tools.dataset_generation as data_gen
-from cassiopeia.TreeSolver.Node import Node
-from cassiopeia.TreeSolver.Cassiopeia_Tree import Cassiopeia_Tree
+import cassiopeia.solver.simulation_tools.simulation_utils as sim_utils
+import cassiopeia.solver.simulation_tools.dataset_generation as data_gen
+from cassiopeia.solver.Node import Node
+from cassiopeia.solver.Cassiopeia_Tree import Cassiopeia_Tree
 
 from tqdm import tqdm_notebook
 import matplotlib.pyplot as plt
@@ -259,7 +259,10 @@ def remove_and_prune(node, network):
         network.remove_node(curr_parent)
         curr_parent = next_parent
 
-def overlay_mutation_continuous(network, mutation_prob_map, basal_rate, cassette_size, epsilon, silence_rates):
+def overlay_mutation_continuous(network, num_chars, mutation_prob_map, basal_rate, cassette_size, epsilon, silence_rates):
+    for n in network.nodes:
+        n.char_vec = ['0'] * num_chars
+
     root = [n for n in network if network.in_degree(n) == 0][0]
     network.nodes[root]['parent_lifespan'] = 0
     
@@ -370,10 +373,19 @@ def add_stochastic_leaves(leaves, dropout_prob, cassette_size):
         node.char_vec = sample
         node.char_string = '|'.join([str(char) for char in sample])
 
-def compute_priors(C, S, mean=0.01, disp=0.01, dist = 'empirical'):
+def compute_priors(C, S, mean=0.01, disp=0.01, dist = 'full'):
+    assert(dist in ['full', 'down-sampled', 'negative-binomial', 'exponential'])
     prior_probabilities = {}
     
-    if dist == 'empirical':
+    if dist == 'full':
+        sampled_probabilities = pic.load(open("/data/yosef2/users/richardz/projects/notebooks/full_indel_dist.pkl", "rb"))
+        prior_probabilities = {}
+        for i in range(0, C):
+            prior_probabilities[i] = {}
+            for j in range(1, len(sampled_probabilities)+1):
+                prior_probabilities[i][str(j)] = sampled_probabilities[str(j)]
+
+    elif dist == 'down-sampled':
         indel_probs = pd.read_csv('/data/yosef2/users/mattjones/projects/metastasis/JQ19/5k/trees/ALL.5k.indel_priors.txt', sep = '\t', index_col = 0)
         total = sum(list(indel_probs['freq']))
         freqs = list(map(lambda x: x / (1.0 * total), list(indel_probs['freq'])))
@@ -393,9 +405,9 @@ def compute_priors(C, S, mean=0.01, disp=0.01, dist = 'empirical'):
     
     else:
         for i in range(0, C):
-            if dist == 'negative binomial':
+            if dist == 'negative-binomial':
                 sampled_probabilities = sorted([np.random.negative_binomial(mean,disp) for _ in range(1,S+1)])
-            elif dist == 'exponential':
+            else:
                 sampled_probabilities = sorted([np.random.exponential(mean) for _ in range(1,S+1)])
 
             total = np.sum(sampled_probabilities)
@@ -408,17 +420,51 @@ def compute_priors(C, S, mean=0.01, disp=0.01, dist = 'empirical'):
 
     return prior_probabilities
 
+# def post_process_tree(network):
+#     root = [n for n in network if network.in_degree(n) == 0][0]
+#     succs = []
+#     for node in network.successors(root):
+#         succs.append(node)
+#     if len(succs) == 1:
+#         for node in succs:
+#             t = network.nodes[node]['parent_lifespan']
+#             for i in network.successors(node):
+#                 network.add_edge(root, i)
+#                 network.nodes[i]['parent_lifespan'] += t
+#                 succs.append(i)
+#             network.remove_node(node)
+#             succs.remove(node)
+#     for node in succs:
+#         post_process_helper(network, node, root)
+    
+# def post_process_helper(network, node, parent):
+#     succs = []
+#     for i in network.successors(node):
+#         succs.append(i)
+#     if len(succs) == 1:
+#         t = network.nodes[node]['parent_lifespan']
+#         network.remove_node(node)
+#         for i in succs:
+#             network.add_edge(parent, i)
+#             network.nodes[i]['parent_lifespan'] += t
+#             post_process_helper(network, i, parent)
+#     else:
+#         for i in succs:
+#             post_process_helper(network, i, node)
+
+#####################
+
 def post_process_tree(network):
     root = [n for n in network if network.in_degree(n) == 0][0]
     succs = []
     for node in network.successors(root):
         succs.append(node)
-    if len(succs) == 1:
+    while len(succs) < 2:
         for node in succs:
-            t = network.nodes[node]['parent_lifespan']
+            t = network.get_edge_data(root, node)['weight']
             for i in network.successors(node):
-                network.add_edge(root, i)
-                network.nodes[i]['parent_lifespan'] += t
+                t_ = network.get_edge_data(node, i)['weight']
+                network.add_edge(root, i, weight = t + t_)
                 succs.append(i)
             network.remove_node(node)
             succs.remove(node)
@@ -430,15 +476,17 @@ def post_process_helper(network, node, parent):
     for i in network.successors(node):
         succs.append(i)
     if len(succs) == 1:
-        t = network.nodes[node]['parent_lifespan']
-        network.remove_node(node)
+        t = network.get_edge_data(parent, node)['weight']
         for i in succs:
-            network.add_edge(parent, i)
-            network.nodes[i]['parent_lifespan'] += t
+            t_ = network.get_edge_data(node, i)['weight']
+            network.add_edge(parent, i, weight = t + t_)
             post_process_helper(network, i, parent)
+        network.remove_node(node)
     else:
         for i in succs:
             post_process_helper(network, i, node)
+
+#######################
 
 def longest_path(network, node, total, ans):
     if network.out_degree(node) == 0:
@@ -490,16 +538,20 @@ def count_edge_mutations_helper(network, node, muts_dist, parent_vec, depth):
     for n in network.successors(node):
         count_edge_mutations_helper(network, n, muts_dist, node.char_vec, depth + 1)
 
-def construct_topology(num_chars, div_rate, death_rate, fitness = None, fit_base = None, num_leaves = None, time = None):
+def construct_topology(div_rate, death_rate, fitness = None, fit_base = None, num_leaves = None, time = None):
     
-    if time == None:
+    if fitness == 0 or fit_base == 1:
+        fitness = None
+        fit_base = None
+
+    if time == None and num_leaves:
         if fitness == None:
             test = robjects.r('''
                 require(TreeSimGM, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
                 require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
                 test <- function ()
                 {
-                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''', 
+                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''',
                     waitsp="rexp(''' + str(div_rate) + ''')", 
                     waitext="rexp(''' + str(death_rate) + ''')", complete = FALSE)
                     write.tree(yule[[1]], file = "", append = FALSE, digits = 10, tree.names = FALSE)
@@ -512,7 +564,7 @@ def construct_topology(num_chars, div_rate, death_rate, fitness = None, fit_base
                 require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
                 test <- function ()
                 {
-                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''', 
+                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''',
                     waitsp="rexp(''' + str(div_rate) + ''')", 
                     waitext="rexp(''' + str(death_rate) + ''')",
                     shiftsp=list(prob=''' + str(fitness) + ''', strength="''' + str(fit_base) + '''**runif(-1,1)"),
@@ -522,7 +574,110 @@ def construct_topology(num_chars, div_rate, death_rate, fitness = None, fit_base
                 test()
                 ''')
         
-    elif num_leaves == None:
+    elif num_leaves == None and time:
+        try:
+            if fitness == None:
+                test = robjects.r('''
+                    require(TreeSimGM, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                    require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                    test <- function ()
+                    {
+                        yule <- sim.age(1, age=''' + str(time) + ''', 
+                        waitsp="rexp(''' + str(div_rate) + ''')", 
+                        waitext="rexp(''' + str(death_rate) + ''')", complete = FALSE)
+                        write.tree(yule[[1]], file = "", append = FALSE, digits = 10, tree.names = FALSE)
+                    }
+                    test()
+                    ''')
+            else:
+                test = robjects.r('''
+                    require(TreeSimGM, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                    require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                    test <- function ()
+                    {
+                        yule <- sim.age(1, age=''' + str(time) + ''', 
+                        waitsp="rexp(''' + str(div_rate) + ''')", 
+                        waitext="rexp(''' + str(death_rate) + ''')",
+                        shiftsp=list(prob=''' + str(fitness) + ''', strength="''' + str(fit_base) + '''**runif(-1,1)"),
+                        complete = FALSE)
+                        write.tree(yule[[1]], file = "", append = FALSE, digits = 10, tree.names = FALSE)
+                    }
+                    test()
+                    ''')
+        except Exception as e:
+            if e.__class__.__name__ == 'RRuntimeError':          
+                print("R Error: likely that lineage fully deceased by the end of experiment, no samples generated")
+                return None, []
+        
+    else:
+        print("Please specify either a time length of experiment or a number of cells desired")
+        return
+    
+    for string in test.items():
+        string
+        
+    tree = Phylo.read(StringIO(string[1]), 'newick')
+    network = Phylo.to_networkx(tree)
+    network = network.to_directed()
+    prune_directed_graph(network)
+
+    rdict = {}
+    i = 0
+    for n in network.nodes:
+        nn = Node("StateNode" + str(i), ['0'], pid = i, is_target=False)
+        i += 1
+        rdict[n] = nn
+
+    network = nx.relabel_nodes(network, rdict, copy=False)
+    
+    leaves = [n for n in network if network.out_degree(n) == 0 and network.in_degree(n) == 1] 
+    
+    state_tree = Cassiopeia_Tree('simulated', network = network)
+    return state_tree, leaves
+
+def construct_topology_gsa(num_chars, div_rate, death_rate, fitness = None, fit_base = None, num_leaves = None, time = None, subsampling_prop = None):
+    
+    if fitness == 0 or fit_base == 1:
+        fitness = None
+        fit_base = None
+
+    if subsampling_prop and num_leaves:
+        total_samples = round(num_leaves/subsampling_prop)
+
+    if time == None and num_leaves:
+        if fitness == None:
+  
+            test = robjects.r('''
+                require(TreeSimGM, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                test <- function ()
+                {
+                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''',
+                    m=''' + str(total_samples) + ''',
+                    waitsp="rexp(''' + str(div_rate) + ''')", 
+                    waitext="rexp(''' + str(death_rate) + ''')", complete = FALSE, gsa = TRUE)
+                    write.tree(yule[[1]], file = "", append = FALSE, digits = 10, tree.names = FALSE)
+                }
+                test()
+                ''')
+        else:
+            test = robjects.r('''
+                require(TreeSimGM, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                require(ape, lib.loc = '~/richardz/anaconda2/envs/python3_6/lib/R/library')
+                test <- function ()
+                {
+                    yule <- sim.taxa(1, n=''' + str(num_leaves) + ''',
+                    m=''' + str(total_samples) + ''', 
+                    waitsp="rexp(''' + str(div_rate) + ''')", 
+                    waitext="rexp(''' + str(death_rate) + ''')",
+                    shiftsp=list(prob=''' + str(fitness) + ''', strength="''' + str(fit_base) + '''**runif(-1,1)"),
+                    complete = FALSE, gsa = TRUE)
+                    write.tree(yule[[1]], file = "", append = FALSE, digits = 10, tree.names = FALSE)
+                }
+                test()
+                ''')
+        
+    elif num_leaves == None and time:
         try:
             if fitness == None:
                 test = robjects.r('''

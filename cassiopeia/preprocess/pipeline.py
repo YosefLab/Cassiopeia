@@ -724,7 +724,6 @@ def filter_molecule_table(
 
 def call_lineage_groups(
     input_df: pd.DataFrame,
-    out_fn: str,
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
@@ -734,7 +733,7 @@ def call_lineage_groups(
     kinship_thresh: float = 0.25,
     verbose: bool = False,
     plot: bool = False,
-):
+) -> pd.DataFrame:
     """Assigns cells to their clonal populations.
 
     Performs multiple rounds of filtering and assigning to lineage groups:
@@ -757,7 +756,6 @@ def call_lineage_groups(
     Args:
         input_df: The allele table of cellBC-UMI-allele groups to be annotated
             with lineage assignments
-        out_fn: The file name of the final table
         output_directory: The folder to store the final table as well as plots
         min_umi_per_cell: The threshold specifying the minimum number of UMIs a
             cell needs in order to not be filtered during filtering
@@ -830,25 +828,25 @@ def call_lineage_groups(
     )
 
     logging.info("Annotating alignment table with refined lineage groups...")
-    at = l_utils.annotate_lineage_groups(
+    allele_table = l_utils.annotate_lineage_groups(
         input_df, kinship_scores, master_intBCs
     )
     if inter_doublet_threshold:
         logging.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
-        at = d_utils.filter_inter_doublets(
-            at, rule=inter_doublet_threshold, verbose=verbose
+        allele_table = d_utils.filter_inter_doublets(
+            allele_table, rule=inter_doublet_threshold, verbose=verbose
         )
 
     logging.info(
         "Filtering out low proportion intBCs in finalized lineage groups..."
     )
     filtered_lgs = l_utils.filter_intbcs_final_lineages(
-        at, min_intbc_thresh=min_intbc_thresh
+        allele_table, min_intbc_thresh=min_intbc_thresh
     )
 
-    at = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
+    allele_table = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
 
     if verbose:
         logging.info("Final lineage group assignments:")
@@ -858,29 +856,29 @@ def call_lineage_groups(
             )
 
     logging.info("Filtering out low UMI cell barcodes...")
-    at = utilities.filter_cells(
-        at,
+    allele_table = utilities.filter_cells(
+        allele_table,
         min_umi_per_cell=int(min_umi_per_cell),
         min_avg_reads_per_umi=min_avg_reads_per_umi,
         verbose=verbose,
     )
-    at["lineageGrp"] = at["lineageGrp"].astype(int)
+    allele_table["lineageGrp"] = allele_table["lineageGrp"].astype(int)
 
     final_time = time.time()
     logging.info(f"Finished filtering alignments in {final_time - t0}.")
 
-    at.to_csv(output_directory + "/" + out_fn, sep="\t", index=False)
-
     if plot:
         logging.info("Producing Plots...")
         at_pivot_I = pd.pivot_table(
-            at, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
+            allele_table, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
         )
         at_pivot_I.fillna(value=0, inplace=True)
         at_pivot_I[at_pivot_I > 0] = 1
 
         logging.info("Producing pivot table heatmap...")
-        l_utils.plot_overlap_heatmap(at, at_pivot_I, output_directory)
+        l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
 
         logging.info("Plotting filtered lineage group pivot table heatmap...")
-        l_utils.plot_overlap_heatmap_lg(at, at_pivot_I, output_directory)
+        l_utils.plot_overlap_heatmap_lg(allele_table, at_pivot_I, output_directory)
+
+    return allele_table
