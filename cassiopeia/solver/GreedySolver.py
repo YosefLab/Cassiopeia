@@ -6,7 +6,7 @@ recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import CassiopeiaSolver
 
