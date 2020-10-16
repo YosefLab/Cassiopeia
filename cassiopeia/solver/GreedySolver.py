@@ -7,7 +7,7 @@ presence, or absence, of the most frequently occurring mutation.
 """
 import abc
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from cassiopeia.solver import CassiopeiaSolver
 
@@ -34,5 +34,16 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         
         Returns:
             A tuple of lists, representing the left and right partitions
+        """
+        pass
+    
+    def compute_mutation_frequencies(self, samples: List[int]) -> pd.DataFrame:
+        """Computes the frequency of mutations in the list of samples.
+
+        Args:
+            samples: A list of samples
+
+        Returns:
+            A dataframe mapping mutations to frequencies.
         """
         pass
