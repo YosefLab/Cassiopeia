@@ -12,7 +12,6 @@ from cassiopeia.solver import GreedySolver
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
-
     def __init__(
         self,
         character_matrix: pd.DataFrame,
@@ -26,7 +25,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
 
         self.missing_data_classifier = missing_data_classifier
         self.fuzzy_solver = fuzzy_solver
-    
+
     def solve(self):
         """Implements the solver routine for Cassiopeia-Greedy
 

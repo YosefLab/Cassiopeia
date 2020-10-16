@@ -13,7 +13,6 @@ from cassiopeia.solver import CassiopeiaSolver
 
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
-
     def __init__(
         self,
         character_matrix: pd.DataFrame,
@@ -24,9 +23,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         super().__init__(character_matrix, meta_data, priors)
 
     @abc.abstractmethod
-    def perform_split(
-        self, samples: List[int]
-    ) -> Tuple[List[int], List[int]]:
+    def perform_split(self, samples: List[int]) -> Tuple[List[int], List[int]]:
         """Performs a partition of the samples.
 
         Args:
@@ -36,7 +33,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             A tuple of lists, representing the left and right partitions
         """
         pass
-    
+
+    def solve(self):
+        """Implements a top-down greedy solving procedure.
+        """
+        raise NotImplementedError()
+
     def compute_mutation_frequencies(self, samples: List[int]) -> pd.DataFrame:
         """Computes the frequency of mutations in the list of samples.
 
@@ -46,4 +48,4 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A dataframe mapping mutations to frequencies.
         """
-        pass
+        raise NotImplementedError()
