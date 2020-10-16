@@ -160,6 +160,7 @@ def resolve_umi_sequence(
         plt.xlabel("Number of Unique Seqs")
         plt.ylabel("Count (Log)")
         plt.savefig(os.path.join(output_directory, "seqs_per_equivClass.png"))
+        plt.close()
 
     # ----------------- Select most abundant sequence ------------------ #
 
