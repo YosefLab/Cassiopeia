@@ -21,14 +21,12 @@ class CassiopeiaSolver(abc.ABC):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        unedit_char: str,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None
     ):
 
         self.character_matrix = character_matrix
-        self.unedit_char = unedit_char
         self.missing_char = missing_char
         self.meta_data = meta_data
         self.priors = priors

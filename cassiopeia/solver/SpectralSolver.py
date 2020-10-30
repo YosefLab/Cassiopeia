@@ -12,7 +12,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        unedit_char: str,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
@@ -20,7 +19,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         weights: Optional[Dict] = None
     ):
 
-        super().__init__(character_matrix, unedit_char, missing_char, meta_data, priors)
+        super().__init__(character_matrix, missing_char, meta_data, priors)
 
         self.threshold = threshold
         self.weights = weights
