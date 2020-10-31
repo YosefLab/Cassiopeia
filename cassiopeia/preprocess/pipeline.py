@@ -483,7 +483,7 @@ def error_correct_umis(
     allele_groups = sorted_df.groupby(["cellBC", "intBC"])
 
     allele_groups = progress(
-        allele_groups, total=total, desc="Error-correcting UMIs"
+        allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
     )
 
     for fields, allele_group in allele_groups:
