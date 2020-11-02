@@ -31,7 +31,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         dissimilarity_function: Callable = None,
     ):
 
-        if not (dissimilarity_function or dissimilarity_map):
+        if dissimilarity_function is None and dissimilarity_map is None:
             raise DistanceSolveError(
                 "Please specify a dissimilarity map or dissimilarity function"
             )
@@ -41,7 +41,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function
 
-        if not self.dissimilarity_map:
+        if self.dissimilarity_map is None:
 
             N = self.character_matrix.shape[0]
             dissimilarity_map = np.zeros((N, N))
@@ -81,7 +81,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # instantiate a tree where all samples appear as leaves.
         tree = nx.DiGraph()
-        tree.add_nodes_from(range(N))
+        tree.add_nodes_from(self.character_matrix.index)
 
         while N > 2:
 

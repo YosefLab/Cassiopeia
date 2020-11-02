@@ -99,10 +99,12 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             updated_map.loc[v, new_node] = updated_map.loc[new_node, v] = (
                 0.5
                 * (
-                    self.dissimilarity_map.loc[v, cherry[0]]
-                    + self.dissimilarity_map.loc[v, cherry[1]]
-                    - self.dissimilarity_map.loc[cherry[0], cherry[1]]
+                    dissimilarity_map.loc[v, cherry[0]]
+                    + dissimilarity_map.loc[v, cherry[1]]
+                    - dissimilarity_map.loc[cherry[0], cherry[1]]
                 )
             )
+
+        updated_map.loc[new_node, new_node] = 0
 
         return updated_map
