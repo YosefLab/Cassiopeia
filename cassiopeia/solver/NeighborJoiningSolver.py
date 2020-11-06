@@ -74,9 +74,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         n = dissimilarity_map.shape[0]
         for i in range(n):
             for j in range(i):
-                q[i, j] = q[j, i] = (dissimilarity_map[i, j]) - 1 / (n - 2) * (
-                    dissimilarity_map[i, :].sum()
-                    - dissimilarity_map[j, :].sum()
+                q[i, j] = q[j, i] = (dissimilarity_map[i, j]) - (
+                    1
+                    / (n - 2)
+                    * (
+                        dissimilarity_map[i, :].sum()
+                        + dissimilarity_map[j, :].sum()
+                    )
                 )
         return q
 

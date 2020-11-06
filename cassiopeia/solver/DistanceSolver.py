@@ -52,7 +52,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 for j in range(i + 1, character_matrix.shape[0]):
 
                     ind2 = self.character_matrix.iloc[j, :].values
-                    dissimilarity_map[i, j] = dissimilarity_map[j, i] = self.dissimilarity_function(ind1, ind2)
+                    dissimilarity_map[i, j] = dissimilarity_map[
+                        j, i
+                    ] = self.dissimilarity_function(ind1, ind2)
 
             self.dissimilarity_map = pd.DataFrame(
                 dissimilarity_map,
@@ -71,17 +73,19 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.tree instance variable.
         """
 
-        N = self.character_matrix.shape[0]
+        N = self.dissimilarity_map.shape[0]
 
-        identifier_to_sample = dict(zip([str(i) for i in range(N)], self.character_matrix.index))
+        identifier_to_sample = dict(
+            zip([str(i) for i in range(N)], self.dissimilarity_map.index)
+        )
 
         # instantiate a dissimilarity map that can be updated as we join
         # together nodes.
         _dissimilarity_map = self.dissimilarity_map.copy()
 
         # instantiate a tree where all samples appear as leaves.
-        tree = nx.DiGraph()
-        tree.add_nodes_from(self.character_matrix.index)
+        tree = nx.Graph()
+        tree.add_nodes_from(self.dissimilarity_map.index)
 
         while N > 2:
 
@@ -95,7 +99,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             new_node_name = str(len(tree.nodes))
             tree.add_node(new_node_name)
-            tree.add_edges_from([(new_node_name, node_i), (new_node_name, node_j)])
+            tree.add_edges_from(
+                [(new_node_name, node_i), (new_node_name, node_j)]
+            )
 
             _dissimilarity_map = self.update_dissimilarity_map(
                 _dissimilarity_map, (node_i, node_j), new_node_name
@@ -103,10 +109,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             N = _dissimilarity_map.shape[0]
 
-        new_node_name = len(tree.nodes)
-        tree.add_node(new_node_name)
+        # new_node_name = len(tree.nodes)
+        # tree.add_node(new_node_name)
+        # tree.add_edges_from(
+        #     [(new_node_name, i) for i in _dissimilarity_map.index]
+        # )
 
-        tree.add_edges_from([(new_node_name, i) for i in _dissimilarity_map.index])
+        remaining_samples = _dissimilarity_map.index.values
+        tree.add_edge(remaining_samples[0], remaining_samples[1])
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
         self.tree = tree
@@ -131,7 +141,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
-        new_node: str
+        new_node: str,
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
         
