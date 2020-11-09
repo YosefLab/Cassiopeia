@@ -1,22 +1,33 @@
-import os
 import unittest
 
 import networkx as nx
 import pandas as pd
-from pathlib import Path
 
-import cassiopeia.solver.GreedySolver as gs
+import cassiopeia.solver.solver_utilities as s_utils
 
 
-def collapse_tree_recon(T, cm):
+def collapse_tree(
+    T: nx.DiGraph,
+    infer_ancestral_characters: bool,
+    cm: pd.DataFrame = None,
+    missing_char: str = None,
+):
     leaves = [n for n in T if T.out_degree(n) == 0 and T.in_degree(n) == 1]
-    char_map = {}
-    for i in leaves:
-        char_map[i] = list(cm.iloc[i, :])
-
     root = [n for n in T if T.in_degree(n) == 0][0]
-    gs.annotate_internal_nodes(T, root, char_map)
-    gs.collapse_edges_recon(T, root, char_map)
+    char_map = {}
+
+    # Populates the internal annotations using either the ground truth
+    # annotations, or infers them
+    if s_utils.infer_ancestral_characters:
+        for i in leaves:
+            char_map[i] = list(cm.iloc[i, :])
+        s_utils.infer_ancestral_characters(T, root, char_map, missing_char)
+    else:
+        for i in T.nodes():
+            char_map[i] = i.char_vec
+
+    # Calls helper function on root, passing in the mapping dictionary
+    s_utils.collapse_edges(T, root, char_map)
     return char_map
 
 
@@ -38,7 +49,7 @@ class TestCollapseEdges(unittest.TestCase):
             [0, 0, 1, 0, 3],
         ]
         cm = pd.DataFrame(table)
-        char_map = collapse_tree_recon(T, cm)
+        char_map = collapse_tree(T, True, cm)
         new_map = {}
         for i in T:
             new_map[i] = "|".join([str(c) for c in char_map[i]])
@@ -74,7 +85,7 @@ class TestCollapseEdges(unittest.TestCase):
             [0, 0, 1, 2, 1],
         ]
         cm = pd.DataFrame(table)
-        char_map = collapse_tree_recon(T, cm)
+        char_map = collapse_tree(T, True, cm)
         new_map = {}
         for i in T:
             new_map[i] = "|".join([str(c) for c in char_map[i]])

@@ -10,7 +10,7 @@ import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import utils
+from cassiopeia.solver import solver_utilities as utils
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
@@ -18,9 +18,9 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         self,
         character_matrix: pd.DataFrame,
         missing_char: str,
+        missing_data_classifier: Union[Callable, str],
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        missing_data_classifier = Union[Callable, str],
         fuzzy_solver: bool = False,
     ):
 
@@ -30,93 +30,136 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         self.fuzzy_solver = fuzzy_solver
 
     def perform_split(
-        self, samples: List[int] = None
+        self,
+        samples: List[int] = None,
     ) -> Tuple[List[int], List[int]]:
         """Performs a partition based on the most frequent (character, state) pair.
-        
+
         Uses the (character, state) pair to split the list of samples into
         two partitions. In doing so, the procedure makes use of the missing
         data classifier passed into the class.
 
         Args:
             samples: A list of samples to partition
-        
+
         Returns:
             A tuple of lists, representing the left and right partitions
         """
         if not samples:
             samples = list(range(self.prune_cm.shape[0]))
-        F = utils.compute_mutation_frequencies(samples)
+        F = utils.compute_mutation_frequencies(
+            self.prune_cm, self.missing_char, samples
+        )
         freq = 0
         char = 0
         state = 0
         for i in F:
             for j in F[i]:
-                if j != self.missing_char and j != '0':
-                    if F[i][j] > freq and F[i][j] < len(samples) - F[i][self.missing_char]:
-                        char, state = i,j
+                if j != self.missing_char and j != "0":
+                    if (
+                        F[i][j] > freq
+                        and F[i][j] < len(samples) - F[i][self.missing_char]
+                    ):
+                        char, state = i, j
                         freq = F[i][j]
         if freq == 0:
             return self.random_nontrivial_cut(samples)
-        S = []
-        Sc = []
+        left_set = []
+        right_set = []
         missing = []
 
         for i in samples:
             if self.prune_cm.iloc[i, char] == state:
-                S.append(i)
-            elif self.prune_cm.iloc[i, char] == -1:
+                left_set.append(i)
+            elif self.prune_cm.iloc[i, char] == self.missing_char:
                 missing.append(i)
             else:
-                Sc.append(i)
-        
-        S, Sc = self.assign_missing_average(S, Sc, missing)
-            
-        return S, Sc
+                right_set.append(i)
 
-    def random_nontrivial_cut(self, samples):
+        left_set, right_set = self.assign_missing_average(
+            left_set, right_set, missing
+        )
+
+        return left_set, right_set
+
+    def random_nontrivial_cut(
+        self, samples: List[int]
+    ) -> Tuple[List[int], List[int]]:
+        """Performs a random partition of the samples, but garuntees that both
+        sides of the partition contain at least one sample.
+
+        Args:
+            samples: A list of samples to paritition
+
+        Returns:
+            A tuple of lists, representing the left and right partitions
+        """
         assert len(samples) > 1
-        S = []
-        Sc = []
-        S.append(samples[0])
-        Sc.append(samples[1])
-        for i in range(2,len(samples)):
+        left_set = []
+        right_set = []
+        left_set.append(samples[0])
+        right_set.append(samples[1])
+        for i in range(2, len(samples)):
             if np.random.random() > 0.5:
-                S.append(samples[i])
+                left_set.append(samples[i])
             else:
-                Sc.append(samples[i])
-        return S, Sc
+                right_set.append(samples[i])
+        return left_set, right_set
 
-    def assign_missing_average(self, S, Sc, missing):
+    def assign_missing_average(
+        self, left_set: List[int], right_set: List[int], missing: List[int]
+    ) -> Tuple[List[int], List[int]]:
+        """Implements the "Average" missing data imputation method.
+
+        An on-the-fly missing data imputation method for the Vanilla Greedy
+        Solver. It takes in a set of samples that have a missing value at the
+        character chosen to split on in a partition. For each of these samples,
+        it calculates the average number of mutations that samples on each side
+        of the partition share with it and places the sample on the side with
+        the higher value.
+
+        Args:
+            left_set: A list of the samples on the left of the partition
+            right_set: A list of the samples on the right of the partition
+            missing: A list of samples with missing data to be imputed
+
+        Returns:
+            A tuple of lists, representing the left and right partitions with
+            missing samples imputed
+        """
         for i in missing:
-            s_score = 0
-            sc_score = 0
+            left_score = 0
+            right_score = 0
 
-            subset_cm = self.prune_cm.iloc[S, :]
+            subset_cm = self.prune_cm.iloc[left_set, :]
             for char in range(self.prune_cm.shape[1]):
                 state = self.prune_cm.iloc[i, char]
-                if state != self.missing_char and state != '0':
-                    state_counts = np.unique(subset_cm.iloc[:,char], return_counts = True)
+                if state != self.missing_char and state != "0":
+                    state_counts = np.unique(
+                        subset_cm.iloc[:, char], return_counts=True
+                    )
                     ind = np.where(state_counts[0] == state)
                     if len(ind[0]) > 0:
-                        s_score += state_counts[1][ind[0][0]]
+                        left_score += state_counts[1][ind[0][0]]
                     else:
-                        s_score += 0
+                        left_score += 0
 
-            subset_cm = self.prune_cm.iloc[Sc, :]
+            subset_cm = self.prune_cm.iloc[right_set, :]
             for char in range(self.prune_cm.shape[1]):
                 state = self.prune_cm.iloc[i, char]
-                if state != self.missing_char and state != '0':
-                    state_counts = np.unique(subset_cm.iloc[:,char], return_counts = True)
+                if state != self.missing_char and state != "0":
+                    state_counts = np.unique(
+                        subset_cm.iloc[:, char], return_counts=True
+                    )
                     ind = np.where(state_counts[0] == state)
                     if len(ind[0]) > 0:
-                        sc_score += state_counts[1][ind[0][0]]
+                        right_score += state_counts[1][ind[0][0]]
                     else:
-                        sc_score += 0
+                        right_score += 0
 
-            if s_score/len(S) > sc_score/len(Sc):
-                S.append(i)
+            if left_score / len(left_set) > right_score / len(right_set):
+                left_set.append(i)
             else:
-                Sc.append(i)
+                right_set.append(i)
 
-        return S, Sc
+        return left_set, right_set

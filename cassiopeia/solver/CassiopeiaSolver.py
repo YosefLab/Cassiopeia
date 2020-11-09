@@ -23,7 +23,7 @@ class CassiopeiaSolver(abc.ABC):
         character_matrix: pd.DataFrame,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None
+        priors: Optional[Dict] = None,
     ):
 
         self.character_matrix = character_matrix
@@ -34,6 +34,5 @@ class CassiopeiaSolver(abc.ABC):
 
     @abc.abstractmethod
     def solve(self):
-        """Solves the inference problem.
-        """
+        """Solves the inference problem."""
         pass
