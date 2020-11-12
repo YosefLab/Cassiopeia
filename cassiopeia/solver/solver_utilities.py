@@ -5,14 +5,16 @@ import networkx as nx
 from typing import Dict, List, Optional, Tuple
 
 
-def get_lca_characters(vec1: List[str], vec2: List[str], missing_char: str) -> List[str]:
+def get_lca_characters(
+    vec1: List[str], vec2: List[str], missing_char: str
+) -> List[str]:
     """Builds the character vector of the LCA of two character vectors, obeying
     Camin-Sokal Parsimony.
 
-    For each index in the reconstructed vector, imputes the non-missing 
+    For each index in the reconstructed vector, imputes the non-missing
     character if only one of the constituent vectors has a missing value at that
     index, and imputes missing value if both have a missing value at that index.
-    
+
     Args:
         vec1: The first character vector
         vec2: The second character vector
@@ -34,7 +36,9 @@ def get_lca_characters(vec1: List[str], vec2: List[str], missing_char: str) -> L
     return lca_vec
 
 
-def infer_ancestral_characters(T: nx.DiGraph, node: int, char_map: Dict[int, List[str]], missing_char: str):
+def infer_ancestral_characters(
+    T: nx.DiGraph, node: int, char_map: Dict[int, List[str]], missing_char: str
+):
     """Annotates the character vectors of the internal nodes of a reconstructed
     network from the samples, obeying Camin-Sokal Parsimony.
 
@@ -61,15 +65,14 @@ def infer_ancestral_characters(T: nx.DiGraph, node: int, char_map: Dict[int, Lis
     assert len(vecs) == 2
     lca_characters = get_lca_characters(vecs[0], vecs[1], missing_char)
     char_map[node] = lca_characters
-    return
 
 
 def collapse_edges(T: nx.DiGraph, node: int, char_map: Dict[int, List[str]]):
-    """A helper function to help collapse mutationless edges in a tree.
+    """A helper function to collapse mutationless edges in a tree in-place.
 
     Collapses an edge if the character vector of the parent node is identical
     to its daughter, removing the identical daughter and creating edges between
-    the parent and the daughter's children. Does not collapse at the level of 
+    the parent and the daughter's children. Does not collapse at the level of
     the samples. Can create multifurcating trees from strictly binary trees.
 
     Args:
@@ -94,12 +97,16 @@ def collapse_edges(T: nx.DiGraph, node: int, char_map: Dict[int, List[str]]):
             to_remove.append(i)
     for i in to_remove:
         T.remove_node(i)
-    return
 
 
-def collapse_tree(T: nx.DiGraph, infer_ancestral_characters: bool, cm: pd.DataFrame = None, missing_char: str = None):
-    """Collapses mutationless edges in a tree. 
-    
+def collapse_tree(
+    T: nx.DiGraph,
+    infer_ancestral_characters: bool,
+    cm: pd.DataFrame = None,
+    missing_char: str = None,
+):
+    """Collapses mutationless edges in a tree in-place.
+
     Uses the internal node annotations of a tree to collapse edges with no
     mutations. Either takes in a tree with internal node annotations or
     a tree without annotations and infers the annotations bottom-up from the
@@ -112,13 +119,13 @@ def collapse_tree(T: nx.DiGraph, infer_ancestral_characters: bool, cm: pd.DataFr
 
     Returns:
         None, operates on the tree destructively
-    
+
     """
     leaves = [n for n in T if T.out_degree(n) == 0 and T.in_degree(n) == 1]
     root = [n for n in T if T.in_degree(n) == 0][0]
     char_map = {}
 
-    # Populates the internal annotations using either the ground truth 
+    # Populates the internal annotations using either the ground truth
     # annotations, or infers them
     if infer_ancestral_characters:
         for i in leaves:
@@ -130,43 +137,7 @@ def collapse_tree(T: nx.DiGraph, infer_ancestral_characters: bool, cm: pd.DataFr
 
     # Calls helper function on root, passing in the mapping dictionary
     collapse_edges(T, root, char_map)
-    
+
 
 def post_process_tree(T, cm):
     raise NotImplementedError()
-
-
-def compute_mutation_frequencies(
-    cm: pd.DataFrame, missing_char: str, samples: List[int] = None
-) -> Dict[int, Dict[int, int]]:
-    """Computes the number of samples in a character matrix that have each
-    character/state mutation.
-
-    Generates a dictionary that maps each character to a dictionary of state/
-    sample frequency pairs, allowing quick lookup. Subsets the character matrix
-    to only include the samples in the sample set.
-
-    Args:
-        cm: The character matrix from which to calculate frequencies
-        missing_char: The character representing missing values
-        samples: The set of relevant samples in calculating frequencies
-
-    Returns:
-        A dictionary containing frequency information for each character/state
-        pair
-
-    """
-    if samples:
-        cm = cm.iloc[samples, :]
-    freq_dict = {}
-    for char in range(cm.shape[1]):
-        char_dict = {}
-        state_counts = np.unique(cm.iloc[:, char], return_counts=True)
-        for i in range(len(state_counts[0])):
-            state = state_counts[0][i]
-            count = state_counts[1][i]
-            char_dict[state] = count
-        if missing_char not in char_dict:
-            char_dict[missing_char] = 0
-        freq_dict[char] = char_dict
-    return freq_dict
