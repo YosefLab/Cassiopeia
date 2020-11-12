@@ -10,7 +10,6 @@ import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import solver_utilities as utils
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
@@ -31,6 +30,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
 
     def perform_split(
         self,
+        mutation_frequencies: Dict[int, Dict[str, int]],
         samples: List[int] = None,
     ) -> Tuple[List[int], List[int]]:
         """Performs a partition based on the most frequent (character, state) pair.
@@ -40,6 +40,9 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         data classifier passed into the class.
 
         Args:
+            mutation_frequencies: A dictionary containing the frequencies of
+                each character/state pair that appear in the character matrix
+                restricted to the sample set
             samples: A list of samples to partition
 
         Returns:
@@ -47,23 +50,20 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         """
         if not samples:
             samples = list(range(self.prune_cm.shape[0]))
-        F = utils.compute_mutation_frequencies(
-            self.prune_cm, self.missing_char, samples
-        )
         freq = 0
         char = 0
         state = 0
-        for i in F:
-            for j in F[i]:
+        for i in mutation_frequencies:
+            for j in mutation_frequencies[i]:
                 if j != self.missing_char and j != "0":
                     if (
-                        F[i][j] > freq
-                        and F[i][j] < len(samples) - F[i][self.missing_char]
+                        mutation_frequencies[i][j] > freq
+                        and mutation_frequencies[i][j]
+                        < len(samples)
+                        - mutation_frequencies[i][self.missing_char]
                     ):
                         char, state = i, j
-                        freq = F[i][j]
-        if freq == 0:
-            return self.random_nontrivial_cut(samples)
+                        freq = mutation_frequencies[i][j]
         left_set = []
         right_set = []
         missing = []
@@ -80,6 +80,8 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             left_set, right_set, missing
         )
 
+        if len(left_set) == 0 or len(right_set) == 0:
+            return self.random_nontrivial_cut(samples)
         return left_set, right_set
 
     def random_nontrivial_cut(
