@@ -1,20 +1,13 @@
-import sys 
 import networkx as nx
 import pandas as pd
 import numpy as np
 import pickle as pic
 import random
-import scipy.stats as stats
 
-import cassiopeia.solver.simulation_tools.simulation_utils as sim_utils
-import cassiopeia.solver.simulation_tools.dataset_generation as data_gen
 from cassiopeia.solver.Node import Node
 from cassiopeia.solver.Cassiopeia_Tree import Cassiopeia_Tree
 
 from tqdm import tqdm_notebook
-import matplotlib.pyplot as plt
-
-import subprocess
 
 from Bio import Phylo as Phylo
 from io import StringIO
@@ -460,14 +453,14 @@ def post_process_tree(network):
     for node in network.successors(root):
         succs.append(node)
     while len(succs) < 2:
-        for node in succs:
-            t = network.get_edge_data(root, node)['weight']
-            for i in network.successors(node):
-                t_ = network.get_edge_data(node, i)['weight']
-                network.add_edge(root, i, weight = t + t_)
-                succs.append(i)
-            network.remove_node(node)
-            succs.remove(node)
+        node = succs[0]
+        t = network.get_edge_data(root, node)['weight']
+        for i in network.successors(node):
+            t_ = network.get_edge_data(node, i)['weight']
+            network.add_edge(root, i, weight = t + t_)
+            succs.append(i)
+        network.remove_node(node)
+        succs.remove(node)
     for node in succs:
         post_process_helper(network, node, root)
     

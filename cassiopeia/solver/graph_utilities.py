@@ -4,11 +4,67 @@ import itertools
 from cassiopeia.solver import solver_utilities as utils
 
 
-def check_if_cut(u, v, S):
+def check_if_cut(u, v, S: list) -> bool:
+    """A simple function to check if two nodes are on opposite sides of a graph
+    partition.
+
+    Args:
+        u: The first node
+        v: The second node
+        S: A set identifying the nodes on one side of the partition
+
+    Returns:
+        Whether nodes u and v are on the same side of the partition
+    """
     return ((u in S) and (not v in S)) or ((v in S) and (not u in S))
 
 
+def construct_connectivity_graph(cm, missing_char, samples=None, w=None):
+    """
+    """
+    G = nx.Graph()
+    if not samples:
+        samples = range(cm.shape[0])
+    for i in samples:
+        G.add_node(i)
+    F = utils.compute_mutation_frequencies(cm, missing_char, samples)
+    for i, j in itertools.combinations(samples, 2):
+        # compute simularity scores
+        score = 0
+        for l in range(cm.shape[1]):
+            x = cm.iloc[i, l]
+            y = cm.iloc[j, l]
+            if (x != missing_char and y != missing_char) and (x != "0" or y != "0"):
+                if w is not None:
+                    if x == y:
+                        score -= (
+                            3 * w[l][x] * (len(samples) - F[l][x] - F[l][missing_char])
+                        )
+                    elif x == "0" or y == "0":
+                        score += w[l][max(x, y)] * (F[l][max(x, y)] - 1)
+                    else:
+                        score += w[l][x] * (F[l][x] - 1) + w[l][y] * (F[l][y] - 1)
+                else:
+                    if x == y:
+                        score -= 3 * (len(samples) - F[l][x] - F[l][missing_char])
+                    elif x == "0" or y == "0":
+                        score += F[l][max(x, y)] - 1
+                    else:
+                        score += F[l][x] + F[l][y] - 2
+
+            if score != 0:
+                G.add_edge(i, j, weight=score)
+    return G
+
+
 def max_cut_improve_cut(G, S):
+    """A hill-climbing procdure to optimize a partition on a graph for the
+    max-cut criterion.
+
+    The procedure is initialized by calculating the improvement to the max-cut
+    criterion gained by moving each node across the partition. The procedure 
+    then iteratively chooses the node 
+    """
     ip = {}
     new_S = S.copy()
     for i in G.nodes():
@@ -45,42 +101,6 @@ def max_cut_improve_cut(G, S):
         iters += 1
     # print("number of hill climbing interations: ", iters)
     return new_S
-
-
-def construct_connectivity_graph(cm, missing_char, samples=None, w=None):
-    G = nx.Graph()
-    if not samples:
-        samples = range(cm.shape[0])
-    for i in samples:
-        G.add_node(i)
-    F = utils.compute_mutation_frequencies(cm, missing_char, samples)
-    for i, j in itertools.combinations(samples, 2):
-        # compute simularity scores
-        score = 0
-        for l in range(cm.shape[1]):
-            x = cm.iloc[i, l]
-            y = cm.iloc[j, l]
-            if (x != missing_char and y != missing_char) and (x != "0" or y != "0"):
-                if w is not None:
-                    if x == y:
-                        score -= (
-                            3 * w[l][x] * (len(samples) - F[l][x] - F[l][missing_char])
-                        )
-                    elif x == "0" or y == "0":
-                        score += w[l][max(x, y)] * (F[l][max(x, y)] - 1)
-                    else:
-                        score += w[l][x] * (F[l][x] - 1) + w[l][y] * (F[l][y] - 1)
-                else:
-                    if x == y:
-                        score -= 3 * (len(samples) - F[l][x] - F[l][missing_char])
-                    elif x == "0" or y == "0":
-                        score += F[l][max(x, y)] - 1
-                    else:
-                        score += F[l][x] + F[l][y] - 2
-
-            if score != 0:
-                G.add_edge(i, j, weight=score)
-    return G
 
 
 def construct_similarity_graph(cm, missing_char, samples=None, threshold=0, w=None):

@@ -28,7 +28,9 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         self.weights = weights
 
     def perform_split(
-        self, samples: List[int] = None
+        self,
+        mutation_frequencies: Dict[int, Dict[str, int]],
+        samples: List[int] = None,
     ) -> Tuple[List[int], List[int]]:
         """"""
         G = g_utils.construct_connectivity_graph(
