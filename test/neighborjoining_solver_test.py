@@ -13,16 +13,13 @@ from cassiopeia import solver
 
 
 def find_triplet_structure(triplet, T):
-
     a, b, c = triplet[0], triplet[1], triplet[2]
-
     a_ancestors = [node for node in nx.ancestors(T, a)]
     b_ancestors = [node for node in nx.ancestors(T, b)]
     c_ancestors = [node for node in nx.ancestors(T, c)]
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
-
     structure = "-"
     if ab_common > bc_common and ab_common > ac_common:
         structure = "ab"
@@ -36,6 +33,7 @@ def find_triplet_structure(triplet, T):
 class TestNeighborJoiningSolver(unittest.TestCase):
     def setUp(self):
 
+        # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
             {
                 "a": [0, 1, 2],
@@ -61,7 +59,26 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         )
 
         self.nj_solver = solver.NeighborJoiningSolver(
-            cm, dissimilarity_map=delta
+            cm, dissimilarity_map=delta, root_sample="b"
+        )
+
+        # ---------------- Lineage Tracing NJ ----------------
+
+        cm = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 0],
+                "b": [1, 2, 0],
+                "c": [1, 2, 1],
+                "d": [2, 0, 0],
+                "e": [2, 0, 2],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
+
+        delta_fn = lambda x, y: np.sum([x[i] != y[i] for i in range(len(x))])
+        self.nj_pp_solver = solver.NeighborJoiningSolver(
+            cm, dissimilarity_function=delta_fn
         )
 
     def test_constructor(self):
@@ -71,6 +88,26 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         self.assertEqual(delta.shape[0], 5)
         self.assertEqual(delta.shape[1], 5)
         self.assertTrue(np.allclose(delta.values, delta.T))
+        self.assertEqual(self.nj_solver.root_sample, "b")
+
+        # testing PP Neighbor Joining solver
+        delta = self.nj_pp_solver.dissimilarity_map
+        expected_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2, 2, 3, 2],
+                "b": [1, 0, 1, 2, 3, 2],
+                "c": [2, 1, 0, 3, 3, 3],
+                "d": [2, 2, 3, 0, 1, 1],
+                "e": [3, 3, 3, 1, 0, 2],
+                "root": [2, 2, 3, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e", "root"],
+        )
+
+        for i in expected_map.index:
+            for j in expected_map.columns:
+                self.assertEqual(expected_map.loc[i, j], delta.loc[i, j])
 
     def test_compute_q(self):
 
@@ -131,44 +168,50 @@ class TestNeighborJoiningSolver(unittest.TestCase):
                     expected_delta.loc[sample, sample2],
                 )
 
-    def test_solver(self):
+    def test_basic_solver(self):
 
         self.nj_solver.solve()
 
         T = self.nj_solver.tree
 
         # test leaves exist in tree
-        _leaves = [n for n in T if T.degree(n) == 1]
+        _leaves = [n for n in T if T.out_degree(n) == 0]
+
         self.assertEqual(
-            len(_leaves), self.nj_solver.dissimilarity_map.shape[0]
+            len(_leaves), self.nj_solver.dissimilarity_map.shape[0] - 1
         )
-        for sample in self.nj_solver.dissimilarity_map.index.values:
-            self.assertIn(sample, _leaves)
+        for _leaf in _leaves:
+            self.assertIn(_leaf, self.nj_solver.dissimilarity_map.index.values)
 
         # test for expected number of edges
         edges = list(T.edges())
         self.assertEqual(len(edges), 7)
 
         # test relationships between samples
-        expected_tree = nx.Graph()
+        expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "5", "6", "7"])
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
                 ("5", "e"),
                 ("6", "5"),
-                ("6", "b"),
-                ("7", "6"),
+                ("b", "6"),
+                ("6", "7"),
                 ("7", "d"),
                 ("7", "c"),
             ]
         )
 
-        self.assertEqual(
-            nx.to_nested_tuple(T, "a"), nx.to_nested_tuple(expected_tree, "a")
-        )
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
 
         # compare tree distances
+        T = T.to_undirected()
+        expected_tree = expected_tree.to_undirected()
         for i in range(len(_leaves)):
             sample1 = _leaves[i]
             for j in range(i + 1, len(_leaves)):
@@ -177,6 +220,35 @@ class TestNeighborJoiningSolver(unittest.TestCase):
                     nx.shortest_path_length(T, sample1, sample2),
                     nx.shortest_path_length(expected_tree, sample1, sample2),
                 )
+
+    def test_pp_solver(self):
+
+        self.nj_pp_solver.solve()
+        T = self.nj_pp_solver.tree
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("root", "9"),
+                ("9", "8"),
+                ("9", "7"),
+                ("7", "6"),
+                ("7", "a"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "e"),
+                ("8", "d"),
+            ]
+        )
+
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
 
 
 if __name__ == "__main__":

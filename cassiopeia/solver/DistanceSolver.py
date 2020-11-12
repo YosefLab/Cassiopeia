@@ -17,7 +17,6 @@ from cassiopeia.solver import CassiopeiaSolver
 class DistanceSolveError(Exception):
     """An Exception class for all DistanceSolver subclasses.
     """
-
     pass
 
 
@@ -38,9 +37,12 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         super().__init__(character_matrix, meta_data, priors)
 
+        self.tree = None
+        
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function
 
+        # Create the dissimilarity map if not specified
         if self.dissimilarity_map is None:
 
             N = self.character_matrix.shape[0]
@@ -109,17 +111,22 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             N = _dissimilarity_map.shape[0]
 
-        # new_node_name = len(tree.nodes)
-        # tree.add_node(new_node_name)
-        # tree.add_edges_from(
-        #     [(new_node_name, i) for i in _dissimilarity_map.index]
-        # )
-
         remaining_samples = _dissimilarity_map.index.values
         tree.add_edge(remaining_samples[0], remaining_samples[1])
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
         self.tree = tree
+
+        self.root_tree()
+
+    @abc.abstractmethod
+    def root_tree(self):
+        """Roots a tree.
+
+        Finds a location on the tree to place a root and converts the general
+        graph to a directed graph with respect to that root.
+        """
+        pass
 
     @abc.abstractmethod
     def find_cherry(self, dissimilarity_map: np.array) -> Tuple[int, int]:

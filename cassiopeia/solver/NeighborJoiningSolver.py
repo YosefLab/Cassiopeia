@@ -5,6 +5,7 @@ Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
 import abc
+import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
@@ -14,6 +15,42 @@ from cassiopeia.solver import DistanceSolver
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
+    """
+    Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
+    as a derived class of DistanceSolver. This class inherits the generic
+    `solve` method, but implements its own procedure for finding cherries by
+    minimizing the Q-criterion between samples.
+
+    Args:
+        character_matrix: A character matrix of observed character states for
+            all samples.
+        meta_data: Any meta data associated with the samples
+        priors: Prior probabilities of observing a transition from 0 to any 
+            character state
+        dissimilarity_map: A dissimilarity map describing the distances between
+            samples.
+        dissimilarity_function: A function by which to compute the dissimilarity
+            map. Optional if a dissimilarity map is already provided.
+        root_sample: A sample in the character matrix to treat as the root. If
+            not provided, a root of (0,...,0) is added to the character matrix.
+            Throws an error is a root_sample is not provided and no dissimilarity
+            function is provided.
+
+    Attributes:
+        character_matrix: The character matrix describing the samples
+        meta_data: Data table storing meta data for each sample
+        priors: Prior probabilities of character state transitions
+        dissimilarity_map: Dissimilarity map describing distances between
+            samples
+        dissimilarity_function: Function to compute the dissimilarity between
+            samples.
+        root_sample: Sample to treat as a root, an index in the dissimlarity
+            map and character matrix.
+        tree: The tree returned by `self.solve()`. None if `solve` has not been
+            called yet.
+
+    """
+
     def __init__(
         self,
         character_matrix: pd.DataFrame,
@@ -21,7 +58,22 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         priors: Optional[Dict[int, str]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
+        root_sample: Optional[str] = None,
     ):
+
+        if dissimilarity_function is None and root_sample is None:
+            raise DistanceSolver.DistanceSolveError(
+                "Please specify a root sample or provide a dissimilarity "
+                "function by which to add a root to the dissimilarity map"
+            )
+
+        if not root_sample:
+
+            root = [0] * character_matrix.shape[1]
+            character_matrix.loc["root"] = root
+            root_sample = "root"
+
+        self.root_sample = root_sample
 
         super().__init__(
             character_matrix,
@@ -53,6 +105,21 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         i, j = _min % q.shape[0], _min // q.shape[0]
 
         return (i, j)
+
+    def root_tree(self):
+        """Roots a tree at the inferred ancestral root.
+
+        Uses the root sample stored in self.root_sample to root the 
+        tree stored in the class instance.
+        """
+
+        tree = nx.DiGraph()
+
+        for e in nx.dfs_edges(self.tree, source=self.root_sample):
+
+            tree.add_edge(e[0], e[1])
+
+        self.tree = tree
 
     @staticmethod
     @numba.jit(nopython=True, parallel=True)
@@ -90,6 +157,21 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         cherry: Tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
+        """Update dissimilarity map after finding a cherry.
+
+        Updates the dissimilarity map after joining together two nodes (m1, m2)
+        at a cherry m. For all nodes v, the new dissimilarity map d' is:
+
+        d'(m, v) = 0.5 * (d(v, m1) + d(v, m2) - d(m1, m2))
+
+        Args:
+            dissimilarity_map: A dissimilarity map to update
+            cherry: A tuple of indices in the dissimilarity map that are joining
+            new_node: New node name, to be added to the new dissimilarity map
+
+        Returns:
+            A new dissimilarity map, updated with the new node
+        """
 
         updated_map = dissimilarity_map.drop(
             index=list(cherry), columns=list(cherry)
