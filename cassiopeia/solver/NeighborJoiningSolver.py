@@ -73,6 +73,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             character_matrix.loc["root"] = root
             root_sample = "root"
 
+            # if root sample is not specified, we'll add the implicit root
+            # and recompute the dissimilairty map
+            dissimilarity_map = None 
+
         self.root_sample = root_sample
 
         super().__init__(

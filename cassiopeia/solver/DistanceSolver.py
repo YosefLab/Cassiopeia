@@ -1,3 +1,4 @@
+
 """
 This file stores a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
 the inference procedures that inherit from this method will need to implement
@@ -26,8 +27,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        dissimilarity_map: pd.DataFrame = None,
-        dissimilarity_function: Callable = None,
+        dissimilarity_map: Optional[pd.DataFrame] = None,
+        dissimilarity_function: Optional[Callable] = None,
     ):
 
         if dissimilarity_function is None and dissimilarity_map is None:
