@@ -5,19 +5,51 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
-import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
+from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
+    """The VanillaGreedySolver implements a top-down algorithm that optimizes
+    for parsimony by recursively splitting the sample set based on the most
+    presence, or absence, of the most frequent mutation. Multiple missing data
+    imputation methods are included for handling the case when a sample has a
+    missing value on the character being split, making it ambigious which side
+    of the partition the sample belongs on. The user can also specify a
+    missing data method.
+
+    Args:
+        character_matrix: A character matrix of observed character states for
+            all samples
+        missing_char: The character representing missing values
+        missing_data_classifier: Takes either a string specifying one of the
+            included missing data imputation methods, or a function
+            implementing the user-specified missing data method. The default is
+            the "average" method.
+        meta_data: Any meta data associated with the samples
+        priors: Prior probabilities of observing a transition from 0 to any
+            character state
+        fuzzy_solver: #TODO
+
+    Attributes:
+        character_matrix: The character matrix describing the samples
+        missing_char: The character representing missing values
+        meta_data: Data table storing meta data for each sample
+        priors: Prior probabilities of character state transitions
+        tree: The tree built by `self.solve()`. None if `solve` has not been
+            called yet
+        prune_cm: A character matrix with duplicate rows filtered out, removing
+            doublets from the sample set
+    """
+
     def __init__(
         self,
         character_matrix: pd.DataFrame,
         missing_char: str,
-        missing_data_classifier: Union[Callable, str],
+        missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
         fuzzy_solver: bool = False,
@@ -52,7 +84,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             samples = list(range(self.prune_cm.shape[0]))
         freq = 0
         char = 0
-        state = 0
+        state = ""
         for i in mutation_frequencies:
             for j in mutation_frequencies[i]:
                 if j != self.missing_char and j != "0":
@@ -64,6 +96,10 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                     ):
                         char, state = i, j
                         freq = mutation_frequencies[i][j]
+
+        if state == "":
+            return samples, []
+
         left_set = []
         right_set = []
         missing = []
@@ -76,92 +112,9 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             else:
                 right_set.append(i)
 
-        left_set, right_set = self.assign_missing_average(
-            left_set, right_set, missing
-        )
-
-        if len(left_set) == 0 or len(right_set) == 0:
-            return self.random_nontrivial_cut(samples)
-        return left_set, right_set
-
-    def random_nontrivial_cut(
-        self, samples: List[int]
-    ) -> Tuple[List[int], List[int]]:
-        """Performs a random partition of the samples, but garuntees that both
-        sides of the partition contain at least one sample.
-
-        Args:
-            samples: A list of samples to paritition
-
-        Returns:
-            A tuple of lists, representing the left and right partitions
-        """
-        assert len(samples) > 1
-        left_set = []
-        right_set = []
-        left_set.append(samples[0])
-        right_set.append(samples[1])
-        for i in range(2, len(samples)):
-            if np.random.random() > 0.5:
-                left_set.append(samples[i])
-            else:
-                right_set.append(samples[i])
-        return left_set, right_set
-
-    def assign_missing_average(
-        self, left_set: List[int], right_set: List[int], missing: List[int]
-    ) -> Tuple[List[int], List[int]]:
-        """Implements the "Average" missing data imputation method.
-
-        An on-the-fly missing data imputation method for the Vanilla Greedy
-        Solver. It takes in a set of samples that have a missing value at the
-        character chosen to split on in a partition. For each of these samples,
-        it calculates the average number of mutations that samples on each side
-        of the partition share with it and places the sample on the side with
-        the higher value.
-
-        Args:
-            left_set: A list of the samples on the left of the partition
-            right_set: A list of the samples on the right of the partition
-            missing: A list of samples with missing data to be imputed
-
-        Returns:
-            A tuple of lists, representing the left and right partitions with
-            missing samples imputed
-        """
-        for i in missing:
-            left_score = 0
-            right_score = 0
-
-            subset_cm = self.prune_cm.iloc[left_set, :]
-            for char in range(self.prune_cm.shape[1]):
-                state = self.prune_cm.iloc[i, char]
-                if state != self.missing_char and state != "0":
-                    state_counts = np.unique(
-                        subset_cm.iloc[:, char], return_counts=True
-                    )
-                    ind = np.where(state_counts[0] == state)
-                    if len(ind[0]) > 0:
-                        left_score += state_counts[1][ind[0][0]]
-                    else:
-                        left_score += 0
-
-            subset_cm = self.prune_cm.iloc[right_set, :]
-            for char in range(self.prune_cm.shape[1]):
-                state = self.prune_cm.iloc[i, char]
-                if state != self.missing_char and state != "0":
-                    state_counts = np.unique(
-                        subset_cm.iloc[:, char], return_counts=True
-                    )
-                    ind = np.where(state_counts[0] == state)
-                    if len(ind[0]) > 0:
-                        right_score += state_counts[1][ind[0][0]]
-                    else:
-                        right_score += 0
-
-            if left_score / len(left_set) > right_score / len(right_set):
-                left_set.append(i)
-            else:
-                right_set.append(i)
+        if self.missing_data_classifier == "average":
+            left_set, right_set = assign_missing_average(
+                self.prune_cm, self.missing_char, left_set, right_set, missing
+            )
 
         return left_set, right_set

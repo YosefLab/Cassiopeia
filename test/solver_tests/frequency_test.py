@@ -3,7 +3,7 @@ import unittest
 import networkx as nx
 import pandas as pd
 
-import cassiopeia.solver.solver_utilities as s_utils
+from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 
 
 class TestComputeFrequency(unittest.TestCase):
@@ -17,16 +17,18 @@ class TestComputeFrequency(unittest.TestCase):
             ]
         )
 
-        freq_dict = s_utils.compute_mutation_frequencies(cm)
+        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char="-")
+        freq_dict = vgsolver.compute_mutation_frequencies()
 
         self.assertEqual(len(freq_dict), 5)
         self.assertEqual(len(freq_dict[0]), 4)
-        self.assertEqual(len(freq_dict[1]), 2)
-        self.assertEqual(len(freq_dict[2]), 3)
-        self.assertEqual(len(freq_dict[3]), 1)
+        self.assertEqual(len(freq_dict[1]), 3)
+        self.assertEqual(len(freq_dict[2]), 4)
+        self.assertEqual(len(freq_dict[3]), 2)
         self.assertEqual(len(freq_dict[4]), 3)
         self.assertEqual(freq_dict[0]["5"], 1)
         self.assertEqual(freq_dict[1]["0"], 2)
+        self.assertEqual(freq_dict[2]["-"], 0)
         self.assertNotIn("3", freq_dict[1].keys())
 
 

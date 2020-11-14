@@ -1,3 +1,8 @@
+"""This file contains general utilities to be called by functions throughout 
+the solver module"""
+
+import logging
+
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -5,45 +10,54 @@ import networkx as nx
 from typing import Dict, List, Optional, Tuple
 
 
-def get_lca_characters(
-    vec1: List[str], vec2: List[str], missing_char: str
-) -> List[str]:
-    """Builds the character vector of the LCA of two character vectors, obeying
-    Camin-Sokal Parsimony.
+class InferAncestorError(Exception):
+    """An Exception class for collapsing edges, indicating a necessary argument
+    was not included.
+    """
+
+    pass
+
+
+def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
+    """Builds the character vector of the LCA of a list of character vectors,
+    obeying Camin-Sokal Parsimony.
 
     For each index in the reconstructed vector, imputes the non-missing
     character if only one of the constituent vectors has a missing value at that
-    index, and imputes missing value if both have a missing value at that index.
+    index, and imputes missing value if all have a missing value at that index.
 
     Args:
-        vec1: The first character vector
-        vec2: The second character vector
+        vecs: A list of character vectors to generate an LCA for
         missing_char: The character representing missing values
 
     Returns:
-        A list representing the character vector of the lca
+        A list representing the character vector of the LCA
 
     """
-    assert len(vec1) == len(vec2)
-    lca_vec = [0] * len(vec1)
-    for i in range(len(vec1)):
-        if vec1[i] == missing_char and vec2[i] != missing_char:
-            lca_vec[i] = vec2[i]
-        if vec2[i] == missing_char and vec1[i] != missing_char:
-            lca_vec[i] = vec1[i]
-        if vec1[i] == vec2[i] and vec1[i] != "0":
-            lca_vec[i] = vec1[i]
+    k = len(vecs[0])
+    for i in vecs:
+        assert len(i) == k
+    lca_vec = ["0"] * len(vecs[0])
+    for i in range(k):
+        chars = [vec[i] for vec in vecs]
+        if len(set(chars)) == 1:
+            lca_vec[i] = chars[0]
+        else:
+            if missing_char in chars:
+                chars.remove(missing_char)
+                if len(set(chars)) == 1:
+                    lca_vec[i] = chars[0]
     return lca_vec
 
 
-def infer_ancestral_characters(
+def annotate_ancestral_characters(
     T: nx.DiGraph, node: int, char_map: Dict[int, List[str]], missing_char: str
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
     network from the samples, obeying Camin-Sokal Parsimony.
 
     For an internal node, annotates that node's character vector to be the LCA
-    of its daughters character vectors. Annotates from the samples.
+    of its daughter character vectors. Annotates from the samples upwards.
 
     Args:
         T: A networkx DiGraph object representing the tree
@@ -60,10 +74,9 @@ def infer_ancestral_characters(
         return
     vecs = []
     for i in T.successors(node):
-        infer_ancestral_characters(T, i, char_map, missing_char)
+        annotate_ancestral_characters(T, i, char_map, missing_char)
         vecs.append(char_map[i])
-    assert len(vecs) == 2
-    lca_characters = get_lca_characters(vecs[0], vecs[1], missing_char)
+    lca_characters = get_lca_characters(vecs, missing_char)
     char_map[node] = lca_characters
 
 
@@ -90,11 +103,12 @@ def collapse_edges(T: nx.DiGraph, node: int, char_map: Dict[int, List[str]]):
     for i in T.successors(node):
         to_collapse.append(i)
     for i in to_collapse:
-        collapse_edges(T, i, char_map)
-        if char_map[i] == char_map[node]:
-            for j in T.successors(i):
-                T.add_edge(node, j)
-            to_remove.append(i)
+        if T.out_degree(i) > 0:
+            collapse_edges(T, i, char_map)
+            if char_map[i] == char_map[node]:
+                for j in T.successors(i):
+                    T.add_edge(node, j)
+                to_remove.append(i)
     for i in to_remove:
         T.remove_node(i)
 
@@ -128,9 +142,15 @@ def collapse_tree(
     # Populates the internal annotations using either the ground truth
     # annotations, or infers them
     if infer_ancestral_characters:
+        if cm is None or missing_char is None:
+            logging.info(
+                "In order to infer ancestral characters, a character matrix and missing character are needed"
+            )
+            raise InferAncestorError()
+
         for i in leaves:
             char_map[i] = list(cm.iloc[i, :])
-        infer_ancestral_characters(T, root, char_map, missing_char)
+        annotate_ancestral_characters(T, root, char_map, missing_char)
     else:
         for i in T.nodes():
             char_map[i] = i.char_vec
@@ -140,4 +160,5 @@ def collapse_tree(
 
 
 def post_process_tree(T, cm):
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    pass

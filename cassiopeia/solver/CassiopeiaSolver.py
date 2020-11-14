@@ -16,6 +16,22 @@ class CassiopeiaSolver(abc.ABC):
     CassiopeiaSolver is an abstract class that all inference algorithms derive
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.
+
+    Args:
+        character_matrix: A character matrix of observed character states for
+            all samples
+        missing_char: The character representing missing values
+        meta_data: Any meta data associated with the samples
+        priors: Prior probabilities of observing a transition from 0 to any
+            character state
+
+    Attributes:
+        character_matrix: The character matrix describing the samples
+        missing_char: The character representing missing values
+        meta_data: Data table storing meta data for each sample
+        priors: Prior probabilities of character state transitions
+        tree: The tree built by `self.solve()`. None if `solve` has not been
+            called yet
     """
 
     def __init__(

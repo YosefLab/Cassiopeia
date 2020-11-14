@@ -16,6 +16,32 @@ from cassiopeia.solver import solver_utilities
 
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
+    """
+    GreedySolver is an abstract class representing the structure of top-down
+    inference algorithms. The solver procedure contains logic to build a tree
+    from the root by recursively paritioning the set of samples. Each subclass
+    will implement "perform_split", which is the procedure for successively
+    partioning the sample set.
+
+    Args:
+        character_matrix: A character matrix of observed character states for
+            all samples
+        missing_char: The character representing missing values
+        meta_data: Any meta data associated with the samples
+        priors: Prior probabilities of observing a transition from 0 to any
+            character state
+
+    Attributes:
+        character_matrix: The character matrix describing the samples
+        missing_char: The character representing missing values
+        meta_data: Data table storing meta data for each sample
+        priors: Prior probabilities of character state transitions
+        tree: The tree built by `self.solve()`. None if `solve` has not been
+            called yet
+        prune_cm: A character matrix with duplicate rows filtered out, removing
+            doublets from the sample set
+    """
+
     def __init__(
         self,
         character_matrix: pd.DataFrame,
@@ -66,8 +92,17 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 mutation_frequencies, samples
             )
             # Generates a root for this subtree with a unique int identifier
-            root = len(self.tree.nodes) - len(samples) + self.prune_cm.shape[0]
+            root = len(self.tree.nodes)
             self.tree.add_node(root)
+            # If unable to return a split, generate a polytomy and return
+            if len(left_set) == 0:
+                for i in right_set:
+                    self.tree.add_edge(root, i)
+                return root
+            if len(right_set) == 0:
+                for i in left_set:
+                    self.tree.add_edge(root, i)
+                return root
             # Recursively generate the left and right subtrees
             left_child = _solve(left_set)
             right_child = _solve(right_set)
@@ -76,9 +111,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             return root
 
         _solve(range(self.prune_cm.shape[0]))
-        # Collapse 0-mutation edges and appends duplicate samples
+        # Collapse 0-mutation edges and append duplicate samples
         solver_utilities.collapse_tree(
-            self.tree, self.prune_cm, True, self.missing_char
+            self.tree, True, self.prune_cm, self.missing_char
         )
         solver_utilities.post_process_tree(self.tree, self.character_matrix)
 
