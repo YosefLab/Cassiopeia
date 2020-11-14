@@ -64,7 +64,7 @@ def assign_lineage_groups(
         )
 
         # append returned objects to output variable
-        piv_assigned = piv_assigned.append(piv_lg)
+        piv_assigned = piv_assigned.append(piv_lg, sort=True)
 
         # update pivot_in by removing assigned alignments
         pivot_in = piv_nolg
@@ -147,7 +147,7 @@ def find_top_lg(
     PIV_noLG = PIVOT_in.iloc[~PIVOT_in.index.isin(LG_cells), :]
 
     # Return PIV with LG_cells assigned
-    PIV_LG = PIVOT_in.iloc[PIVOT_in.index.isin(LG_cells), :]
+    PIV_LG = PIVOT_in.iloc[PIVOT_in.index.isin(LG_cells), :].copy()
     PIV_LG["lineageGrp"] = iteration + 1
 
     # Print statements
@@ -237,7 +237,7 @@ def score_lineage_kinships(
         LGi = master_LGs[i]
         intBCsi = master_intBCs[LGi]
         dfi = pd.DataFrame(index=[LGi], columns=intBCsi, data=1)
-        dfLG2intBC = dfLG2intBC.append(dfi)
+        dfLG2intBC = dfLG2intBC.append(dfi, sort=True)
 
     dfLG2intBC = dfLG2intBC.fillna(0)
 

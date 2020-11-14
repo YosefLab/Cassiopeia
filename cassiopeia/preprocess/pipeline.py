@@ -160,6 +160,7 @@ def resolve_umi_sequence(
         plt.xlabel("Number of Unique Seqs")
         plt.ylabel("Count (Log)")
         plt.savefig(os.path.join(output_directory, "seqs_per_equivClass.png"))
+        plt.close()
 
     # ----------------- Select most abundant sequence ------------------ #
 
@@ -482,7 +483,7 @@ def error_correct_umis(
     allele_groups = sorted_df.groupby(["cellBC", "intBC"])
 
     allele_groups = progress(
-        allele_groups, total=total, desc="Error-correcting UMIs"
+        allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
     )
 
     for fields, allele_group in allele_groups:
