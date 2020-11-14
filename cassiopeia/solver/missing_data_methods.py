@@ -1,12 +1,13 @@
 """This file contains included missing data imputation methods."""
 
 import numpy as np
+import pandas as pd
 from typing import List, Tuple
 
 
 def assign_missing_average(
-    cm,
-    missing_char,
+    cm: pd.DataFrame,
+    missing_char: str,
     left_set: List[int],
     right_set: List[int],
     missing: List[int],
@@ -21,6 +22,9 @@ def assign_missing_average(
     the higher value.
 
     Args:
+        cm: The character matrix containing the observed character states for
+            the samples
+        missing_char: The character representing missing values
         left_set: A list of the samples on the left of the partition
         right_set: A list of the samples on the right of the partition
         missing: A list of samples with missing data to be imputed
