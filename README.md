@@ -1,5 +1,5 @@
 Updates (April 16, 2020)
-===========================
+=========================
 
 We now introduce FitchCount algorithm in Cassiopeia's Analysis module. Briefly, FitchCount is an efficient algorithm for aggreagating the number of state transitions across all optimal evolutionary histories (under the maximum parsimony criterion) given the states of the leaves are known. It builds on the Fitch-Hartigan algorithm for ancestral state assignment (i.e. the Small Parsimony Problem; Fitch 1971 & Hartigan 1973). 
 
@@ -17,7 +17,7 @@ M = reconstruct_states.fitch_count(tree, meta['tissue_sample')
 We are in the process of putting together a notebook tutorial, so stay tuned!
 
 Updates (Feb. 9, 2020)
-==========================
+========
 
 We have some updated features in our most current release:
 
@@ -72,7 +72,7 @@ Installation
 To verify that it installed correctly, try using the package in a python session: ``import cassiopeia``. Then, to make sure that the command-line tools work, try ``reconstruct-lineage -h`` and confirm that you get the usage details.
 
 Command Line Tools
-----------------------
+-------------------
 
 In addition to allowing users to use Cassiopeia from a python session, we provide five unique command line tools for common pipeline procedures:
 

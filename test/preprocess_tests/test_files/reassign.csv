@@ -1,9 +1,0 @@
-cellBC	intBC	allele	r1	r2	r3	lineageGrp	UMI	readCount	Sample
-A	XX	1_2_3	1	2	3	1	2	40	A
-B	XX	1_2_3	1	2	3	1	2	70	B
-C	XX	1_2_3	1	2	3	1	2	120	C
-D	XX	1_2_3	1	2	3	1	1	20	D
-D	YZ	1_2_3	1	2	3	1	1	15	D
-E	XZ	1_2_3	1	2	3	1	1	10	E
-E	YZ	1_2_3	1	2	3	1	1	10	E
-F	XZ	1_2_3	1	2	3	1	3	30	F
