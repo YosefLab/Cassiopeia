@@ -41,12 +41,11 @@ author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn, Jeffrey Hussmann, Mic
 cmdclass = {'build_ext': build_ext}
 
 # files to wrap with cython
-to_cythonize = [Extension("cassiopeia.solver.lineage_solver.solver_utils", ["cassiopeia/solver/lineage_solver/solver_utils.pyx"]),
-                Extension("cassiopeia.solver.simulation_tools.dataset_generation", ["cassiopeia/solver/simulation_tools/dataset_generation.pyx"]),
-                Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
-                Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
-                Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
-                Extension("cassiopeia.solver.utilities", ['cassiopeia/solver/utilities.pyx'])] 
+to_cythonize = [Extension("cassiopeia.TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
+                Extension("cassiopeia.TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
+                Extension("cassiopeia.ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
+                Extension("cassiopeia.ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"]),
+                Extension("cassiopeia.TreeSolver.utilities", ['cassiopeia/TreeSolver/utilities.pyx'])] 
 #to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
 #               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
 #               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
@@ -61,11 +60,12 @@ setup(
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main',
-                                'cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main',
-                                'reconstruct-lineage = cassiopeia.solver.reconstruct_tree:main',
-                                'post-process-tree = cassiopeia.solver.post_process_tree:main',
-                                'stress-test = cassiopeia.solver.reconstruct_sim_tree:main',
-                                'simulate-tree = cassiopeia.solver.simulate_tree:main']
+                                'reconstruct-lineage = cassiopeia.TreeSolver.reconstruct_tree:main',
+                                'post-process-tree = cassiopeia.TreeSolver.post_process_tree:main',
+                                'stress-test = cassiopeia.TreeSolver.reconstruct_sim_tree:main',
+                                'simulate-tree = cassiopeia.TreeSolver.simulate_tree:main',
+                                'call-lineages = cassiopeia.ProcessingPipeline.process.lineageGroup:main',
+                                'filter-molecule-table = cassiopeia.ProcessingPipeline.process.filterMoleculeTables:main']
             
         },
         author_email="mattjones315@berkeley.edu",

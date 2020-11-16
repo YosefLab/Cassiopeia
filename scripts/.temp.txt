@@ -1,0 +1,7 @@
+true_network_characters_10_run_0infile.txt
+F
+true_network_characters_10_run_0outfile.txt
+P
+Y
+F
+true_network_characters_10_run_0outtree.txt
