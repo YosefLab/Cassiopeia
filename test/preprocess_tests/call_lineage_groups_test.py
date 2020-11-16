@@ -11,9 +11,10 @@ from cassiopeia.preprocess import pipeline
 
 class TestCallLineageGroup(unittest.TestCase):
     def setUp(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        if not os.path.exists(dir_path + "/test_files"):
-            os.makedirs(dir_path + "/test_files")
+        
+        self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        if not os.path.exists(self.dir_path + "/test_files"):
+            os.makedirs(self.dir_path + "/test_files")
 
         self.basic_grouping = pd.DataFrame.from_dict(
             {
@@ -59,14 +60,6 @@ class TestCallLineageGroup(unittest.TestCase):
 
         self.basic_grouping["allele"] = self.basic_grouping.apply(
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
-
-        pipeline.call_lineage_groups(
-            self.basic_grouping,
-            "basic_grouping.csv",
-            dir_path + "/test_files",
-            min_umi_per_cell=0,
-            min_intbc_thresh=0.5,
         )
 
         self.reassign = pd.DataFrame.from_dict(
@@ -149,14 +142,6 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
-        pipeline.call_lineage_groups(
-            self.reassign,
-            "reassign.csv",
-            dir_path + "/test_files",
-            min_umi_per_cell=0,
-            min_intbc_thresh=0.25,
-            kinship_thresh=0.1,
-        )
 
         self.filter_and_reassign = pd.DataFrame.from_dict(
             {
@@ -216,15 +201,6 @@ class TestCallLineageGroup(unittest.TestCase):
 
         self.filter_and_reassign["allele"] = self.filter_and_reassign.apply(
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
-
-        pipeline.call_lineage_groups(
-            self.filter_and_reassign,
-            "filter_and_reassign.csv",
-            dir_path + "/test_files",
-            min_umi_per_cell=0,
-            min_intbc_thresh=0.5,
-            kinship_thresh=0.1,
         )
 
         self.doublet = pd.DataFrame.from_dict(
@@ -287,20 +263,16 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
-        pipeline.call_lineage_groups(
+
+    def test_format(self):
+
+        aln_df = pipeline.call_lineage_groups(
             self.doublet,
-            "doublet.csv",
-            dir_path + "/test_files",
+            self.dir_path + "/test_files",
             min_umi_per_cell=1,
             min_intbc_thresh=0.5,
             kinship_thresh=0.5,
             inter_doublet_threshold=0.6,
-        )
-
-    def test_format(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        aln_df = pd.read_csv(
-            dir_path + "/test_files/doublet.csv", sep="\t", header=0
         )
 
         expected_columns = [
@@ -317,10 +289,14 @@ class TestCallLineageGroup(unittest.TestCase):
             self.assertIn(column, aln_df.columns)
 
     def test_basic_grouping(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        aln_df = pd.read_csv(
-            dir_path + "/test_files/basic_grouping.csv", sep="\t"
+
+        aln_df = pipeline.call_lineage_groups(
+            self.basic_grouping,
+            self.dir_path + "/test_files",
+            min_umi_per_cell=0,
+            min_intbc_thresh=0.5,
         )
+
         
         expected_rows = {
             ("A", "XX"): (1, 3),
@@ -347,8 +323,15 @@ class TestCallLineageGroup(unittest.TestCase):
             )
 
     def test_doublet(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        aln_df = pd.read_csv(dir_path + "/test_files/doublet.csv", sep="\t")
+
+        aln_df = pipeline.call_lineage_groups(
+            self.doublet,
+            self.dir_path + "/test_files",
+            min_umi_per_cell=1,
+            min_intbc_thresh=0.5,
+            kinship_thresh=0.5,
+            inter_doublet_threshold=0.6,
+        )
         
         samples = aln_df["Sample"]
         self.assertNotIn("C", samples)
@@ -381,8 +364,14 @@ class TestCallLineageGroup(unittest.TestCase):
 
 
     def test_reassign(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        aln_df = pd.read_csv(dir_path + "/test_files/reassign.csv", sep="\t")
+
+        aln_df = pipeline.call_lineage_groups(
+            self.reassign,
+            self.dir_path + "/test_files",
+            min_umi_per_cell=0,
+            min_intbc_thresh=0.25,
+            kinship_thresh=0.1,
+        )
         
         expected_rows = {
             ("A", "XX"): (1, 2),
@@ -412,9 +401,13 @@ class TestCallLineageGroup(unittest.TestCase):
             )
 
     def test_filter_reassign(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        aln_df = pd.read_csv(
-            dir_path + "/test_files/filter_and_reassign.csv", sep="\t"
+        
+        aln_df = pipeline.call_lineage_groups(
+            self.filter_and_reassign,
+            self.dir_path + "/test_files",
+            min_umi_per_cell=0,
+            min_intbc_thresh=0.5,
+            kinship_thresh=0.1,
         )
 
         self.assertNotIn("YZ", aln_df["intBC"])

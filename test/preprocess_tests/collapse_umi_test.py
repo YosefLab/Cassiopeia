@@ -33,14 +33,12 @@ class TestCollapseUMIs(unittest.TestCase):
         _, _ = UMI_utils.sort_cellranger_bam(
             self.test_file,
             str(self.sorted_file_name),
-            show_progress=False,
         )
 
         UMI_utils.form_collapsed_clusters(
             str(self.sorted_file_name),
             max_hq_mismatches=3,
             max_indels=2,
-            show_progress=False,
         )
 
     def test_sort_bam(self):
