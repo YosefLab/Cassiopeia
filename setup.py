@@ -45,8 +45,8 @@ to_cythonize = [Extension("cassiopeia.solver.lineage_solver.solver_utils", ["cas
                 Extension("cassiopeia.solver.simulation_tools.dataset_generation", ["cassiopeia/solver/simulation_tools/dataset_generation.pyx"]),
                 Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
                 Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
-                Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
-                Extension("cassiopeia.solver.utilities", ['cassiopeia/solver/utilities.pyx'])] 
+                Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"])]
+#                Extension("cassiopeia.solver.utilities", ['cassiopeia/solver/utilities.pyx'])] 
 #to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
 #               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
 #               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
