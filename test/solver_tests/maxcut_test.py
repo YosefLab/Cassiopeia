@@ -24,14 +24,20 @@ class MaxCutSolverTest(unittest.TestCase):
 
     def test_evaluate_cut(self):
         G = graph_utilities.construct_connectivity_graph(
-            self.cm, self.mutation_frequencies, "-"
+            self.cm,
+            self.mutation_frequencies,
+            "-",
+            list(range(self.cm.shape[0])),
         )
         cut_weight = self.mcsolver.evaluate_cut([1, 2], G)
         self.assertEqual(cut_weight, -4)
 
     def test_graph_construction(self):
         G = graph_utilities.construct_connectivity_graph(
-            self.cm, self.mutation_frequencies, "-"
+            self.cm,
+            self.mutation_frequencies,
+            "-",
+            list(range(self.cm.shape[0])),
         )
 
         self.assertEqual(G[0][1]["weight"], -1)
