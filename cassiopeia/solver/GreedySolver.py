@@ -79,11 +79,11 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
-        each partition of the samples, an ancestral node is created and each 
+        each partition of the samples, an ancestral node is created and each
         side of the parition is placed as a daughter clade of that node. This
         continues until each side of the partition is comprised only of single
-        samples. If an algorithm cannot produce a split on a set of samples, 
-        then those samples are placed as sister nodes and the procedure 
+        samples. If an algorithm cannot produce a split on a set of samples,
+        then those samples are placed as sister nodes and the procedure
         terminates, generating a polytomy in the tree.
 
         Returns:
