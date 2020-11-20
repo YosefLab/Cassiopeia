@@ -16,52 +16,6 @@ class InferAncestorError(Exception):
     pass
 
 
-# def collapse_tree_tester(
-#     T: nx.DiGraph,
-#     infer_ancestral_characters: bool,
-#     cm: pd.DataFrame = None,
-#     missing_char: str = None,
-# ):
-#     """Collapses mutationless edges in a tree in-place.
-
-#     Uses the internal node annotations of a tree to collapse edges with no
-#     mutations. Either takes in a tree with internal node annotations or
-#     a tree without annotations and infers the annotations bottom-up from the
-#     samples obeying Camin-Sokal Parsimony. If ground truth internal annotations
-#     exist, it is suggested that they are used directly and that the annotations
-#     are not inferred again using the parsimony method.
-
-#     Args:
-#         network: A networkx DiGraph object representing the tree
-
-#     Returns:
-#         None, operates on the tree destructively
-
-#     """
-#     leaves = [n for n in T if T.out_degree(n) == 0 and T.in_degree(n) == 1]
-#     root = [n for n in T if T.in_degree(n) == 0][0]
-#     char_map = {}
-
-#     # Populates the internal annotations using either the ground truth
-#     # annotations, or infers them
-#     if infer_ancestral_characters:
-#         if cm is None or missing_char is None:
-#             raise InferAncestorError()
-
-#         for i in leaves:
-#             char_map[i] = list(cm.iloc[i, :])
-#         solver_utilities.annotate_ancestral_characters(
-#             T, root, char_map, missing_char
-#         )
-#     else:
-#         for i in T.nodes():
-#             char_map[i] = i.char_vec
-
-#     # Calls helper function on root, passing in the mapping dictionary
-#     solver_utilities.collapse_edges(T, root, char_map)
-#     return char_map
-
-
 class TestCollapseEdges(unittest.TestCase):
     def test1(self):
         T = nx.DiGraph()
@@ -166,6 +120,22 @@ class TestCollapseEdges(unittest.TestCase):
 
         for i in T.edges():
             self.assertIn(i, expected_edges)
+
+    def test_newick_converter(self):
+        T = nx.DiGraph()
+        for i in range(7):
+            T.add_node(i)
+        T.add_edge(4, 0)
+        T.add_edge(4, 1)
+        T.add_edge(5, 3)
+        T.add_edge(5, 4)
+        T.add_edge(6, 5)
+        T.add_edge(6, 2)
+
+        expected_newick_string = "((3,(0,1)),2);"
+        observed_newick_string = solver_utilities.to_newick(T)
+
+        self.assertEqual(expected_newick_string, observed_newick_string)
 
 
 if __name__ == "__main__":

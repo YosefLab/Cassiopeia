@@ -175,7 +175,7 @@ def to_newick(tree: nx.DiGraph) -> str:
         _name = node
 
         return (
-            "%s" % (_name,) + ":1"
+            "%s" % (_name,)
             if is_leaf
             else (
                 "("
@@ -184,8 +184,8 @@ def to_newick(tree: nx.DiGraph) -> str:
             )
         )
 
-    root = [node for node in graph if tree.in_degree(node) == 0][0]
-    return to_newick_str(tree, root) + ";"
+    root = [node for node in tree if tree.in_degree(node) == 0][0]
+    return _to_newick_str(tree, root) + ";"
 
 def post_process_tree(T, cm):
     # raise NotImplementedError()
