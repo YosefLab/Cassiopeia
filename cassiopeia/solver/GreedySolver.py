@@ -78,6 +78,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(self) -> nx.DiGraph:
         """Implements a top-down greedy solving procedure.
 
+        The procedure recursively splits a set of samples to build a tree. At
+        each partition of the samples, an ancestral node is created and each 
+        side of the parition is placed as a daughter clade of that node. This
+        continues until each side of the partition is comprised only of single
+        samples. If an algorithm cannot produce a split on a set of samples, 
+        then those samples are placed as sister nodes and the procedure 
+        terminates, generating a polytomy in the tree.
+
         Returns:
             A networkx directed graph representing the reconstructed tree
         """
@@ -110,7 +118,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             self.tree.add_edge(root, right_child)
             return root
 
-        _solve(range(self.prune_cm.shape[0]))
+        _solve(list(range(self.prune_cm.shape[0])))
         # Collapse 0-mutation edges and append duplicate samples
         solver_utilities.collapse_tree(
             self.tree, True, self.prune_cm, self.missing_char
