@@ -25,7 +25,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         character_matrix: A character matrix of observed character states for
             all samples.
         meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any 
+        priors: Prior probabilities of observing a transition from 0 to any
             character state
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
@@ -75,7 +75,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
             # if root sample is not specified, we'll add the implicit root
             # and recompute the dissimilairty map
-            dissimilarity_map = None 
+            dissimilarity_map = None
 
         self.root_sample = root_sample
 
@@ -113,7 +113,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def root_tree(self):
         """Roots a tree at the inferred ancestral root.
 
-        Uses the root sample stored in self.root_sample to root the 
+        Uses the root sample stored in self.root_sample to root the
         tree stored in the class instance.
         """
 
@@ -136,7 +136,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         Args:
             dissimilarity_map: A sample x sample dissimilarity map
-        
+
         Returns:
             A matrix storing the Q-criterion for every pair of samples.
         """
@@ -186,13 +186,12 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             if v in cherry:
                 continue
 
-            updated_map.loc[v, new_node] = updated_map.loc[new_node, v] = (
-                0.5
-                * (
-                    dissimilarity_map.loc[v, cherry[0]]
-                    + dissimilarity_map.loc[v, cherry[1]]
-                    - dissimilarity_map.loc[cherry[0], cherry[1]]
-                )
+            updated_map.loc[v, new_node] = updated_map.loc[
+                new_node, v
+            ] = 0.5 * (
+                dissimilarity_map.loc[v, cherry[0]]
+                + dissimilarity_map.loc[v, cherry[1]]
+                - dissimilarity_map.loc[cherry[0], cherry[1]]
             )
 
         updated_map.loc[new_node, new_node] = 0
