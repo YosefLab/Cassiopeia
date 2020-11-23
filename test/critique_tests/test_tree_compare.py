@@ -85,6 +85,16 @@ class TestResolveUMISequence(unittest.TestCase):
             ]
         )
 
+        self.ground_truth_rake = nx.DiGraph()
+        self.ground_truth_rake.add_edges_from([
+            (0, 1),
+            (0, 2),
+            (0, 3),
+            (0, 4),
+            (0, 5),
+            (0, 6)
+        ])
+
     def test_same_tree_gives_perfect_triplets_correct(self):
 
         (
@@ -177,6 +187,23 @@ class TestResolveUMISequence(unittest.TestCase):
         # of sampling the left
         prob_of_sampling_left = 0.833
         self.assertAlmostEqual(all_triplets[1], prob_of_sampling_left, delta=0.05)
+
+    def test_rake_tree(self):
+
+        (
+            all_triplets,
+            resolvable_triplets_correct,
+            unresolved_triplets_correct,
+            proportion_unresolvable,
+        ) = cas.critique.triplets_correct(
+            self.ground_truth_rake,
+            self.ground_truth_rake,
+            number_of_trials=1000,
+        )
+
+        self.assertEqual(all_triplets[0], 1.0)
+        self.assertEqual(unresolved_triplets_correct[0], 1.0)
+        self.assertEqual(proportion_unresolvable[0], 1.0)
         
 
 if __name__ == "__main__":
