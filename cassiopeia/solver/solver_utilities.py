@@ -194,11 +194,39 @@ def collapse_unifurcations(tree: ete3.Tree):
 
     return collapsed_tree
 
+def collapse_unifurcations(tree: ete3.Tree):
+    """Collapse unifurcations.
+
+    Collapse all unifurcations in the tree, namely any node with only one child
+    should be removed and all children should be connected to the parent node.
+
+    Args:
+        tree: tree to be collapsed
+
+    Returns:
+        A collapsed tree.
+    """
+
+    collapse_fn = lambda x: (len(x.children) == 1)
+
+    collapsed_tree = tree.copy()
+    to_collapse = [n for n in collapsed_tree.traverse() if collapse_fn(n)]
+
+    for n in to_collapse:
+        n.delete()
+
+    return collapsed_tree
+
+
 def to_newick(tree: nx.DiGraph) -> str:
     """Converts a networkx graph to a newick string.
 
     Args:
         tree: A networkx tree
+
+    Returns:
+        A newick string representing the topology of the tree
+    """
 
     Returns:
         A newick string representing the topology of the tree

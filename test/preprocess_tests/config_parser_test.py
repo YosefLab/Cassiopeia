@@ -81,7 +81,9 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.assertIn("output_directory", parameters["collapse"].keys())
         self.assertIn("output_directory", parameters["resolve"].keys())
-        self.assertIn("output_directory", parameters["filter_molecule_table"].keys())
+        self.assertIn(
+            "output_directory", parameters["filter_molecule_table"].keys()
+        )
         self.assertIn("output_directory", parameters["call_lineages"].keys())
 
     def test_unspecified_config_raises_error(self):

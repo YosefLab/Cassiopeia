@@ -193,6 +193,7 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edges_from([(0, 1), (0, 2), (2, 3), (3, 4), (4, 5), (5, 6), (5, 7)])
 
         tree = ete3.Tree(to_newick_with_internal(T), format=1)
+
         collapsed_tree = solver_utilities.collapse_unifurcations(tree)
 
         # make sure all leaves remain
@@ -203,6 +204,7 @@ class TestCollapseEdges(unittest.TestCase):
         # make sure there are no singletons left
         for n in collapsed_tree.traverse():
             self.assertFalse(len(n.children) == 1)
+
 
         self.assertEqual((collapsed_tree&"5").up.name, "0")
 

@@ -95,6 +95,7 @@ class TestResolveUMISequence(unittest.TestCase):
             (0, 6)
         ])
 
+    
     def test_same_tree_gives_perfect_triplets_correct(self):
 
         (
@@ -144,23 +145,27 @@ class TestResolveUMISequence(unittest.TestCase):
             self.multifurcating_ground_truth,
             number_of_trials=1000,
         )
-        
-    
+
         for depth in all_triplets.keys():
             self.assertEqual(all_triplets[depth], 1.0)
             self.assertEqual(unresolved_triplets_correct[depth], 1.0)
-
-
         # expected proportion of unresolvable triplets at depth 1
         # this is simply:
         #   prob. of sampling the multifurcating child * \
         #   the prob of sampling a leaf from each of its children
         prob_of_sampling_left = 0.833333
         prob_of_sampling_unresolvable_from_left = 0.4
-        expected_unresolvable_triplets = prob_of_sampling_left * prob_of_sampling_unresolvable_from_left
+        expected_unresolvable_triplets = (
+            prob_of_sampling_left * prob_of_sampling_unresolvable_from_left
+        )
 
         self.assertEqual(proportion_unresolvable[0], 0)
-        self.assertAlmostEqual(proportion_unresolvable[1], expected_unresolvable_triplets, delta=0.03)
+        self.assertAlmostEqual(
+            proportion_unresolvable[1],
+            expected_unresolvable_triplets,
+            delta=0.03,
+        )
+        
 
     def test_triplets_correct_multifurcating_different_trees(self):
 
@@ -176,7 +181,7 @@ class TestResolveUMISequence(unittest.TestCase):
         )
 
         self.assertEqual(all_triplets[0], 1.0)
-        
+
         # we only changed triplets on the resolvable part of the tree so make
         # sure that the unresolvable triplets correct is 1.0
         for depth in unresolved_triplets_correct.keys():

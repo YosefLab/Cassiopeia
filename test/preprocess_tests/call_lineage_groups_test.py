@@ -11,7 +11,7 @@ from cassiopeia.preprocess import pipeline
 
 class TestCallLineageGroup(unittest.TestCase):
     def setUp(self):
-        
+
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         if not os.path.exists(self.dir_path + "/test_files"):
             os.makedirs(self.dir_path + "/test_files")
@@ -142,7 +142,6 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
-
         self.filter_and_reassign = pd.DataFrame.from_dict(
             {
                 "cellBC": [
@@ -263,7 +262,6 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
-
     def test_format(self):
 
         aln_df = pipeline.call_lineage_groups(
@@ -297,11 +295,10 @@ class TestCallLineageGroup(unittest.TestCase):
             min_intbc_thresh=0.5,
         )
 
-        
         expected_rows = {
             ("A", "XX"): (1, 3),
             ("B", "XX"): (1, 1),
-            ("C", "XZ"): (2, 1)
+            ("C", "XZ"): (2, 1),
         }
 
         for pair in expected_rows:
@@ -309,16 +306,20 @@ class TestCallLineageGroup(unittest.TestCase):
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "lineageGrp",
+                ].iloc[0],
                 expected_lineage[0],
             )
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "UMI",
+                ].iloc[0],
                 expected_lineage[1],
             )
 
@@ -332,7 +333,7 @@ class TestCallLineageGroup(unittest.TestCase):
             kinship_thresh=0.5,
             inter_doublet_threshold=0.6,
         )
-        
+
         samples = aln_df["Sample"]
         self.assertNotIn("C", samples)
         self.assertNotIn("F", samples)
@@ -341,7 +342,7 @@ class TestCallLineageGroup(unittest.TestCase):
             ("A", "XX"): (1, 2),
             ("B", "XX"): (1, 2),
             ("D", "XY"): (2, 2),
-            ("E", "XY"): (2, 2)
+            ("E", "XY"): (2, 2),
         }
 
         for pair in expected_rows:
@@ -349,19 +350,22 @@ class TestCallLineageGroup(unittest.TestCase):
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "lineageGrp",
+                ].iloc[0],
                 expected_lineage[0],
             )
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "UMI",
+                ].iloc[0],
                 expected_lineage[1],
             )
-
 
     def test_reassign(self):
 
@@ -372,14 +376,14 @@ class TestCallLineageGroup(unittest.TestCase):
             min_intbc_thresh=0.25,
             kinship_thresh=0.1,
         )
-        
+
         expected_rows = {
             ("A", "XX"): (1, 2),
             ("B", "XX"): (1, 2),
             ("C", "XX"): (1, 2),
             ("D", "XX"): (1, 1),
             ("E", "XZ"): (1, 1),
-            ("F", "XZ"): (1, 3)
+            ("F", "XZ"): (1, 3),
         }
 
         for pair in expected_rows:
@@ -387,21 +391,25 @@ class TestCallLineageGroup(unittest.TestCase):
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "lineageGrp",
+                ].iloc[0],
                 expected_lineage[0],
             )
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "UMI",
+                ].iloc[0],
                 expected_lineage[1],
             )
 
     def test_filter_reassign(self):
-        
+
         aln_df = pipeline.call_lineage_groups(
             self.filter_and_reassign,
             self.dir_path + "/test_files",
@@ -418,7 +426,7 @@ class TestCallLineageGroup(unittest.TestCase):
             ("C", "XX"): (1, 1),
             ("D", "XX"): (1, 1),
             ("E", "XZ"): (2, 2),
-            ("F", "XZ"): (2, 2)
+            ("F", "XZ"): (2, 2),
         }
 
         for pair in expected_rows:
@@ -426,18 +434,23 @@ class TestCallLineageGroup(unittest.TestCase):
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "lineageGrp"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "lineageGrp",
+                ].iloc[0],
                 expected_lineage[0],
             )
 
             self.assertEqual(
-                aln_df.loc[(aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]), "UMI"].iloc[
-                    0
-                ],
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "UMI",
+                ].iloc[0],
                 expected_lineage[1],
             )
+
 
 if __name__ == "__main__":
     unittest.main()
