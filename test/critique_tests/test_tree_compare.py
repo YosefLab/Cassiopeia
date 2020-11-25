@@ -86,16 +86,10 @@ class TestResolveUMISequence(unittest.TestCase):
         )
 
         self.ground_truth_rake = nx.DiGraph()
-        self.ground_truth_rake.add_edges_from([
-            (0, 1),
-            (0, 2),
-            (0, 3),
-            (0, 4),
-            (0, 5),
-            (0, 6)
-        ])
+        self.ground_truth_rake.add_edges_from(
+            [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
+        )
 
-    
     def test_same_tree_gives_perfect_triplets_correct(self):
 
         (
@@ -165,7 +159,6 @@ class TestResolveUMISequence(unittest.TestCase):
             expected_unresolvable_triplets,
             delta=0.03,
         )
-        
 
     def test_triplets_correct_multifurcating_different_trees(self):
 
@@ -187,11 +180,13 @@ class TestResolveUMISequence(unittest.TestCase):
         for depth in unresolved_triplets_correct.keys():
             self.assertEqual(unresolved_triplets_correct[depth], 1.0)
 
-        # all of the triplets on the right side of the tree at depth 1 are 
+        # all of the triplets on the right side of the tree at depth 1 are
         # incorrect, so the overall triplets correct should be just the prob.
         # of sampling the left
         prob_of_sampling_left = 0.833
-        self.assertAlmostEqual(all_triplets[1], prob_of_sampling_left, delta=0.05)
+        self.assertAlmostEqual(
+            all_triplets[1], prob_of_sampling_left, delta=0.05
+        )
 
     def test_rake_tree(self):
 
@@ -209,7 +204,7 @@ class TestResolveUMISequence(unittest.TestCase):
         self.assertEqual(all_triplets[0], 1.0)
         self.assertEqual(unresolved_triplets_correct[0], 1.0)
         self.assertEqual(proportion_unresolvable[0], 1.0)
-        
+
 
 if __name__ == "__main__":
     unittest.main()
