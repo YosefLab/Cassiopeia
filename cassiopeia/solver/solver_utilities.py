@@ -52,7 +52,10 @@ def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
 
 
 def annotate_ancestral_characters(
-    T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[str]], missing_char: str
+    T: nx.DiGraph,
+    node: int,
+    node_to_characters: Dict[int, List[str]],
+    missing_char: str,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
     network from the samples, obeying Camin-Sokal Parsimony.
@@ -79,10 +82,12 @@ def annotate_ancestral_characters(
         vecs.append(node_to_characters[i])
     lca_characters = get_lca_characters(vecs, missing_char)
     node_to_characters[node] = lca_characters
-    T.nodes[node]['characters'] = lca_characters
+    T.nodes[node]["characters"] = lca_characters
 
 
-def collapse_edges(T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[str]]):
+def collapse_edges(
+    T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[str]]
+):
     """A helper function to collapse mutationless edges in a tree in-place.
 
     Collapses an edge if the character vector of the parent node is identical
@@ -157,11 +162,11 @@ def collapse_tree(
 
         for i in leaves:
             node_to_characters[i] = list(character_matrix.iloc[i, :])
-            T.nodes[i]['characters'] = list(character_matrix.iloc[i, :])
+            T.nodes[i]["characters"] = list(character_matrix.iloc[i, :])
         annotate_ancestral_characters(T, root, node_to_characters, missing_char)
     else:
         for i in T.nodes():
-            node_to_characters[i] = T.nodes[i]['characters']
+            node_to_characters[i] = T.nodes[i]["characters"]
 
     # Calls helper function on root, passing in the mapping dictionary
     collapse_edges(T, root, node_to_characters)
@@ -198,7 +203,6 @@ def to_newick(tree: nx.DiGraph) -> str:
     Returns:
         A newick string representing the topology of the tree
     """
-
     def _to_newick_str(g, node):
         is_leaf = g.out_degree(node) == 0
         _name = str(node)
@@ -207,13 +211,16 @@ def to_newick(tree: nx.DiGraph) -> str:
             if is_leaf
             else (
                 "("
-                + ",".join(_to_newick_str(g, child) for child in g.successors(node))
+                + ",".join(
+                    _to_newick_str(g, child) for child in g.successors(node)
+                )
                 + ")"
             )
         )
         
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
+
 
 def post_process_tree(T, cm):
     # raise NotImplementedError()

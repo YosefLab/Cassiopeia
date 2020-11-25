@@ -88,6 +88,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         for i in mutation_frequencies:
             for j in mutation_frequencies[i]:
                 if j != self.missing_char and j != "0":
+                    # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[i][j] > freq
                         and mutation_frequencies[i][j]
