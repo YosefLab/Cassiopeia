@@ -1,4 +1,3 @@
-
 """
 This file stores a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
 the inference procedures that inherit from this method will need to implement
@@ -16,8 +15,8 @@ from cassiopeia.solver import CassiopeiaSolver
 
 
 class DistanceSolveError(Exception):
-    """An Exception class for all DistanceSolver subclasses.
-    """
+    """An Exception class for all DistanceSolver subclasses."""
+
     pass
 
 
@@ -39,7 +38,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         super().__init__(character_matrix, meta_data, priors)
 
         self.tree = None
-        
+
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function
 
@@ -138,7 +137,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             dissimilarity_map: A dissimilarity map relating samples
-        
+
         Returns:
             A tuple of samples to join together.
         """
@@ -152,7 +151,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         new_node: str,
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
-        
+
         Args:
             dissimilarity_map: Dissimilarity map to update
             cherry1: One of the children to join.
