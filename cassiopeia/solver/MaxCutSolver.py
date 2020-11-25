@@ -123,7 +123,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                         * np.linalg.norm(emb[i] - emb[j])
                         * emb[j]
                     )
-                cm = cm / np.linalg.norm(cm)
+                if cm.any():
+                    cm = cm / np.linalg.norm(cm)
                 new_emb[i] = cm
             emb = new_emb
 
