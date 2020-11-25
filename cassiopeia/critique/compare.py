@@ -15,7 +15,9 @@ from cassiopeia.solver import solver_utilities
 
 def triplets_correct(
     tree1: nx.DiGraph, tree2: nx.DiGraph, number_of_trials: int = 1000
-) -> Tuple[Dict[int, float], Dict[int, float], Dict[int, float], Dict[int,float]]:
+) -> Tuple[
+    Dict[int, float], Dict[int, float], Dict[int, float], Dict[int, float]
+]:
     """Calculate the triplets correct accuracy between two trees.
 
     Takes in two newick strings and computes the proportion of triplets in the 
@@ -68,7 +70,6 @@ def triplets_correct(
         total_triplets = sum([v.number_of_triplets for v in candidate_nodes])
         if total_triplets == 0:
             continue
-   
 
         for _ in range(number_of_trials):
 
@@ -106,7 +107,7 @@ def triplets_correct(
                 unresolved_triplets_correct[depth] += score
 
         all_triplets_correct[depth] /= number_of_trials
-        
+
         if number_unresolvable_triplets == 0:
             unresolved_triplets_correct[depth] = 1.0
         else:
@@ -129,3 +130,42 @@ def triplets_correct(
         unresolved_triplets_correct,
         proportion_unresolvable,
     )
+
+
+def robinson_foulds(
+    tree1: nx.DiGraph, tree2: nx.DiGraph
+) -> Tuple[float, float]:
+    """Compares two trees with Robinson-Foulds distance.
+
+    Computes the Robinsons-Foulds distance between two trees. Currently, this
+    is the unweighted variant as most of the algorithms we use are maximum-
+    parsimony based and do not use edge weights. This is mostly just a wrapper
+    around the `robinson_foulds` method from Ete3.
+
+    Args:
+        tree1: A graph representing the first tree
+        tree2: A graph representing the second tree
+
+    Returns:
+        The Robinson-Foulds distance between the two trees and the maximum
+            Robinson-Foulds distance for downstream normalization
+    """
+
+    # convert to Ete3 trees and collapse unifurcations
+    T1 = ete3.Tree(solver_utilities.to_newick(tree1), format=1)
+    T2 = ete3.Tree(solver_utilities.to_newick(tree2), format=1)
+
+    T1 = solver_utilities.collapse_unifurcations(T1)
+    T2 = solver_utilities.collapse_unifurcations(T2)
+
+    (
+        rf,
+        rf_max,
+        names,
+        edges_t1,
+        edges_t2,
+        discarded_edges_t1,
+        discarded_edges_t2,
+    ) = T1.robinson_foulds(T2)
+
+    return rf, rf_max
