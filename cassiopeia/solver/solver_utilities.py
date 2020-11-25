@@ -171,6 +171,28 @@ def collapse_tree(
     # Calls helper function on root, passing in the mapping dictionary
     collapse_edges(T, root, node_to_characters)
 
+def collapse_unifurcations(tree: ete3.Tree):
+    """Collapse unifurcations.
+
+    Collapse all unifurcations in the tree, namely any node with only one child
+    should be removed and all children should be connected to the parent node.
+
+    Args:
+        tree: tree to be collapsed
+
+    Returns:
+        A collapsed tree.
+    """
+
+    collapse_fn = lambda x: (len(x.children) == 1)
+
+    collapsed_tree = tree.copy()
+    to_collapse = [n for n in collapsed_tree.traverse() if collapse_fn(n)]
+
+    for n in to_collapse:
+        n.delete()
+
+    return collapsed_tree
 
 def collapse_unifurcations(tree: ete3.Tree):
     """Collapse unifurcations.
@@ -206,6 +228,9 @@ def to_newick(tree: nx.DiGraph) -> str:
         A newick string representing the topology of the tree
     """
 
+    Returns:
+        A newick string representing the topology of the tree
+    """
     def _to_newick_str(g, node):
         is_leaf = g.out_degree(node) == 0
         _name = str(node)
@@ -220,7 +245,7 @@ def to_newick(tree: nx.DiGraph) -> str:
                 + ")"
             )
         )
-
+        
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
 

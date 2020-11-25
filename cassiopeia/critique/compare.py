@@ -106,9 +106,6 @@ def triplets_correct(
                 unresolved_triplets_correct[depth] += score
 
         all_triplets_correct[depth] /= number_of_trials
-        resolvable_triplets_correct[depth] /= (
-            number_of_trials - number_unresolvable_triplets
-        )
         
         if number_unresolvable_triplets == 0:
             unresolved_triplets_correct[depth] = 1.0
@@ -118,6 +115,13 @@ def triplets_correct(
         proportion_unresolvable[depth] = (
             number_unresolvable_triplets / number_of_trials
         )
+
+        if proportion_unresolvable[depth] < 1:
+            resolvable_triplets_correct[depth] /= (
+                number_of_trials - number_unresolvable_triplets
+            )
+        else:
+            resolvable_triplets_correct[depth] = 1.0
 
     return (
         all_triplets_correct,
