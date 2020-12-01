@@ -157,7 +157,7 @@ class TestResolveUMISequence(unittest.TestCase):
         self.assertAlmostEqual(
             proportion_unresolvable[1],
             expected_unresolvable_triplets,
-            delta=0.03,
+            delta=0.05,
         )
 
     def test_triplets_correct_multifurcating_different_trees(self):
@@ -168,9 +168,7 @@ class TestResolveUMISequence(unittest.TestCase):
             unresolved_triplets_correct,
             proportion_unresolvable,
         ) = cas.critique.triplets_correct(
-            self.multifurcating_ground_truth,
-            self.tree2,
-            number_of_trials=1000,
+            self.multifurcating_ground_truth, self.tree2, number_of_trials=1000
         )
 
         self.assertEqual(all_triplets[0], 1.0)
@@ -204,6 +202,15 @@ class TestResolveUMISequence(unittest.TestCase):
         self.assertEqual(all_triplets[0], 1.0)
         self.assertEqual(unresolved_triplets_correct[0], 1.0)
         self.assertEqual(proportion_unresolvable[0], 1.0)
+
+    def test_robinson_foulds_same_tree(self):
+
+        rf, max_rf = cas.critique.robinson_foulds(
+            self.ground_truth_tree, self.ground_truth_tree
+        )
+
+        self.assertEqual(rf, 0)
+        self.assertEqual(max_rf, 12)
 
 
 if __name__ == "__main__":
