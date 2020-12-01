@@ -7,8 +7,10 @@ There may be other subclasses of this
 """
 import abc
 import networkx as nx
+import numba
 import numpy as np
 import pandas as pd
+import scipy
 from typing import Callable, Dict, Optional, Tuple
 
 from cassiopeia.solver import CassiopeiaSolver
@@ -46,17 +48,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         if self.dissimilarity_map is None:
 
             N = self.character_matrix.shape[0]
-            dissimilarity_map = np.zeros((N, N))
-            for i in range(character_matrix.shape[0]):
-
-                ind1 = self.character_matrix.iloc[i, :].values
-
-                for j in range(i + 1, character_matrix.shape[0]):
-
-                    ind2 = self.character_matrix.iloc[j, :].values
-                    dissimilarity_map[i, j] = dissimilarity_map[
-                        j, i
-                    ] = self.dissimilarity_function(ind1, ind2)
+            dissimilarity_map = self.compute_dissimilarity_map(
+                self.character_matrix.to_numpy().astype(np.str),
+                N,
+            )
+            dissimilarity_map = scipy.spatial.distance.squareform(
+                dissimilarity_map
+            )
 
             self.dissimilarity_map = pd.DataFrame(
                 dissimilarity_map,
@@ -118,6 +116,38 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.tree = tree
 
         self.root_tree()
+
+    @numba.jit(forceobj=True, parallel=True)
+    def compute_dissimilarity_map(
+        self, cm: np.array, C: int
+    ) -> np.array:
+        """Compute the dissimilarity between all samples
+
+        An optimized function for computing pairwise dissimilarities between
+        samples in a character matrix according to the dissimilarity function.
+
+        Args:
+            cm: Character matrix
+            C: Number of samples
+            delta: A dissimilarity function that takes in two arrays and returns
+                a dissimilarity
+        
+        Returns:
+            A dissimilarity mapping as a flattened array.
+        """
+
+        dm = np.zeros(C * (C - 1) // 2, dtype=float)
+        k = 0
+        for i in range(C - 1):
+            for j in range(i + 1, C):
+
+                s1 = cm[i, :]
+                s2 = cm[j, :]
+
+                dm[k] = self.dissimilarity_function(s1, s2)
+                k += 1
+
+        return dm
 
     @abc.abstractmethod
     def root_tree(self):

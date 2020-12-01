@@ -69,7 +69,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         if not root_sample:
 
-            root = [0] * character_matrix.shape[1]
+            root = ['0'] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
             root_sample = "root"
 
