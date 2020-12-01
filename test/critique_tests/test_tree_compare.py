@@ -211,7 +211,7 @@ class TestResolveUMISequence(unittest.TestCase):
         )
 
         self.assertEqual(rf, 0)
-        self.assertEqual(max_rf, 12)
+        self.assertEqual(max_rf, 10)
 
 
 if __name__ == "__main__":
