@@ -40,14 +40,14 @@ def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
         assert len(i) == k
     lca_vec = ["0"] * len(vecs[0])
     for i in range(k):
-        chars = [vec[i] for vec in vecs]
-        if len(set(chars)) == 1:
-            lca_vec[i] = chars[0]
+        chars = set([vec[i] for vec in vecs])
+        if len(chars) == 1:
+            lca_vec[i] = list(chars)[0]
         else:
             if missing_char in chars:
                 chars.remove(missing_char)
-                if len(set(chars)) == 1:
-                    lca_vec[i] = chars[0]
+                if len(chars) == 1:
+                    lca_vec[i] = list(chars)[0]
     return lca_vec
 
 
@@ -170,30 +170,6 @@ def collapse_tree(
 
     # Calls helper function on root, passing in the mapping dictionary
     collapse_edges(T, root, node_to_characters)
-
-
-def collapse_unifurcations(tree: ete3.Tree):
-    """Collapse unifurcations.
-
-    Collapse all unifurcations in the tree, namely any node with only one child
-    should be removed and all children should be connected to the parent node.
-
-    Args:
-        tree: tree to be collapsed
-
-    Returns:
-        A collapsed tree.
-    """
-
-    collapse_fn = lambda x: (len(x.children) == 1)
-
-    collapsed_tree = tree.copy()
-    to_collapse = [n for n in collapsed_tree.traverse() if collapse_fn(n)]
-
-    for n in to_collapse:
-        n.delete()
-
-    return collapsed_tree
 
 
 def collapse_unifurcations(tree: ete3.Tree):

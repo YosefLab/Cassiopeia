@@ -1,4 +1,5 @@
 import itertools
+import numpy as np
 import networkx as nx
 import pandas as pd
 
@@ -194,8 +195,6 @@ def construct_similarity_graph(
         A similarity graph constructed over the sample set
     """
     G = nx.Graph()
-    if not samples:
-        samples = range(cm.shape[0])
     for i in samples:
         G.add_node(i)
     for i in mutation_frequencies:
@@ -238,12 +237,36 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         A new partition that is a local minimum to the objective function
     """
 
-    delta_num = {}
-    delta_denom = {}
+    def set_improvement_potential(u):
+        """A helper function to calculate the change to the cut weight by
+        moving the node to the other side of the partition.
+        """
+        # If moving a node across the cut would result in one side having 0
+        # weight, that move is disallowed
+        if (
+            min(
+                weight_within_side + delta_denominator[u],
+                total_weight - weight_within_side - delta_denominator[u],
+            )
+            == 0
+        ):
+            improvement_potentials[u] = np.inf
+        else:
+            # The improvement potential is the change to the weight ratio in
+            # moving the node across the cut.
+            improvement_potentials[u] = (numerator + delta_numerator[u]) / min(
+                weight_within_side + delta_denominator[u],
+                total_weight - weight_within_side - delta_denominator[u],
+            ) - numerator / min(
+                weight_within_side, total_weight - weight_within_side
+            )
+
+    delta_numerator = {}
+    delta_denominator = {}
     improvement_potentials = {}
     new_cut = cut
     total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
-    num = sum(
+    numerator = sum(
         [
             G[e[0]][e[1]]["weight"]
             for e in G.edges()
@@ -254,27 +277,8 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         [sum([G[u][v]["weight"] for v in G.neighbors(u)]) for u in new_cut]
     )
 
-    if num == 0:
+    if numerator == 0:
         return new_cut
-
-    def set_improvement_potential(u):
-        # If moving a node across the cut would result in one side having 0
-        # weight, that move is disallowed
-        if (
-            min(
-                weight_within_side + delta_denom[u],
-                total_weight - weight_within_side - delta_denom[u],
-            )
-            == 0
-        ):
-            improvement_potentials[u] = 1000
-        else:
-            # The improvement potential is the change to the ratio in moving
-            # the node across the cut
-            improvement_potentials[u] = (num + delta_num[u]) / min(
-                weight_within_side + delta_denom[u],
-                total_weight - weight_within_side - delta_denom[u],
-            ) - num / min(weight_within_side, total_weight - weight_within_side)
 
     for u in G.nodes():
         # Annotate each node with the change to the weight across the cut and
@@ -289,11 +293,11 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
                 if check_if_cut(u, v, new_cut)
             ]
         )
-        delta_num[u] = d - 2 * c
+        delta_numerator[u] = d - 2 * c
         if u in new_cut:
-            delta_denom[u] = -d
+            delta_denominator[u] = -d
         else:
-            delta_denom[u] = d
+            delta_denominator[u] = d
         # Set the improvement potential for each node
         set_improvement_potential(u)
 
@@ -301,23 +305,22 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
     iters = 0
 
     while (not all_pos) and (iters < len(G.nodes)):
-        # Negative potentials decrease the cut, so iterates until moves would
-        # no longer decrease the cut, thus minimizing
+        # Negative potentials improve the cut
         best_potential = min(improvement_potentials.values())
         if best_potential < 0:
             best_index = min(
                 improvement_potentials, key=improvement_potentials.get
             )
-            num += delta_num[best_index]
-            weight_within_side += delta_denom[best_index]
+            numerator += delta_numerator[best_index]
+            weight_within_side += delta_denominator[best_index]
             for j in G.neighbors(best_index):
                 if check_if_cut(best_index, j, new_cut):
-                    delta_num[j] += 2 * G[best_index][j]["weight"]
+                    delta_numerator[j] += 2 * G[best_index][j]["weight"]
                 else:
-                    delta_num[j] -= 2 * G[best_index][j]["weight"]
+                    delta_numerator[j] -= 2 * G[best_index][j]["weight"]
                 set_improvement_potential(j)
-            delta_num[best_index] = -delta_num[best_index]
-            delta_denom[best_index] = -delta_denom[best_index]
+            delta_numerator[best_index] = -delta_numerator[best_index]
+            delta_denominator[best_index] = -delta_denominator[best_index]
             set_improvement_potential(best_index)
             if best_index in new_cut:
                 new_cut.remove(best_index)

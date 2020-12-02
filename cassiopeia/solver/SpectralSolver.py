@@ -8,17 +8,22 @@ for the sizes of each of the sides of the partition.
 """
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 import pandas as pd
 import scipy as sp
 
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
 
 
 class SpectralSolver(GreedySolver.GreedySolver):
-    """The SpectralSolver implements a top-down algorithm that recursively
+    """
+    TODO: Try different similarity measures, or add a modular similarity
+    measure.
+    TODO: Try different priors on the similarities.
+    The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,
     a similarity graph is generated for the sample set, where edges
     represent the number of shared mutations between nodes. Then a partition
@@ -46,8 +51,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of character state transitions
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out, removing
-            doublets from the sample set
+        prune_cm: A character matrix with duplicate rows filtered out
         threshold: A minimum similarity threshold
         weights: A set of optional weights for calculating similarity for edges
             in the graph
@@ -72,7 +76,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         self,
         mutation_frequencies: Dict[int, Dict[str, int]],
         samples: List[int] = None,
-    ):
+    ) -> Tuple[List[int], List[int]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
 
@@ -116,27 +120,29 @@ class SpectralSolver(GreedySolver.GreedySolver):
             x[vertices[i]] = v2[i]
         vertices.sort(key=lambda v: x[v])
         total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
+        # If the similarity graph is empty and there are no meaningful splits,
+        # return a polytomy over the remaining samples
         if total_weight == 0:
             return samples, []
         cut = set()
         numerator = 0
         denominator = 0
         prev_numerator = -1
-        best_score = 10000000
+        best_score = np.inf
         best_index = 0
-        for i in range(len(vertices)):
+        for i in range(len(vertices) - 1):
             v = vertices[i]
             cut.add(v)
-            in_weight = 0
+            cut_edges = 0
             neighbor_weight = 0
             for w in G.neighbors(v):
                 neighbor_weight += G[v][w]["weight"]
                 if w in cut:
-                    in_weight += G[v][w]["weight"]
+                    cut_edges += G[v][w]["weight"]
             denominator += neighbor_weight
             if i > 0:
                 prev_numerator = numerator
-            numerator += neighbor_weight - 2 * in_weight
+            numerator += neighbor_weight - 2 * cut_edges
             # Avoids naively taking the first zero-weight cut. If more samples
             # can be added without changing the cut weight, those samples do not
             # share any similarity with the other side of the parititon.

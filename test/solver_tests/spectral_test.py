@@ -37,7 +37,7 @@ class SpectralSolverTest(unittest.TestCase):
             range(cm.shape[0])
         )
         G = graph_utilities.construct_similarity_graph(
-            cm, mutation_frequencies, "-"
+            cm, mutation_frequencies, "-", [0, 1, 2, 3]
         )
 
         self.assertEqual(G[0][1]["weight"], 1)
