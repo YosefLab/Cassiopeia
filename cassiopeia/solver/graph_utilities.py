@@ -240,6 +240,13 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
     def set_improvement_potential(node: int):
         """A helper function to calculate the change to the cut weight by
         moving the node to the other side of the partition.
+
+        Args:
+            node: An integer representing the index of a sample and its 
+                respective node in the graph G
+
+        Returns:
+            None. Annotates the improvement_potentials dictionary
         """
         # If moving a node across the cut would result in one side having 0
         # weight, that move is disallowed
