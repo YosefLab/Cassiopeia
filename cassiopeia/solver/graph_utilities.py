@@ -26,7 +26,7 @@ def construct_connectivity_graph(
     cm: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[str, int]],
     missing_char: str,
-    samples: List[int] = None,
+    samples: List[int],
     w: Optional[Dict[int, Dict[str, float]]] = None,
 ) -> nx.Graph:
     """Generates connectivity graph for max-cut algorithm.
@@ -167,7 +167,7 @@ def construct_similarity_graph(
     cm: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[str, int]],
     missing_char: str,
-    samples: List[int] = None,
+    samples: List[int],
     threshold: int = 0,
     w: Optional[Dict[int, Dict[str, float]]] = None,
 ) -> nx.Graph:
@@ -237,7 +237,7 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         A new partition that is a local minimum to the objective function
     """
 
-    def set_improvement_potential(u):
+    def set_improvement_potential(node: int):
         """A helper function to calculate the change to the cut weight by
         moving the node to the other side of the partition.
         """
@@ -245,18 +245,18 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         # weight, that move is disallowed
         if (
             min(
-                weight_within_side + delta_denominator[u],
-                total_weight - weight_within_side - delta_denominator[u],
+                weight_within_side + delta_denominator[node],
+                total_weight - weight_within_side - delta_denominator[node],
             )
             == 0
         ):
-            improvement_potentials[u] = np.inf
+            improvement_potentials[node] = np.inf
         else:
             # The improvement potential is the change to the weight ratio in
             # moving the node across the cut.
-            improvement_potentials[u] = (numerator + delta_numerator[u]) / min(
-                weight_within_side + delta_denominator[u],
-                total_weight - weight_within_side - delta_denominator[u],
+            improvement_potentials[node] = (numerator + delta_numerator[node]) / min(
+                weight_within_side + delta_denominator[node],
+                total_weight - weight_within_side - delta_denominator[node],
             ) - numerator / min(
                 weight_within_side, total_weight - weight_within_side
             )
@@ -313,12 +313,12 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
             )
             numerator += delta_numerator[best_index]
             weight_within_side += delta_denominator[best_index]
-            for j in G.neighbors(best_index):
-                if check_if_cut(best_index, j, new_cut):
-                    delta_numerator[j] += 2 * G[best_index][j]["weight"]
+            for i in G.neighbors(best_index):
+                if check_if_cut(best_index, i, new_cut):
+                    delta_numerator[i] += 2 * G[best_index][i]["weight"]
                 else:
-                    delta_numerator[j] -= 2 * G[best_index][j]["weight"]
-                set_improvement_potential(j)
+                    delta_numerator[i] -= 2 * G[best_index][i]["weight"]
+                set_improvement_potential(i)
             delta_numerator[best_index] = -delta_numerator[best_index]
             delta_denominator[best_index] = -delta_denominator[best_index]
             set_improvement_potential(best_index)
