@@ -144,7 +144,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 s1 = cm[i, :]
                 s2 = cm[j, :]
 
-                dm[k] = self.dissimilarity_function(s1, s2)
+                dm[k] = self.dissimilarity_function(s1, s2, self.priors)
                 k += 1
 
         return dm
