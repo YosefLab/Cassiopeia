@@ -16,16 +16,16 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class SpectralGreedySolver(GreedySolver.GreedySolver):
-    """The SpectralGreedySolver implements a top-down algorithm that recursively 
-    splits the sample set based on the presence, or absence, of the most 
-    frequent mutation. Additionally, the hill-climbing procedure from the 
-    SpectralSolver is used to further optimize each split for the normalized 
+    """The SpectralGreedySolver implements a top-down algorithm that recursively
+    splits the sample set based on the presence, or absence, of the most
+    frequent mutation. Additionally, the hill-climbing procedure from the
+    SpectralSolver is used to further optimize each split for the normalized
     cut on the similarity graph on the samples. This effectively moves samples
-    across the parition so that both sides of partition have higher internal 
+    across the parition so that both sides of partition have higher internal
     similarity in their mutations. Multiple missing data imputation methods are
-    included for handling the case when a sample has a missing value on the 
-    character being split, where presence or absence of the character is 
-    ambiguous. The user can also specify a missing data method. 
+    included for handling the case when a sample has a missing value on the
+    character being split, where presence or absence of the character is
+    ambiguous. The user can also specify a missing data method.
 
     Args:
         character_matrix: A character matrix of observed character states for
@@ -80,9 +80,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
     ) -> Tuple[List[int], List[int]]:
         """Performs a partition using both Greedy and Spectral criteria.
 
-        First, uses the most frequent (character, state) pair to split the 
-        list of samples. In doing so, the procedure makes use of the missing 
-        data classifier. Then, it optimizes this partition for the normalized 
+        First, uses the most frequent (character, state) pair to split the
+        list of samples. In doing so, the procedure makes use of the missing
+        data classifier. Then, it optimizes this partition for the normalized
         cut on a similarity graph constructed on the samples using a hill-
         climbing method.
 
@@ -140,9 +140,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             w=self.weights,
         )
 
-        improved_left_set = graph_utilities.spectral_improve_cut(
-            G, left_set
-        )
+        improved_left_set = graph_utilities.spectral_improve_cut(G, left_set)
 
         improved_right_set = set(samples) - set(improved_left_set)
 

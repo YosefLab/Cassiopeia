@@ -55,7 +55,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         for i in range(self.prune_cm.shape[0]):
             self.tree.add_node(i)
 
-
     def perform_split(
         self,
         mutation_frequencies: Dict[int, Dict[str, int]],

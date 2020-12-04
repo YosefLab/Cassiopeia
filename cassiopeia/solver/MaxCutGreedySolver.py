@@ -17,15 +17,15 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
-    """The MaxCutGreedySolver implements a top-down algorithm that recursively 
+    """The MaxCutGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence/absence of the most frequent
-    mutation. Additionally, the hill-climbing procedure from the MaxCutSolver is 
-    used to further optimize each split for the max cut on the similarity graph 
-    on the samples. This effectively moves samples across the partition so that 
-    samples with similar mutations are grouped together and samples with 
-    different mutations are seperated. Multiple missing data imputation methods 
-    are included for handling the case when a sample has a missing value on the 
-    character being split, where presence or absence of the character is 
+    mutation. Additionally, the hill-climbing procedure from the MaxCutSolver is
+    used to further optimize each split for the max cut on the similarity graph
+    on the samples. This effectively moves samples across the partition so that
+    samples with similar mutations are grouped together and samples with
+    different mutations are seperated. Multiple missing data imputation methods
+    are included for handling the case when a sample has a missing value on the
+    character being split, where presence or absence of the character is
     ambiguous. The user can also specify a missing data method.
 
     Args:
@@ -78,9 +78,9 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         """Performs a partition using both Greedy and MaxCut criteria.
 
         First, uses the most frequent (character, state) pair to split the list
-        of samples. In doing so, the procedure makes use of the missing data 
+        of samples. In doing so, the procedure makes use of the missing data
         classifier. Then, it optimizes this partition for the max cut on a
-        connectivity graph constructed on the samples using a hill-climbing 
+        connectivity graph constructed on the samples using a hill-climbing
         method.
 
         Args:
@@ -137,9 +137,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         )
 
         print(left_set)
-        improved_left_set = graph_utilities.max_cut_improve_cut(
-            G, left_set
-        )
+        improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
         print(improved_left_set)
         improved_right_set = set(samples) - set(improved_left_set)
 

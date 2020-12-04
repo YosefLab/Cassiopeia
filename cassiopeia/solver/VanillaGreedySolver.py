@@ -67,7 +67,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
 
         Uses the (character, state) pair to split the list of samples into
         two partitions. In doing so, the procedure makes use of the missing
-        data classifier to classify samples that have missing data at that 
+        data classifier to classify samples that have missing data at that
         character where presence or absence of the character is ambiguous.
 
         Args:

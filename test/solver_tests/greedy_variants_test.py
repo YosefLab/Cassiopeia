@@ -16,7 +16,7 @@ class GreedyVariantsTest(unittest.TestCase):
                 ["5", "3", "0", "0", "0"],
                 ["0", "3", "4", "2", "1"],
                 ["5", "0", "0", "0", "1"],
-                ["5", "0", "4", "2", "0"]
+                ["5", "0", "4", "2", "0"],
             ]
         )
 
@@ -31,7 +31,6 @@ class GreedyVariantsTest(unittest.TestCase):
         observed_newick_string = solver_utilities.to_newick(sgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
-
     def test_maxcut_base_case(self):
         # A case in which the connectivity only has negative weights, so the
         # hill-climbing procedure favors a cut with 0 weight
@@ -40,7 +39,7 @@ class GreedyVariantsTest(unittest.TestCase):
                 ["5", "3", "0", "0", "0"],
                 ["0", "3", "4", "2", "1"],
                 ["5", "0", "0", "0", "1"],
-                ["5", "0", "4", "2", "0"]
+                ["5", "0", "4", "2", "0"],
             ]
         )
 

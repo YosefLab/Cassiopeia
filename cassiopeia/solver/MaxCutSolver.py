@@ -22,7 +22,7 @@ from cassiopeia.solver import graph_utilities
 class MaxCutSolver(GreedySolver.GreedySolver):
     """The MaxCutSolver implements a top-down algorithm that recursively
     partitions the sample set based on connectivity. At each recursive step,
-    a connectivity graph is generated for the sample set, where edge weights 
+    a connectivity graph is generated for the sample set, where edge weights
     between samples represent the number of triplets that seperate those samples
     minus the number of triplets that have those samples as an ingroup. Shared
     mutations are coded as strong negative connections and differing mutations
