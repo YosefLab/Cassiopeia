@@ -76,7 +76,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        delta_fn = lambda x, y: np.sum([x[i] != y[i] for i in range(len(x))])
+        delta_fn = lambda x, y, priors: np.sum([x[i] != y[i] for i in range(len(x))])
         self.nj_pp_solver = solver.NeighborJoiningSolver(
             cm, dissimilarity_function=delta_fn
         )

@@ -203,7 +203,7 @@ class TestResolveUMISequence(unittest.TestCase):
         self.assertEqual(unresolved_triplets_correct[0], 1.0)
         self.assertEqual(proportion_unresolvable[0], 1.0)
 
-    def test_robinson_foulds_same_tree(self):
+    def test_robinson_foulds_same_tree_bifurcating(self):
 
         rf, max_rf = cas.critique.robinson_foulds(
             self.ground_truth_tree, self.ground_truth_tree
