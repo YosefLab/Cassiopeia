@@ -613,7 +613,7 @@ def find_good_gurobi_subgraph(
         + "). Proceeding to solver."
     )
 
-    for l in potential_network_priors.selfloop_edges():
+    for l in nx.selfloop_edges(potential_network_priors):
         potential_network_priors.remove_edge(l[0], l[1])
 
     nodes = list(potential_network_priors.nodes())
