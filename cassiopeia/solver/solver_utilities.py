@@ -40,14 +40,14 @@ def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
         assert len(i) == k
     lca_vec = ["0"] * len(vecs[0])
     for i in range(k):
-        chars = [vec[i] for vec in vecs]
-        if len(set(chars)) == 1:
-            lca_vec[i] = chars[0]
+        chars = set([vec[i] for vec in vecs])
+        if len(chars) == 1:
+            lca_vec[i] = list(chars)[0]
         else:
             if missing_char in chars:
                 chars.remove(missing_char)
-                if len(set(chars)) == 1:
-                    lca_vec[i] = chars[0]
+                if len(chars) == 1:
+                    lca_vec[i] = list(chars)[0]
     return lca_vec
 
 
@@ -123,8 +123,8 @@ def collapse_edges(
 def collapse_tree(
     T: nx.DiGraph,
     infer_ancestral_characters: bool,
-    character_matrix: pd.DataFrame = None,
-    missing_char: str = None,
+    character_matrix: Optional[pd.DataFrame] = None,
+    missing_char: str = '-',
 ):
     """Collapses mutationless edges in a tree in-place.
 
@@ -171,6 +171,7 @@ def collapse_tree(
     # Calls helper function on root, passing in the mapping dictionary
     collapse_edges(T, root, node_to_characters)
 
+
 def collapse_unifurcations(tree: ete3.Tree):
     """Collapse unifurcations.
 
@@ -194,6 +195,7 @@ def collapse_unifurcations(tree: ete3.Tree):
 
     return collapsed_tree
 
+
 def to_newick(tree: nx.DiGraph) -> str:
     """Converts a networkx graph to a newick string.
 
@@ -203,6 +205,7 @@ def to_newick(tree: nx.DiGraph) -> str:
     Returns:
         A newick string representing the topology of the tree
     """
+
     def _to_newick_str(g, node):
         is_leaf = g.out_degree(node) == 0
         _name = str(node)
@@ -217,7 +220,7 @@ def to_newick(tree: nx.DiGraph) -> str:
                 + ")"
             )
         )
-        
+
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
 

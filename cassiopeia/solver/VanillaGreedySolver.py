@@ -41,8 +41,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of character state transitions
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out, removing
-            doublets from the sample set
+        prune_cm: A character matrix with duplicate rows filtered out
     """
 
     def __init__(

@@ -143,7 +143,6 @@ class TestResolveUMISequence(unittest.TestCase):
         for depth in all_triplets.keys():
             self.assertEqual(all_triplets[depth], 1.0)
             self.assertEqual(unresolved_triplets_correct[depth], 1.0)
-
         # expected proportion of unresolvable triplets at depth 1
         # this is simply:
         #   prob. of sampling the multifurcating child * \
