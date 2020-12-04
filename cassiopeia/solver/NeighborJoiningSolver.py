@@ -184,6 +184,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         dissimilarity_map = pd.DataFrame(dissimilarity_array, index = sample_names, columns = sample_names)
 
+        # drop out cherry from dissimilarity map
         dissimilarity_map.drop(columns = [cherry[0], cherry[1]], index = [cherry[0], cherry[1]], inplace=True)
 
         return dissimilarity_map
@@ -216,8 +217,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         new_row = np.array([0.0]*N)
         updated_map= np.vstack((dissimilarity_map, np.atleast_2d(new_row)))
-        new_row = np.array([0.0] * (N+1))
-        updated_map = np.hstack((updated_map, np.atleast_2d(new_row).T))
+        new_col = np.array([0.0] * (N+1))
+        updated_map = np.hstack((updated_map, np.atleast_2d(new_col).T))
 
         new_node_index = (updated_map.shape[0]-1)
         for v in range(dissimilarity_map.shape[0]):

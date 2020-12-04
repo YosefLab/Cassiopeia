@@ -11,5 +11,5 @@ from .pipeline import (
     filter_molecule_table,
     call_lineage_groups,
 )
-from .utilities import filter_cells
+from .utilities import convert_alleletable_to_character_matrix, filter_cells, filter_umis
 from .setup_utilities import setup
