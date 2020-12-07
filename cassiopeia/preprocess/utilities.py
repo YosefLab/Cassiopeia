@@ -5,14 +5,14 @@ pipeline.
 import os
 import logging
 
-from typing import Tuple
-
+from collections import defaultdict, OrderedDict
 import Levenshtein
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pysam
+from typing import Dict, List, Optional, Tuple
 
 from tqdm.auto import tqdm
 
@@ -349,3 +349,138 @@ def convert_bam_to_df(
             }
         )
         return df
+
+
+def convert_alleletable_to_character_matrix(
+    alleletable: pd.DataFrame,
+    ignore_intbcs: List[str] = [],
+    allele_rep_thresh: float = 1.0,
+    missing_data_state: str = "-",
+    mutation_priors: Optional[pd.DataFrame] = None,
+) -> Tuple[
+    pd.DataFrame, Dict[int, Dict[str, float]], Dict[int, Dict[str, str]]
+]:
+    """Converts an alleletable into a character matrix.
+
+    Given an alleletable storing the observed mutations for each intBC / cellBC
+    combination, create a character matrix for input into a CassiopeiaSolver
+    object. By default, we codify uncut mutations as '0' and missing data items
+    as '-'. The function also have the ability to ignore certain intBC sets as
+    well as cut sites with too little diversity. 
+
+    Args:
+        alleletable: Allele Table to be converted into a character matrix
+        ignore_intbcs: A set of intBCs to ignore
+        allele_rep_thresh: A threshold for removing target sites that have an
+            allele represented by this proportion
+        missing_data_state: A state to use for missing data.
+        mutation_priors: A table storing the prior probability of a mutation
+            occurring. This table is used to create a character matrix-specific
+            probability dictionary for reconstruction. 
+
+	Returns:
+        A character matrix, a probability dictionary, and a dictionary mapping
+            states to the original mutation.
+	"""
+
+    filtered_samples = defaultdict(OrderedDict)
+    for sample in alleletable.index:
+        cell = alleletable.loc[sample, "cellBC"]
+        intBC = alleletable.loc[sample, "intBC"]
+        cut_sites = ["_r1", "_r2", "_r3"]
+
+        to_add = []
+        i = 1
+        for c in cut_sites:
+            if intBC not in ignore_intbcs:
+                to_add.append(("intBC", c, "r" + str(i)))
+
+            i += 1
+
+        for ent in to_add:
+            filtered_samples[cell][
+                alleletable.loc[sample, ent[0]] + ent[1]
+            ] = alleletable.loc[sample, ent[2]]
+
+    character_strings = defaultdict(list)
+    allele_counter = defaultdict(OrderedDict)
+
+    _intbc_uniq = []
+    allele_dist = defaultdict(list)
+    for s in filtered_samples:
+        for key in filtered_samples[s]:
+            if key not in _intbc_uniq:
+                _intbc_uniq.append(key)
+            allele_dist[key].append(filtered_samples[s][key])
+
+    # remove intBCs that are not diverse enough
+    intbc_uniq = []
+    dropped = []
+    for key in allele_dist.keys():
+
+        props = np.unique(allele_dist[key], return_counts=True)[1]
+        props = props / len(allele_dist[key])
+        if np.any(props > allele_rep_thresh):
+            dropped.append(key)
+        else:
+            intbc_uniq.append(key)
+
+    print(
+        "Dropping the following intBCs due to lack of diversity with threshold "
+        + str(allele_rep_thresh)
+        + ": "
+        + str(dropped)
+    )
+
+    prior_probs = defaultdict(dict)
+    indel_to_charstate = defaultdict(dict)
+    # for all characters
+    for i in tqdm(range(len(list(intbc_uniq))), desc="Processing characters"):
+
+        c = list(intbc_uniq)[i]
+
+        # for all samples, construct a character string
+        for sample in filtered_samples.keys():
+
+            if c in filtered_samples[sample]:
+
+                state = filtered_samples[sample][c]
+
+                if type(state) != str and np.isnan(state):
+                    character_strings[sample].append(missing_data_state)
+                    continue
+
+                if state == "NONE" or "None" in state:
+                    character_strings[sample].append("0")
+                else:
+                    if state in allele_counter[c]:
+                        character_strings[sample].append(
+                            str(allele_counter[c][state])
+                        )
+                    else:
+                        # if this is the first time we're seeing the state for this character,
+                        # add a new entry to the allele_counter
+                        allele_counter[c][state] = len(allele_counter[c]) + 1
+                        character_strings[sample].append(
+                            str(allele_counter[c][state])
+                        )
+
+                        # add a new entry to the character's probability map
+                        if mutation_priors is not None:
+                            prob = np.mean(mutation_priors.loc[state, "freq"])
+                            prior_probs[i][
+                                str(len(allele_counter[c]))
+                            ] = float(prob)
+                            indel_to_charstate[i][
+                                str(len(allele_counter[c]))
+                            ] = state
+            else:
+                character_strings[sample].append(missing_data_state)
+
+    character_matrix = pd.DataFrame.from_dict(
+        character_strings,
+        orient="index",
+        columns=[f"r{i}" for i in range(1, len(intbc_uniq)+1)],
+    )
+
+    return character_matrix, prior_probs, indel_to_charstate

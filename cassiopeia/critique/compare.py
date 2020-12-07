@@ -166,6 +166,7 @@ def robinson_foulds(
         edges_t2,
         discarded_edges_t1,
         discarded_edges_t2,
-    ) = T1.robinson_foulds(T2, unrooted_trees = True)
+    ) = T1.robinson_foulds(T2, unrooted_trees=True)
+
 
     return rf, rf_max

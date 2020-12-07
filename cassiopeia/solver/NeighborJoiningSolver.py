@@ -69,7 +69,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         if not root_sample:
 
-            root = [0] * character_matrix.shape[1]
+            root = ["0"] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
             root_sample = "root"
 
@@ -155,8 +155,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 )
         return q
 
-    def update_dissimilarity_map(
-        self,
+
+    def update_dissimilarity_map(self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
@@ -176,24 +176,62 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Returns:
             A new dissimilarity map, updated with the new node
         """
+        
+        i, j = (np.where(dissimilarity_map.index == cherry[0])[0][0], np.where(dissimilarity_map.index == cherry[1])[0][0])
 
-        updated_map = dissimilarity_map.drop(
-            index=list(cherry), columns=list(cherry)
-        )
+        dissimilarity_array = self.update_dissimilarity_map_numba(dissimilarity_map.to_numpy(), i, j)
+        sample_names = list(dissimilarity_map.index) + [new_node]
 
-        for v in dissimilarity_map.index:
+        dissimilarity_map = pd.DataFrame(dissimilarity_array, index = sample_names, columns = sample_names)
 
-            if v in cherry:
+        # drop out cherry from dissimilarity map
+        dissimilarity_map.drop(columns = [cherry[0], cherry[1]], index = [cherry[0], cherry[1]], inplace=True)
+
+        return dissimilarity_map
+
+    @staticmethod
+    @numba.jit(nopython=True)
+    def update_dissimilarity_map_numba(
+        dissimilarity_map: np.array,
+        cherry_i: int,
+        cherry_j: int,
+        ) -> np.array:
+        """An optimized function for updating dissimilarities.
+
+        A faster implementation of updating the dissimilarity map for Neighbor
+        Joining, invoked by `self.update_dissimilarity_map`.
+
+        Args:
+            dissimilarity_map: A matrix of dissimilarities to update
+            cherry_i: Index of the first item in the cherry
+            cherry_j: Index of the second item in the cherry
+            
+
+        Returns:
+            An updated dissimilarity map
+
+        """
+
+        # add new row & column for incoming sample
+        N = dissimilarity_map.shape[1]
+
+        new_row = np.array([0.0]*N)
+        updated_map= np.vstack((dissimilarity_map, np.atleast_2d(new_row)))
+        new_col = np.array([0.0] * (N+1))
+        updated_map = np.hstack((updated_map, np.atleast_2d(new_col).T))
+
+        new_node_index = (updated_map.shape[0]-1)
+        for v in range(dissimilarity_map.shape[0]):
+            if v == cherry_i or v == cherry_j:
                 continue
-
-            updated_map.loc[v, new_node] = updated_map.loc[
-                new_node, v
+            updated_map[v, new_node_index] = updated_map[
+                new_node_index, v
             ] = 0.5 * (
-                dissimilarity_map.loc[v, cherry[0]]
-                + dissimilarity_map.loc[v, cherry[1]]
-                - dissimilarity_map.loc[cherry[0], cherry[1]]
+                dissimilarity_map[v, cherry_i]
+                + dissimilarity_map[v, cherry_j]
+                - dissimilarity_map[cherry_i, cherry_j]
             )
 
-        updated_map.loc[new_node, new_node] = 0
+        updated_map[new_node_index, new_node_index] = 0
 
         return updated_map
