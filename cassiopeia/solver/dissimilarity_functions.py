@@ -70,3 +70,25 @@ def weighted_hamming_distance(
         return 0
 
     return d / num_present
+
+def hamming_distance(s1: List[int], s2: List[int]):
+    """Computes the vanilla hamming distance between two samples.
+
+    Counts the number of positions that two samples disagree at.
+
+    Args:
+        s1: The first sample
+        s2: The second sample
+
+    Returns:
+        The number of positions two nodes disagree at.
+    """
+
+    dist = 0
+
+    for i in range(len(s1)):
+
+        if s1[i] != s2[i]:
+            dist += 1
+
+    return dist
