@@ -94,26 +94,25 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 return samples[0]
             mutation_frequencies = self.compute_mutation_frequencies(samples)
             # Finds the best partition of the set given the split criteria
-            left_set, right_set = self.perform_split(
-                mutation_frequencies, samples
-            )
+            clades = list(self.perform_split(mutation_frequencies, samples))
             # Generates a root for this subtree with a unique int identifier
             root = len(self.tree.nodes)
             self.tree.add_node(root)
+
+            for clade in clades:
+                if len(clade) == 0:
+                    clades.remove(clade)
+
             # If unable to return a split, generate a polytomy and return
-            if len(left_set) == 0:
-                for i in right_set:
-                    self.tree.add_edge(root, i)
+            if len(clades) == 1:
+                for clade in clades[0]:
+                    self.tree.add_edge(root, clade)
                 return root
-            if len(right_set) == 0:
-                for i in left_set:
-                    self.tree.add_edge(root, i)
-                return root
-            # Recursively generate the left and right subtrees
-            left_child = _solve(left_set)
-            right_child = _solve(right_set)
-            self.tree.add_edge(root, left_child)
-            self.tree.add_edge(root, right_child)
+
+            # Recursively generate the subtrees for each daughter clade
+            for clade in clades:
+                child = _solve(clade)
+                self.tree.add_edge(root, child)
             return root
 
         _solve(list(range(self.prune_cm.shape[0])))

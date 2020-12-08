@@ -136,9 +136,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             w=self.weights,
         )
 
-        print(left_set)
         improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
-        print(improved_left_set)
         improved_right_set = set(samples) - set(improved_left_set)
 
         return improved_left_set, list(improved_right_set)

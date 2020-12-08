@@ -118,9 +118,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.root_tree()
 
     @numba.jit(forceobj=True, parallel=True)
-    def compute_dissimilarity_map(
-        self, cm: np.array, C: int
-    ) -> np.array:
+    def compute_dissimilarity_map(self, cm: np.array, C: int) -> np.array:
         """Compute the dissimilarity between all samples
 
         An optimized function for computing pairwise dissimilarities between
@@ -131,7 +129,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             C: Number of samples
             delta: A dissimilarity function that takes in two arrays and returns
                 a dissimilarity
-        
+
         Returns:
             A dissimilarity mapping as a flattened array.
         """

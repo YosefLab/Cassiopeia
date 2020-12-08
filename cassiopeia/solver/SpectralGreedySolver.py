@@ -16,7 +16,9 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class SpectralGreedySolver(GreedySolver.GreedySolver):
-    """The SpectralGreedySolver implements a top-down algorithm that recursively
+    """
+    TODO: Implement FuzzySolver
+    The SpectralGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence, or absence, of the most
     frequent mutation. Additionally, the hill-climbing procedure from the
     SpectralSolver is used to further optimize each split for the normalized
@@ -38,7 +40,6 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             character state
-        fuzzy_solver: #TODO
         weights: A set of optional weights for calculating similarity for edges
             in the graph
 
@@ -61,7 +62,6 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        fuzzy_solver: bool = False,
         threshold: Optional[int] = 0,
         weights: Optional[Dict] = None,
     ):
@@ -69,7 +69,6 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         super().__init__(character_matrix, missing_char, meta_data, priors)
 
         self.missing_data_classifier = missing_data_classifier
-        self.fuzzy_solver = fuzzy_solver
         self.threshold = threshold
         self.weights = weights
 

@@ -13,7 +13,9 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
-    """The VanillaGreedySolver implements a top-down algorithm that optimizes
+    """
+    TODO: Implement fuzzysolver
+    The VanillaGreedySolver implements a top-down algorithm that optimizes
     for parsimony by recursively splitting the sample set based on the most
     presence, or absence, of the most frequent mutation. Multiple missing data
     imputation methods are included for handling the case when a sample has a
@@ -31,7 +33,6 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             character state
-        fuzzy_solver: #TODO
 
     Attributes:
         character_matrix: The character matrix describing the samples
@@ -50,13 +51,11 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        fuzzy_solver: bool = False,
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
 
         self.missing_data_classifier = missing_data_classifier
-        self.fuzzy_solver = fuzzy_solver
 
     def perform_split(
         self,
