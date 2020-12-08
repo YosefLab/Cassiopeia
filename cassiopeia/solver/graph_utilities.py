@@ -33,13 +33,12 @@ def construct_connectivity_graph(
 
     Instantiates a graph with a node for each sample. This graph represents a
     supertree over trees generated for each character. For each pair of nodes
-    (samples), the edge weight between those nodes is the sum of the number
-    of triplets that can be seperated using each character. If the nodes are an
-    ingroup on that character (the states at that character are the same), then
-    the edge weight is negative, otherwise it is positive. Effectively,
-    the construction of the graph incentivizes the max-cut algorithm to group
-    samples with shared mutations together and split samples with distant
-    mutations.
+    (samples), the edge weight between those nodes is the total number
+    of triplets that seperate the nodes using a single character minus the
+    total number of triplets where a single character groups them as an ingroup.
+    Effectively, the construction of the graph incentivizes the max-cut
+    algorithm to group samples with shared mutations together and split samples
+    with distant mutations.
 
     Args:
         cm: The character matrix of observed character states for all samples
@@ -101,8 +100,8 @@ def construct_connectivity_graph(
                             + mutation_frequencies[l][y]
                             - 2
                         )
-            if score != 0:
-                G.add_edge(i, j, weight=score)
+        if score != 0:
+            G.add_edge(i, j, weight=score)
     return G
 
 
@@ -135,7 +134,6 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[int]):
             else:
                 improvement_potential += G[i][j]["weight"]
         ip[i] = improvement_potential
-
     all_neg = False
     iters = 0
     while (not all_neg) and (iters < 2 * len(G.nodes)):
@@ -242,7 +240,7 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         moving the node to the other side of the partition.
 
         Args:
-            node: An integer representing the index of a sample and its 
+            node: An integer representing the index of a sample and its
                 respective node in the graph G
 
         Returns:
@@ -261,7 +259,9 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         else:
             # The improvement potential is the change to the weight ratio in
             # moving the node across the cut.
-            improvement_potentials[node] = (numerator + delta_numerator[node]) / min(
+            improvement_potentials[node] = (
+                numerator + delta_numerator[node]
+            ) / min(
                 weight_within_side + delta_denominator[node],
                 total_weight - weight_within_side - delta_denominator[node],
             ) - numerator / min(
