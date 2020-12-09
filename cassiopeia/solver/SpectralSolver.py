@@ -20,9 +20,6 @@ from cassiopeia.solver import graph_utilities
 
 class SpectralSolver(GreedySolver.GreedySolver):
     """
-    TODO: Try different similarity measures, or add a modular similarity
-    measure.
-    TODO: Try different priors on the similarities.
     The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,
     a similarity graph is generated for the sample set, where edges
@@ -31,7 +28,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
     normalized over the sum of edges within each side of the partition. The
     cut is minimized in order to preserve similarities. The final partition
     is then improved upon by a greedy hill-climbing procedure that further
-    improves the cut.
+    optimizes the cut.
 
     Args:
         character_matrix: A character matrix of observed character states for

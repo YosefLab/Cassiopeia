@@ -47,14 +47,6 @@ class MaxCutSolverTest(unittest.TestCase):
         self.assertEqual(G[1][3]["weight"], -3)
         self.assertEqual(G[2][3]["weight"], -3)
 
-    def test_simple_base_case(self):
-        # A case where samples 1, 2, 3 cannot be resolved, so they are returned
-        # as a polytomy
-        self.mcsolver.solve()
-        expected_newick_string = "(0,(1,2,3));"
-        observed_newick_string = solver_utilities.to_newick(self.mcsolver.tree)
-        self.assertEqual(expected_newick_string, observed_newick_string)
-
     def test_hill_climb(self):
         G = nx.DiGraph()
         for i in range(4):
@@ -68,6 +60,14 @@ class MaxCutSolverTest(unittest.TestCase):
 
         new_cut = graph_utilities.max_cut_improve_cut(G, [0, 2])
         self.assertEqual(new_cut, [0, 1])
+
+    def test_simple_base_case(self):
+        # A case where samples 1, 2, 3 cannot be resolved, so they are returned
+        # as a polytomy
+        self.mcsolver.solve()
+        expected_newick_string = "(0,(1,2,3));"
+        observed_newick_string = solver_utilities.to_newick(self.mcsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
 
 
 if __name__ == "__main__":
