@@ -27,6 +27,12 @@ def infer_layer_of_potential_graph(
     of the potential graph as well as the edges to add to the potential
     graph.
 
+    The edge representation here is a bit unorthodox, as a way of avoiding
+    the use of tuples. The edges are returned as concatenated numpy arrays of 
+    length 2M (where M is the number of characters). The first M characters
+    correspond to the first node in the edge and the latter half correspond
+    to the second node.
+
     Args:
         source_nodes: A list of samples, represented by their character
             states.
