@@ -96,18 +96,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             ),
         )
 
-        if self.priors:
-            for character in self.priors.keys():
-                nb_priors[character] = numba.typed.Dict.empty(
-                    numba.core.types.int32, numba.core.types.float64
-                )
-
-                for state in self.priors[character]:
-                    nb_priors[character][int(state)] = self.priors[character][
-                        states
-                    ]
-
-        self.priors = nb_priors
+        self.priors = priors
 
         # set up logger
         self.logfile = logfile
@@ -148,7 +137,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         potential_graph = self.infer_potential_graph(
             root, pid, max_lca_distance
         )
-        # potential_graph = ilp_solver_utilities.infer_potential_graph(self.unique_character_matrix.values, pid, max_lca_distance, self.maximum_potential_graph_layer_size, self.priors, self.missing_char)
 
         # generate Steiner Tree ILP model
         nodes = list(potential_graph.nodes())
