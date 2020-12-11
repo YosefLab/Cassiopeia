@@ -19,7 +19,7 @@ class InferAncestorError(Exception):
     pass
 
 
-def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
+def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -38,7 +38,7 @@ def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
     k = len(vecs[0])
     for i in vecs:
         assert len(i) == k
-    lca_vec = ["0"] * len(vecs[0])
+    lca_vec = [0] * len(vecs[0])
     for i in range(k):
         chars = set([vec[i] for vec in vecs])
         if len(chars) == 1:
