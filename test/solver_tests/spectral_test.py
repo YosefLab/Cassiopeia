@@ -22,6 +22,27 @@ class SpectralSolverTest(unittest.TestCase):
         self.assertEqual(graph_utilities.similarity(0, 2, cm, "-"), 0)
         self.assertEqual(graph_utilities.similarity(1, 2, cm, "-"), 2)
 
+    def test_similarity_weighted(self):
+        cm = pd.DataFrame(
+            [
+                ["5", "-", "1", "2", "0"],
+                ["5", "4", "0", "2", "1"],
+                ["4", "4", "3", "1", "1"],
+                ["-", "4", "0", "1", "-"],
+            ]
+        )
+
+        weights = {
+            0: {"5": 2},
+            1: {"4": 2},
+            2: {"1": 1, "3": 1},
+            3: {"1": 1, "2": 1},
+            4: {"1": 3},
+        }
+
+        self.assertEqual(graph_utilities.similarity(0, 2, cm, "-", weights), 0)
+        self.assertEqual(graph_utilities.similarity(1, 2, cm, "-", weights), 5)
+
     def test_graph_construction(self):
         cm = pd.DataFrame(
             [
@@ -44,6 +65,42 @@ class SpectralSolverTest(unittest.TestCase):
         self.assertEqual(G[1][2]["weight"], 1)
         self.assertEqual(G[2][3]["weight"], 1)
         self.assertNotIn([0, 2], G.edges)
+        self.assertNotIn([0, 3], G.edges)
+        self.assertNotIn([1, 3], G.edges)
+
+    def test_graph_construction_weighted(self):
+        cm = pd.DataFrame(
+            [
+                ["5", "-", "1", "2", "0"],
+                ["5", "4", "0", "2", "1"],
+                ["4", "4", "3", "1", "1"],
+                ["-", "4", "0", "1", "-"],
+            ]
+        )
+
+        weights = {
+            0: {"5": 2},
+            1: {"4": 2},
+            2: {"1": 1, "3": 1},
+            3: {"1": 1, "2": 1},
+            4: {"1": 3},
+        }
+
+        spsolver = SpectralSolver(character_matrix=cm, missing_char="-")
+
+        mutation_frequencies = spsolver.compute_mutation_frequencies(
+            range(cm.shape[0])
+        )
+        G = graph_utilities.construct_similarity_graph(
+            cm, mutation_frequencies, "-", [0, 1, 2, 3], w=weights
+        )
+
+        self.assertEqual(G[0][1]["weight"], 2)
+        self.assertEqual(G[1][2]["weight"], 4)
+        self.assertEqual(G[1][3]["weight"], 1)
+        self.assertEqual(G[2][3]["weight"], 2)
+        self.assertNotIn([0, 2], G.edges)
+        self.assertNotIn([0, 3], G.edges)
 
     def test_hill_climb(self):
         G = nx.Graph()

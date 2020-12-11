@@ -7,7 +7,7 @@ from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 
 
 class TestComputeFrequency(unittest.TestCase):
-    def test1(self):
+    def test_basic(self):
         cm = pd.DataFrame(
             [
                 ["5", "0", "1", "2", "-"],

@@ -59,15 +59,13 @@ class SpectralSolver(GreedySolver.GreedySolver):
         character_matrix: pd.DataFrame,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
+        priors: Optional[Dict[int, Dict[str, float]]] = None,
         threshold: Optional[int] = 0,
-        weights: Optional[Dict] = None,
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
 
         self.threshold = threshold
-        self.weights = weights
 
     def perform_split(
         self,
@@ -105,17 +103,17 @@ class SpectralSolver(GreedySolver.GreedySolver):
             self.missing_char,
             samples,
             threshold=self.threshold,
-            w=self.weights,
+            w=self.priors,
         )
 
         L = nx.normalized_laplacian_matrix(G).todense()
         diag = sp.linalg.eig(L)
-        v2 = diag[1][:, 1]
-        x = {}
+        second_eigenvector = diag[1][:, 1]
+        nodes_to_eigenvector = {}
         vertices = list(G.nodes())
         for i in range(len(vertices)):
-            x[vertices[i]] = v2[i]
-        vertices.sort(key=lambda v: x[v])
+            nodes_to_eigenvector[vertices[i]] = second_eigenvector[i]
+        vertices.sort(key=lambda v: nodes_to_eigenvector[v])
         total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
         # If the similarity graph is empty and there are no meaningful splits,
         # return a polytomy over the remaining samples

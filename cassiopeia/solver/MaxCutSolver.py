@@ -61,16 +61,14 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         character_matrix: pd.DataFrame,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
+        priors: Optional[Dict[int, Dict[str, float]]] = None,
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
-        weights: Optional[Dict] = None,
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
         self.sdimension = sdimension
         self.iterations = iterations
-        self.weights = weights
 
     def perform_split(
         self,
@@ -105,7 +103,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             mutation_frequencies,
             self.missing_char,
             samples,
-            w=self.weights,
+            w=self.priors,
         )
 
         if len(G.edges) == 0:

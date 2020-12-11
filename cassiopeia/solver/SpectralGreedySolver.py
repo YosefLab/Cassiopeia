@@ -61,16 +61,14 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing_char: str,
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
+        priors: Optional[Dict[int, Dict[str, float]]] = None,
         threshold: Optional[int] = 0,
-        weights: Optional[Dict] = None,
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
 
         self.missing_data_classifier = missing_data_classifier
         self.threshold = threshold
-        self.weights = weights
 
     def perform_split(
         self,
@@ -94,23 +92,46 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         Returns:
             A tuple of lists, representing the left and right partitions
         """
-        freq = 0
-        char = 0
-        state = ""
-        for i in mutation_frequencies:
-            for j in mutation_frequencies[i]:
-                if j != self.missing_char and j != "0":
+        best_frequency = 0
+        chosen_character = 0
+        chosen_state = ""
+        for character in mutation_frequencies:
+            for state in mutation_frequencies[character]:
+                if state != self.missing_char and state != "0":
                     # Avoid splitting on mutations shared by all samples
                     if (
-                        mutation_frequencies[i][j] > freq
-                        and mutation_frequencies[i][j]
+                        mutation_frequencies[character][state]
                         < len(samples)
-                        - mutation_frequencies[i][self.missing_char]
+                        - mutation_frequencies[character][self.missing_char]
                     ):
-                        char, state = i, j
-                        freq = mutation_frequencies[i][j]
+                        if self.priors:
+                            if (
+                                mutation_frequencies[character][state]
+                                * self.priors[character][state]
+                                > best_frequency
+                            ):
+                                chosen_character, chosen_state = (
+                                    character,
+                                    state,
+                                )
+                                best_frequency = (
+                                    mutation_frequencies[character][state]
+                                    * self.priors[character][state]
+                                )
+                        else:
+                            if (
+                                mutation_frequencies[character][state]
+                                > best_frequency
+                            ):
+                                chosen_character, chosen_state = (
+                                    character,
+                                    state,
+                                )
+                                best_frequency = mutation_frequencies[
+                                    character
+                                ][state]
 
-        if state == "":
+        if chosen_state == "":
             return samples, []
 
         left_set = []
@@ -118,9 +139,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing = []
 
         for i in samples:
-            if self.prune_cm.iloc[i, char] == state:
+            if self.prune_cm.iloc[i, chosen_character] == chosen_state:
                 left_set.append(i)
-            elif self.prune_cm.iloc[i, char] == self.missing_char:
+            elif self.prune_cm.iloc[i, chosen_character] == self.missing_char:
                 missing.append(i)
             else:
                 right_set.append(i)
@@ -136,7 +157,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             self.missing_char,
             samples,
             threshold=self.threshold,
-            w=self.weights,
+            w=self.priors,
         )
 
         improved_left_set = graph_utilities.spectral_improve_cut(G, left_set)

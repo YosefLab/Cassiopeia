@@ -1,13 +1,15 @@
 import unittest
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
+from cassiopeia.solver import solver_utilities
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
-    def test1(self):
+    def test_base_case_1(self):
         cm = pd.DataFrame(
             [
                 ["5", "0", "1", "2", "0"],
@@ -28,18 +30,11 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertListEqual(right, [0, 1])
 
         vgsolver.solve()
-        self.assertIn((6, 7), vgsolver.tree.edges)
-        self.assertIn((6, 10), vgsolver.tree.edges)
-        self.assertIn((7, 8), vgsolver.tree.edges)
-        self.assertIn((7, 9), vgsolver.tree.edges)
-        self.assertIn((8, 2), vgsolver.tree.edges)
-        self.assertIn((8, 5), vgsolver.tree.edges)
-        self.assertIn((9, 3), vgsolver.tree.edges)
-        self.assertIn((9, 4), vgsolver.tree.edges)
-        self.assertIn((10, 0), vgsolver.tree.edges)
-        self.assertIn((10, 1), vgsolver.tree.edges)
+        expected_newick_string = "(((2,5),(4,3)),(0,1));"
+        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
 
-    def test2(self):
+    def test_base_case_2(self):
         cm = pd.DataFrame(
             [
                 ["0", "0", "1", "2", "0"],
@@ -52,20 +47,107 @@ class VanillaGreedySolverTest(unittest.TestCase):
             ]
         )
 
+        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char="-")
+
+        vgsolver.solve()
+        expected_newick_string = "(((2,1),(3,4,5)),0);"
+        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
+
+    def test_weighted_case_trivial(self):
+        cm = pd.DataFrame(
+            [
+                ["0", "0", "1", "2", "0"],
+                ["0", "0", "1", "2", "0"],
+                ["1", "2", "0", "2", "-"],
+                ["1", "2", "3", "2", "-"],
+                ["1", "0", "3", "4", "5"],
+                ["1", "0", "-", "4", "5"],
+                ["1", "0", "-", "-", "5"],
+            ]
+        )
+
+        weights = {
+            0: {"1": 1},
+            1: {"2": 1},
+            2: {"1": 1, "3": 1},
+            3: {"2": 1, "4": 1},
+            4: {"5": 1},
+        }
+
         vgsolver = VanillaGreedySolver(
-            character_matrix=cm, missing_char="-", missing_data_classifier=None
+            character_matrix=cm, missing_char="-", priors=weights
         )
 
         vgsolver.solve()
-        self.assertIn((6, 7), vgsolver.tree.edges)
-        self.assertIn((6, 0), vgsolver.tree.edges)
-        self.assertIn((7, 8), vgsolver.tree.edges)
-        self.assertIn((7, 9), vgsolver.tree.edges)
-        self.assertIn((8, 2), vgsolver.tree.edges)
-        self.assertIn((8, 1), vgsolver.tree.edges)
-        self.assertIn((9, 3), vgsolver.tree.edges)
-        self.assertIn((9, 4), vgsolver.tree.edges)
-        self.assertIn((9, 5), vgsolver.tree.edges)
+        expected_newick_string = "(((2,1),(3,4,5)),0);"
+        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
+
+    def test_weighted_case_non_trivial(self):
+        cm = pd.DataFrame(
+            [
+                ["0", "0", "1", "2", "0"],
+                ["0", "0", "1", "2", "0"],
+                ["1", "2", "0", "2", "-"],
+                ["1", "2", "3", "2", "-"],
+                ["1", "0", "3", "4", "5"],
+                ["1", "0", "-", "4", "5"],
+                ["1", "0", "-", "-", "5"],
+            ]
+        )
+
+        weights = {
+            0: {"1": 1},
+            1: {"2": 1},
+            2: {"1": 2, "3": 3},
+            3: {"2": 1, "4": 1},
+            4: {"5": 2},
+        }
+
+        vgsolver = VanillaGreedySolver(
+            character_matrix=cm, missing_char="-", priors=weights
+        )
+
+        vgsolver.solve()
+        expected_newick_string = "(((3,4,5),2),(0,1));"
+        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
+
+    def test_priors_case(self):
+        cm = pd.DataFrame(
+            [
+                ["0", "0", "1", "2", "0"],
+                ["0", "0", "1", "2", "0"],
+                ["1", "2", "0", "2", "-"],
+                ["1", "2", "3", "2", "-"],
+                ["1", "0", "3", "4", "5"],
+                ["1", "0", "-", "4", "5"],
+                ["1", "0", "-", "-", "5"],
+            ]
+        )
+
+        priors = {
+            0: {"1": 1},
+            1: {"2": 1},
+            2: {"1": 0.8, "3": 0.2},
+            3: {"2": 0.9, "4": 0.1},
+            4: {"5": 1},
+        }
+        weights = {}
+        for i in priors:
+            temp = {}
+            for j in priors[i]:
+                temp[j] = -np.log(priors[i][j])
+            weights[i] = temp
+        vgsolver = VanillaGreedySolver(
+            character_matrix=cm, missing_char="-", priors=weights
+        )
+
+        vgsolver.solve()
+        expected_newick_string = "((3,4,5),(2,0,1));"
+        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        self.assertEqual(expected_newick_string, observed_newick_string)
 
 
 if __name__ == "__main__":
