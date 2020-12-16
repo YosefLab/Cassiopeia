@@ -50,12 +50,12 @@ def to_newick_with_internal(tree: nx.DiGraph) -> str:
 class TestCollapseEdges(unittest.TestCase):
     def test_lca_characters(self):
         vecs = [
-            ["1", "0", "3", "4", "5"],
-            ["1", "-", "-", "3", "-"],
-            ["1", "2", "3", "2", "-"],
+            [1, 0, 3, 4, 5],
+            [1, -1, -1, 3, -1],
+            [1, 2, 3, 2, -1],
         ]
-        ret_vec = solver_utilities.get_lca_characters(vecs, missing_char="-")
-        self.assertEqual(ret_vec, ["1", "0", "3", "0", "5"])
+        ret_vec = solver_utilities.get_lca_characters(vecs, missing_char=-1)
+        self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test1(self):
         T = nx.DiGraph()
@@ -68,17 +68,17 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(6, 4)
         T.add_edge(6, 5)
         table = [
-            ["1", "0", "3", "4", "5"],
-            ["1", "0", "3", "3", "-"],
-            ["1", "2", "3", "0", "-"],
-            ["1", "0", "3", "0", "-"],
+            [1, 0, 3, 4, 5],
+            [1, 0, 3, 3, -1],
+            [1, 2, 3, 0, -1],
+            [1, 0, 3, 0, -1],
         ]
         cm = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
             character_matrix=cm,
-            missing_char="-",
+            missing_char=-1,
         )
         new_map = {}
         for i in T:
@@ -89,19 +89,19 @@ class TestCollapseEdges(unittest.TestCase):
 
         expected_nodes = {
             "1|0|3|4|5,0",
-            "1|0|3|3|-,1",
-            "1|2|3|0|-,2",
-            "1|0|3|0|-,3",
-            "1|0|3|0|-,5",
+            "1|0|3|3|-1,1",
+            "1|2|3|0|-1,2",
+            "1|0|3|0|-1,3",
+            "1|0|3|0|-1,5",
             "1|0|3|0|5,6",
         }
 
         expected_edges = {
             ("1|0|3|0|5,6", "1|0|3|4|5,0"),
-            ("1|0|3|0|5,6", "1|0|3|3|-,1"),
-            ("1|0|3|0|-,5", "1|0|3|0|-,3"),
-            ("1|0|3|0|-,5", "1|2|3|0|-,2"),
-            ("1|0|3|0|5,6", "1|0|3|0|-,5"),
+            ("1|0|3|0|5,6", "1|0|3|3|-1,1"),
+            ("1|0|3|0|-1,5", "1|0|3|0|-1,3"),
+            ("1|0|3|0|-1,5", "1|2|3|0|-1,2"),
+            ("1|0|3|0|5,6", "1|0|3|0|-1,5"),
         }
 
         for i in T:
@@ -121,17 +121,17 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(6, 5)
         T.add_edge(6, 2)
         table = [
-            ["1", "0", "3", "4", "5"],
-            ["1", "0", "3", "3", "-"],
-            ["1", "2", "3", "0", "-"],
-            ["1", "0", "3", "0", "-"],
+            [1, 0, 3, 4, 5],
+            [1, 0, 3, 3, -1],
+            [1, 2, 3, 0, -1],
+            [1, 0, 3, 0, -1],
         ]
         cm = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
             character_matrix=cm,
-            missing_char="-",
+            missing_char=-1,
         )
         new_map = {}
         for i in T:
@@ -142,17 +142,17 @@ class TestCollapseEdges(unittest.TestCase):
 
         expected_nodes = {
             "1|0|3|4|5,0",
-            "1|0|3|3|-,1",
-            "1|2|3|0|-,2",
-            "1|0|3|0|-,3",
+            "1|0|3|3|-1,1",
+            "1|2|3|0|-1,2",
+            "1|0|3|0|-1,3",
             "1|0|3|0|5,6",
         }
 
         expected_edges = {
             ("1|0|3|0|5,6", "1|0|3|4|5,0"),
-            ("1|0|3|0|5,6", "1|0|3|3|-,1"),
-            ("1|0|3|0|5,6", "1|2|3|0|-,2"),
-            ("1|0|3|0|5,6", "1|0|3|0|-,3"),
+            ("1|0|3|0|5,6", "1|0|3|3|-1,1"),
+            ("1|0|3|0|5,6", "1|2|3|0|-1,2"),
+            ("1|0|3|0|5,6", "1|0|3|0|-1,3"),
         }
 
         for i in T:
@@ -219,7 +219,7 @@ class TestCollapseEdges(unittest.TestCase):
         for n in collapsed_tree.traverse():
             self.assertFalse(len(n.children) == 1)
 
-        self.assertEqual((collapsed_tree & "5").up.name, "0")
+        self.assertEqual((collapsed_tree & 5).up.name, "0")
 
 
 if __name__ == "__main__":

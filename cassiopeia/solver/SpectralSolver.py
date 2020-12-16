@@ -16,6 +16,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
+from cassiopeia.solver import dissimilarity_functions
 
 
 class SpectralSolver(GreedySolver.GreedySolver):
@@ -36,10 +37,15 @@ class SpectralSolver(GreedySolver.GreedySolver):
         missing_char: The character representing missing values
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            character state
-        threshold: A minimum similarity threshold
-        weights: A set of optional weights for calculating similarity for edges
-            in the graph
+            state for each character. Weights are set to be negative log of
+            these probabilities.
+        weights: A set of optional weights on character/mutation pairs to
+            scale the contribution of a mutation to similarity between a pair
+            of nodes. Overrides weights from priors
+        similarity_function: A function that calculates a similarity score
+            between two given samples and their observed mutations
+        threshold: A minimum similarity threshold to include an edge in the
+            similarity graph
 
     Attributes:
         character_matrix: The character matrix describing the samples
@@ -49,9 +55,11 @@ class SpectralSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         prune_cm: A character matrix with duplicate rows filtered out
+        weights: Weights on character/mutation pairs, derived from priors or
+            explicitly provided
+        similarity_function: A function that calculates a similarity score
+            between two given samples and their observed mutations
         threshold: A minimum similarity threshold
-        weights: A set of optional weights for calculating similarity for edges
-            in the graph
     """
 
     def __init__(
@@ -60,12 +68,33 @@ class SpectralSolver(GreedySolver.GreedySolver):
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
+        weights: Optional[Dict[int, Dict[str, float]]] = None,
+        similarity_function: Optional[
+            Callable[
+                [
+                    int,
+                    int,
+                    pd.DataFrame,
+                    int,
+                    Optional[Dict[int, Dict[str, float]]],
+                ],
+                float,
+            ]
+        ] = None,
         threshold: Optional[int] = 0,
     ):
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__(
+            character_matrix, missing_char, meta_data, priors, weights
+        )
 
         self.threshold = threshold
+        if similarity_function:
+            self.similarity_function = similarity_function
+        else:
+            self.similarity_function = (
+                dissimilarity_functions.hamming_similarity
+            )
 
     def perform_split(
         self,
@@ -76,16 +105,17 @@ class SpectralSolver(GreedySolver.GreedySolver):
         of the samples.
 
         First, a similarity graph is generated with samples as nodes such that
-        edges between a pair of nodes is the number of character/state mutations
-        shared. Then, Fielder's algorithm is used to generate a partition on
-        this graph that minimizes a modified normalized cut: weight of edges
-        across cut/ min(weight of edges within each side of cut). It does this by
-        first calculating the 2nd eigenvector of the normalized Laplacian of
-        the similarity matrix. Then, it orders the nodes in a graph by the
-        eigenvector values and finds an index such that partitioning the ordered
-        nodes on that index minimizes the normalized cut ratio. As the optimal
-        partition can be determined using the 2nd eigenvector, this greatly
-        reduces the space of cuts needed to be explored.
+        edges between a pair of nodes is some provided function on the number
+        of character/state mutations shared. Then, Fielder's algorithm is used
+        to generate a partition on this graph that minimizes a modified
+        normalized cut: weight of edges across cut/ min(weight of edges within
+        each side of cut). It does this efficiently by first calculating the
+        2nd eigenvector of the normalized Laplacian of the similarity matrix.
+        Then, it orders the nodes in a graph by the eigenvector values and finds
+        an index such that partitioning the ordered nodes on that index
+        minimizes the normalized cut ratio. As the optimal partition can be
+        determined using the 2nd eigenvector, this greatly reduces the space of
+        cuts needed to be explored.
 
         Args:
             mutation_frequencies: A dictionary containing the frequencies of
@@ -102,8 +132,9 @@ class SpectralSolver(GreedySolver.GreedySolver):
             mutation_frequencies,
             self.missing_char,
             samples,
+            similarity_function=self.similarity_function,
             threshold=self.threshold,
-            w=self.priors,
+            w=self.weights,
         )
 
         L = nx.normalized_laplacian_matrix(G).todense()

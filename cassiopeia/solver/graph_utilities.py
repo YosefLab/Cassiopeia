@@ -4,7 +4,7 @@ import networkx as nx
 import pandas as pd
 
 from cassiopeia.solver import solver_utilities
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 
 def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
@@ -24,12 +24,14 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
 
 def construct_connectivity_graph(
     cm: pd.DataFrame,
-    mutation_frequencies: Dict[int, Dict[str, int]],
+    mutation_frequencies: Dict[int, Dict[int, int]],
     missing_char: str,
     samples: List[int],
-    w: Optional[Dict[int, Dict[str, float]]] = None,
+    w: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
-    """Generates connectivity graph for max-cut algorithm.
+    """
+    TODO: Optimize with numba?
+    Generates connectivity graph for max-cut algorithm.
 
     Instantiates a graph with a node for each sample. This graph represents a
     supertree over trees generated for each character. For each pair of nodes
@@ -61,9 +63,7 @@ def construct_connectivity_graph(
         for l in range(cm.shape[1]):
             x = cm.iloc[i, l]
             y = cm.iloc[j, l]
-            if (x != missing_char and y != missing_char) and (
-                x != "0" or y != "0"
-            ):
+            if (x != missing_char and y != missing_char) and (x != 0 or y != 0):
                 if w is not None:
                     if x == y:
                         score -= (
@@ -75,9 +75,9 @@ def construct_connectivity_graph(
                                 - mutation_frequencies[l][missing_char]
                             )
                         )
-                    elif x == "0":
+                    elif x == 0:
                         score += w[l][y] * (mutation_frequencies[l][y] - 1)
-                    elif y == "0":
+                    elif y == 0:
                         score += w[l][x] * (mutation_frequencies[l][x] - 1)
                     else:
                         score += w[l][x] * (mutation_frequencies[l][x] - 1) + w[
@@ -90,9 +90,9 @@ def construct_connectivity_graph(
                             - mutation_frequencies[l][x]
                             - mutation_frequencies[l][missing_char]
                         )
-                    elif x == "0":
+                    elif x == 0:
                         score += mutation_frequencies[l][y] - 1
-                    elif y == "0":
+                    elif y == 0:
                         score += mutation_frequencies[l][x] - 1
                     else:
                         score += (
@@ -163,13 +163,19 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[int]):
 
 def construct_similarity_graph(
     cm: pd.DataFrame,
-    mutation_frequencies: Dict[int, Dict[str, int]],
-    missing_char: str,
+    mutation_frequencies: Dict[int, Dict[int, int]],
+    missing_char: int,
     samples: List[int],
+    similarity_function: Callable[
+        [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
+        float,
+    ],
     threshold: int = 0,
-    w: Optional[Dict[int, Dict[str, float]]] = None,
+    w: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
-    """Generates a similarity graph on the sample set.
+    """
+    TODO: Optimize with numba?
+    Generates a similarity graph on the sample set.
 
     Generates a similarity graph with the samples in the sample set as nodes.
     For each pair of nodes, an edge is created with weight equal to the
@@ -186,6 +192,8 @@ def construct_similarity_graph(
             restricted to the sample set
         missing_char: The character representing missing values
         samples: A list of samples to build the graph over
+        similarity_function: A function that calculates a similarity score
+            between two given samples and their observed mutations
         threshold: A minimum similarity threshold
         w: A set of optional weights for edges in the similarity graph
 
@@ -195,22 +203,28 @@ def construct_similarity_graph(
     G = nx.Graph()
     for i in samples:
         G.add_node(i)
-    for character in mutation_frequencies:
-        for state in mutation_frequencies[character]:
-            if state != "0" and state != missing_char:
-                # Increase the threshold for every mutation shared by all
-                # samples
-                if (
-                    mutation_frequencies[character][state]
-                    == len(samples)
-                    - mutation_frequencies[character][missing_char]
-                ):
-                    threshold += 1
 
     for i, j in itertools.combinations(samples, 2):
-        s = similarity(i, j, cm, missing_char, w)
+        s = similarity_function(
+            list(cm.iloc[i, :]), list(cm.iloc[j, :]), missing_char, w
+        )
         if s > threshold:
-            G.add_edge(i, j, weight=(s - threshold))
+            G.add_edge(i, j, weight=s)
+
+    if len(G.edges) > 1:
+        min_edge = min(G.edges(data=True), key=lambda x: x[2]["weight"])
+        min_edge_weight = min_edge[2]["weight"]
+        G.remove_edge(min_edge[0], min_edge[1])
+
+        to_remove = []
+        for node1, node2, d in G.edges(data=True):
+            d["weight"] -= min_edge_weight
+            if d["weight"] <= 0:
+                to_remove.append((node1, node2))
+
+        for edge in to_remove:
+            G.remove_edge(edge[0], edge[1])
+
     return G
 
 
@@ -284,30 +298,29 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
     weight_within_side = sum(
         [sum([G[u][v]["weight"] for v in G.neighbors(u)]) for u in new_cut]
     )
-
     if numerator == 0:
         return new_cut
 
-    for u in G.nodes():
+    for node1 in G.nodes:
         # Annotate each node with the change to the weight across the cut and
         # the weight within a side of the cut
-        d = sum([G[u][v]["weight"] for v in G.neighbors(u)])
-        if d == 0:
-            return [u]
-        c = sum(
+        neighbor_weight = sum(
+            [G[node1][node2]["weight"] for node2 in G.neighbors(node1)]
+        )
+        cut_weight = sum(
             [
-                G[u][v]["weight"]
-                for v in G.neighbors(u)
-                if check_if_cut(u, v, new_cut)
+                G[node1][node2]["weight"]
+                for node2 in G.neighbors(node1)
+                if check_if_cut(node1, node2, new_cut)
             ]
         )
-        delta_numerator[u] = d - 2 * c
-        if u in new_cut:
-            delta_denominator[u] = -d
+        delta_numerator[node1] = neighbor_weight - 2 * cut_weight
+        if node1 in new_cut:
+            delta_denominator[node1] = -neighbor_weight
         else:
-            delta_denominator[u] = d
+            delta_denominator[node1] = neighbor_weight
         # Set the improvement potential for each node
-        set_improvement_potential(u)
+        set_improvement_potential(node1)
 
     all_pos = False
     iters = 0
@@ -339,51 +352,3 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         iters += 1
 
     return new_cut
-
-
-def similarity(
-    node1: int,
-    node2: int,
-    cm: pd.DataFrame,
-    missing_char: str,
-    w: Optional[Dict[int, Dict[str, float]]] = None,
-) -> Union[int, float]:
-    """A function to return the number of (non-missing) character/state
-    mutations shared by two samples.
-
-    Args:
-        node1: The row index of the character matrix representing the first sample
-        v: The row index of the character matrix representing the second sample
-        cm: The character matrix of observed character states for all samples
-        missing_char: The character representing missing values
-        w: A set of optional weights to weight the similarity of a mutation
-    Returns:
-        The number of shared mutations between two samples, weighted or unweighted
-    """
-
-    # TODO Optimize this using masks
-    num_chars = cm.shape[1]
-    if w is None:
-        return sum(
-            [
-                1
-                for i in range(num_chars)
-                if cm.iloc[node1, i] == cm.iloc[node2, i]
-                and (
-                    cm.iloc[node1, i] != "0"
-                    and cm.iloc[node1, i] != missing_char
-                )
-            ]
-        )
-    else:
-        return sum(
-            [
-                w[i][cm.iloc[node1, i]]
-                for i in range(num_chars)
-                if cm.iloc[node1, i] == cm.iloc[node2, i]
-                and (
-                    cm.iloc[node1, i] != "0"
-                    and cm.iloc[node1, i] != missing_char
-                )
-            ]
-        )

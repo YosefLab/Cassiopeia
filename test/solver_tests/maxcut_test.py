@@ -10,10 +10,8 @@ from cassiopeia.solver import solver_utilities
 
 class MaxCutSolverTest(unittest.TestCase):
     def setUp(self):
-        self.cm = pd.DataFrame(
-            [["5", "0", "1"], ["5", "4", "0"], ["4", "4", "3"], ["-", "4", "0"]]
-        )
-        self.mcsolver = MaxCutSolver(character_matrix=self.cm, missing_char="-")
+        self.cm = pd.DataFrame([[5, 0, 1], [5, 4, 0], [4, 4, 3], [-1, 4, 0]])
+        self.mcsolver = MaxCutSolver(character_matrix=self.cm, missing_char=-1)
         self.mutation_frequencies = self.mcsolver.compute_mutation_frequencies(
             range(self.cm.shape[0])
         )
@@ -26,7 +24,7 @@ class MaxCutSolverTest(unittest.TestCase):
         G = graph_utilities.construct_connectivity_graph(
             self.cm,
             self.mutation_frequencies,
-            "-",
+            -1,
             list(range(self.cm.shape[0])),
         )
         cut_weight = self.mcsolver.evaluate_cut([1, 2], G)
@@ -36,7 +34,7 @@ class MaxCutSolverTest(unittest.TestCase):
         G = graph_utilities.construct_connectivity_graph(
             self.cm,
             self.mutation_frequencies,
-            "-",
+            -1,
             list(range(self.cm.shape[0])),
         )
 
@@ -48,12 +46,12 @@ class MaxCutSolverTest(unittest.TestCase):
         self.assertEqual(G[2][3]["weight"], -3)
 
     def test_graph_construction_weights(self):
-        weights = {0: {"4": 1, "5": 2}, 1: {"4": 2}, 2: {"1": 1, "3": 1}}
+        weights = {0: {4: 1, 5: 2}, 1: {4: 2}, 2: {1: 1, 3: 1}}
 
         G = graph_utilities.construct_connectivity_graph(
             self.cm,
             self.mutation_frequencies,
-            "-",
+            -1,
             list(range(self.cm.shape[0])),
             w=weights,
         )

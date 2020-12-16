@@ -12,16 +12,16 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_base_case_1(self):
         cm = pd.DataFrame(
             [
-                ["5", "0", "1", "2", "0"],
-                ["5", "0", "0", "2", "-"],
-                ["4", "0", "3", "2", "-"],
-                ["-", "4", "0", "2", "2"],
-                ["0", "4", "1", "2", "2"],
-                ["4", "0", "0", "2", "2"],
+                [5, 0, 1, 2, 0],
+                [5, 0, 0, 2, -1],
+                [4, 0, 3, 2, -1],
+                [-1, 4, 0, 2, 2],
+                [0, 4, 1, 2, 2],
+                [4, 0, 0, 2, 2],
             ]
         )
 
-        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char="-")
+        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
 
         mut_freqs = vgsolver.compute_mutation_frequencies()
         left, right = vgsolver.perform_split(mut_freqs, list(range(6)))
@@ -37,17 +37,17 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_base_case_2(self):
         cm = pd.DataFrame(
             [
-                ["0", "0", "1", "2", "0"],
-                ["0", "0", "1", "2", "0"],
-                ["1", "2", "0", "2", "-"],
-                ["1", "2", "3", "2", "-"],
-                ["1", "0", "3", "4", "5"],
-                ["1", "0", "-", "4", "5"],
-                ["1", "0", "-", "-", "5"],
+                [0, 0, 1, 2, 0],
+                [0, 0, 1, 2, 0],
+                [1, 2, 0, 2, -1],
+                [1, 2, 3, 2, -1],
+                [1, 0, 3, 4, 5],
+                [1, 0, -1, 4, 5],
+                [1, 0, -1, -1, 5],
             ]
         )
 
-        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char="-")
+        vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
 
         vgsolver.solve()
         expected_newick_string = "(((2,1),(3,4,5)),0);"
@@ -57,26 +57,26 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_weighted_case_trivial(self):
         cm = pd.DataFrame(
             [
-                ["0", "0", "1", "2", "0"],
-                ["0", "0", "1", "2", "0"],
-                ["1", "2", "0", "2", "-"],
-                ["1", "2", "3", "2", "-"],
-                ["1", "0", "3", "4", "5"],
-                ["1", "0", "-", "4", "5"],
-                ["1", "0", "-", "-", "5"],
+                [0, 0, 1, 2, 0],
+                [0, 0, 1, 2, 0],
+                [1, 2, 0, 2, -1],
+                [1, 2, 3, 2, -1],
+                [1, 0, 3, 4, 5],
+                [1, 0, -1, 4, 5],
+                [1, 0, -1, -1, 5],
             ]
         )
 
         weights = {
-            0: {"1": 1},
-            1: {"2": 1},
-            2: {"1": 1, "3": 1},
-            3: {"2": 1, "4": 1},
-            4: {"5": 1},
+            0: {1: 1},
+            1: {2: 1},
+            2: {1: 1, 3: 1},
+            3: {2: 1, 4: 1},
+            4: {5: 1},
         }
 
         vgsolver = VanillaGreedySolver(
-            character_matrix=cm, missing_char="-", priors=weights
+            character_matrix=cm, missing_char=-1, weights=weights
         )
 
         vgsolver.solve()
@@ -87,26 +87,26 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_weighted_case_non_trivial(self):
         cm = pd.DataFrame(
             [
-                ["0", "0", "1", "2", "0"],
-                ["0", "0", "1", "2", "0"],
-                ["1", "2", "0", "2", "-"],
-                ["1", "2", "3", "2", "-"],
-                ["1", "0", "3", "4", "5"],
-                ["1", "0", "-", "4", "5"],
-                ["1", "0", "-", "-", "5"],
+                [0, 0, 1, 2, 0],
+                [0, 0, 1, 2, 0],
+                [1, 2, 0, 2, -1],
+                [1, 2, 3, 2, -1],
+                [1, 0, 3, 4, 5],
+                [1, 0, -1, 4, 5],
+                [1, 0, -1, -1, 5],
             ]
         )
 
         weights = {
-            0: {"1": 1},
-            1: {"2": 1},
-            2: {"1": 2, "3": 3},
-            3: {"2": 1, "4": 1},
-            4: {"5": 2},
+            0: {1: 1},
+            1: {2: 1},
+            2: {1: 2, 3: 3},
+            3: {2: 1, 4: 1},
+            4: {5: 2},
         }
 
         vgsolver = VanillaGreedySolver(
-            character_matrix=cm, missing_char="-", priors=weights
+            character_matrix=cm, missing_char=-1, weights=weights
         )
 
         vgsolver.solve()
@@ -117,31 +117,26 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_priors_case(self):
         cm = pd.DataFrame(
             [
-                ["0", "0", "1", "2", "0"],
-                ["0", "0", "1", "2", "0"],
-                ["1", "2", "0", "2", "-"],
-                ["1", "2", "3", "2", "-"],
-                ["1", "0", "3", "4", "5"],
-                ["1", "0", "-", "4", "5"],
-                ["1", "0", "-", "-", "5"],
+                [0, 0, 1, 2, 0],
+                [0, 0, 1, 2, 0],
+                [1, 2, 0, 2, -1],
+                [1, 2, 3, 2, -1],
+                [1, 0, 3, 4, 5],
+                [1, 0, -1, 4, 5],
+                [1, 0, -1, -1, 5],
             ]
         )
 
         priors = {
-            0: {"1": 1},
-            1: {"2": 1},
-            2: {"1": 0.8, "3": 0.2},
-            3: {"2": 0.9, "4": 0.1},
-            4: {"5": 1},
+            0: {1: 1},
+            1: {2: 1},
+            2: {1: 0.8, 3: 0.2},
+            3: {2: 0.9, 4: 0.1},
+            4: {5: 1},
         }
-        weights = {}
-        for i in priors:
-            temp = {}
-            for j in priors[i]:
-                temp[j] = -np.log(priors[i][j])
-            weights[i] = temp
+
         vgsolver = VanillaGreedySolver(
-            character_matrix=cm, missing_char="-", priors=weights
+            character_matrix=cm, missing_char=-1, priors=priors
         )
 
         vgsolver.solve()

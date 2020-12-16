@@ -40,7 +40,7 @@ def assign_missing_average(
         subset_cm = cm.iloc[left_set, :]
         for char in range(cm.shape[1]):
             state = cm.iloc[i, char]
-            if state != missing_char and state != "0":
+            if state != missing_char and state != 0:
                 state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)
                 if len(ind[0]) > 0:
@@ -51,7 +51,7 @@ def assign_missing_average(
         subset_cm = cm.iloc[right_set, :]
         for char in range(cm.shape[1]):
             state = cm.iloc[i, char]
-            if state != missing_char and state != "0":
+            if state != missing_char and state != 0:
                 state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)
                 if len(ind[0]) > 0:

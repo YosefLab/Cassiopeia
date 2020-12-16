@@ -38,7 +38,7 @@ def get_lca_characters(vecs: List[List[str]], missing_char: str) -> List[str]:
     k = len(vecs[0])
     for i in vecs:
         assert len(i) == k
-    lca_vec = ["0"] * len(vecs[0])
+    lca_vec = [0] * len(vecs[0])
     for i in range(k):
         chars = set([vec[i] for vec in vecs])
         if len(chars) == 1:
@@ -228,3 +228,25 @@ def to_newick(tree: nx.DiGraph) -> str:
 def post_process_tree(T, cm):
     # raise NotImplementedError()
     pass
+
+
+def negative_log_prob_weights(priors):
+    """Generates a dictionary of negative log probabilities from priors.
+
+    Generates a dicitonary of weights for use in algorithms that inheret the
+    GreedySolver from given priors.
+
+    Args:
+        priors: A dictionary of prior probabilities for each character/state
+            pair
+
+    Returns:
+        A dictionary of weights for each character/state pair
+    """
+    weights = {}
+    for character in priors:
+        state_weights = {}
+        for state in priors[character]:
+            state_weights[state] = -np.log(priors[character][state])
+        weights[character] = state_weights
+    return weights

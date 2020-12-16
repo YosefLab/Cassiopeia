@@ -29,13 +29,18 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: The character representing missing values
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            character state
+            state for each character. Sets weights to be negative log
+            transformations of these probabilities.
+        weights: A set of optional weights on character/mutation pairs for use
+            in the algorithm. Overrides weights from priors
 
     Attributes:
         character_matrix: The character matrix describing the samples
         missing_char: The character representing missing values
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
+        weights: Weights on character/mutation pairs, derived from priors or
+            explicitly provided
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         prune_cm: A character matrix with duplicate rows filtered out
@@ -46,10 +51,18 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
+        priors: Optional[Dict[int, Dict[int, float]]] = None,
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
+        self.weights = weights
+        if priors:
+            self.priors = priors
+            if not weights:
+                self.weights = solver_utilities.negative_log_prob_weights(
+                    priors
+                )
         self.prune_cm = self.character_matrix.drop_duplicates()
         self.tree = nx.DiGraph()
         for i in range(self.prune_cm.shape[0]):
@@ -57,7 +70,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def perform_split(
         self,
-        mutation_frequencies: Dict[int, Dict[str, int]],
+        mutation_frequencies: Dict[int, Dict[int, int]],
         samples: List[int],
     ) -> Tuple[List[int], List[int]]:
         """Performs a partition of the samples.

@@ -36,24 +36,29 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: The character representing missing values
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            character state
+            state for each character. Sets weights to be negative log
+            transformations of these probabilities.
+        weights: A set of optional weights on character/mutation pairs to scale
+            the contribution of each mutuation in the connectivity graph.
+            Overrides weights from priors
         sdimension: The number of dimensions to use for the embedding space.
             Acts as a hyperparameter
         iterations: The number of iterations in updating the embeddings.
             Acts as a hyperparameter
-        weights: A set of optional weights for edges in the connectivity graph
+
 
     Attributes:
         character_matrix: The character matrix describing the samples
         missing_char: The character representing missing values
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
+        weights: Weights on character/mutation pairs, derived from priors or
+            explicitly provided
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         prune_cm: A character matrix with duplicate rows filtered out
         sdimension: The number of dimensions to use for the embedding space
         iterations: The number of iterations in updating the embeddings
-        weights: A set of optional weights for edges in the connectivity graph
     """
 
     def __init__(
@@ -62,11 +67,14 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__(
+            character_matrix, missing_char, meta_data, priors, weights
+        )
         self.sdimension = sdimension
         self.iterations = iterations
 
@@ -103,7 +111,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             mutation_frequencies,
             self.missing_char,
             samples,
-            w=self.priors,
+            w=self.weights,
         )
 
         if len(G.edges) == 0:

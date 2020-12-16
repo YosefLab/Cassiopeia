@@ -17,7 +17,9 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
-    """The MaxCutGreedySolver implements a top-down algorithm that recursively
+    """
+    TODO: Implement fuzzy solver
+    The MaxCutGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence/absence of the most frequent
     mutation. Additionally, the hill-climbing procedure from the MaxCutSolver is
     used to further optimize each split for the max cut on the similarity graph
@@ -38,19 +40,22 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             the "average" method.
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            character state
-        fuzzy_solver: #TODO
-        weights: A set of optional weights for edges in the connectivity graph
+            state for each character. Sets weights to be negative log
+            transformations of these probabilities.
+        weights: A set of optional weights on character/mutation pairs to scale
+            frequency and the contribution of each mutuation in the
+            connectivity graph. Overrides weights from priors
 
     Attributes:
         character_matrix: The character matrix describing the samples
         missing_char: The character representing missing values
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
+        weights: Weights on character/mutation pairs, derived from priors or
+            explicitly provided
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         prune_cm: A character matrix with duplicate rows filtered out
-        weights: A set of optional weights for edges in the connectivity graph
     """
 
     def __init__(
@@ -59,18 +64,19 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         missing_char: str,
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, Dict[str, float]]] = None,
-        fuzzy_solver: bool = False,
+        priors: Optional[Dict[int, Dict[int, float]]] = None,
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
     ):
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__(
+            character_matrix, missing_char, meta_data, priors, weights
+        )
 
         self.missing_data_classifier = missing_data_classifier
-        self.fuzzy_solver = fuzzy_solver
 
     def perform_split(
         self,
-        mutation_frequencies: Dict[int, Dict[str, int]],
+        mutation_frequencies: Dict[int, Dict[int, int]],
         samples: List[int],
     ) -> Tuple[List[int], List[int]]:
         """Performs a partition using both Greedy and MaxCut criteria.
@@ -92,20 +98,20 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         """
         best_frequency = 0
         chosen_character = 0
-        chosen_state = ""
+        chosen_state = 0
         for character in mutation_frequencies:
             for state in mutation_frequencies[character]:
-                if state != self.missing_char and state != "0":
+                if state != self.missing_char and state != 0:
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
                         < len(samples)
                         - mutation_frequencies[character][self.missing_char]
                     ):
-                        if self.priors:
+                        if self.weights:
                             if (
                                 mutation_frequencies[character][state]
-                                * self.priors[character][state]
+                                * self.weights[character][state]
                                 > best_frequency
                             ):
                                 chosen_character, chosen_state = (
@@ -114,7 +120,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                                 )
                                 best_frequency = (
                                     mutation_frequencies[character][state]
-                                    * self.priors[character][state]
+                                    * self.weights[character][state]
                                 )
                         else:
                             if (
@@ -129,7 +135,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                                     character
                                 ][state]
 
-        if chosen_state == "":
+        if chosen_state == 0:
             return samples, []
 
         left_set = []
@@ -154,7 +160,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             mutation_frequencies,
             self.missing_char,
             samples,
-            w=self.priors,
+            w=self.weights,
         )
 
         improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
