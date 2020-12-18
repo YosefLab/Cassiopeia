@@ -399,8 +399,27 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def solve_steiner_instance(
         self, model, edge_variables, potential_graph, pid
-    ):
+    ) -> List[nx.DiGraph]:
         """Solves for a Steiner Tree from the Gurobi instance.
+
+        This function works with a model that has been specified via Gurobi,
+        and will solve the model using the stopping criteria that the user
+        has specified in this class instance.
+
+        Args:
+            model: A Gurobi model corresponding to the Steiner Tree problem.
+                This should be created with `generate_steiner_model`.
+            edge_variables: Edge variables that were created during model
+                generation. These are Gurobi variables that indicate whether
+                two nodes are connected to one another in the Potential Graph;
+                we use these variables to recreate a tree at the end from the
+                Gurobi solution.
+            potential_graph: Potential Graph that was used as input to the 
+                Steiner Tree problem.
+            pid: Process ID
+
+        Returns:
+            A list of solutions
         """
 
         model.params.LogToConsole = 0
