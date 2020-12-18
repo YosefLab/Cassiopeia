@@ -82,10 +82,8 @@ class TestILPSolver(unittest.TestCase):
 
         source_nodes = self.ilp_pp_solver.unique_character_matrix.values
         dim = source_nodes.shape[1]
-        #layer_nodes, layer_edges = self.ilp_pp_solver.infer_layer_of_potential_graph(
-        #    source_nodes, 10
-        #)
-        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(source_nodes, 10)
+
+        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(source_nodes, 10, self.ilp_pp_solver.missing_char)
 
         layer_nodes = np.unique(layer_nodes, axis=0)
 

@@ -10,12 +10,13 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.solver import solver_utilities
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def infer_layer_of_potential_graph(
-    long[:,:] source_nodes, int distance_threshold
+    long[:,:] source_nodes, int distance_threshold, int missing_char
 ) -> Tuple[np.array, List[Tuple[np.array, np.array]]]:
     """Infer a layer of the potential graph.
 
@@ -38,6 +39,7 @@ def infer_layer_of_potential_graph(
             states.
         distance_threshold: Maximum hamming distance allowed between a pair of 
             source nodes through their ancestor.
+        missing_char: State to treat as missing.
 
     Returns:
         A list of samples to be treated as the source nodes of the next
@@ -64,7 +66,8 @@ def infer_layer_of_potential_graph(
         for j in range(i + 1, n_samples):
 
             sample2 = source_nodes[j]
-            ancestor = np.array([sample1[k] if sample1[k] == sample2[k] else 0 for k in range(dim)])
+            # ancestor = np.array([sample1[k] if sample1[k] == sample2[k] else 0 for k in range(dim)])
+            ancestor = np.array(solver_utilities.get_lca_characters([sample1, sample2], missing_char=missing_char))
 
             d1_a = dissimilarity_functions.hamming_distance(sample1, ancestor)
             d2_a = dissimilarity_functions.hamming_distance(sample2, ancestor)

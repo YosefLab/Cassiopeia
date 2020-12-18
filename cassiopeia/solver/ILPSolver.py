@@ -10,6 +10,7 @@ import time
 
 import gurobipy
 import hashlib
+import itertools
 import networkx as nx
 import numba
 import numpy as np
@@ -55,6 +56,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             likelihood of the mutations.
         seed: Random seed to use during ILP optimization.
         mip_gap: Objective gap for mixed integer linear programming problem.
+        logfile: A file to log output to. This will contain information around
+            the potential graph inference procedure as well as the Steiner Tree
+            optimization.
     """
 
     def __init__(
@@ -127,11 +131,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             dissimilarity_functions.hamming_distance(root, np.array(u))
             for u in targets
         ]
-        for i in range(len(lca_distances)):
-            for j in range(i + 1, len(lca_distances)):
-                max_lca_distance = max(
-                    max_lca_distance, lca_distances[i] + lca_distances[j] + 1
-                )
+
+        for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
+            max_lca_distance = max(max_lca_distance, lca_distances[i] + lca_distances[j] + 1)
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
@@ -177,7 +179,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         First, a directed graph is constructed by considering all pairs of
         samples, and checking if a sample can be a possible parent of another
         sample. Then, for all pairs of nodes with in-degree of 0 and are
-        similar enough to one nanother, we add their common ancestor as a parent
+        similar enough to one another, we add their common ancestor as a parent
         to the two nodes. This procedure is done until there exists only one
         possible ancestor left - this will be the root of the tree.
 
@@ -228,7 +230,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                     return self.add_edge_weights(prev_graph)
 
                 next_layer, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
-                    source_nodes, effective_threshold
+                    source_nodes, effective_threshold, self.missing_char
                 )
 
                 # subset to unique values
@@ -314,10 +316,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 space on which to solve for the Steiner Tree.
             root: A node in the graph to treat as the source.
             targets: A list of nodes in the tree that serve as targets for the
-                Stiner Tree procedure. 
+                Steiner Tree procedure. 
         
         Returns:
-            A Gurobipy Model intance and the edge variables involved.
+            A Gurobipy Model instance and the edge variables involved.
         """
 
         source_flow = {v: 0 for v in potential_graph.nodes()}
@@ -349,7 +351,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 name=f"edge_{u}_{v}",
             )
 
-        # add edge-useage indicator variable
+        # add edge-usage indicator variable
         edge_variables_binary = {}
         for u, v in potential_graph.edges():
             edge_variables_binary[u, v] = model.addVar(
@@ -534,6 +536,22 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         return processed_solution
 
     def append_sample_names(self, solution: nx.DiGraph) -> nx.DiGraph:
+        """Append sample names to character states in tree.
+
+        Given a tree where every node corresponds to a set of character states,
+        append sample names at the deepest node that has its character
+        state. Sometimes character states can exist in two separate parts of
+        the tree (especially when using the Hybrid algorithm where parts of 
+        the tree are built indepedently), so we make sure we only add a
+        particular sample once to the tree.
+
+        Args:
+            solution: A Steiner Tree solution that we wish to add sample
+                names to.
+
+        Returns:
+            A solution with extra leaves corresponding to sample names. 
+        """
 
         root = [n for n in solution if solution.in_degree(n) == 0][0]
 
