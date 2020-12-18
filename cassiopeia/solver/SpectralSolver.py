@@ -30,7 +30,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     cut is minimized in order to preserve similarities. The final partition
     is then improved upon by a greedy hill-climbing procedure that further
     optimizes the cut.
-
     Args:
         character_matrix: A character matrix of observed character states for
             all samples
@@ -102,7 +101,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
-
         First, a similarity graph is generated with samples as nodes such that
         edges between a pair of nodes is some provided function on the number
         of character/state mutations shared. Then, Fielder's algorithm is used
@@ -121,7 +119,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 each character/state pair that appear in the character matrix
                 restricted to the sample set
             samples: A list of samples to partition
-
         Returns:
             A tuple of lists, representing the left and right partitions
         """
@@ -196,4 +193,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
+<<<<<<< HEAD
         return improved_left_set, improved_right_set
+=======
+        return improved_cut, list(rest)
+>>>>>>> adc3335faaf8c857ae678cf4d1ccf45d247609d6

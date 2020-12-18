@@ -45,8 +45,8 @@ class CassiopeiaSolver(abc.ABC):
         self.character_matrix = character_matrix
         self.missing_char = missing_char
         self.meta_data = meta_data
-        self.priors = priors
         self.tree = None
+        self.priors = priors        
 
     @abc.abstractmethod
     def solve(self):

@@ -126,8 +126,8 @@ def collapse_edges(
 def collapse_tree(
     tree: nx.DiGraph,
     infer_ancestral_characters: bool,
-    character_matrix: pd.DataFrame = None,
-    missing_char: int = None,
+    character_matrix: Optional[pd.DataFrame] = None,
+    missing_char: Optional[int] = None,
 ):
     """Collapses mutationless edges in a tree in-place.
 
