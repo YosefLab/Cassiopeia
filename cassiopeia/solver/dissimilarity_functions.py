@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 
 def weighted_hamming_distance(
-    s1: List[str], s2: List[str], priors: Optional[Dict[int, Dict[str, float]]] = None
+    s1: List[int], s2: List[int], priors: Optional[Dict[int, Dict[int, float]]] = None, missing_state = -1,
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
@@ -40,28 +40,28 @@ def weighted_hamming_distance(
     num_present = 0
     for i in range(len(s1)):
         
-        if s1[i] == "-" or s2[i] == "-":
+        if s1[i] == missing_state or s2[i] == missing_state:
             continue
 
         num_present += 1
         
         if priors:
-            if s1[i] == s2[i] and (s1[i] != "0"):
-                d += (2*np.log(priors[i][str(s1[i])]))
+            if s1[i] == s2[i] and (s1[i] != 0):
+                d += (2*np.log(priors[i][s1[i]]))
 
         if s1[i] != s2[i]:
-            if s1[i] == "0" or s2[i] == "0":
+            if s1[i] == 0 or s2[i] == 0:
                 if priors:
-                    if s1[i] != "0":
-                        d -= np.log(priors[i][str(s1[i])])
+                    if s1[i] != 0:
+                        d -= np.log(priors[i][s1[i]])
                     else:
-                        d -= np.log(priors[i][str(s2[i])])
+                        d -= np.log(priors[i][s2[i]])
                 else:
                     d += 1
             else:
                 if priors:
-                    d -= (np.log(priors[i][str(s1[i])]) + np.log(
-                        priors[i][str(s2[i])]
+                    d -= (np.log(priors[i][s1[i]]) + np.log(
+                        priors[i][s2[i]]
                     ))
                 else:
                     d += 2
@@ -70,3 +70,26 @@ def weighted_hamming_distance(
         return 0
 
     return d / num_present
+
+@numba.jit(nopython=True)
+def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
+    """Computes the vanilla hamming distance between two samples.
+
+    Counts the number of positions that two samples disagree at.
+
+    Args:
+        s1: The first sample
+        s2: The second sample
+
+    Returns:
+        The number of positions two nodes disagree at.
+    """
+
+    dist = 0
+
+    for i in range(len(s1)):
+
+        if s1[i] != s2[i]:
+            dist += 1
+
+    return dist

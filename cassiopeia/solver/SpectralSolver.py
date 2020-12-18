@@ -29,7 +29,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     cut is minimized in order to preserve similarities. The final partition
     is then improved upon by a greedy hill-climbing procedure that further
     optimizes the cut.
-
     Args:
         character_matrix: A character matrix of observed character states for
             all samples
@@ -40,7 +39,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
         threshold: A minimum similarity threshold
         weights: A set of optional weights for calculating similarity for edges
             in the graph
-
     Attributes:
         character_matrix: The character matrix describing the samples
         missing_char: The character representing missing values
@@ -76,7 +74,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     ) -> Tuple[List[int], List[int]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
-
         First, a similarity graph is generated with samples as nodes such that
         edges between a pair of nodes is the number of character/state mutations
         shared. Then, Fielder's algorithm is used to generate a partition on
@@ -88,13 +85,11 @@ class SpectralSolver(GreedySolver.GreedySolver):
         nodes on that index minimizes the normalized cut ratio. As the optimal
         partition can be determined using the 2nd eigenvector, this greatly
         reduces the space of cuts needed to be explored.
-
         Args:
             mutation_frequencies: A dictionary containing the frequencies of
                 each character/state pair that appear in the character matrix
                 restricted to the sample set
             samples: A list of samples to partition
-
         Returns:
             A tuple of lists, representing the left and right partitions
         """

@@ -1,5 +1,5 @@
 """
-Test basic CassiopeiaSolver constructor.
+Test NeighborJoiningSolver in Cassiopeia.solver.
 """
 import os
 import unittest
