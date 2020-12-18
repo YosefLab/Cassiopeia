@@ -70,7 +70,7 @@ def weighted_hamming_distance(
 
     return d / num_present
 
-def hamming_similarity(
+def hamming_similarity_without_missing(
     s1: List[int], 
     s2: List[int],
     missing_char: int,

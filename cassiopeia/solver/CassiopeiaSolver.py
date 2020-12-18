@@ -37,7 +37,7 @@ class CassiopeiaSolver(abc.ABC):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
     ):

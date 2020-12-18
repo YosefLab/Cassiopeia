@@ -36,11 +36,10 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: The character representing missing values
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            state for each character. Sets weights to be negative log
-            transformations of these probabilities.
-        weights: A set of optional weights on character/mutation pairs to scale
-            the contribution of each mutuation in the connectivity graph.
-            Overrides weights from priors
+            state for each character
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale frequencies and the contribution of
+            each mutuation in the connectivity graph
         sdimension: The number of dimensions to use for the embedding space.
             Acts as a hyperparameter
         iterations: The number of iterations in updating the embeddings.
@@ -52,11 +51,11 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: The character representing missing values
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors or
-            explicitly provided
+        weights: Weights on character/mutation pairs, derived from priors
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out
+        unique_character_matrix: A character matrix with duplicate rows filtered
+            out
         sdimension: The number of dimensions to use for the embedding space
         iterations: The number of iterations in updating the embeddings
     """
@@ -64,16 +63,16 @@ class MaxCutSolver(GreedySolver.GreedySolver):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, weights
+            character_matrix, missing_char, meta_data, priors, prior_function
         )
         self.sdimension = sdimension
         self.iterations = iterations
@@ -81,8 +80,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
     def perform_split(
         self,
         mutation_frequencies: Dict[int, Dict[str, int]],
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[Union[int, str]] = None,
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """Generate a partition of the samples by finding the max-cut.
 
         First, a connectivity graph is generated with samples as nodes such
@@ -107,7 +106,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             A tuple of lists, representing the left and right partitions
         """
         G = graph_utilities.construct_connectivity_graph(
-            self.prune_cm,
+            self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
             samples,
@@ -153,17 +152,20 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                 return_cut = cut
                 best_score = this_score
 
-        improved_cut = graph_utilities.max_cut_improve_cut(G, return_cut)
+        improved_left_set = graph_utilities.max_cut_improve_cut(G, return_cut)
 
-        rest = set(samples) - set(improved_cut)
+        improved_right_set = []
+        for i in samples:
+            if i not in improved_left_set:
+                improved_right_set.append(i)
 
-        return improved_cut, list(rest)
+        return improved_left_set, improved_right_set
 
-    def evaluate_cut(self, cut: List[int], G: nx.DiGraph) -> float:
+    def evaluate_cut(self, cut: List[Union[int, str]], G: nx.DiGraph) -> float:
         """A simple function to evaluate the weight of a cut.
 
-        For each edge in the graph, checks if it is in the cut, and then adds its
-        edge weight to the cut if it is.
+        For each edge in the graph, checks if it is in the cut, and then adds
+        its edge weight to the cut if it is.
 
         Args:
             cut: A list of nodes that represents one of the sides of a cut

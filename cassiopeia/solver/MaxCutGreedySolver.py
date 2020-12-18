@@ -37,39 +37,38 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Takes either a string specifying one of the
             included missing data imputation methods, or a function
             implementing the user-specified missing data method. The default is
-            the "average" method.
+            the "average" method
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            state for each character. Sets weights to be negative log
-            transformations of these probabilities.
-        weights: A set of optional weights on character/mutation pairs to scale
-            frequency and the contribution of each mutuation in the
-            connectivity graph. Overrides weights from priors
+            state for each character
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale frequencies and the contribution of
+            each mutuation in the connectivity graph
 
     Attributes:
         character_matrix: The character matrix describing the samples
         missing_char: The character representing missing values
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors or
-            explicitly provided
+        weights: Weights on character/mutation pairs, derived from priors
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out
+        unique_character_matrix: A character matrix with duplicate rows filtered
+            out
     """
 
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, weights
+            character_matrix, missing_char, meta_data, priors, prior_function
         )
 
         self.missing_data_classifier = missing_data_classifier
@@ -77,8 +76,8 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
     def perform_split(
         self,
         mutation_frequencies: Dict[int, Dict[int, int]],
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[Union[int, str]],
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """Performs a partition using both Greedy and MaxCut criteria.
 
         First, uses the most frequent (character, state) pair to split the list
@@ -143,20 +142,30 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         missing = []
 
         for i in samples:
-            if self.prune_cm.iloc[i, chosen_character] == chosen_state:
+            if (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == chosen_state
+            ):
                 left_set.append(i)
-            elif self.prune_cm.iloc[i, chosen_character] == self.missing_char:
+            elif (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == self.missing_char
+            ):
                 missing.append(i)
             else:
                 right_set.append(i)
 
         if self.missing_data_classifier == "average":
             left_set, right_set = assign_missing_average(
-                self.prune_cm, self.missing_char, left_set, right_set, missing
+                self.unique_character_matrix,
+                self.missing_char,
+                left_set,
+                right_set,
+                missing,
             )
 
         G = graph_utilities.construct_connectivity_graph(
-            self.prune_cm,
+            self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
             samples,
@@ -164,6 +173,10 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         )
 
         improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
-        improved_right_set = set(samples) - set(improved_left_set)
 
-        return improved_left_set, list(improved_right_set)
+        improved_right_set = []
+        for i in samples:
+            if i not in improved_left_set:
+                improved_right_set.append(i)
+
+        return improved_left_set, improved_right_set

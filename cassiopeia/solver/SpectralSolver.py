@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
@@ -37,11 +37,10 @@ class SpectralSolver(GreedySolver.GreedySolver):
         missing_char: The character representing missing values
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            state for each character. Weights are set to be negative log of
-            these probabilities.
-        weights: A set of optional weights on character/mutation pairs to
-            scale the contribution of a mutation to similarity between a pair
-            of nodes. Overrides weights from priors
+            state for each character
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale the contribution of each mutuation in
+            the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold to include an edge in the
@@ -54,9 +53,9 @@ class SpectralSolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of character state transitions
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out
-        weights: Weights on character/mutation pairs, derived from priors or
-            explicitly provided
+        unique_character_matrix: A character matrix with duplicate rows filtered
+            out
+        weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
@@ -65,10 +64,10 @@ class SpectralSolver(GreedySolver.GreedySolver):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        weights: Optional[Dict[int, Dict[str, float]]] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
         similarity_function: Optional[
             Callable[
                 [
@@ -85,7 +84,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, weights
+            character_matrix, missing_char, meta_data, priors, prior_function
         )
 
         self.threshold = threshold
@@ -93,14 +92,14 @@ class SpectralSolver(GreedySolver.GreedySolver):
             self.similarity_function = similarity_function
         else:
             self.similarity_function = (
-                dissimilarity_functions.hamming_similarity
+                dissimilarity_functions.hamming_similarity_without_missing
             )
 
     def perform_split(
         self,
         mutation_frequencies: Dict[int, Dict[str, int]],
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[Union[int, str]] = None,
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
 
@@ -128,7 +127,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         """
 
         G = graph_utilities.construct_similarity_graph(
-            self.prune_cm,
+            self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
             samples,
@@ -188,10 +187,13 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 best_score = 0
                 best_index = i
 
-        improved_cut = graph_utilities.spectral_improve_cut(
+        improved_left_set = graph_utilities.spectral_improve_cut(
             G, vertices[: best_index + 1]
         )
 
-        rest = set(samples) - set(improved_cut)
+        improved_right_set = []
+        for i in samples:
+            if i not in improved_left_set:
+                improved_right_set.append(i)
 
-        return improved_cut, list(rest)
+        return improved_left_set, improved_right_set

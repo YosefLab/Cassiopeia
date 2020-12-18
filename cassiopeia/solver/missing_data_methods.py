@@ -2,16 +2,16 @@
 
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 def assign_missing_average(
     cm: pd.DataFrame,
-    missing_char: str,
-    left_set: List[int],
-    right_set: List[int],
-    missing: List[int],
-) -> Tuple[List[int], List[int]]:
+    missing_char: int,
+    left_set: List[Union[int, str]],
+    right_set: List[Union[int, str]],
+    missing: List[Union[int, str]],
+) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
     """Implements the "Average" missing data imputation method.
 
     An on-the-fly missing data imputation method for the Vanilla Greedy
@@ -37,9 +37,9 @@ def assign_missing_average(
         left_score = 0
         right_score = 0
 
-        subset_cm = cm.iloc[left_set, :]
+        subset_cm = cm.loc[left_set, :]
         for char in range(cm.shape[1]):
-            state = cm.iloc[i, char]
+            state = cm.loc[i,:][char]
             if state != missing_char and state != 0:
                 state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)
@@ -48,9 +48,9 @@ def assign_missing_average(
                 else:
                     left_score += 0
 
-        subset_cm = cm.iloc[right_set, :]
+        subset_cm = cm.loc[right_set, :]
         for char in range(cm.shape[1]):
-            state = cm.iloc[i, char]
+            state = cm.loc[i,:][char]
             if state != missing_char and state != 0:
                 state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)

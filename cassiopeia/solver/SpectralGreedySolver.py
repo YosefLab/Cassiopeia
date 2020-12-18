@@ -40,11 +40,10 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             the "average" method.
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            state for each character. Weights are set to be negative log of
-            these probabilities.
-        weights: A set of optional weights on character/mutation pairs to scale
-            frequency and the contribution of mutations to similarity.
-            Overrides weights from priors
+            state for each character
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale frequencies and the contribution of
+            each mutuation in the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold to include an edge in the
@@ -57,22 +56,22 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of character state transitions
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out
+        unique_character_matrix: A character matrix with duplicate rows filtered
+            out
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
-        weights: Weights on character/mutation pairs, derived from priors or
-            explicitly provided
+        weights: Weights on character/mutation pairs, derived from priors
         threshold: A minimum similarity threshold
     """
 
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
         similarity_function: Optional[
             Callable[
                 [
@@ -88,7 +87,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, weights
+            character_matrix, missing_char, meta_data, priors, prior_function
         )
 
         self.missing_data_classifier = missing_data_classifier
@@ -97,14 +96,14 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             self.similarity_function = similarity_function
         else:
             self.similarity_function = (
-                dissimilarity_functions.hamming_similarity
+                dissimilarity_functions.hamming_similarity_without_missing
             )
 
     def perform_split(
         self,
         mutation_frequencies: Dict[int, Dict[int, int]],
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[Union[int, str]],
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """Performs a partition using both Greedy and Spectral criteria.
 
         First, uses the most frequent (character, state) pair to split the
@@ -169,20 +168,30 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing = []
 
         for i in samples:
-            if self.prune_cm.iloc[i, chosen_character] == chosen_state:
+            if (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == chosen_state
+            ):
                 left_set.append(i)
-            elif self.prune_cm.iloc[i, chosen_character] == self.missing_char:
+            elif (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == self.missing_char
+            ):
                 missing.append(i)
             else:
                 right_set.append(i)
 
         if self.missing_data_classifier == "average":
             left_set, right_set = assign_missing_average(
-                self.prune_cm, self.missing_char, left_set, right_set, missing
+                self.unique_character_matrix,
+                self.missing_char,
+                left_set,
+                right_set,
+                missing,
             )
 
         G = graph_utilities.construct_similarity_graph(
-            self.prune_cm,
+            self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
             samples,
@@ -190,9 +199,11 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             threshold=self.threshold,
             w=self.weights,
         )
-
         improved_left_set = graph_utilities.spectral_improve_cut(G, left_set)
 
-        improved_right_set = set(samples) - set(improved_left_set)
+        improved_right_set = []
+        for i in samples:
+            if i not in improved_left_set:
+                improved_right_set.append(i)
 
-        return improved_left_set, list(improved_right_set)
+        return improved_left_set, improved_right_set

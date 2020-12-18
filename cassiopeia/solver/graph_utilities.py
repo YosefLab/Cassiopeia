@@ -7,7 +7,9 @@ from cassiopeia.solver import solver_utilities
 from typing import Callable, Dict, List, Optional, Union
 
 
-def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
+def check_if_cut(
+    u: Union[int, str], v: Union[int, str], cut: List[Union[int, str]]
+) -> bool:
     """Checks if two nodes are on opposite sides of a graph partition.
 
     Args:
@@ -25,8 +27,8 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
 def construct_connectivity_graph(
     cm: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[int, int]],
-    missing_char: str,
-    samples: List[int],
+    missing_char: int,
+    samples: List[Union[int, str]],
     w: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
     """
@@ -61,8 +63,8 @@ def construct_connectivity_graph(
         # compute similarity scores
         score = 0
         for l in range(cm.shape[1]):
-            x = cm.iloc[i, l]
-            y = cm.iloc[j, l]
+            x = cm.loc[i, :][l]
+            y = cm.loc[j, :][l]
             if (x != missing_char and y != missing_char) and (x != 0 or y != 0):
                 if w is not None:
                     if x == y:
@@ -105,7 +107,9 @@ def construct_connectivity_graph(
     return G
 
 
-def max_cut_improve_cut(G: nx.Graph, cut: List[int]):
+def max_cut_improve_cut(
+    G: nx.Graph, cut: List[Union[int, str]]
+) -> List[Union[int, str]]:
     """A greedy hill-climbing procedure to optimize a partition for the max-cut.
 
     The procedure is initialized by calculating the improvement to the max-cut
@@ -165,7 +169,7 @@ def construct_similarity_graph(
     cm: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[int, int]],
     missing_char: int,
-    samples: List[int],
+    samples: List[Union[int, str]],
     similarity_function: Callable[
         [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
         float,
@@ -206,7 +210,7 @@ def construct_similarity_graph(
 
     for i, j in itertools.combinations(samples, 2):
         s = similarity_function(
-            list(cm.iloc[i, :]), list(cm.iloc[j, :]), missing_char, w
+            list(cm.loc[i, :]), list(cm.loc[j, :]), missing_char, w
         )
         if s > threshold:
             G.add_edge(i, j, weight=s)
@@ -228,7 +232,9 @@ def construct_similarity_graph(
     return G
 
 
-def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
+def spectral_improve_cut(
+    G: nx.Graph, cut: List[Union[int, str]]
+) -> List[Union[int, str]]:
     """A greedy hill-climbing procedure minimizing a modified normalized cut.
 
     The procedure minimizes a partition on a graph for the following objective
@@ -250,25 +256,24 @@ def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
         A new partition that is a local minimum to the objective function
     """
 
-    def set_improvement_potential(node: int):
+    def set_improvement_potential(node: Union[int, str]):
         """A helper function to calculate the change to the cut weight by
         moving the node to the other side of the partition.
 
         Args:
-            node: An integer representing the index of a sample and its
-                respective node in the graph G
+            node: The index of a sample and its respective node in the graph G
 
         Returns:
             None. Annotates the improvement_potentials dictionary
         """
         # If moving a node across the cut would result in one side having 0
         # weight, that move is disallowed
-        if (
+        if np.isclose(
             min(
                 weight_within_side + delta_denominator[node],
                 total_weight - weight_within_side - delta_denominator[node],
-            )
-            == 0
+            ),
+            0,
         ):
             improvement_potentials[node] = np.inf
         else:
