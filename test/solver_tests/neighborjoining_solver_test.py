@@ -94,15 +94,15 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         delta = self.nj_pp_solver.dissimilarity_map
         expected_map = pd.DataFrame.from_dict(
             {
-                "a": [0, 1, 2, 2, 3, 2],
-                "b": [1, 0, 1, 2, 3, 2],
-                "c": [2, 1, 0, 3, 3, 3],
-                "d": [2, 2, 3, 0, 1, 1],
-                "e": [3, 3, 3, 1, 0, 2],
-                "root": [2, 2, 3, 1, 2, 0],
+                "state0": [0, 1, 2, 2, 3, 2],
+                "state1": [1, 0, 1, 2, 3, 2],
+                "state2": [2, 1, 0, 3, 3, 3],
+                "state3": [2, 2, 3, 0, 1, 1],
+                "state4": [3, 3, 3, 1, 0, 2],
+                "state5": [2, 2, 3, 1, 2, 0],
             },
             orient="index",
-            columns=["a", "b", "c", "d", "e", "root"],
+            columns=["state0", "state1", "state2", "state3", "state4", "state5"],
         )
 
         for i in expected_map.index:
@@ -117,14 +117,14 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         expected_q = pd.DataFrame.from_dict(
             {
-                "a": [0, -22.67, -22, -22, -33.33],
-                "b": [-22.67, 0, -27.33, -27.33, -22.67],
-                "c": [-22, -27.33, 0, -28.67, -22],
-                "d": [-22, -27.33, -28.67, 0, -22],
-                "e": [-33.33, -22.67, -22, -22, 0],
+                "state0": [0, -22.67, -22, -22, -33.33],
+                "state1": [-22.67, 0, -27.33, -27.33, -22.67],
+                "state2": [-22, -27.33, 0, -28.67, -22],
+                "state3": [-22, -27.33, -28.67, 0, -22],
+                "state4": [-33.33, -22.67, -22, -22, 0],
             },
             orient="index",
-            columns=["a", "b", "c", "d", "e"],
+            columns=["state0", "state2", "state3", "state4", "state5"],
         )
 
         self.assertTrue(np.allclose(q_vals, expected_q, atol=0.1))
