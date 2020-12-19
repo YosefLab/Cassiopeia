@@ -21,6 +21,7 @@ from cassiopeia.solver import dissimilarity_functions
 
 class SpectralSolver(GreedySolver.GreedySolver):
     """
+    TODO: Experiment to find the best default similarity function
     The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,
     a similarity graph is generated for the sample set, where edges
@@ -41,7 +42,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
             in forming weights to scale the contribution of each mutuation in
             the similarity graph
         similarity_function: A function that calculates a similarity score
-            between two given samples and their observed mutations
+            between two given samples and their observed mutations. The default
+            is "hamming_distance_without_missing"
         threshold: A minimum similarity threshold to include an edge in the
             similarity graph
 

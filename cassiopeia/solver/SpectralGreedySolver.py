@@ -19,6 +19,7 @@ from cassiopeia.solver.missing_data_methods import assign_missing_average
 class SpectralGreedySolver(GreedySolver.GreedySolver):
     """
     TODO: Implement FuzzySolver
+    TODO: Experiment to find the best default similarity function
     The SpectralGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence, or absence, of the most
     frequent mutation. Additionally, the hill-climbing procedure from the
@@ -45,7 +46,8 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             in forming weights to scale frequencies and the contribution of
             each mutuation in the similarity graph
         similarity_function: A function that calculates a similarity score
-            between two given samples and their observed mutations
+            between two given samples and their observed mutations. The default
+            is "hamming_distance_without_missing"
         threshold: A minimum similarity threshold to include an edge in the
             similarity graph
 
