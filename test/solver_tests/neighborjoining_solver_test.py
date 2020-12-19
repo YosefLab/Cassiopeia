@@ -287,8 +287,8 @@ class TestNeighborJoiningSolver(unittest.TestCase):
                 ("6", "b"),
                 ("6", "c"),
                 ("8", "10"),
-                ("10", "e")
-                ("10", "f")
+                ("10", "e"),
+                ("10", "f"),
                 ("8", "d"),
             ]
         )
