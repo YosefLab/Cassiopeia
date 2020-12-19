@@ -76,8 +76,26 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        delta_fn = lambda x, y, priors: np.sum([x[i] != y[i] for i in range(len(x))])
+        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
         self.nj_pp_solver = solver.NeighborJoiningSolver(
+            cm, dissimilarity_function=delta_fn
+        )
+
+        # ------------- CM with Duplictes -----------------------
+        cm = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 0],
+                "b": [1, 2, 0],
+                "c": [1, 2, 1],
+                "d": [2, 0, 0],
+                "e": [2, 0, 2],
+                "f": [2, 0, 2],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
+        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
+        self.nj_duplicates_solver = solver.NeighborJoiningSolver(
             cm, dissimilarity_function=delta_fn
         )
 
@@ -249,6 +267,31 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_duplicate_sample_neighbor_joining(self):
+
+        self.nj_duplicates_solver.solve()
+        T = self.nj_duplicates_solver.tree
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "f", "root", "6", "7", "8", "9", "10"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("root", "9"),
+                ("9", "8"),
+                ("9", "7"),
+                ("7", "6"),
+                ("7", "a"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "10"),
+                ("10", "e")
+                ("10", "f")
+                ("8", "d"),
+            ]
+        )
 
 
 if __name__ == "__main__":

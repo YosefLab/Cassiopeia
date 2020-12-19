@@ -28,6 +28,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
+        missing_char: int = -1,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):
@@ -146,7 +147,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 s1 = cm[i, :]
                 s2 = cm[j, :]
 
-                dm[k] = self.dissimilarity_function(s1, s2, self.priors)
+                dm[k] = self.dissimilarity_function(s1, s2, self.priors, self.missing_char)
                 k += 1
 
         return dm
