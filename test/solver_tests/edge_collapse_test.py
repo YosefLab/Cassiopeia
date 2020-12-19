@@ -52,7 +52,7 @@ class TestCollapseEdges(unittest.TestCase):
         vecs = [
             [1, 0, 3, 4, 5],
             [1, -1, -1, 3, -1],
-            [1, 2, 3, 2,  -1],
+            [1, 2, 3, 2, -1],
         ]
         ret_vec = solver_utilities.get_lca_characters(vecs, missing_char=-1)
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
@@ -219,7 +219,7 @@ class TestCollapseEdges(unittest.TestCase):
         for n in collapsed_tree.traverse():
             self.assertFalse(len(n.children) == 1)
 
-        self.assertEqual((collapsed_tree & "5").up.name, "0")
+        self.assertEqual((collapsed_tree & 5).up.name, "0")
 
 
 if __name__ == "__main__":
