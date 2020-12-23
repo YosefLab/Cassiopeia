@@ -50,8 +50,13 @@ class TestILPSolver(unittest.TestCase):
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
-        open(os.path.join(dir_path, 'test.log'), 'a').close()
-        self.ilp_pp_solver = cas.solver.ILPSolver(cm, missing_char=-1, logfile=os.path.join(dir_path, 'test.log'), mip_gap = 0.0)
+        open(os.path.join(dir_path, "test.log"), "a").close()
+        self.ilp_pp_solver = cas.solver.ILPSolver(
+            cm,
+            missing_char=-1,
+            logfile=os.path.join(dir_path, "test.log"),
+            mip_gap=0.0,
+        )
 
     def test_basic_ilp_constructor(self):
 
@@ -83,17 +88,22 @@ class TestILPSolver(unittest.TestCase):
         source_nodes = self.ilp_pp_solver.unique_character_matrix.values
         dim = source_nodes.shape[1]
 
-        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(source_nodes, 10, self.ilp_pp_solver.missing_char)
+        (
+            layer_nodes,
+            layer_edges,
+        ) = ilp_solver_utilities.infer_layer_of_potential_graph(
+            source_nodes, 10, self.ilp_pp_solver.missing_char
+        )
 
         layer_nodes = np.unique(layer_nodes, axis=0)
 
         expected_next_layer = np.array(
             [[1, 0, 0], [1, 2, 0], [0, 0, 0], [2, 0, 0]]
         )
-        
+
         for sample in expected_next_layer:
             self.assertIn(sample, layer_nodes)
-        
+
         # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
         layer_edges = [(list(e[:dim]), list(e[dim:])) for e in layer_edges]
         expected_edges = [
@@ -128,7 +138,9 @@ class TestILPSolver(unittest.TestCase):
             self.ilp_pp_solver.missing_char,
         )
         max_lca_height = 10
-        potential_graph = self.ilp_pp_solver.infer_potential_graph(root, 0, max_lca_height)
+        potential_graph = self.ilp_pp_solver.infer_potential_graph(
+            root, 0, max_lca_height
+        )
 
         # potential_graph = ilp_solver_utilities.infer_potential_graph(
         #     self.ilp_pp_solver.unique_character_matrix.values, 0, max_lca_height, self.ilp_pp_solver.maximum_potential_graph_layer_size, self.ilp_pp_solver.priors, self.ilp_pp_solver.missing_char
@@ -230,6 +242,7 @@ class TestILPSolver(unittest.TestCase):
     def tearDown(self):
 
         os.remove(self.ilp_pp_solver.logfile)
+
 
 if __name__ == "__main__":
     unittest.main()

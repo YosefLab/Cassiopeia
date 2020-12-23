@@ -102,17 +102,20 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_simple_base_case_priors(self):
         # Priors help resolve the unresolvable case
         priors = {
-            0: {5: 0.5, 4: 0.5},
-            1: {4: 1},
+            0: {5: 0.8, 4: 0.5},
+            1: {4: 0.1},
             2: {1: 0.5, 3: 0.3},
         }
         mcsolver2 = MaxCutSolver(
             character_matrix=self.cm, missing_char=-1, priors=priors
         )
         mcsolver2.solve()
-        expected_newick_string = "((c1,c2),(c5,(c3,c4)));"
+        expected_newick_strings = [
+            "(c1,(c2,c5,(c3,c4)));",
+            "((c2,c5,(c3,c4)),c1);",
+        ]
         observed_newick_string = solver_utilities.to_newick(mcsolver2.tree)
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        self.assertIn(observed_newick_string, expected_newick_strings)
 
 
 if __name__ == "__main__":
