@@ -76,10 +76,26 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        delta_fn = lambda x, y, priors: np.sum(
-            [x[i] != y[i] for i in range(len(x))]
-        )
+        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
         self.nj_pp_solver = solver.NeighborJoiningSolver(
+            cm, dissimilarity_function=delta_fn
+        )
+
+        # ------------- CM with Duplictes -----------------------
+        cm = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 0],
+                "b": [1, 2, 0],
+                "c": [1, 2, 1],
+                "d": [2, 0, 0],
+                "e": [2, 0, 2],
+                "f": [2, 0, 2],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
+        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
+        self.nj_duplicates_solver = solver.NeighborJoiningSolver(
             cm, dissimilarity_function=delta_fn
         )
 
@@ -96,15 +112,15 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         delta = self.nj_pp_solver.dissimilarity_map
         expected_map = pd.DataFrame.from_dict(
             {
-                "a": [0, 1, 2, 2, 3, 2],
-                "b": [1, 0, 1, 2, 3, 2],
-                "c": [2, 1, 0, 3, 3, 3],
-                "d": [2, 2, 3, 0, 1, 1],
-                "e": [3, 3, 3, 1, 0, 2],
-                "root": [2, 2, 3, 1, 2, 0],
+                "state0": [0, 1, 2, 2, 3, 2],
+                "state1": [1, 0, 1, 2, 3, 2],
+                "state2": [2, 1, 0, 3, 3, 3],
+                "state3": [2, 2, 3, 0, 1, 1],
+                "state4": [3, 3, 3, 1, 0, 2],
+                "state5": [2, 2, 3, 1, 2, 0],
             },
             orient="index",
-            columns=["a", "b", "c", "d", "e", "root"],
+            columns=["state0", "state1", "state2", "state3", "state4", "state5"],
         )
 
         for i in expected_map.index:
@@ -119,14 +135,14 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         expected_q = pd.DataFrame.from_dict(
             {
-                "a": [0, -22.67, -22, -22, -33.33],
-                "b": [-22.67, 0, -27.33, -27.33, -22.67],
-                "c": [-22, -27.33, 0, -28.67, -22],
-                "d": [-22, -27.33, -28.67, 0, -22],
-                "e": [-33.33, -22.67, -22, -22, 0],
+                "state0": [0, -22.67, -22, -22, -33.33],
+                "state1": [-22.67, 0, -27.33, -27.33, -22.67],
+                "state2": [-22, -27.33, 0, -28.67, -22],
+                "state3": [-22, -27.33, -28.67, 0, -22],
+                "state4": [-33.33, -22.67, -22, -22, 0],
             },
             orient="index",
-            columns=["a", "b", "c", "d", "e"],
+            columns=["state0", "state2", "state3", "state4", "state5"],
         )
 
         self.assertTrue(np.allclose(q_vals, expected_q, atol=0.1))
@@ -251,6 +267,31 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_duplicate_sample_neighbor_joining(self):
+
+        self.nj_duplicates_solver.solve()
+        T = self.nj_duplicates_solver.tree
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "f", "root", "6", "7", "8", "9", "10"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("root", "9"),
+                ("9", "8"),
+                ("9", "7"),
+                ("7", "6"),
+                ("7", "a"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "10"),
+                ("10", "e"),
+                ("10", "f"),
+                ("8", "d"),
+            ]
+        )
 
 
 if __name__ == "__main__":

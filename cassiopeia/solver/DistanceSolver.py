@@ -28,6 +28,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
+        missing_char: int = -1,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):
@@ -44,13 +45,16 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function
 
+        self.unique_character_matrix = self.character_matrix.drop_duplicates().copy()
+        self.unique_character_matrix.index = [
+            f"state{i}" for i in range(self.unique_character_matrix.shape[0])
+        ]
+
         # Create the dissimilarity map if not specified
         if self.dissimilarity_map is None:
-
-            N = self.character_matrix.shape[0]
+            N = self.unique_character_matrix.shape[0]
             dissimilarity_map = self.compute_dissimilarity_map(
-                self.character_matrix.to_numpy().astype(np.str),
-                N,
+                self.unique_character_matrix.to_numpy(), N
             )
             dissimilarity_map = scipy.spatial.distance.squareform(
                 dissimilarity_map
@@ -58,8 +62,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             self.dissimilarity_map = pd.DataFrame(
                 dissimilarity_map,
-                index=self.character_matrix.index,
-                columns=self.character_matrix.index,
+                index=self.unique_character_matrix.index,
+                columns=self.unique_character_matrix.index,
             )
 
     def solve(self):
@@ -113,11 +117,12 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree.add_edge(remaining_samples[0], remaining_samples[1])
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
+        tree = self.append_sample_names(tree)
+        tree = self.root_tree(tree)
+
         self.tree = tree
 
-        self.root_tree()
-
-    @numba.jit(forceobj=True, parallel=True)
+    @numba.jit(forceobj=True)
     def compute_dissimilarity_map(self, cm: np.array, C: int) -> np.array:
         """Compute the dissimilarity between all samples
 
@@ -142,7 +147,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 s1 = cm[i, :]
                 s2 = cm[j, :]
 
-                dm[k] = self.dissimilarity_function(s1, s2, self.priors)
+                dm[k] = self.dissimilarity_function(s1, s2, self.priors, self.missing_char)
                 k += 1
 
         return dm
@@ -157,7 +162,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         pass
 
     @abc.abstractmethod
-    def find_cherry(self, dissimilarity_map: np.array) -> Tuple[int, int]:
+    def find_cherry(self, dissimilarity_map: np.array(float)) -> Tuple[int, int]:
         """Selects two samples to join together as a cherry.
 
         Selects two samples from the dissimilarity map to join together as a
@@ -190,3 +195,43 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             An updated dissimilarity map.
         """
         pass
+
+    def append_sample_names(self, solution: nx.DiGraph) -> nx.DiGraph:
+        """Append sample names to character states in tree.
+
+        Given a tree where every node corresponds to a set of character states,
+        append sample names at the deepest node that has its character
+        state. The DistanceSolver by default has observed samples as leaves,
+        so this procedure is simply to stitch samples names onto the leaves
+        at the appropriate location.
+
+        Args:
+            solution: A DistanceSolver solution that we wish to add sample
+                names to.
+
+        Returns:
+            A solution with extra leaves corresponding to sample names. 
+        """
+
+        leaves = [n for n in solution if solution.degree(n) == 1]
+
+        sample_lookup = self.character_matrix.apply(
+            lambda x: tuple(x.values), axis=1
+        )
+        
+        for l in leaves:
+            
+            if l not in self.unique_character_matrix.index:
+                continue
+
+            character_state = tuple(self.unique_character_matrix.loc[l].values)
+            samples = sample_lookup[sample_lookup == character_state].index.values
+
+            # remove samples with the same name as the leaf
+            samples = [s for s in samples if s != l]
+
+            if len(samples) > 0:
+                    solution.add_edges_from([(l, sample) for sample in samples])
+        
+        return solution
+
