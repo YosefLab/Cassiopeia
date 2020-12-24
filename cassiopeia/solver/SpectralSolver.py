@@ -195,4 +195,4 @@ class SpectralSolver(GreedySolver.GreedySolver):
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        return improved_cut, improved_right_set
+        return improved_left_set, improved_right_set

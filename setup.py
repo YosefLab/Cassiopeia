@@ -15,7 +15,7 @@ requirements = [
         "numpy > 1.17",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
-        "networkx >= 2.0",
+        "networkx >= 2.5",
         "tqdm >= 4",
         # "gurobipy",
         'ete3 >= 3.1.1',
@@ -32,27 +32,20 @@ requirements = [
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0',
         'hits',
-        'scikit-bio >= 0.5.5'
+        'scikit-bio >= 0.5.6'
 ]
 
 
-author = "Matthew Jones, Alex Khodaverdian, Jeffrey Quinn, Jeffrey Hussmann, Michelle Chan"
+author = "Matthew Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo"
 
 cmdclass = {'build_ext': build_ext}
 
 # files to wrap with cython
-to_cythonize = [Extension("cassiopeia.solver.lineage_solver.solver_utils", ["cassiopeia/solver/lineage_solver/solver_utils.pyx"]),
-                Extension("cassiopeia.solver.simulation_tools.dataset_generation", ["cassiopeia/solver/simulation_tools/dataset_generation.pyx"]),
-                Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
+to_cythonize = [Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
                 Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
                 Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
                 Extension("cassiopeia.solver.ilp_solver_utilities", ["cassiopeia/solver/ilp_solver_utilities.pyx"])]
-#                Extension("cassiopeia.solver.utilities", ['cassiopeia/solver/utilities.pyx'])] 
-#to_cythonize = [Extension("TreeSolver.lineage_solver.solver_utils", ["cassiopeia/TreeSolver/lineage_solver/solver_utils.pyx"]),
-#               Extension("TreeSolver.simulation_tools.dataset_generation", ["cassiopeia/TreeSolver/simulation_tools/dataset_generation.pyx"]),
-#               Extension("ProcessingPipeline.process.lineageGroup_utils", ["cassiopeia/ProcessingPipeline/process/lineageGroup_utils.pyx"]), 
-#               Extension("ProcessingPipeline.process.collapse_cython", ["cassiopeia/ProcessingPipeline/process/collapse_cython.pyx"])] 
-                
+
 
 setup(
         name="cassiopeia-lineage",
@@ -61,12 +54,7 @@ setup(
         setup_requires=['cython', 'numpy'],
         cmdclass=cmdclass,
         entry_points={
-            'console_scripts': ['scLT = cassiopeia.__main__:main',
-                                'cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main',
-                                'reconstruct-lineage = cassiopeia.solver.reconstruct_tree:main',
-                                'post-process-tree = cassiopeia.solver.post_process_tree:main',
-                                'stress-test = cassiopeia.solver.reconstruct_sim_tree:main',
-                                'simulate-tree = cassiopeia.solver.simulate_tree:main']
+            'console_scripts': ['scLT = cassiopeia.__main__:main']
             
         },
         author_email="mattjones315@berkeley.edu",
