@@ -137,7 +137,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         return rooted_tree
 
     @staticmethod
-    @numba.jit(nopython=True, parallel=True)
+    @numba.jit(nopython=True)
     def compute_q(dissimilarity_map: np.array(int)):
         """Computes the Q-criterion for every pair of samples.
 
