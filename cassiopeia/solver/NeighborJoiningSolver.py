@@ -57,7 +57,18 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, str]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
-        dissimilarity_function: Optional[Callable] = None,
+        dissimilarity_function: Optional[
+            Callable[
+                [
+                    int,
+                    int,
+                    pd.DataFrame,
+                    int,
+                    Optional[Dict[int, Dict[str, float]]],
+                ],
+                float,
+            ]
+        ] = None,
         root_sample: Optional[str] = None,
     ):
 
@@ -126,7 +137,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         return rooted_tree
 
     @staticmethod
-    @numba.jit(nopython=True, parallel=True)
+    @numba.jit(nopython=True)
     def compute_q(dissimilarity_map: np.array(int)):
         """Computes the Q-criterion for every pair of samples.
 

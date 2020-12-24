@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
-from typing import Dict, List, Optional, Tuple
+from collections import defaultdict
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 
 class InferAncestorError(Exception):
@@ -53,9 +54,9 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
 
 def annotate_ancestral_characters(
     T: nx.DiGraph,
-    node: int,
-    node_to_characters: Dict[int, List[str]],
-    missing_char: str,
+    node: Union[int, str],
+    node_to_characters: Dict[Union[int, str], List[int]],
+    missing_char: int,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
     network from the samples, obeying Camin-Sokal Parsimony.
@@ -86,7 +87,9 @@ def annotate_ancestral_characters(
 
 
 def collapse_edges(
-    T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[str]]
+    T: nx.DiGraph,
+    node: Union[int, str],
+    node_to_characters: Dict[Union[int, str], List[int]],
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -121,10 +124,10 @@ def collapse_edges(
 
 
 def collapse_tree(
-    T: nx.DiGraph,
+    tree: nx.DiGraph,
     infer_ancestral_characters: bool,
     character_matrix: Optional[pd.DataFrame] = None,
-    missing_char: str = '-',
+    missing_char: Optional[int] = None,
 ):
     """Collapses mutationless edges in a tree in-place.
 
@@ -136,7 +139,7 @@ def collapse_tree(
     are not inferred again using the parsimony method.
 
     Args:
-        T: A networkx DiGraph object representing the tree
+        tree: A networkx DiGraph object representing the tree
         infer_ancestral_characters: Infer the ancestral characters states of
             the tree
         character_matrix: A character matrix storing character states for each
@@ -144,11 +147,13 @@ def collapse_tree(
         missing_char: Character state indicating missing data
 
     Returns:
-        None, operates on the tree destructively
+        A collapsed tree
 
     """
-    leaves = [n for n in T if T.out_degree(n) == 0 and T.in_degree(n) == 1]
-    root = [n for n in T if T.in_degree(n) == 0][0]
+    leaves = [
+        n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1
+    ]
+    root = [n for n in tree if tree.in_degree(n) == 0][0]
     node_to_characters = {}
 
     # Populates the internal annotations using either the ground truth
@@ -161,18 +166,21 @@ def collapse_tree(
             raise InferAncestorError()
 
         for i in leaves:
-            node_to_characters[i] = list(character_matrix.iloc[i, :])
-            T.nodes[i]["characters"] = list(character_matrix.iloc[i, :])
-        annotate_ancestral_characters(T, root, node_to_characters, missing_char)
+            node_to_characters[i] = list(character_matrix.loc[i, :])
+            tree.nodes[i]["characters"] = list(character_matrix.loc[i, :])
+        annotate_ancestral_characters(
+            tree, root, node_to_characters, missing_char
+        )
     else:
-        for i in T.nodes():
-            node_to_characters[i] = T.nodes[i]["characters"]
+        for i in tree.nodes():
+            node_to_characters[i] = tree.nodes[i]["characters"]
 
     # Calls helper function on root, passing in the mapping dictionary
-    collapse_edges(T, root, node_to_characters)
+    collapse_edges(tree, root, node_to_characters)
+    return tree
 
 
-def collapse_unifurcations(tree: ete3.Tree):
+def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     """Collapse unifurcations.
 
     Collapse all unifurcations in the tree, namely any node with only one child
@@ -224,6 +232,29 @@ def to_newick(tree: nx.DiGraph) -> str:
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
 
-def post_process_tree(T, cm):
-    # raise NotImplementedError()
-    pass
+
+def transform_priors(
+    priors: Optional[Dict[int, Dict[int, float]]] = None,
+    prior_function: Optional[Callable[[float], float]] = None,
+):
+    """Generates a dictionary of negative log probabilities from priors.
+
+    Generates a dicitonary of weights for use in algorithms that inheret the
+    GreedySolver from given priors.
+
+    Args:
+        priors: A dictionary of prior probabilities for each character/state
+            pair
+        prior_function: A function defining a transformation on the priors
+            in forming weights
+
+    Returns:
+        A dictionary of weights for each character/state pair
+    """
+    weights = {}
+    for character in priors:
+        state_weights = {}
+        for state in priors[character]:
+            state_weights[state] = prior_function(priors[character][state])
+        weights[character] = state_weights
+    return weights

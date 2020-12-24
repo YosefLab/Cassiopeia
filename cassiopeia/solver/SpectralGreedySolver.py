@@ -12,12 +12,14 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
+from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver.missing_data_methods import assign_missing_average
 
 
 class SpectralGreedySolver(GreedySolver.GreedySolver):
     """
     TODO: Implement FuzzySolver
+    TODO: Experiment to find the best default similarity function
     The SpectralGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence, or absence, of the most
     frequent mutation. Additionally, the hill-climbing procedure from the
@@ -39,9 +41,15 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             the "average" method.
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
-            character state
-        weights: A set of optional weights for calculating similarity for edges
-            in the graph
+            state for each character
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale frequencies and the contribution of
+            each mutuation in the similarity graph
+        similarity_function: A function that calculates a similarity score
+            between two given samples and their observed mutations. The default
+            is "hamming_distance_without_missing"
+        threshold: A minimum similarity threshold to include an edge in the
+            similarity graph
 
     Attributes:
         character_matrix: The character matrix describing the samples
@@ -50,33 +58,54 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of character state transitions
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
-        prune_cm: A character matrix with duplicate rows filtered out
-        weights: A set of optional weights for calculating similarity for edges
-            in the graph
+        unique_character_matrix: A character matrix with duplicate rows filtered
+            out
+        similarity_function: A function that calculates a similarity score
+            between two given samples and their observed mutations
+        weights: Weights on character/mutation pairs, derived from priors
+        threshold: A minimum similarity threshold
     """
 
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: str,
+        missing_char: int,
         missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
+        priors: Optional[Dict[int, Dict[int, float]]] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
+        similarity_function: Optional[
+            Callable[
+                [
+                    List[int],
+                    List[int],
+                    int,
+                    Optional[Dict[int, Dict[int, float]]],
+                ],
+                float,
+            ]
+        ] = None,
         threshold: Optional[int] = 0,
-        weights: Optional[Dict] = None,
     ):
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__(
+            character_matrix, missing_char, meta_data, priors, prior_function
+        )
 
         self.missing_data_classifier = missing_data_classifier
         self.threshold = threshold
-        self.weights = weights
+        if similarity_function:
+            self.similarity_function = similarity_function
+        else:
+            self.similarity_function = (
+                dissimilarity_functions.hamming_similarity_without_missing
+            )
 
     def perform_split(
         self,
-        mutation_frequencies: Dict[int, Dict[str, int]],
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        mutation_frequencies: Dict[int, Dict[int, int]],
+        samples: List[Union[int, str]],
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """Performs a partition using both Greedy and Spectral criteria.
 
         First, uses the most frequent (character, state) pair to split the
@@ -94,23 +123,46 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         Returns:
             A tuple of lists, representing the left and right partitions
         """
-        freq = 0
-        char = 0
-        state = ""
-        for i in mutation_frequencies:
-            for j in mutation_frequencies[i]:
-                if j != self.missing_char and j != "0":
+        best_frequency = 0
+        chosen_character = 0
+        chosen_state = 0
+        for character in mutation_frequencies:
+            for state in mutation_frequencies[character]:
+                if state != self.missing_char and state != 0:
                     # Avoid splitting on mutations shared by all samples
                     if (
-                        mutation_frequencies[i][j] > freq
-                        and mutation_frequencies[i][j]
+                        mutation_frequencies[character][state]
                         < len(samples)
-                        - mutation_frequencies[i][self.missing_char]
+                        - mutation_frequencies[character][self.missing_char]
                     ):
-                        char, state = i, j
-                        freq = mutation_frequencies[i][j]
+                        if self.weights:
+                            if (
+                                mutation_frequencies[character][state]
+                                * self.weights[character][state]
+                                > best_frequency
+                            ):
+                                chosen_character, chosen_state = (
+                                    character,
+                                    state,
+                                )
+                                best_frequency = (
+                                    mutation_frequencies[character][state]
+                                    * self.weights[character][state]
+                                )
+                        else:
+                            if (
+                                mutation_frequencies[character][state]
+                                > best_frequency
+                            ):
+                                chosen_character, chosen_state = (
+                                    character,
+                                    state,
+                                )
+                                best_frequency = mutation_frequencies[
+                                    character
+                                ][state]
 
-        if state == "":
+        if chosen_state == 0:
             return samples, []
 
         left_set = []
@@ -118,29 +170,42 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing = []
 
         for i in samples:
-            if self.prune_cm.iloc[i, char] == state:
+            if (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == chosen_state
+            ):
                 left_set.append(i)
-            elif self.prune_cm.iloc[i, char] == self.missing_char:
+            elif (
+                self.unique_character_matrix.loc[i, :][chosen_character]
+                == self.missing_char
+            ):
                 missing.append(i)
             else:
                 right_set.append(i)
 
         if self.missing_data_classifier == "average":
             left_set, right_set = assign_missing_average(
-                self.prune_cm, self.missing_char, left_set, right_set, missing
+                self.unique_character_matrix,
+                self.missing_char,
+                left_set,
+                right_set,
+                missing,
             )
 
         G = graph_utilities.construct_similarity_graph(
-            self.prune_cm,
+            self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
             samples,
+            similarity_function=self.similarity_function,
             threshold=self.threshold,
             w=self.weights,
         )
-
         improved_left_set = graph_utilities.spectral_improve_cut(G, left_set)
 
-        improved_right_set = set(samples) - set(improved_left_set)
+        improved_right_set = []
+        for i in samples:
+            if i not in improved_left_set:
+                improved_right_set.append(i)
 
-        return improved_left_set, list(improved_right_set)
+        return improved_left_set, improved_right_set
