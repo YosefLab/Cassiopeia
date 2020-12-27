@@ -1,8 +1,8 @@
 import abc
-from .tree import Tree
 import networkx as nx
-
 from typing import List
+
+from .tree import Tree
 
 
 class LineageSimulator(abc.ABC):

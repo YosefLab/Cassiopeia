@@ -1,5 +1,5 @@
-import numpy as np
 import networkx as nx
+import numpy as np
 
 from cassiopeia.tools.lineage_tracing_simulator import\
     IIDExponentialLineageTracer
