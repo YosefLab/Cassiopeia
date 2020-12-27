@@ -1,6 +1,8 @@
 import abc
+import copy
 import cvxpy as cp
-
+import numpy as np
+from typing import List, Tuple
 from .tree import Tree
 
 
@@ -20,7 +22,7 @@ class BranchLengthEstimator(abc.ABC):
         """
 
 
-class PoissonConvexBLE(BranchLengthEstimator):
+class IIDExponentialBLE(BranchLengthEstimator):
     r"""
     A simple branch length estimator that assumes that the characters evolve IID
     over the phylogeny with the same cutting rate.
@@ -129,10 +131,137 @@ class PoissonConvexBLE(BranchLengthEstimator):
                 child,
                 length=new_edge_length)
 
+        self.log_likelihood = log_likelihood.value
+        self.log_loss = f_star
+
         return f_star
 
-    def score(self, tree: Tree) -> float:
+    @classmethod
+    def log_likelihood(self, T: Tree) -> float:
         r"""
-        The log-likelihood of the given data under the model
+        The log-likelihood under the model.
         """
-        raise NotImplementedError()
+        log_likelihood = 0.0
+        for (parent, child) in T.edges():
+            edge_length = T.get_age(parent) - T.get_age(child)
+            zeros_parent = T.get_state(parent).count('0')  # TODO: hardcoded '0'
+            zeros_child = T.get_state(child).count('0')  # TODO: hardcoded '0'
+            new_cuts_child = zeros_parent - zeros_child
+            assert(new_cuts_child >= 0)
+            # Add log-lik for characters that didn't get cut
+            log_likelihood += zeros_child * (-edge_length)
+            # Add log-lik for characters that got cut
+            if edge_length < 1e-8 and new_cuts_child > 0:
+                return -np.inf
+            log_likelihood += new_cuts_child * np.log(1 - np.exp(-edge_length))
+        return log_likelihood
+
+
+class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
+    r"""
+    Cross-validated version of IIDExponentialBLE which fits the hyperparameters
+    based on character-level held-out log-likelihood.
+    """
+    def __init__(
+        self,
+        minimum_edge_lengths: Tuple[float] = (0),
+        l2_regularizations: Tuple[float] = (0),
+        verbose: bool = False
+    ):
+        self.minimum_edge_lengths = minimum_edge_lengths
+        self.l2_regularizations = l2_regularizations
+        self.verbose = verbose
+
+    def estimate_branch_lengths(self, T: Tree) -> None:
+        r"""
+        TODO
+        """
+        # Extract parameters
+        minimum_edge_lengths = self.minimum_edge_lengths
+        l2_regularizations = self.l2_regularizations
+        verbose = self.verbose
+
+        held_out_log_likelihoods = []  # type: List[Tuple[float, List]]
+        for minimum_edge_length in minimum_edge_lengths:
+            for l2_regularization in l2_regularizations:
+                cv_log_likelihood = self._cv_log_likelihood(
+                    T=T,
+                    minimum_edge_length=minimum_edge_length,
+                    l2_regularization=l2_regularization)
+                held_out_log_likelihoods.append(
+                    (cv_log_likelihood,
+                     [minimum_edge_length,
+                      l2_regularization])
+                )
+
+        # Refit model on full dataset with the best hyperparameters
+        held_out_log_likelihoods.sort(reverse=True)
+        best_minimum_edge_length, best_l2_regularization =\
+            held_out_log_likelihoods[0][1]
+        if verbose:
+            print(f"Refitting full model with:\n"
+                  f"minimum_edge_length={best_minimum_edge_length}\n"
+                  f"l2_regularization={best_l2_regularization}")
+        log_likelihood = IIDExponentialBLE(
+            minimum_edge_length=best_minimum_edge_length,
+            l2_regularization=best_l2_regularization
+        ).estimate_branch_lengths(T)
+        self.minimum_edge_length = best_minimum_edge_length
+        self.l2_regularization = best_l2_regularization
+        self.log_likelihood = log_likelihood
+
+    def _cv_log_likelihood(
+        self,
+        T: Tree,
+        minimum_edge_length: float,
+        l2_regularization: float
+    ) -> float:
+        verbose = self.verbose
+        if verbose:
+            print(f"Cross-validating hyperparameters:"
+                  f"\nminimum_edge_length={minimum_edge_length}"
+                  f"\nl2_regularizations={l2_regularization}")
+        n_characters = T.num_characters()
+        log_likelihood_folds = np.zeros(shape=(n_characters))
+        for held_out_character_idx in range(n_characters):
+            T_train, T_valid =\
+                self._cv_split(
+                    T,
+                    held_out_character_idx=held_out_character_idx
+                )
+            IIDExponentialBLE(
+                minimum_edge_length=minimum_edge_length,
+                l2_regularization=l2_regularization
+            ).estimate_branch_lengths(T_train)
+            T_valid.copy_branch_lengths(T_other=T_train)
+            held_out_log_likelihood =\
+                IIDExponentialBLE.log_likelihood(T_valid)
+            log_likelihood_folds[held_out_character_idx] =\
+                held_out_log_likelihood
+        if verbose:
+            print(f"log_likelihood_folds = {log_likelihood_folds}")
+            print(f"mean log_likelihood_folds = "
+                  f"{np.mean(log_likelihood_folds)}")
+        return np.mean(log_likelihood_folds)
+
+    def _cv_split(
+        self,
+        T: Tree,
+        held_out_character_idx: int
+    ) -> Tuple[Tree, Tree]:
+        r"""
+        Creates a training and a cross validation tree by hiding the
+        character at position held_out_character_idx.
+        """
+        T_train = copy.deepcopy(T)
+        T_valid = copy.deepcopy(T)
+        for node in T.nodes():
+            state = T_train.get_state(node)
+            train_state =\
+                state[:held_out_character_idx]\
+                + state[(held_out_character_idx + 1):]
+            valid_data =\
+                state[held_out_character_idx]
+            T_train.set_state(node, train_state)
+            T_valid.set_state(node, valid_data)
+        return T_train, T_valid

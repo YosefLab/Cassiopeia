@@ -177,3 +177,28 @@ class Tree():
                 # Reset state to all zeros!
                 self.set_state(v, '0' * n_characters)
         dfs(root)
+
+    def copy_branch_lengths(self, T_other):
+        r"""
+        Copies the branch lengths of T_other onto self
+        """
+        assert(self.nodes() == T_other.nodes())
+        assert(self.edges() == T_other.edges())
+
+        for node in self.nodes():
+            new_age = T_other.get_age(node)
+            self.set_age(node, age=new_age)
+
+        for (parent, child) in self.edges():
+            new_edge_length =\
+                T_other.get_age(parent) - T_other.get_age(child)
+            self.set_edge_length(
+                parent,
+                child,
+                length=new_edge_length)
+
+    def print_edges(self):
+        for (parent, child) in self.edges():
+            print(f"{parent}[{self.get_state(parent)}] -> "
+                  f"{child}[{self.get_state(child)}]: "
+                  f"{self.get_edge_length(parent, child)}")
