@@ -159,8 +159,8 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
     """
     def __init__(
         self,
-        minimum_edge_lengths: Tuple[float] = (0),
-        l2_regularizations: Tuple[float] = (0),
+        minimum_edge_lengths: Tuple[float] = (0, ),
+        l2_regularizations: Tuple[float] = (0, ),
         verbose: bool = False
     ):
         self.minimum_edge_lengths = minimum_edge_lengths
