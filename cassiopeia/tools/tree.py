@@ -32,7 +32,7 @@ class Tree():
         return list(T.nodes())
 
     def num_characters(self) -> int:
-        return len(self.T.nodes[0]["characters"])
+        return len(self.T.nodes[self.root()]["characters"])
 
     def get_state(self, node: int) -> str:
         T = self.T
