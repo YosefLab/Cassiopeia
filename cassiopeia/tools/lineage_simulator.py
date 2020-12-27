@@ -1,39 +1,83 @@
-import numpy as np
+import abc
 from .tree import Tree
+import networkx as nx
+
+from typing import List
 
 
-def lineage_tracing_simulator(
-    T: Tree,
-    mutation_rate: float,
-    num_characters: float
-) -> None:
+class LineageSimulator(abc.ABC):
     r"""
-    Populates the phylogenetic tree T with lineage tracing characters.
+    Abstract base class for lineage simulators.
     """
-    def dfs(node: int, T: Tree):
-        node_state = T.get_state(node)
-        for child in T.children(node):
-            # Compute the state of the child
-            child_state = ''
-            edge_length = T.get_age(node) - T.get_age(child)
-            # print(f"{node} -> {child}, length {edge_length}")
-            assert(edge_length >= 0)
-            for i in range(num_characters):
-                # See what happens to character i
-                if node_state[i] != '0':
-                    # The character has already mutated; there in nothing to do
-                    child_state += node_state[i]
-                    continue
-                else:
-                    # Determine if the character will mutate.
-                    mutates =\
-                        np.random.exponential(1.0 / mutation_rate) < edge_length
-                    if mutates:
-                        child_state += '1'
-                    else:
-                        child_state += '0'
-            T.set_state(child, child_state)
-            dfs(child, T)
-    root = T.root()
-    T.set_state(root, '0' * num_characters)
-    dfs(root, T)
+    @abc.abstractmethod
+    def simulate_lineage(self) -> Tree:
+        r"""Simulates a ground truth lineage"""
+
+
+class PerfectBinaryTree(LineageSimulator):
+    def __init__(
+        self,
+        generation_branch_lengths: List[float]
+    ):
+        self.generation_branch_lengths = generation_branch_lengths[:]
+
+    def simulate_lineage(self) -> Tree:
+        r"""
+        See test for doc.
+        """
+        generation_branch_lengths = self.generation_branch_lengths
+        n_generations = len(generation_branch_lengths)
+        T = nx.DiGraph()
+        T.add_nodes_from(range(2 ** (n_generations + 1) - 1))
+        edges = [(int((child - 1) / 2), child)
+                 for child in range(1, 2 ** (n_generations + 1) - 1)]
+        node_generation = []
+        for i in range(n_generations + 1):
+            node_generation += [i] * 2 ** i
+        T.add_edges_from(edges)
+        for (parent, child) in edges:
+            parent_generation = node_generation[parent]
+            branch_length = generation_branch_lengths[parent_generation]
+            T.edges[parent, child]["length"] = branch_length
+        T.nodes[0]["age"] = sum(generation_branch_lengths)
+        for child in range(1, 2 ** (n_generations + 1) - 1):
+            child_generation = node_generation[child]
+            branch_length = generation_branch_lengths[child_generation - 1]
+            T.nodes[child]["age"] =\
+                T.nodes[int((child - 1) / 2)]["age"] - branch_length
+        return Tree(T)
+
+
+class PerfectBinaryTreeWithRootBranch(LineageSimulator):
+    def __init__(
+        self,
+        generation_branch_lengths: List[float]
+    ):
+        self.generation_branch_lengths = generation_branch_lengths
+
+    def simulate_lineage(self) -> Tree:
+        r"""
+        See test for doc.
+        """
+        # generation_branch_lengths = self.generation_branch_lengths
+        generation_branch_lengths = self.generation_branch_lengths
+        n_generations = len(generation_branch_lengths)
+        T = nx.DiGraph()
+        T.add_nodes_from(range(2 ** n_generations))
+        edges = [(int(child / 2), child)
+                 for child in range(1, 2 ** n_generations)]
+        T.add_edges_from(edges)
+        node_generation = [0]
+        for i in range(n_generations):
+            node_generation += [i + 1] * 2 ** i
+        for (parent, child) in edges:
+            parent_generation = node_generation[parent]
+            branch_length = generation_branch_lengths[parent_generation]
+            T.edges[parent, child]["length"] = branch_length
+        T.nodes[0]["age"] = sum(generation_branch_lengths)
+        for child in range(1, 2 ** n_generations):
+            child_generation = node_generation[child]
+            branch_length = generation_branch_lengths[child_generation - 1]
+            T.nodes[child]["age"] =\
+                T.nodes[int(child / 2)]["age"] - branch_length
+        return Tree(T)

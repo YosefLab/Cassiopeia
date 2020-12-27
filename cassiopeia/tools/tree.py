@@ -17,11 +17,14 @@ def upload_to_itol_and_export_figure(
     verbose: bool = True
 ):
     r"""
+    TODO: Change doc to Google style
     TODO: Can use 'metadata_source' to select what data to show!!!
     For all export parameters see: https://itol.embl.de/help.cgi#export
     :param tree_name_in_iTOL: The name of the uploaded tree in iTOL
-    :param figure_file: Name of the file where the tree figure will be exported to.
-    :param plot_grid_line_scale: If provided, the distance between lines on the grid.
+    :param figure_file: Name of the file where the tree figure will be exported
+        to.
+    :param plot_grid_line_scale: If provided, the distance between lines on the
+        grid.
     :param verbose: Verbosity
     """
     # Write out newick tree to file
@@ -51,11 +54,14 @@ def upload_to_itol_and_export_figure(
         "format", figure_file.split(".")[-1]
     )  # ['png', 'svg', 'eps', 'ps', 'pdf', 'nexus', 'newick']
     itol_exporter.set_export_param_value("display_mode", 1)  # rectangular tree
-    itol_exporter.set_export_param_value("label_display", 1)  # Possible values: 0 or 1 (0=hide labels, 1=show labels)
+    # Possible values: 0 or 1 (0=hide labels, 1=show labels)
+    itol_exporter.set_export_param_value("label_display", 1)
     if plot_grid_line_scale is not None:
         itol_exporter.set_export_param_value("internal_scale", 1)
-        itol_exporter.set_export_param_value("internalScale1", plot_grid_line_scale)
-        itol_exporter.set_export_param_value("internalScale2", plot_grid_line_scale)
+        itol_exporter.set_export_param_value(
+            "internalScale1", plot_grid_line_scale)
+        itol_exporter.set_export_param_value(
+            "internalScale2", plot_grid_line_scale)
         itol_exporter.set_export_param_value("internalScale1Dashed", 1)
         itol_exporter.set_export_param_value("internalScale2Dashed", 1)
     else:
@@ -79,7 +85,8 @@ def upload_to_itol_and_export_figure(
     # itol_exporter.set_export_param_value("internalScale1Label", 1)
     # itol_exporter.set_export_param_value("newick_format", "ID")
     # itol_exporter.set_export_param_value("internalScale1Label", 1)
-    itol_exporter.set_export_param_value("leaf_sorting", 1)  # Possible values: 1 or 2 (1=normal sorting, 2=no sorting)
+    # Possible values: 1 or 2 (1=normal sorting, 2=no sorting)
+    itol_exporter.set_export_param_value("leaf_sorting", 1)
     print(f"Exporting tree to {figure_file}")
     itol_exporter.export(figure_file)
 
@@ -93,12 +100,14 @@ def create_networkx_DiGraph_from_newick_file(file_path: str) -> nx.DiGraph:
         f=1
     ):
         """
+        TODO: Am I even using this?
         Given a file path to a newick file, convert to a directed graph.
 
         :param newick_filepath:
             File path to a newick text file
         :param f:
-            Parameter to be passed to Ete3 while reading in the newick file. (Default 1)
+            Parameter to be passed to Ete3 while reading in the newick file.
+            (Default 1)
         :return: a networkx file of the tree
         """
 
@@ -106,7 +115,8 @@ def create_networkx_DiGraph_from_newick_file(file_path: str) -> nx.DiGraph:
         tree = ETEtree(newick_filepath, format=f)
 
         # Create dict from ete3 node to cassiopeia.Node
-        # NOTE(sprillo): Instead of mapping to a Cassiopeia node, we'll map to a string (just the node name)
+        # NOTE(sprillo): Instead of mapping to a Cassiopeia node, we'll map to
+        # a string (just the node name)
         e2cass = {}
         edge_lengths = {}
         internal_node_id = 0

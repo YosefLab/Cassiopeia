@@ -1,7 +1,8 @@
 import numpy as np
 import networkx as nx
 
-from cassiopeia.tools.lineage_simulator import lineage_tracing_simulator
+from cassiopeia.tools.lineage_tracing_simulator import\
+    IIDExponentialLineageTracer
 from cassiopeia.tools.tree import Tree
 
 
@@ -21,4 +22,5 @@ def test_smoke():
     T.nodes[5]["age"] = 0
     T.nodes[6]["age"] = 0
     T = Tree(T)
-    lineage_tracing_simulator(T, mutation_rate=1.0, num_characters=10)
+    IIDExponentialLineageTracer(mutation_rate=1.0, num_characters=10)\
+        .overlay_lineage_tracing_data(T)
