@@ -25,7 +25,9 @@ def test_no_mutations():
     T.nodes[0]["characters"] = '0'
     T.nodes[1]["characters"] = '0'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(T.get_edge_length(0, 1), 0.0)
     np.testing.assert_almost_equal(T.get_age(0), 0.0)
     np.testing.assert_almost_equal(T.get_age(1), 0.0)
@@ -51,7 +53,9 @@ def test_saturation():
     T.nodes[0]["characters"] = '0'
     T.nodes[1]["characters"] = '1'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     assert(T.get_edge_length(0, 1) > 15.0)
     assert(T.get_age(0) > 15.0)
     np.testing.assert_almost_equal(T.get_age(1), 0.0)
@@ -78,7 +82,9 @@ def test_hand_solvable_problem_1():
     T.nodes[0]["characters"] = '00'
     T.nodes[1]["characters"] = '01'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(
         T.get_edge_length(0, 1), np.log(2), decimal=3)
     np.testing.assert_almost_equal(T.get_age(0), np.log(2), decimal=3)
@@ -106,7 +112,9 @@ def test_hand_solvable_problem_2():
     T.nodes[0]["characters"] = '000'
     T.nodes[1]["characters"] = '011'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(
         T.get_edge_length(0, 1), np.log(3), decimal=3)
     np.testing.assert_almost_equal(T.get_age(0), np.log(3), decimal=3)
@@ -134,7 +142,9 @@ def test_hand_solvable_problem_3():
     T.nodes[0]["characters"] = '000'
     T.nodes[1]["characters"] = '001'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(
         T.get_edge_length(0, 1), np.log(1.5), decimal=3)
     np.testing.assert_almost_equal(T.get_age(0), np.log(1.5), decimal=3)
@@ -159,7 +169,9 @@ def test_small_tree_with_no_mutations():
     T.nodes[5]["characters"] = '0000'
     T.nodes[6]["characters"] = '0000'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     for edge in T.edges():
         np.testing.assert_almost_equal(T.get_edge_length(*edge), 0, decimal=3)
     np.testing.assert_almost_equal(log_likelihood, 0.0, decimal=3)
@@ -187,7 +199,9 @@ def test_small_tree_with_one_mutation():
     T.nodes[5]["characters"] = '0'
     T.nodes[6]["characters"] = '1'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(T.get_edge_length(0, 1), 0.405, decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(0, 2), 0.0, decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(1, 3), 0.0, decimal=3)
@@ -215,7 +229,9 @@ def test_small_tree_with_saturation():
     T.nodes[5]["characters"] = '1'
     T.nodes[6]["characters"] = '1'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     assert(T.get_edge_length(0, 2) > 15.0)
     assert(T.get_edge_length(1, 3) > 15.0)
     assert(T.get_edge_length(1, 4) > 15.0)
@@ -240,7 +256,9 @@ def test_small_tree_regression():
     T.nodes[5]["characters"] = '000056700'
     T.nodes[6]["characters"] = '000406089'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(T.get_edge_length(0, 1), 0.203, decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(0, 2), 0.082, decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(1, 3), 0.175, decimal=3)
@@ -267,7 +285,9 @@ def test_small_symmetric_tree():
     T.nodes[5]["characters"] = '110'
     T.nodes[6]["characters"] = '110'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(
         T.get_edge_length(0, 1), T.get_edge_length(0, 2))
     np.testing.assert_almost_equal(
@@ -298,7 +318,9 @@ def test_small_tree_with_infinite_legs():
     T.nodes[5]["characters"] = '11'
     T.nodes[6]["characters"] = '11'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(T.get_edge_length(0, 1), 0.693, decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(0, 2), 0.693, decimal=3)
     assert(T.get_edge_length(1, 3) > 15)
@@ -326,7 +348,9 @@ def test_on_simulated_data():
         .overlay_lineage_tracing_data(T)
     for node in T.nodes():
         T.set_age(node, -1)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     assert(0.9 < T.get_age(0) < 1.1)
     assert(0.8 < T.get_age(1) < 1.0)
     assert(0.05 < T.get_age(2) < 0.15)
@@ -352,7 +376,9 @@ def test_subtree_collapses_when_no_mutations():
     T.nodes[3]["characters"] = '1'
     T.nodes[4]["characters"] = '0'
     T = Tree(T)
-    log_likelihood = IIDExponentialBLE().estimate_branch_lengths(T)
+    model = IIDExponentialBLE()
+    model.estimate_branch_lengths(T)
+    log_likelihood = model.log_likelihood
     np.testing.assert_almost_equal(
         T.get_edge_length(0, 1), np.log(2), decimal=3)
     np.testing.assert_almost_equal(T.get_edge_length(1, 2), 0.0, decimal=3)

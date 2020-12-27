@@ -40,11 +40,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
         self.l2_regularization = l2_regularization
         self.verbose = verbose
 
-    def estimate_branch_lengths(self, tree: Tree) -> float:
+    def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
-        TODO: This shouldn't return the log-likelihood according to the API.
-        What should we do about this? Maybe let's look at sklearn?
-
         Estimates branch lengths for the given tree.
 
         This is in fact an exponential cone program, which is a special kind of
@@ -134,8 +131,6 @@ class IIDExponentialBLE(BranchLengthEstimator):
         self.log_likelihood = log_likelihood.value
         self.log_loss = f_star
 
-        return f_star
-
     @classmethod
     def log_likelihood(self, T: Tree) -> float:
         r"""
@@ -202,13 +197,15 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             print(f"Refitting full model with:\n"
                   f"minimum_edge_length={best_minimum_edge_length}\n"
                   f"l2_regularization={best_l2_regularization}")
-        log_likelihood = IIDExponentialBLE(
+        final_model = IIDExponentialBLE(
             minimum_edge_length=best_minimum_edge_length,
             l2_regularization=best_l2_regularization
-        ).estimate_branch_lengths(T)
+        )
+        final_model.estimate_branch_lengths(T)
         self.minimum_edge_length = best_minimum_edge_length
         self.l2_regularization = best_l2_regularization
-        self.log_likelihood = log_likelihood
+        self.log_likelihood = final_model.log_likelihood
+        self.log_loss = final_model.log_loss
 
     def _cv_log_likelihood(
         self,
