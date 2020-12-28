@@ -395,10 +395,10 @@ def test_IIDExponentialBLEGridSearchCV():
     T.nodes[1]["characters"] = '001'
     T = Tree(T)
     model = IIDExponentialBLEGridSearchCV(
-        minimum_edge_lengths=(0, 1.0, 3.0),
+        minimum_branch_lengths=(0, 1.0, 3.0),
         l2_regularizations=(0, ),
         verbose=True
     )
     model.estimate_branch_lengths(T)
-    minimum_edge_length = model.minimum_edge_length
-    np.testing.assert_almost_equal(minimum_edge_length, 1.0)
+    minimum_branch_length = model.minimum_branch_length
+    np.testing.assert_almost_equal(minimum_branch_length, 1.0)
