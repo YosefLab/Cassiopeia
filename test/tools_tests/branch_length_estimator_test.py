@@ -1,11 +1,8 @@
 import networkx as nx
 import numpy as np
 
-from cassiopeia.tools.branch_length_estimator import IIDExponentialBLE,\
-    IIDExponentialBLEGridSearchCV
-from cassiopeia.tools.lineage_tracing_simulator import\
-    IIDExponentialLineageTracer
-from cassiopeia.tools.tree import Tree
+from cassiopeia.tools import (IIDExponentialBLE, IIDExponentialBLEGridSearchCV,
+                              IIDExponentialLineageTracer, Tree)
 
 
 def test_no_mutations():

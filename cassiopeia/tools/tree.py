@@ -1,5 +1,6 @@
-import networkx as nx
 from typing import List, Tuple
+
+import networkx as nx
 
 
 class Tree():

@@ -1,4 +1,5 @@
 import abc
+
 import numpy as np
 
 from .tree import Tree
@@ -18,7 +19,7 @@ class LineageTracingSimulator(abc.ABC):
 
 class IIDExponentialLineageTracer():
     r"""
-    Characters evolve IID over the lineage, with exponential rates.
+    Characters evolve IID over the lineage, with the same rate.
     """
     def __init__(
         self,

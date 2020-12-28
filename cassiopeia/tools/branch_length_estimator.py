@@ -1,8 +1,10 @@
 import abc
 import copy
+from typing import List, Tuple
+
 import cvxpy as cp
 import numpy as np
-from typing import List, Tuple
+
 from .tree import Tree
 
 

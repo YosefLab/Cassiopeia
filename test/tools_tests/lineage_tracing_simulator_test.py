@@ -1,9 +1,7 @@
 import networkx as nx
 import numpy as np
 
-from cassiopeia.tools.lineage_tracing_simulator import\
-    IIDExponentialLineageTracer
-from cassiopeia.tools.tree import Tree
+from cassiopeia.tools import IIDExponentialLineageTracer, Tree
 
 
 def test_smoke():

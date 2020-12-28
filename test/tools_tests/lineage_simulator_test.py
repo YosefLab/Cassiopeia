@@ -1,5 +1,4 @@
-from cassiopeia.tools.lineage_simulator import PerfectBinaryTree,\
-    PerfectBinaryTreeWithRootBranch
+from cassiopeia.tools import PerfectBinaryTree, PerfectBinaryTreeWithRootBranch
 
 
 def test_PerfectBinaryTree():
