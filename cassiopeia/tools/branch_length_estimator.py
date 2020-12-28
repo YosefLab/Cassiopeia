@@ -226,13 +226,16 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
                     T,
                     held_out_character_idx=held_out_character_idx
                 )
-            IIDExponentialBLE(
-                minimum_edge_length=minimum_edge_length,
-                l2_regularization=l2_regularization
-            ).estimate_branch_lengths(T_train)
-            T_valid.copy_branch_lengths(T_other=T_train)
-            held_out_log_likelihood =\
-                IIDExponentialBLE.log_likelihood(T_valid)
+            try:
+                IIDExponentialBLE(
+                    minimum_edge_length=minimum_edge_length,
+                    l2_regularization=l2_regularization
+                ).estimate_branch_lengths(T_train)
+                T_valid.copy_branch_lengths(T_other=T_train)
+                held_out_log_likelihood =\
+                    IIDExponentialBLE.log_likelihood(T_valid)
+            except cp.error.SolverError:
+                held_out_log_likelihood = -np.inf
             log_likelihood_folds[held_out_character_idx] =\
                 held_out_log_likelihood
         if verbose:
