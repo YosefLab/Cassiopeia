@@ -5,8 +5,13 @@ import networkx as nx
 
 class Tree():
     r"""
-    networkx.Digraph wrapper to isolate networkx dependency and add custom tree
-    methods.
+    A phylogenetic tree for holding data from lineages and lineage tracing
+    experiments.
+
+    (Currently implemented as a light wrapper over networkx.DiGraph)
+
+    Args:
+        tree: The networkx.DiGraph from which to create the tree.
     """
     def __init__(self, tree: nx.DiGraph):
         self.tree = tree
@@ -93,11 +98,13 @@ class Tree():
         add_N_to_node_id: bool = False
     ) -> str:
         r"""
-        Converts tree into Newick tree format for viewing in e.g. ITOL.
-        Arguments:
+        Converts tree into Newick tree format.
+
+        Args:
             print_internal_nodes: If True, prints the names of internal
             nodes too.
             print_pct_of_mutated_characters_along_edge: Self-explanatory
+            TODO
         """
         leaves = self.leaves()
 

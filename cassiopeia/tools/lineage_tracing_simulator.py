@@ -8,18 +8,29 @@ from .tree import Tree
 class LineageTracingSimulator(abc.ABC):
     r"""
     Abstract base class for all lineage tracing simulators.
+
+    A LineageTracingSimulator implements a method overlay_lineage_tracing_data
+    which overlays lineage tracing data (i.e. character vectors) on top of the
+    tree. These are stored as the node's state.
     """
     @abc.abstractmethod
     def overlay_lineage_tracing_data(self, tree: Tree) -> None:
         r"""
         Annotates the tree's nodes with lineage tracing character vectors.
-        Operates on the tree in-place.
+        These are stored as the node's state. (Operates on the tree in-place.)
+
+        Args:
+            tree: The tree to overlay lineage tracing data on.
         """
 
 
-class IIDExponentialLineageTracer():
+class IIDExponentialLineageTracer(LineageTracingSimulator):
     r"""
-    Characters evolve IID over the lineage, with the same rate.
+    Characters evolve IID over the lineage, with the same given mutation rate.
+
+    Args:
+        mutation_rate: The mutation rate of each character (same for all).
+        num_characters: The number of characters.
     """
     def __init__(
         self,
@@ -31,7 +42,7 @@ class IIDExponentialLineageTracer():
 
     def overlay_lineage_tracing_data(self, tree: Tree) -> None:
         r"""
-        Populates the phylogenetic tree T with lineage tracing characters.
+        See base class.
         """
         num_characters = self.num_characters
         mutation_rate = self.mutation_rate

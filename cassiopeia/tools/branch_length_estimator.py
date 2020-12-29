@@ -69,8 +69,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
     def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
-        See base class. Only caveat is that this method raises if it fails to
-        solve the underlying optimization problem for any reason.
+        See base class. The only caveat is that this method raises if it fails
+        to solve the underlying optimization problem for any reason.
 
         Raises:
             cp.error.SolverError
@@ -175,8 +175,17 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
 class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
     r"""
-    Cross-validated version of IIDExponentialBLE which fits the hyperparameters
-    based on character-level held-out log-likelihood.
+    Like IIDExponentialBLE but with automatic tuning of hyperparameters.
+
+    This class fits the hyperparameters of IIDExponentialBLE based on
+    character-level held-out log-likelihood. It leaves out one character at a
+    time, fitting the data on all the remaining characters. Thus, the number
+    of models trained by this class is #characters * grid size.
+
+    Args:
+        minimum_branch_lengths: The grid of minimum_branch_length to use.
+        l2_regularizations: The grid of l2_regularization to use.
+        verbose: Verbosity level.
     """
     def __init__(
         self,
@@ -190,7 +199,11 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
 
     def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
-        TODO
+        See base class. The only caveat is that this method raises if it fails
+        to solve the underlying optimization problem for any reason.
+
+        Raises:
+            cp.error.SolverError
         """
         # Extract parameters
         minimum_branch_lengths = self.minimum_branch_lengths
@@ -234,6 +247,14 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         minimum_branch_length: float,
         l2_regularization: float
     ) -> float:
+        r"""
+        Given the tree and the parameters of the model, returns the
+        cross-validated log-likelihood of the model. This is done by holding out
+        one character at a time, fitting the model on the remaining characters,
+        and evaluating the log-likelihood on the held-out character. As a
+        consequence, #character models are fit by this method. The mean held-out
+        log-likelihood over the #character folds is returned.
+        """
         verbose = self.verbose
         if verbose:
             print(f"Cross-validating hyperparameters:"
