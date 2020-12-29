@@ -13,6 +13,7 @@ class LineageTracingSimulator(abc.ABC):
     which overlays lineage tracing data (i.e. character vectors) on top of the
     tree. These are stored as the node's state.
     """
+
     @abc.abstractmethod
     def overlay_lineage_tracing_data(self, tree: Tree) -> None:
         r"""
@@ -32,11 +33,8 @@ class IIDExponentialLineageTracer(LineageTracingSimulator):
         mutation_rate: The mutation rate of each character (same for all).
         num_characters: The number of characters.
     """
-    def __init__(
-        self,
-        mutation_rate: float,
-        num_characters: float
-    ):
+
+    def __init__(self, mutation_rate: float, num_characters: float):
         self.mutation_rate = mutation_rate
         self.num_characters = num_characters
 
@@ -51,28 +49,30 @@ class IIDExponentialLineageTracer(LineageTracingSimulator):
             node_state = tree.get_state(node)
             for child in tree.children(node):
                 # Compute the state of the child
-                child_state = ''
+                child_state = ""
                 edge_length = tree.get_age(node) - tree.get_age(child)
                 # print(f"{node} -> {child}, length {edge_length}")
-                assert(edge_length >= 0)
+                assert edge_length >= 0
                 for i in range(num_characters):
                     # See what happens to character i
-                    if node_state[i] != '0':
+                    if node_state[i] != "0":
                         # The character has already mutated; there in nothing
                         # to do
                         child_state += node_state[i]
                         continue
                     else:
                         # Determine if the character will mutate.
-                        mutates =\
-                            np.random.exponential(1.0 / mutation_rate)\
+                        mutates = (
+                            np.random.exponential(1.0 / mutation_rate)
                             < edge_length
+                        )
                         if mutates:
-                            child_state += '1'
+                            child_state += "1"
                         else:
-                            child_state += '0'
+                            child_state += "0"
                 tree.set_state(child, child_state)
                 dfs(child, tree)
+
         root = tree.root()
-        tree.set_state(root, '0' * num_characters)
+        tree.set_state(root, "0" * num_characters)
         dfs(root, tree)

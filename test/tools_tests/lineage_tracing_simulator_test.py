@@ -20,5 +20,6 @@ def test_smoke():
     tree.nodes[5]["age"] = 0
     tree.nodes[6]["age"] = 0
     tree = Tree(tree)
-    IIDExponentialLineageTracer(mutation_rate=1.0, num_characters=10)\
-        .overlay_lineage_tracing_data(tree)
+    IIDExponentialLineageTracer(
+        mutation_rate=1.0, num_characters=10
+    ).overlay_lineage_tracing_data(tree)

@@ -1,15 +1,15 @@
 from .branch_length_estimator import (
     BranchLengthEstimator,
     IIDExponentialBLE,
-    IIDExponentialBLEGridSearchCV
+    IIDExponentialBLEGridSearchCV,
 )
 from .lineage_simulator import (
     LineageSimulator,
     PerfectBinaryTree,
-    PerfectBinaryTreeWithRootBranch
+    PerfectBinaryTreeWithRootBranch,
 )
 from .lineage_tracing_simulator import (
     LineageTracingSimulator,
-    IIDExponentialLineageTracer
+    IIDExponentialLineageTracer,
 )
 from .tree import Tree

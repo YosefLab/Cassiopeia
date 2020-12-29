@@ -17,6 +17,7 @@ class BranchLengthEstimator(abc.ABC):
     possibly at the internal nodes too), estimates the branch lengths of the
     tree.
     """
+
     @abc.abstractmethod
     def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
@@ -57,11 +58,12 @@ class IIDExponentialBLE(BranchLengthEstimator):
         log_loss: The log-loss of the training data under the estimated model.
             This is the log likhelihood plus the regularization terms.
     """
+
     def __init__(
         self,
         minimum_branch_length: float = 0,
         l2_regularization: float = 0,
-        verbose: bool = False
+        verbose: bool = False,
     ):
         self.minimum_branch_length = minimum_branch_length
         self.l2_regularization = l2_regularization
@@ -84,21 +86,28 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # tree = Tree(tree)
 
         # # # # # Create variables of the optimization problem # # # # #
-        r_X_t_variables = dict([(node_id, cp.Variable(name=f'r_X_t_{node_id}'))
-                                for node_id in tree.nodes()])
+        r_X_t_variables = dict(
+            [
+                (node_id, cp.Variable(name=f"r_X_t_{node_id}"))
+                for node_id in tree.nodes()
+            ]
+        )
         time_increases_constraints = [
             r_X_t_variables[parent]
             >= r_X_t_variables[child] + minimum_branch_length
             for (parent, child) in tree.edges()
         ]
-        leaves_have_age_0_constraints =\
-            [r_X_t_variables[leaf] == 0 for leaf in tree.leaves()]
-        non_negative_r_X_t_constraints =\
-            [r_X_t >= 0 for r_X_t in r_X_t_variables.values()]
-        all_constraints =\
-            time_increases_constraints + \
-            leaves_have_age_0_constraints + \
-            non_negative_r_X_t_constraints
+        leaves_have_age_0_constraints = [
+            r_X_t_variables[leaf] == 0 for leaf in tree.leaves()
+        ]
+        non_negative_r_X_t_constraints = [
+            r_X_t >= 0 for r_X_t in r_X_t_variables.values()
+        ]
+        all_constraints = (
+            time_increases_constraints
+            + leaves_have_age_0_constraints
+            + non_negative_r_X_t_constraints
+        )
 
         # # # # # Compute the log-likelihood # # # # #
         log_likelihood = 0
@@ -107,10 +116,11 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # sufficient statistic. This makes the solver WAY faster!
         for (parent, child) in tree.edges():
             edge_length = r_X_t_variables[parent] - r_X_t_variables[child]
-            zeros_parent = tree.get_state(parent).count('0')  # TODO: '0'...
-            zeros_child = tree.get_state(child).count('0')  # TODO: '0'...
+            # TODO: hardcoded '0' here...
+            zeros_parent = tree.get_state(parent).count("0")
+            zeros_child = tree.get_state(child).count("0")
             new_cuts_child = zeros_parent - zeros_child
-            assert(new_cuts_child >= 0)
+            assert new_cuts_child >= 0
             # Add log-lik for characters that didn't get cut
             log_likelihood += zeros_child * (-edge_length)
             # Add log-lik for characters that got cut
@@ -121,10 +131,12 @@ class IIDExponentialBLE(BranchLengthEstimator):
         l2_penalty = 0
         for (parent, child) in tree.edges():
             for child_of_child in tree.children(child):
-                edge_length_above =\
+                edge_length_above = (
                     r_X_t_variables[parent] - r_X_t_variables[child]
-                edge_length_below =\
+                )
+                edge_length_below = (
                     r_X_t_variables[child] - r_X_t_variables[child_of_child]
+                )
                 l2_penalty += (edge_length_above - edge_length_below) ** 2
         l2_penalty *= l2_regularization
 
@@ -133,7 +145,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
         obj = cp.Maximize(log_likelihood - l2_penalty)
         prob = cp.Problem(obj, all_constraints)
 
-        f_star = prob.solve(solver='ECOS', verbose=verbose)
+        f_star = prob.solve(solver="ECOS", verbose=verbose)
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
 
@@ -141,12 +153,10 @@ class IIDExponentialBLE(BranchLengthEstimator):
             tree.set_age(node, age=r_X_t_variables[node].value)
 
         for (parent, child) in tree.edges():
-            new_edge_length =\
+            new_edge_length = (
                 r_X_t_variables[parent].value - r_X_t_variables[child].value
-            tree.set_edge_length(
-                parent,
-                child,
-                length=new_edge_length)
+            )
+            tree.set_edge_length(parent, child, length=new_edge_length)
 
         self.log_likelihood = log_likelihood.value
         self.log_loss = f_star
@@ -160,10 +170,10 @@ class IIDExponentialBLE(BranchLengthEstimator):
         for (parent, child) in tree.edges():
             edge_length = tree.get_age(parent) - tree.get_age(child)
             # TODO: hardcoded '0' here...
-            zeros_parent = tree.get_state(parent).count('0')
-            zeros_child = tree.get_state(child).count('0')
+            zeros_parent = tree.get_state(parent).count("0")
+            zeros_child = tree.get_state(child).count("0")
             new_cuts_child = zeros_parent - zeros_child
-            assert(new_cuts_child >= 0)
+            assert new_cuts_child >= 0
             # Add log-lik for characters that didn't get cut
             log_likelihood += zeros_child * (-edge_length)
             # Add log-lik for characters that got cut
@@ -187,11 +197,12 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         l2_regularizations: The grid of l2_regularization to use.
         verbose: Verbosity level.
     """
+
     def __init__(
         self,
-        minimum_branch_lengths: Tuple[float] = (0, ),
-        l2_regularizations: Tuple[float] = (0, ),
-        verbose: bool = False
+        minimum_branch_lengths: Tuple[float] = (0,),
+        l2_regularizations: Tuple[float] = (0,),
+        verbose: bool = False,
     ):
         self.minimum_branch_lengths = minimum_branch_lengths
         self.l2_regularizations = l2_regularizations
@@ -216,24 +227,30 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
                 cv_log_likelihood = self._cv_log_likelihood(
                     tree=tree,
                     minimum_branch_length=minimum_branch_length,
-                    l2_regularization=l2_regularization)
+                    l2_regularization=l2_regularization,
+                )
                 held_out_log_likelihoods.append(
-                    (cv_log_likelihood,
-                     [minimum_branch_length,
-                      l2_regularization])
+                    (
+                        cv_log_likelihood,
+                        [minimum_branch_length, l2_regularization],
+                    )
                 )
 
         # Refit model on full dataset with the best hyperparameters
         held_out_log_likelihoods.sort(reverse=True)
-        best_minimum_branch_length, best_l2_regularization =\
-            held_out_log_likelihoods[0][1]
+        (
+            best_minimum_branch_length,
+            best_l2_regularization,
+        ) = held_out_log_likelihoods[0][1]
         if verbose:
-            print(f"Refitting full model with:\n"
-                  f"minimum_branch_length={best_minimum_branch_length}\n"
-                  f"l2_regularization={best_l2_regularization}")
+            print(
+                f"Refitting full model with:\n"
+                f"minimum_branch_length={best_minimum_branch_length}\n"
+                f"l2_regularization={best_l2_regularization}"
+            )
         final_model = IIDExponentialBLE(
             minimum_branch_length=best_minimum_branch_length,
-            l2_regularization=best_l2_regularization
+            l2_regularization=best_l2_regularization,
         )
         final_model.estimate_branch_lengths(tree)
         self.minimum_branch_length = best_minimum_branch_length
@@ -242,10 +259,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         self.log_loss = final_model.log_loss
 
     def _cv_log_likelihood(
-        self,
-        tree: Tree,
-        minimum_branch_length: float,
-        l2_regularization: float
+        self, tree: Tree, minimum_branch_length: float, l2_regularization: float
     ) -> float:
         r"""
         Given the tree and the parameters of the model, returns the
@@ -257,39 +271,41 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         """
         verbose = self.verbose
         if verbose:
-            print(f"Cross-validating hyperparameters:"
-                  f"\nminimum_branch_length={minimum_branch_length}"
-                  f"\nl2_regularizations={l2_regularization}")
+            print(
+                f"Cross-validating hyperparameters:"
+                f"\nminimum_branch_length={minimum_branch_length}"
+                f"\nl2_regularizations={l2_regularization}"
+            )
         n_characters = tree.num_characters()
         log_likelihood_folds = np.zeros(shape=(n_characters))
         for held_out_character_idx in range(n_characters):
-            tree_train, tree_valid =\
-                self._cv_split(
-                    tree=tree,
-                    held_out_character_idx=held_out_character_idx
-                )
+            tree_train, tree_valid = self._cv_split(
+                tree=tree, held_out_character_idx=held_out_character_idx
+            )
             try:
                 IIDExponentialBLE(
                     minimum_branch_length=minimum_branch_length,
-                    l2_regularization=l2_regularization
+                    l2_regularization=l2_regularization,
                 ).estimate_branch_lengths(tree_train)
                 tree_valid.copy_branch_lengths(tree_other=tree_train)
-                held_out_log_likelihood =\
-                    IIDExponentialBLE.log_likelihood(tree_valid)
+                held_out_log_likelihood = IIDExponentialBLE.log_likelihood(
+                    tree_valid
+                )
             except cp.error.SolverError:
                 held_out_log_likelihood = -np.inf
-            log_likelihood_folds[held_out_character_idx] =\
-                held_out_log_likelihood
+            log_likelihood_folds[
+                held_out_character_idx
+            ] = held_out_log_likelihood
         if verbose:
             print(f"log_likelihood_folds = {log_likelihood_folds}")
-            print(f"mean log_likelihood_folds = "
-                  f"{np.mean(log_likelihood_folds)}")
+            print(
+                f"mean log_likelihood_folds = "
+                f"{np.mean(log_likelihood_folds)}"
+            )
         return np.mean(log_likelihood_folds)
 
     def _cv_split(
-        self,
-        tree: Tree,
-        held_out_character_idx: int
+        self, tree: Tree, held_out_character_idx: int
     ) -> Tuple[Tree, Tree]:
         r"""
         Creates a training and a cross validation tree by hiding the
@@ -299,11 +315,11 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         tree_valid = copy.deepcopy(tree)
         for node in tree.nodes():
             state = tree_train.get_state(node)
-            train_state =\
-                state[:held_out_character_idx]\
-                + state[(held_out_character_idx + 1):]
-            valid_data =\
-                state[held_out_character_idx]
+            train_state = (
+                state[:held_out_character_idx]
+                + state[(held_out_character_idx + 1) :]
+            )
+            valid_data = state[held_out_character_idx]
             tree_train.set_state(node, train_state)
             tree_valid.set_state(node, valid_data)
         return tree_train, tree_valid

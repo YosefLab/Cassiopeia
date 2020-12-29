@@ -3,7 +3,7 @@ from typing import List, Tuple
 import networkx as nx
 
 
-class Tree():
+class Tree:
     r"""
     A phylogenetic tree for holding data from lineages and lineage tracing
     experiments.
@@ -13,6 +13,7 @@ class Tree():
     Args:
         tree: The networkx.DiGraph from which to create the tree.
     """
+
     def __init__(self, tree: nx.DiGraph):
         self.tree = tree
 
@@ -23,9 +24,11 @@ class Tree():
 
     def leaves(self) -> List[int]:
         tree = self.tree
-        leaves = [n for n in tree
-                  if tree.out_degree(n) == 0
-                  and tree.in_degree(n) == 1]
+        leaves = [
+            n
+            for n in tree
+            if tree.out_degree(n) == 0 and tree.in_degree(n) == 1
+        ]
         return leaves
 
     def internal_nodes(self) -> List[int]:
@@ -80,8 +83,8 @@ class Tree():
         tree.edges[parent, child]["length"] = length
 
     def set_edge_lengths(
-            self,
-            parent_child_and_length_list: List[Tuple[int, int, float]]) -> None:
+        self, parent_child_and_length_list: List[Tuple[int, int, float]]
+    ) -> None:
         for (parent, child, length) in parent_child_and_length_list:
             self.set_edge_length(parent, child, length)
 
@@ -95,7 +98,7 @@ class Tree():
         print_internal_nodes: bool = False,
         append_state_to_node_name: bool = False,
         print_pct_of_mutated_characters_along_edge: bool = False,
-        add_N_to_node_id: bool = False
+        add_N_to_node_id: bool = False,
     ) -> str:
         r"""
         Converts tree into Newick tree format.
@@ -109,11 +112,13 @@ class Tree():
         leaves = self.leaves()
 
         def format_node(v: int):
-            node_id_prefix = '' if not add_N_to_node_id else 'N'
-            node_id = '' if not print_node_names else str(v)
-            node_suffix =\
-                '' if not append_state_to_node_name\
-                else '_' + str(self.get_state(v))
+            node_id_prefix = "" if not add_N_to_node_id else "N"
+            node_id = "" if not print_node_names else str(v)
+            node_suffix = (
+                ""
+                if not append_state_to_node_name
+                else "_" + str(self.get_state(v))
+            )
             return node_id_prefix + node_id + node_suffix
 
         def subtree_newick_representation(v: int) -> str:
@@ -125,38 +130,42 @@ class Tree():
                 if child in leaves:
                     subtree_newick = subtree_newick_representation(child)
                 else:
-                    subtree_newick =\
-                        '(' + subtree_newick_representation(child) + ')'
+                    subtree_newick = (
+                        "(" + subtree_newick_representation(child) + ")"
+                    )
                     if print_internal_nodes:
                         subtree_newick += format_node(child)
                 # Add edge length
-                subtree_newick = subtree_newick + ':' + str(edge_length)
+                subtree_newick = subtree_newick + ":" + str(edge_length)
                 if print_pct_of_mutated_characters_along_edge:
                     # Also add number of mutations
-                    number_of_unmutated_characters_in_parent =\
-                        self.get_state(v).count('0')
-                    number_of_mutations_along_edge =\
-                        self.get_state(v).count('0')\
-                        - self.get_state(child).count('0')
-                    pct_of_mutated_characters_along_edge =\
-                        number_of_mutations_along_edge /\
-                        (number_of_unmutated_characters_in_parent + 1e-100)
-                    subtree_newick = subtree_newick +\
-                        "[&&NHX:muts="\
+                    number_of_unmutated_characters_in_parent = self.get_state(
+                        v
+                    ).count("0")
+                    number_of_mutations_along_edge = self.get_state(v).count(
+                        "0"
+                    ) - self.get_state(child).count("0")
+                    pct_of_mutated_characters_along_edge = (
+                        number_of_mutations_along_edge
+                        / (number_of_unmutated_characters_in_parent + 1e-100)
+                    )
+                    subtree_newick = (
+                        subtree_newick + "[&&NHX:muts="
                         f"{self._fmt(pct_of_mutated_characters_along_edge)}]"
+                    )
                 subtrees_newick.append(subtree_newick)
-            newick = ','.join(subtrees_newick)
+            newick = ",".join(subtrees_newick)
             return newick
 
         root = self.root()
-        res = '(' + subtree_newick_representation(root) + ')'
+        res = "(" + subtree_newick_representation(root) + ")"
         if print_internal_nodes:
             res += format_node(root)
-        res += ');'
+        res += ");"
         return res
 
     def _fmt(self, x: float):
-        return '%.2f' % x
+        return "%.2f" % x
 
     def reconstruct_ancestral_states(self):
         r"""
@@ -173,42 +182,46 @@ class Tree():
                 dfs(child)
             children_states = [self.get_state(child) for child in children]
             n_characters = len(children_states[0])
-            state = ''
+            state = ""
             for character_id in range(n_characters):
-                states_for_this_character =\
-                    set([children_states[i][character_id]
-                         for i in range(n_children)])
+                states_for_this_character = set(
+                    [
+                        children_states[i][character_id]
+                        for i in range(n_children)
+                    ]
+                )
                 if len(states_for_this_character) == 1:
                     state += states_for_this_character.pop()
                 else:
-                    state += '0'
+                    state += "0"
             self.set_state(v, state)
             if v == root:
                 # Reset state to all zeros!
-                self.set_state(v, '0' * n_characters)
+                self.set_state(v, "0" * n_characters)
+
         dfs(root)
 
     def copy_branch_lengths(self, tree_other):
         r"""
         Copies the branch lengths of tree_other onto self
         """
-        assert(self.nodes() == tree_other.nodes())
-        assert(self.edges() == tree_other.edges())
+        assert self.nodes() == tree_other.nodes()
+        assert self.edges() == tree_other.edges()
 
         for node in self.nodes():
             new_age = tree_other.get_age(node)
             self.set_age(node, age=new_age)
 
         for (parent, child) in self.edges():
-            new_edge_length =\
-                tree_other.get_age(parent) - tree_other.get_age(child)
-            self.set_edge_length(
-                parent,
-                child,
-                length=new_edge_length)
+            new_edge_length = tree_other.get_age(parent) - tree_other.get_age(
+                child
+            )
+            self.set_edge_length(parent, child, length=new_edge_length)
 
     def print_edges(self):
         for (parent, child) in self.edges():
-            print(f"{parent}[{self.get_state(parent)}] -> "
-                  f"{child}[{self.get_state(child)}]: "
-                  f"{self.get_edge_length(parent, child)}")
+            print(
+                f"{parent}[{self.get_state(parent)}] -> "
+                f"{child}[{self.get_state(child)}]: "
+                f"{self.get_edge_length(parent, child)}"
+            )
