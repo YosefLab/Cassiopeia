@@ -29,19 +29,19 @@ class IIDExponentialLineageTracer():
         self.mutation_rate = mutation_rate
         self.num_characters = num_characters
 
-    def overlay_lineage_tracing_data(self, T: Tree) -> None:
+    def overlay_lineage_tracing_data(self, tree: Tree) -> None:
         r"""
         Populates the phylogenetic tree T with lineage tracing characters.
         """
         num_characters = self.num_characters
         mutation_rate = self.mutation_rate
 
-        def dfs(node: int, T: Tree):
-            node_state = T.get_state(node)
-            for child in T.children(node):
+        def dfs(node: int, tree: Tree):
+            node_state = tree.get_state(node)
+            for child in tree.children(node):
                 # Compute the state of the child
                 child_state = ''
-                edge_length = T.get_age(node) - T.get_age(child)
+                edge_length = tree.get_age(node) - tree.get_age(child)
                 # print(f"{node} -> {child}, length {edge_length}")
                 assert(edge_length >= 0)
                 for i in range(num_characters):
@@ -60,8 +60,8 @@ class IIDExponentialLineageTracer():
                             child_state += '1'
                         else:
                             child_state += '0'
-                T.set_state(child, child_state)
-                dfs(child, T)
-        root = T.root()
-        T.set_state(root, '0' * num_characters)
-        dfs(root, T)
+                tree.set_state(child, child_state)
+                dfs(child, tree)
+        root = tree.root()
+        tree.set_state(root, '0' * num_characters)
+        dfs(root, tree)

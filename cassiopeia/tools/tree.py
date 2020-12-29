@@ -8,69 +8,71 @@ class Tree():
     networkx.Digraph wrapper to isolate networkx dependency and add custom tree
     methods.
     """
-    def __init__(self, T: nx.DiGraph):
-        self.T = T
+    def __init__(self, tree: nx.DiGraph):
+        self.tree = tree
 
     def root(self) -> int:
-        T = self.T
-        root = [n for n in T if T.in_degree(n) == 0][0]
+        tree = self.tree
+        root = [n for n in tree if tree.in_degree(n) == 0][0]
         return root
 
     def leaves(self) -> List[int]:
-        T = self.T
-        leaves = [n for n in T if T.out_degree(n) == 0 and T.in_degree(n) == 1]
+        tree = self.tree
+        leaves = [n for n in tree
+                  if tree.out_degree(n) == 0
+                  and tree.in_degree(n) == 1]
         return leaves
 
     def internal_nodes(self) -> List[int]:
-        T = self.T
-        return [n for n in T if n != self.root() and n not in self.leaves()]
+        tree = self.tree
+        return [n for n in tree if n != self.root() and n not in self.leaves()]
 
     def non_root_nodes(self) -> List[int]:
         return self.leaves() + self.internal_nodes()
 
     def nodes(self):
-        T = self.T
-        return list(T.nodes())
+        tree = self.tree
+        return list(tree.nodes())
 
     def num_characters(self) -> int:
-        return len(self.T.nodes[self.root()]["characters"])
+        return len(self.tree.nodes[self.root()]["characters"])
 
     def get_state(self, node: int) -> str:
-        T = self.T
-        return T.nodes[node]["characters"]
+        tree = self.tree
+        return tree.nodes[node]["characters"]
 
     def set_state(self, node: int, state: str) -> None:
-        T = self.T
-        T.nodes[node]["characters"] = state
+        tree = self.tree
+        tree.nodes[node]["characters"] = state
 
     def set_states(self, node_state_list: List[Tuple[int, str]]) -> None:
         for (node, state) in node_state_list:
             self.set_state(node, state)
 
     def get_age(self, node: int) -> float:
-        T = self.T
-        return T.nodes[node]["age"]
+        tree = self.tree
+        return tree.nodes[node]["age"]
 
     def set_age(self, node: int, age: float) -> None:
-        T = self.T
-        T.nodes[node]["age"] = age
+        tree = self.tree
+        tree.nodes[node]["age"] = age
 
     def edges(self) -> List[Tuple[int, int]]:
         """List of (parent, child) tuples"""
-        T = self.T
-        return list(T.edges)
+        tree = self.tree
+        return list(tree.edges)
 
     def get_edge_length(self, parent: int, child: int) -> float:
-        T = self.T
-        assert parent in T
-        assert child in T[parent]
-        return T.edges[parent, child]["length"]
+        tree = self.tree
+        assert parent in tree
+        assert child in tree[parent]
+        return tree.edges[parent, child]["length"]
 
     def set_edge_length(self, parent: int, child: int, length: float) -> None:
-        T = self.T
-        assert parent in T
-        assert child in T[parent]
-        T.edges[parent, child]["length"] = length
+        tree = self.tree
+        assert parent in tree
+        assert child in tree[parent]
+        tree.edges[parent, child]["length"] = length
 
     def set_edge_lengths(
             self,
@@ -79,8 +81,8 @@ class Tree():
             self.set_edge_length(parent, child, length)
 
     def children(self, node: int) -> List[int]:
-        T = self.T
-        return list(T.adj[node])
+        tree = self.tree
+        return list(tree.adj[node])
 
     def to_newick_tree_format(
         self,
@@ -179,20 +181,20 @@ class Tree():
                 self.set_state(v, '0' * n_characters)
         dfs(root)
 
-    def copy_branch_lengths(self, T_other):
+    def copy_branch_lengths(self, tree_other):
         r"""
-        Copies the branch lengths of T_other onto self
+        Copies the branch lengths of tree_other onto self
         """
-        assert(self.nodes() == T_other.nodes())
-        assert(self.edges() == T_other.edges())
+        assert(self.nodes() == tree_other.nodes())
+        assert(self.edges() == tree_other.edges())
 
         for node in self.nodes():
-            new_age = T_other.get_age(node)
+            new_age = tree_other.get_age(node)
             self.set_age(node, age=new_age)
 
         for (parent, child) in self.edges():
             new_edge_length =\
-                T_other.get_age(parent) - T_other.get_age(child)
+                tree_other.get_age(parent) - tree_other.get_age(child)
             self.set_edge_length(
                 parent,
                 child,

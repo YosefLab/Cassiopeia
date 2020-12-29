@@ -11,13 +11,20 @@ from .tree import Tree
 class BranchLengthEstimator(abc.ABC):
     r"""
     Abstract base class for all branch length estimators.
+
+    A BranchLengthEstimator implements a method estimate_branch_lengths which,
+    given a Tree with lineage tracing character vectors at the leaves (and
+    possibly at the internal nodes too), estimates the branch lengths of the
+    tree.
     """
     @abc.abstractmethod
     def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
+        Estimates the branch lengths of the tree.
+
         Annotates the tree's nodes with their estimated age, and
-        the tree's branches with their lengths.
-        Operates on the tree in-place.
+        the tree's branches with their estiamted lengths. Operates on the tree
+        in-place.
 
         Args:
             tree: The tree for which to estimate branch lengths.
@@ -29,8 +36,26 @@ class IIDExponentialBLE(BranchLengthEstimator):
     A simple branch length estimator that assumes that the characters evolve IID
     over the phylogeny with the same cutting rate.
 
-    Maximum Parsinomy is used to impute the ancestral states first. Doing so
-    leads to a convex optimization problem.
+    This estimator requires that the ancestral states are provided.
+
+    The optimization problem is a special kind of convex program called an
+    exponential cone program:
+    https://docs.mosek.com/modeling-cookbook/expo.html
+    Because it is a convex program, it can be readily solved.
+
+    Args:
+        minimum_branch_length: Estimated branch lengths will be constrained to
+            have at least this lenght.
+        l2_regularization: Consecutive branches will be regularized to have
+            similar length via an L2 penalty whose weight is given by
+            l2_regularization.
+        verbose: Verbosity level.
+
+    Attributes:
+        log_likelihood: The log-likelihood of the training data under the
+            estimated model.
+        log_loss: The log-loss of the training data under the estimated model.
+            This is the log likhelihood plus the regularization terms.
     """
     def __init__(
         self,
@@ -44,17 +69,11 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
     def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
-        Estimates branch lengths for the given tree.
+        See base class. Only caveat is that this method raises if it fails to
+        solve the underlying optimization problem for any reason.
 
-        This is in fact an exponential cone program, which is a special kind of
-        convex problem:
-        https://docs.mosek.com/modeling-cookbook/expo.html
-
-        Args:
-            tree: The tree for which to estimate branch lengths.
-
-        Returns:
-            The log-likelihood under the model for the computed branch lengths.
+        Raises:
+            cp.error.SolverError
         """
         # Extract parameters
         minimum_branch_length = self.minimum_branch_length
@@ -62,19 +81,18 @@ class IIDExponentialBLE(BranchLengthEstimator):
         verbose = self.verbose
 
         # # Wrap the networkx DiGraph for goodies.
-        # T = Tree(tree)
-        T = tree
+        # tree = Tree(tree)
 
         # # # # # Create variables of the optimization problem # # # # #
         r_X_t_variables = dict([(node_id, cp.Variable(name=f'r_X_t_{node_id}'))
-                                for node_id in T.nodes()])
+                                for node_id in tree.nodes()])
         time_increases_constraints = [
             r_X_t_variables[parent]
             >= r_X_t_variables[child] + minimum_branch_length
-            for (parent, child) in T.edges()
+            for (parent, child) in tree.edges()
         ]
         leaves_have_age_0_constraints =\
-            [r_X_t_variables[leaf] == 0 for leaf in T.leaves()]
+            [r_X_t_variables[leaf] == 0 for leaf in tree.leaves()]
         non_negative_r_X_t_constraints =\
             [r_X_t >= 0 for r_X_t in r_X_t_variables.values()]
         all_constraints =\
@@ -87,10 +105,10 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
         # Because all rates are equal, the number of cuts in each node is a
         # sufficient statistic. This makes the solver WAY faster!
-        for (parent, child) in T.edges():
+        for (parent, child) in tree.edges():
             edge_length = r_X_t_variables[parent] - r_X_t_variables[child]
-            zeros_parent = T.get_state(parent).count('0')  # TODO: '0'...
-            zeros_child = T.get_state(child).count('0')  # TODO: '0'...
+            zeros_parent = tree.get_state(parent).count('0')  # TODO: '0'...
+            zeros_child = tree.get_state(child).count('0')  # TODO: '0'...
             new_cuts_child = zeros_parent - zeros_child
             assert(new_cuts_child >= 0)
             # Add log-lik for characters that didn't get cut
@@ -101,8 +119,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # # # # # Add regularization # # # # #
 
         l2_penalty = 0
-        for (parent, child) in T.edges():
-            for child_of_child in T.children(child):
+        for (parent, child) in tree.edges():
+            for child_of_child in tree.children(child):
                 edge_length_above =\
                     r_X_t_variables[parent] - r_X_t_variables[child]
                 edge_length_below =\
@@ -119,13 +137,13 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
 
-        for node in T.nodes():
-            T.set_age(node, age=r_X_t_variables[node].value)
+        for node in tree.nodes():
+            tree.set_age(node, age=r_X_t_variables[node].value)
 
-        for (parent, child) in T.edges():
+        for (parent, child) in tree.edges():
             new_edge_length =\
                 r_X_t_variables[parent].value - r_X_t_variables[child].value
-            T.set_edge_length(
+            tree.set_edge_length(
                 parent,
                 child,
                 length=new_edge_length)
@@ -134,15 +152,16 @@ class IIDExponentialBLE(BranchLengthEstimator):
         self.log_loss = f_star
 
     @classmethod
-    def log_likelihood(self, T: Tree) -> float:
+    def log_likelihood(self, tree: Tree) -> float:
         r"""
-        The log-likelihood under the model.
+        The log-likelihood of the given tree under the model.
         """
         log_likelihood = 0.0
-        for (parent, child) in T.edges():
-            edge_length = T.get_age(parent) - T.get_age(child)
-            zeros_parent = T.get_state(parent).count('0')  # TODO: hardcoded '0'
-            zeros_child = T.get_state(child).count('0')  # TODO: hardcoded '0'
+        for (parent, child) in tree.edges():
+            edge_length = tree.get_age(parent) - tree.get_age(child)
+            # TODO: hardcoded '0' here...
+            zeros_parent = tree.get_state(parent).count('0')
+            zeros_child = tree.get_state(child).count('0')
             new_cuts_child = zeros_parent - zeros_child
             assert(new_cuts_child >= 0)
             # Add log-lik for characters that didn't get cut
@@ -169,7 +188,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         self.l2_regularizations = l2_regularizations
         self.verbose = verbose
 
-    def estimate_branch_lengths(self, T: Tree) -> None:
+    def estimate_branch_lengths(self, tree: Tree) -> None:
         r"""
         TODO
         """
@@ -182,7 +201,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         for minimum_branch_length in minimum_branch_lengths:
             for l2_regularization in l2_regularizations:
                 cv_log_likelihood = self._cv_log_likelihood(
-                    T=T,
+                    tree=tree,
                     minimum_branch_length=minimum_branch_length,
                     l2_regularization=l2_regularization)
                 held_out_log_likelihoods.append(
@@ -203,7 +222,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             minimum_branch_length=best_minimum_branch_length,
             l2_regularization=best_l2_regularization
         )
-        final_model.estimate_branch_lengths(T)
+        final_model.estimate_branch_lengths(tree)
         self.minimum_branch_length = best_minimum_branch_length
         self.l2_regularization = best_l2_regularization
         self.log_likelihood = final_model.log_likelihood
@@ -211,7 +230,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
 
     def _cv_log_likelihood(
         self,
-        T: Tree,
+        tree: Tree,
         minimum_branch_length: float,
         l2_regularization: float
     ) -> float:
@@ -220,22 +239,22 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             print(f"Cross-validating hyperparameters:"
                   f"\nminimum_branch_length={minimum_branch_length}"
                   f"\nl2_regularizations={l2_regularization}")
-        n_characters = T.num_characters()
+        n_characters = tree.num_characters()
         log_likelihood_folds = np.zeros(shape=(n_characters))
         for held_out_character_idx in range(n_characters):
-            T_train, T_valid =\
+            tree_train, tree_valid =\
                 self._cv_split(
-                    T,
+                    tree=tree,
                     held_out_character_idx=held_out_character_idx
                 )
             try:
                 IIDExponentialBLE(
                     minimum_branch_length=minimum_branch_length,
                     l2_regularization=l2_regularization
-                ).estimate_branch_lengths(T_train)
-                T_valid.copy_branch_lengths(T_other=T_train)
+                ).estimate_branch_lengths(tree_train)
+                tree_valid.copy_branch_lengths(tree_other=tree_train)
                 held_out_log_likelihood =\
-                    IIDExponentialBLE.log_likelihood(T_valid)
+                    IIDExponentialBLE.log_likelihood(tree_valid)
             except cp.error.SolverError:
                 held_out_log_likelihood = -np.inf
             log_likelihood_folds[held_out_character_idx] =\
@@ -248,22 +267,22 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
 
     def _cv_split(
         self,
-        T: Tree,
+        tree: Tree,
         held_out_character_idx: int
     ) -> Tuple[Tree, Tree]:
         r"""
         Creates a training and a cross validation tree by hiding the
         character at position held_out_character_idx.
         """
-        T_train = copy.deepcopy(T)
-        T_valid = copy.deepcopy(T)
-        for node in T.nodes():
-            state = T_train.get_state(node)
+        tree_train = copy.deepcopy(tree)
+        tree_valid = copy.deepcopy(tree)
+        for node in tree.nodes():
+            state = tree_train.get_state(node)
             train_state =\
                 state[:held_out_character_idx]\
                 + state[(held_out_character_idx + 1):]
             valid_data =\
                 state[held_out_character_idx]
-            T_train.set_state(node, train_state)
-            T_valid.set_state(node, valid_data)
-        return T_train, T_valid
+            tree_train.set_state(node, train_state)
+            tree_valid.set_state(node, valid_data)
+        return tree_train, tree_valid
