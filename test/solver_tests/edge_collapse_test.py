@@ -8,6 +8,7 @@ import ete3
 import networkx as nx
 import pandas as pd
 
+import cassiopeia as cas
 from cassiopeia.solver import solver_utilities
 
 
@@ -173,7 +174,7 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(6, 2)
 
         expected_newick_string = "((3,(0,1)),2);"
-        observed_newick_string = solver_utilities.to_newick(T)
+        observed_newick_string = cas.data.to_newick(T)
 
         self.assertEqual(expected_newick_string, observed_newick_string)
 

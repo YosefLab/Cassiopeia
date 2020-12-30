@@ -11,7 +11,7 @@ import pandas as pd
 import cassiopeia as cas
 
 
-class TestResolveUMISequence(unittest.TestCase):
+class TestTreeComparisons(unittest.TestCase):
     def setUp(self):
 
         self.ground_truth_tree = nx.balanced_tree(2, 3, create_using=nx.DiGraph)

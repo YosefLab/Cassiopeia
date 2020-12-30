@@ -204,35 +204,6 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     return collapsed_tree
 
 
-def to_newick(tree: nx.DiGraph) -> str:
-    """Converts a networkx graph to a newick string.
-
-    Args:
-        tree: A networkx tree
-
-    Returns:
-        A newick string representing the topology of the tree
-    """
-
-    def _to_newick_str(g, node):
-        is_leaf = g.out_degree(node) == 0
-        _name = str(node)
-        return (
-            "%s" % (_name,)
-            if is_leaf
-            else (
-                "("
-                + ",".join(
-                    _to_newick_str(g, child) for child in g.successors(node)
-                )
-                + ")"
-            )
-        )
-
-    root = [node for node in tree if tree.in_degree(node) == 0][0]
-    return _to_newick_str(tree, root) + ";"
-
-
 def transform_priors(
     priors: Optional[Dict[int, Dict[int, float]]] = None,
     prior_function: Optional[Callable[[float], float]] = None,

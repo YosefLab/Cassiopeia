@@ -1,3 +1,4 @@
 """Top level for data."""
 
-from .LineageDataset import LineageDataset
+from .CassiopeiaTree import CassiopeiaTree
+from .utilities import to_newick
