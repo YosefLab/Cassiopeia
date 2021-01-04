@@ -28,6 +28,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
+        prior_function: Optional[Callable[[float], float]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):
