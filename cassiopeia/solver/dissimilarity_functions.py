@@ -2,6 +2,7 @@
 A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
+import numba
 import numpy as np
 from typing import Dict, List, Optional
 

@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
+from cassiopeia.solver import NeighborJoiningSolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import similarity_functions
 from cassiopeia.solver import solver_utilities
@@ -146,6 +147,35 @@ class PercolationSolver(GreedySolver.GreedySolver):
         # greedily joining the most similar LCAs of each component until
         # only 2 remain
         if len(connected_components) > 2:
+            lcas = {}
+            cluster_membership = {}
+            for i in range(len(connected_components)):
+                cluster_membership[i] = list(connected_components[i])
+                character_vectors = self.unique_character_matrix.loc[
+                    connected_components[i], :
+                ].values.tolist()
+                lcas[i] = solver_utilities.get_lca_characters(
+                    character_vectors, self.missing_char
+                )
+
+            negative_similarity
+
+            lca_cm = pd.DataFrame.from_dict(lcas, orient="index")
+            nj_solver = NeighborJoiningSolver(
+                lca_cm, dissimilarity_function=
+            )
+
+            nj_solver.solve
+
+
+        return connected_components
+
+
+
+
+
+
+        if len(connected_components) > 2:
             new_clust_num = len(connected_components)
             lcas = {}
             cluster_membership = {}
@@ -182,5 +212,3 @@ class PercolationSolver(GreedySolver.GreedySolver):
                 new_clust_num += 1
 
             return list(cluster_membership.values())
-
-        return connected_components
