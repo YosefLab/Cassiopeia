@@ -553,6 +553,16 @@ def test_IIDExponentialPosteriorMeanBLE():
     total_variation = np.sum(np.abs(analytical_posterior - model.posteriors[1]))
     assert total_variation < 0.03
 
+    analytical_posterior_mean = np.sum(
+        analytical_posterior
+        * np.array(range(discretization_level + 1))
+        / discretization_level
+    )
+    posterior_mean = tree.get_age(1)
+    np.testing.assert_approx_equal(
+        posterior_mean, analytical_posterior_mean, significant=2
+    )
+
 
 def test_IIDExponentialPosteriorMeanBLE_2():
     tree = nx.DiGraph()
