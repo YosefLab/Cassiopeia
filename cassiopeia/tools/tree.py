@@ -225,3 +225,15 @@ class Tree:
                 f"{child}[{self.get_state(child)}]: "
                 f"{self.get_edge_length(parent, child)}"
             )
+
+    def num_cuts(self, v: int) -> int:
+        # TODO: Hardcoded '0'...
+        res = self.num_characters() - self.get_state(v).count('0')
+        return res
+
+    def parent(self, v: int) -> int:
+        if v == self.root():
+            raise ValueError("Asked for parent of root node!")
+        incident_edges_at_v = [edge for edge in self.edges() if edge[1] == v]
+        assert(len(incident_edges_at_v) == 1)
+        return incident_edges_at_v[0][0]
