@@ -59,26 +59,30 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             log_likelihood += self.down(child_of_root, discretization_level, 0)
         self.log_likelihood = log_likelihood
         # # # # # Compute Posteriors # # # # #
-        posteriors = {}
-        log_posteriors = {}
-        posterior_means = {}
+        log_joints = {}  # log P(t_v = t, X, T)
+        posteriors = {}  # P(t_v = t | X, T)
+        posterior_means = {}  # E[t_v = t | X, T]
+        lam = self.birth_rate
+        dt = 1.0 / discretization_level
         for v in tree.internal_nodes():
             # Compute the posterior for this node
-            posterior = np.zeros(shape=(discretization_level + 1,))
+            log_joint = np.zeros(shape=(discretization_level + 1,))
             for t in range(discretization_level + 1):
-                posterior[t] = self.down(v, t, tree.num_cuts(v)) + self.up(
-                    v, t, tree.num_cuts(v)
+                children = tree.children(v)
+                log_joint[t] = (
+                    sum([self.down(u, t, tree.num_cuts(v)) for u in children])
+                    + self.up(v, t, tree.num_cuts(v))
+                    + np.log(lam * dt)
                 )
-            posterior -= np.max(posterior)
-            log_posteriors[v] = posterior.copy()
-            posterior = np.exp(posterior)
+            log_joints[v] = log_joint.copy()
+            posterior = np.exp(log_joint - log_joint.max())
             posterior /= np.sum(posterior)
             posteriors[v] = posterior
             posterior_means[v] = (
                 posterior * np.array(range(discretization_level + 1))
             ).sum() / discretization_level
+        self.log_joints = log_joints
         self.posteriors = posteriors
-        self.log_posteriors = log_posteriors
         self.posterior_means = posterior_means
         # # # # # Populate the tree with the estimated branch lengths # # # # #
         for node in tree.internal_nodes():
@@ -269,7 +273,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.mutation_rate = best_mutation_rate
         self.birth_rate = best_birth_rate
         self.log_likelihood = final_model.log_likelihood
+        self.log_joints = final_model.log_joints
         self.posteriors = final_model.posteriors
-        self.log_posteriors = final_model.log_posteriors
         self.posterior_means = final_model.posterior_means
         self.grid = grid
