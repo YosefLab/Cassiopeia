@@ -5,7 +5,7 @@ from typing import List, Tuple
 import cvxpy as cp
 import numpy as np
 
-from .tree import Tree
+from ..tree import Tree
 
 
 class BranchLengthEstimator(abc.ABC):
