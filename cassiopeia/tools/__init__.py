@@ -2,6 +2,8 @@ from .branch_length_estimator import (
     BranchLengthEstimator,
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
+    IIDExponentialPosteriorMeanBLE,
+    IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
 from .lineage_simulator import (
     LineageSimulator,

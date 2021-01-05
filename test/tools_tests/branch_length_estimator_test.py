@@ -5,6 +5,8 @@ from cassiopeia.tools import (
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
     IIDExponentialLineageTracer,
+    IIDExponentialPosteriorMeanBLE,
+    IIDExponentialPosteriorMeanBLEGridSearchCV,
     Tree,
 )
 
@@ -418,3 +420,168 @@ def test_IIDExponentialBLEGridSearchCV():
     model.estimate_branch_lengths(tree)
     minimum_branch_length = model.minimum_branch_length
     np.testing.assert_almost_equal(minimum_branch_length, 1.0)
+
+
+def test_IIDExponentialPosteriorMeanBLE():
+    # Make a test case out of this!
+
+    from scipy.special import binom
+    from scipy.special import logsumexp
+
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3])
+    tree.add_edges_from([(0, 1), (1, 2), (1, 3)])
+    tree.nodes[0]["characters"] = "000000000"
+    tree.nodes[1]["characters"] = "010000110"
+    tree.nodes[2]["characters"] = "010110111"
+    tree.nodes[3]["characters"] = "011100111"
+    tree = Tree(tree)
+
+    mutation_rate = 0.3
+    birth_rate = 0.7
+    discretization_level = 100
+    model = IIDExponentialPosteriorMeanBLE(
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        discretization_level=discretization_level,
+    )
+
+    model.estimate_branch_lengths(tree)
+
+    print(model.log_likelihood)
+
+    def cuts(parent, child):
+        zeros_parent = tree.get_state(parent).count("0")
+        zeros_child = tree.get_state(child).count("0")
+        new_cuts_child = zeros_parent - zeros_child
+        return new_cuts_child
+
+    def uncuts(parent, child):
+        zeros_child = tree.get_state(child).count("0")
+        return zeros_child
+
+    def analytical_log_joint(t):
+        t = 1.0 - t
+        if t == 0 or t == 1:
+            return -np.inf
+        e = np.exp
+        lg = np.log
+        lam = birth_rate
+        r = mutation_rate
+        res = 0.0
+        res += (
+            lg(lam) + -t * lam + -2 * (1.0 - t) * lam
+        )  # Tree topology likelihood
+        res += -t * r * uncuts(0, 1) + lg(1.0 - e(-t * r)) * cuts(
+            0, 1
+        )  # 0->1 edge likelihood
+        res += -(1.0 - t) * r * uncuts(1, 2) + lg(
+            1.0 - e(-(1.0 - t) * r)
+        ) * cuts(
+            1, 2
+        )  # 1->2 edge likelihood
+        res += -(1.0 - t) * r * uncuts(1, 3) + lg(
+            1.0 - e(-(1.0 - t) * r)
+        ) * cuts(
+            1, 3
+        )  # 1->3 edge likelihood
+        return res
+
+    step = 2000
+    analytical_log_likelihood = (
+        logsumexp(
+            [
+                analytical_log_joint(t)
+                for t in np.arange(1.0 / step, 1.0 - 1.0 / step, 1.0 / step)
+            ]
+        )
+        - np.log(step)
+        + np.log(binom(cuts(0, 1) + uncuts(0, 1), cuts(0, 1)))
+        + np.log(binom(cuts(1, 2) + uncuts(1, 2), cuts(1, 2)))
+        + np.log(binom(cuts(1, 3) + uncuts(1, 3), cuts(1, 3)))
+    )
+
+    print(analytical_log_likelihood)
+
+    np.testing.assert_approx_equal(
+        model.log_likelihood, analytical_log_likelihood, significant=3
+    )
+
+    leaf = 2
+    model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+    print(model_log_likelihood_up)
+    np.testing.assert_approx_equal(
+        model.log_likelihood, model_log_likelihood_up, significant=3
+    )
+
+    # import matplotlib.pyplot as plt
+
+    # plt.plot(model.posteriors[1])
+    # plt.show()
+    # print(model.posterior_means[1])
+
+    # Analytical posterior
+    analytical_posterior = np.array(
+        [
+            analytical_log_joint(t)
+            for t in np.array(range(discretization_level + 1))
+            / discretization_level
+        ]
+    )
+    analytical_posterior -= analytical_posterior.max()
+    analytical_posterior = np.exp(analytical_posterior)
+    analytical_posterior /= analytical_posterior.sum()
+    # plt.plot(analytical_posterior)
+    # plt.show()
+    for i in range(discretization_level + 1):
+        np.testing.assert_almost_equal(
+            analytical_posterior[i], model.posteriors[1][i], decimal=2
+        )
+
+
+def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
+    # This is same tree as test_subtree_collapses_when_no_mutations. Should no
+    # longer collapse!
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4]),
+    tree.add_edges_from([(0, 1), (1, 2), (1, 3), (0, 4)])
+    tree.nodes[0]["characters"] = "0"
+    tree.nodes[1]["characters"] = "1"
+    tree.nodes[2]["characters"] = "1"
+    tree.nodes[3]["characters"] = "1"
+    tree.nodes[4]["characters"] = "0"
+    tree = Tree(tree)
+
+    discretization_level = 100
+    mutation_rates = (0.625, 0.750, 0.875)
+    birth_rates = (0.25, 0.50, 0.75)
+    model = IIDExponentialPosteriorMeanBLEGridSearchCV(
+        mutation_rates=mutation_rates,
+        birth_rates=birth_rates,
+        discretization_level=discretization_level,
+        verbose=True,
+    )
+
+    model.estimate_branch_lengths(tree)
+
+    # import seaborn as sns
+
+    # import matplotlib.pyplot as plt
+
+    # sns.heatmap(
+    #     model.grid,
+    #     yticklabels=mutation_rates,
+    #     xticklabels=birth_rates
+    # )
+    # plt.ylabel('Mutation Rate')
+    # plt.xlabel('Birth Rate')
+    # plt.show()
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(model.posteriors[1])
+    # plt.show()
+    # print(model.posterior_means[1])
+
+    np.testing.assert_almost_equal(model.posterior_means[1], 0.5006, decimal=3)
+    np.testing.assert_almost_equal(model.mutation_rate, 0.75)
+    np.testing.assert_almost_equal(model.birth_rate, 0.5)
