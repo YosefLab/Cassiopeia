@@ -1,4 +1,3 @@
-import abc
 import copy
 from typing import List, Tuple
 
@@ -6,30 +5,7 @@ import cvxpy as cp
 import numpy as np
 
 from ..tree import Tree
-
-
-class BranchLengthEstimator(abc.ABC):
-    r"""
-    Abstract base class for all branch length estimators.
-
-    A BranchLengthEstimator implements a method estimate_branch_lengths which,
-    given a Tree with lineage tracing character vectors at the leaves (and
-    possibly at the internal nodes too), estimates the branch lengths of the
-    tree.
-    """
-
-    @abc.abstractmethod
-    def estimate_branch_lengths(self, tree: Tree) -> None:
-        r"""
-        Estimates the branch lengths of the tree.
-
-        Annotates the tree's nodes with their estimated age, and
-        the tree's branches with their estiamted lengths. Operates on the tree
-        in-place.
-
-        Args:
-            tree: The tree for which to estimate branch lengths.
-        """
+from .BranchLengthEstimator import BranchLengthEstimator
 
 
 class IIDExponentialBLE(BranchLengthEstimator):
@@ -46,7 +22,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
     Args:
         minimum_branch_length: Estimated branch lengths will be constrained to
-            have at least this lenght.
+            have at least this length.
         l2_regularization: Consecutive branches will be regularized to have
             similar length via an L2 penalty whose weight is given by
             l2_regularization.
@@ -56,7 +32,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
         log_likelihood: The log-likelihood of the training data under the
             estimated model.
         log_loss: The log-loss of the training data under the estimated model.
-            This is the log likhelihood plus the regularization terms.
+            This is the log likelihood plus the regularization terms.
     """
 
     def __init__(

@@ -1,1 +1,2 @@
-from .branch_length_estimator import BranchLengthEstimator, IIDExponentialBLE, IIDExponentialBLEGridSearchCV
+from .BranchLengthEstimator import BranchLengthEstimator
+from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
