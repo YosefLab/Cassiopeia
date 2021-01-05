@@ -242,8 +242,8 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                 if self.verbose:
                     print(
                         f"Fitting model with:\n"
-                        f"best_mutation_rate={mutation_rate}\n"
-                        f"best_birth_rate={birth_rate}"
+                        f"mutation_rate={mutation_rate}\n"
+                        f"birth_rate={birth_rate}"
                     )
                 model = IIDExponentialPosteriorMeanBLE(
                     mutation_rate=mutation_rate,
