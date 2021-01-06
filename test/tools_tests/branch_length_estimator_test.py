@@ -11,6 +11,19 @@ from cassiopeia.tools import (
     Tree,
 )
 
+from copy import deepcopy
+import itertools
+import matplotlib.pyplot as plt
+import multiprocessing
+import numpy as np
+
+from cassiopeia.tools import (
+    Tree,
+    BirthProcess,
+    IIDExponentialLineageTracer,
+    IIDExponentialPosteriorMeanBLE,
+)
+
 
 def test_no_mutations():
     r"""
@@ -659,3 +672,84 @@ def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
     np.testing.assert_almost_equal(model.posterior_means[1], 0.3184, decimal=3)
     np.testing.assert_almost_equal(model.mutation_rate, 0.75)
     np.testing.assert_almost_equal(model.birth_rate, 0.5)
+
+
+def get_z_scores(
+    repetition,
+    birth_rate_true,
+    mutation_rate_true,
+    birth_rate_model,
+    mutation_rate_model,
+    num_characters,
+):
+    np.random.seed(repetition)
+    tree = BirthProcess(
+        birth_rate=birth_rate_true, tree_depth=1.0
+    ).simulate_lineage()
+    tree_true = deepcopy(tree)
+    IIDExponentialLineageTracer(
+        mutation_rate=mutation_rate_true, num_characters=num_characters
+    ).overlay_lineage_tracing_data(tree)
+    discretization_level = 100
+    model = IIDExponentialPosteriorMeanBLE(
+        birth_rate=birth_rate_model,
+        mutation_rate=mutation_rate_model,
+        discretization_level=discretization_level,
+    )
+    model.estimate_branch_lengths(tree)
+    z_scores = []
+    if len(tree.internal_nodes()) > 0:
+        for node in [np.random.choice(tree.internal_nodes())]:
+            true_age = tree_true.get_age(node)
+            z_score = model.posteriors[node][
+                : int(true_age * discretization_level)
+            ].sum()
+            z_scores.append(z_score)
+    return z_scores
+
+
+def get_z_scores_under_true_model(repetition):
+    return get_z_scores(
+        repetition,
+        birth_rate_true=0.8,
+        mutation_rate_true=1.2,
+        birth_rate_model=0.8,
+        mutation_rate_model=1.2,
+        num_characters=3,
+    )
+
+
+def get_z_scores_under_misspecified_model(repetition):
+    return get_z_scores(
+        repetition,
+        birth_rate_true=0.4,
+        mutation_rate_true=0.6,
+        birth_rate_model=0.8,
+        mutation_rate_model=1.2,
+        num_characters=3,
+    )
+
+
+@pytest.mark.slow
+def test_IIDExponentialPosteriorMeanBLE_posterior_calibration():
+    repetitions = 1000
+
+    # Under the true model, the Z scores should be ~Unif[0, 1]
+    with multiprocessing.Pool(processes=6) as pool:
+        z_scores = pool.map(get_z_scores_under_true_model, range(repetitions))
+    z_scores = np.array(list(itertools.chain(*z_scores)))
+    mean_z_score = z_scores.mean()
+    p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
+    print(f"p_value = {p_value}")
+    assert p_value > 0.01
+
+    # Under the wrong model, the Z scores should not be ~Unif[0, 1]
+    with multiprocessing.Pool(processes=6) as pool:
+        z_scores = pool.map(
+            get_z_scores_under_misspecified_model, range(repetitions)
+        )
+    z_scores = np.array(list(itertools.chain(*z_scores)))
+    mean_z_score = z_scores.mean()
+    p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
+    print(f"p_value = {p_value}")
+    assert p_value < 0.01
