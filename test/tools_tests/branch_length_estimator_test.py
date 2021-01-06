@@ -1,27 +1,19 @@
+import itertools
+import multiprocessing
+from copy import deepcopy
+
 import networkx as nx
 import numpy as np
 import pytest
 
 from cassiopeia.tools import (
+    BirthProcess,
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
     IIDExponentialLineageTracer,
     IIDExponentialPosteriorMeanBLE,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
     Tree,
-)
-
-from copy import deepcopy
-import itertools
-import matplotlib.pyplot as plt
-import multiprocessing
-import numpy as np
-
-from cassiopeia.tools import (
-    Tree,
-    BirthProcess,
-    IIDExponentialLineageTracer,
-    IIDExponentialPosteriorMeanBLE,
 )
 
 
@@ -438,10 +430,12 @@ def test_IIDExponentialBLEGridSearchCV():
 
 def test_IIDExponentialPosteriorMeanBLE():
     r"""
-    TODO
+    For a small tree with only one internal node, the likelihood of the data,
+    and the posterior age of the internal node, can be computed easily in
+    closed form. We check the theoretical values against those obtained from
+    our model.
     """
-    from scipy.special import binom
-    from scipy.special import logsumexp
+    from scipy.special import binom, logsumexp
 
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3])
@@ -471,11 +465,13 @@ def test_IIDExponentialPosteriorMeanBLE():
         zeros_child = tree.get_state(child).count("0")
         return zeros_child
 
-    def analytical_log_joint(t):
+    def analytical_log_joint(age):
         r"""
-        when node 1 has age t, i.e. hangs at distance 1.0 - t from the root.
+        Here t is the age of the internal node.
         """
-        t = 1.0 - t
+        # Originally I did the math using the distance t of the internal node
+        # from the root, which is t = 1 - age.
+        t = 1.0 - age
         if t == 0 or t == 1:
             return -np.inf
         e = np.exp
@@ -517,20 +513,20 @@ def test_IIDExponentialPosteriorMeanBLE():
     # age of vertex 1.
     model_log_joints = model.log_joints[
         1
-    ]  # P(t_1 = t, X, T) where t_1 is the age of the first node.
+    ]  # log P(t_1 = t, X, T) where t_1 is the age of the first node.
     model_log_likelihood_2 = logsumexp(model_log_joints)
     print(f"{model_log_likelihood_2} = {model_log_likelihood_2}")
     np.testing.assert_approx_equal(
         model.log_likelihood, model_log_likelihood_2, significant=3
     )
 
-    # Test the model log likelihood vs its computation from a leaf node.
-    leaf = 2
-    model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
-    print(f"{model_log_likelihood_up} = model_log_likelihood_up")
-    np.testing.assert_approx_equal(
-        model.log_likelihood, model_log_likelihood_up, significant=3
-    )
+    # Test the model log likelihood vs its computation from the leaf nodes.
+    for leaf in [2, 3]:
+        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        print(f"{model_log_likelihood_up} = model_log_likelihood_up")
+        np.testing.assert_approx_equal(
+            model.log_likelihood, model_log_likelihood_up, significant=3
+        )
 
     # Test the model log likelihood against its analytic computation
     analytical_log_joints = np.array(
@@ -545,27 +541,25 @@ def test_IIDExponentialPosteriorMeanBLE():
     np.testing.assert_approx_equal(
         model.log_likelihood, analytical_log_likelihood, significant=3
     )
-
+    # Test the _whole_ array of log joints P(t_v = t, X, T)
     np.testing.assert_array_almost_equal(
-        analytical_log_joints[50:150], model.log_joints[1][50:150], decimal=1
+        analytical_log_joints[50:-50], model.log_joints[1][50:-50], decimal=1
     )
 
-    # import matplotlib.pyplot as plt
-
-    # plt.plot(model.posteriors[1])
-    # plt.show()
-    # print(model.posterior_means[1])
-
-    # Analytical posterior
+    # Test the model posterior against its analytic posterior
     analytical_posterior = np.exp(
         analytical_log_joints - analytical_log_joints.max()
     )
     analytical_posterior /= analytical_posterior.sum()
+    # import matplotlib.pyplot as plt
+    # plt.plot(model.posteriors[1])
+    # plt.show()
     # plt.plot(analytical_posterior)
     # plt.show()
     total_variation = np.sum(np.abs(analytical_posterior - model.posteriors[1]))
     assert total_variation < 0.03
 
+    # Test the posterior mean against the analytical posterior mean.
     analytical_posterior_mean = np.sum(
         analytical_posterior
         * np.array(range(discretization_level + 1))
@@ -578,6 +572,11 @@ def test_IIDExponentialPosteriorMeanBLE():
 
 
 def test_IIDExponentialPosteriorMeanBLE_2():
+    r"""
+    We run the Bayesian estimator on a small tree with all different leaves,
+    and then check that the likelihood of the data, computed from all of the
+    leaves, is the same.
+    """
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6]),
     tree.add_edges_from([(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
@@ -619,16 +618,11 @@ def test_IIDExponentialPosteriorMeanBLE_2():
                 significant=3,
             )
 
-    # import matplotlib.pyplot as plt
-
-    # plt.plot(model.posteriors[1])
-    # plt.show()
-    # print(model.posterior_means[1])
-
 
 def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
-    # This is same tree as test_subtree_collapses_when_no_mutations. Should no
-    # longer collapse!
+    r"""
+    We just check that the grid search estimator does its job on a small grid.
+    """
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3, 4]),
     tree.add_edges_from([(0, 1), (1, 2), (1, 3), (0, 4)])
@@ -651,10 +645,8 @@ def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
 
     model.estimate_branch_lengths(tree)
 
-    # import seaborn as sns
-
     # import matplotlib.pyplot as plt
-
+    # import seaborn as sns
     # sns.heatmap(
     #     model.grid,
     #     yticklabels=mutation_rates,
@@ -663,11 +655,6 @@ def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
     # plt.ylabel('Mutation Rate')
     # plt.xlabel('Birth Rate')
     # plt.show()
-
-    # import matplotlib.pyplot as plt
-    # plt.plot(model.posteriors[1])
-    # plt.show()
-    # print(model.posterior_means[1])
 
     np.testing.assert_almost_equal(model.posterior_means[1], 0.3184, decimal=3)
     np.testing.assert_almost_equal(model.mutation_rate, 0.75)
@@ -732,6 +719,15 @@ def get_z_scores_under_misspecified_model(repetition):
 
 @pytest.mark.slow
 def test_IIDExponentialPosteriorMeanBLE_posterior_calibration():
+    r"""
+    Under the true model, the Z scores should be ~Unif[0, 1]
+    Under the wrong model, the Z scores should not be ~Unif[0, 1]
+    This test is slow because we need to make many repetitions to get
+    enough statistical power for the test to be meaningful.
+    We use p-values computed from the Hoeffding bound.
+    TODO: There might be a more powerful test, e.g. Kolmogorov–Smirnov?
+    (This would mean we need less repetitions and can make the test faster.)
+    """
     repetitions = 1000
 
     # Under the true model, the Z scores should be ~Unif[0, 1]
@@ -740,8 +736,11 @@ def test_IIDExponentialPosteriorMeanBLE_posterior_calibration():
     z_scores = np.array(list(itertools.chain(*z_scores)))
     mean_z_score = z_scores.mean()
     p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
-    print(f"p_value = {p_value}")
+    print(f"p_value under true model = {p_value}")
     assert p_value > 0.01
+    # import matplotlib.pyplot as plt
+    # plt.hist(z_scores, bins=10)
+    # plt.show()
 
     # Under the wrong model, the Z scores should not be ~Unif[0, 1]
     with multiprocessing.Pool(processes=6) as pool:
@@ -751,5 +750,8 @@ def test_IIDExponentialPosteriorMeanBLE_posterior_calibration():
     z_scores = np.array(list(itertools.chain(*z_scores)))
     mean_z_score = z_scores.mean()
     p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
-    print(f"p_value = {p_value}")
+    print(f"p_value under misspecified model = {p_value}")
     assert p_value < 0.01
+    # import matplotlib.pyplot as plt
+    # plt.hist(z_scores, bins=10)
+    # plt.show()
