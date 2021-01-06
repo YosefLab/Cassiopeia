@@ -1,5 +1,7 @@
 from typing import Tuple
 
+from copy import deepcopy
+import multiprocessing
 import numpy as np
 from scipy.special import logsumexp
 
@@ -27,6 +29,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         mutation_rate: TODO
         birth_rate: TODO
         discretization_level: TODO
+        enforce_parsimony: TODO
         verbose: Verbosity level. TODO
 
     Attributes: TODO
@@ -34,46 +37,69 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     """
 
     def __init__(
-        self, mutation_rate: float, birth_rate: float, discretization_level: int
+        self,
+        mutation_rate: float,
+        birth_rate: float,
+        discretization_level: int,
+        enforce_parsimony: bool = True,
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
-        # descent.
+        # descent?
         self.mutation_rate = mutation_rate
         # TODO: Is there some easy heuristic way to set this to a reasonable
         # value and thus avoid grid searching it / optimizing it?
         self.birth_rate = birth_rate
         self.discretization_level = discretization_level
+        self.enforce_parsimony = enforce_parsimony
 
-    def estimate_branch_lengths(self, tree: Tree) -> None:
-        r"""
-        See base class.
-        """
+    def _compute_log_likelihood(self):
+        tree = self.tree
         discretization_level = self.discretization_level
-        self.down_cache = {}  # TODO: Rename to _down_cache
-        self.up_cache = {}  # TODO: Rename to _up_cache
-        self.tree = tree
         log_likelihood = 0
         # TODO: Should I also add a division event when the root has multiple
-        # children?
+        # children? (If not, the joint we are computing won't integrate to 1;
+        # on the other hand, this is a constant multiplicative term that doesn't
+        # affect inference.
         for child_of_root in tree.children(tree.root()):
             log_likelihood += self.down(child_of_root, discretization_level, 0)
         self.log_likelihood = log_likelihood
-        # # # # # Compute Posteriors # # # # #
+
+    def _compute_log_joint(self, v, t):
+        r"""
+        P(t_v = t, X, T).
+        Dependind on whether we are enforcing parsimony or not, we consider
+        different possible number of cuts for v.
+        """
+        discretization_level = self.discretization_level
+        tree = self.tree
+        lam = self.birth_rate
+        enforce_parsimony = self.enforce_parsimony
+        dt = 1.0 / discretization_level
+        children = tree.children(v)
+        if enforce_parsimony:
+            valid_num_cuts = [tree.num_cuts(v)]
+        else:
+            valid_num_cuts = range(tree.num_cuts(v) + 1)
+        ll_for_x = []
+        for x in valid_num_cuts:
+            ll_for_x.append(
+                sum([self.down(u, t, x) for u in children])
+                + self.up(v, t, x)
+                + np.log(lam * dt)
+            )
+        return logsumexp(ll_for_x)
+
+    def _compute_posteriors(self):
+        tree = self.tree
+        discretization_level = self.discretization_level
         log_joints = {}  # log P(t_v = t, X, T)
         posteriors = {}  # P(t_v = t | X, T)
         posterior_means = {}  # E[t_v = t | X, T]
-        lam = self.birth_rate
-        dt = 1.0 / discretization_level
         for v in tree.internal_nodes():
             # Compute the posterior for this node
             log_joint = np.zeros(shape=(discretization_level + 1,))
             for t in range(discretization_level + 1):
-                children = tree.children(v)
-                log_joint[t] = (
-                    sum([self.down(u, t, tree.num_cuts(v)) for u in children])
-                    + self.up(v, t, tree.num_cuts(v))
-                    + np.log(lam * dt)
-                )
+                log_joint[t] = self._compute_log_joint(v, t)
             log_joints[v] = log_joint.copy()
             posterior = np.exp(log_joint - log_joint.max())
             posterior /= np.sum(posterior)
@@ -84,20 +110,40 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.log_joints = log_joints
         self.posteriors = posteriors
         self.posterior_means = posterior_means
-        # # # # # Populate the tree with the estimated branch lengths # # # # #
+
+    def _populate_branch_lengths(self):
+        tree = self.tree
+        posterior_means = self.posterior_means
         for node in tree.internal_nodes():
             tree.set_age(node, age=posterior_means[node])
         tree.set_age(tree.root(), age=1.0)
         for leaf in tree.leaves():
             tree.set_age(leaf, age=0.0)
-
         for (parent, child) in tree.edges():
             new_edge_length = tree.get_age(parent) - tree.get_age(child)
             tree.set_edge_length(parent, child, length=new_edge_length)
 
+    def estimate_branch_lengths(self, tree: Tree) -> None:
+        r"""
+        See base class.
+        """
+        self.down_cache = {}  # TODO: Rename to _down_cache
+        self.up_cache = {}  # TODO: Rename to _up_cache
+        self.tree = tree
+        self._compute_log_likelihood()
+        self._compute_posteriors()
+        self._populate_branch_lengths()
+
+    def compatible_with_observed_data(self, x, observed_cuts) -> bool:
+        # TODO: Make method private
+        if self.enforce_parsimony:
+            return x == observed_cuts
+        else:
+            return x <= observed_cuts
+
     def up(self, v, t, x) -> float:
         r"""
-        TODO: Rename this _up.
+        TODO: Rename this _up?
         log P(X_up(b(v)), T_up(b(v)), t \in t_b(v), X_b(v)(t) = x)
         """
         if (v, t, x) in self.up_cache:
@@ -114,6 +160,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         assert 0 <= x <= K
         log_likelihood = 0.0
         if v == tree.root():  # Base case: we reached the root of the tree.
+            # TODO: 'tree.root()' is O(n). We should have O(1) method.
             if t == discretization_level and x == tree.num_cuts(v):
                 log_likelihood = 0.0
             else:
@@ -136,8 +183,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 )
             # Case 3: A cell division happened
             if v != tree.root():
+                # TODO: 'tree.root()' is O(n). We should have O(1) method.
                 p = tree.parent(v)
-                if x == tree.num_cuts(p):
+                if self.compatible_with_observed_data(x, tree.num_cuts(p)):
                     siblings = [u for u in tree.children(p) if u != v]
                     ll = (
                         np.log(lam * dt)
@@ -145,6 +193,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                         + sum([self.down(u, t, x) for u in siblings])
                     )
                     if p == tree.root():  # The branch start is for free!
+                        # TODO: 'tree.root()' is O(n). We should have O(1)
+                        # method.
                         ll -= np.log(lam * dt)
                     log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
@@ -153,7 +203,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
 
     def down(self, v, t, x) -> float:
         r"""
-        TODO: Rename this _down.
+        TODO: Rename this _down?
         log P(X_down(v), T_down(v) | t_v = t, X_v = x)
         """
         if (v, t, x) in self.down_cache:
@@ -171,6 +221,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         log_likelihood = 0.0
         if t == 0:  # Base case
             if v in tree.leaves() and x == tree.num_cuts(v):
+                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1) check.
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
@@ -190,7 +241,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             # The number of cuts at this state must match the ground truth.
             # TODO: Allow for weak match at internal nodes and exact match at
             # leaves.
-            if x == tree.num_cuts(v) and v not in tree.leaves():
+            if (
+                self.compatible_with_observed_data(x, tree.num_cuts(v))
+                and v not in tree.leaves()
+            ):
+                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1) check.
                 ll = sum(
                     [self.down(child, t - 1, x) for child in tree.children(v)]
                 ) + np.log(lam * dt)
@@ -198,6 +253,17 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             log_likelihood = logsumexp(log_likelihoods_cases)
         self.down_cache[(v, t, x)] = log_likelihood
         return log_likelihood
+
+
+def _fit_model(model_and_tree):
+    r"""
+    This is used by IIDExponentialPosteriorMeanBLEGridSearchCV to
+    parallelize the grid search. It must be defined here (at the top level of
+    the module) for multiprocessing to be able to pickle it.
+    """
+    model, tree = model_and_tree
+    model.estimate_branch_lengths(tree)
+    return model.log_likelihood
 
 
 class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
@@ -220,11 +286,15 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         mutation_rates: Tuple[float] = (0,),
         birth_rates: Tuple[float] = (0,),
         discretization_level: int = 1000,
+        enforce_parsimony: bool = True,
+        processes: int = 6,
         verbose: bool = False,
     ):
         self.mutation_rates = mutation_rates
         self.birth_rates = birth_rates
         self.discretization_level = discretization_level
+        self.enforce_parsimony = enforce_parsimony
+        self.processes = processes
         self.verbose = verbose
 
     def estimate_branch_lengths(self, tree: Tree) -> None:
@@ -234,9 +304,14 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         mutation_rates = self.mutation_rates
         birth_rates = self.birth_rates
         discretization_level = self.discretization_level
+        enforce_parsimony = self.enforce_parsimony
+        processes = self.processes
         verbose = self.verbose
         lls = []
         grid = np.zeros(shape=(len(mutation_rates), len(birth_rates)))
+        models = []
+        mutation_and_birth_rates = []
+        ijs = []
         for i, mutation_rate in enumerate(mutation_rates):
             for j, birth_rate in enumerate(birth_rates):
                 if self.verbose:
@@ -245,17 +320,26 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                         f"mutation_rate={mutation_rate}\n"
                         f"birth_rate={birth_rate}"
                     )
-                model = IIDExponentialPosteriorMeanBLE(
-                    mutation_rate=mutation_rate,
-                    birth_rate=birth_rate,
-                    discretization_level=discretization_level,
+                models.append(
+                    IIDExponentialPosteriorMeanBLE(
+                        mutation_rate=mutation_rate,
+                        birth_rate=birth_rate,
+                        discretization_level=discretization_level,
+                        enforce_parsimony=enforce_parsimony,
+                    )
                 )
-                model.estimate_branch_lengths(tree)
-                ll = model.log_likelihood
-                lls.append((ll, (mutation_rate, birth_rate)))
-                grid[i, j] = ll
-        lls.sort(reverse=True)
-        (best_mutation_rate, best_birth_rate,) = lls[
+                mutation_and_birth_rates.append((mutation_rate, birth_rate))
+                ijs.append((i, j))
+        with multiprocessing.Pool(processes=processes) as pool:
+            lls = pool.map(
+                _fit_model,
+                zip(models, [deepcopy(tree) for _ in range(len(models))]),
+            )
+        lls_and_rates = list(zip(lls, mutation_and_birth_rates))
+        for ll, (i, j) in list(zip(lls, ijs)):
+            grid[i, j] = ll
+        lls_and_rates.sort(reverse=True)
+        (best_mutation_rate, best_birth_rate,) = lls_and_rates[
             0
         ][1]
         if verbose:
@@ -268,6 +352,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             mutation_rate=best_mutation_rate,
             birth_rate=best_birth_rate,
             discretization_level=discretization_level,
+            enforce_parsimony=enforce_parsimony,
         )
         final_model.estimate_branch_lengths(tree)
         self.mutation_rate = best_mutation_rate

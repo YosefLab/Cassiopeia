@@ -434,6 +434,8 @@ def test_IIDExponentialPosteriorMeanBLE():
     and the posterior age of the internal node, can be computed easily in
     closed form. We check the theoretical values against those obtained from
     our model.
+    TODO: Add a test with a tree with 2 internal nodes and check the model
+    against the 2D numerical integral.
     """
     from scipy.special import binom, logsumexp
 
@@ -656,9 +658,9 @@ def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
     # plt.xlabel('Birth Rate')
     # plt.show()
 
-    np.testing.assert_almost_equal(model.posterior_means[1], 0.3184, decimal=3)
     np.testing.assert_almost_equal(model.mutation_rate, 0.75)
     np.testing.assert_almost_equal(model.birth_rate, 0.5)
+    np.testing.assert_almost_equal(model.posterior_means[1], 0.3184, decimal=3)
 
 
 def get_z_scores(
