@@ -6,6 +6,7 @@ from .branch_length_estimator import (
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
 from .lineage_simulator import (
+    BirthProcess,
     LineageSimulator,
     PerfectBinaryTree,
     PerfectBinaryTreeWithRootBranch,

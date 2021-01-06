@@ -237,3 +237,32 @@ class Tree:
         incident_edges_at_v = [edge for edge in self.edges() if edge[1] == v]
         assert len(incident_edges_at_v) == 1
         return incident_edges_at_v[0][0]
+
+    def set_edge_length_from_node_ages(self) -> None:
+        r"""
+        Sets the edge lengths to match the node ages.
+        """
+        for (parent, child) in self.edges():
+            self.set_edge_length(
+                parent, child, self.get_age(parent) - self.get_age(child)
+            )
+
+    def length(self) -> float:
+        r"""
+        Total length of the tree
+        """
+        res = 0
+        for (parent, child) in self.edges():
+            res += self.get_edge_length(parent, child)
+        return res
+
+    def num_ancestors(self, node: int) -> int:
+        r"""
+        Number of ancestors of a node. Terribly inefficient implementation.
+        """
+        res = 0
+        root = self.root()
+        while node != root:
+            node = self.parent(node)
+            res += 1
+        return res
