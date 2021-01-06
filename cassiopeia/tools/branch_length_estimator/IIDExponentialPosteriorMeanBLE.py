@@ -3,7 +3,7 @@ from typing import Tuple
 from copy import deepcopy
 import multiprocessing
 import numpy as np
-from scipy.special import logsumexp
+from scipy.special import binom, logsumexp
 
 from .BranchLengthEstimator import BranchLengthEstimator
 from ..tree import Tree
@@ -221,7 +221,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         log_likelihood = 0.0
         if t == 0:  # Base case
             if v in tree.leaves() and x == tree.num_cuts(v):
-                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1) check.
+                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
+                # check.
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
@@ -245,7 +246,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 self.compatible_with_observed_data(x, tree.num_cuts(v))
                 and v not in tree.leaves()
             ):
-                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1) check.
+                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
+                # check.
                 ll = sum(
                     [self.down(child, t - 1, x) for child in tree.children(v)]
                 ) + np.log(lam * dt)
@@ -253,6 +255,36 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             log_likelihood = logsumexp(log_likelihoods_cases)
         self.down_cache[(v, t, x)] = log_likelihood
         return log_likelihood
+
+    @classmethod
+    def joint_log_likelihood(
+        self, tree: Tree, mutation_rate: float, birth_rate: float
+    ) -> float:
+        r"""
+        log P(T, X, branch_lengths), i.e. the log likelihood given both
+        character vectors _and_ branch lengths.
+        """
+        ll = 0.0
+        lam = birth_rate
+        r = mutation_rate
+        lg = np.log
+        e = np.exp
+        b = binom
+        for (p, c) in tree.edges():
+            t = tree.get_edge_length(p, c)
+            # Birth process likelihood
+            ll += -t * lam
+            if c not in tree.leaves():
+                ll += lg(lam)
+            # Mutation process likelihood
+            cuts = tree.number_of_mutations_along_edge(p, c)
+            uncuts = tree.number_of_nonmutations_along_edge(p, c)
+            ll += (
+                (-t * r) * uncuts
+                + lg(1 - e(-t * r)) * cuts
+                + lg(b(cuts + uncuts, cuts))
+            )
+        return ll
 
 
 def _fit_model(model_and_tree):

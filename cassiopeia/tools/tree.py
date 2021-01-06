@@ -142,11 +142,8 @@ class Tree:
                     number_of_unmutated_characters_in_parent = self.get_state(
                         v
                     ).count("0")
-                    number_of_mutations_along_edge = self.get_state(v).count(
-                        "0"
-                    ) - self.get_state(child).count("0")
                     pct_of_mutated_characters_along_edge = (
-                        number_of_mutations_along_edge
+                        self.number_of_mutations_along_edge(v, child)
                         / (number_of_unmutated_characters_in_parent + 1e-100)
                     )
                     subtree_newick = (
@@ -266,3 +263,17 @@ class Tree:
             node = self.parent(node)
             res += 1
         return res
+
+    def number_of_mutations_along_edge(self, parent, child):
+        return self.get_state(parent).count("0") - self.get_state(child).count(
+            "0"
+        )
+
+    def number_of_nonmutations_along_edge(self, parent, child):
+        return self.get_state(child).count("0")
+
+    def num_uncut(self, v):
+        return self.get_state(v).count("0")
+
+    def num_cut(self, v):
+        return self.get_state(v).count("1")

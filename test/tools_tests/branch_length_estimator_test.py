@@ -437,7 +437,7 @@ def test_IIDExponentialPosteriorMeanBLE():
     TODO: Add a test with a tree with 2 internal nodes and check the model
     against the 2D numerical integral.
     """
-    from scipy.special import binom, logsumexp
+    from scipy.special import logsumexp
 
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3])
@@ -457,16 +457,6 @@ def test_IIDExponentialPosteriorMeanBLE():
         discretization_level=discretization_level,
     )
 
-    def cuts(parent, child):
-        zeros_parent = tree.get_state(parent).count("0")
-        zeros_child = tree.get_state(child).count("0")
-        new_cuts_child = zeros_parent - zeros_child
-        return new_cuts_child
-
-    def uncuts(parent, child):
-        zeros_child = tree.get_state(child).count("0")
-        return zeros_child
-
     def analytical_log_joint(age):
         r"""
         Here t is the age of the internal node.
@@ -476,37 +466,12 @@ def test_IIDExponentialPosteriorMeanBLE():
         t = 1.0 - age
         if t == 0 or t == 1:
             return -np.inf
-        e = np.exp
-        lg = np.log
-        lam = birth_rate
-        r = mutation_rate
-        res = 0.0
-        res += (
-            lg(lam) + -t * lam + -2 * (1.0 - t) * lam
-        )  # Tree topology likelihood
-        res += -t * r * uncuts(0, 1) + lg(1.0 - e(-t * r)) * cuts(
-            0, 1
-        )  # 0->1 edge likelihood
-        res += -(1.0 - t) * r * uncuts(1, 2) + lg(
-            1.0 - e(-(1.0 - t) * r)
-        ) * cuts(
-            1, 2
-        )  # 1->2 edge likelihood
-        res += -(1.0 - t) * r * uncuts(1, 3) + lg(
-            1.0 - e(-(1.0 - t) * r)
-        ) * cuts(
-            1, 3
-        )  # 1->3 edge likelihood
-        # Adjust by the grid size so we don't overestimate the bucket's
-        # probability.
-        res -= np.log(discretization_level)
-        # Finally, we need to account for repetitions
-        res += (
-            np.log(binom(cuts(0, 1) + uncuts(0, 1), cuts(0, 1)))
-            + np.log(binom(cuts(1, 2) + uncuts(1, 2), cuts(1, 2)))
-            + np.log(binom(cuts(1, 3) + uncuts(1, 3), cuts(1, 3)))
+        tree_copy = deepcopy(tree)
+        tree_copy.set_age(1, age)
+        tree_copy.set_edge_length_from_node_ages()
+        return IIDExponentialPosteriorMeanBLE.joint_log_likelihood(
+            tree=tree_copy, mutation_rate=mutation_rate, birth_rate=birth_rate
         )
-        return res
 
     model.estimate_branch_lengths(tree)
     print(f"{model.log_likelihood} = model.log_likelihood")
@@ -533,7 +498,7 @@ def test_IIDExponentialPosteriorMeanBLE():
     # Test the model log likelihood against its analytic computation
     analytical_log_joints = np.array(
         [
-            analytical_log_joint(t)
+            analytical_log_joint(t) - np.log(discretization_level)
             for t in np.array(range(discretization_level + 1))
             / discretization_level
         ]
