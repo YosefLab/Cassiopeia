@@ -160,6 +160,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         discretization_level = self.discretization_level
         assert 0 <= t <= self.discretization_level
         assert 0 <= x <= K
+        if not (1.0 - lam * dt - K * r * dt > 0):
+            raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
         if v == tree.root():  # Base case: we reached the root of the tree.
             # TODO: 'tree.root()' is O(n). We should have O(1) method.
@@ -220,6 +222,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         assert v != tree.root()
         assert 0 <= t <= self.discretization_level
         assert 0 <= x <= K
+        if not (1.0 - lam * dt - K * r * dt > 0):
+            raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
         if t == 0:  # Base case
             if v in tree.leaves() and x == tree.num_cuts(v):
@@ -322,13 +326,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 )
             )
 
-        return np.log(
+        res = np.log(
             integrate.nquad(
                 f,
                 [[0, 1]] * len(tree.internal_nodes()),
                 opts={"epsrel": epsrel},
             )[0]
         )
+        assert not np.isnan(res)
+        return res
 
     @classmethod
     def numerical_log_joint(
@@ -388,6 +394,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     )
                     - np.log(discretization_level)
                 )
+                assert not np.isnan(res[i])
 
         return res
 
@@ -469,6 +476,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         enforce_parsimony = self.enforce_parsimony
         processes = self.processes
         verbose = self.verbose
+
         lls = []
         grid = np.zeros(shape=(len(mutation_rates), len(birth_rates)))
         models = []

@@ -412,20 +412,45 @@ def test_subtree_collapses_when_no_mutations():
 
 
 def test_IIDExponentialBLEGridSearchCV():
+    r"""
+    We make sure to test a tree for which no regularization produces
+    a likelihood of 0.
+    """
     tree = nx.DiGraph()
-    tree.add_nodes_from([0, 1]),
-    tree.add_edges_from([(0, 1)])
-    tree.nodes[0]["characters"] = "000"
-    tree.nodes[1]["characters"] = "001"
+    tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7]),
+    tree.add_edges_from(
+        [(0, 1), (1, 2), (1, 3), (2, 4), (2, 5), (3, 6), (3, 7)]
+    )
+    tree.nodes[4]["characters"] = "110"
+    tree.nodes[5]["characters"] = "110"
+    tree.nodes[6]["characters"] = "100"
+    tree.nodes[7]["characters"] = "100"
     tree = Tree(tree)
+    tree.reconstruct_ancestral_states()
     model = IIDExponentialBLEGridSearchCV(
-        minimum_branch_lengths=(0, 1.0, 3.0),
-        l2_regularizations=(0,),
+        minimum_branch_lengths=(0, 0.2, 4.0),
+        l2_regularizations=(0.0, 2.0, 4.0),
         verbose=True,
+        processes=1,
     )
     model.estimate_branch_lengths(tree)
-    minimum_branch_length = model.minimum_branch_length
-    np.testing.assert_almost_equal(minimum_branch_length, 1.0)
+    print(model.grid)
+    assert model.grid[0, 0] == -np.inf
+
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+    # sns.heatmap(
+    #     model.grid,
+    #     yticklabels=model.minimum_branch_lengths,
+    #     xticklabels=model.l2_regularizations,
+    #     mask=np.isneginf(model.grid),
+    # )
+    # plt.ylabel("minimum_branch_length")
+    # plt.xlabel("l2_regularization")
+    # plt.show()
+
+    np.testing.assert_almost_equal(model.minimum_branch_length, 0.2)
+    np.testing.assert_almost_equal(model.l2_regularization, 2.0)
 
 
 def test_IIDExponentialPosteriorMeanBLE():
@@ -712,9 +737,7 @@ def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1():
     """
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6]),
-    tree.add_edges_from(
-        [(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)]
-    )
+    tree.add_edges_from([(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
     tree.nodes[3]["characters"] = "2011000111"
     tree.nodes[4]["characters"] = "2011010111"
     tree.nodes[5]["characters"] = "2011010111"
@@ -763,9 +786,9 @@ def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1():
                 discretization_level=discretization_level,
             )
         )
-        mean_error = np.mean(np.abs(
-            model.log_joints[node][25:-25] -
-            numerical_log_joint[25:-25]) / np.abs(numerical_log_joint[25:-25])
+        mean_error = np.mean(
+            np.abs(model.log_joints[node][25:-25] - numerical_log_joint[25:-25])
+            / np.abs(numerical_log_joint[25:-25])
         )
         assert mean_error < 0.03
 

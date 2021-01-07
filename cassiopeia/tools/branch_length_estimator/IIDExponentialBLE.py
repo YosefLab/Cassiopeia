@@ -1,3 +1,4 @@
+import multiprocessing
 import copy
 from typing import List, Tuple
 
@@ -145,17 +146,17 @@ class IIDExponentialBLE(BranchLengthEstimator):
         log_likelihood = 0.0
         for (parent, child) in tree.edges():
             edge_length = tree.get_age(parent) - tree.get_age(child)
-            # TODO: hardcoded '0' here...
-            zeros_parent = tree.get_state(parent).count("0")
-            zeros_child = tree.get_state(child).count("0")
-            new_cuts_child = zeros_parent - zeros_child
-            assert new_cuts_child >= 0
+            n_nonmutated = tree.number_of_nonmutations_along_edge(parent, child)
+            n_mutated = tree.number_of_mutations_along_edge(parent, child)
+            assert n_mutated >= 0 and n_nonmutated >= 0
             # Add log-lik for characters that didn't get cut
-            log_likelihood += zeros_child * (-edge_length)
+            log_likelihood += n_nonmutated * (-edge_length)
             # Add log-lik for characters that got cut
-            if edge_length < 1e-8 and new_cuts_child > 0:
-                return -np.inf
-            log_likelihood += new_cuts_child * np.log(1 - np.exp(-edge_length))
+            if n_mutated > 0:
+                if edge_length < 1e-8:
+                    return -np.inf
+                log_likelihood += n_mutated * np.log(1 - np.exp(-edge_length))
+        assert not np.isnan(log_likelihood)
         return log_likelihood
 
 
@@ -178,10 +179,12 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         self,
         minimum_branch_lengths: Tuple[float] = (0,),
         l2_regularizations: Tuple[float] = (0,),
+        processes: int = 6,
         verbose: bool = False,
     ):
         self.minimum_branch_lengths = minimum_branch_lengths
         self.l2_regularizations = l2_regularizations
+        self.processes = processes
         self.verbose = verbose
 
     def estimate_branch_lengths(self, tree: Tree) -> None:
@@ -198,8 +201,11 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         verbose = self.verbose
 
         held_out_log_likelihoods = []  # type: List[Tuple[float, List]]
-        for minimum_branch_length in minimum_branch_lengths:
-            for l2_regularization in l2_regularizations:
+        grid = np.zeros(
+            shape=(len(minimum_branch_lengths), len(l2_regularizations))
+        )
+        for i, minimum_branch_length in enumerate(minimum_branch_lengths):
+            for j, l2_regularization in enumerate(l2_regularizations):
                 cv_log_likelihood = self._cv_log_likelihood(
                     tree=tree,
                     minimum_branch_length=minimum_branch_length,
@@ -211,6 +217,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
                         [minimum_branch_length, l2_regularization],
                     )
                 )
+                grid[i, j] = cv_log_likelihood
 
         # Refit model on full dataset with the best hyperparameters
         held_out_log_likelihoods.sort(reverse=True)
@@ -233,6 +240,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         self.l2_regularization = best_l2_regularization
         self.log_likelihood = final_model.log_likelihood
         self.log_loss = final_model.log_loss
+        self.grid = grid
 
     def _cv_log_likelihood(
         self, tree: Tree, minimum_branch_length: float, l2_regularization: float
@@ -246,6 +254,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         log-likelihood over the #character folds is returned.
         """
         verbose = self.verbose
+        processes = self.processes
         if verbose:
             print(
                 f"Cross-validating hyperparameters:"
@@ -253,32 +262,22 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
                 f"\nl2_regularizations={l2_regularization}"
             )
         n_characters = tree.num_characters()
-        log_likelihood_folds = np.zeros(shape=(n_characters))
+        params = []
         for held_out_character_idx in range(n_characters):
             tree_train, tree_valid = self._cv_split(
                 tree=tree, held_out_character_idx=held_out_character_idx
             )
-            try:
-                IIDExponentialBLE(
-                    minimum_branch_length=minimum_branch_length,
-                    l2_regularization=l2_regularization,
-                ).estimate_branch_lengths(tree_train)
-                tree_valid.copy_branch_lengths(tree_other=tree_train)
-                held_out_log_likelihood = IIDExponentialBLE.log_likelihood(
-                    tree_valid
-                )
-            except cp.error.SolverError:
-                held_out_log_likelihood = -np.inf
-            log_likelihood_folds[
-                held_out_character_idx
-            ] = held_out_log_likelihood
-        if verbose:
-            print(f"log_likelihood_folds = {log_likelihood_folds}")
-            print(
-                f"mean log_likelihood_folds = "
-                f"{np.mean(log_likelihood_folds)}"
+            model = IIDExponentialBLE(
+                minimum_branch_length=minimum_branch_length,
+                l2_regularization=l2_regularization,
             )
-        return np.mean(log_likelihood_folds)
+            params.append((model, tree_train, tree_valid))
+        if processes > 1:
+            with multiprocessing.Pool(processes=processes) as pool:
+                log_likelihood_folds = pool.map(_fit_model, params)
+        else:
+            log_likelihood_folds = list(map(_fit_model, params))
+        return np.mean(np.array(log_likelihood_folds))
 
     def _cv_split(
         self, tree: Tree, held_out_character_idx: int
@@ -299,3 +298,21 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             tree_train.set_state(node, train_state)
             tree_valid.set_state(node, valid_data)
         return tree_train, tree_valid
+
+
+def _fit_model(args):
+    r"""
+    This is used by IIDExponentialBLEGridSearchCV to
+    parallelize the CV folds. It must be defined here (at the top level of
+    the module) for multiprocessing to be able to pickle it. (This is why
+    coverage misses it)
+    """
+    model, tree_train, tree_valid = args
+    assert tree_valid.num_characters() == 1
+    try:
+        model.estimate_branch_lengths(tree_train)
+        tree_valid.copy_branch_lengths(tree_other=tree_train)
+        held_out_log_likelihood = IIDExponentialBLE.log_likelihood(tree_valid)
+    except cp.error.SolverError:
+        held_out_log_likelihood = -np.inf
+    return held_out_log_likelihood
