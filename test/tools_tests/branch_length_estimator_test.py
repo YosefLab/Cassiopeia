@@ -411,6 +411,26 @@ def test_subtree_collapses_when_no_mutations():
     np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=3)
 
 
+def test_minimum_branch_length():
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4])
+    tree.add_edges_from([(0, 1), (0, 2), (0, 3), (2, 4)])
+    tree = Tree(tree)
+    for node in tree.nodes():
+        tree.set_state(node, "1")
+    tree.reconstruct_ancestral_states()
+    # Too large a minimum_branch_length
+    model = IIDExponentialBLE(minimum_branch_length=0.6)
+    model.estimate_branch_lengths(tree)
+    for node in tree.nodes():
+        print(f"{node} = {tree.get_age(node)}")
+    assert model.log_likelihood == -np.inf
+    # An okay minimum_branch_length
+    model = IIDExponentialBLE(minimum_branch_length=0.4)
+    model.estimate_branch_lengths(tree)
+    assert model.log_likelihood != -np.inf
+
+
 def test_IIDExponentialBLEGridSearchCV_smoke():
     r"""
     Just want to see that it runs in both single and multiprocessor mode

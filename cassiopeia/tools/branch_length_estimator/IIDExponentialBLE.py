@@ -23,7 +23,10 @@ class IIDExponentialBLE(BranchLengthEstimator):
 
     Args:
         minimum_branch_length: Estimated branch lengths will be constrained to
-            have at least this length.
+            have at least length THIS MULTIPLE OF THE TREE HEIGHT. If this is
+            greater than 1.0 / [height of the tree] (where the height
+            is measured in terms of the greatest number of edges of any lineage)
+            then all edges will have length 0, so be careful!
         l2_regularization: Consecutive branches will be regularized to have
             similar length via an L2 penalty whose weight is given by
             l2_regularization.
@@ -69,9 +72,11 @@ class IIDExponentialBLE(BranchLengthEstimator):
                 for node_id in tree.nodes()
             ]
         )
+        root = tree.root()
         time_increases_constraints = [
             r_X_t_variables[parent]
-            >= r_X_t_variables[child] + minimum_branch_length
+            >= r_X_t_variables[child]
+            + minimum_branch_length * r_X_t_variables[root]
             for (parent, child) in tree.edges()
         ]
         leaves_have_age_0_constraints = [
@@ -137,8 +142,14 @@ class IIDExponentialBLE(BranchLengthEstimator):
             )
             tree.set_edge_length(parent, child, length=new_edge_length)
 
-        self.log_likelihood = log_likelihood.value
-        self.log_loss = f_star
+        log_likelihood = log_likelihood.value
+        log_loss = f_star
+        if np.isnan(log_likelihood):
+            log_likelihood = -np.inf
+        if np.isnan(log_loss):
+            log_loss = -np.inf
+        self.log_likelihood = log_likelihood
+        self.log_loss = log_loss
 
     @classmethod
     def log_likelihood(self, tree: Tree) -> float:

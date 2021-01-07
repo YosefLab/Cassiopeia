@@ -277,3 +277,18 @@ class Tree:
 
     def num_cut(self, v):
         return self.get_state(v).count("1")
+
+    def depth(self) -> int:
+        r"""
+        Depth of the tree.
+        E.g. the tree 0 -> 1 has depth 1.
+        """
+
+        def dfs(v):
+            res = 0
+            for child in self.children(v):
+                res = max(res, dfs(child) + 1)
+            return res
+
+        res = dfs(self.root())
+        return res

@@ -168,3 +168,11 @@ def test_reconstruct_ancestral_states_DREAM_challenge_tree_25():
     assert tree.get_state(5) == "0000010220"
     assert tree.get_state(6) == "0000000000"
     assert tree.get_state(9) == "0000000000"
+
+
+def test_depth():
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4])
+    tree.add_edges_from([(0, 1), (0, 2), (0, 3), (2, 4)])
+    tree = Tree(tree)
+    assert tree.depth() == 2
