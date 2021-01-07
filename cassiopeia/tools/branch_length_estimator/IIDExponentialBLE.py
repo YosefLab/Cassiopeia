@@ -101,7 +101,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
             # Add log-lik for characters that didn't get cut
             log_likelihood += zeros_child * (-edge_length)
             # Add log-lik for characters that got cut
-            log_likelihood += new_cuts_child * cp.log(1 - cp.exp(-edge_length))
+            log_likelihood += new_cuts_child * cp.log(1 - cp.exp(-edge_length - 1e-8))
 
         # # # # # Add regularization # # # # #
 
