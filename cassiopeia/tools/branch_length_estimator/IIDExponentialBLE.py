@@ -101,7 +101,9 @@ class IIDExponentialBLE(BranchLengthEstimator):
             # Add log-lik for characters that didn't get cut
             log_likelihood += zeros_child * (-edge_length)
             # Add log-lik for characters that got cut
-            log_likelihood += new_cuts_child * cp.log(1 - cp.exp(-edge_length - 1e-8))
+            log_likelihood += new_cuts_child * cp.log(
+                1 - cp.exp(-edge_length - 1e-8)
+            )
 
         # # # # # Add regularization # # # # #
 
@@ -272,11 +274,9 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
                 l2_regularization=l2_regularization,
             )
             params.append((model, tree_train, tree_valid))
-        if processes > 1:
-            with multiprocessing.Pool(processes=processes) as pool:
-                log_likelihood_folds = pool.map(_fit_model, params)
-        else:
-            log_likelihood_folds = list(map(_fit_model, params))
+        with multiprocessing.Pool(processes=processes) as pool:
+            map_fn = pool.map if processes > 1 else map
+            log_likelihood_folds = list(map_fn(_fit_model, params))
         return np.mean(np.array(log_likelihood_folds))
 
     def _cv_split(

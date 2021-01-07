@@ -411,6 +411,26 @@ def test_subtree_collapses_when_no_mutations():
     np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=3)
 
 
+def test_IIDExponentialBLEGridSearchCV_smoke():
+    r"""
+    Just want to see that it runs in both single and multiprocessor mode
+    """
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1]),
+    tree.add_edges_from([(0, 1)])
+    tree.nodes[0]["characters"] = "0"
+    tree.nodes[1]["characters"] = "1"
+    tree = Tree(tree)
+    for processes in [1, 2]:
+        model = IIDExponentialBLEGridSearchCV(
+            minimum_branch_lengths=(1.0,),
+            l2_regularizations=(1.0,),
+            verbose=True,
+            processes=processes,
+        )
+        model.estimate_branch_lengths(tree)
+
+
 def test_IIDExponentialBLEGridSearchCV():
     r"""
     We make sure to test a tree for which no regularization produces
@@ -431,7 +451,7 @@ def test_IIDExponentialBLEGridSearchCV():
         minimum_branch_lengths=(0, 0.2, 4.0),
         l2_regularizations=(0.0, 2.0, 4.0),
         verbose=True,
-        processes=1,
+        processes=6,
     )
     model.estimate_branch_lengths(tree)
     print(model.grid)
@@ -806,6 +826,26 @@ def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1():
             np.abs(model.posteriors[node] - numerical_posterior)
         )
         assert total_variation < 0.05
+
+
+def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke():
+    r"""
+    Just want to see that it runs in both single and multiprocessor mode
+    """
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1]),
+    tree.add_edges_from([(0, 1)])
+    tree.nodes[0]["characters"] = "0"
+    tree.nodes[1]["characters"] = "1"
+    tree = Tree(tree)
+    for processes in [1, 2]:
+        model = IIDExponentialPosteriorMeanBLEGridSearchCV(
+            mutation_rates=(0.5,),
+            birth_rates=(1.5,),
+            discretization_level=5,
+            verbose=True,
+        )
+        model.estimate_branch_lengths(tree)
 
 
 def test_IIDExponentialPosteriorMeanBLEGridSeachCV():

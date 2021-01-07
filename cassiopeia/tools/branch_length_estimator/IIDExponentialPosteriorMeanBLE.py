@@ -501,9 +501,12 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                 mutation_and_birth_rates.append((mutation_rate, birth_rate))
                 ijs.append((i, j))
         with multiprocessing.Pool(processes=processes) as pool:
-            lls = pool.map(
-                _fit_model,
-                zip(models, [deepcopy(tree) for _ in range(len(models))]),
+            map_fn = pool.map if processes > 1 else map
+            lls = list(
+                map_fn(
+                    _fit_model,
+                    zip(models, [deepcopy(tree) for _ in range(len(models))]),
+                )
             )
         lls_and_rates = list(zip(lls, mutation_and_birth_rates))
         for ll, (i, j) in list(zip(lls, ijs)):
