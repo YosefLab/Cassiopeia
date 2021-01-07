@@ -705,6 +705,86 @@ def test_IIDExponentialPosteriorMeanBLE_3():
         assert total_variation < 0.03
 
 
+@pytest.mark.slow
+def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1():
+    r"""
+    A tree from the DREAM subchallenge 1, verified analytically.
+    """
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6]),
+    tree.add_edges_from(
+        [(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)]
+    )
+    tree.nodes[3]["characters"] = "2011000111"
+    tree.nodes[4]["characters"] = "2011010111"
+    tree.nodes[5]["characters"] = "2011010111"
+    tree.nodes[6]["characters"] = "2011010111"
+    tree = Tree(tree)
+    tree.reconstruct_ancestral_states()
+
+    mutation_rate = 0.6
+    birth_rate = 0.8
+    discretization_level = 500
+    model = IIDExponentialPosteriorMeanBLE(
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        discretization_level=discretization_level,
+    )
+
+    model.estimate_branch_lengths(tree)
+    print(model.log_likelihood)
+
+    # Test the model log likelihood against its numerical computation
+    numerical_log_likelihood = (
+        IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+            tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate
+        )
+    )
+    np.testing.assert_approx_equal(
+        model.log_likelihood, numerical_log_likelihood, significant=3
+    )
+
+    # Check that the likelihood computed from each leaf node is correct.
+    for leaf in tree.leaves():
+        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        print(model_log_likelihood_up)
+        np.testing.assert_approx_equal(
+            model.log_likelihood, model_log_likelihood_up, significant=3
+        )
+
+    # Check that the posterior ages of the nodes are correct.
+    for node in tree.internal_nodes():
+        numerical_log_joint = (
+            IIDExponentialPosteriorMeanBLE.numerical_log_joint(
+                tree=tree,
+                node=node,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                discretization_level=discretization_level,
+            )
+        )
+        mean_error = np.mean(np.abs(
+            model.log_joints[node][25:-25] -
+            numerical_log_joint[25:-25]) / np.abs(numerical_log_joint[25:-25])
+        )
+        assert mean_error < 0.03
+
+        # Test the model posterior against its numerical posterior.
+        numerical_posterior = np.exp(
+            numerical_log_joint - numerical_log_joint.max()
+        )
+        numerical_posterior /= numerical_posterior.sum()
+        # import matplotlib.pyplot as plt
+        # plt.plot(model.posteriors[node])
+        # plt.show()
+        # plt.plot(numerical_posterior)
+        # plt.show()
+        total_variation = np.sum(
+            np.abs(model.posteriors[node] - numerical_posterior)
+        )
+        assert total_variation < 0.05
+
+
 def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
     r"""
     We just check that the grid search estimator does its job on a small grid.
