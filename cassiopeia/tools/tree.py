@@ -235,7 +235,7 @@ class Tree:
         assert len(incident_edges_at_v) == 1
         return incident_edges_at_v[0][0]
 
-    def set_edge_length_from_node_ages(self) -> None:
+    def set_edge_lengths_from_node_ages(self) -> None:
         r"""
         Sets the edge lengths to match the node ages.
         """

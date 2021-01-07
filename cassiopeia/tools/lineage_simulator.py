@@ -170,5 +170,5 @@ class BirthProcess(LineageSimulator):
         tree = Tree(tree_nx)
         for node in tree.nodes():
             tree.set_age(node, node_age[node])
-        tree.set_edge_length_from_node_ages()
+        tree.set_edge_lengths_from_node_ages()
         return tree

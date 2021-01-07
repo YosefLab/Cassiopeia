@@ -434,8 +434,6 @@ def test_IIDExponentialPosteriorMeanBLE():
     and the posterior age of the internal node, can be computed easily in
     closed form. We check the theoretical values against those obtained from
     our model.
-    TODO: Add a test with a tree with 2 internal nodes and check the model
-    against the 2D numerical integral.
     """
     from scipy.special import logsumexp
 
@@ -456,22 +454,6 @@ def test_IIDExponentialPosteriorMeanBLE():
         birth_rate=birth_rate,
         discretization_level=discretization_level,
     )
-
-    def analytical_log_joint(age):
-        r"""
-        Here t is the age of the internal node.
-        """
-        # Originally I did the math using the distance t of the internal node
-        # from the root, which is t = 1 - age.
-        t = 1.0 - age
-        if t == 0 or t == 1:
-            return -np.inf
-        tree_copy = deepcopy(tree)
-        tree_copy.set_age(1, age)
-        tree_copy.set_edge_length_from_node_ages()
-        return IIDExponentialPosteriorMeanBLE.joint_log_likelihood(
-            tree=tree_copy, mutation_rate=mutation_rate, birth_rate=birth_rate
-        )
 
     model.estimate_branch_lengths(tree)
     print(f"{model.log_likelihood} = model.log_likelihood")
@@ -495,54 +477,65 @@ def test_IIDExponentialPosteriorMeanBLE():
             model.log_likelihood, model_log_likelihood_up, significant=3
         )
 
-    # Test the model log likelihood against its analytic computation
-    analytical_log_joints = np.array(
-        [
-            analytical_log_joint(t) - np.log(discretization_level)
-            for t in np.array(range(discretization_level + 1))
-            / discretization_level
-        ]
+    # Test the model log likelihood against its numerical computation
+    numerical_log_likelihood = (
+        IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+            tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate
+        )
     )
-    analytical_log_likelihood = logsumexp(analytical_log_joints)
-    print(f"{analytical_log_likelihood} = analytical_log_likelihood")
+    print(f"{numerical_log_likelihood} = numerical_log_likelihood")
     np.testing.assert_approx_equal(
-        model.log_likelihood, analytical_log_likelihood, significant=3
-    )
-    # Test the _whole_ array of log joints P(t_v = t, X, T)
-    np.testing.assert_array_almost_equal(
-        analytical_log_joints[50:-50], model.log_joints[1][50:-50], decimal=1
+        model.log_likelihood, numerical_log_likelihood, significant=3
     )
 
-    # Test the model posterior against its analytic posterior
-    analytical_posterior = np.exp(
-        analytical_log_joints - analytical_log_joints.max()
+    # Test the _whole_ array of log joints P(t_v = t, X, T) against its
+    # numerical computation
+    numerical_log_joint = IIDExponentialPosteriorMeanBLE.numerical_log_joint(
+        tree=tree,
+        node=1,
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        discretization_level=discretization_level,
     )
-    analytical_posterior /= analytical_posterior.sum()
+    np.testing.assert_array_almost_equal(
+        model.log_joints[1][50:-50], numerical_log_joint[50:-50], decimal=1
+    )
+
+    # Test the model posterior against its numerical posterior
+    numerical_posterior = IIDExponentialPosteriorMeanBLE.numerical_posterior(
+        tree=tree,
+        node=1,
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        discretization_level=discretization_level,
+    )
     # import matplotlib.pyplot as plt
     # plt.plot(model.posteriors[1])
     # plt.show()
-    # plt.plot(analytical_posterior)
+    # plt.plot(numerical_posterior)
     # plt.show()
-    total_variation = np.sum(np.abs(analytical_posterior - model.posteriors[1]))
+    total_variation = np.sum(np.abs(model.posteriors[1] - numerical_posterior))
     assert total_variation < 0.03
 
-    # Test the posterior mean against the analytical posterior mean.
-    analytical_posterior_mean = np.sum(
-        analytical_posterior
+    # Test the posterior mean against the numerical posterior mean.
+    numerical_posterior_mean = np.sum(
+        numerical_posterior
         * np.array(range(discretization_level + 1))
         / discretization_level
     )
     posterior_mean = tree.get_age(1)
     np.testing.assert_approx_equal(
-        posterior_mean, analytical_posterior_mean, significant=2
+        posterior_mean, numerical_posterior_mean, significant=2
     )
 
 
 def test_IIDExponentialPosteriorMeanBLE_2():
     r"""
     We run the Bayesian estimator on a small tree with all different leaves,
-    and then check that the likelihood of the data, computed from all of the
-    leaves, is the same.
+    and then check that:
+    - The likelihood of the data, computed from all of the leaves, is the same.
+    - The posteriors of the internal node ages matches their numerical
+        counterpart.
     """
     tree = nx.DiGraph()
     tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6]),
@@ -568,6 +561,17 @@ def test_IIDExponentialPosteriorMeanBLE_2():
     model.estimate_branch_lengths(tree)
     print(model.log_likelihood)
 
+    # Test the model log likelihood against its numerical computation
+    numerical_log_likelihood = (
+        IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+            tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate
+        )
+    )
+    np.testing.assert_approx_equal(
+        model.log_likelihood, numerical_log_likelihood, significant=3
+    )
+
+    # Check that the likelihood computed from each leaf node is correct.
     for leaf in tree.leaves():
         model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
         print(model_log_likelihood_up)
@@ -584,6 +588,121 @@ def test_IIDExponentialPosteriorMeanBLE_2():
                 model_log_likelihood_up_wrong,
                 significant=3,
             )
+
+    # Check that the posterior ages of the nodes are correct.
+    for node in tree.internal_nodes():
+        numerical_log_joint = (
+            IIDExponentialPosteriorMeanBLE.numerical_log_joint(
+                tree=tree,
+                node=node,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                discretization_level=discretization_level,
+            )
+        )
+        np.testing.assert_array_almost_equal(
+            model.log_joints[node][25:-25],
+            numerical_log_joint[25:-25],
+            decimal=1,
+        )
+
+        # Test the model posterior against its numerical posterior.
+        numerical_posterior = np.exp(
+            numerical_log_joint - numerical_log_joint.max()
+        )
+        numerical_posterior /= numerical_posterior.sum()
+        # import matplotlib.pyplot as plt
+        # plt.plot(model.posteriors[node])
+        # plt.show()
+        # plt.plot(analytical_posterior)
+        # plt.show()
+        total_variation = np.sum(
+            np.abs(model.posteriors[node] - numerical_posterior)
+        )
+        assert total_variation < 0.03
+
+
+@pytest.mark.slow
+def test_IIDExponentialPosteriorMeanBLE_3():
+    r"""
+    Same as test_IIDExponentialPosteriorMeanBLE_2 but with a weirder topology.
+    """
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7]),
+    tree.add_edges_from(
+        [(0, 1), (1, 2), (1, 3), (2, 4), (2, 5), (2, 6), (0, 7)]
+    )
+    tree.nodes[0]["characters"] = "00"
+    tree.nodes[1]["characters"] = "00"
+    tree.nodes[2]["characters"] = "10"
+    tree.nodes[3]["characters"] = "11"
+    tree.nodes[4]["characters"] = "10"
+    tree.nodes[5]["characters"] = "10"
+    tree.nodes[6]["characters"] = "11"
+    tree.nodes[7]["characters"] = "00"
+    tree = Tree(tree)
+
+    mutation_rate = 0.625
+    birth_rate = 0.75
+    discretization_level = 100
+    model = IIDExponentialPosteriorMeanBLE(
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        discretization_level=discretization_level,
+    )
+
+    model.estimate_branch_lengths(tree)
+    print(model.log_likelihood)
+
+    # Test the model log likelihood against its numerical computation
+    numerical_log_likelihood = (
+        IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+            tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate
+        )
+    )
+    np.testing.assert_approx_equal(
+        model.log_likelihood, numerical_log_likelihood, significant=3
+    )
+
+    # Check that the likelihood computed from each leaf node is correct.
+    for leaf in tree.leaves():
+        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        print(model_log_likelihood_up)
+        np.testing.assert_approx_equal(
+            model.log_likelihood, model_log_likelihood_up, significant=2
+        )
+
+    # Check that the posterior ages of the nodes are correct.
+    for node in tree.internal_nodes():
+        numerical_log_joint = (
+            IIDExponentialPosteriorMeanBLE.numerical_log_joint(
+                tree=tree,
+                node=node,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                discretization_level=discretization_level,
+            )
+        )
+        np.testing.assert_array_almost_equal(
+            model.log_joints[node][25:-25],
+            numerical_log_joint[25:-25],
+            decimal=1,
+        )
+
+        # Test the model posterior against its numerical posterior.
+        numerical_posterior = np.exp(
+            numerical_log_joint - numerical_log_joint.max()
+        )
+        numerical_posterior /= numerical_posterior.sum()
+        # import matplotlib.pyplot as plt
+        # plt.plot(model.posteriors[node])
+        # plt.show()
+        # plt.plot(numerical_posterior)
+        # plt.show()
+        total_variation = np.sum(
+            np.abs(model.posteriors[node] - numerical_posterior)
+        )
+        assert total_variation < 0.03
 
 
 def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
@@ -610,7 +729,18 @@ def test_IIDExponentialPosteriorMeanBLEGridSeachCV():
         verbose=True,
     )
 
+    # Test the model log likelihood against its numerical computation
     model.estimate_branch_lengths(tree)
+    numerical_log_likelihood = (
+        IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+            tree=tree,
+            mutation_rate=model.mutation_rate,
+            birth_rate=model.birth_rate,
+        )
+    )
+    np.testing.assert_approx_equal(
+        model.log_likelihood, numerical_log_likelihood, significant=3
+    )
 
     # import matplotlib.pyplot as plt
     # import seaborn as sns

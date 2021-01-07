@@ -1,12 +1,13 @@
+import multiprocessing
+from copy import deepcopy
 from typing import Tuple
 
-from copy import deepcopy
-import multiprocessing
 import numpy as np
+from scipy import integrate
 from scipy.special import binom, logsumexp
 
-from .BranchLengthEstimator import BranchLengthEstimator
 from ..tree import Tree
+from .BranchLengthEstimator import BranchLengthEstimator
 
 
 class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
@@ -257,13 +258,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         return log_likelihood
 
     @classmethod
-    def joint_log_likelihood(
+    def exact_log_full_joint(
         self, tree: Tree, mutation_rate: float, birth_rate: float
     ) -> float:
         r"""
-        log P(T, X, branch_lengths), i.e. the log likelihood given both
-        character vectors _and_ branch lengths.
+        log P(T, X, branch_lengths), i.e. the full joint log likelihood given
+        both character vectors _and_ branch lengths.
         """
+        tree = deepcopy(tree)
+        tree.set_edge_lengths_from_node_ages()
         ll = 0.0
         lam = birth_rate
         r = mutation_rate
@@ -285,6 +288,131 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 + lg(b(cuts + uncuts, cuts))
             )
         return ll
+
+    @classmethod
+    def numerical_log_likelihood(
+        self,
+        tree: Tree,
+        mutation_rate: float,
+        birth_rate: float,
+        epsrel: float = 0.01,
+    ):
+        r"""
+        log P(T, X), i.e. the marginal log likelihood given _only_ tree
+        topology and character vectors (including those of internal nodes).
+        It is computed with a grid.
+        """
+
+        tree = deepcopy(tree)
+
+        def f(*args):
+            ages = args
+            for node, age in list(zip(tree.internal_nodes(), ages)):
+                tree.set_age(node, age)
+            for (p, c) in tree.edges():
+                if tree.get_age(p) <= tree.get_age(c):
+                    return 0.0
+            tree.set_edge_lengths_from_node_ages()
+            return np.exp(
+                IIDExponentialPosteriorMeanBLE.exact_log_full_joint(
+                    tree=tree,
+                    mutation_rate=mutation_rate,
+                    birth_rate=birth_rate,
+                )
+            )
+
+        return np.log(
+            integrate.nquad(
+                f,
+                [[0, 1]] * len(tree.internal_nodes()),
+                opts={"epsrel": epsrel},
+            )[0]
+        )
+
+    @classmethod
+    def numerical_log_joint(
+        self,
+        tree: Tree,
+        node,
+        mutation_rate: float,
+        birth_rate: float,
+        discretization_level: int,
+        epsrel: float = 0.01,
+    ):
+        r"""
+        log P(t_node = t, X, T) for each t in the interval [0, 1] discretized
+        to the level discretization_level
+        """
+        res = np.zeros(shape=(discretization_level + 1,))
+        other_nodes = [n for n in tree.internal_nodes() if n != node]
+
+        tree = deepcopy(tree)
+
+        def f(*args):
+            ages = args
+            for other_node, age in list(zip(other_nodes, ages)):
+                tree.set_age(other_node, age)
+            for (p, c) in tree.edges():
+                if tree.get_age(p) <= tree.get_age(c):
+                    return 0.0
+            tree.set_edge_lengths_from_node_ages()
+            return np.exp(
+                IIDExponentialPosteriorMeanBLE.exact_log_full_joint(
+                    tree=tree,
+                    mutation_rate=mutation_rate,
+                    birth_rate=birth_rate,
+                )
+            )
+
+        for i in range(discretization_level + 1):
+            node_age = i / discretization_level
+            tree.set_age(node, node_age)
+            tree.set_edge_lengths_from_node_ages()
+            if len(other_nodes) == 0:
+                # There is nothing to integrate over.
+                res[i] = self.exact_log_full_joint(
+                    tree=tree,
+                    mutation_rate=mutation_rate,
+                    birth_rate=birth_rate,
+                )
+                res[i] -= np.log(discretization_level)
+            else:
+                res[i] = (
+                    np.log(
+                        integrate.nquad(
+                            f,
+                            [[0, 1]] * (len(tree.internal_nodes()) - 1),
+                            opts={"epsrel": epsrel},
+                        )[0]
+                    )
+                    - np.log(discretization_level)
+                )
+
+        return res
+
+    @classmethod
+    def numerical_posterior(
+        self,
+        tree: Tree,
+        node,
+        mutation_rate: float,
+        birth_rate: float,
+        discretization_level: int,
+        epsrel: float = 0.01,
+    ):
+        numerical_log_joint = self.numerical_log_joint(
+            tree=tree,
+            node=node,
+            mutation_rate=mutation_rate,
+            birth_rate=birth_rate,
+            discretization_level=discretization_level,
+            epsrel=epsrel,
+        )
+        numerical_posterior = np.exp(
+            numerical_log_joint - numerical_log_joint.max()
+        )
+        numerical_posterior /= numerical_posterior.sum()
+        return numerical_posterior
 
 
 def _fit_model(model_and_tree):
