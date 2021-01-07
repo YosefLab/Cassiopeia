@@ -68,11 +68,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     def _compute_log_joint(self, v, t):
         r"""
         P(t_v = t, X, T).
-        Dependind on whether we are enforcing parsimony or not, we consider
+        Depending on whether we are enforcing parsimony or not, we consider
         different possible number of cuts for v.
         """
         discretization_level = self.discretization_level
         tree = self.tree
+        assert v in tree.internal_nodes()
         lam = self.birth_rate
         enforce_parsimony = self.enforce_parsimony
         dt = 1.0 / discretization_level
@@ -419,7 +420,8 @@ def _fit_model(model_and_tree):
     r"""
     This is used by IIDExponentialPosteriorMeanBLEGridSearchCV to
     parallelize the grid search. It must be defined here (at the top level of
-    the module) for multiprocessing to be able to pickle it.
+    the module) for multiprocessing to be able to pickle it. (This is why
+    coverage misses it)
     """
     model, tree = model_and_tree
     model.estimate_branch_lengths(tree)
