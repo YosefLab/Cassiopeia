@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import networkx as nx
 
@@ -99,6 +99,7 @@ class Tree:
         append_state_to_node_name: bool = False,
         print_pct_of_mutated_characters_along_edge: bool = False,
         add_N_to_node_id: bool = False,
+        fmt_branch_lengths: str = "%s",
     ) -> str:
         r"""
         Converts tree into Newick tree format.
@@ -136,7 +137,9 @@ class Tree:
                     if print_internal_nodes:
                         subtree_newick += format_node(child)
                 # Add edge length
-                subtree_newick = subtree_newick + ":" + str(edge_length)
+                subtree_newick = (
+                    subtree_newick + ":" + (fmt_branch_lengths % edge_length)
+                )
                 if print_pct_of_mutated_characters_along_edge:
                     # Also add number of mutations
                     number_of_unmutated_characters_in_parent = self.get_state(
@@ -292,3 +295,11 @@ class Tree:
 
         res = dfs(self.root())
         return res
+
+    def scale(self, factor: float):
+        r"""
+        The branch lengths of the tree are all scaled by this factor
+        """
+        for node in self.nodes():
+            self.set_age(node, factor * self.get_age(node))
+        self.set_edge_lengths_from_node_ages()
