@@ -1,6 +1,6 @@
 import multiprocessing
 from copy import deepcopy
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from scipy import integrate
@@ -8,6 +8,7 @@ from scipy.special import binom, logsumexp
 
 from ..tree import Tree
 from .BranchLengthEstimator import BranchLengthEstimator
+from . import utils
 
 
 class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
@@ -535,3 +536,18 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.posteriors = final_model.posteriors
         self.posterior_means = final_model.posterior_means
         self.grid = grid
+
+    def plot_grid(
+        self,
+        figure_file: Optional[str] = None,
+        show_plot: bool = True
+    ):
+        utils.plot_grid(
+            grid=self.grid,
+            yticklabels=self.mutation_rates,
+            xticklabels=self.birth_rates,
+            ylabel=r"Mutation Rate ($r$)",
+            xlabel=r"Birth Rate ($\lambda$)",
+            figure_file=figure_file,
+            show_plot=show_plot,
+        )

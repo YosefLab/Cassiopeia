@@ -1,12 +1,13 @@
 import multiprocessing
 import copy
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import cvxpy as cp
 import numpy as np
 
 from ..tree import Tree
 from .BranchLengthEstimator import BranchLengthEstimator
+from . import utils
 
 
 class IIDExponentialBLE(BranchLengthEstimator):
@@ -288,6 +289,8 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         with multiprocessing.Pool(processes=processes) as pool:
             map_fn = pool.map if processes > 1 else map
             log_likelihood_folds = list(map_fn(_fit_model, params))
+        if verbose:
+            print(f"log_likelihood_folds = {log_likelihood_folds}")
         return np.mean(np.array(log_likelihood_folds))
 
     def _cv_split(
@@ -309,6 +312,21 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             tree_train.set_state(node, train_state)
             tree_valid.set_state(node, valid_data)
         return tree_train, tree_valid
+
+    def plot_grid(
+        self,
+        figure_file: Optional[str] = None,
+        show_plot: bool = True
+    ):
+        utils.plot_grid(
+            grid=self.grid,
+            yticklabels=self.minimum_branch_lengths,
+            xticklabels=self.l2_regularizations,
+            ylabel=r"Minimum Branch Length ($\epsilon$)",
+            xlabel=r"l2 Regularization ($\lambda$)",
+            figure_file=figure_file,
+            show_plot=show_plot,
+        )
 
 
 def _fit_model(args):
