@@ -86,9 +86,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         ll_for_x = []
         for x in valid_num_cuts:
             ll_for_x.append(
-                sum([self.down(u, t, x) for u in children])
-                + self.up(v, t, x)
-                + np.log(lam * dt)
+                sum([self.down(u, t, x) for u in children]) + self.up(v, t, x)
             )
         return logsumexp(ll_for_x)
 
@@ -197,10 +195,6 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                         + self.up(p, t + 1, x)
                         + sum([self.down(u, t, x) for u in siblings])
                     )
-                    if p == tree.root():  # The branch start is for free!
-                        # TODO: 'tree.root()' is O(n). We should have O(1)
-                        # method.
-                        ll -= np.log(lam * dt)
                     log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
         self.up_cache[(v, t, x)] = log_likelihood
@@ -538,9 +532,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.grid = grid
 
     def plot_grid(
-        self,
-        figure_file: Optional[str] = None,
-        show_plot: bool = True
+        self, figure_file: Optional[str] = None, show_plot: bool = True
     ):
         utils.plot_grid(
             grid=self.grid,

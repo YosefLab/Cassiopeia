@@ -314,9 +314,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
         return tree_train, tree_valid
 
     def plot_grid(
-        self,
-        figure_file: Optional[str] = None,
-        show_plot: bool = True
+        self, figure_file: Optional[str] = None, show_plot: bool = True
     ):
         utils.plot_grid(
             grid=self.grid,

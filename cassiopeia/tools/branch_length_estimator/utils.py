@@ -11,7 +11,7 @@ def plot_grid(
     ylabel,
     xlabel,
     figure_file: Optional[str],
-    show_plot: str = True
+    show_plot: str = True,
 ) -> None:
     sns.heatmap(
         grid,

@@ -536,7 +536,9 @@ def test_IIDExponentialPosteriorMeanBLE():
 
     # Test the model log likelihood vs its computation from the leaf nodes.
     for leaf in [2, 3]:
-        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        model_log_likelihood_up = model.up(
+            leaf, 0, tree.num_cuts(leaf)
+        ) - np.log(birth_rate * 1.0 / discretization_level)
         print(f"{model_log_likelihood_up} = model_log_likelihood_up")
         np.testing.assert_approx_equal(
             model.log_likelihood, model_log_likelihood_up, significant=3
@@ -638,7 +640,9 @@ def test_IIDExponentialPosteriorMeanBLE_2():
 
     # Check that the likelihood computed from each leaf node is correct.
     for leaf in tree.leaves():
-        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        model_log_likelihood_up = model.up(
+            leaf, 0, tree.num_cuts(leaf)
+        ) - np.log(birth_rate * 1.0 / discretization_level)
         print(model_log_likelihood_up)
         np.testing.assert_approx_equal(
             model.log_likelihood, model_log_likelihood_up, significant=3
@@ -731,7 +735,9 @@ def test_IIDExponentialPosteriorMeanBLE_3():
 
     # Check that the likelihood computed from each leaf node is correct.
     for leaf in tree.leaves():
-        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        model_log_likelihood_up = model.up(
+            leaf, 0, tree.num_cuts(leaf)
+        ) - np.log(birth_rate * 1.0 / discretization_level)
         print(model_log_likelihood_up)
         np.testing.assert_approx_equal(
             model.log_likelihood, model_log_likelihood_up, significant=2
@@ -809,7 +815,9 @@ def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1():
 
     # Check that the likelihood computed from each leaf node is correct.
     for leaf in tree.leaves():
-        model_log_likelihood_up = model.up(leaf, 0, tree.num_cuts(leaf))
+        model_log_likelihood_up = model.up(
+            leaf, 0, tree.num_cuts(leaf)
+        ) - np.log(birth_rate * 1.0 / discretization_level)
         print(model_log_likelihood_up)
         np.testing.assert_approx_equal(
             model.log_likelihood, model_log_likelihood_up, significant=3
