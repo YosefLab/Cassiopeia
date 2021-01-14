@@ -17,7 +17,7 @@ analysis module, like a branch length estimator or rate matrix estimator
 import ete3
 import networkx as nx
 import pandas as pd
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from cassiopeia.data import utilities
 
@@ -100,14 +100,17 @@ class CassiopeiaTree:
                     self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
                 else:
                     self.__network.nodes[n]['character_states'] = []
-
-            # instantiate node ages
-            for n in self.nodes:
-                self.__network.nodes[n]['age'] = 0
             
             # instantiate branch lengths
             for u,v in self.edges:
-                self.__network[u][v]['length'] = 0
+                self.__network[u][v]['length'] = 1
+
+            # instantiate node ages and edge depth
+            self.__network.nodes[self.root]['age'] = 0
+            self.__network.nodes[self.root]['edge_depth'] = 0
+            for u,v in self.depth_first_traverse_edges(source=self.root):
+                self.__network.nodes[v]['age'] = self.__network.nodes[u]['age'] + self.__network[u][v]['length']
+                self.__network.nodes[v]['edge_depth'] = self.__network.nodes[v]['age']
 
     @property
     def n_cell(self) -> int:
@@ -260,8 +263,8 @@ class CassiopeiaTree:
         """
         return self.__network.nodes[node]['character_states']
 
-    def depth_first_traverse_nodes(self, source: Optional[int] = None, postorder: bool = True) -> List[str]:
-        """Depth first traversal of the tree.
+    def depth_first_traverse_nodes(self, source: Optional[int] = None, postorder: bool = True) -> Iterator[str]:
+        """Nodes from depth first traversal of the tree.
 
         Returns the nodes from a DFS on the tree.
 
@@ -278,9 +281,26 @@ class CassiopeiaTree:
             source = self.root
 
         if postorder:
-            return [n for n in nx.dfs_postorder_nodes(self.__network, source=source)]
+            return nx.dfs_postorder_nodes(self.__network, source=source)
         else:
-            return [n for n in nx.dfs_preorder_nodes(self.__network, source=source)]
+            return nx.dfs_preorder_nodes(self.__network, source=source)
+
+    def depth_first_traverse_edges(self, source: Optional[int] = None) -> Iterator[Tuple[str, str]]:
+        """Edges from depth first traversal of the tree.
+
+        Returns the edges from a DFS on the tree.
+
+        Args:
+            source: Where to begin the depth first traversal.
+
+        Returns:
+            A list of edges from the depth first traversal.
+        """
+
+        if source is None:
+            source = self.root
+
+        return nx.dfs_edges(self.__network, source=source)
 
     def leaves_in_subtree(self, node) -> List[str]:
         """Get leaves in subtree below a given node.

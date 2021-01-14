@@ -217,15 +217,26 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         obs_ordering = tree.depth_first_traverse_nodes(source='node0', postorder=True)
         expected_ordering = ['node3', 'node7', 'node9', 'node11', 'node13', 'node15', 'node17', 'node18', 'node16', 'node14', 'node12', 'node10', 'node8', 'node4', 'node1', 'node5', 'node6', 'node2', 'node0']
-        self.assertCountEqual(obs_ordering, expected_ordering)
+        self.assertCountEqual([n for n in obs_ordering], expected_ordering)
 
         obs_ordering = tree.depth_first_traverse_nodes(source='node14', postorder=True)
         expected_ordering = ['node15', 'node17', 'node18', 'node16', 'node14']
-        self.assertCountEqual(obs_ordering, expected_ordering)
+        self.assertCountEqual([n for n in obs_ordering], expected_ordering)
 
         obs_ordering = tree.depth_first_traverse_nodes(source='node0', postorder=False)
         expected_ordering = ['node0', 'node1', 'node3', 'node4', 'node7', 'node8', 'node9', 'node10', 'node11', 'node12', 'node13', 'node14', 'node15', 'node16', 'node17', 'node18', 'node2', 'node5', 'node6']
+        self.assertCountEqual([n for n in obs_ordering], expected_ordering)
+
+    def test_depth_first_traversal_edges(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        obs_ordering = tree.depth_first_traverse_edges(source='node0')
+        expected_ordering = [('node0', 'node1'), ('node1', 'node3'), ('node1', 'node4'), ('node4', 'node7'), ('node4', 'node8'), ('node8', 'node9'), ('node8', 'node10'), ('node10', 'node11'), ('node10', 'node12'), ('node12', 'node13'), ('node12', 'node14'), ('node14', 'node15'), ('node14', 'node16'), ('node16', 'node17'), ('node16', 'node18'), ('node0', 'node2'), ('node2', 'node5'), ('node2', 'node6')]
         self.assertCountEqual(obs_ordering, expected_ordering)
+
 
     def test_get_leaves_in_subtree(self):
 
