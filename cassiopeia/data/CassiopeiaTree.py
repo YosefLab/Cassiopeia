@@ -23,13 +23,47 @@ from cassiopeia.data import utilities
 
 
 class CassiopeiaTree:
+    """Basic tree object for Cassiopeia.
+
+    This object stores the key attributes and functionalities a user might want
+    for working with lineage tracing experiments. At its core, it stores
+    three main items - a tree, a character matrix, and meta data associated
+    with the data.
+
+    The tree can be fed into the object via Ete3, Networkx, or can be inferred
+    using one of the CassiopeiaSolver algorithms in the `solver` module.
+
+    A character matrix can be stored in the object, containing the states
+    observed for each cell. In typical lineage tracing experiments, these are
+    integer representations of the indels observed at each unique cut site.
+
+    Meta data for cells or characters can also be stored in this object. These
+    items can be categorical or numerical in nature. Common examples of cell
+    meta data are the cluster identity, tissue identity, or number of target-site
+    UMIs per cell. These items can be used in downstream analyses, for example
+    the FitchCount algorithm which infers the number of transitions between
+    categorical variables (e.g., tissues). Common examples of character meta
+    data are the proportion of missing data for each character or the entropy
+    of states. These are good statistics to have for feature selection.
+
+    TODO(mattjones315): Add experimental meta data as arguments.
+
+    Args:
+        character_matrix: The character matrix for the lineage.
+        cell_meta: Per-cell meta data
+        character_meta: Per-character meta data
+        priors: A dictionary storing the probability of a character mutating
+            to a particular state.
+        tree: A tree for the lineage. 
+    """
+
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
+        character_matrix: Optional[pd.DataFrame] = None,
         cell_meta: Optional[pd.DataFrame] = None,
         character_meta: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
+        tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None
     ):
 
         self.character_matrix = character_matrix
@@ -90,7 +124,7 @@ class CassiopeiaTree:
 
     @property
     def nodes(self) -> List[str]:
-        """Retruns all nodes in tree.
+        """Returns all nodes in tree.
         """
         if self.__network is None:
             return None
@@ -172,6 +206,11 @@ class CassiopeiaTree:
         """
         pass
 
+    def get_max_depth_of_tree(self) -> float:
+        """Computes the max depth of the tree.
+        """
+        pass
+
     def cophenetic_correlation(self) -> float:
         """Computes cophenetic correlation.
 
@@ -179,7 +218,72 @@ class CassiopeiaTree:
         to compute the cophenetic correlation as a measure of agreement between
         the two distances.
 
-        Returns
+        Returns:
             The cophenetic correlation
         """
         pass
+
+    def get_mutations_along_edge(self, parent: str, child: str) -> List[Tuple[int, int]]:
+        """Gets the mutations along an edge of interest.
+
+        Returns a list of tuples (character, state) of mutations that occur
+        along an edge.
+
+        Args:
+            parent: parent in tree
+            child: child in tree
+
+        Returns:
+            A list of (character, state) tuples indicating which character
+                mutated and to which state.
+        """
+        pass
+
+    def prune(self, leaves: List[str]):
+        """Subsets the tree to keep the specified leaves.
+
+        Removes away any leaf that is not in the list specified and prunes
+        back lineages not related to the leaves left over. Operates on the
+        tree in place. 
+
+
+        Args:
+            leaves: leaves to keep in the tree.
+        """
+        pass
+
+    def collapse_mutationless_edges(self):
+        """Collapses edges in the tree that have no mutations.
+
+        Removes edges in the tree that have no mutations along them. Does not
+        remove edges that lead directly to a leaf. Modifies the tree inplace.
+        """
+        pass
+
+    def collapse_unifurcations(self):
+        """Collapses unifurcations in the tree.
+
+        Removes all nodes that have exactly one child. Modifies the tree
+        inplace.
+        """
+        pass
+
+    def relabel_nodes(self, relabel_map: Dict[str, str]):
+        """Relabels the nodes in the tree.
+
+        Renames the nodes in the tree according to the relabeling map. Modifies
+        the tree inplace.
+
+        Args:
+            relabel_map: A mapping of old names to new names.
+        """
+        pass
+
+    def colless_index(self) -> float:
+        """Returns the colless balance index of the tree.
+
+        Returns:
+            The colless index.
+        """
+        pass
+
