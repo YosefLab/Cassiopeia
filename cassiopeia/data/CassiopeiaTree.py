@@ -17,7 +17,7 @@ analysis module, like a branch length estimator or rate matrix estimator
 import ete3
 import networkx as nx
 import pandas as pd
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from cassiopeia.data import utilities
 
@@ -64,7 +64,7 @@ class CassiopeiaTree:
 
     def __init__(
         self,
-        character_matrix: Optional[pd.DataFrame] = None,
+        character_matrix: pd.DataFrame,
         cell_meta: Optional[pd.DataFrame] = None,
         character_meta: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
@@ -85,7 +85,7 @@ class CassiopeiaTree:
             self.__network = utilities.ete3_to_networkx(tree)
 
     @property
-    def n_cells(self) -> int:
+    def n_cell(self) -> int:
         """Returns number of cells in character matrix.
         """
         return self.character_matrix.shape[0]
@@ -116,7 +116,7 @@ class CassiopeiaTree:
 
     @property
     def internal_nodes(self) -> List[str]:
-        """Returns internal nodes in tree.
+        """Returns internal nodes in tree (including the root).
         """
         if self.__network is None:
             return None
@@ -124,7 +124,6 @@ class CassiopeiaTree:
             n
             for n in self.__network
             if self.__network.out_degree(n) > 1
-            and self.__network.in_degree(n) > 0
         ]
 
     @property
@@ -148,8 +147,14 @@ class CassiopeiaTree:
         """
         pass
 
-    def children(self, node: str):
+    def children(self, node: str) -> List[str]:
         """Gets the children of a given node.
+
+        Args:
+            node: A node in the tree.
+
+        Returns:
+            A list of nodes that are direct children of the input node.
         """
         pass
 

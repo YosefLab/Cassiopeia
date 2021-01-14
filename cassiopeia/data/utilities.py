@@ -30,8 +30,8 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     """
 
     g = nx.DiGraph()
-    internal_node_iter = 1
-    for n in t.traverse():
+    internal_node_iter = 0
+    for n in tree.traverse():
 
         if n.is_root():
             if n.name == "":
