@@ -47,6 +47,11 @@ class CassiopeiaTree:
     of states. These are good statistics to have for feature selection.
 
     TODO(mattjones315): Add experimental meta data as arguments.
+    TODO(mattjones315): Add functionality that mutates the underlying tree
+        structure: pruning lineages, collapsing mutationless edges, and
+        collapsing unifurcations
+    TODO(mattjones315): Add utility methods to compute the colless index
+        and the cophenetic correlation wrt to some cell meta item
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -130,6 +135,14 @@ class CassiopeiaTree:
             return None
         return [n for n in self.__network]
 
+    @property
+    def edges(self) -> List[Tuple[str, str]]:
+        """Returns all edges in the tree.
+        """
+        if self.__network is None:
+            return None
+        return [(u, v) for (u,v) in self.__network.edges]
+
     def reconstruct_ancestral_characters(self):
         """Reconstruct ancestral character states
         """
@@ -211,18 +224,6 @@ class CassiopeiaTree:
         """
         pass
 
-    def cophenetic_correlation(self) -> float:
-        """Computes cophenetic correlation.
-
-        Compares the character-state distances with the tree tree distances
-        to compute the cophenetic correlation as a measure of agreement between
-        the two distances.
-
-        Returns:
-            The cophenetic correlation
-        """
-        pass
-
     def get_mutations_along_edge(self, parent: str, child: str) -> List[Tuple[int, int]]:
         """Gets the mutations along an edge of interest.
 
@@ -239,35 +240,6 @@ class CassiopeiaTree:
         """
         pass
 
-    def prune(self, leaves: List[str]):
-        """Subsets the tree to keep the specified leaves.
-
-        Removes away any leaf that is not in the list specified and prunes
-        back lineages not related to the leaves left over. Operates on the
-        tree in place. 
-
-
-        Args:
-            leaves: leaves to keep in the tree.
-        """
-        pass
-
-    def collapse_mutationless_edges(self):
-        """Collapses edges in the tree that have no mutations.
-
-        Removes edges in the tree that have no mutations along them. Does not
-        remove edges that lead directly to a leaf. Modifies the tree inplace.
-        """
-        pass
-
-    def collapse_unifurcations(self):
-        """Collapses unifurcations in the tree.
-
-        Removes all nodes that have exactly one child. Modifies the tree
-        inplace.
-        """
-        pass
-
     def relabel_nodes(self, relabel_map: Dict[str, str]):
         """Relabels the nodes in the tree.
 
@@ -278,12 +250,3 @@ class CassiopeiaTree:
             relabel_map: A mapping of old names to new names.
         """
         pass
-
-    def colless_index(self) -> float:
-        """Returns the colless balance index of the tree.
-
-        Returns:
-            The colless index.
-        """
-        pass
-
