@@ -22,6 +22,10 @@ from typing import Dict, List, Optional, Tuple, Union
 from cassiopeia.data import utilities
 
 
+class CassiopeiaTreeError(Exception):
+    """An Exception class for the CassiopeiaTree class."""
+    pass
+
 class CassiopeiaTree:
     """Basic tree object for Cassiopeia.
 
@@ -77,6 +81,10 @@ class CassiopeiaTree:
         self.priors = priors
         self.__network = None
 
+        self.populate_tree(tree)
+
+    def populate_tree(self, tree: Union[str, ete3.Tree, nx.DiGraph]):
+
         if isinstance(tree, nx.DiGraph):
             self.__network = tree
         if isinstance(tree, str):
@@ -84,12 +92,22 @@ class CassiopeiaTree:
         if isinstance(tree, ete3.Tree):
             self.__network = utilities.ete3_to_networkx(tree)
 
-        # instantiate character states
-        for n in self.nodes:
-            if n in self.character_matrix.index.values:
-                self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
-            else:
-                self.__network.nodes[n]['character_states'] = []
+        if self.__network is not None:
+
+            # add character states
+            for n in self.nodes:
+                if n in self.character_matrix.index.values:
+                    self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
+                else:
+                    self.__network.nodes[n]['character_states'] = []
+
+            # instantiate node ages
+            for n in self.nodes:
+                self.__network.nodes[n]['age'] = 0
+            
+            # instantiate branch lengths
+            for u,v in self.edges:
+                self.__network[u][v]['length'] = 0
 
     @property
     def n_cell(self) -> int:
@@ -189,7 +207,7 @@ class CassiopeiaTree:
         """
         pass
 
-    def set_branch_length(self, parent: str, child: str, length: float) -> None:
+    def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
         """
         pass
@@ -199,15 +217,25 @@ class CassiopeiaTree:
         """
         pass
 
-    def set_state(self, node: str, character: int, state: int) -> None:
+    def set_state(self, node: str, character: int, state: int):
         """Sets the state of a single character for a node.
         """
-        pass
+        self.__network.nodes[node]['character_states'][character] = state
 
-    def set_states(self, node: str, states: List[int]) -> None:
+    def set_states(self, node: str, states: List[int]):
         """Sets all the states for a particular node.
+
+        Args:
+            node: Node in the tree
+            states: A list of states to add to the node.
+
+        Raises:
+            CassiopeiaTreeError if the character vector is the incorrect length.
         """
-        pass
+        if len(states) != self.n_character:
+            raise CassiopeiaTreeError("Input character vector is not the right length.")
+
+        self.__network.nodes[node]['character_states'] = states
 
     def get_state(self, node: str, character: int) -> int:
         """Gets the state of a single character for a particular node.

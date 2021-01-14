@@ -164,7 +164,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertListEqual(obs_children, expected_children)
 
         obs_children = tree.children("node5")
-        self.assertEquals(len(obs_children), 0)
+        self.assertEqual(len(obs_children), 0)
 
     def test_character_state_assignments_at_leaves(self):
         
@@ -178,7 +178,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
 
         obs_state = tree.get_state("node3", 0)
-        self.assertEquals(obs_state, 0)
+        self.assertEqual(obs_state, 0)
 
         obs_states = tree.get_states("node0")
         self.assertListEqual(obs_states, [])
@@ -195,6 +195,19 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(tree.is_leaf("node5"))
         self.assertFalse(tree.is_leaf("node10"))
 
+    def test_set_states(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        self.assertListEqual(tree.get_states('node5'), [2, 2, 2])
+
+        tree.set_state('node5', 2, 5)
+        self.assertListEqual(tree.get_states('node5'), [2,2,5])
+
+        tree.set_states("node5", [1,100, 2])
+        self.assertListEqual(tree.get_states('node5'), [1, 100, 2])
 
 
 if __name__ == "__main__":
