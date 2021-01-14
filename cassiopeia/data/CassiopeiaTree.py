@@ -84,6 +84,13 @@ class CassiopeiaTree:
         if isinstance(tree, ete3.Tree):
             self.__network = utilities.ete3_to_networkx(tree)
 
+        # instantiate character states
+        for n in self.nodes:
+            if n in self.character_matrix.index.values:
+                self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
+            else:
+                self.__network.nodes[n]['character_states'] = []
+
     @property
     def n_cell(self) -> int:
         """Returns number of cells in character matrix.
@@ -142,8 +149,22 @@ class CassiopeiaTree:
             return None
         return [(u, v) for (u,v) in self.__network.edges]
 
+    def is_leaf(self, node: str) -> bool:
+        """Returns whether or not the node is a leaf.
+        """
+        return (node in self.leaves)
+
+    def is_root(self, node: str) -> bool:
+        """Returns whether or not the node is the root.
+        """
+        return (node == self.root)
+
     def reconstruct_ancestral_characters(self):
-        """Reconstruct ancestral character states
+        """Reconstruct ancestral character states.
+
+        Reconstructs ancestral states (i.e., those character states in the
+        internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
+        irreversibility). Operates on the tree in place.
         """
         pass
 
@@ -156,7 +177,7 @@ class CassiopeiaTree:
         Returns:
             A list of nodes that are direct children of the input node.
         """
-        pass
+        return [v for v in self.__network.successors(node)]
 
     def set_age(self, node: str, age: float) -> None:
         """Sets the age of a node.
@@ -190,13 +211,26 @@ class CassiopeiaTree:
 
     def get_state(self, node: str, character: int) -> int:
         """Gets the state of a single character for a particular node.
+
+        Args:
+            node: Node in the tree.
+            character: Index of character, 0 indexed.
+
+        Returns:
+            The character state at the specified position.
         """
-        pass
+        return self.__network.nodes[node]['character_states'][character]
 
     def get_states(self, node: str) -> List[int]:
         """Gets all the character states for a particular node.
+
+        Args:
+            node: Node in the tree.
+
+        Returns:
+            The full character state array of the specified node.
         """
-        pass
+        return self.__network.nodes[node]['character_states']
 
     def depth_first_traverse_nodes(self, postorder: bool = True):
         """Depth first traversal of the tree.
