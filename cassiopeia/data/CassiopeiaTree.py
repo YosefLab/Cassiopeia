@@ -260,21 +260,39 @@ class CassiopeiaTree:
         """
         return self.__network.nodes[node]['character_states']
 
-    def depth_first_traverse_nodes(self, postorder: bool = True):
+    def depth_first_traverse_nodes(self, source: Optional[int] = None, postorder: bool = True) -> List[str]:
         """Depth first traversal of the tree.
 
         Returns the nodes from a DFS on the tree.
 
         Args:
+            source: Where to begin the depth first traversal.
             postorder: Return the nodes in postorder. If False, returns in 
                 preorder.
+
+        Returns:
+            A list of nodes from the depth first traversal.
         """
-        pass
+
+        if source is None:
+            source = self.root
+
+        if postorder:
+            return [n for n in nx.dfs_postorder_nodes(self.__network, source=source)]
+        else:
+            return [n for n in nx.dfs_preorder_nodes(self.__network, source=source)]
 
     def leaves_in_subtree(self, node) -> List[str]:
         """Get leaves in subtree below a given node.
+
+        Args:
+            node: Root of the subtree.
+
+        Returns:
+            A list of the leaves in the subtree rooted at the specified node.
         """
-        pass
+        
+        return [n for n in self.depth_first_traverse_nodes(source = node) if self.__network.out_degree(n) == 0]
 
     def get_newick(self) -> str:
         """Returns newick format of tree.

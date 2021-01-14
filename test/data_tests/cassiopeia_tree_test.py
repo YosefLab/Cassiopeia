@@ -161,7 +161,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         obs_children = tree.children("node14")
         expected_children = ["node15", "node16"]
-        self.assertListEqual(obs_children, expected_children)
+        self.assertCountEqual(obs_children, expected_children)
 
         obs_children = tree.children("node5")
         self.assertEqual(len(obs_children), 0)
@@ -174,14 +174,14 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         obs_states = tree.get_states("node5")
         expected_states = self.character_matrix.loc["node5"].to_list()
-        self.assertListEqual(obs_states, expected_states)
+        self.assertCountEqual(obs_states, expected_states)
 
 
         obs_state = tree.get_state("node3", 0)
         self.assertEqual(obs_state, 0)
 
         obs_states = tree.get_states("node0")
-        self.assertListEqual(obs_states, [])
+        self.assertCountEqual(obs_states, [])
 
     def test_root_and_leaf_indicators(self):
 
@@ -201,13 +201,44 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        self.assertListEqual(tree.get_states('node5'), [2, 2, 2])
+        self.assertCountEqual(tree.get_states('node5'), [2, 2, 2])
 
         tree.set_state('node5', 2, 5)
-        self.assertListEqual(tree.get_states('node5'), [2,2,5])
+        self.assertCountEqual(tree.get_states('node5'), [2,2,5])
 
         tree.set_states("node5", [1,100, 2])
-        self.assertListEqual(tree.get_states('node5'), [1, 100, 2])
+        self.assertCountEqual(tree.get_states('node5'), [1, 100, 2])
+
+    def test_depth_first_traversal(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        obs_ordering = tree.depth_first_traverse_nodes(source='node0', postorder=True)
+        expected_ordering = ['node3', 'node7', 'node9', 'node11', 'node13', 'node15', 'node17', 'node18', 'node16', 'node14', 'node12', 'node10', 'node8', 'node4', 'node1', 'node5', 'node6', 'node2', 'node0']
+        self.assertCountEqual(obs_ordering, expected_ordering)
+
+        obs_ordering = tree.depth_first_traverse_nodes(source='node14', postorder=True)
+        expected_ordering = ['node15', 'node17', 'node18', 'node16', 'node14']
+        self.assertCountEqual(obs_ordering, expected_ordering)
+
+        obs_ordering = tree.depth_first_traverse_nodes(source='node0', postorder=False)
+        expected_ordering = ['node0', 'node1', 'node3', 'node4', 'node7', 'node8', 'node9', 'node10', 'node11', 'node12', 'node13', 'node14', 'node15', 'node16', 'node17', 'node18', 'node2', 'node5', 'node6']
+        self.assertCountEqual(obs_ordering, expected_ordering)
+
+    def test_get_leaves_in_subtree(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        obs_leaves = tree.leaves_in_subtree("node0")
+        self.assertCountEqual(obs_leaves, tree.leaves)
+
+        obs_leaves = tree.leaves_in_subtree("node14")
+        expected_leaves = ['node15', 'node17', 'node18']
+        self.assertCountEqual(obs_leaves, expected_leaves)
 
 
 if __name__ == "__main__":
