@@ -13,6 +13,8 @@ from . import utils
 
 class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     r"""
+    TODO: Update to match my technical write-up.
+
     Same model as IIDExponentialBLE but computes the posterior mean instead
     of the MLE. The phylogeny model is chosen to be a birth process.
 
@@ -146,8 +148,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r"""
         TODO: Rename this _up?
         log P(X_up(b(v)), T_up(b(v)), t \in t_b(v), X_b(v)(t) = x)
+        TODO: Update to match my technical write-up.
         """
-        if (v, t, x) in self.up_cache:
+        if (v, t, x) in self.up_cache:  # TODO: Use arrays
             # TODO: Use a decorator instead of a hand-made cache
             return self.up_cache[(v, t, x)]
         # Pull out params
@@ -204,6 +207,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r"""
         TODO: Rename this _down?
         log P(X_down(v), T_down(v) | t_v = t, X_v = x)
+        TODO: Update to match my technical write-up.
         """
         if (v, t, x) in self.down_cache:
             # TODO: Use a decorator instead of a hand-made cache

@@ -35,9 +35,6 @@ class Tree:
         tree = self.tree
         return [n for n in tree if n != self.root() and n not in self.leaves()]
 
-    def non_root_nodes(self) -> List[int]:
-        return self.leaves() + self.internal_nodes()
-
     def nodes(self):
         tree = self.tree
         return list(tree.nodes())
@@ -247,15 +244,6 @@ class Tree:
                 parent, child, self.get_age(parent) - self.get_age(child)
             )
 
-    def length(self) -> float:
-        r"""
-        Total length of the tree
-        """
-        res = 0
-        for (parent, child) in self.edges():
-            res += self.get_edge_length(parent, child)
-        return res
-
     def num_ancestors(self, node: int) -> int:
         r"""
         Number of ancestors of a node. Terribly inefficient implementation.
@@ -277,9 +265,6 @@ class Tree:
 
     def num_uncut(self, v):
         return self.get_state(v).count("0")
-
-    def num_cut(self, v):
-        return self.get_state(v).count("1")
 
     def depth(self) -> int:
         r"""
@@ -303,3 +288,19 @@ class Tree:
         for node in self.nodes():
             self.set_age(node, factor * self.get_age(node))
         self.set_edge_lengths_from_node_ages()
+
+    def __str__(self):
+        def node_str(p, v):
+            res = ""
+            if p is not None:
+                res += f"({self.number_of_mutations_along_edge(p, v)})"
+            res += self.get_state(v)
+            return res
+
+        def dfs(p, v, depth) -> List[str]:
+            res = ["\t" * depth + node_str(p, v) + "\n"]
+            for c in self.children(v):
+                res += dfs(v, c, depth + 1)
+            return res
+
+        return "".join(dfs(None, self.root(), 0))

@@ -176,3 +176,13 @@ def test_depth():
     tree.add_edges_from([(0, 1), (0, 2), (0, 3), (2, 4)])
     tree = Tree(tree)
     assert tree.depth() == 2
+
+
+def test_str():
+    tree = nx.DiGraph()
+    tree.add_nodes_from([0, 1, 2, 3, 4])
+    tree.add_edges_from([(0, 1), (0, 2), (0, 3), (2, 4)])
+    tree = Tree(tree)
+    tree.set_states([(0, "00"), (1, "01"), (2, "00"), (3, "10"), (4, "11")])
+    res = str(tree)
+    assert res == "00\n\t(1)01\n\t(0)00\n\t\t(2)11\n\t(1)10\n"
