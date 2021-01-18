@@ -16,6 +16,7 @@ analysis module, like a branch length estimator or rate matrix estimator
 """
 import ete3
 import networkx as nx
+import numpy as np
 import pandas as pd
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
@@ -118,14 +119,10 @@ class CassiopeiaTree:
 
         # instantiate node ages and edge depth
         self.__network.nodes[self.root]["age"] = 0
-        self.__network.nodes[self.root]["edge_depth"] = 0
         for u, v in self.depth_first_traverse_edges(source=self.root):
             self.__network.nodes[v]["age"] = (
                 self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
             )
-            self.__network.nodes[v]["edge_depth"] = self.__network.nodes[v][
-                "age"
-            ]
 
     @property
     def n_cell(self) -> int:
@@ -275,8 +272,14 @@ class CassiopeiaTree:
 
     def get_age(self, node: str) -> float:
         """Gets the age of a node.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+
+        return self.__network.nodes[node]['age']
 
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
@@ -285,8 +288,14 @@ class CassiopeiaTree:
 
     def get_branch_length(self, parent: str, child: str) -> float:
         """Gets the length of a branch.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        
+        return self.__network.nodes[child]['age'] - self.__network.nodes[parent]['age']
 
     def __set_character_states(self, node: str, states: List[int]):
         """Sets all the states for a particular node.
@@ -382,13 +391,33 @@ class CassiopeiaTree:
 
     def get_mean_depth_of_tree(self) -> float:
         """Computes mean depth of tree.
+
+        Returns the mean depth of the tree. If branch lengths have not been
+        estimated, depth is by default the number of edges in the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        
+        depths = [self.get_age(l) for l in self.leaves]
+        return np.mean(depths)
 
     def get_max_depth_of_tree(self) -> float:
         """Computes the max depth of the tree.
+
+        Returns the maximum depth of the tree. If branch lengths have not been
+        estimated, depth is by default the number of edges in the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        
+        depths = [self.get_age(l) for l in self.leaves]
+        return np.max(depths)
 
     def get_mutations_along_edge(
         self, parent: str, child: str

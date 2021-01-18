@@ -330,5 +330,17 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertRaises(CassiopeiaTreeError, tree.get_mutations_along_edge, 'node4', 'node6')
 
+    def test_depth_calculations_on_tree(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        mean_depth = tree.get_mean_depth_of_tree()
+        self.assertEqual(mean_depth, 4.7)
+
+        max_depth = tree.get_max_depth_of_tree()
+        self.assertEqual(max_depth, 8)
+
 if __name__ == "__main__":
     unittest.main()
