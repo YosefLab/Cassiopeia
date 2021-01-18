@@ -10,6 +10,7 @@ import networkx as nx
 
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Union
+from cassiopeia.data import utilities as data_utilities
 
 
 class InferAncestorError(Exception):
@@ -18,39 +19,6 @@ class InferAncestorError(Exception):
     """
 
     pass
-
-
-def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
-    """Builds the character vector of the LCA of a list of character vectors,
-    obeying Camin-Sokal Parsimony.
-
-    For each index in the reconstructed vector, imputes the non-missing
-    character if only one of the constituent vectors has a missing value at that
-    index, and imputes missing value if all have a missing value at that index.
-
-    Args:
-        vecs: A list of character vectors to generate an LCA for
-        missing_char: The character representing missing values
-
-    Returns:
-        A list representing the character vector of the LCA
-
-    """
-    k = len(vecs[0])
-    for i in vecs:
-        assert len(i) == k
-    lca_vec = [0] * len(vecs[0])
-    for i in range(k):
-        chars = set([vec[i] for vec in vecs])
-        if len(chars) == 1:
-            lca_vec[i] = list(chars)[0]
-        else:
-            if missing_char in chars:
-                chars.remove(missing_char)
-                if len(chars) == 1:
-                    lca_vec[i] = list(chars)[0]
-    return lca_vec
-
 
 def annotate_ancestral_characters(
     T: nx.DiGraph,
@@ -81,10 +49,9 @@ def annotate_ancestral_characters(
     for i in T.successors(node):
         annotate_ancestral_characters(T, i, node_to_characters, missing_char)
         vecs.append(node_to_characters[i])
-    lca_characters = get_lca_characters(vecs, missing_char)
+    lca_characters = data_utilities.get_lca_characters(vecs, missing_char)
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
-
 
 def collapse_edges(
     T: nx.DiGraph,

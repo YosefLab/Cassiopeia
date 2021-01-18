@@ -24,7 +24,9 @@ from cassiopeia.data import utilities
 
 class CassiopeiaTreeError(Exception):
     """An Exception class for the CassiopeiaTree class."""
+
     pass
+
 
 class CassiopeiaTree:
     """Basic tree object for Cassiopeia.
@@ -59,6 +61,8 @@ class CassiopeiaTree:
 
     Args:
         character_matrix: The character matrix for the lineage.
+        missing_state_indicator: An indicator for missing states in the
+            character matrix.
         cell_meta: Per-cell meta data
         character_meta: Per-character meta data
         priors: A dictionary storing the probability of a character mutating
@@ -69,13 +73,15 @@ class CassiopeiaTree:
     def __init__(
         self,
         character_matrix: pd.DataFrame,
+        missing_state_indicator: int = -1,
         cell_meta: Optional[pd.DataFrame] = None,
         character_meta: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None
+        tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
     ):
 
         self.character_matrix = character_matrix
+        self.missing_state_indicator = missing_state_indicator
         self.cell_meta = cell_meta
         self.character_meta = character_meta
         self.priors = priors
@@ -88,33 +94,38 @@ class CassiopeiaTree:
 
         if isinstance(tree, nx.DiGraph):
             self.__network = tree
-        if isinstance(tree, str):
+        elif isinstance(tree, str):
             self.__network = utilities.newick_to_networkx(tree)
-        if isinstance(tree, ete3.Tree):
+        elif isinstance(tree, ete3.Tree):
             self.__network = utilities.ete3_to_networkx(tree)
-
         else:
-            raise CassiopeiaTreeError("Please pass an ete3 Tree, a newick string, or a Networkx object.")
-
+            raise CassiopeiaTreeError(
+                "Please pass an ete3 Tree, a newick string, or a Networkx object."
+            )
 
         # add character states
         for n in self.nodes:
             if n in self.character_matrix.index.values:
-                self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
+                self.__network.nodes[n][
+                    "character_states"
+                ] = self.character_matrix.loc[n].to_list()
             else:
-                self.__network.nodes[n]['character_states'] = []
-        
+                self.__network.nodes[n]["character_states"] = []
+
         # instantiate branch lengths
-        for u,v in self.edges:
-            self.__network[u][v]['length'] = 1
+        for u, v in self.edges:
+            self.__network[u][v]["length"] = 1
 
         # instantiate node ages and edge depth
-        self.__network.nodes[self.root]['age'] = 0
-        self.__network.nodes[self.root]['edge_depth'] = 0
-        for u,v in self.depth_first_traverse_edges(source=self.root):
-            self.__network.nodes[v]['age'] = self.__network.nodes[u]['age'] + self.__network[u][v]['length']
-            self.__network.nodes[v]['edge_depth'] = self.__network.nodes[v]['age']
-            
+        self.__network.nodes[self.root]["age"] = 0
+        self.__network.nodes[self.root]["edge_depth"] = 0
+        for u, v in self.depth_first_traverse_edges(source=self.root):
+            self.__network.nodes[v]["age"] = (
+                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            )
+            self.__network.nodes[v]["edge_depth"] = self.__network.nodes[v][
+                "age"
+            ]
 
     @property
     def n_cell(self) -> int:
@@ -170,11 +181,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [
-            n
-            for n in self.__network
-            if self.__network.out_degree(n) > 1
-        ]
+        return [n for n in self.__network if self.__network.out_degree(n) > 1]
 
     @property
     def nodes(self) -> List[str]:
@@ -202,7 +209,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [(u, v) for (u,v) in self.__network.edges]
+        return [(u, v) for (u, v) in self.__network.edges]
 
     def is_leaf(self, node: str) -> bool:
         """Returns whether or not the node is a leaf.
@@ -215,7 +222,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return (self.__network.out_degree(node) == 0)
+        return self.__network.out_degree(node) == 0
 
     def is_root(self, node: str) -> bool:
         """Returns whether or not the node is the root.
@@ -228,7 +235,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return (node == self.root)
+        return node == self.root
 
     def reconstruct_ancestral_characters(self):
         """Reconstruct ancestral character states.
@@ -237,7 +244,18 @@ class CassiopeiaTree:
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+
+        for n in self.depth_first_traverse_nodes(postorder=True):
+            if self.is_leaf(n):
+                continue
+            children = self.children(n)
+            character_states = [self.get_character_states(c) for c in children]
+            reconstructed = utilities.get_lca_characters(
+                character_states, self.missing_state_indicator
+            )
+            self.__set_character_states(n, reconstructed)
 
     def children(self, node: str) -> List[str]:
         """Gets the children of a given node.
@@ -270,12 +288,7 @@ class CassiopeiaTree:
         """
         pass
 
-    def set_state(self, node: str, character: int, state: int):
-        """Sets the state of a single character for a node.
-        """
-        self.__network.nodes[node]['character_states'][character] = state
-
-    def set_states(self, node: str, states: List[int]):
+    def __set_character_states(self, node: str, states: List[int]):
         """Sets all the states for a particular node.
 
         Args:
@@ -286,9 +299,11 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the character vector is the incorrect length.
         """
         if len(states) != self.n_character:
-            raise CassiopeiaTreeError("Input character vector is not the right length.")
+            raise CassiopeiaTreeError(
+                "Input character vector is not the right length."
+            )
 
-        self.__network.nodes[node]['character_states'] = states
+        self.__network.nodes[node]["character_states"] = states
 
     def get_state(self, node: str, character: int) -> int:
         """Gets the state of a single character for a particular node.
@@ -300,9 +315,9 @@ class CassiopeiaTree:
         Returns:
             The character state at the specified position.
         """
-        return self.__network.nodes[node]['character_states'][character]
+        return self.__network.nodes[node]["character_states"][character]
 
-    def get_states(self, node: str) -> List[int]:
+    def get_character_states(self, node: str) -> List[int]:
         """Gets all the character states for a particular node.
 
         Args:
@@ -311,9 +326,11 @@ class CassiopeiaTree:
         Returns:
             The full character state array of the specified node.
         """
-        return self.__network.nodes[node]['character_states']
+        return self.__network.nodes[node]["character_states"]
 
-    def depth_first_traverse_nodes(self, source: Optional[int] = None, postorder: bool = True) -> Iterator[str]:
+    def depth_first_traverse_nodes(
+        self, source: Optional[int] = None, postorder: bool = True
+    ) -> Iterator[str]:
         """Nodes from depth first traversal of the tree.
 
         Returns the nodes from a DFS on the tree.
@@ -335,7 +352,9 @@ class CassiopeiaTree:
         else:
             return nx.dfs_preorder_nodes(self.__network, source=source)
 
-    def depth_first_traverse_edges(self, source: Optional[int] = None) -> Iterator[Tuple[str, str]]:
+    def depth_first_traverse_edges(
+        self, source: Optional[int] = None
+    ) -> Iterator[Tuple[str, str]]:
         """Edges from depth first traversal of the tree.
 
         Returns the edges from a DFS on the tree.
@@ -361,8 +380,12 @@ class CassiopeiaTree:
         Returns:
             A list of the leaves in the subtree rooted at the specified node.
         """
-        
-        return [n for n in self.depth_first_traverse_nodes(source = node) if self.__network.out_degree(n) == 0]
+
+        return [
+            n
+            for n in self.depth_first_traverse_nodes(source=node)
+            if self.__network.out_degree(n) == 0
+        ]
 
     def get_newick(self) -> str:
         """Returns newick format of tree.
@@ -379,7 +402,9 @@ class CassiopeiaTree:
         """
         pass
 
-    def get_mutations_along_edge(self, parent: str, child: str) -> List[Tuple[int, int]]:
+    def get_mutations_along_edge(
+        self, parent: str, child: str
+    ) -> List[Tuple[int, int]]:
         """Gets the mutations along an edge of interest.
 
         Returns a list of tuples (character, state) of mutations that occur

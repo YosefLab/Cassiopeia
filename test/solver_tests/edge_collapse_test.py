@@ -9,6 +9,7 @@ import networkx as nx
 import pandas as pd
 
 import cassiopeia as cas
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import solver_utilities
 
 
@@ -55,7 +56,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, -1, -1, 3, -1],
             [1, 2, 3, 2, -1],
         ]
-        ret_vec = solver_utilities.get_lca_characters(vecs, missing_char=-1)
+        ret_vec = data_utilities.get_lca_characters(vecs, missing_char=-1)
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test1(self):
