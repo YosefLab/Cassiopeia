@@ -305,18 +305,6 @@ class CassiopeiaTree:
 
         self.__network.nodes[node]["character_states"] = states
 
-    def get_state(self, node: str, character: int) -> int:
-        """Gets the state of a single character for a particular node.
-
-        Args:
-            node: Node in the tree.
-            character: Index of character, 0 indexed.
-
-        Returns:
-            The character state at the specified position.
-        """
-        return self.__network.nodes[node]["character_states"][character]
-
     def get_character_states(self, node: str) -> List[int]:
         """Gets all the character states for a particular node.
 
