@@ -127,9 +127,15 @@ class CassiopeiaTree:
     @property
     def root(self) -> str:
         """Returns root of tree.
+
+        Returns:
+            The root.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         if self.__network is None:
-            return None
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [n for n in self.__network if self.__network.in_degree(n) == 0][
             0
         ]
@@ -137,17 +143,29 @@ class CassiopeiaTree:
     @property
     def leaves(self) -> List[str]:
         """Returns leaves of tree.
+
+        Returns:
+            The leaves of the tree.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         if self.__network is None:
-            return None
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [n for n in self.__network if self.__network.out_degree(n) == 0]
 
     @property
     def internal_nodes(self) -> List[str]:
         """Returns internal nodes in tree (including the root).
+
+        Returns:
+            The internal nodes of the tree (i.e. all nodes not at the leaves)
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         if self.__network is None:
-            return None
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [
             n
             for n in self.__network
@@ -157,27 +175,55 @@ class CassiopeiaTree:
     @property
     def nodes(self) -> List[str]:
         """Returns all nodes in tree.
+
+        Returns:
+            All nodes of the tree (internal + leaves)
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         if self.__network is None:
-            return None
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [n for n in self.__network]
 
     @property
     def edges(self) -> List[Tuple[str, str]]:
         """Returns all edges in the tree.
+
+        Returns:
+            All edges of the tree.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         if self.__network is None:
-            return None
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [(u, v) for (u,v) in self.__network.edges]
 
     def is_leaf(self, node: str) -> bool:
         """Returns whether or not the node is a leaf.
+
+        Returns:
+            Whether or not the node is a leaf.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
-        return (node in self.leaves)
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        return (self.__network.out_degree(node) == 0)
 
     def is_root(self, node: str) -> bool:
         """Returns whether or not the node is the root.
+
+        Returns:
+            Whether or not the node is the root.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return (node == self.root)
 
     def reconstruct_ancestral_characters(self):
