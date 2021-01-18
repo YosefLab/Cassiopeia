@@ -9,6 +9,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTreeError
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -313,6 +314,21 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertCountEqual(tree.get_character_states("node2"), [2, 0, 0, 0, 0, 0, 0, 0])
         self.assertCountEqual(tree.get_character_states("node10"), [1, 1, 1, 1, 0, 0, 0, 0])
 
+    def test_get_mutations_along_edge(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        tree.reconstruct_ancestral_characters()
+
+        edge_of_interest = ('node4', 'node8')
+        expected_mutations = [(3, 1)]
+        observed_mutations = tree.get_mutations_along_edge('node4', 'node8')
+
+        self.assertCountEqual(expected_mutations, observed_mutations)
+
+        self.assertRaises(CassiopeiaTreeError, tree.get_mutations_along_edge, 'node4', 'node6')
 
 if __name__ == "__main__":
     unittest.main()

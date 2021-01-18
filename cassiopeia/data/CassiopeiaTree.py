@@ -396,7 +396,7 @@ class CassiopeiaTree:
         """Gets the mutations along an edge of interest.
 
         Returns a list of tuples (character, state) of mutations that occur
-        along an edge.
+        along an edge. Characters are 1-indexed.
 
         Args:
             parent: parent in tree
@@ -405,8 +405,26 @@ class CassiopeiaTree:
         Returns:
             A list of (character, state) tuples indicating which character
                 mutated and to which state.
+
+        Raises:
+            CassipeiaTreeError if the edge does not exist or if the tree is 
+                not initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+
+        if (parent, child) not in self.edges:
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        parent_states = self.get_character_states(parent)
+        child_states = self.get_character_states(child)
+        
+        mutations = []
+        for i in range(self.n_character):
+            if parent_states[i] == 0 and child_states[i] != 0:
+                mutations.append((i+1, child_states[i]))
+
+        return mutations
 
     def relabel_nodes(self, relabel_map: Dict[str, str]):
         """Relabels the nodes in the tree.
