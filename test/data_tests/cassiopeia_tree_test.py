@@ -1,5 +1,5 @@
 """
-Tests for the CassiopeiTree object in the data module.
+Tests for the CassiopeiaTree object in the data module.
 """
 import unittest
 

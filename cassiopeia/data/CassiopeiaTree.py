@@ -81,7 +81,8 @@ class CassiopeiaTree:
         self.priors = priors
         self.__network = None
 
-        self.populate_tree(tree)
+        if tree is not None:
+            self.populate_tree(tree)
 
     def populate_tree(self, tree: Union[str, ete3.Tree, nx.DiGraph]):
 
@@ -92,25 +93,28 @@ class CassiopeiaTree:
         if isinstance(tree, ete3.Tree):
             self.__network = utilities.ete3_to_networkx(tree)
 
-        if self.__network is not None:
+        else:
+            raise CassiopeiaTreeError("Please pass an ete3 Tree, a newick string, or a Networkx object.")
 
-            # add character states
-            for n in self.nodes:
-                if n in self.character_matrix.index.values:
-                    self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
-                else:
-                    self.__network.nodes[n]['character_states'] = []
+
+        # add character states
+        for n in self.nodes:
+            if n in self.character_matrix.index.values:
+                self.__network.nodes[n]['character_states'] = self.character_matrix.loc[n].to_list()
+            else:
+                self.__network.nodes[n]['character_states'] = []
+        
+        # instantiate branch lengths
+        for u,v in self.edges:
+            self.__network[u][v]['length'] = 1
+
+        # instantiate node ages and edge depth
+        self.__network.nodes[self.root]['age'] = 0
+        self.__network.nodes[self.root]['edge_depth'] = 0
+        for u,v in self.depth_first_traverse_edges(source=self.root):
+            self.__network.nodes[v]['age'] = self.__network.nodes[u]['age'] + self.__network[u][v]['length']
+            self.__network.nodes[v]['edge_depth'] = self.__network.nodes[v]['age']
             
-            # instantiate branch lengths
-            for u,v in self.edges:
-                self.__network[u][v]['length'] = 1
-
-            # instantiate node ages and edge depth
-            self.__network.nodes[self.root]['age'] = 0
-            self.__network.nodes[self.root]['edge_depth'] = 0
-            for u,v in self.depth_first_traverse_edges(source=self.root):
-                self.__network.nodes[v]['age'] = self.__network.nodes[u]['age'] + self.__network[u][v]['length']
-                self.__network.nodes[v]['edge_depth'] = self.__network.nodes[v]['age']
 
     @property
     def n_cell(self) -> int:
