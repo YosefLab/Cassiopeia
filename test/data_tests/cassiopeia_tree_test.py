@@ -342,5 +342,23 @@ class TestCassiopeiaTree(unittest.TestCase):
         max_depth = tree.get_max_depth_of_tree()
         self.assertEqual(max_depth, 8)
 
+    def test_relabel_nodes_in_network(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        relabel_map = {"node0": 'root', 'node1': 'child1', 'node2': 'child2'}
+        tree.relabel_nodes(relabel_map)
+
+        self.assertIn('root', tree.nodes)
+        self.assertNotIn('node0', tree.nodes)
+
+        expected_children = ['child1', 'child2']
+        observed_children = tree.children('root')
+        self.assertCountEqual(expected_children, observed_children)
+
+        self.assertIn("node8", tree.nodes)
+
 if __name__ == "__main__":
     unittest.main()

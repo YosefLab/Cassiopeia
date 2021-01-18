@@ -463,5 +463,11 @@ class CassiopeiaTree:
 
         Args:
             relabel_map: A mapping of old names to new names.
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initalized.")
+
+        self.__network = nx.relabel_nodes(self.__network, relabel_map)
