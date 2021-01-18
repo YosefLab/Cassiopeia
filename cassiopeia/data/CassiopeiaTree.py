@@ -125,11 +125,11 @@ class CassiopeiaTree:
         for u, v in self.edges:
             self.__network[u][v]["length"] = 1
 
-        # instantiate node ages and edge depth
-        self.__network.nodes[self.root]["age"] = 0
+        # instantiate node time
+        self.__network.nodes[self.root]["time"] = 0
         for u, v in self.depth_first_traverse_edges(source=self.root):
-            self.__network.nodes[v]["age"] = (
-                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            self.__network.nodes[v]["time"] = (
+                self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
     def initialize_character_states_at_leaves(
@@ -412,48 +412,51 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Tree is not initialized.")
         return [v for v in self.__network.successors(node)]
 
-    def set_age(self, node: str, age: float) -> None:
-        """Sets the age of a node.
+    def set_time(self, node: str, new_time: float) -> None:
+        """Sets the time of a node.
 
         Importantly, this maintains consistency with the rest of the tree. In
         other words, setting the edge of a particular node will change the
-        ages of all the nodes below it. This is done by assuming that the 
-        branch lengths do not change; essentially all ages below the node of 
-        interest are adjusted relative to the new age. Importantly, we ajust
+        times of all the nodes below it. This is done by assuming that the 
+        branch lengths do not change; essentially all times below the node of 
+        interest are adjusted relative to the new time. Importantly, we ajust
         the edge _incident_ to the node - not the edge that leaves the node of
         interest. For more precise behavior regarding this, see
         `set_branch_length`.
 
         Args:
             node: Node in the tree
-            age: New age
+            new_time: New time for the node.
 
         Raises:
             CassiopeiaTreeError if the tree is not initialized or if the new
-                age is less than the age of the parent.
+                time is less than the time of the parent.
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized")
 
         parent = self.parent(node)
-        if age < self.get_age(parent):
+        if new_time < self.get_time(parent):
             raise CassiopeiaTreeError(
                 "New age is less than the age of the parent."
             )
 
-        self.__network.nodes[node]["age"] = age
+        self.__network.nodes[node]["time"] = new_time
 
         for (u, v) in self.depth_first_traverse_edges(source=node):
-            self.__network.nodes[v]["age"] = (
-                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            self.__network.nodes[v]["time"] = (
+                self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
-        self.__network[parent][node]["length"] = self.get_age(
+        self.__network[parent][node]["length"] = self.get_time(
             node
-        ) - self.get_age(parent)
+        ) - self.get_time(parent)
 
-    def get_age(self, node: str) -> float:
-        """Gets the age of a node.
+    def get_time(self, node: str) -> float:
+        """Gets the time of a node.
+
+        Returns the time of a node, defined as the sum of edge lengths from the
+        root to the node.
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
@@ -461,15 +464,15 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
-        return self.__network.nodes[node]["age"]
+        return self.__network.nodes[node]["time"]
 
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
 
         Adjusts the branch length of the specified parent-child relationship.
-        This procedure maintains the consistency with the rest of the ages in
+        This procedure maintains the consistency with the rest of the times in
         the tree. Namely, by changing the branch length here, it will change
-        the ages of all the nodes below the parent of interest, relative to the
+        the times of all the nodes below the parent of interest, relative to the
         difference between the old and new branch length.
 
         Args:
@@ -493,8 +496,8 @@ class CassiopeiaTree:
         self.__network[parent][child]["length"] = length
 
         for (u, v) in self.depth_first_traverse_edges(source=parent):
-            self.__network.nodes[v]["age"] = (
-                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            self.__network.nodes[v]["time"] = (
+                self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
     def get_branch_length(self, parent: str, child: str) -> float:
@@ -638,7 +641,7 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
-        depths = [self.get_age(l) for l in self.leaves]
+        depths = [self.get_time(l) for l in self.leaves]
         return np.mean(depths)
 
     def get_max_depth_of_tree(self) -> float:
@@ -653,7 +656,7 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
-        depths = [self.get_age(l) for l in self.leaves]
+        depths = [self.get_time(l) for l in self.leaves]
         return np.max(depths)
 
     def get_mutations_along_edge(
