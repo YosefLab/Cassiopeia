@@ -254,6 +254,23 @@ class CassiopeiaTree:
             )
             self.__set_character_states(n, reconstructed)
 
+    def parent(self, node: str) -> str:
+        """Gets the parent of a node.
+
+        Args:
+            node: A node in the tree
+
+        Returns:
+            The parent of the node.
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        
+        return [u for u in self.__network.predecessors(node)][0]
+
     def children(self, node: str) -> List[str]:
         """Gets the children of a given node.
 
@@ -262,13 +279,49 @@ class CassiopeiaTree:
 
         Returns:
             A list of nodes that are direct children of the input node.
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
         """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
         return [v for v in self.__network.successors(node)]
 
     def set_age(self, node: str, age: float) -> None:
         """Sets the age of a node.
+
+        Importantly, this maintains consistency with the rest of the tree. In
+        other words, setting the edge of a particular node will change the
+        ages of all the nodes below it. This is done by assuming that the 
+        branch lengths do not change; essentially all ages below the node of 
+        interest are adjusted relative to the new age. Importantly, we ajust
+        the edge _incident_ to the node - not the edge that leaves the node of
+        interest. For more precise behavior regarding this, see
+        `set_branch_length`.
+
+        Args:
+            node: Node in the tree
+            age: New age
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized or if the new
+                age is less than the age of the parent.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized")
+        
+        parent = self.parent(node)
+        if age < self.get_age(parent):
+            raise CassiopeiaTreeError("New age is less than the age of the parent.")
+
+        self.__network.nodes[node]["age"] = age
+
+        for (u, v) in self.depth_first_traverse_edges(source=node):
+            self.__network.nodes[v]["age"] = (
+                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            )
+
+        self.__network[parent][node]['length'] = self.get_age(node) - self.get_age(parent)
 
     def get_age(self, node: str) -> float:
         """Gets the age of a node.
@@ -279,23 +332,57 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
-        return self.__network.nodes[node]['age']
+        return self.__network.nodes[node]["age"]
 
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
+
+        Adjusts the branch length of the specified parent-child relationship.
+        This procedure maintains the consistency with the rest of the ages in
+        the tree. Namely, by changing the branch length here, it will change
+        the ages of all the nodes below the parent of interest, relative to the
+        difference between the old and new branch length.
+
+        Args:
+            parent: Parent node of the edge
+            child: Child node of the edge 
+            length: New edge length
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized, if the edge
+                does not exist, or if the edge length is negative.
         """
-        pass
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        
+        if child not in self.children(parent):
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        if length < 0:
+            raise CassiopeiaTreeError("Edge length must be positive.")
+
+        self.__network[parent][child]['length'] = length
+
+        for (u, v) in self.depth_first_traverse_edges(source=parent):
+            self.__network.nodes[v]["age"] = (
+                self.__network.nodes[u]["age"] + self.__network[u][v]["length"]
+            )
+
 
     def get_branch_length(self, parent: str, child: str) -> float:
         """Gets the length of a branch.
 
         Raises:
-            CassiopeiaTreeError if the tree has not been initialized.
+            CassiopeiaTreeError if the tree has not been initialized or if the
+                branch does not exist in the tree.
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        
-        return self.__network.nodes[child]['age'] - self.__network.nodes[parent]['age']
+
+        if child not in self.children(parent):
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        return self.__network[parent][child]["length"]
 
     def __set_character_states(self, node: str, states: List[int]):
         """Sets all the states for a particular node.
@@ -400,7 +487,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        
+
         depths = [self.get_age(l) for l in self.leaves]
         return np.mean(depths)
 
@@ -415,7 +502,7 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        
+
         depths = [self.get_age(l) for l in self.leaves]
         return np.max(depths)
 
@@ -442,16 +529,16 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
-        if (parent, child) not in self.edges:
+        if child not in self.children(parent):
             raise CassiopeiaTreeError("Edge does not exist.")
 
         parent_states = self.get_character_states(parent)
         child_states = self.get_character_states(child)
-        
+
         mutations = []
         for i in range(self.n_character):
             if parent_states[i] == 0 and child_states[i] != 0:
-                mutations.append((i+1, child_states[i]))
+                mutations.append((i + 1, child_states[i]))
 
         return mutations
 

@@ -360,5 +360,42 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertIn("node8", tree.nodes)
 
+    def test_change_age_of_node(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        self.assertEqual(tree.get_age('node16'), 7)
+        
+        tree.set_age('node16', 20)
+        self.assertEqual(tree.get_age("node16"), 20)
+        self.assertEqual(tree.get_age('node17'), 21)
+        self.assertEqual(tree.get_age('node18'), 21)
+
+        # make sure edges are adjusted accordingly
+        self.assertEqual(tree.get_branch_length('node14', 'node16'), 14)
+
+        self.assertRaises(CassiopeiaTreeError, tree.set_age, 'node14', 1)
+
+    def test_change_branch_length(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        self.assertEqual(tree.get_branch_length('node12', 'node14'), 1)
+
+        tree.set_branch_length('node12', 'node14', 0.5)
+
+        # make sure nodes affected have adjusted their edges
+        node_to_age = {'node14': 5.5, 'node15': 6.5, 'node16': 6.5, 'node17': 7.5, 'node18': 7.5}
+        for n in node_to_age:
+            self.assertEqual(node_to_age[n], tree.get_age(n))
+
+        self.assertRaises(CassiopeiaTreeError, tree.set_branch_length, 'node14', 'node6', 10.0)
+        self.assertRaises(CassiopeiaTreeError, tree.set_branch_length, 'node12', 'node14', -1)
+
+
 if __name__ == "__main__":
     unittest.main()
