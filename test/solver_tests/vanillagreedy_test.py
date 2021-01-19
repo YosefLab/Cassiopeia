@@ -23,10 +23,10 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
 
-        mut_freqs = vgsolver.compute_mutation_frequencies(
-            vgsolver.unique_character_matrix.index
-        )
-        left, right = vgsolver.perform_split(mut_freqs, list(range(6)))
+        # mut_freqs = vgsolver.compute_mutation_frequencies(
+        #     list(range(vgsolver.unique_character_matrix.shape[0]))
+        # )
+        left, right = vgsolver.perform_split(list(range(6)))
 
         self.assertListEqual(left, [3, 4, 5, 2])
         self.assertListEqual(right, [0, 1])

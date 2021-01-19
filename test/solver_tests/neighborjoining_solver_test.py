@@ -76,7 +76,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
+        delta_fn = lambda x, y, missing_state, w: np.sum(
+            [x[i] != y[i] for i in range(len(x))]
+        )
         self.nj_pp_solver = solver.NeighborJoiningSolver(
             cm, dissimilarity_function=delta_fn
         )
@@ -94,7 +96,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             orient="index",
             columns=["x1", "x2", "x3"],
         )
-        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
+        delta_fn = lambda x, y, missing_state, w: np.sum(
+            [x[i] != y[i] for i in range(len(x))]
+        )
         self.nj_duplicates_solver = solver.NeighborJoiningSolver(
             cm, dissimilarity_function=delta_fn
         )
@@ -120,7 +124,14 @@ class TestNeighborJoiningSolver(unittest.TestCase):
                 "state5": [2, 2, 3, 1, 2, 0],
             },
             orient="index",
-            columns=["state0", "state1", "state2", "state3", "state4", "state5"],
+            columns=[
+                "state0",
+                "state1",
+                "state2",
+                "state3",
+                "state4",
+                "state5",
+            ],
         )
 
         for i in expected_map.index:
@@ -243,6 +254,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         self.nj_pp_solver.solve()
         T = self.nj_pp_solver.tree
+        print(T.edges)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(

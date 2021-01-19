@@ -73,11 +73,11 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        cm = pd.DataFrame(table)
+        character_matrix = pd.DataFrame(table).to_numpy()
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
-            character_matrix=cm,
+            character_matrix=character_matrix,
             missing_char=-1,
         )
         new_map = {}
@@ -120,17 +120,18 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(5, 4)
         T.add_edge(6, 5)
         T.add_edge(6, 2)
+        T.add_edge(7, 6)
         table = [
             [1, 0, 3, 4, 5],
             [1, 0, 3, 3, -1],
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        cm = pd.DataFrame(table)
+        character_matrix = pd.DataFrame(table).to_numpy()
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
-            character_matrix=cm,
+            character_matrix=character_matrix,
             missing_char=-1,
         )
         new_map = {}
@@ -145,14 +146,14 @@ class TestCollapseEdges(unittest.TestCase):
             "1|0|3|3|-1,1",
             "1|2|3|0|-1,2",
             "1|0|3|0|-1,3",
-            "1|0|3|0|5,6",
+            "1|0|3|0|5,7",
         }
 
         expected_edges = {
-            ("1|0|3|0|5,6", "1|0|3|4|5,0"),
-            ("1|0|3|0|5,6", "1|0|3|3|-1,1"),
-            ("1|0|3|0|5,6", "1|2|3|0|-1,2"),
-            ("1|0|3|0|5,6", "1|0|3|0|-1,3"),
+            ("1|0|3|0|5,7", "1|0|3|4|5,0"),
+            ("1|0|3|0|5,7", "1|0|3|3|-1,1"),
+            ("1|0|3|0|5,7", "1|2|3|0|-1,2"),
+            ("1|0|3|0|5,7", "1|0|3|0|-1,3"),
         }
 
         for i in T:

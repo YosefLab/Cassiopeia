@@ -8,7 +8,10 @@ from typing import Dict, List, Optional
 
 
 def weighted_hamming_distance(
-    s1: List[int], s2: List[int], priors: Optional[Dict[int, Dict[int, float]]] = None, missing_state = -1,
+    s1: List[int],
+    s2: List[int],
+    missing_state=-1,
+    w: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
@@ -20,17 +23,19 @@ def weighted_hamming_distance(
     the probability of these states occurring. We normalize the dissimilarity
     by the number of non-missing characters shared by the two samples.
 
-    If priors are not given, then we increment dissimilarity by +2 if the states
+    If weights are not given, then we increment dissimilarity by +2 if the states
     are different, +1 if one state is uncut and the other is an indel, and +0 if
     the two states are identical.
 
     Args:
         s1: Character states of the first sample
         s2: Character states of the second sample
-        priors: A dictionary storing the state priors for each character. This
-            should be a nested dictionary where each key corresponds to character
-            that then indexes another dictionary storing the probability of each
-            observed state. (Character -> State -> Probability)
+        missing_char: The character representing missing values
+        w: A dictionary storing the state weights for each character, derived
+            from the state priors. This should be a nested dictionary where each
+            key corresponds to character that then indexes another dictionary
+            storing the weight of each observed state.
+            (Character -> State -> Weight)
 
     Returns:
         A dissimilarity score.
@@ -39,41 +44,39 @@ def weighted_hamming_distance(
     d = 0
     num_present = 0
     for i in range(len(s1)):
-        
+
         if s1[i] == missing_state or s2[i] == missing_state:
             continue
 
         num_present += 1
-        
-        if priors:
-            if s1[i] == s2[i] and (s1[i] != 0):
-                d += (2*np.log(priors[i][s1[i]]))
 
         if s1[i] != s2[i]:
             if s1[i] == 0 or s2[i] == 0:
-                if priors:
+                if w:
                     if s1[i] != 0:
-                        d -= np.log(priors[i][s1[i]])
+                        d += w[i][s1[i]]
                     else:
-                        d -= np.log(priors[i][s2[i]])
+                        d += w[i][s2[i]]
                 else:
                     d += 1
             else:
-                if priors:
-                    d -= (np.log(priors[i][s1[i]]) + np.log(
-                        priors[i][s2[i]]
-                    ))
+                if w:
+                    d += w[i][s1[i]] + w[i][s2[i]]
                 else:
                     d += 2
+        else:
+            if s1[i] != 0:
+                if w:
+                    d -= 2 * w[i][s1[i]]
 
     if num_present == 0:
         return 0
 
     return d / num_present
-    
+
 
 def hamming_similarity_without_missing(
-    s1: List[int], 
+    s1: List[int],
     s2: List[int],
     missing_char: int,
     w: Optional[Dict[int, Dict[int, float]]] = None,
@@ -98,11 +101,7 @@ def hamming_similarity_without_missing(
             [
                 1
                 for i in range(num_chars)
-                if s1[i] == s2[i]
-                and (
-                    s1[i] != 0
-                    and s1[i] != missing_char
-                )
+                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
             ]
         )
     else:
@@ -110,11 +109,7 @@ def hamming_similarity_without_missing(
             [
                 w[i][s1[i]]
                 for i in range(num_chars)
-                if s1[i] == s2[i]
-                and (
-                    s1[i] != 0
-                    and s1[i] != missing_char
-                )
+                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
             ]
         )
 
@@ -141,3 +136,79 @@ def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
             dist += 1
 
     return dist
+
+
+def negative_weighted_hamming_distance(
+    s1: List[int],
+    s2: List[int],
+    missing_char: int,
+    w: Optional[Dict[int, Dict[int, float]]] = None,
+) -> float:
+    """Computes the negative weighted hamming distance between samples.
+
+    Returns the negative value of the weighted_hamming_distance function above
+    as a similarity.
+
+    Args:
+        s1: Character states of the first sample
+        s2: Character states of the second sample
+        missing_char: The character representing missing values
+        w: A dictionary storing the state weights for each character, derived
+            from the state priors. This should be a nested dictionary where each
+            key corresponds to character that then indexes another dictionary
+            storing the weight of each observed state.
+            (Character -> State -> Weight)
+
+    Returns:
+        A similarity score.
+    """
+
+    return -1 * weighted_hamming_distance(s1, s2, missing_char, w)
+
+
+def weighted_hamming_similarity(
+    s1: List[int],
+    s2: List[int],
+    missing_char: int,
+    w: Optional[Dict[int, Dict[int, float]]] = None,
+) -> float:
+    """A function to return the weighted number of (non-missing) character/state
+    mutations shared by two samples.
+
+    Args:
+        s1: Character states of the first sample
+        s2: Character states of the second sample
+        missing_char: The character representing missing values
+        w: A set of optional weights to weight the similarity of a mutation
+
+    Returns:
+        The weighted number of shared mutations between two samples
+    """
+
+    d = 0
+    num_present = 0
+    for i in range(len(s1)):
+
+        if s1[i] == missing_char or s2[i] == missing_char:
+            continue
+
+        num_present += 1
+
+        if s1[i] == s2[i]:
+            if s1[i] != 0:
+                if w:
+                    d += 2 * w[i][s1[i]]
+                else:
+                    d += 2
+            else:
+                if not w:
+                    d += 1
+        else:
+            if s1[i] != 0 and s2[i] != 0:
+                if w:
+                    d -= w[i][s1[i]] - w[i][s2[i]]
+
+    if num_present == 0:
+        return 0
+
+    return d / num_present

@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 
 from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.solver import solver_utilities
 
 
 class TestDissimilarityFunctions(unittest.TestCase):
@@ -25,6 +26,10 @@ class TestDissimilarityFunctions(unittest.TestCase):
             5: {1: 0.1, 2: 0.05, 3: 0.85},
         }
 
+        self.weights = solver_utilities.transform_priors(
+            self.priors, lambda x: -np.log(x)
+        )
+
     def test_weighted_hamming_distance_identical(self):
 
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
@@ -42,9 +47,8 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 3 / 5)
 
     def test_weighted_hamming_distance_priors(self):
-
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s2, priors=self.priors
+            self.s1, self.s2, w=self.weights
         )
 
         expected_dissimilarity = np.sum(
@@ -61,7 +65,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
     def test_weighted_hamming_distance_all_missing(self):
 
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.all_missing, priors=self.priors
+            self.s1, self.all_missing, w=self.weights
         )
 
         self.assertEqual(dissimilarity, 0)

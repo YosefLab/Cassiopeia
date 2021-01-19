@@ -20,7 +20,9 @@ class InferAncestorError(Exception):
     pass
 
 
-def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
+def get_lca_characters(
+    vectors: List[List[int]], missing_char: int
+) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -29,19 +31,19 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
     index, and imputes missing value if all have a missing value at that index.
 
     Args:
-        vecs: A list of character vectors to generate an LCA for
+        vectors: A list of character vectors to generate an LCA for
         missing_char: The character representing missing values
 
     Returns:
         A list representing the character vector of the LCA
 
     """
-    k = len(vecs[0])
-    for i in vecs:
+    k = len(vectors[0])
+    for i in vectors:
         assert len(i) == k
-    lca_vec = [0] * len(vecs[0])
+    lca_vec = [0] * len(vectors[0])
     for i in range(k):
-        chars = set([vec[i] for vec in vecs])
+        chars = set([vec[i] for vec in vectors])
         if len(chars) == 1:
             lca_vec[i] = list(chars)[0]
         else:
@@ -54,8 +56,8 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
 
 def annotate_ancestral_characters(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
     missing_char: int,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
@@ -77,19 +79,19 @@ def annotate_ancestral_characters(
     """
     if T.out_degree(node) == 0:
         return
-    vecs = []
+    vectors = []
     for i in T.successors(node):
         annotate_ancestral_characters(T, i, node_to_characters, missing_char)
-        vecs.append(node_to_characters[i])
-    lca_characters = get_lca_characters(vecs, missing_char)
+        vectors.append(node_to_characters[i])
+    lca_characters = get_lca_characters(vectors, missing_char)
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
 
 
 def collapse_edges(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -166,8 +168,8 @@ def collapse_tree(
             raise InferAncestorError()
 
         for i in leaves:
-            node_to_characters[i] = list(character_matrix.loc[i, :])
-            tree.nodes[i]["characters"] = list(character_matrix.loc[i, :])
+            node_to_characters[i] = list(character_matrix[i, :])
+            tree.nodes[i]["characters"] = list(character_matrix[i, :])
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_char
         )
@@ -234,12 +236,12 @@ def to_newick(tree: nx.DiGraph) -> str:
 
 
 def transform_priors(
-    priors: Optional[Dict[int, Dict[int, float]]] = None,
-    prior_function: Optional[Callable[[float], float]] = None,
+    priors: Optional[Dict[int, Dict[int, float]]],
+    prior_function: Optional[Callable[[float], float]],
 ):
     """Generates a dictionary of negative log probabilities from priors.
 
-    Generates a dicitonary of weights for use in algorithms that inheret the
+    Generates a dictionary of weights for use in algorithms that inherit the
     GreedySolver from given priors.
 
     Args:

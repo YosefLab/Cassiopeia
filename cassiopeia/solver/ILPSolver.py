@@ -101,6 +101,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         self.priors = priors
+        if self.priors:
+            self.weights = solver_utilities.transform_priors(
+                priors, lambda x: -np.log(x)
+            )
+        else:
+            self.weights = None
 
         # set up logger
         self.logfile = logfile
@@ -297,7 +303,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             weighted_graph[u][v][
                 "weight"
             ] = dissimilarity_functions.weighted_hamming_distance(
-                list(u), list(v), self.priors, self.missing_char
+                list(u), list(v), self.missing_char, self.weights
             )
 
         return weighted_graph
@@ -328,10 +334,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
         if root not in potential_graph.nodes:
-            raise ILPSolver("Root node not in potential graph.")
+            raise ILPSolverError("Root node not in potential graph.")
         for t in targets:
             if t not in potential_graph.nodes:
-                raise ILPSolver("Target node not in potential graph.")
+                raise ILPSolverError("Target node not in potential graph.")
 
         # remove source from targets if it exists there
         targets = [t for t in targets if t != root]
