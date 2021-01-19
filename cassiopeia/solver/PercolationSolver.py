@@ -19,7 +19,7 @@ class PercolationSolver(GreedySolver.GreedySolver):
     It is an implicit version of Aho's algorithm for tree discovery (1981).
     At each recursive step, the similarities of each sample pair are embedded
     in a graph. The graph is then percolated by removing the minimum edges
-    until mulitple connected components are produced. The algorithm enforces
+    until multiple connected components are produced. The algorithm enforces
     binary partitions if there are more than two connected components using a
     neighbor-joining procedure.
 
@@ -31,7 +31,7 @@ class PercolationSolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
         prior_function: A function defining a transformation on the priors
-            in forming weights to scale the contribution of each mutuation in
+            in forming weights to scale the contribution of each mutation in
             the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
@@ -46,7 +46,9 @@ class PercolationSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out
+            out, converted to a numpy array for efficient indexing
+        node_mapping: A mapping of node names to their integer indices in the
+            original character matrix, for efficient indexing
         weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
@@ -84,8 +86,7 @@ class PercolationSolver(GreedySolver.GreedySolver):
 
     def perform_split(
         self,
-        mutation_frequencies: Dict[int, Dict[int, int]],
-        samples: List[int] = None,
+        samples: List[int],
     ) -> Tuple[List[int], List[int]]:
         """The function used by the percolation algorithm to generate a
         partition of the samples.
@@ -101,15 +102,11 @@ class PercolationSolver(GreedySolver.GreedySolver):
         procedure on these LCAs using the provided similarity function.
 
         Args:
-            mutation_frequencies: A dictionary containing the frequencies of
-                each character/state pair that appear in the character matrix
-                restricted to the sample set
-            samples: A list of samples to partition
+            samples: A list of samples, represented as integer indices
 
         Returns:
-            A tuple of lists, representing the left and right partitions
+            A tuple of lists, representing the left and right partition groups
         """
-
         G = nx.Graph()
         for v in samples:
             G.add_node(v)
@@ -118,8 +115,8 @@ class PercolationSolver(GreedySolver.GreedySolver):
         edge_weights_to_pairs = defaultdict(list)
         for i, j in itertools.combinations(samples, 2):
             similarity = self.similarity_function(
-                list(self.unique_character_matrix.loc[i, :]),
-                list(self.unique_character_matrix.loc[j, :]),
+                self.unique_character_matrix[i],
+                self.unique_character_matrix[j],
                 self.missing_char,
                 self.weights,
             )
@@ -134,7 +131,7 @@ class PercolationSolver(GreedySolver.GreedySolver):
         sorted_edge_weights = sorted(edge_weights_to_pairs, reverse=True)
 
         # Percolate the similarity graph by continuously removing the minimum
-        # edge if only 1 component exists
+        # edge until at least two components exists
         while len(connected_components) <= 1:
             min_weight = sorted_edge_weights.pop()
             for edge in edge_weights_to_pairs[min_weight]:
@@ -146,69 +143,50 @@ class PercolationSolver(GreedySolver.GreedySolver):
         # If the number of connected components > 2, merge components by
         # greedily joining the most similar LCAs of each component until
         # only 2 remain
+
         if len(connected_components) > 2:
             lcas = {}
-            cluster_membership = {}
+            component_to_nodes = {}
+            # Find the LCA of the nodes in each connected component
             for i in range(len(connected_components)):
-                cluster_membership[i] = list(connected_components[i])
-                character_vectors = self.unique_character_matrix.loc[
-                    connected_components[i], :
-                ].values.tolist()
+                component_to_nodes[i] = list(connected_components[i])
+                character_vectors = [
+                    list(i)
+                    for i in list(
+                        self.unique_character_matrix[connected_components[i], :]
+                    )
+                ]
                 lcas[i] = solver_utilities.get_lca_characters(
                     character_vectors, self.missing_char
                 )
-
-            negative_similarity
-
-            lca_cm = pd.DataFrame.from_dict(lcas, orient="index")
-            nj_solver = NeighborJoiningSolver(
-                lca_cm, dissimilarity_function=
+            # The NeighborJoiningSolver operates on a distance, so to have it
+            # work on similarity simply use negative similarity
+            negative_similarity = (
+                lambda s1, s2, missing_char, w: -1
+                * self.similarity_function(s1, s2, missing_char, w)
             )
-
-            nj_solver.solve
-
+            lca_character_matrix = pd.DataFrame.from_dict(lcas, orient="index")
+            nj_solver = NeighborJoiningSolver(
+                lca_character_matrix, dissimilarity_function=negative_similarity
+            )
+            nj_solver.solve()
+            clusters = []
+            root = [
+                n for n in nj_solver.tree if nj_solver.tree.in_degree(n) == 0
+            ][0]
+            solver_utilities.collapse_unifurcations_newick(nj_solver.tree)
+            # Take the bifurcation at the root as the two clusters of components
+            # in the split
+            for i in nj_solver.tree.successors(root):
+                clusters.append(solver_utilities.get_leaves(nj_solver.tree, i))
+            split = []
+            # For each component in each cluster, take the nodes in that
+            # component to form the final split
+            for cluster in clusters:
+                node_group = []
+                for component in cluster:
+                    node_group.extend(component_to_nodes[component])
+                split.append(node_group)
+            return split
 
         return connected_components
-
-
-
-
-
-
-        if len(connected_components) > 2:
-            new_clust_num = len(connected_components)
-            lcas = {}
-            cluster_membership = {}
-            for i in range(len(connected_components)):
-                cluster_membership[i] = list(connected_components[i])
-                character_vectors = self.unique_character_matrix.loc[
-                    connected_components[i], :
-                ].values.tolist()
-                lcas[i] = solver_utilities.get_lca_characters(
-                    character_vectors, self.missing_char
-                )
-            while len(cluster_membership) > 2:
-                best_similarity = 0
-                to_merge = []
-                for cluster1, cluster2 in itertools.combinations(
-                    cluster_membership, 2
-                ):
-                    similarity = self.similarity_function(
-                        lcas[cluster1],
-                        lcas[cluster2],
-                        self.missing_char,
-                        self.weights,
-                    )
-                    if similarity >= best_similarity:
-                        best_similarity = similarity
-                        to_merge = [cluster1, cluster2]
-                new_lca = solver_utilities.get_lca_characters(
-                    [lcas[to_merge[0]], lcas[to_merge[1]]], self.missing_char
-                )
-                lcas[new_clust_num] = new_lca
-                cluster_membership[new_clust_num] = cluster_membership.pop(
-                    to_merge[0]
-                ) + cluster_membership.pop(to_merge[1])
-                new_clust_num += 1
-
-            return list(cluster_membership.values())
