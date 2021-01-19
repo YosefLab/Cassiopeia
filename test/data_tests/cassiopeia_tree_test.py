@@ -410,13 +410,16 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertEqual(tree.get_time('node16'), 7)
         
-        tree.set_time('node16', 20)
-        self.assertEqual(tree.get_time("node16"), 20)
-        self.assertEqual(tree.get_time('node17'), 21)
-        self.assertEqual(tree.get_time('node18'), 21)
+        self.assertRaises(CassiopeiaTreeError, tree.set_time, 'node16', 20)
+
+        tree.set_time('node16', 7.5)
+        self.assertEqual(tree.get_time("node16"), 7.5)
+        self.assertEqual(tree.get_time('node17'), 8)
+        self.assertEqual(tree.get_time('node18'), 8)
 
         # make sure edges are adjusted accordingly
-        self.assertEqual(tree.get_branch_length('node14', 'node16'), 14)
+        self.assertEqual(tree.get_branch_length('node14', 'node16'), 1.5)
+        self.assertEqual(tree.get_branch_length('node16', 'node17'), 0.5)
 
         self.assertRaises(CassiopeiaTreeError, tree.set_time, 'node14', 1)
 

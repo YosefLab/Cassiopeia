@@ -416,21 +416,19 @@ class CassiopeiaTree:
         """Sets the time of a node.
 
         Importantly, this maintains consistency with the rest of the tree. In
-        other words, setting the edge of a particular node will change the
-        times of all the nodes below it. This is done by assuming that the 
-        branch lengths do not change; essentially all times below the node of 
-        interest are adjusted relative to the new time. Importantly, we ajust
-        the edge _incident_ to the node - not the edge that leaves the node of
-        interest. For more precise behavior regarding this, see
-        `set_branch_length`.
+        other words, setting the time of a particular node will change the 
+        length of the edge leading into the node and the edge leading out. This
+        function assumes monotonicity of times are maintained (i.e. no negative
+        branch lengths).
 
         Args:
             node: Node in the tree
             new_time: New time for the node.
 
         Raises:
-            CassiopeiaTreeError if the tree is not initialized or if the new
-                time is less than the time of the parent.
+            CassiopeiaTreeError if the tree is not initialized, if the new
+                time is less than the time of the parent, or if monotonicity
+                is not maintained.
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized")
@@ -441,16 +439,17 @@ class CassiopeiaTree:
                 "New age is less than the age of the parent."
             )
 
-        self.__network.nodes[node]["time"] = new_time
-
-        for (u, v) in self.depth_first_traverse_edges(source=node):
-            self.__network.nodes[v]["time"] = (
-                self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
+        for child in self.children(node):
+            if new_time > self.get_time(child):
+                raise CassiopeiaTreeError(
+                "New age is greater than than a child."
             )
 
-        self.__network[parent][node]["length"] = self.get_time(
-            node
-        ) - self.get_time(parent)
+        self.__network.nodes[node]["time"] = new_time
+
+        self.__network[parent][node]['length'] = new_time - self.get_time(parent)
+        for child in self.children(node):
+            self.__network[node][child]['length'] = self.get_time(child) - new_time
 
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
