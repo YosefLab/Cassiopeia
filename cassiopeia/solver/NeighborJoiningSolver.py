@@ -80,7 +80,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         if not root_sample:
 
-            root = ["0"] * character_matrix.shape[1]
+            root = [0] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
             root_sample = "root"
 
@@ -121,24 +121,24 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return (i, j)
 
-    def root_tree(self):
+    def root_tree(self, tree):
         """Roots a tree at the inferred ancestral root.
 
         Uses the root sample stored in self.root_sample to root the
         tree stored in the class instance.
         """
 
-        tree = nx.DiGraph()
+        rooted_tree = nx.DiGraph()
 
-        for e in nx.dfs_edges(self.tree, source=self.root_sample):
+        for e in nx.dfs_edges(tree, source=self.root_sample):
 
-            tree.add_edge(e[0], e[1])
+            rooted_tree.add_edge(e[0], e[1])
 
-        self.tree = tree
+        return rooted_tree
 
     @staticmethod
-    @numba.jit(nopython=True, parallel=True)
-    def compute_q(dissimilarity_map):
+    @numba.jit(nopython=True)
+    def compute_q(dissimilarity_map: np.array(int)):
         """Computes the Q-criterion for every pair of samples.
 
         Computes the Q-criterion defined by Saitou and Nei (1987):
