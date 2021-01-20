@@ -64,7 +64,8 @@ class CassiopeiaTree:
     TODO(mattjones315): Add experimental meta data as arguments.
     TODO(mattjones315): Add functionality that mutates the underlying tree
         structure: pruning lineages, collapsing mutationless edges, and
-        collapsing unifurcations
+        collapsing unifurcations. When this happens, be sure to make sure the 
+        cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
 
@@ -251,23 +252,32 @@ class CassiopeiaTree:
     @property
     def n_cell(self) -> int:
         """Returns number of cells in tree.
+
+        Raises:
+            CassiopeiaTreeError if the object is empty (i.e. no tree or
+            character matrix).
         """
         if self.__original_character_matrix is None:
             if self.__network is None:
-                return 0
+                raise CassiopeiaTreeError("This is an empty object with no tree or character matrix.")
             return len(self.leaves)
         return self.__original_character_matrix.shape[0]
 
     @property
     def n_character(self) -> int:
         """Returns number of characters in character matrix.
+
+        Raises:
+            CassiopeiaTreeError if the object is empty (i.e. no tree or
+            character matrix) or if the character states have not been
+            initialized.
         """
         if self.__original_character_matrix is None:
             if self.__network is None:
-                return 0
+                raise CassiopeiaTreeError("This is an empty object with no tree or character matrix.")
             if "character_states" in self.__network.nodes[self.leaves[0]]:
                 return len(self.get_character_states(self.leaves[0]))
-            return 0
+            raise CassiopeiaTreeError("Character states have not been initialized.")
         return self.__original_character_matrix.shape[1]
 
     @property
