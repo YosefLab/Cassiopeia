@@ -37,6 +37,7 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
                     lca_vec[i] = list(chars)[0]
     return lca_vec
 
+
 def newick_to_networkx(newick_string: str) -> nx.DiGraph:
     """Converts a newick string to a networkx DiGraph.
 

@@ -68,6 +68,8 @@ class CassiopeiaTree:
         cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
+    TODO(sprillo): Add bulk set_times and set_branch_lengths methods
+    TODO(mattjones315): Add bulk set_states method.
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -95,12 +97,13 @@ class CassiopeiaTree:
         if character_matrix is not None:
             self.__original_character_matrix = character_matrix.copy()
             self.__current_character_matrix = character_matrix.copy()
-        
+
         self.missing_state_indicator = missing_state_indicator
         self.cell_meta = cell_meta
         self.character_meta = character_meta
         self.priors = priors
         self.__network = None
+        self.__cache = {}
 
         if tree is not None:
             self.populate_tree(tree)
@@ -117,6 +120,9 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError(
                 "Please pass an ete3 Tree, a newick string, or a Networkx object."
             )
+
+        # clear cache if we're changing the topology of the tree
+        self.__cache = {}
 
         # add character states
         for n in self.nodes:
@@ -193,8 +199,8 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
-        
-        if set([n for n in mapping.keys()]) != set(self.nodes):
+
+        if set([n for n in character_state_mapping.keys()]) != set(self.nodes):
             raise CassiopeiaTreeError(
                 "Mapping does not account for all the nodes."
             )
@@ -259,7 +265,9 @@ class CassiopeiaTree:
         """
         if self.__original_character_matrix is None:
             if self.__network is None:
-                raise CassiopeiaTreeError("This is an empty object with no tree or character matrix.")
+                raise CassiopeiaTreeError(
+                    "This is an empty object with no tree or character matrix."
+                )
             return len(self.leaves)
         return self.__original_character_matrix.shape[0]
 
@@ -274,10 +282,14 @@ class CassiopeiaTree:
         """
         if self.__original_character_matrix is None:
             if self.__network is None:
-                raise CassiopeiaTreeError("This is an empty object with no tree or character matrix.")
+                raise CassiopeiaTreeError(
+                    "This is an empty object with no tree or character matrix."
+                )
             if "character_states" in self.__network.nodes[self.leaves[0]]:
                 return len(self.get_character_states(self.leaves[0]))
-            raise CassiopeiaTreeError("Character states have not been initialized.")
+            raise CassiopeiaTreeError(
+                "Character states have not been initialized."
+            )
         return self.__original_character_matrix.shape[1]
 
     @property
@@ -292,9 +304,12 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [n for n in self.__network if self.__network.in_degree(n) == 0][
-            0
-        ]
+
+        if "root" not in self.__cache:
+            self.__cache["root"] = [
+                n for n in self.__network if self.__network.in_degree(n) == 0
+            ][0]
+        return self.__cache["root"]
 
     @property
     def leaves(self) -> List[str]:
@@ -308,7 +323,12 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [n for n in self.__network if self.__network.out_degree(n) == 0]
+
+        if "leaves" not in self.__cache:
+            self.__cache["leaves"] = [
+                n for n in self.__network if self.__network.out_degree(n) == 0
+            ]
+        return self.__cache["leaves"]
 
     @property
     def internal_nodes(self) -> List[str]:
@@ -322,7 +342,12 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [n for n in self.__network if self.__network.out_degree(n) > 1]
+
+        if "internal_nodes" not in self.__cache:
+            self.__cache["internal_nodes"] = [
+                n for n in self.__network if self.__network.out_degree(n) > 1
+            ]
+        return self.__cache["internal_nodes"]
 
     @property
     def nodes(self) -> List[str]:
@@ -336,7 +361,10 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [n for n in self.__network]
+
+        if "nodes" not in self.__cache:
+            self.__cache["nodes"] = [n for n in self.__network]
+        return self.__cache["nodes"]
 
     @property
     def edges(self) -> List[Tuple[str, str]]:
@@ -350,7 +378,10 @@ class CassiopeiaTree:
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
-        return [(u, v) for (u, v) in self.__network.edges]
+
+        if "edges" not in self.__cache:
+            self.__cache["edges"] = [(u, v) for (u, v) in self.__network.edges]
+        return self.__cache["edges"]
 
     def is_leaf(self, node: str) -> bool:
         """Returns whether or not the node is a leaf.
@@ -377,6 +408,21 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
         return node == self.root
+
+    def is_internal_node(self, node: str) -> bool:
+        """Returns whether or not the node is an internal node.
+
+        Returns:
+            Whether or not the node is an internal node (i.e. out degree is
+            greater than 0). In this case, the root is considered an internal
+            node.
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+        return self.__network.out_degree(node) > 0
 
     def reconstruct_ancestral_characters(self):
         """Reconstruct ancestral character states.
@@ -436,8 +482,8 @@ class CassiopeiaTree:
 
         Importantly, this maintains consistency with the rest of the tree. In
         other words, setting the time of a particular node will change the 
-        length of the edge leading into the node and the edge leading out. This
-        function assumes monotonicity of times are maintained (i.e. no negative
+        length of the edge leading into the node and the edges leading out. This
+        function requires monotonicity of times are maintained (i.e. no negative
         branch lengths).
 
         Args:
@@ -461,14 +507,18 @@ class CassiopeiaTree:
         for child in self.children(node):
             if new_time > self.get_time(child):
                 raise CassiopeiaTreeError(
-                "New age is greater than than a child."
-            )
+                    "New age is greater than than a child."
+                )
 
         self.__network.nodes[node]["time"] = new_time
 
-        self.__network[parent][node]['length'] = new_time - self.get_time(parent)
+        self.__network[parent][node]["length"] = new_time - self.get_time(
+            parent
+        )
         for child in self.children(node):
-            self.__network[node][child]['length'] = self.get_time(child) - new_time
+            self.__network[node][child]["length"] = (
+                self.get_time(child) - new_time
+            )
 
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
@@ -553,7 +603,7 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             if self.get_character_states(node) == []:
                 raise CassiopeiaTreeError(
-                    "Leaf node character states have not been instantiated with initialize_character_states_at_leaves"
+                    "Leaf node character states have not been instantiated"
                 )
         self.__set_character_states(node, states)
 
@@ -729,3 +779,6 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Tree is not initalized.")
 
         self.__network = nx.relabel_nodes(self.__network, relabel_map)
+
+        # reset cache because we've changed names
+        self.__cache = {}
