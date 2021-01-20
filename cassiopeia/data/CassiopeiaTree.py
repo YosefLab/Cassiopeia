@@ -194,7 +194,7 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
         
-        if set([n for n in mapping.keys()]) != set(self.nodes):
+        if set([n for n in character_state_mapping.keys()]) != set(self.nodes):
             raise CassiopeiaTreeError(
                 "Mapping does not account for all the nodes."
             )
