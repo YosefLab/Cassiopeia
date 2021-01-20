@@ -147,6 +147,10 @@ class CassiopeiaTree:
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
+    def __check_network_initialized(self):
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree has not been initialized.")
+
     def initialize_character_states_at_leaves(
         self, character_matrix: Union[pd.DataFrame, Dict]
     ):
@@ -163,8 +167,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if not all leaves are accounted for or if the
                 tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree has not been initialized.")
+        self.__check_network_initialized()
 
         if isinstance(character_matrix, dict):
             character_matrix = pd.DataFrame.from_dict(
@@ -197,8 +200,7 @@ class CassiopeiaTree:
                 character_state_mapping does not contain assignments for every
                 node.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree has not been initialized.")
+        self.__check_network_initialized()
 
         if set([n for n in character_state_mapping.keys()]) != set(self.nodes):
             raise CassiopeiaTreeError(
@@ -302,8 +304,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "root" not in self.__cache:
             self.__cache["root"] = [
@@ -321,8 +322,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "leaves" not in self.__cache:
             self.__cache["leaves"] = [
@@ -340,8 +340,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "internal_nodes" not in self.__cache:
             self.__cache["internal_nodes"] = [
@@ -359,8 +358,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "nodes" not in self.__cache:
             self.__cache["nodes"] = [n for n in self.__network]
@@ -376,8 +374,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "edges" not in self.__cache:
             self.__cache["edges"] = [(u, v) for (u, v) in self.__network.edges]
@@ -392,8 +389,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
         return self.__network.out_degree(node) == 0
 
     def is_root(self, node: str) -> bool:
@@ -405,8 +401,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
         return node == self.root
 
     def is_internal_node(self, node: str) -> bool:
@@ -420,8 +415,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
         return self.__network.out_degree(node) > 0
 
     def reconstruct_ancestral_characters(self):
@@ -431,8 +425,7 @@ class CassiopeiaTree:
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
@@ -456,8 +449,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         return [u for u in self.__network.predecessors(node)][0]
 
@@ -473,8 +465,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
         return [v for v in self.__network.successors(node)]
 
     def set_time(self, node: str, new_time: float) -> None:
@@ -495,8 +486,7 @@ class CassiopeiaTree:
                 time is less than the time of the parent, or if monotonicity
                 is not maintained.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized")
+        self.__check_network_initialized()
 
         parent = self.parent(node)
         if new_time < self.get_time(parent):
@@ -529,8 +519,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         return self.__network.nodes[node]["time"]
 
@@ -552,8 +541,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree is not initialized, if the edge
                 does not exist, or if the edge length is negative.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if child not in self.children(parent):
             raise CassiopeiaTreeError("Edge does not exist.")
@@ -575,8 +563,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree has not been initialized or if the
                 branch does not exist in the tree.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if child not in self.children(parent):
             raise CassiopeiaTreeError("Edge does not exist.")
@@ -706,8 +693,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         depths = [self.get_time(l) for l in self.leaves]
         return np.mean(depths)
@@ -721,8 +707,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         depths = [self.get_time(l) for l in self.leaves]
         return np.max(depths)
@@ -747,8 +732,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the edge does not exist or if the tree is 
                 not initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if child not in self.children(parent):
             raise CassiopeiaTreeError("Edge does not exist.")
@@ -775,8 +759,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initalized.")
+        self.__check_network_initialized()
 
         self.__network = nx.relabel_nodes(self.__network, relabel_map)
 
