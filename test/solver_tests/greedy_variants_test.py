@@ -6,7 +6,7 @@ import pandas as pd
 from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as tree_utilities
 
 
 class GreedyVariantsTest(unittest.TestCase):
@@ -30,7 +30,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         sgsolver.solve()
         expected_newick_string = "((0,3,2),1);"
-        observed_newick_string = solver_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_spectral_base_case(self):
@@ -59,7 +59,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = solver_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_spectral_base_case_weights_almost_one(self):
@@ -101,7 +101,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = solver_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_maxcut_base_case(self):
@@ -131,7 +131,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         mcgsolver.solve()
         expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = solver_utilities.to_newick(mcgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(mcgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_maxcut_base_case_weights_trivial(self):
@@ -171,7 +171,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         mcgsolver.solve()
         expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = solver_utilities.to_newick(mcgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(mcgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 
