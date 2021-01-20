@@ -38,11 +38,19 @@ class CassiopeiaTree:
     with the data.
 
     The tree can be fed into the object via Ete3, Networkx, or can be inferred
-    using one of the CassiopeiaSolver algorithms in the `solver` module.
+    using one of the CassiopeiaSolver algorithms in the `solver` module. The
+    tree here is only used for obtaining the _topology_ of the tree. The one
+    exception is if the newick string has branch lengths, in which we transfer
+    these values.
 
     A character matrix can be stored in the object, containing the states
     observed for each cell. In typical lineage tracing experiments, these are
-    integer representations of the indels observed at each unique cut site.
+    integer representations of the indels observed at each unique cut site. We
+    track both an unmodified version of the character matrix (obtainable via
+    the `get_original_character_matrix` method) that does not maintain
+    consistency with the character states of the leaves, and a working character
+    matrix (obtainable via the `get_modified_character_matrix` method) that
+    is updated when the character states of leaves are changed.
 
     Meta data for cells or characters can also be stored in this object. These
     items can be categorical or numerical in nature. Common examples of cell
@@ -156,7 +164,7 @@ class CassiopeiaTree:
                 character_matrix, orient="index"
             )
 
-        if len(np.setdiff1d(self.leaves, character_matrix.index.values)) > 0:
+        if set(self.leaves) != set(character_matrix.index.values):
             raise CassiopeiaTreeError(
                 "Character matrix does not account for all the leaves."
             )
@@ -167,33 +175,34 @@ class CassiopeiaTree:
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
 
-    def initialize_all_character_states(self, mapping: Dict):
+    def initialize_all_character_states(self, character_state_mapping: Dict):
         """Populates character states across the tree.
 
         Assigns character states to all of the nodes in the tree. The mapping
         must have an entry for every node in the tree.
 
         Args:
-            mapping: A mapping containing character state assignments for every
+            character_state_mapping: A mapping containing character state assignments for every
                 node
         
         Raises:
             CassiopeiaTreeError if the tree is not initialized or if the
-                mapping does not contain assignments for every node.
+                character_state_mapping does not contain assignments for every
+                node.
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
-
-        if len(np.setdiff1d(self.nodes, character_matrix.keys())) > 0:
+        
+        if set([n for n in mapping.keys()]) != set(self.nodes):
             raise CassiopeiaTreeError(
                 "Mapping does not account for all the nodes."
             )
 
         character_matrix = {}
         for n in self.nodes:
-            if self.is_leaf():
-                character_matrix[n] = mapping[n]
-            self.__set_character_states(n, mapping[n])
+            if self.is_leaf(n):
+                character_matrix[n] = character_state_mapping[n]
+            self.__set_character_states(n, character_state_mapping[n])
 
         character_matrix = pd.DataFrame.from_dict(
             character_matrix, orient="index"
@@ -664,7 +673,7 @@ class CassiopeiaTree:
         """Gets the mutations along an edge of interest.
 
         Returns a list of tuples (character, state) of mutations that occur
-        along an edge. Characters are 1-indexed.
+        along an edge. Characters are 0-indexed.
 
         Args:
             parent: parent in tree
@@ -675,7 +684,7 @@ class CassiopeiaTree:
                 mutated and to which state.
 
         Raises:
-            CassipeiaTreeError if the edge does not exist or if the tree is 
+            CassiopeiaTreeError if the edge does not exist or if the tree is 
                 not initialized.
         """
         if self.__network is None:
@@ -690,7 +699,7 @@ class CassiopeiaTree:
         mutations = []
         for i in range(self.n_character):
             if parent_states[i] == 0 and child_states[i] != 0:
-                mutations.append((i + 1, child_states[i]))
+                mutations.append((i, child_states[i]))
 
         return mutations
 
