@@ -573,7 +573,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         Methods of the CassiopeiaTree that operate on the tree (as opposed to,
         say, just the character matrix) require that the tree has been
         initialized, and should raise an error otherwise. Here we make sure
-        that one such method raises the error. It is a very a minimal test.
+        that one such method raises the error. It is a very minimal test.
         """
         tree = cas.data.CassiopeiaTree(character_matrix=self.character_matrix)
         with self.assertRaises(CassiopeiaTreeError):
