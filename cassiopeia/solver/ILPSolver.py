@@ -17,10 +17,10 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
 
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import ilp_solver_utilities
-from cassiopeia.solver import solver_utilities
 
 
 class ILPSolverError(Exception):
@@ -112,7 +112,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         # find the root of the tree & generate process ID
         root = tuple(
-            solver_utilities.get_lca_characters(
+            data_utilities.get_lca_characters(
                 self.unique_character_matrix.values.tolist(), self.missing_char
             )
         )

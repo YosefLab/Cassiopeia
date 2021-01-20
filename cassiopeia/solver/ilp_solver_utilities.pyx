@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as data_utilities
 
 
 @cython.boundscheck(False)
@@ -67,7 +67,7 @@ def infer_layer_of_potential_graph(
 
             sample2 = source_nodes[j]
             # ancestor = np.array([sample1[k] if sample1[k] == sample2[k] else 0 for k in range(dim)])
-            ancestor = np.array(solver_utilities.get_lca_characters([sample1, sample2], missing_char=missing_char))
+            ancestor = np.array(data_utilities.get_lca_characters([sample1, sample2], missing_char=missing_char))
 
             d1_a = dissimilarity_functions.hamming_distance(sample1, ancestor)
             d2_a = dissimilarity_functions.hamming_distance(sample2, ancestor)
