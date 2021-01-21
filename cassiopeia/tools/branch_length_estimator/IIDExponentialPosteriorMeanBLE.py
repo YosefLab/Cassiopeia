@@ -6,7 +6,7 @@ import numpy as np
 from scipy import integrate
 from scipy.special import binom, logsumexp
 
-from ..tree import Tree
+from cassiopeia.data import CassiopeiaTree
 from .BranchLengthEstimator import BranchLengthEstimator
 from . import utils
 
@@ -64,8 +64,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         # children? (If not, the joint we are computing won't integrate to 1;
         # on the other hand, this is a constant multiplicative term that doesn't
         # affect inference.
-        for child_of_root in tree.children(tree.root()):
-            log_likelihood += self.down(child_of_root, discretization_level, 0)
+        for child_of_root in tree.children(tree.root):
+            log_likelihood += self.down(child_of_root, 0, 0)
         self.log_likelihood = log_likelihood
 
     def _compute_log_joint(self, v, t):
@@ -74,17 +74,16 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         Depending on whether we are enforcing parsimony or not, we consider
         different possible number of cuts for v.
         """
-        discretization_level = self.discretization_level
         tree = self.tree
-        assert v in tree.internal_nodes()
-        lam = self.birth_rate
+        assert tree.is_internal_node(v) and v != tree.root
         enforce_parsimony = self.enforce_parsimony
-        dt = 1.0 / discretization_level
         children = tree.children(v)
         if enforce_parsimony:
-            valid_num_cuts = [tree.num_cuts(v)]
+            valid_num_cuts = [tree.get_number_of_mutated_characters_in_node(v)]
         else:
-            valid_num_cuts = range(tree.num_cuts(v) + 1)
+            valid_num_cuts = range(
+                tree.get_number_of_mutated_characters_in_node(v) + 1
+            )
         ll_for_x = []
         for x in valid_num_cuts:
             ll_for_x.append(
@@ -98,7 +97,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         log_joints = {}  # log P(t_v = t, X, T)
         posteriors = {}  # P(t_v = t | X, T)
         posterior_means = {}  # E[t_v = t | X, T]
-        for v in tree.internal_nodes():
+        for v in tree.non_root_internal_nodes:
             # Compute the posterior for this node
             log_joint = np.zeros(shape=(discretization_level + 1,))
             for t in range(discretization_level + 1):
@@ -117,16 +116,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     def _populate_branch_lengths(self):
         tree = self.tree
         posterior_means = self.posterior_means
-        for node in tree.internal_nodes():
-            tree.set_age(node, age=posterior_means[node])
-        tree.set_age(tree.root(), age=1.0)
-        for leaf in tree.leaves():
-            tree.set_age(leaf, age=0.0)
-        for (parent, child) in tree.edges():
-            new_edge_length = tree.get_age(parent) - tree.get_age(child)
-            tree.set_edge_length(parent, child, length=new_edge_length)
+        times = {}
+        for node in tree.non_root_internal_nodes:
+            times[node] = posterior_means[node]
+        times[tree.root] = 0.0
+        for leaf in tree.leaves:
+            times[leaf] = 1.0
+        tree.set_times(times)
 
-    def estimate_branch_lengths(self, tree: Tree) -> None:
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
         See base class.
         """
@@ -157,7 +155,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r = self.mutation_rate
         lam = self.birth_rate
         dt = 1.0 / self.discretization_level
-        K = self.tree.num_characters()
+        K = self.tree.n_character
         tree = self.tree
         discretization_level = self.discretization_level
         assert 0 <= t <= self.discretization_level
@@ -165,37 +163,38 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         if not (1.0 - lam * dt - K * r * dt > 0):
             raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
-        if v == tree.root():  # Base case: we reached the root of the tree.
-            # TODO: 'tree.root()' is O(n). We should have O(1) method.
-            if t == discretization_level and x == tree.num_cuts(v):
+        if v == tree.root:  # Base case: we reached the root of the tree.
+            if t == 0 and x == tree.get_number_of_mutated_characters_in_node(v):
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
-        elif t == discretization_level:
+        elif t == 0:
             # Base case: we reached the start of the process, but we're not yet
             # at the root.
-            assert v != tree.root()
+            assert v != tree.root
             log_likelihood = -np.inf
         else:  # Recursion.
             log_likelihoods_cases = []
             # Case 1: Nothing happened
             log_likelihoods_cases.append(
-                np.log(1.0 - lam * dt - (K - x) * r * dt) + self.up(v, t + 1, x)
+                np.log(1.0 - lam * dt - (K - x) * r * dt) + self.up(v, t - 1, x)
             )
             # Case 2: Mutation happened
             if x - 1 >= 0:
                 log_likelihoods_cases.append(
-                    np.log((K - (x - 1)) * r * dt) + self.up(v, t + 1, x - 1)
+                    np.log((K - (x - 1)) * r * dt) + self.up(v, t - 1, x - 1)
                 )
             # Case 3: A cell division happened
-            if v != tree.root():
+            if v != tree.root:
                 # TODO: 'tree.root()' is O(n). We should have O(1) method.
                 p = tree.parent(v)
-                if self.compatible_with_observed_data(x, tree.num_cuts(p)):
+                if self.compatible_with_observed_data(
+                    x, tree.get_number_of_mutated_characters_in_node(p)
+                ):
                     siblings = [u for u in tree.children(p) if u != v]
                     ll = (
                         np.log(lam * dt)
-                        + self.up(p, t + 1, x)
+                        + self.up(p, t - 1, x)
                         + sum([self.down(u, t, x) for u in siblings])
                     )
                     log_likelihoods_cases.append(ll)
@@ -213,19 +212,23 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             # TODO: Use a decorator instead of a hand-made cache
             return self.down_cache[(v, t, x)]
         # Pull out params
+        discretization_level = self.discretization_level
         r = self.mutation_rate
         lam = self.birth_rate
         dt = 1.0 / self.discretization_level
-        K = self.tree.num_characters()
+        K = self.tree.n_character
         tree = self.tree
-        assert v != tree.root()
+        assert v != tree.root
         assert 0 <= t <= self.discretization_level
         assert 0 <= x <= K
         if not (1.0 - lam * dt - K * r * dt > 0):
             raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
-        if t == 0:  # Base case
-            if v in tree.leaves() and x == tree.num_cuts(v):
+        if t == discretization_level:  # Base case
+            if (
+                v in tree.leaves
+                and x == tree.get_number_of_mutated_characters_in_node(v)
+            ):
                 # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
                 # check.
                 log_likelihood = 0.0
@@ -236,25 +239,27 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             # Case 1: Nothing happens
             log_likelihoods_cases.append(
                 np.log(1.0 - lam * dt - (K - x) * r * dt)
-                + self.down(v, t - 1, x)
+                + self.down(v, t + 1, x)
             )
             # Case 2: One character mutates.
             if x + 1 <= K:
                 log_likelihoods_cases.append(
-                    np.log((K - x) * r * dt) + self.down(v, t - 1, x + 1)
+                    np.log((K - x) * r * dt) + self.down(v, t + 1, x + 1)
                 )
             # Case 3: Cell divides
             # The number of cuts at this state must match the ground truth.
             # TODO: Allow for weak match at internal nodes and exact match at
             # leaves.
             if (
-                self.compatible_with_observed_data(x, tree.num_cuts(v))
-                and v not in tree.leaves()
+                self.compatible_with_observed_data(
+                    x, tree.get_number_of_mutated_characters_in_node(v)
+                )
+                and v not in tree.leaves
             ):
                 # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
                 # check.
                 ll = sum(
-                    [self.down(child, t - 1, x) for child in tree.children(v)]
+                    [self.down(child, t + 1, x) for child in tree.children(v)]
                 ) + np.log(lam * dt)
                 log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
@@ -263,29 +268,28 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
 
     @classmethod
     def exact_log_full_joint(
-        self, tree: Tree, mutation_rate: float, birth_rate: float
+        self, tree: CassiopeiaTree, mutation_rate: float, birth_rate: float
     ) -> float:
         r"""
         log P(T, X, branch_lengths), i.e. the full joint log likelihood given
         both character vectors _and_ branch lengths.
         """
         tree = deepcopy(tree)
-        tree.set_edge_lengths_from_node_ages()
         ll = 0.0
         lam = birth_rate
         r = mutation_rate
         lg = np.log
         e = np.exp
         b = binom
-        for (p, c) in tree.edges():
-            t = tree.get_edge_length(p, c)
+        for (p, c) in tree.edges:
+            t = tree.get_branch_length(p, c)
             # Birth process likelihood
             ll += -t * lam
-            if c not in tree.leaves():
+            if c not in tree.leaves:
                 ll += lg(lam)
             # Mutation process likelihood
-            cuts = tree.number_of_mutations_along_edge(p, c)
-            uncuts = tree.number_of_nonmutations_along_edge(p, c)
+            cuts = tree.get_number_of_mutations_along_edge(p, c)
+            uncuts = tree.get_number_of_unmutated_characters_in_node(c)
             ll += (
                 (-t * r) * uncuts
                 + lg(1 - e(-t * r)) * cuts
@@ -296,7 +300,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     @classmethod
     def numerical_log_likelihood(
         self,
-        tree: Tree,
+        tree: CassiopeiaTree,
         mutation_rate: float,
         birth_rate: float,
         epsrel: float = 0.01,
@@ -310,13 +314,19 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         tree = deepcopy(tree)
 
         def f(*args):
-            ages = args
-            for node, age in list(zip(tree.internal_nodes(), ages)):
-                tree.set_age(node, age)
-            for (p, c) in tree.edges():
-                if tree.get_age(p) <= tree.get_age(c):
+            times_list = args
+            times = {}
+            for node, time in list(
+                zip(tree.non_root_internal_nodes, times_list)
+            ):
+                times[node] = time
+            times[tree.root] = 0
+            for leaf in tree.leaves:
+                times[leaf] = 1.0
+            for (p, c) in tree.edges:
+                if times[p] >= times[c]:
                     return 0.0
-            tree.set_edge_lengths_from_node_ages()
+            tree.set_times(times)
             return np.exp(
                 IIDExponentialPosteriorMeanBLE.exact_log_full_joint(
                     tree=tree,
@@ -328,7 +338,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         res = np.log(
             integrate.nquad(
                 f,
-                [[0, 1]] * len(tree.internal_nodes()),
+                [[0, 1]] * len(tree.non_root_internal_nodes),
                 opts={"epsrel": epsrel},
             )[0]
         )
@@ -338,7 +348,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     @classmethod
     def numerical_log_joint(
         self,
-        tree: Tree,
+        tree: CassiopeiaTree,
         node,
         mutation_rate: float,
         birth_rate: float,
@@ -350,18 +360,25 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         to the level discretization_level
         """
         res = np.zeros(shape=(discretization_level + 1,))
-        other_nodes = [n for n in tree.internal_nodes() if n != node]
+        other_nodes = [n for n in tree.non_root_internal_nodes if n != node]
+        node_time = -1
 
         tree = deepcopy(tree)
 
         def f(*args):
-            ages = args
-            for other_node, age in list(zip(other_nodes, ages)):
-                tree.set_age(other_node, age)
-            for (p, c) in tree.edges():
-                if tree.get_age(p) <= tree.get_age(c):
+            times_list = args
+            times = {}
+            times[node] = node_time
+            assert len(other_nodes) == len(times_list)
+            for other_node, time in list(zip(other_nodes, times_list)):
+                times[other_node] = time
+            times[tree.root] = 0
+            for leaf in tree.leaves:
+                times[leaf] = 1.0
+            for (p, c) in tree.edges:
+                if times[p] >= times[c]:
                     return 0.0
-            tree.set_edge_lengths_from_node_ages()
+            tree.set_times(times)
             return np.exp(
                 IIDExponentialPosteriorMeanBLE.exact_log_full_joint(
                     tree=tree,
@@ -371,11 +388,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             )
 
         for i in range(discretization_level + 1):
-            node_age = i / discretization_level
-            tree.set_age(node, node_age)
-            tree.set_edge_lengths_from_node_ages()
+            node_time = i / discretization_level
             if len(other_nodes) == 0:
                 # There is nothing to integrate over.
+                times = {}
+                times[tree.root] = 0
+                for leaf in tree.leaves:
+                    times[leaf] = 1.0
+                times[node] = node_time
+                tree.set_times(times)
                 res[i] = self.exact_log_full_joint(
                     tree=tree,
                     mutation_rate=mutation_rate,
@@ -387,7 +408,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     np.log(
                         integrate.nquad(
                             f,
-                            [[0, 1]] * (len(tree.internal_nodes()) - 1),
+                            [[0, 1]] * (len(tree.non_root_internal_nodes) - 1),
                             opts={"epsrel": epsrel},
                         )[0]
                     )
@@ -400,7 +421,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     @classmethod
     def numerical_posterior(
         self,
-        tree: Tree,
+        tree: CassiopeiaTree,
         node,
         mutation_rate: float,
         birth_rate: float,
@@ -465,7 +486,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.processes = processes
         self.verbose = verbose
 
-    def estimate_branch_lengths(self, tree: Tree) -> None:
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
         See base class.
         """

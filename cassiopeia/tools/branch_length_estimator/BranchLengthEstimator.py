@@ -1,6 +1,6 @@
 import abc
 
-from ..tree import Tree
+from cassiopeia.data import CassiopeiaTree
 
 
 class BranchLengthEstimator(abc.ABC):
@@ -14,7 +14,7 @@ class BranchLengthEstimator(abc.ABC):
     """
 
     @abc.abstractmethod
-    def estimate_branch_lengths(self, tree: Tree) -> None:
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
         Estimates the branch lengths of the tree.
 

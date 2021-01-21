@@ -4,7 +4,7 @@ from typing import List
 import networkx as nx
 import numpy as np
 
-from .tree import Tree
+from cassiopeia.data import CassiopeiaTree
 
 
 class LineageSimulator(abc.ABC):
@@ -16,7 +16,7 @@ class LineageSimulator(abc.ABC):
     """
 
     @abc.abstractmethod
-    def simulate_lineage(self) -> Tree:
+    def simulate_lineage(self) -> CassiopeiaTree:
         r"""
         Simulates a lineage tree, i.e. a Tree with branch lengths and age
         specified for each node. Additional information such as cell fitness,
@@ -36,7 +36,7 @@ class PerfectBinaryTree(LineageSimulator):
     def __init__(self, generation_branch_lengths: List[float]):
         self.generation_branch_lengths = generation_branch_lengths[:]
 
-    def simulate_lineage(self) -> Tree:
+    def simulate_lineage(self) -> CassiopeiaTree:
         r"""
         See base class.
         """
@@ -63,7 +63,12 @@ class PerfectBinaryTree(LineageSimulator):
             tree.nodes[child]["age"] = (
                 tree.nodes[int((child - 1) / 2)]["age"] - branch_length
             )
-        return Tree(tree)
+        times = {}
+        for node in tree.nodes:
+            times[node] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
+        res = CassiopeiaTree(tree=tree)
+        res.set_times(times)
+        return res
 
 
 class PerfectBinaryTreeWithRootBranch(LineageSimulator):
@@ -79,7 +84,7 @@ class PerfectBinaryTreeWithRootBranch(LineageSimulator):
     def __init__(self, generation_branch_lengths: List[float]):
         self.generation_branch_lengths = generation_branch_lengths
 
-    def simulate_lineage(self) -> Tree:
+    def simulate_lineage(self) -> CassiopeiaTree:
         r"""
         See base class.
         """
@@ -106,7 +111,12 @@ class PerfectBinaryTreeWithRootBranch(LineageSimulator):
             tree.nodes[child]["age"] = (
                 tree.nodes[int(child / 2)]["age"] - branch_length
             )
-        return Tree(tree)
+        times = {}
+        for node in tree.nodes:
+            times[node] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
+        res = CassiopeiaTree(tree=tree)
+        res.set_times(times)
+        return res
 
 
 class BirthProcess(LineageSimulator):
@@ -122,7 +132,7 @@ class BirthProcess(LineageSimulator):
         self.birth_rate = birth_rate
         self.tree_depth = tree_depth
 
-    def simulate_lineage(self) -> Tree:
+    def simulate_lineage(self) -> CassiopeiaTree:
         r"""
         See base class.
         """
@@ -167,8 +177,9 @@ class BirthProcess(LineageSimulator):
         tree_nx = nx.DiGraph()
         tree_nx.add_nodes_from(range(last_node_id + 1))
         tree_nx.add_edges_from(edges)
-        tree = Tree(tree_nx)
-        for node in tree.nodes():
-            tree.set_age(node, node_age[node])
-        tree.set_edge_lengths_from_node_ages()
+        times = {}
+        for node in tree_nx.nodes:
+            times[node] = node_age[0] - node_age[node]
+        tree = CassiopeiaTree(tree=tree_nx)
+        tree.set_times(times)
         return tree

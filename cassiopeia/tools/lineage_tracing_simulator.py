@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from .tree import Tree
+from cassiopeia.data import CassiopeiaTree
 
 
 class LineageTracingSimulator(abc.ABC):
@@ -15,7 +15,7 @@ class LineageTracingSimulator(abc.ABC):
     """
 
     @abc.abstractmethod
-    def overlay_lineage_tracing_data(self, tree: Tree) -> None:
+    def overlay_lineage_tracing_data(self, tree: CassiopeiaTree) -> None:
         r"""
         Annotates the tree's nodes with lineage tracing character vectors.
         These are stored as the node's state. (Operates on the tree in-place.)
@@ -38,27 +38,28 @@ class IIDExponentialLineageTracer(LineageTracingSimulator):
         self.mutation_rate = mutation_rate
         self.num_characters = num_characters
 
-    def overlay_lineage_tracing_data(self, tree: Tree) -> None:
+    def overlay_lineage_tracing_data(self, tree: CassiopeiaTree) -> None:
         r"""
         See base class.
         """
         num_characters = self.num_characters
         mutation_rate = self.mutation_rate
+        states = {}
 
-        def dfs(node: int, tree: Tree):
-            node_state = tree.get_state(node)
+        def dfs(node: str, tree: CassiopeiaTree):
+            node_state = states[node]
             for child in tree.children(node):
                 # Compute the state of the child
-                child_state = ""
-                edge_length = tree.get_age(node) - tree.get_age(child)
+                child_state = []
+                edge_length = tree.get_branch_length(node, child)
                 # print(f"{node} -> {child}, length {edge_length}")
                 assert edge_length >= 0
                 for i in range(num_characters):
                     # See what happens to character i
-                    if node_state[i] != "0":
+                    if node_state[i] != 0:
                         # The character has already mutated; there in nothing
                         # to do
-                        child_state += node_state[i]
+                        child_state += [node_state[i]]
                         continue
                     else:
                         # Determine if the character will mutate.
@@ -67,12 +68,13 @@ class IIDExponentialLineageTracer(LineageTracingSimulator):
                             < edge_length
                         )
                         if mutates:
-                            child_state += "1"
+                            child_state += [1]
                         else:
-                            child_state += "0"
-                tree.set_state(child, child_state)
+                            child_state += [0]
+                states[child] = child_state
                 dfs(child, tree)
 
-        root = tree.root()
-        tree.set_state(root, "0" * num_characters)
+        root = tree.root
+        states[root] = [0] * num_characters
         dfs(root, tree)
+        tree.initialize_all_character_states(states)

@@ -14,6 +14,7 @@ phylogeny.
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
+import copy
 import ete3
 import networkx as nx
 import numpy as np
@@ -106,6 +107,7 @@ class CassiopeiaTree:
         self.__cache = {}
 
         if tree is not None:
+            tree = copy.deepcopy(tree)
             self.populate_tree(tree)
 
     def populate_tree(self, tree: Union[str, ete3.Tree, nx.DiGraph]):
@@ -328,7 +330,7 @@ class CassiopeiaTree:
             self.__cache["leaves"] = [
                 n for n in self.__network if self.__network.out_degree(n) == 0
             ]
-        return self.__cache["leaves"]
+        return self.__cache["leaves"][:]
 
     @property
     def internal_nodes(self) -> List[str]:
@@ -345,9 +347,31 @@ class CassiopeiaTree:
 
         if "internal_nodes" not in self.__cache:
             self.__cache["internal_nodes"] = [
-                n for n in self.__network if self.__network.out_degree(n) > 1
+                n for n in self.__network if self.__network.out_degree(n) > 0
             ]
-        return self.__cache["internal_nodes"]
+        return self.__cache["internal_nodes"][:]
+
+    @property
+    def non_root_internal_nodes(self) -> List[str]:
+        """Returns internal nodes in tree (excluding the root).
+
+        Returns:
+            The internal nodes of the tree that are not the root (i.e. all
+            nodes not at the leaves, and not the root)
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+
+        if "non_root_internal_nodes" not in self.__cache:
+            res = [
+                n for n in self.__network if self.__network.out_degree(n) > 0
+            ]
+            res.remove(self.root)
+            self.__cache["non_root_internal_nodes"] = res
+        return self.__cache["non_root_internal_nodes"][:]
 
     @property
     def nodes(self) -> List[str]:
@@ -364,7 +388,7 @@ class CassiopeiaTree:
 
         if "nodes" not in self.__cache:
             self.__cache["nodes"] = [n for n in self.__network]
-        return self.__cache["nodes"]
+        return self.__cache["nodes"][:]
 
     @property
     def edges(self) -> List[Tuple[str, str]]:
@@ -381,7 +405,7 @@ class CassiopeiaTree:
 
         if "edges" not in self.__cache:
             self.__cache["edges"] = [(u, v) for (u, v) in self.__network.edges]
-        return self.__cache["edges"]
+        return self.__cache["edges"][:]
 
     def is_leaf(self, node: str) -> bool:
         """Returns whether or not the node is a leaf.
@@ -424,12 +448,16 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Tree is not initialized.")
         return self.__network.out_degree(node) > 0
 
-    def reconstruct_ancestral_characters(self):
+    def reconstruct_ancestral_characters(self, zero_the_root: bool = False):
         """Reconstruct ancestral character states.
 
         Reconstructs ancestral states (i.e., those character states in the
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
+
+        Args:
+            zero_the_root: If True, the root will be forced to have unmutated
+                chracters.
         """
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized.")
@@ -443,6 +471,9 @@ class CassiopeiaTree:
                 character_states, self.missing_state_indicator
             )
             self.__set_character_states(n, reconstructed)
+
+        if zero_the_root:
+            self.__set_character_states(self.root, [0] * self.n_character)
 
     def parent(self, node: str) -> str:
         """Gets the parent of a node.
@@ -498,27 +529,58 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree is not initialized")
 
-        parent = self.parent(node)
-        if new_time < self.get_time(parent):
-            raise CassiopeiaTreeError(
-                "New age is less than the age of the parent."
-            )
+        if node != self.root:
+            parent = self.parent(node)
+            if new_time < self.get_time(parent):
+                raise CassiopeiaTreeError(
+                    "New time is less than the time of the parent."
+                )
 
         for child in self.children(node):
             if new_time > self.get_time(child):
                 raise CassiopeiaTreeError(
-                    "New age is greater than than a child."
+                    "New time is greater than than a child."
                 )
 
         self.__network.nodes[node]["time"] = new_time
 
-        self.__network[parent][node]["length"] = new_time - self.get_time(
-            parent
-        )
+        if node != self.root:
+            self.__network[parent][node]["length"] = new_time - self.get_time(
+                parent
+            )
         for child in self.children(node):
             self.__network[node][child]["length"] = (
                 self.get_time(child) - new_time
             )
+
+    def set_times(self, time_dict: Dict[str, float]) -> None:
+        """Sets the time of all nodes in the tree.
+
+        Args:
+            time_dict: Dictionary mapping nodes to their time.
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized, if the time
+            of any parent is greater than that of a child.
+        """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized")
+
+        # TODO: Check that the keys of time_dict match exactly the nodes in the
+        # tree and raise otherwise?
+        # Currently, if nodes are missing in time_dict, code below blows up. If
+        # extra nodes are present, they are ignored.
+
+        for (parent, child) in self.edges:
+            time_parent = time_dict[parent]
+            time_child = time_dict[child]
+            if time_parent > time_child:
+                raise CassiopeiaTreeError(
+                    "Time of parent greater than that of child: "
+                    f"{time_parent} > {time_child}")
+            self.__network[parent][child]["length"] = time_child - time_parent
+        for node, time in time_dict.items():
+            self.__network.nodes[node]["time"] = time
 
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
@@ -533,6 +595,17 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Tree is not initialized.")
 
         return self.__network.nodes[node]["time"]
+
+    def get_times(self) -> Dict[str, float]:
+        """Gets the times of all nodes.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        if self.__network is None:
+            raise CassiopeiaTreeError("Tree is not initialized.")
+
+        return dict([(node, self.get_time(node)) for node in self.nodes])
 
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
@@ -763,6 +836,23 @@ class CassiopeiaTree:
 
         return mutations
 
+    def get_number_of_mutations_along_edge(
+        self, parent: str, child: str
+    ) -> int:
+        return len(self.get_mutations_along_edge(parent, child))
+
+    def get_number_of_unmutated_characters_in_node(
+        self, node: str
+    ) -> int:
+        states = self.get_character_states(node)
+        return states.count(0)
+
+    def get_number_of_mutated_characters_in_node(
+        self, node: str
+    ) -> int:
+        return self.n_character -\
+            self.get_number_of_unmutated_characters_in_node(node)
+
     def relabel_nodes(self, relabel_map: Dict[str, str]):
         """Relabels the nodes in the tree.
 
@@ -782,3 +872,9 @@ class CassiopeiaTree:
 
         # reset cache because we've changed names
         self.__cache = {}
+
+    def get_tree_topology(self) -> nx.DiGraph:
+        r"""
+        Returns the underlying tree topology as a networkx DiGraph.
+        """
+        return copy.deepcopy(self.__network)
