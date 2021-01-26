@@ -11,7 +11,7 @@ from typing import Dict, Tuple
 
 from cassiopeia.critique import critique_utilities
 from cassiopeia.solver import solver_utilities
-
+from cassiopeia.data import utilities as tree_utilities
 
 def triplets_correct(
     tree1: nx.DiGraph, tree2: nx.DiGraph, number_of_trials: int = 1000
@@ -48,8 +48,8 @@ def triplets_correct(
     proportion_unresolvable = defaultdict(int)
 
     # convert to Ete3 trees and collapse unifurcations
-    T1 = ete3.Tree(solver_utilities.to_newick(tree1), format=1)
-    T2 = ete3.Tree(solver_utilities.to_newick(tree2), format=1)
+    T1 = ete3.Tree(tree_utilities.to_newick(tree1), format=1)
+    T2 = ete3.Tree(tree_utilities.to_newick(tree2), format=1)
 
     T1 = solver_utilities.collapse_unifurcations(T1)
     T2 = solver_utilities.collapse_unifurcations(T2)
@@ -152,8 +152,8 @@ def robinson_foulds(
     """
 
     # convert to Ete3 trees and collapse unifurcations
-    T1 = ete3.Tree(solver_utilities.to_newick(tree1), format=1)
-    T2 = ete3.Tree(solver_utilities.to_newick(tree2), format=1)
+    T1 = ete3.Tree(tree_utilities.to_newick(tree1), format=1)
+    T2 = ete3.Tree(tree_utilities.to_newick(tree2), format=1)
 
     T1 = solver_utilities.collapse_unifurcations(T1)
     T2 = solver_utilities.collapse_unifurcations(T2)

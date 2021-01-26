@@ -5,7 +5,7 @@ import pandas as pd
 
 from cassiopeia.solver.MaxCutSolver import MaxCutSolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as tree_utilities
 
 
 class MaxCutSolverTest(unittest.TestCase):
@@ -96,7 +96,7 @@ class MaxCutSolverTest(unittest.TestCase):
         # as a polytomy
         self.mcsolver.solve()
         expected_newick_string = "(c1,(c2,c5,(c3,c4)));"
-        observed_newick_string = solver_utilities.to_newick(self.mcsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(self.mcsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case_priors(self):
@@ -111,7 +111,7 @@ class MaxCutSolverTest(unittest.TestCase):
         )
         mcsolver2.solve()
         expected_newick_string = "((c1,c2),(c5,(c3,c4)));"
-        observed_newick_string = solver_utilities.to_newick(mcsolver2.tree)
+        observed_newick_string = tree_utilities.to_newick(mcsolver2.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 

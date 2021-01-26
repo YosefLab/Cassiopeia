@@ -6,7 +6,7 @@ import pandas as pd
 from cassiopeia.solver.SpectralSolver import SpectralSolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as tree_utilities
 
 
 class SpectralSolverTest(unittest.TestCase):
@@ -177,7 +177,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
         spsolver.solve()
         expected_newick_string = "(2,(0,1),(5,6),(3,4));"
-        observed_newick_string = solver_utilities.to_newick(spsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case_string(self):
@@ -198,7 +198,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
         spsolver.solve()
         expected_newick_string = "(c3,(c1,c2),(c6,(c7,c8)),(c4,c5));"
-        observed_newick_string = solver_utilities.to_newick(spsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2(self):
@@ -213,7 +213,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
         spsolver.solve()
         expected_newick_string = "((0,2),(1,3));"
-        observed_newick_string = solver_utilities.to_newick(spsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2_priors(self):
@@ -239,7 +239,7 @@ class SpectralSolverTest(unittest.TestCase):
         )
         spsolver.solve()
         expected_newick_string = "(0,1,(2,3));"
-        observed_newick_string = solver_utilities.to_newick(spsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 
