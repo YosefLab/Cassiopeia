@@ -116,9 +116,9 @@ class TestHybridSolver(unittest.TestCase):
         )
 
         ## hybrid solver with MaxCut Greedy
-        greedy_maxcut_solver = cas.solver.MaxCutGreedySolver(cm_large, missing_char = -1)
+        greedy_maxcut_solver = cas.solver.MaxCutGreedySolver(cm_missing, missing_char = -1)
         self.hybrid_pp_solver_maxcut = cas.solver.HybridSolver(
-            cm_large, greedy_maxcut_solver, ilp_solver_large, missing_char=-1, cell_cutoff = 3, threads = 2
+            cm_missing, greedy_maxcut_solver, ilp_solver_missing, missing_char=-1, cell_cutoff = 3, threads = 2
         )
 
     def test_constructor(self):
@@ -373,7 +373,7 @@ class TestHybridSolver(unittest.TestCase):
 
         # make sure all samples are leaves
         tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
-        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
 
@@ -383,26 +383,22 @@ class TestHybridSolver(unittest.TestCase):
             [
                 ("node0", "node1"),
                 ("node0", "node2"),
-                ("node1", "a"),
+                ("node1", "node3"),
                 ("node1", "node4"),
-                ("node2", "i"),
-                ("node2", "j"),
-                ("node4", "b"),
-                ("node4", "node8"),
-                ("node8", "c"),
-                ("node8", "node10"),
-                ("node10", "d"),
-                ("node10", "node12"),
-                ("node12", "e"),
-                ("node12", "node14"),
-                ("node14", "f"),
-                ("node14", "node16"),
-                ("node16", "g"),
-                ("node16", "h"),
+                ("node3", "c"),
+                ("node3", "node6"),
+                ("node6", "a"),
+                ("node6", "b"),
+                ("node4", "d"),
+                ("node4", "e"),
+                ("node2", "f"),
+                ("node2", "node5"),
+                ("node5", "g"),
+                ("node5", "h")
             ]
         )
 
-        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], 3)
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
