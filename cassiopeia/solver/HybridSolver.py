@@ -233,16 +233,20 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         """
 
+        if len(samples) == 1:
+            subproblem_tree = nx.DiGraph()
+            subproblem_tree.add_edge(root, samples[0])
+            return subproblem_tree, root
+
         subproblem_character_matrix = self.unique_character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
                 subproblem_character_matrix.loc[samples].values.tolist(), self.missing_char
         )
 
+        base_logfile = self.bottom_solver.logfile.split(".log")[0]
         subtree_root_string = "-".join([str(s) for s in subtree_root])
-        logfile = f"{subtree_root_string}.log"
-
-
+        logfile = f"{base_logfile}_{subtree_root_string}.log"
 
         subtree_solver = copy.deepcopy(self.bottom_solver)
         subtree_solver.prepare_for_subproblem(
