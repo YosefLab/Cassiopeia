@@ -299,7 +299,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
         the tree (especially when using the Hybrid algorithm where parts of 
-        the tree are built indepedently), so we make sure we only add a
+        the tree are built independently), so we make sure we only add a
         particular sample once to the tree.
 
         Args:
