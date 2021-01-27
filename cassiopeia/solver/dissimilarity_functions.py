@@ -134,7 +134,6 @@ def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
     """
 
     dist = 0
-
     for i in range(len(s1)):
 
         if s1[i] != s2[i]:

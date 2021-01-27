@@ -95,7 +95,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         The procedure recursively splits a set of samples to build a tree. At
         each partition of the samples, an ancestral node is created and each
-        side of the parition is placed as a daughter clade of that node. This
+        side of the partition is placed as a daughter clade of that node. This
         continues until each side of the partition is comprised only of single
         samples. If an algorithm cannot produce a split on a set of samples,
         then those samples are placed as sister nodes and the procedure
