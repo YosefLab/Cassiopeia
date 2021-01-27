@@ -268,6 +268,52 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    def test_full_hybrid_single_thread(self):
+
+        self.hybrid_pp_solver.threads = 1
+        self.hybrid_pp_solver.solve()
+
+        tree = self.hybrid_pp_solver.tree
+
+         # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+        # make sure every node has at most one parent
+        multi_parents = [n for n in tree if tree.in_degree(n) > 1]
+        self.assertEqual(len(multi_parents), 0)
+        
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("root", "9"),
+                ("9", "8"),
+                ("9", "7"),
+                ("7", "6"),
+                ("7", "a"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "e"),
+                ("8", "d"),
+            ]
+        )
+
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
     def test_full_hybrid_large(self):
 
         self.hybrid_pp_solver_large.solve()
