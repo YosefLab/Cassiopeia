@@ -115,6 +115,12 @@ class TestHybridSolver(unittest.TestCase):
             cm_missing, greedy_solver_missing, ilp_solver_missing, missing_char = -1, cell_cutoff = 3, threads = 2
         )
 
+        ## hybrid solver with MaxCut Greedy
+        greedy_maxcut_solver = cas.solver.MaxCutGreedySolver(cm_large, missing_char = -1)
+        self.hybrid_pp_solver_maxcut = cas.solver.HybridSolver(
+            cm_large, greedy_maxcut_solver, ilp_solver_large, missing_char=-1, cell_cutoff = 3, threads = 2
+        )
+
     def test_constructor(self):
 
         self.assertEqual(self.hybrid_pp_solver.cell_cutoff, 3)
@@ -309,6 +315,53 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    def test_full_hybrid_maxcut(self):
+
+        self.hybrid_pp_solver_maxcut.solve()
+
+        tree = self.hybrid_pp_solver_maxcut.tree
+
+         # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("node0", "node1"),
+                ("node0", "node2"),
+                ("node1", "a"),
+                ("node1", "node4"),
+                ("node2", "i"),
+                ("node2", "j"),
+                ("node4", "b"),
+                ("node4", "node8"),
+                ("node8", "c"),
+                ("node8", "node10"),
+                ("node10", "d"),
+                ("node10", "node12"),
+                ("node12", "e"),
+                ("node12", "node14"),
+                ("node14", "f"),
+                ("node14", "node16"),
+                ("node16", "g"),
+                ("node16", "h"),
+            ]
+        )
+
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
     def test_full_hybrid_missing(self):
 
         self.hybrid_pp_solver_missing.solve()
@@ -345,7 +398,7 @@ class TestHybridSolver(unittest.TestCase):
                 ("node5", "h")
             ]
         )
-        
+
         triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
