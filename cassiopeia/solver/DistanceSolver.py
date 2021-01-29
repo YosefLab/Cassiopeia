@@ -36,15 +36,22 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         dissimilarity_map: Optional[pd.DataFrame] = None,
         root_sample: Optional[str] = None,
         root_tree: bool = False,
-    ):
+    ) -> None:
         """A general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
         samples to join together into a "cherry" and then reform the
         dissimilarity matrix with respect to this new cherry. The implementation
         of how to find cherries and update the dissimilarity map is left to
-        subclasses of DistanceSolver. The function by default updates the
-        self.tree instance variable.
+        subclasses of DistanceSolver. The function will update the `tree`
+        attribute of the input CassiopeiaTree.
+
+        Args:
+            cassiopeia_tree: CassiopeiaTree object to be populated
+            dissimilarity_map: Dissimilarity map storing the distances
+                between samples
+            root_sample: Sample to treat as a root
+            root_tree: Whether or not to root the tree after the routine
         """
 
         (
@@ -103,7 +110,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         if root_sample is not None:
             tree = self.root_tree(tree, root_sample)
 
-        cassiopeia_tree.tree = tree
+        cassiopeia_tree.populate_tree(tree)
 
     def setup_solver(
         self,

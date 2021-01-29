@@ -166,10 +166,8 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         self.nj_solver.solve(self.basic_tree, dissimilarity_map = self.basic_dissimilarity_map, root_sample = "b", root_tree=True)
 
-        T = self.basic_tree.tree
-
         # test leaves exist in tree
-        _leaves = [n for n in T if T.out_degree(n) == 0]
+        _leaves = self.basic_tree.leaves
 
         self.assertEqual(
             len(_leaves), self.basic_dissimilarity_map.shape[0] - 1
@@ -178,7 +176,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             self.assertIn(_leaf,self.basic_dissimilarity_map.index.values)
 
         # test for expected number of edges
-        edges = list(T.edges())
+        edges = list(self.basic_tree.edges)
         self.assertEqual(len(edges), 7)
 
         # test relationships between samples
@@ -196,6 +194,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
+        T = self.basic_tree.get_network()
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
 
@@ -218,7 +217,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_pp_solver(self):
 
         self.nj_solver_delta.solve(self.pp_tree, root_tree = True)
-        T = self.pp_tree.tree
+        T = self.pp_tree.get_network()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -247,7 +246,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_duplicate_sample_neighbor_joining(self):
 
         self.nj_solver_delta.solve(self.duplicate_tree, root_tree=True)
-        T = self.duplicate_tree.tree
+        T = self.duplicate_tree.get_network()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(

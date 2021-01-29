@@ -688,6 +688,10 @@ class CassiopeiaTree:
         """Returns newick format of tree."""
         return utilities.to_newick(self.__network)
 
+    def get_network(self) -> nx.DiGraph:
+        """Returns the tree in Networkx format."""
+        return self.__network.copy()
+
     def get_mean_depth_of_tree(self) -> float:
         """Computes mean depth of tree.
 
