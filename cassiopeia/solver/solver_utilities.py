@@ -128,7 +128,7 @@ def collapse_edges(
 def collapse_tree(
     tree: nx.DiGraph,
     infer_ancestral_characters: bool,
-    character_matrix: Optional[pd.DataFrame] = None,
+    character_matrix: Optional[np.array[np.array[int]]] = None,
     missing_char: Optional[int] = None,
 ):
     """Collapses mutationless edges in a tree in-place.
@@ -237,7 +237,7 @@ def to_newick(tree: nx.DiGraph) -> str:
 
 def transform_priors(
     priors: Optional[Dict[int, Dict[int, float]]],
-    prior_function: Optional[Callable[[float], float]],
+    prior_transformation: Optional[Callable[[float], float]],
 ):
     """Generates a dictionary of negative log probabilities from priors.
 
@@ -247,7 +247,7 @@ def transform_priors(
     Args:
         priors: A dictionary of prior probabilities for each character/state
             pair
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights
 
     Returns:
@@ -257,6 +257,6 @@ def transform_priors(
     for character in priors:
         state_weights = {}
         for state in priors[character]:
-            state_weights[state] = prior_function(priors[character][state])
+            state_weights[state] = prior_transformation(priors[character][state])
         weights[character] = state_weights
     return weights

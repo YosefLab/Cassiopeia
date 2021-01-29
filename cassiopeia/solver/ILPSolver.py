@@ -67,6 +67,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
+        prior_transformation: Optional[Callable[[float], float]] = lambda x: -np.log(x),
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
@@ -101,9 +102,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         self.priors = priors
-        if self.priors:
+        if priors:
             self.weights = solver_utilities.transform_priors(
-                priors, lambda x: -np.log(x)
+                priors, prior_transformation
             )
         else:
             self.weights = None

@@ -254,7 +254,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         self.nj_pp_solver.solve()
         T = self.nj_pp_solver.tree
-        print(T.edges)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(

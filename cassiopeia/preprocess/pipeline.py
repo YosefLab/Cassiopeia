@@ -258,7 +258,7 @@ def align_sequences(
 ) -> pd.DataFrame:
     """Align reads to the TargetSite reference.
 
-    Take in several queries store in a DataFrame mapping cellBC-UMIs to a
+    Take in several queries stored in a DataFrame mapping cellBC-UMIs to a
     sequence of interest and align each to a reference sequence. The alignment
     algorithm used is the Smith-Waterman local alignment algorithm. The desired
     output consists of the best alignment score and the CIGAR string storing the

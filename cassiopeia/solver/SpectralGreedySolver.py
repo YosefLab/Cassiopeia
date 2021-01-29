@@ -13,7 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver.missing_data_methods import assign_missing_average
+from cassiopeia.solver import missing_data_methods
 
 
 class SpectralGreedySolver(GreedySolver.GreedySolver):
@@ -42,7 +42,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies and the contribution of
             each mutation in the similarity graph
         similarity_function: A function that calculates a similarity score
@@ -72,10 +72,10 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         self,
         character_matrix: pd.DataFrame,
         missing_char: int,
-        missing_data_classifier: Callable = None,
+        missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[Callable[[float], float]] = None,
         similarity_function: Optional[
             Callable[
                 [
@@ -86,25 +86,19 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
                 ],
                 float,
             ]
-        ] = None,
+        ] = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: Optional[int] = 0,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_function
+            character_matrix, missing_char, meta_data, priors, prior_transformation
         )
 
-        if not missing_data_classifier:
-            self.missing_data_classifier = assign_missing_average
-        else:
-            self.missing_data_classifier = missing_data_classifier
+        self.missing_data_classifier = missing_data_classifier
+        
         self.threshold = threshold
-        if similarity_function:
-            self.similarity_function = similarity_function
-        else:
-            self.similarity_function = (
-                dissimilarity_functions.hamming_similarity_without_missing
-            )
+        self.similarity_function = similarity_function
+
 
     def perform_split(
         self,
@@ -174,12 +168,12 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
 
         for i in samples:
             if (
-                self.unique_character_matrix[i][chosen_character]
+                self.unique_character_matrix[i, chosen_character]
                 == chosen_state
             ):
                 left_set.append(i)
             elif (
-                self.unique_character_matrix[i][chosen_character]
+                self.unique_character_matrix[i, chosen_character]
                 == self.missing_char
             ):
                 missing.append(i)
@@ -200,7 +194,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             samples,
             similarity_function=self.similarity_function,
             threshold=self.threshold,
-            w=self.weights,
+            weights=self.weights,
         )
 
         improved_left_set = graph_utilities.spectral_improve_cut(G, left_set)

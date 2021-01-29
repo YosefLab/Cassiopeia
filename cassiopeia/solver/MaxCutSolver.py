@@ -36,7 +36,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies and the contribution of
             each mutation in the connectivity graph
         sdimension: The number of dimensions to use for the embedding space.
@@ -66,13 +66,13 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[Callable[[float], float]] = None,
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_function
+            character_matrix, missing_char, meta_data, priors, prior_transformation
         )
         self.sdimension = sdimension
         self.iterations = iterations

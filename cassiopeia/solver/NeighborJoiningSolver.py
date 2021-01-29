@@ -27,7 +27,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             character state
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
@@ -47,7 +47,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             samples
         dissimilarity_function: Function to compute the dissimilarity between
             samples.
-        root_sample: Sample to treat as a root, an index in the dissimlarity
+        root_sample: Sample to treat as a root, an index in the dissimilarity
             map and character matrix.
         tree: The tree returned by `self.solve()`. None if `solve` has not been
             called yet.
@@ -60,7 +60,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, str]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[Callable[[float], float]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[
@@ -90,7 +90,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             root_sample = "root"
 
             # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilairty map
+            # and recompute the dissimilarity map
             dissimilarity_map = None
 
         self.root_sample = root_sample
@@ -100,7 +100,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             missing_char,
             meta_data,
             priors,
-            prior_function,
+            prior_transformation,
             dissimilarity_map=dissimilarity_map,
             dissimilarity_function=dissimilarity_function,
         )
