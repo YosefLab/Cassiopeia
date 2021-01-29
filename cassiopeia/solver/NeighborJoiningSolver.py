@@ -22,11 +22,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     minimizing the Q-criterion between samples.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples.
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            character state
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -37,26 +32,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             function is provided.
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        dissimilarity_map: Dissimilarity map describing distances between
-            samples
         dissimilarity_function: Function to compute the dissimilarity between
             samples.
-        root_sample: Sample to treat as a root, an index in the dissimlarity
-            map and character matrix.
-        tree: The tree returned by `self.solve()`. None if `solve` has not been
-            called yet.
 
     """
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, str]] = None,
-        dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[
                 [
@@ -69,32 +51,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 float,
             ]
         ] = None,
-        root_sample: Optional[str] = None,
     ):
 
-        if dissimilarity_function is None and root_sample is None:
-            raise DistanceSolver.DistanceSolveError(
-                "Please specify a root sample or provide a dissimilarity "
-                "function by which to add a root to the dissimilarity map"
-            )
-
-        if not root_sample:
-
-            root = [0] * character_matrix.shape[1]
-            character_matrix.loc["root"] = root
-            root_sample = "root"
-
-            # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilairty map
-            dissimilarity_map = None
-
-        self.root_sample = root_sample
-
         super().__init__(
-            character_matrix,
-            meta_data,
-            priors,
-            dissimilarity_map=dissimilarity_map,
             dissimilarity_function=dissimilarity_function,
         )
 
@@ -121,16 +80,18 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return (i, j)
 
-    def root_tree(self, tree):
+    def root_tree(self, tree: nx.DiGraph, root_sample = str):
         """Roots a tree at the inferred ancestral root.
 
-        Uses the root sample stored in self.root_sample to root the
-        tree stored in the class instance.
+        Uses the specified root to root the tree passed in.
+
+        Args:
+            tree: 
         """
 
         rooted_tree = nx.DiGraph()
 
-        for e in nx.dfs_edges(tree, source=self.root_sample):
+        for e in nx.dfs_edges(tree, source=root_sample):
 
             rooted_tree.add_edge(e[0], e[1])
 
