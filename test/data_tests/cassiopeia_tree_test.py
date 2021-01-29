@@ -9,7 +9,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTreeError
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -567,6 +567,45 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(tree.is_internal_node("node10"))
         self.assertTrue(tree.is_internal_node("node0"))
         self.assertFalse(tree.is_internal_node("node5"))
+
+    def test_uninitialized_tree_raises_error(self):
+        r"""
+        Methods of the CassiopeiaTree that operate on the tree (as opposed to,
+        say, just the character matrix) require that the tree has been
+        initialized, and should raise an error otherwise. Here we make sure
+        that one such method raises the error. It is a very minimal test.
+        """
+        tree = cas.data.CassiopeiaTree(character_matrix=self.character_matrix)
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.root
+
+    def test_cache_internals_not_exposed(self):
+        r"""
+        The CassiopeiaTree should not expose the lists in the cache. It should
+        only return copies.
+        """
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        for method in [
+            CassiopeiaTree.leaves,
+            CassiopeiaTree.internal_nodes,
+            CassiopeiaTree.nodes,
+            CassiopeiaTree.edges,
+        ]:
+            res = method.fget(tree)  # Should return a COPY of the list
+            res.clear()  # Thus, this should NOT clear the cache's internal list
+            assert len(method.fget(tree)) > 0
+
+    def test_tree_topology_not_exposed(self):
+        r"""
+        When the CassiopeiaTree is created with a networkx.DiGraph object, a
+        COPY of the networkx.DiGraph object should be stored internally, to
+        avoid aliasing issues.
+        """
+        tree1 = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree2 = cas.data.CassiopeiaTree(tree=self.test_network)
+        a_leaf = tree1.leaves[0]
+        tree1.set_time(a_leaf, 1234)  # Should NOT modify tree2!
+        assert tree2.get_time(a_leaf) != 1234
 
 
 if __name__ == "__main__":
