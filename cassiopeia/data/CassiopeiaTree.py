@@ -364,8 +364,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         if "non_root_internal_nodes" not in self.__cache:
             res = [
@@ -556,8 +555,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree is not initialized, if the time
             of any parent is greater than that of a child.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized")
+        self.__check_network_initialized()
 
         # TODO: Check that the keys of time_dict match exactly the nodes in the
         # tree and raise otherwise?
@@ -594,8 +592,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-        if self.__network is None:
-            raise CassiopeiaTreeError("Tree is not initialized.")
+        self.__check_network_initialized()
 
         return dict([(node, self.get_time(node)) for node in self.nodes])
 
