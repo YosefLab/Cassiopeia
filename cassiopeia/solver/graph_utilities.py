@@ -23,7 +23,7 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
 
 
 def construct_connectivity_graph(
-    character_matrix: np.array[np.array[int]],
+    character_matrix: np.array,
     mutation_frequencies: Dict[int, Dict[int, int]],
     missing_char: int,
     samples: List[int],
@@ -80,13 +80,17 @@ def construct_connectivity_graph(
                             )
                         )
                     elif x == 0:
-                        score += weights[l][y] * (mutation_frequencies[l][y] - 1)
+                        score += weights[l][y] * (
+                            mutation_frequencies[l][y] - 1
+                        )
                     elif y == 0:
-                        score += weights[l][x] * (mutation_frequencies[l][x] - 1)
+                        score += weights[l][x] * (
+                            mutation_frequencies[l][x] - 1
+                        )
                     else:
-                        score += weights[l][x] * (mutation_frequencies[l][x] - 1) + weights[
-                            l
-                        ][y] * (mutation_frequencies[l][y] - 1)
+                        score += weights[l][x] * (
+                            mutation_frequencies[l][x] - 1
+                        ) + weights[l][y] * (mutation_frequencies[l][y] - 1)
                 else:
                     if x == y:
                         score -= 3 * (
@@ -166,7 +170,7 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
 
 
 def construct_similarity_graph(
-    character_matrix: np.array[np.array[int]],
+    character_matrix: np.array,
     missing_char: int,
     samples: List[int],
     similarity_function: Callable[
@@ -209,7 +213,12 @@ def construct_similarity_graph(
         G.add_node(i)
 
     for i, j in itertools.combinations(samples, 2):
-        s = similarity_function(list(character_matrix[i]), list(character_matrix[j]), missing_char, weights)
+        s = similarity_function(
+            list(character_matrix[i]),
+            list(character_matrix[j]),
+            missing_char,
+            weights,
+        )
         if s > threshold:
             G.add_edge(i, j, weight=s)
 

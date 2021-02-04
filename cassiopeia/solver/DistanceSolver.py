@@ -68,7 +68,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        prior_transformation: Optional[Callable[[float], float]] = lambda x: -np.log(x),
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):

@@ -57,8 +57,12 @@ class SpectralSolver(GreedySolver.GreedySolver):
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
             out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        index_to_name: A dictionary mapping sample names to their integer
+            indices in the original character matrix, for efficient indexing
+        name_to_index: A dictionary mapping integer indices of samples in
+            the original character matrix to their names
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
         weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
@@ -71,7 +75,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_function: Optional[Callable[[float], float]] = "negative_log",
         similarity_function: Optional[
             Callable[
                 [
@@ -101,8 +105,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def perform_split(
         self,
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str] = None,
+    ) -> Tuple[List[str], List[str]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
         First, a similarity graph is generated with samples as nodes such that
@@ -119,19 +123,20 @@ class SpectralSolver(GreedySolver.GreedySolver):
         cuts needed to be explored.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their string names
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
+        int_samples = list(map(lambda x: self.name_to_index[x], samples))
 
         G = graph_utilities.construct_similarity_graph(
             self.unique_character_matrix,
             self.missing_char,
-            samples,
+            int_samples,
             similarity_function=self.similarity_function,
             threshold=self.threshold,
-            w=self.weights,
+            weights=self.weights,
         )
 
         L = nx.normalized_laplacian_matrix(G).todense()
@@ -190,8 +195,15 @@ class SpectralSolver(GreedySolver.GreedySolver):
         )
 
         improved_right_set = []
-        for i in samples:
+        for i in int_samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        return improved_left_set, improved_right_set
+        improved_left_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_left_set)
+        )
+        improved_right_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_right_set)
+        )
+
+        return improved_left_set_name, improved_right_set_name

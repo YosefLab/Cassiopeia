@@ -8,6 +8,7 @@ criterion on a connectivity graph built from the observed mutations in the
 samples representing a supertree of phylogenetic trees on each individual 
 character.
 """
+import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -55,8 +56,12 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
             out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        index_to_name: A dictionary mapping sample names to their integer
+            indices in the original character matrix, for efficient indexing
+        name_to_index: A dictionary mapping integer indices of samples in
+            the original character matrix to their names
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
     """
 
     def __init__(
@@ -66,18 +71,24 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_transformation: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_transformation
+            character_matrix,
+            missing_char,
+            meta_data,
+            priors,
+            prior_transformation,
         )
         self.missing_data_classifier = missing_data_classifier
 
     def perform_split(
         self,
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str],
+    ) -> Tuple[List[str], List[str]]:
         """Performs a partition using both Greedy and MaxCut criteria.
 
         First, uses the most frequent (character, state) pair to split the list
@@ -87,12 +98,14 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         method.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their string names
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
+        int_samples = list(map(lambda x: self.name_to_index[x], samples))
+
+        mutation_frequencies = self.compute_mutation_frequencies(int_samples)
 
         best_frequency = 0
         chosen_character = 0
@@ -103,7 +116,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
-                        < len(samples)
+                        < len(int_samples)
                         - mutation_frequencies[character][self.missing_char]
                     ):
                         if self.weights:
@@ -140,7 +153,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         right_set = []
         missing = []
 
-        for i in samples:
+        for i in int_samples:
             if (
                 self.unique_character_matrix[i, chosen_character]
                 == chosen_state
@@ -160,21 +173,29 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             left_set,
             right_set,
             missing,
+            weights=self.weights,
         )
 
         G = graph_utilities.construct_connectivity_graph(
             self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
-            samples,
+            int_samples,
             weights=self.weights,
         )
 
         improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
 
         improved_right_set = []
-        for i in samples:
+        for i in int_samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        return improved_left_set, improved_right_set
+        improved_left_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_left_set)
+        )
+        improved_right_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_right_set)
+        )
+
+        return improved_left_set_name, improved_right_set_name

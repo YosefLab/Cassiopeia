@@ -8,6 +8,8 @@ import ete3
 import networkx as nx
 import pandas as pd
 
+import cassiopeia as cas
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import solver_utilities
 
 
@@ -54,7 +56,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, -1, -1, 3, -1],
             [1, 2, 3, 2, -1],
         ]
-        ret_vec = solver_utilities.get_lca_characters(vecs, missing_char=-1)
+        ret_vec = data_utilities.get_lca_characters(vecs, missing_char=-1)
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test1(self):
@@ -73,7 +75,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        character_matrix = pd.DataFrame(table).to_numpy()
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
@@ -127,7 +129,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        character_matrix = pd.DataFrame(table).to_numpy()
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
@@ -174,7 +176,7 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(6, 2)
 
         expected_newick_string = "((3,(0,1)),2);"
-        observed_newick_string = solver_utilities.to_newick(T)
+        observed_newick_string = cas.data.to_newick(T)
 
         self.assertEqual(expected_newick_string, observed_newick_string)
 

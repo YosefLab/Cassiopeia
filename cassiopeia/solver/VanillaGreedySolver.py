@@ -5,6 +5,7 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
+import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -46,8 +47,12 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
             out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        index_to_name: A dictionary mapping sample names to their integer
+            indices in the original character matrix, for efficient indexing
+        name_to_index: A dictionary mapping integer indices of samples in
+            the original character matrix to their names
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
     """
 
     def __init__(
@@ -57,18 +62,24 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_transformation: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_transformation
+            character_matrix,
+            missing_char,
+            meta_data,
+            priors,
+            prior_transformation,
         )
         self.missing_data_classifier = missing_data_classifier
 
     def perform_split(
         self,
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str],
+    ) -> Tuple[List[str], List[str]]:
         """Performs a partition based on the most frequent (character, state) pair.
 
         Uses the (character, state) pair to split the list of samples into
@@ -77,12 +88,14 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         character where presence or absence of the character is ambiguous.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their string names
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
+        int_samples = list(map(lambda x: self.name_to_index[x], samples))
+
+        mutation_frequencies = self.compute_mutation_frequencies(int_samples)
 
         best_frequency = 0
         chosen_character = 0
@@ -93,7 +106,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
-                        < len(samples)
+                        < len(int_samples)
                         - mutation_frequencies[character][self.missing_char]
                     ):
                         if self.weights:
@@ -130,7 +143,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         right_set = []
         missing = []
 
-        for i in samples:
+        for i in int_samples:
             if (
                 self.unique_character_matrix[i, chosen_character]
                 == chosen_state
@@ -150,5 +163,10 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             left_set,
             right_set,
             missing,
+            weights=self.weights,
         )
-        return left_set, right_set
+
+        left_set_name = list(map(lambda x: self.index_to_name[x], left_set))
+        right_set_name = list(map(lambda x: self.index_to_name[x], right_set))
+
+        return left_set_name, right_set_name

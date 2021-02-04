@@ -129,7 +129,6 @@ def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
     """
 
     dist = 0
-
     for i in range(len(s1)):
 
         if s1[i] != s2[i]:
@@ -178,7 +177,7 @@ def weighted_hamming_similarity(
         else:
             if s1[i] != 0 and s2[i] != 0:
                 if weights:
-                    d -= weights[i][s1[i]] - weights[i][s2[i]]
+                    d -= weights[i][s1[i]] + weights[i][s2[i]]
 
     if num_present == 0:
         return 0

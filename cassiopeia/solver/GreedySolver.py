@@ -43,8 +43,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
             out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        index_to_name: A dictionary mapping sample names to their integer
+            indices in the original character matrix, for efficient indexing
+        name_to_index: A dictionary mapping integer indices of samples in
+            the original character matrix to their names
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
     """
 
     def __init__(
@@ -53,7 +57,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_transformation: Optional[Callable[[float], float]] = lambda x: -np.log(x),
+        prior_transformation: str = "negative_log",
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
@@ -65,15 +69,29 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             self.weights = None
 
         unique_character_matrix = self.character_matrix.drop_duplicates()
+        self.unique_character_matrix = unique_character_matrix.to_numpy()
 
-        self.node_mapping = {
-            key: value
-            for key, value in zip(
-                list(range(unique_character_matrix.shape[0])),
+        self.index_to_name = dict(
+            zip(
+                range(unique_character_matrix.shape[0]),
                 unique_character_matrix.index,
             )
-        }
-        self.unique_character_matrix = unique_character_matrix.to_numpy()
+        )
+        self.name_to_index = dict(
+            zip(
+                unique_character_matrix.index,
+                range(unique_character_matrix.shape[0]),
+            )
+        )
+
+        self.duplicate_groups = (
+            character_matrix[character_matrix.duplicated(keep=False) == True]
+            .reset_index()
+            .groupby(character_matrix.columns.tolist())["index"]
+            .agg(["first", tuple])
+            .set_index("first")["tuple"]
+            .to_dict()
+        )
 
     def perform_split(
         self,
@@ -82,7 +100,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """Performs a partition of the samples.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their string names
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -134,15 +152,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             return root
 
         self.tree = nx.DiGraph()
-        samples = self.node_mapping.keys()
+        samples = list(self.name_to_index.keys())
         for i in samples:
             self.tree.add_node(i)
         _solve(samples)
         # Collapse 0-mutation edges and append duplicate samples
         self.tree = solver_utilities.collapse_tree(
-            self.tree, True, self.unique_character_matrix, self.missing_char
+            self.tree, True, self.character_matrix, self.missing_char
         )
-        self.tree = nx.relabel_nodes(self.tree, self.node_mapping)
         self.tree = self.add_duplicates_to_tree(self.tree)
         return self.tree
 
@@ -152,14 +169,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """Computes the number of samples in a character matrix that have each
         character/state mutation.
 
-        Generates a dictionary that maps each character to a dictionary of state/
-        sample frequency pairs, allowing quick lookup. Subsets the character matrix
-        to only include the samples in the sample set.
+        Computes the frequency of each mutation in the character data of the
+        sample set. Duplicate cells have their frequencies included. Generates
+        a dictionary that maps each character to a dictionary of state/sample
+        frequency pairs, allowing quick lookup.
 
         Args:
-            cm: The character matrix from which to calculate frequencies
-            missing_char: The character representing missing values
-            samples: The set of relevant samples in calculating frequencies
+            samples: The set of relevant samples in calculating frequencies,
+                represented by their string names
 
         Returns:
             A dictionary containing frequency information for each character/state
@@ -168,7 +185,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         subset_cm = self.unique_character_matrix[samples, :]
         freq_dict = {}
-        for char in range(len(subset_cm.shape[1])):
+        for char in range(subset_cm.shape[1]):
             char_dict = {}
             state_counts = np.unique(subset_cm[:, char], return_counts=True)
             for i in range(len(state_counts[0])):
@@ -192,23 +209,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A tree with duplicates added
         """
-        duplicate_groups = (
-            self.character_matrix[
-                self.character_matrix.duplicated(keep=False) == True
-            ]
-            .reset_index()
-            .groupby(self.character_matrix.columns.tolist())["index"]
-            .agg(["first", tuple])
-            .set_index("first")["tuple"]
-            .to_dict()
-        )
-
-        for i in duplicate_groups:
+        for i in self.duplicate_groups:
             new_internal_node = (
                 max([i for i in tree.nodes if type(i) == int]) + 1
             )
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
-            for duplicate in duplicate_groups[i]:
+            for duplicate in self.duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)
 
         return tree

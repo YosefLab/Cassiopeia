@@ -54,8 +54,12 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
             out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        index_to_name: A dictionary mapping sample names to their integer
+            indices in the original character matrix, for efficient indexing
+        name_to_index: A dictionary mapping integer indices of samples in
+            the original character matrix to their names
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
         sdimension: The number of dimensions to use for the embedding space
         iterations: The number of iterations in updating the embeddings
     """
@@ -66,21 +70,27 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_transformation: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_transformation
+            character_matrix,
+            missing_char,
+            meta_data,
+            priors,
+            prior_transformation,
         )
         self.sdimension = sdimension
         self.iterations = iterations
 
     def perform_split(
         self,
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str] = None,
+    ) -> Tuple[List[str], List[str]]:
         """Generate a partition of the samples by finding the max-cut.
         First, a connectivity graph is generated with samples as nodes such
         that samples with shared mutations have strong negative edge weight
@@ -95,19 +105,21 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         the cut.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their string names
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
+        int_samples = list(map(lambda x: self.name_to_index[x], samples))
+
+        mutation_frequencies = self.compute_mutation_frequencies(int_samples)
 
         G = graph_utilities.construct_connectivity_graph(
             self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
-            samples,
-            w=self.weights,
+            int_samples,
+            weights=self.weights,
         )
 
         if len(G.edges) == 0:
@@ -152,11 +164,18 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         improved_left_set = graph_utilities.max_cut_improve_cut(G, return_cut)
 
         improved_right_set = []
-        for i in samples:
+        for i in int_samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        return improved_left_set, improved_right_set
+        improved_left_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_left_set)
+        )
+        improved_right_set_name = list(
+            map(lambda x: self.index_to_name[x], improved_right_set)
+        )
+
+        return improved_left_set_name, improved_right_set_name
 
     def evaluate_cut(self, cut: List[int], G: nx.DiGraph) -> float:
         """A simple function to evaluate the weight of a cut.

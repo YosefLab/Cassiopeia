@@ -1,11 +1,31 @@
 import unittest
 
+import itertools
 import networkx as nx
 import pandas as pd
+import random
 
 from cassiopeia.solver.MaxCutSolver import MaxCutSolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as tree_utilities
+
+
+def find_triplet_structure(triplet, T):
+    a, b, c = triplet[0], triplet[1], triplet[2]
+    a_ancestors = [node for node in nx.ancestors(T, a)]
+    b_ancestors = [node for node in nx.ancestors(T, b)]
+    c_ancestors = [node for node in nx.ancestors(T, c)]
+    ab_common = len(set(a_ancestors) & set(b_ancestors))
+    ac_common = len(set(a_ancestors) & set(c_ancestors))
+    bc_common = len(set(b_ancestors) & set(c_ancestors))
+    structure = "-"
+    if ab_common > bc_common and ab_common > ac_common:
+        structure = "ab"
+    elif ac_common > bc_common and ac_common > ab_common:
+        structure = "ac"
+    elif bc_common > ab_common and bc_common > ac_common:
+        structure = "bc"
+    return structure
 
 
 class MaxCutSolverTest(unittest.TestCase):
@@ -17,6 +37,18 @@ class MaxCutSolverTest(unittest.TestCase):
                 "c3": [4, 4, 3],
                 "c4": [4, 4, 3],
                 "c5": [-1, 4, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c"],
+        )
+
+        self.cm2 = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 0, 1],
+                "c2": [5, 4, 1],
+                "c3": [4, 4, 3],
+                "c4": [4, 4, 3],
+                "c5": [-1, 4, 3],
             },
             orient="index",
             columns=["a", "b", "c"],
@@ -63,7 +95,7 @@ class MaxCutSolverTest(unittest.TestCase):
             self.mutation_frequencies,
             -1,
             list(range(self.mcsolver.unique_character_matrix.shape[0])),
-            w=weights,
+            weights=weights,
         )
 
         self.assertEqual(G[0][1]["weight"], -2)
@@ -87,31 +119,69 @@ class MaxCutSolverTest(unittest.TestCase):
         new_cut = graph_utilities.max_cut_improve_cut(G, [0, 2])
         self.assertEqual(new_cut, [0, 1])
 
-    def test_simple_base_case(self):
-        # A case where samples 1, 2, 3 cannot be resolved, so they are returned
+    def test_polytomy_base_case(self):
+        # A case where samples c2, c3, c5 cannot be resolved, so they are returned
         # as a polytomy
         self.mcsolver.solve()
         expected_newick_string = "(c1,(c2,c5,(c3,c4)));"
-        observed_newick_string = solver_utilities.to_newick(self.mcsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(self.mcsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
-    def test_simple_base_case_priors(self):
-        # Priors help resolve the unresolvable case
-        priors = {
-            0: {5: 0.8, 4: 0.5},
-            1: {4: 0.1},
-            2: {1: 0.5, 3: 0.3},
-        }
-        mcsolver2 = MaxCutSolver(
-            character_matrix=self.cm, missing_char=-1, priors=priors
-        )
+    def test_simple_base_case(self):
+        mcsolver2 = MaxCutSolver(character_matrix=self.cm2, missing_char=-1)
         mcsolver2.solve()
-        expected_newick_strings = [
-            "(c1,(c2,c5,(c3,c4)));",
-            "((c2,c5,(c3,c4)),c1);",
-        ]
-        observed_newick_string = solver_utilities.to_newick(mcsolver2.tree)
-        self.assertIn(observed_newick_string, expected_newick_strings)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_edges_from(
+            [
+                (5, 6),
+                (5, 7),
+                (6, "c1"),
+                (6, "c2"),
+                (7, 8),
+                (8, "c3"),
+                (8, "c4"),
+                (7, "c5"),
+            ]
+        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
+        for triplet in triplets:
+
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, mcsolver2.tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_simple_base_case_priors(self):
+        # Priors can increase connectivity on another character
+        priors = {
+            0: {5: 0.05, 4: 0.05},
+            1: {4: 0.01, 5: 0.99},
+            2: {1: 0.5, 3: 0.5},
+        }
+        # random.seed(10)
+        mcsolver2p = MaxCutSolver(
+            character_matrix=self.cm2, missing_char=-1, priors=priors
+        )
+        mcsolver2p.solve()
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_edges_from(
+            [
+                (5, "c1"),
+                (5, 6),
+                (6, "c2"),
+                (6, 7),
+                (7, "c5"),
+                (7, 8),
+                (8, "c3"),
+                (8, "c4"),
+            ]
+        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, mcsolver2p.tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
 
 if __name__ == "__main__":

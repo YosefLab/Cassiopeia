@@ -10,6 +10,7 @@ import networkx as nx
 
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Union
+from cassiopeia.data import utilities as data_utilities
 
 
 class InferAncestorError(Exception):
@@ -20,38 +21,10 @@ class InferAncestorError(Exception):
     pass
 
 
-def get_lca_characters(
-    vectors: List[List[int]], missing_char: int
-) -> List[int]:
-    """Builds the character vector of the LCA of a list of character vectors,
-    obeying Camin-Sokal Parsimony.
+class PriorTransformationError(Exception):
+    """An Exception class for generating weights from priors."""
 
-    For each index in the reconstructed vector, imputes the non-missing
-    character if only one of the constituent vectors has a missing value at that
-    index, and imputes missing value if all have a missing value at that index.
-
-    Args:
-        vectors: A list of character vectors to generate an LCA for
-        missing_char: The character representing missing values
-
-    Returns:
-        A list representing the character vector of the LCA
-
-    """
-    k = len(vectors[0])
-    for i in vectors:
-        assert len(i) == k
-    lca_vec = [0] * len(vectors[0])
-    for i in range(k):
-        chars = set([vec[i] for vec in vectors])
-        if len(chars) == 1:
-            lca_vec[i] = list(chars)[0]
-        else:
-            if missing_char in chars:
-                chars.remove(missing_char)
-                if len(chars) == 1:
-                    lca_vec[i] = list(chars)[0]
-    return lca_vec
+    pass
 
 
 def annotate_ancestral_characters(
@@ -83,7 +56,7 @@ def annotate_ancestral_characters(
     for i in T.successors(node):
         annotate_ancestral_characters(T, i, node_to_characters, missing_char)
         vectors.append(node_to_characters[i])
-    lca_characters = get_lca_characters(vectors, missing_char)
+    lca_characters = data_utilities.get_lca_characters(vectors, missing_char)
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
 
@@ -128,7 +101,7 @@ def collapse_edges(
 def collapse_tree(
     tree: nx.DiGraph,
     infer_ancestral_characters: bool,
-    character_matrix: Optional[np.array[np.array[int]]] = None,
+    character_matrix: Optional[pd.DataFrame] = None,
     missing_char: Optional[int] = None,
 ):
     """Collapses mutationless edges in a tree in-place.
@@ -152,6 +125,11 @@ def collapse_tree(
         A collapsed tree
 
     """
+    name_to_index = dict(
+        zip(character_matrix.index, range(character_matrix.shape[0]))
+    )
+    character_matrix_np = character_matrix.to_numpy()
+
     leaves = [
         n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1
     ]
@@ -168,8 +146,9 @@ def collapse_tree(
             raise InferAncestorError()
 
         for i in leaves:
-            node_to_characters[i] = list(character_matrix[i, :])
-            tree.nodes[i]["characters"] = list(character_matrix[i, :])
+            node_to_characters[i] = tree.nodes[i]["characters"] = list(
+                character_matrix_np[name_to_index[i], :]
+            )
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_char
         )
@@ -206,57 +185,48 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     return collapsed_tree
 
 
-def to_newick(tree: nx.DiGraph) -> str:
-    """Converts a networkx graph to a newick string.
-
-    Args:
-        tree: A networkx tree
-
-    Returns:
-        A newick string representing the topology of the tree
-    """
-
-    def _to_newick_str(g, node):
-        is_leaf = g.out_degree(node) == 0
-        _name = str(node)
-        return (
-            "%s" % (_name,)
-            if is_leaf
-            else (
-                "("
-                + ",".join(
-                    _to_newick_str(g, child) for child in g.successors(node)
-                )
-                + ")"
-            )
-        )
-
-    root = [node for node in tree if tree.in_degree(node) == 0][0]
-    return _to_newick_str(tree, root) + ";"
-
-
 def transform_priors(
     priors: Optional[Dict[int, Dict[int, float]]],
-    prior_transformation: Optional[Callable[[float], float]],
-):
-    """Generates a dictionary of negative log probabilities from priors.
+    prior_transformation: str = "negative_log",
+) -> Dict[int, Dict[int, float]]:
+    """Generates a dictionary of weights from priors.
 
-    Generates a dictionary of weights for use in algorithms that inherit the
-    GreedySolver from given priors.
+    Generates a dictionary of weights from given priors for each character/state
+    pair for use in algorithms that inherit the GreedySolver. Supported
+    transformations include negative log, negative log square root, and inverse.
 
     Args:
         priors: A dictionary of prior probabilities for each character/state
             pair
         prior_transformation: A function defining a transformation on the priors
-            in forming weights
+            in forming weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative log
+                "negative_square_root_log": Transforms each probability by the
+                    square root of the negative log
+                "inverse": Transforms each probability p by taking 1/p
 
     Returns:
         A dictionary of weights for each character/state pair
     """
+    if prior_transformation not in [
+        "negative_log",
+        "negative_square_root_log",
+        "inverse",
+    ]:
+        logging.info("Please select one of the supported prior transformations")
+        raise PriorTransformationError()
+
+    prior_function = lambda x: -np.log(x)
+
+    if prior_transformation == "negative_square_root_log":
+        prior_function = lambda x: -np.log(np.sqrt(x))
+    if prior_transformation == "inverse":
+        prior_function = lambda x: 1 / x if x > 0 else 0
+
     weights = {}
     for character in priors:
         state_weights = {}
         for state in priors[character]:
-            state_weights[state] = prior_transformation(priors[character][state])
+            state_weights[state] = prior_function(priors[character][state])
         weights[character] = state_weights
     return weights

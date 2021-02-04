@@ -60,7 +60,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, str]] = None,
-        prior_transformation: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[

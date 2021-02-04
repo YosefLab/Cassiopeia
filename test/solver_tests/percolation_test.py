@@ -5,7 +5,7 @@ import pandas as pd
 
 from cassiopeia.solver.PercolationSolver import PercolationSolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as data_utilities
 
 
 class PercolationSolverTest(unittest.TestCase):
@@ -22,7 +22,7 @@ class PercolationSolverTest(unittest.TestCase):
         psolver = PercolationSolver(character_matrix=cm, missing_char=-1)
         psolver.solve()
         expected_newick_string = "((1,3),(0,2,4));"
-        observed_newick_string = solver_utilities.to_newick(psolver.tree)
+        observed_newick_string = data_utilities.to_newick(psolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2(self):
@@ -93,7 +93,7 @@ class PercolationSolverTest(unittest.TestCase):
             "((c2,(c5,c6),c4),(c1,c3));",
             "((c2,(c6,c5),c4),(c1,c3));",
         ]
-        observed_newick_string = solver_utilities.to_newick(psolver.tree)
+        observed_newick_string = data_utilities.to_newick(psolver.tree)
         self.assertIn(observed_newick_string, expected_newick_strings)
 
 

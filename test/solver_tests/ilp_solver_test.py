@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import ilp_solver_utilities
 
 
@@ -133,7 +133,7 @@ class TestILPSolver(unittest.TestCase):
 
     def test_simple_potential_graph_inference(self):
 
-        root = solver_utilities.get_lca_characters(
+        root = data_utilities.get_lca_characters(
             self.ilp_pp_solver.unique_character_matrix.values.tolist(),
             self.ilp_pp_solver.missing_char,
         )
@@ -141,10 +141,6 @@ class TestILPSolver(unittest.TestCase):
         potential_graph = self.ilp_pp_solver.infer_potential_graph(
             root, 0, max_lca_height
         )
-
-        # potential_graph = ilp_solver_utilities.infer_potential_graph(
-        #     self.ilp_pp_solver.unique_character_matrix.values, 0, max_lca_height, self.ilp_pp_solver.maximum_potential_graph_layer_size, self.ilp_pp_solver.priors, self.ilp_pp_solver.missing_char
-        # )
 
         # expected nodes
         expected_nodes = [
