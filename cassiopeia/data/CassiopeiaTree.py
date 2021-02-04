@@ -691,6 +691,8 @@ class CassiopeiaTree:
         Returns:
             The full character state array of the specified node.
         """
+        if node not in self.__network.nodes:
+            raise CassiopeiaTreeError(f"Node {node} does not exist!")
         return self.__network.nodes[node]["character_states"][:]
 
     def depth_first_traverse_nodes(

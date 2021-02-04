@@ -15,4 +15,3 @@ from .lineage_tracing_simulator import (
     LineageTracingSimulator,
     IIDExponentialLineageTracer,
 )
-from .tree import Tree
