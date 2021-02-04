@@ -17,10 +17,10 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
 
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import ilp_solver_utilities
-from cassiopeia.solver import solver_utilities
 
 
 class ILPSolverError(Exception):
@@ -112,11 +112,26 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.logfile = logfile
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
+    def prepare_for_subproblem(self, new_character_matrix: pd.DataFrame, logfile: str):
+        """Prepare ILPSolver to be used in a HybridSolver instance.
+
+        Rewrites the character matrix, unique character matrix, and logfile
+        attributes so this can be used in a HybridSolver instance.
+
+        Args:
+            new_character_matrix: A character matrix
+            logfile: Logfile to store the progress of the ILP solver.
+        """
+
+        self.character_matrix = new_character_matrix.copy()
+        self.unique_character_matrix = self.character_matrix.drop_duplicates()
+        self.logfile = logfile
+        
     def solve(self):
         """Infers a tree with Cassiopeia-ILP."""
         # find the root of the tree & generate process ID
         root = tuple(
-            solver_utilities.get_lca_characters(
+            data_utilities.get_lca_characters(
                 self.unique_character_matrix.values.tolist(), self.missing_char
             )
         )

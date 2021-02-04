@@ -13,7 +13,7 @@ from networkx.algorithms.traversal.depth_first_search import dfs_tree
 def reconcile_S1(T):
     """
     Prune the Fitch-Hartigan S1 arrays across T to respect only solutions that are guaranteed to 
-    be sub-optimal in the subtree below any internal node and legal with respect to its parent's 
+    be optimal in the subtree below any internal node and legal with respect to its parent's 
     set of potential states.
     """
 

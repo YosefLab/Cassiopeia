@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
-from cassiopeia.solver import solver_utilities
+from cassiopeia.data import utilities as tree_utilities
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
@@ -33,7 +33,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver.solve()
         expected_newick_string = "(((2,5),(4,3)),(0,1));"
-        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(vgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_base_case_2(self):
@@ -54,7 +54,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver.solve()
         expected_newick_string = "(((c4,c3),(c5,c6,c7)),(c1,c2));"
-        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(vgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_weighted_case_trivial(self):
@@ -86,7 +86,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver.solve()
         expected_newick_string = "(((c4,c3),(c5,c6,c7)),(c1,c2));"
-        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(vgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_priors_case(self):
@@ -118,7 +118,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver.solve()
         expected_newick_string = "((c5,c6,c7),(c4,c3,(c1,c2)));"
-        observed_newick_string = solver_utilities.to_newick(vgsolver.tree)
+        observed_newick_string = tree_utilities.to_newick(vgsolver.tree)
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 
