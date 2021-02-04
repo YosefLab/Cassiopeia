@@ -21,10 +21,7 @@ class GreedyVariantsTest(unittest.TestCase):
         )
 
         sgsolver = SpectralGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
-        left, right = sgsolver.perform_split(freq_dict, list(range(4)))
+        left, right = sgsolver.perform_split(list(range(4)))
         self.assertListEqual(left, [0, 2, 3])
         self.assertListEqual(right, [1])
 
@@ -48,14 +45,11 @@ class GreedyVariantsTest(unittest.TestCase):
         )
 
         sgsolver = SpectralGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
         left, right = sgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c6"]
+            list(range(sgsolver.unique_character_matrix.shape[0]))
         )
-        self.assertEqual(left, ["c2", "c6"])
-        self.assertEqual(right, ["c1", "c3"])
+        self.assertEqual(left, [1, 3])
+        self.assertEqual(right, [0, 2])
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
@@ -90,14 +84,11 @@ class GreedyVariantsTest(unittest.TestCase):
             priors=priors,
             prior_function=None,
         )
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
         left, right = sgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c6"]
+            list(range(sgsolver.unique_character_matrix.shape[0]))
         )
-        self.assertEqual(left, ["c2", "c6"])
-        self.assertEqual(right, ["c1", "c3"])
+        self.assertEqual(left, [1, 3])
+        self.assertEqual(right, [0, 2])
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
@@ -120,13 +111,10 @@ class GreedyVariantsTest(unittest.TestCase):
         )
 
         mcgsolver = MaxCutGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = mcgsolver.compute_mutation_frequencies(
-            mcgsolver.unique_character_matrix.index
-        )
         left, right = mcgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c4"]
+            list(range(mcgsolver.unique_character_matrix.shape[0]))
         )
-        self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
+        self.assertListEqual(left, [0, 2, 3, 1])
         self.assertListEqual(right, [])
 
         mcgsolver.solve()
@@ -160,13 +148,10 @@ class GreedyVariantsTest(unittest.TestCase):
         mcgsolver = MaxCutGreedySolver(
             character_matrix=cm, missing_char=-1, priors=priors
         )
-        freq_dict = mcgsolver.compute_mutation_frequencies(
-            mcgsolver.unique_character_matrix.index
-        )
         left, right = mcgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c4"]
+            list(range(mcgsolver.unique_character_matrix.shape[0]))
         )
-        self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
+        self.assertListEqual(left, [0, 2, 3, 1])
         self.assertListEqual(right, [])
 
         mcgsolver.solve()

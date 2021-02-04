@@ -20,10 +20,11 @@ class InferAncestorError(Exception):
 
     pass
 
+
 def annotate_ancestral_characters(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
     missing_char: int,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
@@ -45,7 +46,7 @@ def annotate_ancestral_characters(
     """
     if T.out_degree(node) == 0:
         return
-    vecs = []
+    vectors = []
     for i in T.successors(node):
         annotate_ancestral_characters(T, i, node_to_characters, missing_char)
         vecs.append(node_to_characters[i])
@@ -55,8 +56,8 @@ def annotate_ancestral_characters(
 
 def collapse_edges(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -133,8 +134,8 @@ def collapse_tree(
             raise InferAncestorError()
 
         for i in leaves:
-            node_to_characters[i] = list(character_matrix.loc[i, :])
-            tree.nodes[i]["characters"] = list(character_matrix.loc[i, :])
+            node_to_characters[i] = list(character_matrix[i, :])
+            tree.nodes[i]["characters"] = list(character_matrix[i, :])
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_char
         )
@@ -172,12 +173,12 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
 
 
 def transform_priors(
-    priors: Optional[Dict[int, Dict[int, float]]] = None,
-    prior_function: Optional[Callable[[float], float]] = None,
+    priors: Optional[Dict[int, Dict[int, float]]],
+    prior_function: Optional[Callable[[float], float]],
 ):
     """Generates a dictionary of negative log probabilities from priors.
 
-    Generates a dicitonary of weights for use in algorithms that inheret the
+    Generates a dictionary of weights for use in algorithms that inherit the
     GreedySolver from given priors.
 
     Args:
