@@ -27,8 +27,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             character state
-        prior_function: A function defining a transformation on the priors
-            in forming weights
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -42,7 +40,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         character_matrix: The character matrix describing the samples
         meta_data: Data table storing meta data for each sample
         priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
         dissimilarity_map: Dissimilarity map describing distances between
             samples
         dissimilarity_function: Function to compute the dissimilarity between
@@ -57,10 +54,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, str]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[
@@ -97,10 +92,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         super().__init__(
             character_matrix,
-            missing_char,
             meta_data,
             priors,
-            prior_function,
             dissimilarity_map=dissimilarity_map,
             dissimilarity_function=dissimilarity_function,
         )

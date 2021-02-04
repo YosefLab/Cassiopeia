@@ -21,7 +21,7 @@ class TestComputeFrequency(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
         freq_dict = vgsolver.compute_mutation_frequencies(
-            list(range(vgsolver.unique_character_matrix.shape[0]))
+            vgsolver.unique_character_matrix.index
         )
 
         self.assertEqual(len(freq_dict), 5)
@@ -50,7 +50,7 @@ class TestComputeFrequency(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
         freq_dict = vgsolver.compute_mutation_frequencies(
-            list(range(vgsolver.unique_character_matrix.shape[0]))
+            vgsolver.unique_character_matrix.index
         )
 
         self.assertEqual(len(freq_dict), 5)

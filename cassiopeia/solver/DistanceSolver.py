@@ -14,7 +14,6 @@ import scipy
 from typing import Callable, Dict, Optional, Tuple
 
 from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import solver_utilities
 
 
 class DistanceSolveError(Exception):
@@ -24,51 +23,12 @@ class DistanceSolveError(Exception):
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    DistanceSolver is an abstract class representing the structure of bottom-up
-    inference algorithms. The solver procedure contains logic to build a tree
-    from the leaves by iteratively joining the set of samples based on their
-    distances from each other, defined by a provided dissimilarity map or
-    function. Each subclass will implement "find_cherry" and
-    "update_dissimilarity_map", which are the procedures for finding the next
-    cherry to join and updating the dissimilarity map, respectively.
-
-    Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
-        prior_function: A function defining a transformation on the priors
-            in forming weights
-        dissimilarity_map: A dissimilarity map describing the distances between
-            samples.
-        dissimilarity_function: A function by which to compute the dissimilarity
-            map. Optional if a dissimilarity map is already provided.
-
-    Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        dissimilarity_map: Dissimilarity map describing distances between
-            samples
-        dissimilarity_function: Function to compute the dissimilarity between
-            samples.
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered out
-    """
-
     def __init__(
         self,
         character_matrix: pd.DataFrame,
-        missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        missing_char: int = -1,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):
@@ -82,24 +42,10 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         self.tree = None
 
-        if priors:
-            if prior_function:
-                self.weights = solver_utilities.transform_priors(
-                    priors, prior_function
-                )
-            else:
-                self.weights = solver_utilities.transform_priors(
-                    priors, lambda x: -np.log(x)
-                )
-        else:
-            self.weights = None
-
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function
 
-        self.unique_character_matrix = (
-            self.character_matrix.drop_duplicates().copy()
-        )
+        self.unique_character_matrix = self.character_matrix.drop_duplicates().copy()
         self.unique_character_matrix.index = [
             f"state{i}" for i in range(self.unique_character_matrix.shape[0])
         ]
@@ -124,7 +70,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """A general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
-        samples to join together into a "cherry" and then reform the
+        sapmles to join together into a "cherry" and then reform the
         dissimilarity matrix with respect to this new cherry. The implementation
         of how to find cherries and update the dissimilarity map is left to
         subclasses of DistanceSolver. The function by default updates the
@@ -201,15 +147,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 s1 = cm[i, :]
                 s2 = cm[j, :]
 
-                dm[k] = self.dissimilarity_function(
-                    s1, s2, self.missing_char, self.weights
-                )
+                dm[k] = self.dissimilarity_function(s1, s2, self.priors, self.missing_char)
                 k += 1
 
         return dm
 
     @abc.abstractmethod
-    def root_tree(self, tree):
+    def root_tree(self):
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
@@ -218,9 +162,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         pass
 
     @abc.abstractmethod
-    def find_cherry(
-        self, dissimilarity_map: np.array(float)
-    ) -> Tuple[int, int]:
+    def find_cherry(self, dissimilarity_map: np.array(float)) -> Tuple[int, int]:
         """Selects two samples to join together as a cherry.
 
         Selects two samples from the dissimilarity map to join together as a
@@ -268,7 +210,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 names to.
 
         Returns:
-            A solution with extra leaves corresponding to sample names.
+            A solution with extra leaves corresponding to sample names. 
         """
 
         leaves = [n for n in solution if solution.degree(n) == 1]
@@ -276,21 +218,20 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         sample_lookup = self.character_matrix.apply(
             lambda x: tuple(x.values), axis=1
         )
-
+        
         for l in leaves:
-
+            
             if l not in self.unique_character_matrix.index:
                 continue
 
             character_state = tuple(self.unique_character_matrix.loc[l].values)
-            samples = sample_lookup[
-                sample_lookup == character_state
-            ].index.values
+            samples = sample_lookup[sample_lookup == character_state].index.values
 
             # remove samples with the same name as the leaf
             samples = [s for s in samples if s != l]
 
             if len(samples) > 0:
-                solution.add_edges_from([(l, sample) for sample in samples])
-
+                    solution.add_edges_from([(l, sample) for sample in samples])
+        
         return solution
+

@@ -6,12 +6,12 @@ from typing import List, Tuple, Union
 
 
 def assign_missing_average(
-    character_matrix: pd.DataFrame,
+    cm: pd.DataFrame,
     missing_char: int,
-    left_set: List[int],
-    right_set: List[int],
-    missing: List[int],
-) -> Tuple[List[int], List[int]]:
+    left_set: List[Union[int, str]],
+    right_set: List[Union[int, str]],
+    missing: List[Union[int, str]],
+) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
     """Implements the "Average" missing data imputation method.
 
     An on-the-fly missing data imputation method for the Vanilla Greedy
@@ -22,45 +22,37 @@ def assign_missing_average(
     the higher value.
 
     Args:
-        character_matrix: The character matrix containing the observed character states for
+        cm: The character matrix containing the observed character states for
             the samples
         missing_char: The character representing missing values
-        left_set: A list of the samples on the left of the partition,
-            represented as integer indices
-        right_set: A list of the samples on the right of the partition,
-            represented as integer indices
-        missing: A list of samples with missing data to be imputed,
-            represented as integer indices
+        left_set: A list of the samples on the left of the partition
+        right_set: A list of the samples on the right of the partition
+        missing: A list of samples with missing data to be imputed
 
     Returns:
         A tuple of lists, representing the left and right partitions with
         missing samples imputed
     """
-    subset_character_matrix_left = character_matrix[left_set, :]
-    subset_character_matrix_right = character_matrix[right_set, :]
-
     for i in missing:
         left_score = 0
         right_score = 0
 
-        for char in range(character_matrix.shape[1]):
-            state = character_matrix[i][char]
+        subset_cm = cm.loc[left_set, :]
+        for char in range(cm.shape[1]):
+            state = cm.loc[i,:][char]
             if state != missing_char and state != 0:
-                state_counts = np.unique(
-                    subset_character_matrix_left[:, char], return_counts=True
-                )
+                state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)
                 if len(ind[0]) > 0:
                     left_score += state_counts[1][ind[0][0]]
                 else:
                     left_score += 0
 
-        for char in range(character_matrix.shape[1]):
-            state = character_matrix[i][char]
+        subset_cm = cm.loc[right_set, :]
+        for char in range(cm.shape[1]):
+            state = cm.loc[i,:][char]
             if state != missing_char and state != 0:
-                state_counts = np.unique(
-                    subset_character_matrix_right[:, char], return_counts=True
-                )
+                state_counts = np.unique(subset_cm.iloc[:, char], return_counts=True)
                 ind = np.where(state_counts[0] == state)
                 if len(ind[0]) > 0:
                     right_score += state_counts[1][ind[0][0]]

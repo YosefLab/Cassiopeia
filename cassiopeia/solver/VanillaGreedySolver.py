@@ -45,16 +45,14 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+            out
     """
 
     def __init__(
         self,
         character_matrix: pd.DataFrame,
         missing_char: int,
-        missing_data_classifier: Callable = None,
+        missing_data_classifier: Union[Callable, str] = "average",
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
         prior_function: Optional[Callable[[float], float]] = None,
@@ -64,15 +62,13 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             character_matrix, missing_char, meta_data, priors, prior_function
         )
 
-        if not missing_data_classifier:
-            self.missing_data_classifier = assign_missing_average
-        else:
-            self.missing_data_classifier = missing_data_classifier
+        self.missing_data_classifier = missing_data_classifier
 
     def perform_split(
         self,
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        mutation_frequencies: Dict[int, Dict[int, int]],
+        samples: List[Union[int, str]],
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """Performs a partition based on the most frequent (character, state) pair.
 
         Uses the (character, state) pair to split the list of samples into
@@ -81,13 +77,14 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         character where presence or absence of the character is ambiguous.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            mutation_frequencies: A dictionary containing the frequencies of
+                each character/state pair that appear in the character matrix
+                restricted to the sample set
+            samples: A list of samples to partition
 
         Returns:
-            A tuple of lists, representing the left and right partition groups
+            A tuple of lists, representing the left and right partitions
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
-
         best_frequency = 0
         chosen_character = 0
         chosen_state = 0
@@ -136,23 +133,24 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
 
         for i in samples:
             if (
-                self.unique_character_matrix[i][chosen_character]
+                self.unique_character_matrix.loc[i, :][chosen_character]
                 == chosen_state
             ):
                 left_set.append(i)
             elif (
-                self.unique_character_matrix[i][chosen_character]
+                self.unique_character_matrix.loc[i, :][chosen_character]
                 == self.missing_char
             ):
                 missing.append(i)
             else:
                 right_set.append(i)
 
-        left_set, right_set = self.missing_data_classifier(
-            self.unique_character_matrix,
-            self.missing_char,
-            left_set,
-            right_set,
-            missing,
-        )
+        if self.missing_data_classifier == "average":
+            left_set, right_set = assign_missing_average(
+                self.unique_character_matrix,
+                self.missing_char,
+                left_set,
+                right_set,
+                missing,
+            )
         return left_set, right_set

@@ -31,7 +31,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
     cut is minimized in order to preserve similarities. The final partition
     is then improved upon by a greedy hill-climbing procedure that further
     optimizes the cut.
-
     Args:
         character_matrix: A character matrix of observed character states for
             all samples
@@ -40,7 +39,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
         prior_function: A function defining a transformation on the priors
-            in forming weights to scale the contribution of each mutation in
+            in forming weights to scale the contribution of each mutuation in
             the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations. The default
@@ -56,9 +55,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+            out
         weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
@@ -101,13 +98,14 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def perform_split(
         self,
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        mutation_frequencies: Dict[int, Dict[str, int]],
+        samples: List[Union[int, str]] = None,
+    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
         First, a similarity graph is generated with samples as nodes such that
         edges between a pair of nodes is some provided function on the number
-        of character/state mutations shared. Then, Fiedler's algorithm is used
+        of character/state mutations shared. Then, Fielder's algorithm is used
         to generate a partition on this graph that minimizes a modified
         normalized cut: weight of edges across cut/ min(weight of edges within
         each side of cut). It does this efficiently by first calculating the
@@ -119,14 +117,17 @@ class SpectralSolver(GreedySolver.GreedySolver):
         cuts needed to be explored.
 
         Args:
-            samples: A list of samples, represented as integer indices
-
+            mutation_frequencies: A dictionary containing the frequencies of
+                each character/state pair that appear in the character matrix
+                restricted to the sample set
+            samples: A list of samples to partition
         Returns:
-            A tuple of lists, representing the left and right partition groups
+            A tuple of lists, representing the left and right partitions
         """
 
         G = graph_utilities.construct_similarity_graph(
             self.unique_character_matrix,
+            mutation_frequencies,
             self.missing_char,
             samples,
             similarity_function=self.similarity_function,
@@ -168,7 +169,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
             numerator += neighbor_weight - 2 * cut_edges
             # Avoids naively taking the first zero-weight cut. If more samples
             # can be added without changing the cut weight, those samples do not
-            # share any similarity with the other side of the partition.
+            # share any similarity with the other side of the parititon.
             if numerator != 0 and prev_numerator == 0:
                 best_index = i - 1
                 break
