@@ -131,7 +131,7 @@ class CassiopeiaTree:
         for n in self.nodes:
             if (
                 self.__original_character_matrix is not None
-                and n in self.__original_character_matrix.index.values
+                and n in self.__original_character_matrix.index.tolist()
             ):
                 self.__network.nodes[n][
                     "character_states"
