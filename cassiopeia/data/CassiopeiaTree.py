@@ -794,6 +794,8 @@ class CassiopeiaTree:
         Returns a list of tuples (character, state) of mutations that occur
         along an edge. Characters are 0-indexed.
 
+        WARNING: A character dropout event will also be considered a mutation!
+
         Args:
             parent: parent in tree
             child: child in tree
@@ -835,6 +837,9 @@ class CassiopeiaTree:
     def get_number_of_mutated_characters_in_node(
         self, node: str
     ) -> int:
+        r"""
+        WARNING: dropped out characters will be considered as mutated too!
+        """
         return self.n_character -\
             self.get_number_of_unmutated_characters_in_node(node)
 

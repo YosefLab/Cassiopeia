@@ -1,5 +1,6 @@
 import multiprocessing
 from copy import deepcopy
+import time
 from typing import Optional, Tuple
 
 import numpy as np
@@ -19,22 +20,13 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     of the MLE. The phylogeny model is chosen to be a birth process.
 
     This estimator requires that the ancestral states are provided.
-    TODO: Allow for two versions: one where the number of mutations of each
-    node must match exactly, and one where it must be upper bounded by the
-    number of mutations seen. (I believe the latter should ameliorate
-    subtree collapse further.)
 
-    TODO: Use numpy autograd to do optimize the hyperparams? (Empirical Bayes)
+    TODO: Use numpy autograd to optimize the hyperparams? (Empirical Bayes)
 
     We compute the posterior means using a forward-backward-style algorithm
     (DP on a tree).
 
-    Args:
-        mutation_rate: TODO
-        birth_rate: TODO
-        discretization_level: TODO
-        enforce_parsimony: TODO
-        verbose: Verbosity level. TODO
+    Args: TODO
 
     Attributes: TODO
 
@@ -46,6 +38,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         birth_rate: float,
         discretization_level: int,
         enforce_parsimony: bool = True,
+        use_cpp_implementation: bool = False
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
         # descent?
@@ -55,10 +48,10 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.birth_rate = birth_rate
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
+        self.use_cpp_implementation = use_cpp_implementation
 
     def _compute_log_likelihood(self):
         tree = self.tree
-        discretization_level = self.discretization_level
         log_likelihood = 0
         # TODO: Should I also add a division event when the root has multiple
         # children? (If not, the joint we are computing won't integrate to 1;
@@ -128,15 +121,39 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r"""
         See base class.
         """
-        self.down_cache = {}  # TODO: Rename to _down_cache
-        self.up_cache = {}  # TODO: Rename to _up_cache
+        self._down_cache = {}
+        self._up_cache = {}
         self.tree = tree
+        if self.use_cpp_implementation:
+            time_cpp_start = time.time()
+            self._populate_cache_with_cpp_implementation()
+            time_cpp_end = time.time()
+            print(f"time_cpp = {time_cpp_end - time_cpp_start}")
+        time_compute_log_likelihood_start = time.time()
         self._compute_log_likelihood()
+        time_compute_log_likelihood_end = time.time()
+        print(f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}")
+        time_compute_posteriors_start = time.time()
         self._compute_posteriors()
+        time_compute_posteriors_end = time.time()
+        print(f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}")
+        time_populate_branch_lengths_start = time.time()
         self._populate_branch_lengths()
+        time_populate_branch_lengths_end = time.time()
+        print(f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}")
+
+    def _populate_cache_with_cpp_implementation(self):
+        r"""
+        A cpp implementation is run to compute up and down caches, which is
+        the computational bottleneck.
+        """
+        # First extract the relevant information from the tree.
+        # Serialize the tree information
+        # Run the c++ implementation
+        # Read the cache values
+        pass
 
     def _compatible_with_observed_data(self, x, observed_cuts) -> bool:
-        # TODO: Make method private
         if self.enforce_parsimony:
             return x == observed_cuts
         else:
@@ -167,9 +184,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         # Avoid doing anything at all for invalid states.
         if not self._state_is_valid(v, t, x):
             return -np.inf
-        if (v, t, x) in self.up_cache:  # TODO: Use arrays
-            # TODO: Use a decorator instead of a hand-made cache
-            return self.up_cache[(v, t, x)]
+        if (v, t, x) in self._up_cache:  # TODO: Use arrays?
+            # TODO: Use a decorator instead of a hand-made cache?
+            return self._up_cache[(v, t, x)]
+        if self.use_cpp_implementation:
+            raise ValueError(f"Bug in cpp implementation: State up({(v, t, x)})"
+                             f" was not populated.")
         # Pull out params
         r = self.mutation_rate
         lam = self.birth_rate
@@ -205,20 +225,19 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 )
             # Case 3: A cell division happened
             if v != tree.root:
-                # TODO: 'tree.root()' is O(n). We should have O(1) method.
                 p = tree.parent(v)
                 if self._compatible_with_observed_data(
-                    x, tree.get_number_of_mutated_characters_in_node(p)
+                    x, tree.get_number_of_mutated_characters_in_node(p)  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ):
                     siblings = [u for u in tree.children(p) if u != v]
                     ll = (
                         np.log(lam * dt)
-                        + self.up(p, t - 1, x)
-                        + sum([self.down(u, t, x) for u in siblings])
+                        + self.up(p, t - 1, x)  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                        + sum([self.down(u, t, x) for u in siblings])  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
                     )
                     log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
-        self.up_cache[(v, t, x)] = log_likelihood
+        self._up_cache[(v, t, x)] = log_likelihood
         return log_likelihood
 
     def down(self, v, t, x) -> float:
@@ -230,9 +249,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         # Avoid doing anything at all for invalid states.
         if not self._state_is_valid(v, t, x):
             return -np.inf
-        if (v, t, x) in self.down_cache:
-            # TODO: Use a decorator instead of a hand-made cache
-            return self.down_cache[(v, t, x)]
+        if (v, t, x) in self._down_cache:
+            # TODO: Use a decorator instead of a hand-made cache?
+            return self._down_cache[(v, t, x)]
+        if self.use_cpp_implementation:
+            raise ValueError(f"Bug in cpp implementation: State "
+                             f"down({(v, t, x)}) was not populated.")
         # Pull out params
         discretization_level = self.discretization_level
         r = self.mutation_rate
@@ -248,11 +270,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         log_likelihood = 0.0
         if t == discretization_level:  # Base case
             if (
-                v in tree.leaves
+                tree.is_leaf(v)
                 and x == tree.get_number_of_mutated_characters_in_node(v)
             ):
-                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
-                # check.
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
@@ -270,22 +290,18 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 )
             # Case 3: Cell divides
             # The number of cuts at this state must match the ground truth.
-            # TODO: Allow for weak match at internal nodes and exact match at
-            # leaves.
             if (
                 self._compatible_with_observed_data(
                     x, tree.get_number_of_mutated_characters_in_node(v)
                 )
-                and v not in tree.leaves
+                and not tree.is_leaf(v)
             ):
-                # TODO: 'v not in tree.leaves()' is O(n). We should have O(1)
-                # check.
                 ll = sum(
-                    [self.down(child, t + 1, x) for child in tree.children(v)]
+                    [self.down(child, t + 1, x) for child in tree.children(v)]  # If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ) + np.log(lam * dt)
                 log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
-        self.down_cache[(v, t, x)] = log_likelihood
+        self._down_cache[(v, t, x)] = log_likelihood
         return log_likelihood
 
     @classmethod
@@ -485,11 +501,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
     This class fits the hyperparameters of IIDExponentialPosteriorMeanBLE based
     on data log-likelihood. I.e. is performs empirical Bayes.
 
-    Args:
-        mutation_rates: TODO
-        birth_rate: TODO
-        discretization_level: TODO
-        verbose: Verbosity level. TODO
+    Args: TODO
     """
 
     def __init__(
