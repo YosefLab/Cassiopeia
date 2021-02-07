@@ -142,12 +142,31 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         else:
             return x <= observed_cuts
 
+    def state_is_valid(self, v, t, x) -> bool:
+        r"""
+        Used to optimize the DP by avoiding states with 0 probability.
+        The number of mutations should be between those of v and its parent.
+        """
+        tree = self.tree
+        if v == tree.root:
+            return x == 0
+        p = tree.parent(v)
+        cuts_v = tree.get_number_of_mutated_characters_in_node(v)
+        cuts_p = tree.get_number_of_mutated_characters_in_node(p)
+        if self.enforce_parsimony:
+            return cuts_p <= x <= cuts_v
+        else:
+            return x <= cuts_v
+
     def up(self, v, t, x) -> float:
         r"""
         TODO: Rename this _up?
         log P(X_up(b(v)), T_up(b(v)), t \in t_b(v), X_b(v)(t) = x)
         TODO: Update to match my technical write-up.
         """
+        # Avoid doing anything at all for invalid states.
+        if not self.state_is_valid(v, t, x):
+            return -np.inf
         if (v, t, x) in self.up_cache:  # TODO: Use arrays
             # TODO: Use a decorator instead of a hand-made cache
             return self.up_cache[(v, t, x)]
@@ -208,6 +227,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         log P(X_down(v), T_down(v) | t_v = t, X_v = x)
         TODO: Update to match my technical write-up.
         """
+        # Avoid doing anything at all for invalid states.
+        if not self.state_is_valid(v, t, x):
+            return -np.inf
         if (v, t, x) in self.down_cache:
             # TODO: Use a decorator instead of a hand-made cache
             return self.down_cache[(v, t, x)]
