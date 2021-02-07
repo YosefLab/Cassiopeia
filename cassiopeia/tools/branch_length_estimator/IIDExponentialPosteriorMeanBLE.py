@@ -135,14 +135,14 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self._compute_posteriors()
         self._populate_branch_lengths()
 
-    def compatible_with_observed_data(self, x, observed_cuts) -> bool:
+    def _compatible_with_observed_data(self, x, observed_cuts) -> bool:
         # TODO: Make method private
         if self.enforce_parsimony:
             return x == observed_cuts
         else:
             return x <= observed_cuts
 
-    def state_is_valid(self, v, t, x) -> bool:
+    def _state_is_valid(self, v, t, x) -> bool:
         r"""
         Used to optimize the DP by avoiding states with 0 probability.
         The number of mutations should be between those of v and its parent.
@@ -165,7 +165,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         TODO: Update to match my technical write-up.
         """
         # Avoid doing anything at all for invalid states.
-        if not self.state_is_valid(v, t, x):
+        if not self._state_is_valid(v, t, x):
             return -np.inf
         if (v, t, x) in self.up_cache:  # TODO: Use arrays
             # TODO: Use a decorator instead of a hand-made cache
@@ -207,7 +207,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             if v != tree.root:
                 # TODO: 'tree.root()' is O(n). We should have O(1) method.
                 p = tree.parent(v)
-                if self.compatible_with_observed_data(
+                if self._compatible_with_observed_data(
                     x, tree.get_number_of_mutated_characters_in_node(p)
                 ):
                     siblings = [u for u in tree.children(p) if u != v]
@@ -228,7 +228,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         TODO: Update to match my technical write-up.
         """
         # Avoid doing anything at all for invalid states.
-        if not self.state_is_valid(v, t, x):
+        if not self._state_is_valid(v, t, x):
             return -np.inf
         if (v, t, x) in self.down_cache:
             # TODO: Use a decorator instead of a hand-made cache
@@ -273,7 +273,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             # TODO: Allow for weak match at internal nodes and exact match at
             # leaves.
             if (
-                self.compatible_with_observed_data(
+                self._compatible_with_observed_data(
                     x, tree.get_number_of_mutated_characters_in_node(v)
                 )
                 and v not in tree.leaves
