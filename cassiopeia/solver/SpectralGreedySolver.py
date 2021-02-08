@@ -177,17 +177,17 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         missing = []
 
         unique_character_array = self.unique_character_matrix.to_numpy()
-        indices = list(self.unique_character_matrix.index)
+        sample_names = list(self.unique_character_matrix.index)
 
         for i in sample_indices:
             if unique_character_array[i, chosen_character] == chosen_state:
-                left_set.append(indices[i])
+                left_set.append(sample_names[i])
             elif (
                 unique_character_array[i, chosen_character] == self.missing_char
             ):
-                missing.append(indices[i])
+                missing.append(sample_names[i])
             else:
-                right_set.append(indices[i])
+                right_set.append(sample_names[i])
 
         left_set, right_set = self.missing_data_classifier(
             self.unique_character_matrix,

@@ -166,10 +166,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             state pair
 
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(
-            self.unique_character_matrix.index, samples
-        )
-        subset_cm = self.unique_character_matrix.to_numpy()[sample_indices, :]
+        subset_cm = self.unique_character_matrix.loc[samples, :].to_numpy()
         freq_dict = {}
         for char in range(subset_cm.shape[1]):
             char_dict = {}

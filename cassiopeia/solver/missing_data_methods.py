@@ -43,16 +43,16 @@ def assign_missing_average(
 
     # A helper function to calculate the number of shared character/state pairs
     # shared between a missing sample and a side of the partition
-    indices = list(character_matrix.index)
+    sample_names = list(character_matrix.index)
     character_array = character_matrix.to_numpy()
     left_indices = solver_utilities.convert_sample_names_to_indices(
-        indices, left_set
+        sample_names, left_set
     )
     right_indices = solver_utilities.convert_sample_names_to_indices(
-        indices, right_set
+        sample_names, right_set
     )
     missing_indices = solver_utilities.convert_sample_names_to_indices(
-        indices, missing
+        sample_names, missing
     )
 
     def score_side(subset_character_matrix, missing_sample):
@@ -76,13 +76,13 @@ def assign_missing_average(
     subset_character_array_left = character_array[left_indices, :]
     subset_character_array_right = character_array[right_indices, :]
 
-    for sample in missing_indices:
-        left_score = score_side(subset_character_array_left, sample)
-        right_score = score_side(subset_character_array_right, sample)
+    for sample_index in missing_indices:
+        left_score = score_side(subset_character_array_left, sample_index)
+        right_score = score_side(subset_character_array_right, sample_index)
 
         if left_score / len(left_set) > right_score / len(right_set):
-            left_set.append(indices[sample])
+            left_set.append(sample_names[sample_index])
         else:
-            right_set.append(indices[sample])
+            right_set.append(sample_names[sample_index])
 
     return left_set, right_set
