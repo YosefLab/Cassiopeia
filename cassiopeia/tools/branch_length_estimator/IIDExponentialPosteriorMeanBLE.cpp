@@ -79,7 +79,7 @@ void read_N(){
         cerr << "N input corrupted" << endl;
         exit(1); 
     }
-    if(N >= maxN - 10){
+    if(N >= maxN){
         cerr << "N larger than maxN" << endl;
         exit(1);
     }
@@ -201,7 +201,7 @@ void read_K(){
         cerr << "K input corrupted" << endl;
         exit(1); 
     }
-    if(K >= maxK - 10){
+    if(K >= maxK - 1){
         cerr << "K larger than maxK" << endl;
         exit(1);
     }
@@ -215,7 +215,7 @@ void read_T(){
         cerr << "T input corrupted" << endl;
         exit(1); 
     }
-    if(T >= maxT - 10){
+    if(T >= maxT - 1){
         cerr << "T larger than maxT" << endl;
         exit(1);
     }
