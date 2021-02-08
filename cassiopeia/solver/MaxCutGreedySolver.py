@@ -15,6 +15,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import missing_data_methods
+from cassiopeia.solver import solver_utilities
 
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
@@ -55,11 +56,6 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        index_to_name: A dictionary mapping sample names to their integer
-            indices in the original character matrix, for efficient indexing
-        name_to_index: A dictionary mapping integer indices of samples in
-            the original character matrix to their names
         duplicate_groups: A mapping of samples to the set of duplicates that
             share the same character vector. Uses the original sample names
     """
@@ -98,14 +94,16 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         method.
 
         Args:
-            samples: A list of samples, represented by their string names
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        int_samples = list(map(lambda x: self.name_to_index[x], samples))
-
-        mutation_frequencies = self.compute_mutation_frequencies(int_samples)
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            self.unique_character_matrix.index, samples
+        )
+        mutation_frequencies = self.compute_mutation_frequencies(samples)
 
         best_frequency = 0
         chosen_character = 0
@@ -116,7 +114,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
-                        < len(int_samples)
+                        < len(samples)
                         - mutation_frequencies[character][self.missing_char]
                     ):
                         if self.weights:
@@ -153,19 +151,18 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         right_set = []
         missing = []
 
-        for i in int_samples:
-            if (
-                self.unique_character_matrix[i, chosen_character]
-                == chosen_state
-            ):
-                left_set.append(i)
+        unique_character_array = self.unique_character_matrix.to_numpy()
+        indices = list(self.unique_character_matrix.index)
+
+        for i in sample_indices:
+            if unique_character_array[i, chosen_character] == chosen_state:
+                left_set.append(indices[i])
             elif (
-                self.unique_character_matrix[i, chosen_character]
-                == self.missing_char
+                unique_character_array[i, chosen_character] == self.missing_char
             ):
-                missing.append(i)
+                missing.append(indices[i])
             else:
-                right_set.append(i)
+                right_set.append(indices[i])
 
         left_set, right_set = self.missing_data_classifier(
             self.unique_character_matrix,
@@ -180,22 +177,15 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
-            int_samples,
+            samples,
             weights=self.weights,
         )
 
         improved_left_set = graph_utilities.max_cut_improve_cut(G, left_set)
 
         improved_right_set = []
-        for i in int_samples:
+        for i in samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        improved_left_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_left_set)
-        )
-        improved_right_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_right_set)
-        )
-
-        return improved_left_set_name, improved_right_set_name
+        return improved_left_set, improved_right_set

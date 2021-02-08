@@ -153,8 +153,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.tree = self.append_sample_names(self.tree)
 
     def apply_top_solver(
-        self, samples: List[int], root: Optional[int] = None
-    ) -> Tuple[int, List[Tuple[int, List[int]]]]:
+        self, samples: List[str], root: Optional[int] = None
+    ) -> Tuple[int, List[Tuple[int, List[str]]]]:
         """Applies the top solver to samples.
 
         A private helper method for applying the top solver to the samples
@@ -205,7 +205,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         return root, subproblems
 
     def apply_bottom_solver(
-        self, root: int, samples=List[int]
+        self, root: int, samples=List[str]
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
@@ -259,7 +259,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return subproblem_tree, root
 
-    def assess_cutoff(self, samples: List[int]) -> bool:
+    def assess_cutoff(self, samples: List[str]) -> bool:
         """Assesses samples with respect to hybrid cutoff.
 
         Args:

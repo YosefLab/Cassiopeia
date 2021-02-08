@@ -83,13 +83,12 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         super().__init__(character_matrix, meta_data, priors)
 
         self.tree = None
+        self.weights = None
 
         if priors:
             self.weights = solver_utilities.transform_priors(
                 priors, prior_transformation
             )
-        else:
-            self.weights = None
 
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function

@@ -140,10 +140,9 @@ def collapse_tree(
     # annotations, or infers them
     if infer_ancestral_characters:
         if character_matrix is None or missing_char is None:
-            logging.info(
+            raise InferAncestorError(
                 "In order to infer ancestral characters, a character matrix and missing character are needed"
             )
-            raise InferAncestorError()
 
         for i in leaves:
             node_to_characters[i] = tree.nodes[i]["characters"] = list(
@@ -201,32 +200,65 @@ def transform_priors(
         prior_transformation: A function defining a transformation on the priors
             in forming weights. Supports the following transformations:
                 "negative_log": Transforms each probability by the negative log
-                "negative_square_root_log": Transforms each probability by the
-                    square root of the negative log
                 "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Returns:
         A dictionary of weights for each character/state pair
     """
     if prior_transformation not in [
         "negative_log",
-        "negative_square_root_log",
         "inverse",
+        "square_root_inverse",
     ]:
-        logging.info("Please select one of the supported prior transformations")
-        raise PriorTransformationError()
+        raise PriorTransformationError(
+            "Please select one of the supported prior transformations."
+        )
 
     prior_function = lambda x: -np.log(x)
 
-    if prior_transformation == "negative_square_root_log":
-        prior_function = lambda x: -np.log(np.sqrt(x))
+    if prior_transformation == "square_root_inverse":
+        prior_function = lambda x: (np.sqrt(1 / x))
     if prior_transformation == "inverse":
-        prior_function = lambda x: 1 / x if x > 0 else 0
+        prior_function = lambda x: 1 / x
 
     weights = {}
     for character in priors:
         state_weights = {}
         for state in priors[character]:
-            state_weights[state] = prior_function(priors[character][state])
+            p = priors[character][state]
+            if p <= 0.0 or p > 1.0:
+                raise PriorTransformationError(
+                    "Please make sure all priors have a positive value less than 1 and greater than 0"
+                )
+            state_weights[state] = prior_function(p)
         weights[character] = state_weights
     return weights
+
+
+def convert_sample_names_to_indices(
+    names: List[str], samples: List[str]
+) -> List[int]:
+    """Maps samples to their integer indices in a given set of names.
+
+    Used to map sample string names to the their integer positions in the index
+    of the original character matrix for efficient indexing operations.
+
+    Args:
+        names: A list of sample names, represented by their string names in the
+            original character matrix
+        samples: A list of sample names representing the subset to be mapped to
+            integer indices
+
+    Returns:
+        A list of samples mapped to integer indices
+    """
+    name_to_index = dict(
+        zip(
+            names,
+            range(len(names)),
+        )
+    )
+
+    return list(map(lambda x: name_to_index[x], samples))

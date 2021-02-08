@@ -200,7 +200,7 @@ class TestHybridSolver(unittest.TestCase):
         # test manually
         mutation_frequencies = (
             self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-                [0, 1, 2, 3, 4]
+                ["a", "b", "c", "d", "e"]
             )
         )
 

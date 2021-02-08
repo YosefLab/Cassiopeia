@@ -64,10 +64,6 @@ def weighted_hamming_distance(
                     d += weights[i][s1[i]] + weights[i][s2[i]]
                 else:
                     d += 2
-        else:
-            if s1[i] != 0:
-                if weights:
-                    d -= 2 * weights[i][s1[i]]
 
     if num_present == 0:
         return 0
@@ -94,24 +90,24 @@ def hamming_similarity_without_missing(
     """
 
     # TODO Optimize this using masks
-    num_chars = len(s1)
-    assert len(s2) == num_chars
-    if weights is None:
-        return sum(
-            [
-                1
-                for i in range(num_chars)
-                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
-            ]
-        )
-    else:
-        return sum(
-            [
-                weights[i][s1[i]]
-                for i in range(num_chars)
-                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
-            ]
-        )
+    similarity = 0
+    for i in range(len(s1)):
+
+        if (
+            s1[i] == missing_char
+            or s2[i] == missing_char
+            or s1[i] == 0
+            or s2[i] == 0
+        ):
+            continue
+
+        if s1[i] == s2[i]:
+            if weights:
+                similarity += weights[i][s1[i]]
+            else:
+                similarity += 1
+
+    return similarity
 
 
 @numba.jit(nopython=True)
@@ -174,10 +170,6 @@ def weighted_hamming_similarity(
             else:
                 if not weights:
                     d += 1
-        else:
-            if s1[i] != 0 and s2[i] != 0:
-                if weights:
-                    d -= weights[i][s1[i]] + weights[i][s2[i]]
 
     if num_present == 0:
         return 0

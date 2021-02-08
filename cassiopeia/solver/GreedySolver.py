@@ -42,11 +42,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        index_to_name: A dictionary mapping sample names to their integer
-            indices in the original character matrix, for efficient indexing
-        name_to_index: A dictionary mapping integer indices of samples in
-            the original character matrix to their names
         duplicate_groups: A mapping of samples to the set of duplicates that
             share the same character vector. Uses the original sample names
     """
@@ -61,28 +56,15 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     ):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
+
+        self.weights = None
+
         if priors:
             self.weights = solver_utilities.transform_priors(
                 priors, prior_transformation
             )
-        else:
-            self.weights = None
 
-        unique_character_matrix = self.character_matrix.drop_duplicates()
-        self.unique_character_matrix = unique_character_matrix.to_numpy()
-
-        self.index_to_name = dict(
-            zip(
-                range(unique_character_matrix.shape[0]),
-                unique_character_matrix.index,
-            )
-        )
-        self.name_to_index = dict(
-            zip(
-                unique_character_matrix.index,
-                range(unique_character_matrix.shape[0]),
-            )
-        )
+        self.unique_character_matrix = self.character_matrix.drop_duplicates()
 
         self.duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]
@@ -95,12 +77,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def perform_split(
         self,
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str],
+    ) -> Tuple[List[str], List[str]]:
         """Performs a partition of the samples.
 
         Args:
-            samples: A list of samples, represented by their string names
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -131,7 +114,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             # Generates a root for this subtree with a unique int identifier
             root = (
                 len(self.tree.nodes)
-                - len(self.unique_character_matrix)
+                - self.unique_character_matrix.shape[0]
                 + self.character_matrix.shape[0]
             )
             self.tree.add_node(root)
@@ -152,7 +135,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             return root
 
         self.tree = nx.DiGraph()
-        samples = list(self.name_to_index.keys())
+        samples = list(self.unique_character_matrix.index)
         for i in samples:
             self.tree.add_node(i)
         _solve(samples)
@@ -164,7 +147,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return self.tree
 
     def compute_mutation_frequencies(
-        self, samples: List[int]
+        self, samples: List[str]
     ) -> Dict[int, Dict[int, int]]:
         """Computes the number of samples in a character matrix that have each
         character/state mutation.
@@ -176,14 +159,17 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             samples: The set of relevant samples in calculating frequencies,
-                represented by their string names
+                represented by their names in the original character matrix
 
         Returns:
-            A dictionary containing frequency information for each character/state
-            pair
+            A dictionary containing frequency information for each character/
+            state pair
 
         """
-        subset_cm = self.unique_character_matrix[samples, :]
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            self.unique_character_matrix.index, samples
+        )
+        subset_cm = self.unique_character_matrix.to_numpy()[sample_indices, :]
         freq_dict = {}
         for char in range(subset_cm.shape[1]):
             char_dict = {}

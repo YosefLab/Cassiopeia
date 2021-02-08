@@ -53,11 +53,6 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        index_to_name: A dictionary mapping sample names to their integer
-            indices in the original character matrix, for efficient indexing
-        name_to_index: A dictionary mapping integer indices of samples in
-            the original character matrix to their names
         duplicate_groups: A mapping of samples to the set of duplicates that
             share the same character vector. Uses the original sample names
         sdimension: The number of dimensions to use for the embedding space
@@ -105,20 +100,19 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         the cut.
 
         Args:
-            samples: A list of samples, represented by their string names
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        int_samples = list(map(lambda x: self.name_to_index[x], samples))
-
-        mutation_frequencies = self.compute_mutation_frequencies(int_samples)
+        mutation_frequencies = self.compute_mutation_frequencies(samples)
 
         G = graph_utilities.construct_connectivity_graph(
             self.unique_character_matrix,
             mutation_frequencies,
             self.missing_char,
-            int_samples,
+            samples,
             weights=self.weights,
         )
 
@@ -164,20 +158,13 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         improved_left_set = graph_utilities.max_cut_improve_cut(G, return_cut)
 
         improved_right_set = []
-        for i in int_samples:
+        for i in samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        improved_left_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_left_set)
-        )
-        improved_right_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_right_set)
-        )
+        return improved_left_set, improved_right_set
 
-        return improved_left_set_name, improved_right_set_name
-
-    def evaluate_cut(self, cut: List[int], G: nx.DiGraph) -> float:
+    def evaluate_cut(self, cut: List[str], G: nx.DiGraph) -> float:
         """A simple function to evaluate the weight of a cut.
 
         For each edge in the graph, checks if it is in the cut, and then adds

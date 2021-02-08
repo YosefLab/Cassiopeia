@@ -56,11 +56,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        index_to_name: A dictionary mapping sample names to their integer
-            indices in the original character matrix, for efficient indexing
-        name_to_index: A dictionary mapping integer indices of samples in
-            the original character matrix to their names
         duplicate_groups: A mapping of samples to the set of duplicates that
             share the same character vector. Uses the original sample names
         weights: Weights on character/mutation pairs, derived from priors
@@ -123,17 +118,16 @@ class SpectralSolver(GreedySolver.GreedySolver):
         cuts needed to be explored.
 
         Args:
-            samples: A list of samples, represented by their string names
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        int_samples = list(map(lambda x: self.name_to_index[x], samples))
-
         G = graph_utilities.construct_similarity_graph(
             self.unique_character_matrix,
             self.missing_char,
-            int_samples,
+            samples,
             similarity_function=self.similarity_function,
             threshold=self.threshold,
             weights=self.weights,
@@ -195,15 +189,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
         )
 
         improved_right_set = []
-        for i in int_samples:
+        for i in samples:
             if i not in improved_left_set:
                 improved_right_set.append(i)
 
-        improved_left_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_left_set)
-        )
-        improved_right_set_name = list(
-            map(lambda x: self.index_to_name[x], improved_right_set)
-        )
-
-        return improved_left_set_name, improved_right_set_name
+        return improved_left_set, improved_right_set

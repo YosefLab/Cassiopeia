@@ -23,10 +23,10 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
 
 
 def construct_connectivity_graph(
-    character_matrix: np.array,
+    character_matrix: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[int, int]],
     missing_char: int,
-    samples: List[int],
+    samples: List[str],
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
     """
@@ -48,25 +48,30 @@ def construct_connectivity_graph(
             each character/state pair that appear in the character matrix
             restricted to the sample set
         missing_char: The character representing missing values
-        samples: A list of samples to build the graph over, represented as
-            integer indices
+        samples: A list of samples to build the graph over, represented by
+            their names in the original character matrix
         weights: A set of optional weights for edges in the connectivity graph
 
     Returns:
         A connectivity graph constructed over the sample set
     """
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
+    character_array = character_matrix.to_numpy()
+
+    k = character_matrix.shape[1]
+
     G = nx.Graph()
-    for i in samples:
+    for i in sample_indices:
         G.add_node(i)
 
-    k = len(character_matrix[0])
-
-    for i, j in itertools.combinations(samples, 2):
+    for i, j in itertools.combinations(sample_indices, 2):
         # compute similarity scores
         score = 0
         for l in range(k):
-            x = character_matrix[i, l]
-            y = character_matrix[j, l]
+            x = character_array[i, l]
+            y = character_array[j, l]
             if (x != missing_char and y != missing_char) and (x != 0 or y != 0):
                 if weights is not None:
                     if x == y:
@@ -110,10 +115,14 @@ def construct_connectivity_graph(
                         )
         if score != 0:
             G.add_edge(i, j, weight=score)
-    return G
+
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+    )
+    return G_names
 
 
-def max_cut_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
+def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
     """A greedy hill-climbing procedure to optimize a partition for the max-cut.
 
     The procedure is initialized by calculating the improvement to the max-cut
@@ -170,9 +179,9 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
 
 
 def construct_similarity_graph(
-    character_matrix: np.array,
+    character_matrix: pd.DataFrame,
     missing_char: int,
-    samples: List[int],
+    samples: List[str],
     similarity_function: Callable[
         [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
         float,
@@ -198,8 +207,8 @@ def construct_similarity_graph(
             each character/state pair that appear in the character matrix
             restricted to the sample set
         missing_char: The character representing missing values
-        samples: A list of samples to build the graph over, represented as
-            integer indices
+        samples: A list of samples to build the graph over, represented by
+            their names in the original character matrix
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
@@ -208,14 +217,19 @@ def construct_similarity_graph(
     Returns:
         A similarity graph constructed over the sample set
     """
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
+    character_array = character_matrix.to_numpy()
+
     G = nx.Graph()
-    for i in samples:
+    for i in sample_indices:
         G.add_node(i)
 
-    for i, j in itertools.combinations(samples, 2):
+    for i, j in itertools.combinations(sample_indices, 2):
         s = similarity_function(
-            list(character_matrix[i]),
-            list(character_matrix[j]),
+            list(character_array[i]),
+            list(character_array[j]),
             missing_char,
             weights,
         )
@@ -236,10 +250,13 @@ def construct_similarity_graph(
         for edge in to_remove:
             G.remove_edge(edge[0], edge[1])
 
-    return G
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+    )
+    return G_names
 
 
-def spectral_improve_cut(G: nx.Graph, cut: List[int]) -> List[int]:
+def spectral_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
     """A greedy hill-climbing procedure minimizing a modified normalized cut.
 
     The procedure minimizes a partition on a graph for the following objective

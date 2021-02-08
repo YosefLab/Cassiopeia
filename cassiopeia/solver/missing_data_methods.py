@@ -4,15 +4,17 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Union
 
+from cassiopeia.solver import solver_utilities
+
 
 def assign_missing_average(
     character_matrix: pd.DataFrame,
     missing_char: int,
-    left_set: List[int],
-    right_set: List[int],
-    missing: List[int],
+    left_set: List[str],
+    right_set: List[str],
+    missing: List[str],
     weights: Optional[Dict[int, Dict[int, float]]] = None,
-) -> Tuple[List[int], List[int]]:
+) -> Tuple[List[str], List[str]]:
     """Implements the "Average" missing data imputation method.
 
     An on-the-fly missing data imputation method for the VanillaGreedy
@@ -27,11 +29,11 @@ def assign_missing_average(
             character states for the samples
         missing_char: The character representing missing values
         left_set: A list of the samples on the left of the partition,
-            represented as integer indices
+            represented by their names in the original character matrix
         right_set: A list of the samples on the right of the partition,
-            represented as integer indices
+            represented by their names in the original character matrix
         missing: A list of samples with missing data to be imputed,
-            represented as integer indices
+            represented by their names in the original character matrix
         weights: A set of optional weights for character/state mutation pairs
 
     Returns:
@@ -41,10 +43,22 @@ def assign_missing_average(
 
     # A helper function to calculate the number of shared character/state pairs
     # shared between a missing sample and a side of the partition
+    indices = list(character_matrix.index)
+    character_array = character_matrix.to_numpy()
+    left_indices = solver_utilities.convert_sample_names_to_indices(
+        indices, left_set
+    )
+    right_indices = solver_utilities.convert_sample_names_to_indices(
+        indices, right_set
+    )
+    missing_indices = solver_utilities.convert_sample_names_to_indices(
+        indices, missing
+    )
+
     def score_side(subset_character_matrix, missing_sample):
         score = 0
         for char in range(character_matrix.shape[1]):
-            state = character_matrix[missing_sample, char]
+            state = character_array[missing_sample, char]
             if state != missing_char and state != 0:
                 state_counts = np.unique(
                     subset_character_matrix[:, char], return_counts=True
@@ -59,16 +73,16 @@ def assign_missing_average(
                         score += state_counts[1][ind[0][0]]
         return score
 
-    subset_character_matrix_left = character_matrix[left_set, :]
-    subset_character_matrix_right = character_matrix[right_set, :]
+    subset_character_array_left = character_array[left_indices, :]
+    subset_character_array_right = character_array[right_indices, :]
 
-    for sample in missing:
-        left_score = score_side(subset_character_matrix_left, sample)
-        right_score = score_side(subset_character_matrix_right, sample)
+    for sample in missing_indices:
+        left_score = score_side(subset_character_array_left, sample)
+        right_score = score_side(subset_character_array_right, sample)
 
         if left_score / len(left_set) > right_score / len(right_set):
-            left_set.append(sample)
+            left_set.append(indices[sample])
         else:
-            right_set.append(sample)
+            right_set.append(indices[sample])
 
     return left_set, right_set

@@ -105,12 +105,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         self.priors = priors
+        self.weights = None
+
         if priors:
             self.weights = solver_utilities.transform_priors(
                 priors, prior_transformation
             )
-        else:
-            self.weights = None
 
         # set up logger
         self.logfile = logfile

@@ -3,10 +3,11 @@ import unittest
 import networkx as nx
 import pandas as pd
 
+from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.data import utilities as tree_utilities
+from cassiopeia.solver import solver_utilities
 
 
 class GreedyVariantsTest(unittest.TestCase):

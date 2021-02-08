@@ -25,7 +25,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
         freq_dict = vgsolver.compute_mutation_frequencies(
-            list(range(vgsolver.unique_character_matrix.shape[0]))
+            ["c1", "c2", "c3", "c4"]
         )
 
         self.assertEqual(len(freq_dict), 5)
@@ -54,7 +54,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver(character_matrix=cm, missing_char=-1)
         freq_dict = vgsolver.compute_mutation_frequencies(
-            list(range(vgsolver.unique_character_matrix.shape[0]))
+            ["c1", "c3", "c4", "c5"]
         )
 
         self.assertEqual(len(freq_dict), 5)
@@ -82,10 +82,10 @@ class VanillaGreedySolverTest(unittest.TestCase):
         )
 
         left_set, right_set = missing_data_methods.assign_missing_average(
-            cm.to_numpy(), -1, [0, 1], [3, 4], [2]
+            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"]
         )
-        self.assertEqual(left_set, [0, 1, 2])
-        self.assertEqual(right_set, [3, 4])
+        self.assertEqual(left_set, ["c1", "c2", "c3"])
+        self.assertEqual(right_set, ["c4", "c5"])
 
     def test_average_missing_data_priors(self):
         cm = pd.DataFrame.from_dict(
@@ -110,10 +110,10 @@ class VanillaGreedySolverTest(unittest.TestCase):
         weights = solver_utilities.transform_priors(priors)
 
         left_set, right_set = missing_data_methods.assign_missing_average(
-            cm.to_numpy(), -1, [0, 1], [3, 4], [2], weights
+            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"], weights
         )
-        self.assertEqual(left_set, [0, 1, 2])
-        self.assertEqual(right_set, [3, 4])
+        self.assertEqual(left_set, ["c1", "c2", "c3"])
+        self.assertEqual(right_set, ["c4", "c5"])
 
     def test_base_case_1(self):
         cm = pd.DataFrame(
