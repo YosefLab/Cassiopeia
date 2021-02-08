@@ -86,12 +86,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             valid_num_cuts = range(
                 tree.get_number_of_mutated_characters_in_node(v) + 1
             )
-        ll_for_x = []
+        ll_for_xs = []
         for x in valid_num_cuts:
-            ll_for_x.append(
+            ll_for_xs.append(
                 sum([self.down(u, t, x) for u in children]) + self.up(v, t, x)
             )
-        return logsumexp(ll_for_x)
+        return logsumexp(ll_for_xs)
 
     def _compute_posteriors(self):
         tree = self.tree
@@ -141,27 +141,28 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             time_cpp_start = time.time()
             if self.debug_cpp_implementation:
                 # Use a directory that won't go away.
-                self._populate_cache_with_cpp_implementation(
+                self._populate_attributes_with_cpp_implementation(
                     tmp_dir=os.getcwd() + "/tmp"
                 )
             else:
                 # Use a temporary directory.
                 with tempfile.TemporaryDirectory() as tmp_dir:
-                    self._populate_cache_with_cpp_implementation(tmp_dir)
+                    self._populate_attributes_with_cpp_implementation(tmp_dir)
             time_cpp_end = time.time()
             print(f"time_cpp = {time_cpp_end - time_cpp_start}")
-        time_compute_log_likelihood_start = time.time()
-        self._compute_log_likelihood()
-        time_compute_log_likelihood_end = time.time()
-        print(
-            f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}"
-        )
-        time_compute_posteriors_start = time.time()
-        self._compute_posteriors()
-        time_compute_posteriors_end = time.time()
-        print(
-            f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}"
-        )
+        else:
+            time_compute_log_likelihood_start = time.time()
+            self._compute_log_likelihood()
+            time_compute_log_likelihood_end = time.time()
+            print(
+                f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}"
+            )
+            time_compute_posteriors_start = time.time()
+            self._compute_posteriors()
+            time_compute_posteriors_end = time.time()
+            print(
+                f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}"
+            )
         time_populate_branch_lengths_start = time.time()
         self._populate_branch_lengths()
         time_populate_branch_lengths_end = time.time()
@@ -239,10 +240,14 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         with open(filename, "w") as file:
             file.write(res)
 
-    def _populate_cache_with_cpp_implementation(self, tmp_dir):
+    def _populate_attributes_with_cpp_implementation(self, tmp_dir):
         r"""
         A cpp implementation is run to compute up and down caches, which is
-        the computational bottleneck.
+        the computational bottleneck. The other attributes such as the
+        log-likelihood, and the posteriors, are also populated because
+        even these trivial computations are too slow in vanilla python.
+        Looking forward, a cython implementation will hopefully be the
+        best way forward.
         To remove anything that has to do with the cpp implementation, you just
         have to remove this function (and the gates around it).
         I.e., this python implementation is loosely coupled to the cpp call: we
@@ -357,6 +362,47 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 v, t, x = int(v), int(t), int(x)
                 ll = float(ll)
                 self._up_cache[(id_to_node[v], t, x)] = ll
+
+        discretization_level = self.discretization_level
+
+        # Load the log_likelihood
+        with open(f"{tmp_dir}/log_likelihood.txt", "r") as fin:
+            self.log_likelihood = float(fin.read())
+
+        # Load the posteriors
+        log_joints = {}  # log P(t_v = t, X, T)
+        with open(f"{tmp_dir}/log_joints.txt", "r") as fin:
+            for line in fin:
+                vals = line.split(" ")
+                assert(len(vals) == discretization_level + 2)
+                v_id = int(vals[0])
+                log_joint = np.zeros(shape=(discretization_level + 1,))
+                for i, val in enumerate(vals[1:]):
+                    log_joint[i] = float(val)
+                log_joints[id_to_node[v_id]] = log_joint
+
+        posteriors = {}  # P(t_v = t | X, T)
+        with open(f"{tmp_dir}/posteriors.txt", "r") as fin:
+            for line in fin:
+                vals = line.split(" ")
+                assert(len(vals) == discretization_level + 2)
+                v_id = int(vals[0])
+                posterior = np.zeros(shape=(discretization_level + 1,))
+                for i, val in enumerate(vals[1:]):
+                    posterior[i] = float(val)
+                posteriors[id_to_node[v_id]] = posterior
+
+        posterior_means = {}  # E[t_v = t | X, T]
+        with open(f"{tmp_dir}/posterior_means.txt", "r") as fin:
+            for line in fin:
+                v_id, val = line.split(" ")
+                v_id = int(v_id)
+                val = float(val)
+                posterior_means[id_to_node[v_id]] = val
+
+        self.log_joints = log_joints
+        self.posteriors = posteriors
+        self.posterior_means = posterior_means
 
     def _compatible_with_observed_data(self, x, observed_cuts) -> bool:
         if self.enforce_parsimony:

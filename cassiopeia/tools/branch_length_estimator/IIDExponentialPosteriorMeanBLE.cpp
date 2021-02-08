@@ -10,12 +10,15 @@
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)
 
 using namespace std;
-const int maxN = 10000;
-const int maxK = 100;
-const int maxT = 512;
+const int maxN = 8192;
+const int maxK = 63;
+const int maxT = 501;
 const float INF = 1e16;
 float _down_cache[maxN][maxT + 1][maxK + 1];
 float _up_cache[maxN][maxT + 1][maxK + 1];
+float log_joints[maxN][maxT + 1];
+float posteriors[maxN][maxT + 1];
+float posterior_means[maxN];
 
 string input_dir = "";
 string output_dir = "";
@@ -408,6 +411,116 @@ void write_up(){
     fout << res;
 }
 
+void write_log_likelihood(){
+    ofstream fout(output_dir + "/log_likelihood.txt");
+    float log_likelihood = 0;
+    for(auto child_of_root: children[root]){
+        log_likelihood += down(child_of_root, 0, 0);
+    }
+    fout << log_likelihood;
+}
+
+float _compute_log_joint(int v, int t){
+    if(!(is_internal_node[v] and v != root)){
+        cerr << "_compute_log_joint received invalid inputs" << endl;
+        exit(1);
+    }
+    vector<int> valid_num_cuts;
+    if(enforce_parsimony){
+        valid_num_cuts.push_back(get_number_of_mutated_characters_in_node[v]);
+    } else {
+        for(int x = 0; x <= get_number_of_mutated_characters_in_node[v]; x++){
+            valid_num_cuts.push_back(x);
+        }
+    }
+    vector<float> ll_for_xs;
+    for(auto x: valid_num_cuts){
+        float ll_for_x = up(v, t, x);
+        for(auto u: children[v]){
+            ll_for_x += down(u, t, x);
+        }
+        ll_for_xs.push_back(ll_for_x);
+    }
+    return logsumexp(ll_for_xs);
+}
+
+void _write_out_log_joints(){
+    ofstream fout(output_dir + "/log_joints.txt");
+    string res = "";
+    for(auto v: non_root_internal_nodes){
+        res += to_string(v);
+        for(int t = 0; t <= T; t++){
+            res += " " + to_string(log_joints[v][t]);
+        }
+        res += "\n";
+    }
+    fout << res;
+}
+
+void _write_out_posteriors(){
+    // NOTE: copy-pasta of _write_out_log_joints)
+    ofstream fout(output_dir + "/posteriors.txt");
+    string res = "";
+    for(auto v: non_root_internal_nodes){
+        res += to_string(v);
+        for(int t = 0; t <= T; t++){
+            res += " " + to_string(posteriors[v][t]);
+        }
+        res += "\n";
+    }
+    fout << res;
+}
+
+void _write_out_posterior_means(){
+    ofstream fout(output_dir + "/posterior_means.txt");
+    string res = "";
+    for(auto v: non_root_internal_nodes){
+        res += to_string(v);
+        res += " " + to_string(posterior_means[v]);
+        res += "\n";
+    }
+    fout << res;
+}
+
+void write_posteriors(){
+    // mimmicks _compute_posteriors of the python implementation.
+    for(auto v: non_root_internal_nodes){
+        // Compute the log_joints.
+        for(int t = 0; t <= T; t++){
+            log_joints[v][t] = _compute_log_joint(v, t);
+        }
+
+        // Compute the posteriors
+        float mx = -INF;
+        for(int t = 0; t <= T; t++){
+            mx = max(mx, log_joints[v][t]);
+        }
+        for(int t = 0; t <= T; t++){
+            posteriors[v][t] = exp(log_joints[v][t] - mx);
+        }
+        // Normalize posteriors
+        float tot_sum = 0.0;
+        for(int t = 0; t <= T; t++){
+            tot_sum += posteriors[v][t];
+        }
+        for(int t = 0; t <= T; t++){
+            posteriors[v][t] /= tot_sum;
+        }
+
+        // Compute the posterior means.
+        posterior_means[v] = 0.0;
+        for(int t = 0; t <= T; t++){
+            posterior_means[v] += posteriors[v][t] * t;
+        }
+        posterior_means[v] /= float(T);
+    }
+
+    // Write out the log_joints, posteriors, and posterior_means
+    _write_out_log_joints();
+    _write_out_posteriors();
+    _write_out_posterior_means();
+}
+
 
 int main(int argc, char *argv[]){
     if(argc != 3){
@@ -434,5 +547,7 @@ int main(int argc, char *argv[]){
     forn(v, N) forn(t, T + 1) forn(k, K + 1) _down_cache[v][t][k] = _up_cache[v][t][k] = 1.0;
     write_down();
     write_up();
+    write_log_likelihood();
+    write_posteriors();
     return 0;
 }
