@@ -10,12 +10,12 @@
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)
 
 using namespace std;
-const int maxN = 10001;
-const int maxK = 101;
+const int maxN = 10000;
+const int maxK = 100;
 const int maxT = 512;
 const float INF = 1e16;
-float _down_cache[maxN][maxT][maxK];
-float _up_cache[maxN][maxT][maxK];
+float _down_cache[maxN][maxT + 1][maxK + 1];
+float _up_cache[maxN][maxT + 1][maxK + 1];
 
 string input_dir = "";
 string output_dir = "";
@@ -79,7 +79,7 @@ void read_N(){
         cerr << "N input corrupted" << endl;
         exit(1); 
     }
-    if(N >= maxN){
+    if(N > maxN){
         cerr << "N larger than maxN" << endl;
         exit(1);
     }
@@ -201,7 +201,7 @@ void read_K(){
         cerr << "K input corrupted" << endl;
         exit(1); 
     }
-    if(K >= maxK - 1){
+    if(K > maxK){
         cerr << "K larger than maxK" << endl;
         exit(1);
     }
@@ -215,7 +215,7 @@ void read_T(){
         cerr << "T input corrupted" << endl;
         exit(1); 
     }
-    if(T >= maxT - 1){
+    if(T > maxT){
         cerr << "T larger than maxT" << endl;
         exit(1);
     }
