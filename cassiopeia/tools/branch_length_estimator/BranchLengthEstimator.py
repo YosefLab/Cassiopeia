@@ -3,6 +3,12 @@ import abc
 from cassiopeia.data import CassiopeiaTree
 
 
+class BranchLengthEstimatorError(Exception):
+    """An Exception class for the CassiopeiaTree class."""
+
+    pass
+
+
 class BranchLengthEstimator(abc.ABC):
     r"""
     Abstract base class for all branch length estimators.

@@ -22,4 +22,4 @@ pydata-sphinx-theme>=0.4.0
 python-Levenshtein
 pathlib
 typing_extensions; python_version < '3.8'
-
+parameterized

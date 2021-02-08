@@ -1,22 +1,19 @@
 import itertools
 import multiprocessing
+import unittest
 from copy import deepcopy
 
 import networkx as nx
 import numpy as np
 import pytest
-import unittest
+from parameterized import parameterized
 
 from cassiopeia.data import CassiopeiaTree
-
-from cassiopeia.tools import (
-    BirthProcess,
-    IIDExponentialBLE,
-    IIDExponentialBLEGridSearchCV,
-    IIDExponentialLineageTracer,
-    IIDExponentialPosteriorMeanBLE,
-    IIDExponentialPosteriorMeanBLEGridSearchCV,
-)
+from cassiopeia.tools import (BirthProcess, IIDExponentialBLE,
+                              IIDExponentialBLEGridSearchCV,
+                              IIDExponentialLineageTracer,
+                              IIDExponentialPosteriorMeanBLE,
+                              IIDExponentialPosteriorMeanBLEGridSearchCV)
 
 
 class TestIIDExponentialBLE(unittest.TestCase):
@@ -547,6 +544,7 @@ def get_z_scores(
         birth_rate=birth_rate_model,
         mutation_rate=mutation_rate_model,
         discretization_level=discretization_level,
+        use_cpp_implementation=True
     )
     model.estimate_branch_lengths(tree)
     z_scores = []
@@ -591,7 +589,8 @@ def get_z_scores_under_misspecified_model(repetition):
 
 
 class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
-    def test_IIDExponentialPosteriorMeanBLE(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLE(self, name, use_cpp_implementation):
         r"""
         For a small tree with only one internal node, the likelihood of the data,
         and the posterior age of the internal node, can be computed easily in
@@ -618,6 +617,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
             discretization_level=discretization_level,
+            use_cpp_implementation=use_cpp_implementation
         )
 
         model.estimate_branch_lengths(tree)
@@ -695,7 +695,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             posterior_mean, numerical_posterior_mean, significant=2
         )
 
-    def test_IIDExponentialPosteriorMeanBLE_2(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLE_2(self, name, use_cpp_implementation):
         r"""
         We run the Bayesian estimator on a small tree with all different leaves,
         and then check that:
@@ -725,6 +726,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
             discretization_level=discretization_level,
+            use_cpp_implementation=use_cpp_implementation
         )
 
         model.estimate_branch_lengths(tree)
@@ -793,7 +795,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             assert total_variation < 0.03
 
     @pytest.mark.slow
-    def test_IIDExponentialPosteriorMeanBLE_3(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLE_3(self, name, use_cpp_implementation):
         r"""
         Same as test_IIDExponentialPosteriorMeanBLE_2 but with a weirder topology.
         """
@@ -822,6 +825,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
             discretization_level=discretization_level,
+            use_cpp_implementation=use_cpp_implementation
         )
 
         model.estimate_branch_lengths(tree)
@@ -880,7 +884,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             assert total_variation < 0.03
 
     @pytest.mark.slow
-    def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1(self, name, use_cpp_implementation):
         r"""
         A tree from the DREAM subchallenge 1, verified analytically.
         """
@@ -904,6 +909,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
             discretization_level=discretization_level,
+            use_cpp_implementation=use_cpp_implementation
         )
 
         model.estimate_branch_lengths(tree)
@@ -971,6 +977,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         We use p-values computed from the Hoeffding bound.
         TODO: There might be a more powerful test, e.g. Kolmogorov–Smirnov?
         (This would mean we need less repetitions and can make the test faster.)
+        This test uses the c++ implementation to be faster.
         """
         repetitions = 1000
 
@@ -1002,7 +1009,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
 
 
 class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
-    def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke(self, name, use_cpp_implementation):
         r"""
         Just want to see that it runs in both single and multiprocessor mode
         """
@@ -1020,10 +1028,12 @@ class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
                 birth_rates=(1.5,),
                 discretization_level=5,
                 verbose=True,
+                use_cpp_implementation=use_cpp_implementation
             )
             model.estimate_branch_lengths(tree)
 
-    def test_IIDExponentialPosteriorMeanBLEGridSeachCV(self):
+    @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    def test_IIDExponentialPosteriorMeanBLEGridSeachCV(self, name, use_cpp_implementation):
         r"""
         We just check that the grid search estimator does its job on a small grid.
         """
@@ -1047,6 +1057,7 @@ class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
             birth_rates=birth_rates,
             discretization_level=discretization_level,
             verbose=True,
+            use_cpp_implementation=use_cpp_implementation
         )
 
         # Test the model log likelihood against its numerical computation

@@ -1,15 +1,22 @@
 import multiprocessing
-from copy import deepcopy
+import os
+import subprocess
+import tempfile
 import time
-from typing import Optional, Tuple
+from copy import deepcopy
+from typing import List, Optional, Tuple
 
 import numpy as np
 from scipy import integrate
 from scipy.special import binom, logsumexp
 
 from cassiopeia.data import CassiopeiaTree
-from .BranchLengthEstimator import BranchLengthEstimator
+
 from . import utils
+from .BranchLengthEstimator import (
+    BranchLengthEstimator,
+    BranchLengthEstimatorError,
+)
 
 
 class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
@@ -38,7 +45,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         birth_rate: float,
         discretization_level: int,
         enforce_parsimony: bool = True,
-        use_cpp_implementation: bool = False
+        use_cpp_implementation: bool = False,
+        debug_cpp_implementation: bool = False,
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
         # descent?
@@ -49,6 +57,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
         self.use_cpp_implementation = use_cpp_implementation
+        self.debug_cpp_implementation = debug_cpp_implementation
 
     def _compute_log_likelihood(self):
         tree = self.tree
@@ -124,34 +133,230 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self._down_cache = {}
         self._up_cache = {}
         self.tree = tree
+        if self.debug_cpp_implementation:
+            # Write out true dp values to check by eye against c++
+            # implementation values.
+            self._write_out_dps()
         if self.use_cpp_implementation:
             time_cpp_start = time.time()
-            self._populate_cache_with_cpp_implementation()
+            if self.debug_cpp_implementation:
+                # Use a directory that won't go away.
+                self._populate_cache_with_cpp_implementation(
+                    tmp_dir=os.getcwd() + "/tmp"
+                )
+            else:
+                # Use a temporary directory.
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    self._populate_cache_with_cpp_implementation(tmp_dir)
             time_cpp_end = time.time()
             print(f"time_cpp = {time_cpp_end - time_cpp_start}")
         time_compute_log_likelihood_start = time.time()
         self._compute_log_likelihood()
         time_compute_log_likelihood_end = time.time()
-        print(f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}")
+        print(
+            f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}"
+        )
         time_compute_posteriors_start = time.time()
         self._compute_posteriors()
         time_compute_posteriors_end = time.time()
-        print(f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}")
+        print(
+            f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}"
+        )
         time_populate_branch_lengths_start = time.time()
         self._populate_branch_lengths()
         time_populate_branch_lengths_end = time.time()
-        print(f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}")
+        print(
+            f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}"
+        )
 
-    def _populate_cache_with_cpp_implementation(self):
+    def _write_out_dps(self):
+        r"""
+        For debugging the c++ implementation:
+        This writes out the down and up values of the correct python implementation to the files
+        tmp/down_true.txt
+        and
+        tmp/up_true.txt
+        respectively.
+        Compare these against tmp/down.txt and tmp/up.txt, which are the values computed by the c++ implementation.
+        """
+        tree = self.tree
+        N = len(tree.nodes)
+        T = self.discretization_level
+        K = tree.n_character
+        id_to_node = dict(zip(range(len(tree.nodes)), tree.nodes))
+
+        if not os.path.exists("tmp"):
+            os.mkdir("tmp")
+
+        res = ""
+        for v_id in range(N):
+            v = id_to_node[v_id]
+            if v == tree.root:
+                continue
+            for t in range(T + 1):
+                for x in range(K + 1):
+                    if self._state_is_valid(v, t, x):
+                        res += (
+                            str(v_id)
+                            + " "
+                            + str(t)
+                            + " "
+                            + str(x)
+                            + " "
+                            + str(self.down(v, t, x))
+                            + "\n"
+                        )
+        with open("tmp/down_true.txt", "w") as fout:
+            fout.write(res)
+
+        res = ""
+        for v_id in range(N):
+            v = id_to_node[v_id]
+            for t in range(T + 1):
+                for x in range(K + 1):
+                    if self._state_is_valid(v, t, x):
+                        res += (
+                            str(v_id)
+                            + " "
+                            + str(t)
+                            + " "
+                            + str(x)
+                            + " "
+                            + str(self.up(v, t, x))
+                            + "\n"
+                        )
+        with open("tmp/up_true.txt", "w") as fout:
+            fout.write(res)
+
+    def _write_out_list_of_lists(self, lls: List[List[int]], filename: str):
+        res = ""
+        for l in lls:
+            for i, x in enumerate(l):
+                if i:
+                    res += " "
+                res += str(x)
+            res += "\n"
+        with open(filename, "w") as file:
+            file.write(res)
+
+    def _populate_cache_with_cpp_implementation(self, tmp_dir):
         r"""
         A cpp implementation is run to compute up and down caches, which is
         the computational bottleneck.
+        To remove anything that has to do with the cpp implementation, you just
+        have to remove this function (and the gates around it).
+        I.e., this python implementation is loosely coupled to the cpp call: we
+        just have to remove the call to this method to turn it off, and all
+        other code will work just fine. This is because all that this method
+        does is *warm up the cache* with values computed from the cpp
+        subprocess, and the caching process is totally transparent to the
+        other methods of the class.
         """
-        # First extract the relevant information from the tree.
-        # Serialize the tree information
+        # First extract the relevant information from the tree and serialize it.
+        tree = self.tree
+        node_to_id = dict(zip(tree.nodes, range(len(tree.nodes))))
+        id_to_node = dict(zip(range(len(tree.nodes)), tree.nodes))
+
+        N = [[len(tree.nodes)]]
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
+        self._write_out_list_of_lists(N, f"{tmp_dir}/N.txt")
+
+        children = [
+            [node_to_id[v]]
+            + [len(tree.children(v))]
+            + [node_to_id[c] for c in tree.children(v)]
+            for v in tree.nodes
+        ]
+        self._write_out_list_of_lists(children, f"{tmp_dir}/children.txt")
+
+        root = [[node_to_id[tree.root]]]
+        self._write_out_list_of_lists(root, f"{tmp_dir}/root.txt")
+
+        is_internal_node = [
+            [node_to_id[v], 1 * tree.is_internal_node(v)] for v in tree.nodes
+        ]
+        self._write_out_list_of_lists(
+            is_internal_node, f"{tmp_dir}/is_internal_node.txt"
+        )
+
+        get_number_of_mutated_characters_in_node = [
+            [node_to_id[v], tree.get_number_of_mutated_characters_in_node(v)]
+            for v in tree.nodes
+        ]
+        self._write_out_list_of_lists(
+            get_number_of_mutated_characters_in_node,
+            f"{tmp_dir}/get_number_of_mutated_characters_in_node.txt",
+        )
+
+        non_root_internal_nodes = [
+            [node_to_id[v]] for v in tree.non_root_internal_nodes
+        ]
+        self._write_out_list_of_lists(
+            non_root_internal_nodes, f"{tmp_dir}/non_root_internal_nodes.txt"
+        )
+
+        leaves = [[node_to_id[v]] for v in tree.leaves]
+        self._write_out_list_of_lists(leaves, f"{tmp_dir}/leaves.txt")
+
+        parent = [
+            [node_to_id[v], node_to_id[tree.parent(v)]]
+            for v in tree.nodes
+            if v != tree.root
+        ]
+        self._write_out_list_of_lists(parent, f"{tmp_dir}/parent.txt")
+
+        K = [[tree.n_character]]
+        self._write_out_list_of_lists(K, f"{tmp_dir}/K.txt")
+
+        T = [[self.discretization_level]]
+        self._write_out_list_of_lists(T, f"{tmp_dir}/T.txt")
+
+        enforce_parsimony = [[1 * self.enforce_parsimony]]
+        self._write_out_list_of_lists(
+            enforce_parsimony, f"{tmp_dir}/enforce_parsimony.txt"
+        )
+
+        r = [[self.mutation_rate]]
+        self._write_out_list_of_lists(r, f"{tmp_dir}/r.txt")
+
+        lam = [[self.birth_rate]]
+        self._write_out_list_of_lists(lam, f"{tmp_dir}/lam.txt")
+
+        is_leaf = [[node_to_id[v], 1 * tree.is_leaf(v)] for v in tree.nodes]
+        self._write_out_list_of_lists(is_leaf, f"{tmp_dir}/is_leaf.txt")
+
         # Run the c++ implementation
-        # Read the cache values
-        pass
+        try:
+            # os.system('IIDExponentialPosteriorMeanBLE')
+            subprocess.run(
+                [
+                    "./IIDExponentialPosteriorMeanBLE",
+                    f"{tmp_dir}",
+                    f"{tmp_dir}",
+                ],
+                check=True,
+                cwd=os.path.dirname(__file__),
+            )
+        except subprocess.CalledProcessError:
+            raise BranchLengthEstimatorError(
+                "Couldn't run c++ implementation,"
+                " or c++ implementation started running and errored."
+            )
+
+        # Load the c++ implementation results into the cache
+        with open(f"{tmp_dir}/down.txt", "r") as fin:
+            for line in fin:
+                v, t, x, ll = line.split(" ")
+                v, t, x = int(v), int(t), int(x)
+                ll = float(ll)
+                self._down_cache[(id_to_node[v], t, x)] = ll
+        with open(f"{tmp_dir}/up.txt", "r") as fin:
+            for line in fin:
+                v, t, x, ll = line.split(" ")
+                v, t, x = int(v), int(t), int(x)
+                ll = float(ll)
+                self._up_cache[(id_to_node[v], t, x)] = ll
 
     def _compatible_with_observed_data(self, x, observed_cuts) -> bool:
         if self.enforce_parsimony:
@@ -187,16 +392,17 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         if (v, t, x) in self._up_cache:  # TODO: Use arrays?
             # TODO: Use a decorator instead of a hand-made cache?
             return self._up_cache[(v, t, x)]
-        if self.use_cpp_implementation:
-            raise ValueError(f"Bug in cpp implementation: State up({(v, t, x)})"
-                             f" was not populated.")
+        if self.use_cpp_implementation and not self.debug_cpp_implementation:
+            raise ValueError(
+                f"Bug in cpp implementation: State up({(v, t, x)})"
+                f" was not populated."
+            )
         # Pull out params
         r = self.mutation_rate
         lam = self.birth_rate
         dt = 1.0 / self.discretization_level
         K = self.tree.n_character
         tree = self.tree
-        discretization_level = self.discretization_level
         assert 0 <= t <= self.discretization_level
         assert 0 <= x <= K
         if not (1.0 - lam * dt - K * r * dt > 0):
@@ -227,13 +433,20 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             if v != tree.root:
                 p = tree.parent(v)
                 if self._compatible_with_observed_data(
-                    x, tree.get_number_of_mutated_characters_in_node(p)  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                    x,
+                    tree.get_number_of_mutated_characters_in_node(
+                        p
+                    ),  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ):
                     siblings = [u for u in tree.children(p) if u != v]
                     ll = (
                         np.log(lam * dt)
-                        + self.up(p, t - 1, x)  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
-                        + sum([self.down(u, t, x) for u in siblings])  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
+                        + self.up(
+                            p, t - 1, x
+                        )  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                        + sum(
+                            [self.down(u, t, x) for u in siblings]
+                        )  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
                     )
                     log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
@@ -252,9 +465,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         if (v, t, x) in self._down_cache:
             # TODO: Use a decorator instead of a hand-made cache?
             return self._down_cache[(v, t, x)]
-        if self.use_cpp_implementation:
-            raise ValueError(f"Bug in cpp implementation: State "
-                             f"down({(v, t, x)}) was not populated.")
+        if self.use_cpp_implementation and not self.debug_cpp_implementation:
+            raise ValueError(
+                f"Bug in cpp implementation: State "
+                f"down({(v, t, x)}) was not populated."
+            )
         # Pull out params
         discretization_level = self.discretization_level
         r = self.mutation_rate
@@ -269,10 +484,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
         if t == discretization_level:  # Base case
-            if (
-                tree.is_leaf(v)
-                and x == tree.get_number_of_mutated_characters_in_node(v)
-            ):
+            if tree.is_leaf(
+                v
+            ) and x == tree.get_number_of_mutated_characters_in_node(v):
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
@@ -290,14 +504,13 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 )
             # Case 3: Cell divides
             # The number of cuts at this state must match the ground truth.
-            if (
-                self._compatible_with_observed_data(
-                    x, tree.get_number_of_mutated_characters_in_node(v)
-                )
-                and not tree.is_leaf(v)
-            ):
+            if self._compatible_with_observed_data(
+                x, tree.get_number_of_mutated_characters_in_node(v)
+            ) and not tree.is_leaf(v):
                 ll = sum(
-                    [self.down(child, t + 1, x) for child in tree.children(v)]  # If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
+                    [
+                        self.down(child, t + 1, x) for child in tree.children(v)
+                    ]  # If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ) + np.log(lam * dt)
                 log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
@@ -510,6 +723,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         birth_rates: Tuple[float] = (0,),
         discretization_level: int = 1000,
         enforce_parsimony: bool = True,
+        use_cpp_implementation: bool = False,
         processes: int = 6,
         verbose: bool = False,
     ):
@@ -517,6 +731,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.birth_rates = birth_rates
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
+        self.use_cpp_implementation = use_cpp_implementation
         self.processes = processes
         self.verbose = verbose
 
@@ -528,6 +743,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         birth_rates = self.birth_rates
         discretization_level = self.discretization_level
         enforce_parsimony = self.enforce_parsimony
+        use_cpp_implementation = self.use_cpp_implementation
         processes = self.processes
         verbose = self.verbose
 
@@ -550,6 +766,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                         birth_rate=birth_rate,
                         discretization_level=discretization_level,
                         enforce_parsimony=enforce_parsimony,
+                        use_cpp_implementation=use_cpp_implementation,
                     )
                 )
                 mutation_and_birth_rates.append((mutation_rate, birth_rate))
@@ -580,6 +797,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             birth_rate=best_birth_rate,
             discretization_level=discretization_level,
             enforce_parsimony=enforce_parsimony,
+            use_cpp_implementation=use_cpp_implementation,
         )
         final_model.estimate_branch_lengths(tree)
         self.mutation_rate = best_mutation_rate
