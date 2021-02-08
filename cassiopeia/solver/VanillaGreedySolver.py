@@ -5,11 +5,13 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
+import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import GreedySolver
-from cassiopeia.solver.missing_data_methods import assign_missing_average
+from cassiopeia.solver import missing_data_methods
+from cassiopeia.solver import solver_utilities
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
@@ -33,7 +35,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies
 
     Attributes:
@@ -45,34 +47,35 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
     """
 
     def __init__(
         self,
         character_matrix: pd.DataFrame,
         missing_char: int,
-        missing_data_classifier: Callable = None,
+        missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_function
+            character_matrix,
+            missing_char,
+            meta_data,
+            priors,
+            prior_transformation,
         )
-
-        if not missing_data_classifier:
-            self.missing_data_classifier = assign_missing_average
-        else:
-            self.missing_data_classifier = missing_data_classifier
+        self.missing_data_classifier = missing_data_classifier
 
     def perform_split(
         self,
-        samples: List[int],
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str],
+    ) -> Tuple[List[str], List[str]]:
         """Performs a partition based on the most frequent (character, state) pair.
 
         Uses the (character, state) pair to split the list of samples into
@@ -81,11 +84,15 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         character where presence or absence of the character is ambiguous.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            self.unique_character_matrix.index, samples
+        )
         mutation_frequencies = self.compute_mutation_frequencies(samples)
 
         best_frequency = 0
@@ -134,19 +141,18 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         right_set = []
         missing = []
 
-        for i in samples:
-            if (
-                self.unique_character_matrix[i][chosen_character]
-                == chosen_state
-            ):
-                left_set.append(i)
+        unique_character_array = self.unique_character_matrix.to_numpy()
+        sample_names = list(self.unique_character_matrix.index)
+
+        for i in sample_indices:
+            if unique_character_array[i, chosen_character] == chosen_state:
+                left_set.append(sample_names[i])
             elif (
-                self.unique_character_matrix[i][chosen_character]
-                == self.missing_char
+                unique_character_array[i, chosen_character] == self.missing_char
             ):
-                missing.append(i)
+                missing.append(sample_names[i])
             else:
-                right_set.append(i)
+                right_set.append(sample_names[i])
 
         left_set, right_set = self.missing_data_classifier(
             self.unique_character_matrix,
@@ -154,5 +160,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             left_set,
             right_set,
             missing,
+            weights=self.weights,
         )
+
         return left_set, right_set

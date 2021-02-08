@@ -36,7 +36,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies and the contribution of
             each mutation in the connectivity graph
         sdimension: The number of dimensions to use for the embedding space.
@@ -53,9 +53,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
         sdimension: The number of dimensions to use for the embedding space
         iterations: The number of iterations in updating the embeddings
     """
@@ -66,21 +65,27 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
         super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_function
+            character_matrix,
+            missing_char,
+            meta_data,
+            priors,
+            prior_transformation,
         )
         self.sdimension = sdimension
         self.iterations = iterations
 
     def perform_split(
         self,
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str] = None,
+    ) -> Tuple[List[str], List[str]]:
         """Generate a partition of the samples by finding the max-cut.
         First, a connectivity graph is generated with samples as nodes such
         that samples with shared mutations have strong negative edge weight
@@ -95,7 +100,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         the cut.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -107,7 +113,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             mutation_frequencies,
             self.missing_char,
             samples,
-            w=self.weights,
+            weights=self.weights,
         )
 
         if len(G.edges) == 0:
@@ -158,7 +164,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
 
         return improved_left_set, improved_right_set
 
-    def evaluate_cut(self, cut: List[int], G: nx.DiGraph) -> float:
+    def evaluate_cut(self, cut: List[str], G: nx.DiGraph) -> float:
         """A simple function to evaluate the weight of a cut.
 
         For each edge in the graph, checks if it is in the cut, and then adds

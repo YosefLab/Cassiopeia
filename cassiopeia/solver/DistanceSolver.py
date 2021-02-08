@@ -3,7 +3,7 @@ This file stores a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
 the inference procedures that inherit from this method will need to implement
 methods for selecting "cherries" and updating the dissimilarity map. Methods
 that will inherit from this class by default are Neighbor-Joining and UPGMA.
-There may be other subclasses of this
+There may be other subclasses of this.
 """
 import abc
 import networkx as nx
@@ -17,7 +17,7 @@ from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import solver_utilities
 
 
-class DistanceSolveError(Exception):
+class DistanceSolverError(Exception):
     """An Exception class for all DistanceSolver subclasses."""
 
     pass
@@ -40,7 +40,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         meta_data: Any meta data associated with the samples
         priors: Prior probabilities of observing a transition from 0 to any
             state for each character
-        prior_function: A function defining a transformation on the priors
+        prior_transformation: A function defining a transformation on the priors
             in forming weights
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
@@ -68,31 +68,27 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: int = -1,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[Callable] = None,
     ):
 
         if dissimilarity_function is None and dissimilarity_map is None:
-            raise DistanceSolveError(
+            raise DistanceSolverError(
                 "Please specify a dissimilarity map or dissimilarity function"
             )
 
         super().__init__(character_matrix, meta_data, priors)
 
         self.tree = None
+        self.weights = None
 
         if priors:
-            if prior_function:
-                self.weights = solver_utilities.transform_priors(
-                    priors, prior_function
-                )
-            else:
-                self.weights = solver_utilities.transform_priors(
-                    priors, lambda x: -np.log(x)
-                )
-        else:
-            self.weights = None
+            self.weights = solver_utilities.transform_priors(
+                priors, prior_transformation
+            )
 
         self.dissimilarity_map = dissimilarity_map
         self.dissimilarity_function = dissimilarity_function

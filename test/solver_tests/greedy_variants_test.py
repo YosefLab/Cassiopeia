@@ -3,10 +3,11 @@ import unittest
 import networkx as nx
 import pandas as pd
 
+from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.data import utilities as tree_utilities
+from cassiopeia.solver import solver_utilities
 
 
 class GreedyVariantsTest(unittest.TestCase):
@@ -45,11 +46,10 @@ class GreedyVariantsTest(unittest.TestCase):
         )
 
         sgsolver = SpectralGreedySolver(character_matrix=cm, missing_char=-1)
-        left, right = sgsolver.perform_split(
-            list(range(sgsolver.unique_character_matrix.shape[0]))
-        )
-        self.assertEqual(left, [1, 3])
-        self.assertEqual(right, [0, 2])
+        unique_cm = cm.drop_duplicates()
+        left, right = sgsolver.perform_split(unique_cm.index)
+        self.assertEqual(left, ["c2", "c6"])
+        self.assertEqual(right, ["c1", "c3"])
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
@@ -79,16 +79,12 @@ class GreedyVariantsTest(unittest.TestCase):
         }
 
         sgsolver = SpectralGreedySolver(
-            character_matrix=cm,
-            missing_char=-1,
-            priors=priors,
-            prior_function=None,
+            character_matrix=cm, missing_char=-1, priors=priors
         )
-        left, right = sgsolver.perform_split(
-            list(range(sgsolver.unique_character_matrix.shape[0]))
-        )
-        self.assertEqual(left, [1, 3])
-        self.assertEqual(right, [0, 2])
+        unique_cm = cm.drop_duplicates()
+        left, right = sgsolver.perform_split(unique_cm.index)
+        self.assertEqual(left, ["c2", "c6"])
+        self.assertEqual(right, ["c1", "c3"])
 
         sgsolver.solve()
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
@@ -111,10 +107,9 @@ class GreedyVariantsTest(unittest.TestCase):
         )
 
         mcgsolver = MaxCutGreedySolver(character_matrix=cm, missing_char=-1)
-        left, right = mcgsolver.perform_split(
-            list(range(mcgsolver.unique_character_matrix.shape[0]))
-        )
-        self.assertListEqual(left, [0, 2, 3, 1])
+        unique_cm = cm.drop_duplicates()
+        left, right = mcgsolver.perform_split(unique_cm.index)
+        self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
         mcgsolver.solve()
@@ -148,10 +143,9 @@ class GreedyVariantsTest(unittest.TestCase):
         mcgsolver = MaxCutGreedySolver(
             character_matrix=cm, missing_char=-1, priors=priors
         )
-        left, right = mcgsolver.perform_split(
-            list(range(mcgsolver.unique_character_matrix.shape[0]))
-        )
-        self.assertListEqual(left, [0, 2, 3, 1])
+        unique_cm = cm.drop_duplicates()
+        left, right = mcgsolver.perform_split(unique_cm.index)
+        self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
         mcgsolver.solve()

@@ -15,12 +15,13 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import ilp_solver_utilities
+from cassiopeia.solver import solver_utilities
 
 
 class ILPSolverError(Exception):
@@ -67,6 +68,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_char: str,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict] = None,
+        prior_transformation: Optional[
+            Callable[[float], float]
+        ] = "negative_log",
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
@@ -101,18 +105,20 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         self.priors = priors
-        if self.priors:
+        self.weights = None
+
+        if priors:
             self.weights = solver_utilities.transform_priors(
-                priors, lambda x: -np.log(x)
+                priors, prior_transformation
             )
-        else:
-            self.weights = None
 
         # set up logger
         self.logfile = logfile
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
-    def prepare_for_subproblem(self, new_character_matrix: pd.DataFrame, logfile: str):
+    def prepare_for_subproblem(
+        self, new_character_matrix: pd.DataFrame, logfile: str
+    ):
         """Prepare ILPSolver to be used in a HybridSolver instance.
 
         Rewrites the character matrix, unique character matrix, and logfile
@@ -126,7 +132,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.character_matrix = new_character_matrix.copy()
         self.unique_character_matrix = self.character_matrix.drop_duplicates()
         self.logfile = logfile
-        
+
     def solve(self):
         """Infers a tree with Cassiopeia-ILP."""
         # find the root of the tree & generate process ID

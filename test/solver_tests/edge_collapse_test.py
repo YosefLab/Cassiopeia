@@ -75,7 +75,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        character_matrix = pd.DataFrame(table).to_numpy()
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
@@ -129,7 +129,7 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        character_matrix = pd.DataFrame(table).to_numpy()
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,

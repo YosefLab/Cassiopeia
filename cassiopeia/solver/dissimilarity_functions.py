@@ -11,7 +11,7 @@ def weighted_hamming_distance(
     s1: List[int],
     s2: List[int],
     missing_state=-1,
-    w: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
@@ -31,7 +31,7 @@ def weighted_hamming_distance(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_char: The character representing missing values
-        w: A dictionary storing the state weights for each character, derived
+        weights: A dictionary storing the state weights for each character, derived
             from the state priors. This should be a nested dictionary where each
             key corresponds to character that then indexes another dictionary
             storing the weight of each observed state.
@@ -52,22 +52,18 @@ def weighted_hamming_distance(
 
         if s1[i] != s2[i]:
             if s1[i] == 0 or s2[i] == 0:
-                if w:
+                if weights:
                     if s1[i] != 0:
-                        d += w[i][s1[i]]
+                        d += weights[i][s1[i]]
                     else:
-                        d += w[i][s2[i]]
+                        d += weights[i][s2[i]]
                 else:
                     d += 1
             else:
-                if w:
-                    d += w[i][s1[i]] + w[i][s2[i]]
+                if weights:
+                    d += weights[i][s1[i]] + weights[i][s2[i]]
                 else:
                     d += 2
-        else:
-            if s1[i] != 0:
-                if w:
-                    d -= 2 * w[i][s1[i]]
 
     if num_present == 0:
         return 0
@@ -79,7 +75,7 @@ def hamming_similarity_without_missing(
     s1: List[int],
     s2: List[int],
     missing_char: int,
-    w: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
     """A function to return the number of (non-missing) character/state
     mutations shared by two samples.
@@ -88,30 +84,30 @@ def hamming_similarity_without_missing(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_char: The character representing missing values
-        w: A set of optional weights to weight the similarity of a mutation
+        weights: A set of optional weights to weight the similarity of a mutation
     Returns:
         The number of shared mutations between two samples, weighted or unweighted
     """
 
     # TODO Optimize this using masks
-    num_chars = len(s1)
-    assert len(s2) == num_chars
-    if w is None:
-        return sum(
-            [
-                1
-                for i in range(num_chars)
-                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
-            ]
-        )
-    else:
-        return sum(
-            [
-                w[i][s1[i]]
-                for i in range(num_chars)
-                if s1[i] == s2[i] and (s1[i] != 0 and s1[i] != missing_char)
-            ]
-        )
+    similarity = 0
+    for i in range(len(s1)):
+
+        if (
+            s1[i] == missing_char
+            or s2[i] == missing_char
+            or s1[i] == 0
+            or s2[i] == 0
+        ):
+            continue
+
+        if s1[i] == s2[i]:
+            if weights:
+                similarity += weights[i][s1[i]]
+            else:
+                similarity += 1
+
+    return similarity
 
 
 @numba.jit(nopython=True)
@@ -137,39 +133,11 @@ def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
     return dist
 
 
-def negative_weighted_hamming_distance(
-    s1: List[int],
-    s2: List[int],
-    missing_char: int,
-    w: Optional[Dict[int, Dict[int, float]]] = None,
-) -> float:
-    """Computes the negative weighted hamming distance between samples.
-
-    Returns the negative value of the weighted_hamming_distance function above
-    as a similarity.
-
-    Args:
-        s1: Character states of the first sample
-        s2: Character states of the second sample
-        missing_char: The character representing missing values
-        w: A dictionary storing the state weights for each character, derived
-            from the state priors. This should be a nested dictionary where each
-            key corresponds to character that then indexes another dictionary
-            storing the weight of each observed state.
-            (Character -> State -> Weight)
-
-    Returns:
-        A similarity score.
-    """
-
-    return -1 * weighted_hamming_distance(s1, s2, missing_char, w)
-
-
 def weighted_hamming_similarity(
     s1: List[int],
     s2: List[int],
     missing_char: int,
-    w: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
     """A function to return the weighted number of (non-missing) character/state
     mutations shared by two samples.
@@ -178,7 +146,7 @@ def weighted_hamming_similarity(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_char: The character representing missing values
-        w: A set of optional weights to weight the similarity of a mutation
+        weights: A set of optional weights to weight the similarity of a mutation
 
     Returns:
         The weighted number of shared mutations between two samples
@@ -195,17 +163,13 @@ def weighted_hamming_similarity(
 
         if s1[i] == s2[i]:
             if s1[i] != 0:
-                if w:
-                    d += 2 * w[i][s1[i]]
+                if weights:
+                    d += 2 * weights[i][s1[i]]
                 else:
                     d += 2
             else:
-                if not w:
+                if not weights:
                     d += 1
-        else:
-            if s1[i] != 0 and s2[i] != 0:
-                if w:
-                    d -= w[i][s1[i]] - w[i][s2[i]]
 
     if num_present == 0:
         return 0

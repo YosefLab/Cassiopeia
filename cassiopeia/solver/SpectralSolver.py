@@ -56,9 +56,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
         tree: The tree built by `self.solve()`. None if `solve` has not been
             called yet
         unique_character_matrix: A character matrix with duplicate rows filtered
-            out, converted to a numpy array for efficient indexing
-        node_mapping: A mapping of node names to their integer indices in the
-            original character matrix, for efficient indexing
+        duplicate_groups: A mapping of samples to the set of duplicates that
+            share the same character vector. Uses the original sample names
         weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
@@ -71,7 +70,7 @@ class SpectralSolver(GreedySolver.GreedySolver):
         missing_char: int,
         meta_data: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = None,
+        prior_function: Optional[Callable[[float], float]] = "negative_log",
         similarity_function: Optional[
             Callable[
                 [
@@ -101,8 +100,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def perform_split(
         self,
-        samples: List[int] = None,
-    ) -> Tuple[List[int], List[int]]:
+        samples: List[str] = None,
+    ) -> Tuple[List[str], List[str]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
         First, a similarity graph is generated with samples as nodes such that
@@ -119,19 +118,19 @@ class SpectralSolver(GreedySolver.GreedySolver):
         cuts needed to be explored.
 
         Args:
-            samples: A list of samples, represented as integer indices
+            samples: A list of samples, represented by their names in the
+                original character matrix
 
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-
         G = graph_utilities.construct_similarity_graph(
             self.unique_character_matrix,
             self.missing_char,
             samples,
             similarity_function=self.similarity_function,
             threshold=self.threshold,
-            w=self.weights,
+            weights=self.weights,
         )
 
         L = nx.normalized_laplacian_matrix(G).todense()
