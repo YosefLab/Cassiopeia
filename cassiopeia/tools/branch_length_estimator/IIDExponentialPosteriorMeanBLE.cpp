@@ -10,8 +10,8 @@
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)
 
 using namespace std;
-const int maxN = 1024;
-const int maxK = 128;
+const int maxN = 10001;
+const int maxK = 101;
 const int maxT = 512;
 const float INF = 1e16;
 float _down_cache[maxN][maxT][maxK];
