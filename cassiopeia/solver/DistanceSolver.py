@@ -82,6 +82,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         super().__init__(character_matrix, meta_data, priors)
 
+        self.missing_char = missing_char
         self.tree = None
         self.weights = None
 

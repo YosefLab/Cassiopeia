@@ -83,7 +83,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             cm, dissimilarity_function=delta_fn
         )
 
-        # ------------- CM with Duplictes -----------------------
+        # ------------- CM with Duplicates -----------------------
         cm = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0],

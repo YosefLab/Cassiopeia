@@ -80,7 +80,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     ):
 
         if dissimilarity_function is None and root_sample is None:
-            raise DistanceSolver.DistanceSolveError(
+            raise DistanceSolver.DistanceSolverError(
                 "Please specify a root sample or provide a dissimilarity "
                 "function by which to add a root to the dissimilarity map"
             )
