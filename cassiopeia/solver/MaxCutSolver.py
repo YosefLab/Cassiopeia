@@ -61,30 +61,20 @@ class MaxCutSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: int,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_transformation: Optional[
-            Callable[[float], float]
-        ] = "negative_log",
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
     ):
 
-        super().__init__(
-            character_matrix,
-            missing_char,
-            meta_data,
-            priors,
-            prior_transformation,
-        )
+        super().__init__()
         self.sdimension = sdimension
         self.iterations = iterations
 
     def perform_split(
         self,
-        samples: List[str] = None,
+        character_matrix: pd.DataFrame,
+        samples: List[int],
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
         """Generate a partition of the samples by finding the max-cut.
         First, a connectivity graph is generated with samples as nodes such
@@ -106,14 +96,14 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
+        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
 
         G = graph_utilities.construct_connectivity_graph(
-            self.unique_character_matrix,
+            character_matrix,
             mutation_frequencies,
-            self.missing_char,
+            missing_state_indicator,
             samples,
-            weights=self.weights,
+            weights=weights,
         )
 
         if len(G.edges) == 0:
