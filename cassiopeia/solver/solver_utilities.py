@@ -20,10 +20,17 @@ class InferAncestorError(Exception):
 
     pass
 
+
+class PriorTransformationError(Exception):
+    """An Exception class for generating weights from priors."""
+
+    pass
+
+
 def annotate_ancestral_characters(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
     missing_char: int,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
@@ -45,18 +52,19 @@ def annotate_ancestral_characters(
     """
     if T.out_degree(node) == 0:
         return
-    vecs = []
+    vectors = []
     for i in T.successors(node):
         annotate_ancestral_characters(T, i, node_to_characters, missing_char)
-        vecs.append(node_to_characters[i])
-    lca_characters = data_utilities.get_lca_characters(vecs, missing_char)
+        vectors.append(node_to_characters[i])
+    lca_characters = data_utilities.get_lca_characters(vectors, missing_char)
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
 
+
 def collapse_edges(
     T: nx.DiGraph,
-    node: Union[int, str],
-    node_to_characters: Dict[Union[int, str], List[int]],
+    node: int,
+    node_to_characters: Dict[int, List[int]],
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -117,6 +125,11 @@ def collapse_tree(
         A collapsed tree
 
     """
+    name_to_index = dict(
+        zip(character_matrix.index, range(character_matrix.shape[0]))
+    )
+    character_matrix_np = character_matrix.to_numpy()
+
     leaves = [
         n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1
     ]
@@ -127,14 +140,14 @@ def collapse_tree(
     # annotations, or infers them
     if infer_ancestral_characters:
         if character_matrix is None or missing_char is None:
-            logging.info(
+            raise InferAncestorError(
                 "In order to infer ancestral characters, a character matrix and missing character are needed"
             )
-            raise InferAncestorError()
 
         for i in leaves:
-            node_to_characters[i] = list(character_matrix.loc[i, :])
-            tree.nodes[i]["characters"] = list(character_matrix.loc[i, :])
+            node_to_characters[i] = tree.nodes[i]["characters"] = list(
+                character_matrix_np[name_to_index[i], :]
+            )
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_char
         )
@@ -172,27 +185,80 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
 
 
 def transform_priors(
-    priors: Optional[Dict[int, Dict[int, float]]] = None,
-    prior_function: Optional[Callable[[float], float]] = None,
-):
-    """Generates a dictionary of negative log probabilities from priors.
+    priors: Optional[Dict[int, Dict[int, float]]],
+    prior_transformation: str = "negative_log",
+) -> Dict[int, Dict[int, float]]:
+    """Generates a dictionary of weights from priors.
 
-    Generates a dicitonary of weights for use in algorithms that inheret the
-    GreedySolver from given priors.
+    Generates a dictionary of weights from given priors for each character/state
+    pair for use in algorithms that inherit the GreedySolver. Supported
+    transformations include negative log, negative log square root, and inverse.
 
     Args:
         priors: A dictionary of prior probabilities for each character/state
             pair
-        prior_function: A function defining a transformation on the priors
-            in forming weights
+        prior_transformation: A function defining a transformation on the priors
+            in forming weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative log
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Returns:
         A dictionary of weights for each character/state pair
     """
+    if prior_transformation not in [
+        "negative_log",
+        "inverse",
+        "square_root_inverse",
+    ]:
+        raise PriorTransformationError(
+            "Please select one of the supported prior transformations."
+        )
+
+    prior_function = lambda x: -np.log(x)
+
+    if prior_transformation == "square_root_inverse":
+        prior_function = lambda x: (np.sqrt(1 / x))
+    if prior_transformation == "inverse":
+        prior_function = lambda x: 1 / x
+
     weights = {}
     for character in priors:
         state_weights = {}
         for state in priors[character]:
-            state_weights[state] = prior_function(priors[character][state])
+            p = priors[character][state]
+            if p <= 0.0 or p > 1.0:
+                raise PriorTransformationError(
+                    "Please make sure all priors have a positive value less than 1 and greater than 0"
+                )
+            state_weights[state] = prior_function(p)
         weights[character] = state_weights
     return weights
+
+
+def convert_sample_names_to_indices(
+    names: List[str], samples: List[str]
+) -> List[int]:
+    """Maps samples to their integer indices in a given set of names.
+
+    Used to map sample string names to the their integer positions in the index
+    of the original character matrix for efficient indexing operations.
+
+    Args:
+        names: A list of sample names, represented by their string names in the
+            original character matrix
+        samples: A list of sample names representing the subset to be mapped to
+            integer indices
+
+    Returns:
+        A list of samples mapped to integer indices
+    """
+    name_to_index = dict(
+        zip(
+            names,
+            range(len(names)),
+        )
+    )
+
+    return list(map(lambda x: name_to_index[x], samples))

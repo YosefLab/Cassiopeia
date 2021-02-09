@@ -36,7 +36,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     inference algorithms. The solver procedure contains logic for building tree
     starting with a top-down greedy algorithm until a predetermined criteria is reached
     at which point a more complex algorithm is used to reconstruct each
-    subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver 
+    subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver
     as it must have functions `find_split` and `perform_split`. The solver
     employed at the bottom of the tree can be any CassiopeiaSolver subclass and
     need only have a `solve` method.
@@ -80,16 +80,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         super().__init__(character_matrix, missing_char, meta_data, priors)
 
-
         self.top_solver = top_solver
         self.bottom_solver = bottom_solver
 
         # create a unique character matrix
         self.unique_character_matrix = self.character_matrix.drop_duplicates()
-        name_to_identifier = dict(zip(self.unique_character_matrix.index, range(self.unique_character_matrix.shape[0])))
-
-        self.top_solver.unique_character_matrix = self.unique_character_matrix.copy()
-        self.bottom_solver.unique_character_matrix = self.unique_character_matrix.copy()
 
         self.lca_cutoff = lca_cutoff
         self.cell_cutoff = cell_cutoff
@@ -101,7 +96,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(self):
         """The general hybrid solver routine.
 
-        The hybrid solver proceeds by clustering together cells using the 
+        The hybrid solver proceeds by clustering together cells using the
         algorithm stored in the top_solver until a criteria is reached. Once
         this criteria is reached, the bottom_solver is applied to each
         subproblem left over from the "greedy" clustering.
@@ -117,8 +112,14 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             results = list(
                 tqdm(
-                    pool.starmap(self.apply_bottom_solver, [(subproblem[0], subproblem[1]) for subproblem in subproblems]),
-                    total=len(subproblems)
+                    pool.starmap(
+                        self.apply_bottom_solver,
+                        [
+                            (subproblem[0], subproblem[1])
+                            for subproblem in subproblems
+                        ],
+                    ),
+                    total=len(subproblems),
                 )
             )
 
@@ -126,7 +127,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             subproblem_tree, subproblem_root = result[0], result[1]
 
-            # check that the only overlapping name is the root, else 
+            # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
             existing_nodes = [n for n in self.tree]
             unique_iter = root = (
@@ -152,8 +153,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.tree = self.append_sample_names(self.tree)
 
     def apply_top_solver(
-        self, samples: List[int], root: Optional[int] = None
-    ) -> Tuple[int, List[Tuple[int, List[int]]]]:
+        self, samples: List[str], root: Optional[int] = None
+    ) -> Tuple[int, List[Tuple[int, List[str]]]]:
         """Applies the top solver to samples.
 
         A private helper method for applying the top solver to the samples
@@ -164,16 +165,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             samples: Samples in the subclade.
 
         Returns:
-            The ID of the node serving as the root of the tree containing the 
+            The ID of the node serving as the root of the tree containing the
                 samples, and a list of subproblems in the form
                 [subtree-root, subtree-samples].
         """
-
-        mutation_frequencies = self.top_solver.compute_mutation_frequencies(
-            samples
-        )
-
-        clades = list(self.top_solver.perform_split(mutation_frequencies, samples))
+        clades = list(self.top_solver.perform_split(samples))
 
         root = (
             len(self.tree.nodes)
@@ -181,7 +177,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             + self.character_matrix.shape[0]
         )
 
-        self.tree.add_node(root)        
+        self.tree.add_node(root)
         if len(clades) == 1:
             for clade in clades[0]:
                 self.tree.add_edge(root, clade)
@@ -190,7 +186,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         new_clades = []
         subproblems = []
         for clade in clades:
-          
+
             if len(clade) == 0:
                 continue
 
@@ -199,7 +195,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 continue
 
             new_clades.append(clade)
-            
 
         for clade in new_clades:
             child, new_subproblems = self.apply_top_solver(clade)
@@ -210,7 +205,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         return root, subproblems
 
     def apply_bottom_solver(
-        self, root: int, samples=List[int]
+        self, root: int, samples=List[str]
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
@@ -241,7 +236,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         subproblem_character_matrix = self.unique_character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
-                subproblem_character_matrix.loc[samples].values.tolist(), self.missing_char
+            subproblem_character_matrix.loc[samples].values.tolist(),
+            self.missing_char,
         )
 
         base_logfile = self.bottom_solver.logfile.split(".log")[0]
@@ -256,29 +252,33 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         subtree_solver.solve()
 
         subproblem_tree = subtree_solver.tree
-        subproblem_root = [n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0][0]
+        subproblem_root = [
+            n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0
+        ][0]
         subproblem_tree.add_edge(root, subproblem_root)
 
         return subproblem_tree, root
 
-    def assess_cutoff(self, samples: List[int]) -> bool:
+    def assess_cutoff(self, samples: List[str]) -> bool:
         """Assesses samples with respect to hybrid cutoff.
 
         Args:
             samples: A list of samples in a clade.
 
         Returns:
-            True if the cutoff is reached, False if not. 
+            True if the cutoff is reached, False if not.
         """
 
         if self.cell_cutoff is None:
             root_states = data_utilities.get_lca_characters(
-                self.unique_character_matrix.loc[samples].values.tolist(), self.missing_char
+                self.unique_character_matrix.loc[samples].values.tolist(),
+                self.missing_char,
             )
 
             lca_distances = [
                 dissimilarity_functions.hamming_distance(
-                    np.array(root_states), self.unique_character_matrix.loc[u].values
+                    np.array(root_states),
+                    self.unique_character_matrix.loc[u].values,
                 )
                 for u in samples
             ]
@@ -298,7 +298,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Given a tree where every node corresponds to a set of character states,
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
-        the tree (especially when using the Hybrid algorithm where parts of 
+        the tree (especially when using the Hybrid algorithm where parts of
         the tree are built independently), so we make sure we only add a
         particular sample once to the tree.
 
@@ -307,7 +307,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 names to.
 
         Returns:
-            A solution with extra leaves corresponding to sample names. 
+            A solution with extra leaves corresponding to sample names.
         """
 
         root = [n for n in solution if solution.in_degree(n) == 0][0]

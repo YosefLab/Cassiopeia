@@ -3,10 +3,12 @@ import unittest
 import networkx as nx
 import pandas as pd
 
+import cassiopeia as cas
+from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
 from cassiopeia.solver import graph_utilities
-from cassiopeia.data import utilities as tree_utilities
+from cassiopeia.solver import solver_utilities
 
 
 class GreedyVariantsTest(unittest.TestCase):
@@ -20,17 +22,20 @@ class GreedyVariantsTest(unittest.TestCase):
             ]
         )
 
-        sgsolver = SpectralGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
-        left, right = sgsolver.perform_split(freq_dict, list(range(4)))
+        sg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        sgsolver = SpectralGreedySolver()
+
+        character_matrix = sg_tree.get_original_character_matrix()
+        unique_character_matrix = character_matrix.drop_duplicates()
+
+        left, right = sgsolver.perform_split(unique_character_matrix, list(range(4)))
         self.assertListEqual(left, [0, 2, 3])
         self.assertListEqual(right, [1])
 
-        sgsolver.solve()
+        sgsolver.solve(sg_tree)
         expected_newick_string = "((0,3,2),1);"
-        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = sg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_spectral_base_case(self):
@@ -47,19 +52,17 @@ class GreedyVariantsTest(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        sgsolver = SpectralGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
-        left, right = sgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c6"]
-        )
+        sg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        sgsolver = SpectralGreedySolver()
+
+        unique_cm = cm.drop_duplicates()
+        left, right = sgsolver.perform_split(unique_cm, unique_cm.index)
         self.assertEqual(left, ["c2", "c6"])
         self.assertEqual(right, ["c1", "c3"])
 
-        sgsolver.solve()
+        sgsolver.solve(sg_tree)
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = sg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_spectral_base_case_weights_almost_one(self):
@@ -84,24 +87,18 @@ class GreedyVariantsTest(unittest.TestCase):
             4: {1: 0.367879},
         }
 
-        sgsolver = SpectralGreedySolver(
-            character_matrix=cm,
-            missing_char=-1,
-            priors=priors,
-            prior_function=None,
-        )
-        freq_dict = sgsolver.compute_mutation_frequencies(
-            sgsolver.unique_character_matrix.index
-        )
-        left, right = sgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c6"]
-        )
+        sg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+
+        weights = solver_utilities.transform_priors(priors, 'negative_log')
+        sgsolver = SpectralGreedySolver()
+        unique_cm = cm.drop_duplicates()
+        left, right = sgsolver.perform_split(unique_cm, unique_cm.index, weights=weights)
         self.assertEqual(left, ["c2", "c6"])
         self.assertEqual(right, ["c1", "c3"])
 
-        sgsolver.solve()
+        sgsolver.solve(sg_tree)
         expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = tree_utilities.to_newick(sgsolver.tree)
+        observed_newick_string = sg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_maxcut_base_case(self):
@@ -119,19 +116,17 @@ class GreedyVariantsTest(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        mcgsolver = MaxCutGreedySolver(character_matrix=cm, missing_char=-1)
-        freq_dict = mcgsolver.compute_mutation_frequencies(
-            mcgsolver.unique_character_matrix.index
-        )
-        left, right = mcgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c4"]
-        )
+        mcg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        mcgsolver = MaxCutGreedySolver()
+        unique_cm = cm.drop_duplicates()
+        left, right = mcgsolver.perform_split(unique_cm, unique_cm.index)
         self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
-        mcgsolver.solve()
+        mcgsolver.solve(mcg_tree)
         expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = tree_utilities.to_newick(mcgsolver.tree)
+        observed_newick_string = mcg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_maxcut_base_case_weights_trivial(self):
@@ -157,21 +152,19 @@ class GreedyVariantsTest(unittest.TestCase):
             4: {1: 0.5},
         }
 
-        mcgsolver = MaxCutGreedySolver(
-            character_matrix=cm, missing_char=-1, priors=priors
-        )
-        freq_dict = mcgsolver.compute_mutation_frequencies(
-            mcgsolver.unique_character_matrix.index
-        )
-        left, right = mcgsolver.perform_split(
-            freq_dict, ["c1", "c2", "c3", "c4"]
-        )
+        weights = solver_utilities.transform_priors(priors, 'negative_log')
+
+        mcg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+
+        mcgsolver = MaxCutGreedySolver()
+        unique_cm = cm.drop_duplicates()
+        left, right = mcgsolver.perform_split(unique_cm, unique_cm.index, weights=weights)
         self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
-        mcgsolver.solve()
+        mcgsolver.solve(mcg_tree)
         expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = tree_utilities.to_newick(mcgsolver.tree)
+        observed_newick_string = mcg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 
