@@ -24,3 +24,4 @@ pathlib
 typing_extensions; python_version < '3.8'
 cvxpy
 parameterized
+seaborn

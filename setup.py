@@ -35,6 +35,7 @@ requirements = [
         'scikit-bio >= 0.5.6',
         'cvxpy',
         'parameterized',
+        'seaborn',
 ]
 
 
