@@ -75,7 +75,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             dissimilarity_map,
             state_to_sample_mapping,
             root_sample,
-            weights
         ) = self.setup_solver(
             cassiopeia_tree, dissimilarity_map, root_sample, root_tree
         )

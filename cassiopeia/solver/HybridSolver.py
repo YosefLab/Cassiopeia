@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
+from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import GreedySolver
@@ -62,12 +63,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
         top_solver: GreedySolver.GreedySolver,
         bottom_solver: CassiopeiaSolver.CassiopeiaSolver,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
-        missing_char: int = -1,
         lca_cutoff: float = None,
         cell_cutoff: int = None,
         threads: int = 1,
@@ -78,22 +75,25 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "Please specify a cutoff, either through lca_cutoff or cell_cutoff"
             )
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__()
 
         self.top_solver = top_solver
         self.bottom_solver = bottom_solver
-
-        # create a unique character matrix
-        self.unique_character_matrix = self.character_matrix.drop_duplicates()
 
         self.lca_cutoff = lca_cutoff
         self.cell_cutoff = cell_cutoff
 
         self.threads = threads
 
-        self.tree = nx.DiGraph()
+        # create a tree to store in progress results
+        self.__tree = nx.DiGraph()
 
-    def solve(self):
+    def solve(
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        prior_transformation: str = "negative_log",
+        logfile: str = "stdout.log",
+    ):
         """The general hybrid solver routine.
 
         The hybrid solver proceeds by clustering together cells using the
@@ -102,9 +102,21 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         subproblem left over from the "greedy" clustering.
         """
 
+        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        unique_character_matrix = character_matrix.drop_duplicates()
+
+        weights = None
+        if cassiopeia_tree.priors:
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, prior_transformation
+            )
+
         # call top-down solver until a desired cutoff is reached.
         _, subproblems = self.apply_top_solver(
-            list(self.unique_character_matrix.index)
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            weights=weights,
+            missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
 
         # multi-threaded bottom solver approach
@@ -115,7 +127,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                     pool.starmap(
                         self.apply_bottom_solver,
                         [
-                            (subproblem[0], subproblem[1])
+                            (
+                                cassiopeia_tree,
+                                subproblem[0],
+                                subproblem[1],
+                                prior_transformation,
+                                logfile,
+                            )
                             for subproblem in subproblems
                         ],
                     ),
@@ -129,12 +147,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
-            existing_nodes = [n for n in self.tree]
-            unique_iter = root = (
-                len(self.tree.nodes)
-                - self.unique_character_matrix.shape[0]
-                + self.character_matrix.shape[0]
-            )
+            existing_nodes = [n for n in self.__tree]
+            unique_iter = root = len(self.__tree.nodes) + 1
 
             mapping = {}
             for n in subproblem_tree:
@@ -144,16 +158,26 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
-            self.tree = nx.compose(self.tree, subproblem_tree)
+            self.__tree = nx.compose(self.__tree, subproblem_tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        self.tree = solver_utilities.collapse_tree(
-            self.tree, True, self.unique_character_matrix, self.missing_char
+        self.__tree = solver_utilities.collapse_tree(
+            self.__tree,
+            True,
+            unique_character_matrix,
+            cassiopeia_tree.missing_state_indicator,
         )
-        self.tree = self.append_sample_names(self.tree)
+        self.__tree = self.append_sample_names(self.__tree, character_matrix)
+
+        cassiopeia_tree.populate_tree(self.__tree)
 
     def apply_top_solver(
-        self, samples: List[str], root: Optional[int] = None
+        self,
+        character_matrix: pd.DataFrame,
+        samples: List[str],
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        missing_state_indicator: int = -1,
+        root: Optional[int] = None,
     ) -> Tuple[int, List[Tuple[int, List[str]]]]:
         """Applies the top solver to samples.
 
@@ -169,18 +193,19 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 samples, and a list of subproblems in the form
                 [subtree-root, subtree-samples].
         """
-        clades = list(self.top_solver.perform_split(samples))
 
-        root = (
-            len(self.tree.nodes)
-            - self.unique_character_matrix.shape[0]
-            + self.character_matrix.shape[0]
+        clades = list(
+            self.top_solver.perform_split(
+                character_matrix, samples, weights, missing_state_indicator
+            )
         )
 
-        self.tree.add_node(root)
+        root = len(self.__tree.nodes) + 1
+
+        self.__tree.add_node(root)
         if len(clades) == 1:
             for clade in clades[0]:
-                self.tree.add_edge(root, clade)
+                self.__tree.add_edge(root, clade)
             return root, []
 
         new_clades = []
@@ -190,22 +215,31 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             if len(clade) == 0:
                 continue
 
-            if self.assess_cutoff(clade):
+            if self.assess_cutoff(
+                clade, character_matrix, missing_state_indicator
+            ):
                 subproblems += [(root, clade)]
                 continue
 
             new_clades.append(clade)
 
         for clade in new_clades:
-            child, new_subproblems = self.apply_top_solver(clade)
-            self.tree.add_edge(root, child)
+            child, new_subproblems = self.apply_top_solver(
+                character_matrix, clade, weights, missing_state_indicator, root
+            )
+            self.__tree.add_edge(root, child)
 
             subproblems += new_subproblems
 
         return root, subproblems
 
     def apply_bottom_solver(
-        self, root: int, samples=List[str]
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        root: int,
+        samples=List[str],
+        prior_transformation: str = "negative_log",
+        logfile: str = "stdout.log",
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
@@ -233,25 +267,26 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             subproblem_tree.add_edge(root, samples[0])
             return subproblem_tree, root
 
-        subproblem_character_matrix = self.unique_character_matrix.loc[samples]
+        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
             subproblem_character_matrix.loc[samples].values.tolist(),
-            self.missing_char,
+            cassiopeia_tree.missing_state_indicator,
         )
 
-        base_logfile = self.bottom_solver.logfile.split(".log")[0]
+        base_logfile = logfile.split(".log")[0]
         subtree_root_string = "-".join([str(s) for s in subtree_root])
         logfile = f"{base_logfile}_{subtree_root_string}.log"
 
-        subtree_solver = copy.deepcopy(self.bottom_solver)
-        subtree_solver.prepare_for_subproblem(
-            subproblem_character_matrix, logfile
+        subtree = CassiopeiaTree(
+            subproblem_character_matrix,
+            missing_state_indicator=cassiopeia_tree.missing_state_indicator,
+            priors=cassiopeia_tree.priors,
         )
+        self.bottom_solver.solve(subtree)
 
-        subtree_solver.solve()
-
-        subproblem_tree = subtree_solver.tree
+        subproblem_tree = subtree.get_network()
         subproblem_root = [
             n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0
         ][0]
@@ -259,7 +294,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return subproblem_tree, root
 
-    def assess_cutoff(self, samples: List[str]) -> bool:
+    def assess_cutoff(
+        self,
+        samples: List[str],
+        character_matrix: pd.DataFrame,
+        missing_state_indicator: int = -1,
+    ) -> bool:
         """Assesses samples with respect to hybrid cutoff.
 
         Args:
@@ -271,14 +311,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         if self.cell_cutoff is None:
             root_states = data_utilities.get_lca_characters(
-                self.unique_character_matrix.loc[samples].values.tolist(),
-                self.missing_char,
+                character_matrix.loc[samples].values.tolist(),
+                missing_state_indicator,
             )
 
             lca_distances = [
                 dissimilarity_functions.hamming_distance(
-                    np.array(root_states),
-                    self.unique_character_matrix.loc[u].values,
+                    np.array(root_states), character_matrix.loc[u].values
                 )
                 for u in samples
             ]
@@ -292,7 +331,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return False
 
-    def append_sample_names(self, solution: nx.DiGraph) -> nx.DiGraph:
+    def append_sample_names(
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+    ) -> nx.DiGraph:
         """Append sample names to character states in tree.
 
         Given a tree where every node corresponds to a set of character states,
@@ -303,21 +344,21 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         particular sample once to the tree.
 
         Args:
-            solution: A Steiner Tree solution that we wish to add sample
+            tree: A Steiner Tree solution that we wish to add sample
                 names to.
 
         Returns:
             A solution with extra leaves corresponding to sample names.
         """
 
-        root = [n for n in solution if solution.in_degree(n) == 0][0]
+        root = [n for n in tree if tree.in_degree(n) == 0][0]
 
-        sample_lookup = self.character_matrix.apply(
+        sample_lookup = character_matrix.apply(
             lambda x: tuple(x.values), axis=1
         )
 
         states_added = []
-        for node in nx.dfs_postorder_nodes(solution, source=root):
+        for node in nx.dfs_postorder_nodes(tree, source=root):
 
             # append nodes with this character state at the deepest place
             # possible
@@ -326,7 +367,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             samples = sample_lookup[sample_lookup == node].index
             if len(samples) > 0:
-                solution.add_edges_from([(node, sample) for sample in samples])
+                tree.add_edges_from([(node, sample) for sample in samples])
                 states_added.append(node)
 
-        return solution
+        return tree
