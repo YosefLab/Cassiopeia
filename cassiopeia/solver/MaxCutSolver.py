@@ -63,9 +63,10 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         self,
         sdimension: Optional[int] = 3,
         iterations: Optional[int] = 50,
+        prior_transformation: str = "negative_log",
     ):
 
-        super().__init__()
+        super().__init__(prior_transformation)
         self.sdimension = sdimension
         self.iterations = iterations
 

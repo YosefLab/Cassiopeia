@@ -48,10 +48,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     """
 
     def __init__(
-        self
+        self, prior_transformation: str = "negative_log"
     ):
 
-        super().__init__()
+        super().__init__(prior_transformation)
 
     def perform_split(
         self,
@@ -78,8 +78,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         pass
 
     def solve(self,
-            cassiopeia_tree: CassiopeiaTree,
-            prior_transformation: str = "negative_log"):
+            cassiopeia_tree: CassiopeiaTree):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
@@ -94,13 +93,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
-            prior_transformation: Function to use when transforming priors into
-                weights. Supports the following transformations:
-                    "negative_log": Transforms each probability by the negative
-                        log (default)
-                    "inverse": Transforms each probability p by taking 1/p
-                    "square_root_inverse": Transforms each probability by the
-                        the square root of 1/p
         """
 
         # A helper function that builds the subtree given a set of samples
@@ -149,7 +141,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, prior_transformation
+                cassiopeia_tree.priors, self.prior_transformation
             )
 
         # extract character matrix

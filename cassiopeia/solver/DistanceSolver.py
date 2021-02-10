@@ -26,19 +26,21 @@ class DistanceSolverError(Exception):
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     
-    def __init__(self, dissimilarity_function: Optional[Callable] = None):
+    def __init__(self,
+                dissimilarity_function: Optional[Callable] = None,
+                add_root: bool = False,
+                prior_transformation: str = "negative_log",):
 
-        super().__init__()
+        super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
+        self.add_root = add_root
 
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         root_sample: Optional[str] = None,
-        root_tree: bool = False,
-        prior_transformation: str = "negative_log",
     ) -> None:
         """A general bottom-up distance-based solver routine.
 
@@ -76,7 +78,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             state_to_sample_mapping,
             root_sample,
         ) = self.setup_solver(
-            cassiopeia_tree, dissimilarity_map, root_sample, root_tree
+            cassiopeia_tree, dissimilarity_map, root_sample
         )
 
         N = dissimilarity_map.shape[0]
@@ -133,7 +135,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         root_sample: Optional[str] = None,
-        root_tree: bool = False,
         weights: Optional[Dict[int, Dict[int, float]]] = None
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, List[str]], str]:
         """Sets up the solver.
@@ -165,7 +166,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.get_original_character_matrix().copy()
         )
 
-        if root_sample is None and root_tree:
+        if root_sample is None and self.add_root:
 
             if self.dissimilarity_function is None:
                 raise DistanceSolveError(

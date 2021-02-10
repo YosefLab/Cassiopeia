@@ -51,10 +51,14 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 float,
             ]
         ] = None,
+        add_root: bool = False,
+        prior_transformation: str = "negative_log",
     ):
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
+            add_root=add_root,
+            prior_transformation=prior_transformation,
         )
 
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:

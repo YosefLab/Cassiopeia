@@ -68,6 +68,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         lca_cutoff: float = None,
         cell_cutoff: int = None,
         threads: int = 1,
+        prior_transformation: str = "negative_log"
     ):
 
         if lca_cutoff is None and cell_cutoff is None:
@@ -75,10 +76,14 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "Please specify a cutoff, either through lca_cutoff or cell_cutoff"
             )
 
-        super().__init__()
+        super().__init__(prior_transformation)
 
         self.top_solver = top_solver
         self.bottom_solver = bottom_solver
+
+        # enforce the prior transformations are the same across solvers
+        self.top_solver.prior_transformation = prior_transformation
+        self.bottom_solver.prior_transformation = prior_transformation
 
         self.lca_cutoff = lca_cutoff
         self.cell_cutoff = cell_cutoff
@@ -91,7 +96,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        prior_transformation: str = "negative_log",
         logfile: str = "stdout.log",
     ):
         """The general hybrid solver routine.
@@ -108,7 +112,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, prior_transformation
+                cassiopeia_tree.priors, self.prior_transformation
             )
 
         # call top-down solver until a desired cutoff is reached.
@@ -131,7 +135,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                 cassiopeia_tree,
                                 subproblem[0],
                                 subproblem[1],
-                                prior_transformation,
                                 logfile,
                             )
                             for subproblem in subproblems
@@ -238,7 +241,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         root: int,
         samples=List[str],
-        prior_transformation: str = "negative_log",
         logfile: str = "stdout.log",
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.

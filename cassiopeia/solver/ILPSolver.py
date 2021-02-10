@@ -71,6 +71,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         weighted: bool = False,
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
+        prior_transformation: str = "negative_log"
     ):
 
         if weighted and not priors:
@@ -78,7 +79,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "Specify prior probabilities for weighted analysis."
             )
 
-        super().__init__()
+        super().__init__(prior_transformation)
         self.convergence_time_limit = convergence_time_limit
         self.convergence_iteration_limit = convergence_iteration_limit
         self.maximum_potential_graph_layer_size = (
@@ -88,26 +89,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.seed = seed
         self.mip_gap = mip_gap
 
-    # def prepare_for_subproblem(self, new_character_matrix: pd.DataFrame, logfile: str):
-    #     """Prepare ILPSolver to be used in a HybridSolver instance.
-
-    #     Rewrites the character matrix, unique character matrix, and logfile
-    #     attributes so this can be used in a HybridSolver instance.
-
-    #     Args:
-    #         new_character_matrix: A character matrix
-    #         logfile: Logfile to store the progress of the ILP solver.
-    #     """
-
-    #     self.character_matrix = new_character_matrix.copy()
-    #     self.unique_character_matrix = self.character_matrix.drop_duplicates()
-    #     self.logfile = logfile
-
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
         logfile: str = "stdout.log",
-        prior_transformation: str = "negative_log",
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -134,7 +119,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, prior_transformation
+                cassiopeia_tree.priors, self.prior_transformation
             )
 
         # find the root of the tree & generate process ID

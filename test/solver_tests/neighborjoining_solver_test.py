@@ -62,7 +62,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         self.basic_dissimilarity_map = delta
         self.basic_tree = cas.data.CassiopeiaTree(character_matrix = cm)
 
-        self.nj_solver = cas.solver.NeighborJoiningSolver()
+        self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True)
 
         # ---------------- Lineage Tracing NJ ----------------
 
@@ -79,7 +79,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         )
 
         self.pp_tree = cas.data.CassiopeiaTree(character_matrix = pp_cm)
-        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(dissimilarity_function=delta_fn)
+        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(dissimilarity_function=delta_fn, add_root=True)
 
         # ------------- CM with Duplictes -----------------------
         duplicates_cm = pd.DataFrame.from_dict(
@@ -164,7 +164,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_basic_solver(self):
 
-        self.nj_solver.solve(self.basic_tree, dissimilarity_map = self.basic_dissimilarity_map, root_sample = "b", root_tree=True)
+        self.nj_solver.solve(self.basic_tree, dissimilarity_map = self.basic_dissimilarity_map, root_sample = "b")
 
         # test leaves exist in tree
         _leaves = self.basic_tree.leaves
@@ -216,7 +216,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_pp_solver(self):
 
-        self.nj_solver_delta.solve(self.pp_tree, root_tree = True)
+        self.nj_solver_delta.solve(self.pp_tree)
         T = self.pp_tree.get_network()
 
         expected_tree = nx.DiGraph()
@@ -245,7 +245,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_duplicate_sample_neighbor_joining(self):
 
-        self.nj_solver_delta.solve(self.duplicate_tree, root_tree=True)
+        self.nj_solver_delta.solve(self.duplicate_tree)
         T = self.duplicate_tree.get_network()
 
         expected_tree = nx.DiGraph()

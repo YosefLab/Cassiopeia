@@ -34,24 +34,18 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
     ambiguous. The user can also specify a missing data method.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
         missing_data_classifier: Takes either a string specifying one of the
             included missing data imputation methods, or a function
             implementing the user-specified missing data method. The default is
             the "average" method.
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
-        prior_transformation: A function defining a transformation on the priors
-            in forming weights to scale frequencies and the contribution of
-            each mutation in the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations. The default
             is "hamming_distance_without_missing"
         threshold: A minimum similarity threshold to include an edge in the
             similarity graph
+        prior_transformation: A function defining a transformation on the priors
+            in forming weights to scale frequencies and the contribution of
+            each mutation in the similarity graph
 
     Attributes:
         character_matrix: The character matrix describing the samples
@@ -84,9 +78,10 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             ]
         ] = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: Optional[int] = 0,
+        prior_transformation: str = "negative_log",
     ):
 
-        super().__init__()
+        super().__init__(prior_transformation)
 
         self.missing_data_classifier = missing_data_classifier
 
