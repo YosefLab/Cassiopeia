@@ -15,14 +15,16 @@ This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import ete3
 import networkx as nx
 import numpy as np
 import pandas as pd
+import scipy
 
 from cassiopeia.data import utilities
+from cassiopeia.solver import solver_utilities
 
 
 class CassiopeiaTreeError(Exception):
@@ -41,9 +43,7 @@ class CassiopeiaTree:
 
     The tree can be fed into the object via Ete3, Networkx, or can be inferred
     using one of the CassiopeiaSolver algorithms in the `solver` module. The
-    tree here is only used for obtaining the _topology_ of the tree. The one
-    exception is if the newick string has branch lengths, in which we transfer
-    these values.
+    tree here is only used for obtaining the _topology_ of the tree.
 
     A character matrix can be stored in the object, containing the states
     observed for each cell. In typical lineage tracing experiments, these are
@@ -72,6 +72,8 @@ class CassiopeiaTree:
         and the cophenetic correlation wrt to some cell meta item
     TODO(sprillo): Add bulk set_times and set_branch_lengths methods
     TODO(mattjones315): Add bulk set_states method.
+    TODO(mattjones315): Read branch lengths off of newick strings & write
+        branch lengths to newick strings
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -92,13 +94,10 @@ class CassiopeiaTree:
         character_meta: Optional[pd.DataFrame] = None,
         priors: Optional[Dict[int, Dict[int, float]]] = None,
         tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
+        dissimilarity_map: Optional[pd.DataFrame] = None,
+        root_sample_name: Optional[str] = None
     ) -> None:
 
-        self.__original_character_matrix = None
-        self.__current_character_matrix = None
-        if character_matrix is not None:
-            self.__original_character_matrix = character_matrix.copy()
-            self.__current_character_matrix = character_matrix.copy()
 
         self.missing_state_indicator = missing_state_indicator
         self.cell_meta = cell_meta
@@ -107,9 +106,20 @@ class CassiopeiaTree:
         self.__network = None
         self.__cache = {}
 
+        self.__original_character_matrix = None
+        self.__current_character_matrix = None
+        if character_matrix is not None:
+            self.set_character_matrix(character_matrix)
+
         if tree is not None:
             tree = copy.deepcopy(tree)
             self.populate_tree(tree)
+        
+        # these attributes are helpful for distance based solvers
+        self.dissimilarity_map = None
+        if dissimilarity_map is not None:
+            self.set_dissimilarity_map(dissimilarity_map)
+        self.root_sample_name = root_sample_name
 
     def populate_tree(self, tree: Union[str, ete3.Tree, nx.DiGraph]) -> None:
 
@@ -153,6 +163,17 @@ class CassiopeiaTree:
     def __check_network_initialized(self) -> None:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
+
+    def set_character_matrix(self, character_matrix: pd.DataFrame):
+        """Initializes a character matrix in the object.
+        """
+        
+        self.__original_character_matrix = character_matrix.copy()
+        self.__current_character_matrix = character_matrix.copy()
+
+        # overwrite character information at the leaves if needed
+        if self.__network:
+            self.initialize_character_states_at_leaves(character_matrix)
 
     def initialize_character_states_at_leaves(
         self, character_matrix: Union[pd.DataFrame, Dict]
@@ -772,4 +793,65 @@ class CassiopeiaTree:
         self.__network = nx.relabel_nodes(self.__network, relabel_map)
 
         # reset cache because we've changed names
-        self.__cache = {}
+        self.__cache = {} 
+    
+    def get_dissimilarity_map(self):
+        """Gets the dissimilarity map.
+        """
+
+        return self.__dissimilarity_map.copy()
+    
+    def set_dissimilarity_map(self, dissimilarity_map: pd.DataFrame):
+        """Sets the dissimilarity map variable in this object.
+        
+        Args:
+            dissimilarity_map: Dissimilarity map relating all N x N distances
+                between leaves.
+        """
+
+        self.__dissimilarity_map = dissimilarity_map.copy()
+
+
+    def compute_dissimilarity_map(self,
+            dissimilarity_function: Callable,
+            prior_transformation: str = "negative_log"):
+        """Computes a dissimilarity map.
+
+        Given the dissimilarity function passed in, the pairwise dissimilarities
+        will be computed over the samples in the character matrix. Populates
+        the dissimilarity_map attribute in the object.
+
+        Args:
+            dissimilarity_function: A function that will take in two character
+                vectors and priors and produce a dissimilarity.
+        """
+
+        if self.__current_character_matrix is None:
+            raise CassiopeiaTreeError("No character matrix is detected in this tree.")
+        
+        character_matrix = self.get_current_character_matrix()
+
+        weights = None
+        if self.priors:
+            weights = solver_utilities.transform_priors(self.priors, prior_transformation)
+
+        N = character_matrix.shape[0]
+        dissimilarity_map = utilities.compute_dissimilarity_map(
+            character_matrix.to_numpy(),
+            N,
+            dissimilarity_function,
+            weights,
+            self.missing_state_indicator,
+        )
+        dissimilarity_map = scipy.spatial.distance.squareform(
+            dissimilarity_map
+        )
+
+        dissimilarity_map = pd.DataFrame(
+            dissimilarity_map,
+            index=character_matrix.index,
+            columns=character_matrix.index,
+        )
+
+        self.__dissimilarity_map = dissimilarity_map
+

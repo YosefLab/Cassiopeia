@@ -2,9 +2,11 @@
 Tests for the CassiopeiaTree object in the data module.
 """
 import unittest
+from typing import Dict, Optional
 
 import ete3
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
@@ -606,6 +608,75 @@ class TestCassiopeiaTree(unittest.TestCase):
         a_leaf = tree1.leaves[0]
         tree1.set_time(a_leaf, 1234)  # Should NOT modify tree2!
         assert tree2.get_time(a_leaf) != 1234
+
+    def test_set_dissimilarity_map(self):
+
+        dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2, 3, 4],
+                "b": [0, 0, 2, 3, 4],
+                "c": [0, 0, 0, 4, 4],
+                "d": [0, 0, 0, 0, 4],
+                "e": [0, 0, 0, 0, 0],
+            },
+            orient="index",
+        )
+
+        tree = cas.data.CassiopeiaTree(dissimilarity_map=dissimilarity_map)
+
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, dissimilarity_map
+        )
+
+        def delta_fn(
+            x: np.array,
+            y: np.array,
+            missing_state: int,
+            priors: Optional[Dict[int, Dict[int, float]]],
+        ):
+            d = 0
+            for i in range(len(x)):
+                if x[i] != y[i]:
+                    d += 1
+            return d
+
+        tree = cas.data.CassiopeiaTree(self.character_matrix)
+        tree.compute_dissimilarity_map(delta_fn)
+
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+
+        expected_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+                "node7": [1, 0, 1, 2, 3, 4, 5, 6, 2, 2],
+                "node9": [2, 1, 0, 1, 2, 3, 4, 5, 3, 3],
+                "node11": [3, 2, 1, 0, 1, 2, 3, 4, 4, 4],
+                "node13": [4, 3, 2, 1, 0, 1, 2, 3, 5, 5],
+                "node15": [5, 4, 3, 2, 1, 0, 1, 2, 6, 6],
+                "node17": [6, 5, 4, 3, 2, 1, 0, 1, 7, 7],
+                "node18": [7, 6, 5, 4, 3, 2, 1, 0, 8, 8],
+                "node5": [1, 2, 3, 4, 5, 6, 7, 8, 0, 1],
+                "node6": [2, 2, 3, 4, 5, 6, 7, 8, 1, 0],
+            },
+            orient="index",
+            columns=[
+                "node3",
+                "node7",
+                "node9",
+                "node11",
+                "node13",
+                "node15",
+                "node17",
+                "node18",
+                "node5",
+                "node6",
+            ], dtype=np.float32
+        )
+
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, expected_dissimilarity_map
+        )
 
 
 if __name__ == "__main__":

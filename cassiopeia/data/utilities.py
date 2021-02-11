@@ -1,9 +1,12 @@
 """
 General utilities for the datasets encountered in Cassiopeia.
 """
+from typing import Callable, Dict, List, Optional
+
 import ete3
 import networkx as nx
-from typing import List
+import numba
+import numpy as np
 
 
 def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
@@ -108,3 +111,47 @@ def to_newick(tree: nx.DiGraph) -> str:
 
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
+
+def compute_dissimilarity_map(
+    cm: np.array,
+    C: int,
+    dissimilarity_function: Callable,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    missing_indicator: int = -1,
+) -> np.array:
+    """Compute the dissimilarity between all samples
+
+    An optimized function for computing pairwise dissimilarities between
+    samples in a character matrix according to the dissimilarity function.
+
+    Args:
+        cm: Character matrix
+        C: Number of samples
+        weights: Weights to use for comparing states.
+        missing_indicator: State indicating missing data
+
+    Returns:
+        A dissimilarity mapping as a flattened array.
+    """
+
+    nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
+    
+    @numba.jit(nopython=True)
+    def _compute_dissimilarity_map():
+
+        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float32)
+        k = 0
+        for i in range(C - 1):
+            for j in range(i + 1, C):
+
+                s1 = cm[i, :]
+                s2 = cm[j, :]
+
+                dm[k] = nb_dissimilarity(
+                    s1, s2, missing_indicator, weights
+                )
+                k += 1
+
+        return dm
+
+    return _compute_dissimilarity_map()
