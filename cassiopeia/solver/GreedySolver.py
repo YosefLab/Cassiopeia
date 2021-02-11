@@ -25,31 +25,20 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     partioning the sample set.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
-        prior_transformation: A function defining a transformation on the priors
-            in forming weights
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered
-        duplicate_groups: A mapping of samples to the set of duplicates that
-            share the same character vector. Uses the original sample names
+       prior_transformation: Function to use when transforming priors into
+            weights.
     """
 
-    def __init__(
-        self, prior_transformation: str = "negative_log"
-    ):
+    def __init__(self, prior_transformation: str = "negative_log"):
 
         super().__init__(prior_transformation)
 
@@ -64,9 +53,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             character_matrix: Character matrix
-            mutation_frequencies: A dictionary containing the frequencies of
-                each character/state pair that appear in the character matrix
-                restricted to the sample set
             samples: A list of samples to partition
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
@@ -77,8 +63,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def solve(self,
-            cassiopeia_tree: CassiopeiaTree):
+    def solve(self, cassiopeia_tree: CassiopeiaTree):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
@@ -107,7 +92,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             if len(samples) == 1:
                 return samples[0]
             # Finds the best partition of the set given the split criteria
-            clades = list(self.perform_split(unique_character_matrix, samples, weights, missing_state_indicator))
+            clades = list(
+                self.perform_split(
+                    unique_character_matrix,
+                    samples,
+                    weights,
+                    missing_state_indicator,
+                )
+            )
             # Generates a root for this subtree with a unique int identifier
             root = (
                 len(tree.nodes)
@@ -153,14 +145,24 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         for i in samples:
             tree.add_node(i)
 
-        _solve(samples, tree, character_matrix, unique_character_matrix, weights, cassiopeia_tree.missing_state_indicator)
+        _solve(
+            samples,
+            tree,
+            character_matrix,
+            unique_character_matrix,
+            weights,
+            cassiopeia_tree.missing_state_indicator,
+        )
 
         # Collapse 0-mutation edges and append duplicate samples
         tree = solver_utilities.collapse_tree(
-            tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
+            tree,
+            True,
+            character_matrix,
+            cassiopeia_tree.missing_state_indicator,
         )
         tree = self.add_duplicates_to_tree(tree, character_matrix)
-        
+
         cassiopeia_tree.populate_tree(tree)
 
     def compute_mutation_frequencies(
@@ -199,9 +201,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def add_duplicates_to_tree(
-        self,
-        tree: nx.DiGraph,
-        character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 

@@ -54,6 +54,12 @@ class CassiopeiaTree:
     matrix (obtainable via the `get_modified_character_matrix` method) that
     is updated when the character states of leaves are changed.
 
+    Some reconstruction algorithms will make use of dissimilarities between
+    cells. To this end, we store these `dissimilarity maps` in the
+    CassiopeiaTree class itself. For users trying to diagnose the reconstruction
+    accuracy with a known groundtruth, they can compare this dissimilarity
+    map to the phylogenetic distance on the tree.
+
     Meta data for cells or characters can also be stored in this object. These
     items can be categorical or numerical in nature. Common examples of cell
     meta data are the cluster identity, tissue identity, or number of target-site
@@ -84,6 +90,13 @@ class CassiopeiaTree:
         priors: A dictionary storing the probability of a character mutating
             to a particular state.
         tree: A tree for the lineage.
+        dissimilarity_map: An NxN dataframe storing the pairwise dissimilarities
+            between samples.
+        root_sample_name: The name of the sample to treat as the root. This
+            is not always used, but will be added if needed during tree
+            reconstruction. If the user already has a sample in the character
+            matrix or dissimilarity map that they would like to use as the 
+            phylogenetic root, they can specify it here.
     """
 
     def __init__(
@@ -95,9 +108,8 @@ class CassiopeiaTree:
         priors: Optional[Dict[int, Dict[int, float]]] = None,
         tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
-        root_sample_name: Optional[str] = None
+        root_sample_name: Optional[str] = None,
     ) -> None:
-
 
         self.missing_state_indicator = missing_state_indicator
         self.cell_meta = cell_meta
@@ -114,7 +126,7 @@ class CassiopeiaTree:
         if tree is not None:
             tree = copy.deepcopy(tree)
             self.populate_tree(tree)
-        
+
         # these attributes are helpful for distance based solvers
         self.dissimilarity_map = None
         if dissimilarity_map is not None:
@@ -167,7 +179,7 @@ class CassiopeiaTree:
     def set_character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object.
         """
-        
+
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
 
@@ -793,14 +805,14 @@ class CassiopeiaTree:
         self.__network = nx.relabel_nodes(self.__network, relabel_map)
 
         # reset cache because we've changed names
-        self.__cache = {} 
-    
+        self.__cache = {}
+
     def get_dissimilarity_map(self):
         """Gets the dissimilarity map.
         """
 
         return self.__dissimilarity_map.copy()
-    
+
     def set_dissimilarity_map(self, dissimilarity_map: pd.DataFrame):
         """Sets the dissimilarity map variable in this object.
         
@@ -811,10 +823,15 @@ class CassiopeiaTree:
 
         self.__dissimilarity_map = dissimilarity_map.copy()
 
-
-    def compute_dissimilarity_map(self,
-            dissimilarity_function: Callable,
-            prior_transformation: str = "negative_log"):
+    def compute_dissimilarity_map(
+        self,
+        dissimilarity_function: Optional[
+            Callable[
+                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+            ]
+        ] = None,
+        prior_transformation: str = "negative_log",
+    ):
         """Computes a dissimilarity map.
 
         Given the dissimilarity function passed in, the pairwise dissimilarities
@@ -824,16 +841,28 @@ class CassiopeiaTree:
         Args:
             dissimilarity_function: A function that will take in two character
                 vectors and priors and produce a dissimilarity.
+            prior_transformation: A function defining a transformation on the
+                priors in forming weights. Supports the following
+                transformations:
+                    "negative_log": Transforms each probability by the negative
+                        log
+                    "inverse": Transforms each probability p by taking 1/p
+                    "square_root_inverse": Transforms each probability by the
+                        the square root of 1/p
         """
 
         if self.__current_character_matrix is None:
-            raise CassiopeiaTreeError("No character matrix is detected in this tree.")
-        
+            raise CassiopeiaTreeError(
+                "No character matrix is detected in this tree."
+            )
+
         character_matrix = self.get_current_character_matrix()
 
         weights = None
         if self.priors:
-            weights = solver_utilities.transform_priors(self.priors, prior_transformation)
+            weights = solver_utilities.transform_priors(
+                self.priors, prior_transformation
+            )
 
         N = character_matrix.shape[0]
         dissimilarity_map = utilities.compute_dissimilarity_map(
@@ -843,9 +872,7 @@ class CassiopeiaTree:
             weights,
             self.missing_state_indicator,
         )
-        dissimilarity_map = scipy.spatial.distance.squareform(
-            dissimilarity_map
-        )
+        dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
         dissimilarity_map = pd.DataFrame(
             dissimilarity_map,
@@ -853,5 +880,4 @@ class CassiopeiaTree:
             columns=character_matrix.index,
         )
 
-        self.__dissimilarity_map = dissimilarity_map
-
+        self.set_dissimilarity_map(dissimilarity_map)

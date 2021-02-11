@@ -45,22 +45,20 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             similarity graph
         prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies and the contribution of
-            each mutation in the similarity graph
+            each mutation in the similarity graph. One of the following:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered
-        duplicate_groups: A mapping of samples to the set of duplicates that
-            share the same character vector. Uses the original sample names
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         weights: Weights on character/mutation pairs, derived from priors
         threshold: A minimum similarity threshold
+        prior_transformation: Function to use when transforming priors into
+            weights.
     """
 
     def __init__(
@@ -104,8 +102,11 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         climbing method.
 
         Args:
-            samples: A list of samples, represented by their names in the
-                original character matrix
+            character_matrix: Character matrix
+            samples: A list of samples to partition
+            weights: Weighting of each (character, state) pair. Typically a
+                transformation of the priors.
+            missing_state_indicator: Character representing missing data.
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -113,7 +114,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         sample_indices = solver_utilities.convert_sample_names_to_indices(
             character_matrix.index, samples
         )
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         best_frequency = 0
         chosen_character = 0
@@ -125,7 +128,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
                     if (
                         mutation_frequencies[character][state]
                         < len(samples)
-                        - mutation_frequencies[character][missing_state_indicator]
+                        - mutation_frequencies[character][
+                            missing_state_indicator
+                        ]
                     ):
                         if weights:
                             if (
@@ -168,7 +173,8 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
             if unique_character_array[i, chosen_character] == chosen_state:
                 left_set.append(sample_names[i])
             elif (
-                unique_character_array[i, chosen_character] == missing_state_indicator
+                unique_character_array[i, chosen_character]
+                == missing_state_indicator
             ):
                 missing.append(sample_names[i])
             else:

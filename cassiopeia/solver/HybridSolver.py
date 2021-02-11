@@ -43,12 +43,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     need only have a `solve` method.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
         top_solver: An algorithm to be applied at the top of the tree. Must
             be a subclass of GreedySolver.
         bottom_solver: An algorithm to be applied at the bottom of the tree.
@@ -59,6 +53,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             for transitioning to the bottom solver.
         threads: Number of threads to be used. This corresponds to the number of
             subproblems to be run concurrently with the bottom solver.
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
     """
 
     def __init__(
@@ -68,7 +69,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         lca_cutoff: float = None,
         cell_cutoff: int = None,
         threads: int = 1,
-        prior_transformation: str = "negative_log"
+        prior_transformation: str = "negative_log",
     ):
 
         if lca_cutoff is None and cell_cutoff is None:
@@ -94,9 +95,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.__tree = nx.DiGraph()
 
     def solve(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        logfile: str = "stdout.log",
+        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
     ):
         """The general hybrid solver routine.
 
@@ -104,6 +103,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         algorithm stored in the top_solver until a criteria is reached. Once
         this criteria is reached, the bottom_solver is applied to each
         subproblem left over from the "greedy" clustering.
+
+        Args:
+            cassiopeia_tree: CassiopeiaTree that stores the character matrix
+                and priors for reconstruction.
+            logfile: Location to log progress.
         """
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
@@ -184,12 +188,16 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     ) -> Tuple[int, List[Tuple[int, List[str]]]]:
         """Applies the top solver to samples.
 
-        A private helper method for applying the top solver to the samples
+        A helper method for applying the top solver to the samples
         until a criteria is hit. Subproblems and the root ID are returned.
 
         Args:
+            character_matrix: Character matrix
+            samples: Samples in the subclade of interest.
+            weights: Weights of character-state combinations, derived from
+                priors if these are available.
+            missing_state_indicator: Indicator for missing data
             root: Node ID of the root in the subtree containing the samples.
-            samples: Samples in the subclade.
 
         Returns:
             The ID of the node serving as the root of the tree containing the
@@ -255,8 +263,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         of the root of the tree.
 
         Args:
+            cassiopeia_tree: CassiopeiaTree for the entire dataset. This
+                will be subsetted with respect to the samples specified.
             root: Identifier of the root in the master tree
             samples: A list of samples for which to infer a tree.
+            logfile: Base location for logging output. A specific logfile
+                will be created from this base logfile name.
 
         Returns:
             A tree in the form of a Networkx graph and the original root
@@ -306,6 +318,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             samples: A list of samples in a clade.
+            character_matrix: Character matrix
+            missing_state_indicator: Indicator for missing data.
 
         Returns:
             True if the cutoff is reached, False if not.
@@ -348,6 +362,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: A Steiner Tree solution that we wish to add sample
                 names to.
+            character_matrix: Character matrix
 
         Returns:
             A solution with extra leaves corresponding to sample names.

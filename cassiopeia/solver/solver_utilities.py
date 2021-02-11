@@ -62,9 +62,7 @@ def annotate_ancestral_characters(
 
 
 def collapse_edges(
-    T: nx.DiGraph,
-    node: int,
-    node_to_characters: Dict[int, List[int]],
+    T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[int]]
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -254,11 +252,6 @@ def convert_sample_names_to_indices(
     Returns:
         A list of samples mapped to integer indices
     """
-    name_to_index = dict(
-        zip(
-            names,
-            range(len(names)),
-        )
-    )
+    name_to_index = dict(zip(names, range(len(names))))
 
     return list(map(lambda x: name_to_index[x], samples))

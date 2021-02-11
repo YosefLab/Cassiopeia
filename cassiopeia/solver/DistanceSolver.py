@@ -25,23 +25,46 @@ class DistanceSolverError(Exception):
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    
-    def __init__(self,
-                dissimilarity_function: Optional[Callable] = None,
-                add_root: bool = False,
-                prior_transformation: str = "negative_log",):
+    """Distance based solver class
+
+    This solver serves as a generic Distance-based solver. Briefly, all of the
+    classes that derive from this class will use a dissimilarity map to 
+    iteratively choose samples to merge and update the dissimilarity map
+    based on this merging. An example of a derived class is the
+    NeighborJoiningSolver which uses the Q-criterion to iteratively join
+    samples until no samples remain.
+
+    Args:
+        dissimilarity_function: Function that can be used to compute the
+            dissimilarity between samples.
+        add_root: Whether or not to root the tree. Only pertinent in algorithms
+            that return an unrooted tree, by default (e.g. Neighbor Joining)
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
+    """
+
+    def __init__(
+        self,
+        dissimilarity_function: Optional[
+            Callable[
+                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+            ]
+        ] = None,
+        add_root: bool = False,
+        prior_transformation: str = "negative_log",
+    ):
 
         super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
-    def solve(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        dissimilarity_map: Optional[pd.DataFrame] = None,
-        root_sample: Optional[str] = None,
-    ) -> None:
+    def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """A general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
@@ -53,20 +76,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
-            dissimilarity_map: Dissimilarity map storing the distances
-                between samples
-            root_sample: Sample to treat as a root
-            root_tree: Whether or not to root the tree after the routine
-            prior_transformation: Function to use when transforming priors into
-                weights. Supports the following transformations:
-                    "negative_log": Transforms each probability by the negative
-                        log (default)
-                    "inverse": Transforms each probability p by taking 1/p
-                    "square_root_inverse": Transforms each probability by the
-                        the square root of 1/p
         """
 
-        self.setup_solver(cassiopeia_tree)
+        self.setup_dissimilarity_map(cassiopeia_tree)
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
 
@@ -116,10 +128,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         cassiopeia_tree.populate_tree(tree)
 
-    def setup_solver(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        # weights: Optional[Dict[int, Dict[int, float]]] = None
+    def setup_dissimilarity_map(
+        self, cassiopeia_tree: CassiopeiaTree
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, List[str]], str]:
         """Sets up the solver.
 
@@ -129,11 +139,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`.
-            dissimilarity_map: Dissimilarity map. If this is None, the function
-                will create it using the dissimilarity function specified.
-            root_sample: Sample to treat as the root.
-            root_tree: Whether or not to root the tree after inference.
-            prior_transformation: Function to apply to priors to create weights.
 
         Returns:
             A character matrix with duplicate rows filtered out, a
@@ -141,7 +146,10 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 the sample to treat as a root.
         """
 
-        if self.dissimilarity_function is None and cassiopeia_tree.get_dissimilarity_map() is None:
+        if (
+            self.dissimilarity_function is None
+            and cassiopeia_tree.get_dissimilarity_map() is None
+        ):
             raise DistanceSolverError(
                 "Please specify a dissimilarity function or populate the "
                 "CassiopeiaTree object with a dissimilarity map"
@@ -167,7 +175,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             # if root sample is not specified, we'll add the implicit root
             # and recompute the dissimilarity map
             cassiopeia_tree.set_character_matrix(character_matrix)
-            cassiopeia_tree.compute_dissimilarity_map(self.dissimilarity_function, self.prior_transformation)
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
+            )
 
     @abc.abstractmethod
     def root_tree(self, tree):
@@ -231,6 +241,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             solution: A DistanceSolver solution that we wish to add sample
                 names to.
+            state_to_sample_mapping: A dictionary mapping a state to a set
+                 of samples
 
         Returns:
             A solution with extra leaves corresponding to sample names.
