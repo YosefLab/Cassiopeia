@@ -34,6 +34,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     NeighborJoiningSolver which uses the Q-criterion to iteratively join
     samples until no samples remain.
 
+    TODO(mgjones, sprillo): Specify functions to use for rooting, etc. the
+        trees that are produced via a DistanceSolver.
+
     Args:
         dissimilarity_function: Function that can be used to compute the
             dissimilarity between samples.
