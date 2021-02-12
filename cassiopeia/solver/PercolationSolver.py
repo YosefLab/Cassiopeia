@@ -5,12 +5,14 @@ import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data import utilities as data_utilities
+from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import GreedySolver
 from cassiopeia.solver import NeighborJoiningSolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import similarity_functions
 from cassiopeia.solver import solver_utilities
-from cassiopeia.data import utilities as data_utilities
 
 
 class PercolationSolver(GreedySolver.GreedySolver):
@@ -58,13 +60,8 @@ class PercolationSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: str,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_transformation: Optional[
-            Callable[[float], float]
-        ] = "negative_log",
+        joining_solver: CassiopeiaSolver.CassiopeiaSolver,
+        prior_transformation: str = "negative_log",
         similarity_function: Optional[
             Callable[
                 [
@@ -79,14 +76,18 @@ class PercolationSolver(GreedySolver.GreedySolver):
         threshold: Optional[int] = 0,
     ):
 
-        super().__init__(character_matrix, missing_char, meta_data, priors)
+        super().__init__(prior_transformation)
 
+        self.joining_solver = joining_solver
         self.threshold = threshold
         self.similarity_function = similarity_function
 
     def perform_split(
         self,
+        character_matrix: pd.DataFrame,
         samples: List[str],
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
         """The function used by the percolation algorithm to generate a
         partition of the samples.
@@ -109,9 +110,9 @@ class PercolationSolver(GreedySolver.GreedySolver):
             A tuple of lists, representing the left and right partition groups
         """
         sample_indices = solver_utilities.convert_sample_names_to_indices(
-            self.unique_character_matrix.index, samples
+            character_matrix.index, samples
         )
-        unique_character_array = self.unique_character_matrix.to_numpy()
+        unique_character_array = character_matrix.to_numpy()
 
         G = nx.Graph()
         for v in sample_indices:
@@ -123,8 +124,8 @@ class PercolationSolver(GreedySolver.GreedySolver):
             similarity = self.similarity_function(
                 unique_character_array[i, :],
                 unique_character_array[j, :],
-                self.missing_char,
-                self.weights,
+                missing_state_indicator,
+                weights,
             )
             if similarity >= self.threshold:
                 edge_weight_buckets[similarity].append((i, j))
@@ -145,9 +146,8 @@ class PercolationSolver(GreedySolver.GreedySolver):
             connected_components = list(nx.connected_components(G))
 
         # If the number of connected components > 2, merge components by
-        # greedily joining the most similar LCAs of each component until
+        # joining the most similar LCAs of each component until
         # only 2 remain
-
         partition_sides = []
 
         if len(connected_components) > 2:
@@ -165,36 +165,35 @@ class PercolationSolver(GreedySolver.GreedySolver):
                     )
                 ]
                 lcas[i] = data_utilities.get_lca_characters(
-                    character_vectors, self.missing_char
+                    character_vectors, missing_state_indicator
                 )
-            # The NeighborJoiningSolver operates on a distance, so to have it
-            # work on similarity simply use negative similarity
-            negative_similarity = (
-                lambda s1, s2, missing_char, w: -1
-                * self.similarity_function(s1, s2, missing_char, w)
+
+            # Build a tree on the LCA characters to cluster the components
+            lca_tree = CassiopeiaTree(
+                pd.DataFrame.from_dict(lcas, orient="index"),
+                missing_state_indicator=missing_state_indicator,
+                priors="?",
             )
-            lca_character_matrix = pd.DataFrame.from_dict(lcas, orient="index")
-            nj_solver = NeighborJoiningSolver(
-                lca_character_matrix, dissimilarity_function=negative_similarity
-            )
-            nj_solver.solve()
+
+            self.joining_solver.solve(lca_tree)
+            lca_network = lca_tree.get_network()
             grouped_components = []
             root = [
-                n for n in nj_solver.tree if nj_solver.tree.in_degree(n) == 0
+                n for n in lca_network if lca_network.in_degree(n) == 0
             ][0]
 
             # Take the bifurcation at the root as the two clusters of components
             # in the split, ignoring unifurcations
             current_node = root
             while len(grouped_components) == 0:
-                successors = list(nj_solver.tree.successors(current_node))
+                successors = list(lca_network.successors(current_node))
                 if len(successors) == 1:
                     current_node = successors[0]
                 else:
                     for i in successors:
                         grouped_components.append(
                             solver_utilities.get_leaf_children(
-                                nj_solver.tree, i
+                                lca_network, i
                             )
                         )
 
@@ -211,12 +210,13 @@ class PercolationSolver(GreedySolver.GreedySolver):
 
         # Convert from indices back to the sample names in the original
         # character matrix
+        sample_names = list(character_matrix.index)
         partition_named = []
         for sample_index_group in partition_sides:
             sample_name_group = []
             for sample_index in sample_index_group:
                 sample_name_group.append(
-                    self.unique_character_matrix.index[sample_index]
+                    sample_names[sample_index]
                 )
             partition_named.append(sample_name_group)
 

@@ -3,10 +3,11 @@ import unittest
 import networkx as nx
 import pandas as pd
 
+import cassiopeia as cas
+from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralSolver import SpectralSolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.data import utilities as tree_utilities
 
 
 class SpectralSolverTest(unittest.TestCase):
@@ -86,12 +87,12 @@ class SpectralSolverTest(unittest.TestCase):
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-        spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
 
+        unique_character_matrix = cm.drop_duplicates()
         G = graph_utilities.construct_similarity_graph(
-            spsolver.unique_character_matrix,
+            unique_character_matrix,
             -1,
-            spsolver.unique_character_matrix.index,
+            unique_character_matrix.index,
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing,
         )
 
@@ -123,12 +124,12 @@ class SpectralSolverTest(unittest.TestCase):
             4: {1: 3},
         }
 
-        spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
+        unique_character_matrix = cm.drop_duplicates()
 
         G = graph_utilities.construct_similarity_graph(
-            spsolver.unique_character_matrix,
+            unique_character_matrix,
             -1,
-            spsolver.unique_character_matrix.index,
+            unique_character_matrix.index,
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing,
             weights=weights,
         )
@@ -166,10 +167,13 @@ class SpectralSolverTest(unittest.TestCase):
                 [1, -1, 3, 1, 2],
             ]
         )
-        spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
-        spsolver.solve()
+
+        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        spsolver = SpectralSolver()
+        spsolver.solve(sp_tree)
         expected_newick_string = "(2,(0,1),(5,6),(3,4));"
-        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
+        observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case_string(self):
@@ -187,10 +191,13 @@ class SpectralSolverTest(unittest.TestCase):
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-        spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
-        spsolver.solve()
+        
+        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        spsolver = SpectralSolver()
+        spsolver.solve(sp_tree)
         expected_newick_string = "(c3,(c1,c2),(c6,(c7,c8)),(c4,c5));"
-        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
+        observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2(self):
@@ -202,10 +209,13 @@ class SpectralSolverTest(unittest.TestCase):
                 [5, 0, 4, 2, 0],
             ]
         )
-        spsolver = SpectralSolver(character_matrix=cm, missing_char=-1)
-        spsolver.solve()
+
+        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        spsolver = SpectralSolver()
+        spsolver.solve(sp_tree)
         expected_newick_string = "((0,2),(1,3));"
-        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
+        observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2_priors(self):
@@ -226,12 +236,12 @@ class SpectralSolverTest(unittest.TestCase):
             4: {1: 0.1},
         }
 
-        spsolver = SpectralSolver(
-            character_matrix=cm, missing_char=-1, priors=priors
-        )
-        spsolver.solve()
+        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+
+        spsolver = SpectralSolver()
+        spsolver.solve(sp_tree)
         expected_newick_string = "(0,1,(2,3));"
-        observed_newick_string = tree_utilities.to_newick(spsolver.tree)
+        observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
 

@@ -33,20 +33,14 @@ class SpectralSolver(GreedySolver.GreedySolver):
     optimizes the cut.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
-        prior_function: A function defining a transformation on the priors
-            in forming weights to scale the contribution of each mutation in
-            the similarity graph
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations. The default
             is "hamming_distance_without_missing"
         threshold: A minimum similarity threshold to include an edge in the
             similarity graph
+        prior_function: A function defining a transformation on the priors
+            in forming weights to scale the contribution of each mutation in
+            the similarity graph
 
     Attributes:
         character_matrix: The character matrix describing the samples
@@ -66,11 +60,6 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: int,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, Dict[str, float]]] = None,
-        prior_function: Optional[Callable[[float], float]] = "negative_log",
         similarity_function: Optional[
             Callable[
                 [
@@ -82,25 +71,22 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 ],
                 float,
             ]
-        ] = None,
+        ] = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: Optional[int] = 0,
+        prior_transformation: str = "negative_log",
     ):
 
-        super().__init__(
-            character_matrix, missing_char, meta_data, priors, prior_function
-        )
+        super().__init__(prior_transformation)
 
         self.threshold = threshold
-        if similarity_function:
-            self.similarity_function = similarity_function
-        else:
-            self.similarity_function = (
-                dissimilarity_functions.hamming_similarity_without_missing
-            )
+        self.similarity_function = similarity_function
 
     def perform_split(
         self,
-        samples: List[str] = None,
+        character_matrix: pd.DataFrame,
+        samples: List[int],
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
         """The function used by the spectral algorithm to generate a partition
         of the samples.
@@ -125,12 +111,12 @@ class SpectralSolver(GreedySolver.GreedySolver):
             A tuple of lists, representing the left and right partition groups
         """
         G = graph_utilities.construct_similarity_graph(
-            self.unique_character_matrix,
-            self.missing_char,
+            character_matrix,
+            missing_state_indicator,
             samples,
             similarity_function=self.similarity_function,
             threshold=self.threshold,
-            weights=self.weights,
+            weights=weights,
         )
 
         L = nx.normalized_laplacian_matrix(G).todense()

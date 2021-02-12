@@ -22,13 +22,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     minimizing the Q-criterion between samples.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples.
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            character state
-        prior_transformation: A function defining a transformation on the priors
-            in forming weights
         dissimilarity_map: A dissimilarity map describing the distances between
             samples.
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -39,31 +32,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             function is provided.
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        dissimilarity_map: Dissimilarity map describing distances between
-            samples
         dissimilarity_function: Function to compute the dissimilarity between
             samples.
-        root_sample: Sample to treat as a root, an index in the dissimilarity
-            map and character matrix.
-        tree: The tree returned by `self.solve()`. None if `solve` has not been
-            called yet.
 
     """
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: int = -1,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, str]] = None,
-        prior_transformation: Optional[
-            Callable[[float], float]
-        ] = "negative_log",
-        dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[
                 [
@@ -76,35 +51,14 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 float,
             ]
         ] = None,
-        root_sample: Optional[str] = None,
+        add_root: bool = False,
+        prior_transformation: str = "negative_log",
     ):
 
-        if dissimilarity_function is None and root_sample is None:
-            raise DistanceSolver.DistanceSolverError(
-                "Please specify a root sample or provide a dissimilarity "
-                "function by which to add a root to the dissimilarity map"
-            )
-
-        if not root_sample:
-
-            root = [0] * character_matrix.shape[1]
-            character_matrix.loc["root"] = root
-            root_sample = "root"
-
-            # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilarity map
-            dissimilarity_map = None
-
-        self.root_sample = root_sample
-
         super().__init__(
-            character_matrix,
-            missing_char,
-            meta_data,
-            priors,
-            prior_transformation,
-            dissimilarity_map=dissimilarity_map,
             dissimilarity_function=dissimilarity_function,
+            add_root=add_root,
+            prior_transformation=prior_transformation,
         )
 
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
@@ -130,16 +84,18 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return (i, j)
 
-    def root_tree(self, tree):
+    def root_tree(self, tree: nx.DiGraph, root_sample = str):
         """Roots a tree at the inferred ancestral root.
 
-        Uses the root sample stored in self.root_sample to root the
-        tree stored in the class instance.
+        Uses the specified root to root the tree passed in.
+
+        Args:
+            tree: 
         """
 
         rooted_tree = nx.DiGraph()
 
-        for e in nx.dfs_edges(tree, source=self.root_sample):
+        for e in nx.dfs_edges(tree, source=root_sample):
 
             rooted_tree.add_edge(e[0], e[1])
 

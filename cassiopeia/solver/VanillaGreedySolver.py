@@ -25,16 +25,10 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
     character is ambiguous. The user can also specify a missing data method.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
         missing_data_classifier: Takes either a string specifying one of the
             included missing data imputation methods, or a function
             implementing the user-specified missing data method. The default is
             the "average" method
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            state for each character
         prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies
 
@@ -53,28 +47,20 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: int,
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, Dict[int, float]]] = None,
-        prior_transformation: Optional[
-            Callable[[float], float]
-        ] = "negative_log",
+        prior_transformation: str = "negative_log",
     ):
 
-        super().__init__(
-            character_matrix,
-            missing_char,
-            meta_data,
-            priors,
-            prior_transformation,
-        )
+        super().__init__(prior_transformation)
+
         self.missing_data_classifier = missing_data_classifier
 
     def perform_split(
         self,
-        samples: List[str],
+        character_matrix: pd.DataFrame,
+        samples: List[int],
+        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
         """Performs a partition based on the most frequent (character, state) pair.
 
@@ -90,27 +76,30 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         Returns:
             A tuple of lists, representing the left and right partition groups
         """
+
         sample_indices = solver_utilities.convert_sample_names_to_indices(
-            self.unique_character_matrix.index, samples
+            character_matrix.index, samples
         )
-        mutation_frequencies = self.compute_mutation_frequencies(samples)
+        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
 
         best_frequency = 0
         chosen_character = 0
         chosen_state = 0
         for character in mutation_frequencies:
             for state in mutation_frequencies[character]:
-                if state != self.missing_char and state != 0:
+                if state != missing_state_indicator and state != 0:
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
                         < len(samples)
-                        - mutation_frequencies[character][self.missing_char]
+                        - mutation_frequencies[character][
+                            missing_state_indicator
+                        ]
                     ):
-                        if self.weights:
+                        if weights:
                             if (
                                 mutation_frequencies[character][state]
-                                * self.weights[character][state]
+                                * weights[character][state]
                                 > best_frequency
                             ):
                                 chosen_character, chosen_state = (
@@ -119,7 +108,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                                 )
                                 best_frequency = (
                                     mutation_frequencies[character][state]
-                                    * self.weights[character][state]
+                                    * weights[character][state]
                                 )
                         else:
                             if (
@@ -141,26 +130,26 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         right_set = []
         missing = []
 
-        unique_character_array = self.unique_character_matrix.to_numpy()
-        sample_names = list(self.unique_character_matrix.index)
+        unique_character_array = character_matrix.to_numpy()
+        sample_names = list(character_matrix.index)
 
         for i in sample_indices:
             if unique_character_array[i, chosen_character] == chosen_state:
                 left_set.append(sample_names[i])
             elif (
-                unique_character_array[i, chosen_character] == self.missing_char
+                unique_character_array[i, chosen_character] == missing_state_indicator
             ):
                 missing.append(sample_names[i])
             else:
                 right_set.append(sample_names[i])
 
         left_set, right_set = self.missing_data_classifier(
-            self.unique_character_matrix,
-            self.missing_char,
+            character_matrix,
+            missing_state_indicator,
             left_set,
             right_set,
             missing,
-            weights=self.weights,
+            weights=weights,
         )
 
         return left_set, right_set

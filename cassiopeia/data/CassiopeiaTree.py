@@ -131,7 +131,7 @@ class CassiopeiaTree:
         for n in self.nodes:
             if (
                 self.__original_character_matrix is not None
-                and n in self.__original_character_matrix.index.values
+                and n in self.__original_character_matrix.index.tolist()
             ):
                 self.__network.nodes[n][
                     "character_states"
@@ -687,6 +687,10 @@ class CassiopeiaTree:
     def get_newick(self) -> str:
         """Returns newick format of tree."""
         return utilities.to_newick(self.__network)
+
+    def get_network(self) -> nx.DiGraph:
+        """Returns the tree in Networkx format."""
+        return self.__network.copy()
 
     def get_mean_depth_of_tree(self) -> float:
         """Computes mean depth of tree.
