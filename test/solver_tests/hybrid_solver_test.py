@@ -257,7 +257,7 @@ class TestHybridSolver(unittest.TestCase):
 
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
 
-        tree = self.pp_tree.get_network()
+        tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -302,7 +302,7 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver.threads = 1
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
 
-        tree = self.pp_tree.get_network()
+        tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -346,7 +346,7 @@ class TestHybridSolver(unittest.TestCase):
 
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
 
-        tree = self.large_tree.get_network()
+        tree = self.large_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -394,7 +394,7 @@ class TestHybridSolver(unittest.TestCase):
 
         self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
 
-        tree = self.missing_tree.get_network()
+        tree = self.missing_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -438,7 +438,7 @@ class TestHybridSolver(unittest.TestCase):
 
         self.hybrid_pp_solver_missing.solve(self.missing_tree, logfile=self.logfile)
 
-        tree = self.missing_tree.get_network()
+        tree = self.missing_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]

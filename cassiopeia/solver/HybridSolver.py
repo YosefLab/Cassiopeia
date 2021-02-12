@@ -300,7 +300,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
         self.bottom_solver.solve(subtree)
 
-        subproblem_tree = subtree.get_network()
+        subproblem_tree = subtree.get_tree_topology()
         subproblem_root = [
             n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0
         ][0]

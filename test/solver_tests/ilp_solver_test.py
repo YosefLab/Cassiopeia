@@ -179,7 +179,7 @@ class TestILPSolver(unittest.TestCase):
     def test_ilp_solver_perfect_phylogeny(self):
 
         self.ilp_pp_solver.solve(self.pp_tree, self.logfile)
-        tree = self.pp_tree.get_network()
+        tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]

@@ -209,7 +209,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
-        T = self.basic_tree.get_network()
+        T = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
 
@@ -232,7 +232,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_pp_solver(self):
 
         self.nj_solver_delta.solve(self.pp_tree)
-        T = self.pp_tree.get_network()
+        T = self.pp_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -261,7 +261,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_duplicate_sample_neighbor_joining(self):
 
         self.nj_solver_delta.solve(self.duplicate_tree)
-        T = self.duplicate_tree.get_network()
+        T = self.duplicate_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(

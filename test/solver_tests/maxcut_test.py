@@ -170,7 +170,7 @@ class MaxCutSolverTest(unittest.TestCase):
             ]
         )
 
-        observed_tree = self.mc_tree2.get_network()
+        observed_tree = self.mc_tree2.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
         for triplet in triplets:
 
@@ -196,7 +196,7 @@ class MaxCutSolverTest(unittest.TestCase):
                 (8, "c4"),
             ]
         )
-        observed_tree = self.mc_tree3.get_network()
+        observed_tree = self.mc_tree3.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)

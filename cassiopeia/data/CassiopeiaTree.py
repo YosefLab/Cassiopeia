@@ -80,6 +80,8 @@ class CassiopeiaTree:
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones315): Read branch lengths off of newick strings & write
         branch lengths to newick strings
+    TODO(mattjones): Add boolean to `get_tree_topology` which will include
+        all attributes (e.g., node times)
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -721,7 +723,7 @@ class CassiopeiaTree:
         """Returns newick format of tree."""
         return utilities.to_newick(self.__network)
 
-    def get_network(self) -> nx.DiGraph:
+    def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format."""
         return self.__network.copy()
 
