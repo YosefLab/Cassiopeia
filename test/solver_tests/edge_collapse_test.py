@@ -51,12 +51,10 @@ def to_newick_with_internal(tree: nx.DiGraph) -> str:
 
 class TestCollapseEdges(unittest.TestCase):
     def test_lca_characters(self):
-        vecs = [
-            [1, 0, 3, 4, 5],
-            [1, -1, -1, 3, -1],
-            [1, 2, 3, 2, -1],
-        ]
-        ret_vec = data_utilities.get_lca_characters(vecs, missing_char=-1)
+        vecs = [[1, 0, 3, 4, 5], [1, -1, -1, 3, -1], [1, 2, 3, 2, -1]]
+        ret_vec = data_utilities.get_lca_characters(
+            vecs, missing_state_indicator=-1
+        )
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test1(self):
@@ -75,12 +73,12 @@ class TestCollapseEdges(unittest.TestCase):
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        cm = pd.DataFrame(table)
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
-            character_matrix=cm,
-            missing_char=-1,
+            character_matrix=character_matrix,
+            missing_state_indicator=-1,
         )
         new_map = {}
         for i in T:
@@ -122,18 +120,19 @@ class TestCollapseEdges(unittest.TestCase):
         T.add_edge(5, 4)
         T.add_edge(6, 5)
         T.add_edge(6, 2)
+        T.add_edge(7, 6)
         table = [
             [1, 0, 3, 4, 5],
             [1, 0, 3, 3, -1],
             [1, 2, 3, 0, -1],
             [1, 0, 3, 0, -1],
         ]
-        cm = pd.DataFrame(table)
+        character_matrix = pd.DataFrame(table)
         solver_utilities.collapse_tree(
             T,
             infer_ancestral_characters=True,
-            character_matrix=cm,
-            missing_char=-1,
+            character_matrix=character_matrix,
+            missing_state_indicator=-1,
         )
         new_map = {}
         for i in T:
@@ -147,14 +146,14 @@ class TestCollapseEdges(unittest.TestCase):
             "1|0|3|3|-1,1",
             "1|2|3|0|-1,2",
             "1|0|3|0|-1,3",
-            "1|0|3|0|5,6",
+            "1|0|3|0|5,7",
         }
 
         expected_edges = {
-            ("1|0|3|0|5,6", "1|0|3|4|5,0"),
-            ("1|0|3|0|5,6", "1|0|3|3|-1,1"),
-            ("1|0|3|0|5,6", "1|2|3|0|-1,2"),
-            ("1|0|3|0|5,6", "1|0|3|0|-1,3"),
+            ("1|0|3|0|5,7", "1|0|3|4|5,0"),
+            ("1|0|3|0|5,7", "1|0|3|3|-1,1"),
+            ("1|0|3|0|5,7", "1|2|3|0|-1,2"),
+            ("1|0|3|0|5,7", "1|0|3|0|-1,3"),
         }
 
         for i in T:

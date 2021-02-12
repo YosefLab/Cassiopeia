@@ -7,6 +7,7 @@ evolutionary states.
 import datetime
 import logging
 import time
+from typing import Callable, Dict, List, Optional, Tuple
 
 import gurobipy
 import hashlib
@@ -15,12 +16,15 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
 
+from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import ilp_solver_utilities
+from cassiopeia.solver import (
+    CassiopeiaSolver,
+    dissimilarity_functions,
+    ilp_solver_utilities,
+    solver_utilities,
+)
 
 
 class ILPSolverError(Exception):
@@ -39,18 +43,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     optimization approach.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples
-        missing_char: The character representing missing values
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            character state
         convergence_time_limit: Amount of time allotted to the ILP for convergence.
             Ignored if set to 0.
         convergence_iteration_limit: Number of iterations allowed for ILP
             convergence. Ignored if set to 0.
         maximum_potential_graph_layer_size: Maximum size allowed for an iteration
-            of the potential graph inference procedure. If this is exceeded, 
+            of the potential graph inference procedure. If this is exceeded,
             we return the previous iteration's graph or abort altogether.
         weighted: Weight edges on the potential graph by the negative log
             likelihood of the mutations.
@@ -59,30 +57,27 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         logfile: A file to log output to. This will contain information around
             the potential graph inference procedure as well as the Steiner Tree
             optimization.
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
     """
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: str,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict] = None,
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
         weighted: bool = False,
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
-        logfile="stdout.log",
+        prior_transformation: str = "negative_log",
     ):
 
-        if weighted and not priors:
-            raise ILPSolverError(
-                "Specify prior probabilities for weighted analysis."
-            )
-
-        super().__init__(character_matrix, missing_char, meta_data, priors)
-        self.unique_character_matrix = self.character_matrix.drop_duplicates()
+        super().__init__(prior_transformation)
         self.convergence_time_limit = convergence_time_limit
         self.convergence_iteration_limit = convergence_iteration_limit
         self.maximum_potential_graph_layer_size = (
@@ -92,52 +87,49 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.seed = seed
         self.mip_gap = mip_gap
 
-        # convert priors to a numba.typed.Dict for interfacing with numba
-        nb_priors = numba.typed.Dict.empty(
-            key_type=numba.core.types.int32,
-            value_type=numba.core.types.DictType(
-                numba.core.types.int32, numba.core.types.float64
-            ),
-        )
-
-        self.priors = priors
-
-        # set up logger
-        self.logfile = logfile
-        logging.basicConfig(filename=logfile, level=logging.INFO)
-
-    def prepare_for_subproblem(self, new_character_matrix: pd.DataFrame, logfile: str):
-        """Prepare ILPSolver to be used in a HybridSolver instance.
-
-        Rewrites the character matrix, unique character matrix, and logfile
-        attributes so this can be used in a HybridSolver instance.
-
-        Args:
-            new_character_matrix: A character matrix
-            logfile: Logfile to store the progress of the ILP solver.
-        """
-
-        self.character_matrix = new_character_matrix.copy()
-        self.unique_character_matrix = self.character_matrix.drop_duplicates()
-        self.logfile = logfile
-        
-    def solve(self):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+    ):
         """Infers a tree with Cassiopeia-ILP.
 
+        Solves a tree using the Cassiopeia-ILP algorithm and populates a tree
+        in the provided CassiopeiaTree.
+
+        Args:
+            cassiopeia_tree: Input CassiopeiaTree
+            logfile: Location to write standard out.
         """
+
+        if self.weighted and not cassiopeia_tree.priors:
+            raise ILPSolverError(
+                "Specify prior probabilities in the CassiopeiaTree for weighted"
+                " analysis."
+            )
+
+        # setup logfile config
+        logging.basicConfig(filename=logfile, level=logging.INFO)
+
+        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        unique_character_matrix = character_matrix.drop_duplicates()
+
+        weights = None
+        if cassiopeia_tree.priors:
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, self.prior_transformation
+            )
+
         # find the root of the tree & generate process ID
         root = tuple(
             data_utilities.get_lca_characters(
-                self.unique_character_matrix.values.tolist(), self.missing_char
+                unique_character_matrix.values.tolist(),
+                cassiopeia_tree.missing_state_indicator,
             )
         )
         pid = hashlib.md5(
             "|".join([str(r) for r in root]).encode("utf-8")
         ).hexdigest()
 
-        targets = [
-            tuple(t) for t in self.unique_character_matrix.values.tolist()
-        ]
+        targets = [tuple(t) for t in character_matrix.values.tolist()]
 
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
@@ -148,11 +140,18 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         ]
 
         for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
-            max_lca_distance = max(max_lca_distance, lca_distances[i] + lca_distances[j] + 1)
+            max_lca_distance = max(
+                max_lca_distance, lca_distances[i] + lca_distances[j] + 1
+            )
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
-            root, pid, max_lca_distance
+            character_matrix,
+            root,
+            pid,
+            max_lca_distance,
+            weights,
+            cassiopeia_tree.missing_state_indicator,
         )
 
         # generate Steiner Tree ILP model
@@ -170,7 +169,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # solve the ILP problem and return a set of proposed solutions
         proposed_solutions = self.solve_steiner_instance(
-            model, edge_variables, _potential_graph, pid
+            model, edge_variables, _potential_graph, pid, logfile
         )
 
         # select best model and post process the solution
@@ -180,10 +179,20 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, root, targets, pid
         )
 
-        self.tree = optimal_solution
+        optimal_solution = self.__append_sample_names(
+            optimal_solution, character_matrix
+        )
+
+        cassiopeia_tree.populate_tree(optimal_solution)
 
     def infer_potential_graph(
-        self, root: List[str], pid: int, lca_height: int
+        self,
+        character_matrix: pd.DataFrame,
+        root: List[str],
+        pid: int,
+        lca_height: int,
+        weights: Optional[Dict[int, Dict[int, str]]] = None,
+        missing_state_indicator: int = -1,
     ) -> nx.DiGraph:
         """Infers a potential graph for the observed states.
 
@@ -199,11 +208,15 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         possible ancestor left - this will be the root of the tree.
 
         Args:
+            character_matrix: Character matrix 
             root: Specified root node, represented as a list of character states
             pid: Process ID for future reference
             lca_height: Maximum lca height to consider for connecting nodes to
                 an LCA
-        
+            weights: Weights for character-state pairs, derived from the priors
+                if these are available.
+            missing_state_indicator: Indicator for missing data.
+
         Returns:
             A potential graph represented by a directed graph.
         """
@@ -218,9 +231,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         layer_sizes = {}
         prev_graph = None
 
-        character_states = (
-            self.unique_character_matrix.replace("-", "-1").astype(int).values
-        )
+        character_states = character_matrix.values
 
         n_characters = character_states.shape[1]
 
@@ -242,10 +253,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                         "exceeded, returning network."
                     )
 
-                    return self.add_edge_weights(prev_graph)
+                    return self.add_edge_weights(
+                        prev_graph, weights, missing_state_indicator
+                    )
 
                 next_layer, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
-                    source_nodes, effective_threshold, self.missing_char
+                    source_nodes, effective_threshold, missing_state_indicator
                 )
 
                 # subset to unique values
@@ -256,10 +269,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                     len(next_layer) > self.maximum_potential_graph_layer_size
                     and prev_graph != None
                 ):
-                    return self.add_edge_weights(prev_graph)
+                    return self.add_edge_weights(
+                        prev_graph, weights, missing_state_indicator
+                    )
 
                 # edges come out as rows in a numpy matrix, where the first
-                # n_characters positions correpsond to the parent and the
+                # n_characters positions correspond to the parent and the
                 # remaining positions correspond to the child
                 layer_edges = [
                     (tuple(e[:n_characters]), tuple(e[n_characters:]))
@@ -285,20 +300,30 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             prev_graph = layer_graph
 
-        return self.add_edge_weights(layer_graph)
+        return self.add_edge_weights(
+            layer_graph, weights, missing_state_indicator
+        )
 
-    def add_edge_weights(self, potential_graph: nx.DiGraph()) -> nx.DiGraph:
+    def add_edge_weights(
+        self,
+        potential_graph: nx.DiGraph(),
+        weights: Optional[Dict[int, Dict[int, str]]] = None,
+        missing_state_indicator: int = -1,
+    ) -> nx.DiGraph:
         """Annotates edges with the weight.
 
         Given a graph where nodes are iterable entities containing character
         states, annotated edges with respect to the number of mutations. If a
         prior dictionary is passed into the constructor, the log likelihood
-        of the mutations is added instead. These values are stored in the 
+        of the mutations is added instead. These values are stored in the
         `weight` attribute of the networkx graph.
 
         Args:
             potential_graph: Potential graph
-        
+            weights: Weights to use when comparing states between characters
+            missing_state_indicator: Variable to indicate missing state
+                information.
+
         Returns:
             The potential graph with edge weights added, stored in the `weight`
                 attribute.
@@ -309,7 +334,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             weighted_graph[u][v][
                 "weight"
             ] = dissimilarity_functions.weighted_hamming_distance(
-                list(u), list(v), self.priors, self.missing_char
+                list(u), list(v), missing_state_indicator, weights
             )
 
         return weighted_graph
@@ -331,8 +356,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 space on which to solve for the Steiner Tree.
             root: A node in the graph to treat as the source.
             targets: A list of nodes in the tree that serve as targets for the
-                Steiner Tree procedure. 
-        
+                Steiner Tree procedure.
+
         Returns:
             A Gurobipy Model instance and the edge variables involved.
         """
@@ -340,10 +365,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
         if root not in potential_graph.nodes:
-            raise ILPSolver("Root node not in potential graph.")
+            raise ILPSolverError("Root node not in potential graph.")
         for t in targets:
             if t not in potential_graph.nodes:
-                raise ILPSolver("Target node not in potential graph.")
+                raise ILPSolverError("Target node not in potential graph.")
 
         # remove source from targets if it exists there
         targets = [t for t in targets if t != root]
@@ -413,7 +438,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         return model, edge_variables
 
     def solve_steiner_instance(
-        self, model, edge_variables, potential_graph, pid
+        self,
+        model: gurobipy.Model,
+        edge_variables: gurobipy.Var,
+        potential_graph: nx.DiGraph,
+        pid: int,
+        logfile: str,
     ) -> List[nx.DiGraph]:
         """Solves for a Steiner Tree from the Gurobi instance.
 
@@ -429,9 +459,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 two nodes are connected to one another in the Potential Graph;
                 we use these variables to recreate a tree at the end from the
                 Gurobi solution.
-            potential_graph: Potential Graph that was used as input to the 
+            potential_graph: Potential Graph that was used as input to the
                 Steiner Tree problem.
             pid: Process ID
+            logfile: Location to store standard out.
 
         Returns:
             A list of solutions
@@ -448,7 +479,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # Add user-defined parameters
         model.params.MIPGAP = self.mip_gap
-        model.params.LogFile = self.logfile
+        model.params.LogFile = logfile
 
         if self.seed is not None:
             model.params.Seed = self.seed
@@ -516,7 +547,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             pid: Process id
 
         Returns:
-            A cleaned up networkx solution 
+            A cleaned up networkx solution
         """
 
         processed_solution = solution.copy()
@@ -565,31 +596,32 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 if processed_solution.in_degree(n) == 0
             ]
 
-        processed_solution = self.append_sample_names(processed_solution)
-
         return processed_solution
 
-    def append_sample_names(self, solution: nx.DiGraph) -> nx.DiGraph:
+    def __append_sample_names(
+        self, solution: nx.DiGraph, character_matrix: pd.DataFrame
+    ) -> nx.DiGraph:
         """Append sample names to character states in tree.
 
         Given a tree where every node corresponds to a set of character states,
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
-        the tree (especially when using the Hybrid algorithm where parts of 
+        the tree (especially when using the Hybrid algorithm where parts of
         the tree are built indepedently), so we make sure we only add a
         particular sample once to the tree.
 
         Args:
             solution: A Steiner Tree solution that we wish to add sample
                 names to.
+            character_matrix: Character matrix
 
         Returns:
-            A solution with extra leaves corresponding to sample names. 
+            A solution with extra leaves corresponding to sample names.
         """
 
         root = [n for n in solution if solution.in_degree(n) == 0][0]
 
-        sample_lookup = self.character_matrix.apply(
+        sample_lookup = character_matrix.apply(
             lambda x: tuple(x.values), axis=1
         )
 

@@ -1,15 +1,18 @@
+"""
+Utility functions for building connectivity and similarity graphs for the
+Graph-Based solvers.
+"""
+from typing import Callable, Dict, List, Optional, Union
+
 import itertools
-import numpy as np
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 from cassiopeia.solver import solver_utilities
-from typing import Callable, Dict, List, Optional, Union
 
 
-def check_if_cut(
-    u: Union[int, str], v: Union[int, str], cut: List[Union[int, str]]
-) -> bool:
+def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
     """Checks if two nodes are on opposite sides of a graph partition.
 
     Args:
@@ -25,11 +28,11 @@ def check_if_cut(
 
 
 def construct_connectivity_graph(
-    cm: pd.DataFrame,
+    character_matrix: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[int, int]],
-    missing_char: int,
-    samples: List[Union[int, str]],
-    w: Optional[Dict[int, Dict[int, float]]] = None,
+    missing_state_indicator: int,
+    samples: List[str],
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
     """
     TODO: Optimize with numba?
@@ -38,59 +41,76 @@ def construct_connectivity_graph(
     Instantiates a graph with a node for each sample. This graph represents a
     supertree over trees generated for each character. For each pair of nodes
     (samples), the edge weight between those nodes is the total number
-    of triplets that seperate the nodes using a single character minus the
+    of triplets that separate the nodes using a single character minus the
     total number of triplets where a single character groups them as an ingroup.
     Effectively, the construction of the graph incentivizes the max-cut
     algorithm to group samples with shared mutations together and split samples
     with distant mutations.
 
     Args:
-        cm: The character matrix of observed character states for all samples
+        character_matrix: The character matrix of observed character states for all samples
         mutation_frequencies: A dictionary containing the frequencies of
             each character/state pair that appear in the character matrix
             restricted to the sample set
-        missing_char: The character representing missing values
-        samples: A list of samples to build the graph over
-        w: A set of optional weights for edges in the connectivity graph
+        missing_state_indicator: The character representing missing values
+        samples: A list of samples to build the graph over, represented by
+            their names in the original character matrix
+        weights: A set of optional weights for edges in the connectivity graph
 
     Returns:
         A connectivity graph constructed over the sample set
     """
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
+    character_array = character_matrix.to_numpy()
+
+    k = character_matrix.shape[1]
+
     G = nx.Graph()
-    for i in samples:
+    for i in sample_indices:
         G.add_node(i)
-    for i, j in itertools.combinations(samples, 2):
+
+    for i, j in itertools.combinations(sample_indices, 2):
         # compute similarity scores
         score = 0
-        for l in range(cm.shape[1]):
-            x = cm.loc[i, :][l]
-            y = cm.loc[j, :][l]
-            if (x != missing_char and y != missing_char) and (x != 0 or y != 0):
-                if w is not None:
+        for l in range(k):
+            x = character_array[i, l]
+            y = character_array[j, l]
+            if (
+                x != missing_state_indicator and y != missing_state_indicator
+            ) and (x != 0 or y != 0):
+                if weights is not None:
                     if x == y:
                         score -= (
                             3
-                            * w[l][x]
+                            * weights[l][x]
                             * (
                                 len(samples)
                                 - mutation_frequencies[l][x]
-                                - mutation_frequencies[l][missing_char]
+                                - mutation_frequencies[l][
+                                    missing_state_indicator
+                                ]
                             )
                         )
                     elif x == 0:
-                        score += w[l][y] * (mutation_frequencies[l][y] - 1)
+                        score += weights[l][y] * (
+                            mutation_frequencies[l][y] - 1
+                        )
                     elif y == 0:
-                        score += w[l][x] * (mutation_frequencies[l][x] - 1)
+                        score += weights[l][x] * (
+                            mutation_frequencies[l][x] - 1
+                        )
                     else:
-                        score += w[l][x] * (mutation_frequencies[l][x] - 1) + w[
-                            l
-                        ][y] * (mutation_frequencies[l][y] - 1)
+                        score += weights[l][x] * (
+                            mutation_frequencies[l][x] - 1
+                        ) + weights[l][y] * (mutation_frequencies[l][y] - 1)
                 else:
                     if x == y:
                         score -= 3 * (
                             len(samples)
                             - mutation_frequencies[l][x]
-                            - mutation_frequencies[l][missing_char]
+                            - mutation_frequencies[l][missing_state_indicator]
                         )
                     elif x == 0:
                         score += mutation_frequencies[l][y] - 1
@@ -104,12 +124,14 @@ def construct_connectivity_graph(
                         )
         if score != 0:
             G.add_edge(i, j, weight=score)
-    return G
+
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+    )
+    return G_names
 
 
-def max_cut_improve_cut(
-    G: nx.Graph, cut: List[Union[int, str]]
-) -> List[Union[int, str]]:
+def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
     """A greedy hill-climbing procedure to optimize a partition for the max-cut.
 
     The procedure is initialized by calculating the improvement to the max-cut
@@ -121,7 +143,7 @@ def max_cut_improve_cut(
     iteration number is reached.
 
     Args:
-        G: A graph to find an optimized parition over
+        G: A graph to find an optimized partition over
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
@@ -166,16 +188,15 @@ def max_cut_improve_cut(
 
 
 def construct_similarity_graph(
-    cm: pd.DataFrame,
-    mutation_frequencies: Dict[int, Dict[int, int]],
-    missing_char: int,
-    samples: List[Union[int, str]],
+    character_matrix: pd.DataFrame,
+    missing_state_indicator: int,
+    samples: List[str],
     similarity_function: Callable[
         [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
         float,
     ],
     threshold: int = 0,
-    w: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
     """
     TODO: Optimize with numba?
@@ -190,27 +211,36 @@ def construct_similarity_graph(
     graph, but can be treated as a hyperparameter.
 
     Args:
-        cm: The character matrix of observed character states for all samples
+        character_matrix: The character matrix of observed character states for all samples
         mutation_frequencies: A dictionary containing the frequencies of
             each character/state pair that appear in the character matrix
             restricted to the sample set
-        missing_char: The character representing missing values
-        samples: A list of samples to build the graph over
+        missing_state_indicator: The character representing missing values
+        samples: A list of samples to build the graph over, represented by
+            their names in the original character matrix
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
-        w: A set of optional weights for edges in the similarity graph
+        weights: A set of optional weights for edges in the similarity graph
 
     Returns:
         A similarity graph constructed over the sample set
     """
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
+    character_array = character_matrix.to_numpy()
+
     G = nx.Graph()
-    for i in samples:
+    for i in sample_indices:
         G.add_node(i)
 
-    for i, j in itertools.combinations(samples, 2):
+    for i, j in itertools.combinations(sample_indices, 2):
         s = similarity_function(
-            list(cm.loc[i, :]), list(cm.loc[j, :]), missing_char, w
+            list(character_array[i]),
+            list(character_array[j]),
+            missing_state_indicator,
+            weights,
         )
         if s > threshold:
             G.add_edge(i, j, weight=s)
@@ -229,12 +259,13 @@ def construct_similarity_graph(
         for edge in to_remove:
             G.remove_edge(edge[0], edge[1])
 
-    return G
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+    )
+    return G_names
 
 
-def spectral_improve_cut(
-    G: nx.Graph, cut: List[Union[int, str]]
-) -> List[Union[int, str]]:
+def spectral_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
     """A greedy hill-climbing procedure minimizing a modified normalized cut.
 
     The procedure minimizes a partition on a graph for the following objective
@@ -248,7 +279,7 @@ def spectral_improve_cut(
     a partition by grouping samples with similar mutations together.
 
     Args:
-        G: A graph to find an optimized parition over
+        G: A graph to find an optimized partition over
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
@@ -256,7 +287,7 @@ def spectral_improve_cut(
         A new partition that is a local minimum to the objective function
     """
 
-    def set_improvement_potential(node: Union[int, str]):
+    def set_improvement_potential(node: int):
         """A helper function to calculate the change to the cut weight by
         moving the node to the other side of the partition.
 
@@ -291,7 +322,7 @@ def spectral_improve_cut(
     delta_numerator = {}
     delta_denominator = {}
     improvement_potentials = {}
-    new_cut = cut
+    new_cut = cut.copy()
     total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
     numerator = sum(
         [
