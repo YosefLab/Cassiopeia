@@ -1,5 +1,5 @@
 """
-Test ILPSolver in Cassiopeia.solver.
+Test HybridSolver in Cassiopeia.solver.
 """
 import os
 import unittest

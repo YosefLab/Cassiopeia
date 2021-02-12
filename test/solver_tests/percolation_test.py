@@ -1,3 +1,7 @@
+"""
+Test PercolationSolver in Cassiopeia.solver.
+"""
+
 import unittest
 
 import networkx as nx

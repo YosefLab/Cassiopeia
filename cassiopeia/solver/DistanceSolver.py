@@ -69,7 +69,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, prior_transformation
+                cassiopeia_tree.priors, self.prior_transformation
             )
 
         (
@@ -78,7 +78,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             state_to_sample_mapping,
             root_sample,
         ) = self.setup_solver(
-            cassiopeia_tree, dissimilarity_map, root_sample
+            cassiopeia_tree, dissimilarity_map, root_sample, weights
         )
 
         N = dissimilarity_map.shape[0]
@@ -158,7 +158,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
 
         if self.dissimilarity_function is None and dissimilarity_map is None:
-            raise DistanceSolveError(
+            raise DistanceSolverError(
                 "Please specify a dissimilarity map or dissimilarity function"
             )
 
@@ -169,7 +169,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         if root_sample is None and self.add_root:
 
             if self.dissimilarity_function is None:
-                raise DistanceSolveError(
+                raise DistanceSolverError(
                     "Please specify a root sample or provide a dissimilarity "
                     "function by which to add a root to the dissimilarity map"
                 )
@@ -262,7 +262,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         return dm
 
     @abc.abstractmethod
-    def root_tree(self, tree):
+    def root_tree(self, tree, root_sample):
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
