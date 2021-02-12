@@ -8,15 +8,12 @@ criterion on a connectivity graph built from the observed mutations in the
 samples representing a supertree of phylogenetic trees on each individual 
 character.
 """
-import numpy as np
-import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import missing_data_methods
-from cassiopeia.solver import solver_utilities
+import numpy as np
+import pandas as pd
 
+from cassiopeia.solver import graph_utilities, GreedySolver, missing_data_methods, solver_utilities
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
     """

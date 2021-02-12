@@ -1,10 +1,15 @@
+"""
+Utility functions for building connectivity and similarity graphs for the
+Graph-Based solvers.
+"""
+from typing import Callable, Dict, List, Optional, Union
+
 import itertools
-import numpy as np
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 from cassiopeia.solver import solver_utilities
-from typing import Callable, Dict, List, Optional, Union
 
 
 def check_if_cut(u: int, v: int, cut: List[int]) -> bool:

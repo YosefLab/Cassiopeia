@@ -4,12 +4,13 @@ inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
+from typing import Callable, Dict, Optional, Tuple, Union
+
 import abc
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, Optional, Tuple, Union
 
 from cassiopeia.solver import DistanceSolver
 

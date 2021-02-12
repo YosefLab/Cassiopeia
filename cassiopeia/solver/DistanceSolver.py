@@ -14,8 +14,7 @@ import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolverError(Exception):

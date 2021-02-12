@@ -1,8 +1,8 @@
 """This file contains included missing data imputation methods."""
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import solver_utilities
 

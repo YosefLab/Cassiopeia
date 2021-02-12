@@ -4,16 +4,15 @@ represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
 import logging
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import abc
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):

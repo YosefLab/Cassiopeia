@@ -7,6 +7,7 @@ evolutionary states.
 import datetime
 import logging
 import time
+from typing import Callable, Dict, List, Optional, Tuple
 
 import gurobipy
 import hashlib
@@ -15,14 +16,10 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import ilp_solver_utilities
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, dissimilarity_functions, ilp_solver_utilities, solver_utilities
 
 
 class ILPSolverError(Exception):

@@ -19,10 +19,7 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, dissimilarity_functions, GreedySolver, solver_utilities
 
 
 class HybridSolverError(Exception):

@@ -9,8 +9,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.solver import dissimilarity_functions
 
 
 @cython.boundscheck(False)

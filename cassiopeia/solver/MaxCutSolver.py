@@ -9,14 +9,14 @@ goal is to find a partition on the graph that resolves triplets on the
 supertree, grouping together samples that share mutations and seperating
 samples that differ in mutations.
 """
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import graph_utilities
+from cassiopeia.solver import graph_utilities, GreedySolver
 
 
 class MaxCutSolver(GreedySolver.GreedySolver):

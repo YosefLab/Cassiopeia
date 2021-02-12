@@ -6,17 +6,14 @@ the observed mutations on a group of samples. The goal is to find a partition
 on a graph that minimizes seperation in samples that share mutations, normalizing 
 for the sizes of each of the sides of the partition.
 """
-import matplotlib.pyplot as plt
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy as sp
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
-
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.solver import dissimilarity_functions, graph_utilities, GreedySolver
 
 
 class SpectralSolver(GreedySolver.GreedySolver):

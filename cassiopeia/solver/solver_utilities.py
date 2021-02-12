@@ -2,14 +2,13 @@
 the solver module"""
 
 import logging
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import ete3
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
 
-from collections import defaultdict
-from typing import Callable, Dict, List, Optional, Tuple, Union
 from cassiopeia.data import utilities as data_utilities
 
 
