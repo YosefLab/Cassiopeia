@@ -53,9 +53,13 @@ def annotate_ancestral_characters(
         return
     vectors = []
     for i in T.successors(node):
-        annotate_ancestral_characters(T, i, node_to_characters, missing_state_indicator)
+        annotate_ancestral_characters(
+            T, i, node_to_characters, missing_state_indicator
+        )
         vectors.append(node_to_characters[i])
-    lca_characters = data_utilities.get_lca_characters(vectors, missing_state_indicator)
+    lca_characters = data_utilities.get_lca_characters(
+        vectors, missing_state_indicator
+    )
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
 

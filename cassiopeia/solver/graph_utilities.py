@@ -77,7 +77,9 @@ def construct_connectivity_graph(
         for l in range(k):
             x = character_array[i, l]
             y = character_array[j, l]
-            if (x != missing_state_indicator and y != missing_state_indicator) and (x != 0 or y != 0):
+            if (
+                x != missing_state_indicator and y != missing_state_indicator
+            ) and (x != 0 or y != 0):
                 if weights is not None:
                     if x == y:
                         score -= (
@@ -86,7 +88,9 @@ def construct_connectivity_graph(
                             * (
                                 len(samples)
                                 - mutation_frequencies[l][x]
-                                - mutation_frequencies[l][missing_state_indicator]
+                                - mutation_frequencies[l][
+                                    missing_state_indicator
+                                ]
                             )
                         )
                     elif x == 0:

@@ -19,7 +19,12 @@ import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver, dissimilarity_functions, ilp_solver_utilities, solver_utilities
+from cassiopeia.solver import (
+    CassiopeiaSolver,
+    dissimilarity_functions,
+    ilp_solver_utilities,
+    solver_utilities,
+)
 
 
 class ILPSolverError(Exception):

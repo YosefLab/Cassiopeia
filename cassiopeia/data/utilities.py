@@ -9,7 +9,9 @@ import numba
 import numpy as np
 
 
-def get_lca_characters(vecs: List[List[int]], missing_state_indicator: int) -> List[int]:
+def get_lca_characters(
+    vecs: List[List[int]], missing_state_indicator: int
+) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -112,6 +114,7 @@ def to_newick(tree: nx.DiGraph) -> str:
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
 
+
 def compute_dissimilarity_map(
     cm: np.array,
     C: int,
@@ -135,7 +138,7 @@ def compute_dissimilarity_map(
     """
 
     nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
-    
+
     @numba.jit(nopython=True)
     def _compute_dissimilarity_map():
 

@@ -79,47 +79,37 @@ class TestHybridSolver(unittest.TestCase):
 
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.logfile = os.path.join(self.dir_path, "test.log")
-        
+
         self.pp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        self.large_tree = cas.data.CassiopeiaTree(cm_large, missing_state_indicator=-1)
-        self.missing_tree = cas.data.CassiopeiaTree(cm_missing, missing_state_indicator=-1)
+        self.large_tree = cas.data.CassiopeiaTree(
+            cm_large, missing_state_indicator=-1
+        )
+        self.missing_tree = cas.data.CassiopeiaTree(
+            cm_missing, missing_state_indicator=-1
+        )
 
         ## smaller hybrid solver
-        ilp_solver = cas.solver.ILPSolver(
-            mip_gap=0.0,
-        )
+        ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
         greedy_solver = cas.solver.VanillaGreedySolver()
         self.hybrid_pp_solver = cas.solver.HybridSolver(
-            greedy_solver,
-            ilp_solver,
-            cell_cutoff=3,
-            threads=2,
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
         )
 
         ## larger hybrid solver
         self.hybrid_pp_solver_large = cas.solver.HybridSolver(
-            greedy_solver,
-            ilp_solver,
-            cell_cutoff=3,
-            threads=2,
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
         )
 
         ## hybrid solver with missing data
         self.hybrid_pp_solver_missing = cas.solver.HybridSolver(
-            greedy_solver,
-            ilp_solver,
-            cell_cutoff=3,
-            threads=2,
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
         )
 
         ## hybrid solver with MaxCut Greedy
         greedy_maxcut_solver = cas.solver.MaxCutGreedySolver()
         self.hybrid_pp_solver_maxcut = cas.solver.HybridSolver(
-            greedy_maxcut_solver,
-            ilp_solver,
-            cell_cutoff=3,
-            threads=2,
+            greedy_maxcut_solver, ilp_solver, cell_cutoff=3, threads=2
         )
 
     def test_constructor(self):
@@ -155,31 +145,45 @@ class TestHybridSolver(unittest.TestCase):
         )
 
     def test_cutoff(self):
-        
+
         character_matrix = self.pp_tree.get_original_character_matrix()
         missing_state = self.pp_tree.missing_state_indicator
         self.assertTrue(
-            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state), True
+            self.hybrid_pp_solver.assess_cutoff(
+                ["a", "b", "c"], character_matrix, missing_state
+            ),
+            True,
         )
         self.assertFalse(
-            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c", "d"], character_matrix, missing_state), False
+            self.hybrid_pp_solver.assess_cutoff(
+                ["a", "b", "c", "d"], character_matrix, missing_state
+            ),
+            False,
         )
 
         # test lca-based cutoff
         self.hybrid_pp_solver.cell_cutoff = None
         self.hybrid_pp_solver.lca_cutoff = 2
 
-        self.assertTrue(self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state))
-        self.assertFalse(self.hybrid_pp_solver.assess_cutoff(["c", "d"], character_matrix, missing_state))
+        self.assertTrue(
+            self.hybrid_pp_solver.assess_cutoff(
+                ["a", "b", "c"], character_matrix, missing_state
+            )
+        )
+        self.assertFalse(
+            self.hybrid_pp_solver.assess_cutoff(
+                ["c", "d"], character_matrix, missing_state
+            )
+        )
 
     def test_top_down_split_manual(self):
 
         character_matrix = self.pp_tree.get_original_character_matrix()
         # test manually
-        mutation_frequencies = (
-            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-                ["a", "b", "c", "d", "e"], character_matrix, self.pp_tree.missing_state_indicator
-            )
+        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+            ["a", "b", "c", "d", "e"],
+            character_matrix,
+            self.pp_tree.missing_state_indicator,
         )
 
         expected_dictionary = {
@@ -392,7 +396,9 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_full_hybrid_maxcut(self):
 
-        self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
+        self.hybrid_pp_solver_maxcut.solve(
+            self.missing_tree, logfile=self.logfile
+        )
 
         tree = self.missing_tree.get_tree_topology()
 
@@ -436,7 +442,9 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_full_hybrid_missing(self):
 
-        self.hybrid_pp_solver_missing.solve(self.missing_tree, logfile=self.logfile)
+        self.hybrid_pp_solver_missing.solve(
+            self.missing_tree, logfile=self.logfile
+        )
 
         tree = self.missing_tree.get_tree_topology()
 

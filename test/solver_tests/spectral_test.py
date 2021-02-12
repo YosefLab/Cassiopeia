@@ -191,7 +191,7 @@ class SpectralSolverTest(unittest.TestCase):
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-        
+
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
@@ -202,12 +202,7 @@ class SpectralSolverTest(unittest.TestCase):
 
     def test_simple_base_case2(self):
         cm = pd.DataFrame(
-            [
-                [5, 3, 0, 0, 0],
-                [0, 3, 4, 2, 1],
-                [5, 0, 0, 0, 1],
-                [5, 0, 4, 2, 0],
-            ]
+            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
         )
 
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -220,12 +215,7 @@ class SpectralSolverTest(unittest.TestCase):
 
     def test_simple_base_case2_priors(self):
         cm = pd.DataFrame(
-            [
-                [5, 3, 0, 0, 0],
-                [0, 3, 4, 2, 1],
-                [5, 0, 0, 0, 1],
-                [5, 0, 4, 2, 0],
-            ]
+            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
         )
 
         priors = {
@@ -236,7 +226,9 @@ class SpectralSolverTest(unittest.TestCase):
             4: {1: 0.1},
         }
 
-        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+        sp_tree = cas.data.CassiopeiaTree(
+            cm, missing_state_indicator=-1, priors=priors
+        )
 
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree)

@@ -13,7 +13,13 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from cassiopeia.solver import graph_utilities, GreedySolver, missing_data_methods, solver_utilities
+from cassiopeia.solver import (
+    graph_utilities,
+    GreedySolver,
+    missing_data_methods,
+    solver_utilities,
+)
+
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
     """

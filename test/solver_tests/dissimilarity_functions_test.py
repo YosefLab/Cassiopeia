@@ -209,10 +209,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
 
         expected_similarity = np.sum(
-            [
-                -np.log(self.priors[1][1]) * 2,
-                -np.log(self.priors[4][1]) * 2,
-            ]
+            [-np.log(self.priors[1][1]) * 2, -np.log(self.priors[4][1]) * 2]
         )
 
         self.assertEqual(similarity, expected_similarity / 5)

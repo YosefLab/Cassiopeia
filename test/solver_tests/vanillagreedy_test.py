@@ -27,9 +27,13 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
-        unique_character_matrix = vg_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            vg_tree.get_original_character_matrix().drop_duplicates()
+        )
         freq_dict = vgsolver.compute_mutation_frequencies(
-            ["c1", "c2", "c3", "c4"], unique_character_matrix, vg_tree.missing_state_indicator
+            ["c1", "c2", "c3", "c4"],
+            unique_character_matrix,
+            vg_tree.missing_state_indicator,
         )
 
         self.assertEqual(len(freq_dict), 5)
@@ -60,9 +64,13 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver()
 
-        unique_character_matrix = vg_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            vg_tree.get_original_character_matrix().drop_duplicates()
+        )
         freq_dict = vgsolver.compute_mutation_frequencies(
-            ["c1", "c3", "c4", "c5"], unique_character_matrix, vg_tree.missing_state_indicator
+            ["c1", "c3", "c4", "c5"],
+            unique_character_matrix,
+            vg_tree.missing_state_indicator,
         )
 
         self.assertEqual(len(freq_dict), 5)
@@ -126,22 +134,26 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_base_case_1(self):
         cm = pd.DataFrame(
             [
-                [5,  0, 1, 2,  0],
-                [5,  0, 0, 2, -1],
-                [4,  0, 3, 2, -1],
-                [-1, 4, 0, 2,  2],
-                [0,  4, 1, 2,  2],
-                [4,  0, 0, 2,  2],
+                [5, 0, 1, 2, 0],
+                [5, 0, 0, 2, -1],
+                [4, 0, 3, 2, -1],
+                [-1, 4, 0, 2, 2],
+                [0, 4, 1, 2, 2],
+                [4, 0, 0, 2, 2],
             ]
         )
 
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator = -1)
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
-    
-        unique_character_matrix = vg_tree.get_original_character_matrix().drop_duplicates()
 
-        left, right = vgsolver.perform_split(unique_character_matrix, list(range(6)))
+        unique_character_matrix = (
+            vg_tree.get_original_character_matrix().drop_duplicates()
+        )
+
+        left, right = vgsolver.perform_split(
+            unique_character_matrix, list(range(6))
+        )
 
         self.assertListEqual(left, [3, 4, 5, 2])
         self.assertListEqual(right, [0, 1])
@@ -167,7 +179,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator = -1)
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
 
         vgsolver.solve(vg_tree)
@@ -198,7 +210,9 @@ class VanillaGreedySolverTest(unittest.TestCase):
             4: {5: 0.5},
         }
 
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+        vg_tree = cas.data.CassiopeiaTree(
+            cm, missing_state_indicator=-1, priors=priors
+        )
 
         vgsolver = VanillaGreedySolver()
 
@@ -230,7 +244,9 @@ class VanillaGreedySolverTest(unittest.TestCase):
             4: {5: 0.99, 6: 0.01},
         }
 
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
+        vg_tree = cas.data.CassiopeiaTree(
+            cm, missing_state_indicator=-1, priors=priors
+        )
         vgsolver = VanillaGreedySolver()
 
         vgsolver.solve(vg_tree)

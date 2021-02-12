@@ -11,7 +11,11 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError, CassiopeiaTreeWarning
+from cassiopeia.data.CassiopeiaTree import (
+    CassiopeiaTree,
+    CassiopeiaTreeError,
+    CassiopeiaTreeWarning,
+)
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -671,7 +675,8 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "node18",
                 "node5",
                 "node6",
-            ], dtype=np.float32
+            ],
+            dtype=np.float32,
         )
 
         pd.testing.assert_frame_equal(
@@ -679,7 +684,10 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
-        self.assertWarns(CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map)
+        self.assertWarns(
+            CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

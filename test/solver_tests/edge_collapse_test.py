@@ -51,12 +51,10 @@ def to_newick_with_internal(tree: nx.DiGraph) -> str:
 
 class TestCollapseEdges(unittest.TestCase):
     def test_lca_characters(self):
-        vecs = [
-            [1, 0, 3, 4, 5],
-            [1, -1, -1, 3, -1],
-            [1, 2, 3, 2, -1],
-        ]
-        ret_vec = data_utilities.get_lca_characters(vecs, missing_state_indicator=-1)
+        vecs = [[1, 0, 3, 4, 5], [1, -1, -1, 3, -1], [1, 2, 3, 2, -1]]
+        ret_vec = data_utilities.get_lca_characters(
+            vecs, missing_state_indicator=-1
+        )
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test1(self):

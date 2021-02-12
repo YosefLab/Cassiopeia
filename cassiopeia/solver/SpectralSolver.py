@@ -13,7 +13,11 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 
-from cassiopeia.solver import dissimilarity_functions, graph_utilities, GreedySolver
+from cassiopeia.solver import (
+    dissimilarity_functions,
+    graph_utilities,
+    GreedySolver,
+)
 
 
 class SpectralSolver(GreedySolver.GreedySolver):

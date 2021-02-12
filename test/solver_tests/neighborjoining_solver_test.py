@@ -44,8 +44,8 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             d = 0
             for i in range(len(x)):
                 if x[i] != y[i]:
-                    d +=1
-            return d 
+                    d += 1
+            return d
 
         # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
