@@ -4,66 +4,42 @@ inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
+from typing import Callable, Dict, Optional, Tuple, Union
+
 import abc
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, Optional, Tuple, Union
 
 from cassiopeia.solver import DistanceSolver
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """
+    """Neighbor-Joining class for Cassiopeia.
+
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
     `solve` method, but implements its own procedure for finding cherries by
     minimizing the Q-criterion between samples.
 
     Args:
-        character_matrix: A character matrix of observed character states for
-            all samples.
-        meta_data: Any meta data associated with the samples
-        priors: Prior probabilities of observing a transition from 0 to any
-            character state
-        prior_transformation: A function defining a transformation on the priors
-            in forming weights
-        dissimilarity_map: A dissimilarity map describing the distances between
-            samples.
         dissimilarity_function: A function by which to compute the dissimilarity
             map. Optional if a dissimilarity map is already provided.
-        root_sample: A sample in the character matrix to treat as the root. If
-            not provided, a root of (0,...,0) is added to the character matrix.
-            Throws an error is a root_sample is not provided and no dissimilarity
-            function is provided.
-
-    Attributes:
-        character_matrix: The character matrix describing the samples
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        dissimilarity_map: Dissimilarity map describing distances between
-            samples
-        dissimilarity_function: Function to compute the dissimilarity between
-            samples.
-        root_sample: Sample to treat as a root, an index in the dissimilarity
-            map and character matrix.
-        tree: The tree returned by `self.solve()`. None if `solve` has not been
-            called yet.
+        add_root: Whether or not to root the tree. Only pertinent in algorithms
+            that return an unrooted tree, by default (e.g. Neighbor Joining)
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     """
 
     def __init__(
         self,
-        character_matrix: pd.DataFrame,
-        missing_char: int = -1,
-        meta_data: Optional[pd.DataFrame] = None,
-        priors: Optional[Dict[int, str]] = None,
-        prior_transformation: Optional[
-            Callable[[float], float]
-        ] = "negative_log",
-        dissimilarity_map: Optional[pd.DataFrame] = None,
         dissimilarity_function: Optional[
             Callable[
                 [
@@ -76,35 +52,14 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 float,
             ]
         ] = None,
-        root_sample: Optional[str] = None,
+        add_root: bool = False,
+        prior_transformation: str = "negative_log",
     ):
 
-        if dissimilarity_function is None and root_sample is None:
-            raise DistanceSolver.DistanceSolveError(
-                "Please specify a root sample or provide a dissimilarity "
-                "function by which to add a root to the dissimilarity map"
-            )
-
-        if not root_sample:
-
-            root = [0] * character_matrix.shape[1]
-            character_matrix.loc["root"] = root
-            root_sample = "root"
-
-            # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilarity map
-            dissimilarity_map = None
-
-        self.root_sample = root_sample
-
         super().__init__(
-            character_matrix,
-            missing_char,
-            meta_data,
-            priors,
-            prior_transformation,
-            dissimilarity_map=dissimilarity_map,
             dissimilarity_function=dissimilarity_function,
+            add_root=add_root,
+            prior_transformation=prior_transformation,
         )
 
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
@@ -130,16 +85,22 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return (i, j)
 
-    def root_tree(self, tree):
+    def root_tree(self, tree: nx.DiGraph, root_sample=str):
         """Roots a tree at the inferred ancestral root.
 
-        Uses the root sample stored in self.root_sample to root the
-        tree stored in the class instance.
+        Uses the specified root to root the tree passed in.
+
+        Args:
+            tree: Networkx object representing the tree topology
+            root_sample: Sample to treat as the root.
+
+        Returns:
+            A rooted tree.
         """
 
         rooted_tree = nx.DiGraph()
 
-        for e in nx.dfs_edges(tree, source=self.root_sample):
+        for e in nx.dfs_edges(tree, source=root_sample):
 
             rooted_tree.add_edge(e[0], e[1])
 
@@ -223,9 +184,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     @staticmethod
     @numba.jit(nopython=True)
     def update_dissimilarity_map_numba(
-        dissimilarity_map: np.array,
-        cherry_i: int,
-        cherry_j: int,
+        dissimilarity_map: np.array, cherry_i: int, cherry_j: int
     ) -> np.array:
         """An optimized function for updating dissimilarities.
 
@@ -236,7 +195,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             dissimilarity_map: A matrix of dissimilarities to update
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
-
 
         Returns:
             An updated dissimilarity map
@@ -255,12 +213,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[
-                new_node_index, v
-            ] = 0.5 * (
-                dissimilarity_map[v, cherry_i]
-                + dissimilarity_map[v, cherry_j]
-                - dissimilarity_map[cherry_i, cherry_j]
+            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
+                0.5
+                * (
+                    dissimilarity_map[v, cherry_i]
+                    + dissimilarity_map[v, cherry_j]
+                    - dissimilarity_map[cherry_i, cherry_j]
+                )
             )
 
         updated_map[new_node_index, new_node_index] = 0

@@ -51,12 +51,9 @@ class TestILPSolver(unittest.TestCase):
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         open(os.path.join(dir_path, "test.log"), "a").close()
-        self.ilp_pp_solver = cas.solver.ILPSolver(
-            cm,
-            missing_char=-1,
-            logfile=os.path.join(dir_path, "test.log"),
-            mip_gap=0.0,
-        )
+        self.pp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        self.logfile = os.path.join(dir_path, "test.log")
+        self.ilp_pp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
     def test_basic_ilp_constructor(self):
 
@@ -80,19 +77,19 @@ class TestILPSolver(unittest.TestCase):
 
         pd.testing.assert_frame_equal(
             expected_character_matrix,
-            self.ilp_pp_solver.unique_character_matrix,
+            self.pp_tree.get_original_character_matrix(),
         )
 
     def test_get_layer_for_potential_graph(self):
 
-        source_nodes = self.ilp_pp_solver.unique_character_matrix.values
+        unique_character_matrix = (
+            self.pp_tree.get_original_character_matrix().drop_duplicates()
+        )
+        source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
-        (
-            layer_nodes,
-            layer_edges,
-        ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-            source_nodes, 10, self.ilp_pp_solver.missing_char
+        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
+            source_nodes, 10, self.pp_tree.missing_state_indicator
         )
 
         layer_nodes = np.unique(layer_nodes, axis=0)
@@ -133,13 +130,21 @@ class TestILPSolver(unittest.TestCase):
 
     def test_simple_potential_graph_inference(self):
 
+        unique_character_matrix = (
+            self.pp_tree.get_original_character_matrix().drop_duplicates()
+        )
         root = data_utilities.get_lca_characters(
-            self.ilp_pp_solver.unique_character_matrix.values.tolist(),
-            self.ilp_pp_solver.missing_char,
+            unique_character_matrix.values.tolist(),
+            self.pp_tree.missing_state_indicator,
         )
         max_lca_height = 10
         potential_graph = self.ilp_pp_solver.infer_potential_graph(
-            root, 0, max_lca_height
+            unique_character_matrix,
+            root,
+            0,
+            max_lca_height,
+            self.pp_tree.priors,
+            self.pp_tree.missing_state_indicator,
         )
 
         # expected nodes
@@ -180,8 +185,8 @@ class TestILPSolver(unittest.TestCase):
 
     def test_ilp_solver_perfect_phylogeny(self):
 
-        self.ilp_pp_solver.solve()
-        tree = self.ilp_pp_solver.tree
+        self.ilp_pp_solver.solve(self.pp_tree, self.logfile)
+        tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -237,7 +242,7 @@ class TestILPSolver(unittest.TestCase):
 
     def tearDown(self):
 
-        os.remove(self.ilp_pp_solver.logfile)
+        os.remove(self.logfile)
 
 
 if __name__ == "__main__":
