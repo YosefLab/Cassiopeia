@@ -16,13 +16,17 @@ class CassiopeiaSolver(abc.ABC):
     CassiopeiaSolver is an abstract class that all inference algorithms derive
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.
-
+    
+    Args:
+        prior_transformation: A function defining a transformation on the priors
+            in forming weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative log
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
     """
 
-    def __init__(
-        self,
-        prior_transformation: str = "negative_log"
-    ):
+    def __init__(self, prior_transformation: str = "negative_log"):
 
         self.prior_transformation = prior_transformation
 

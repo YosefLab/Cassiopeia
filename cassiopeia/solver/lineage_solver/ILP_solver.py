@@ -64,7 +64,9 @@ def solve_steiner_instance(
         model.params.TimeLimit = time_limit
 
     if detailed_output:
-        print("-----------------------------------------------------------------------")
+        print(
+            "-----------------------------------------------------------------------"
+        )
     model.optimize()
 
     # Recover minimal subgraph
@@ -81,7 +83,9 @@ def solve_steiner_instance(
         )
 
         if model.status != GRB.status.OPTIMAL:
-            print("Warning: Steiner tree solving did not result in an optimal model")
+            print(
+                "Warning: Steiner tree solving did not result in an optimal model"
+            )
 
     return subgraphs
 
@@ -115,7 +119,10 @@ def generate_mSteiner_model(graph, source, destinations):
     edge_variables = {}
     for u, v in graph.edges():
         edge_variables[u, v] = model.addVar(
-            vtype=GRB.INTEGER, lb=0, ub=len(destinations), name="edge_%s_%s" % (u, v)
+            vtype=GRB.INTEGER,
+            lb=0,
+            ub=len(destinations),
+            name="edge_%s_%s" % (u, v),
         )
 
     # 0-1 if edge was used
@@ -132,7 +139,8 @@ def generate_mSteiner_model(graph, source, destinations):
     # Check if edge used
     for u, v in graph.edges():
         model.addConstr(
-            edge_variables_binary[u, v] >= edge_variables[u, v] / len(destinations)
+            edge_variables_binary[u, v]
+            >= edge_variables[u, v] / len(destinations)
         )
         # model.addConstr(edge_variables_binary[u, v] <= edge_variables[u, v] )
 
@@ -152,7 +160,8 @@ def generate_mSteiner_model(graph, source, destinations):
     # Minimize total path weight
 
     objective_expression = quicksum(
-        edge_variables_binary[u, v] * graph[u][v]["weight"] for u, v in graph.edges()
+        edge_variables_binary[u, v] * graph[u][v]["weight"]
+        for u, v in graph.edges()
     )
     model.setObjective(objective_expression, GRB.MINIMIZE)
 
@@ -182,7 +191,10 @@ def retreive_and_print_subgraph(model, graph, edge_variables, detailed_output):
             for u, v in graph.edges():
                 if value_for_edge[u, v] > 0:
                     subgraph.add_edge(
-                        u, v, weight=graph[u][v]["weight"], label=graph[u][v]["label"]
+                        u,
+                        v,
+                        weight=graph[u][v]["weight"],
+                        label=graph[u][v]["label"],
                     )
 
             # Print solution

@@ -2,14 +2,13 @@
 the solver module"""
 
 import logging
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import ete3
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
 
-from collections import defaultdict
-from typing import Callable, Dict, List, Optional, Tuple, Union
 from cassiopeia.data import utilities as data_utilities
 
 
@@ -31,7 +30,7 @@ def annotate_ancestral_characters(
     T: nx.DiGraph,
     node: int,
     node_to_characters: Dict[int, List[int]],
-    missing_char: int,
+    missing_state_indicator: int,
 ):
     """Annotates the character vectors of the internal nodes of a reconstructed
     network from the samples, obeying Camin-Sokal Parsimony.
@@ -43,7 +42,7 @@ def annotate_ancestral_characters(
         T: A networkx DiGraph object representing the tree
         node: The node whose state is to be inferred
         node_to_characters: A dictionary that maps nodes to their character vectors
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
 
     Returns:
         None, annotates node_to_characters dictionary with node/character vector pairs
@@ -54,17 +53,19 @@ def annotate_ancestral_characters(
         return
     vectors = []
     for i in T.successors(node):
-        annotate_ancestral_characters(T, i, node_to_characters, missing_char)
+        annotate_ancestral_characters(
+            T, i, node_to_characters, missing_state_indicator
+        )
         vectors.append(node_to_characters[i])
-    lca_characters = data_utilities.get_lca_characters(vectors, missing_char)
+    lca_characters = data_utilities.get_lca_characters(
+        vectors, missing_state_indicator
+    )
     node_to_characters[node] = lca_characters
     T.nodes[node]["characters"] = lca_characters
 
 
 def collapse_edges(
-    T: nx.DiGraph,
-    node: int,
-    node_to_characters: Dict[int, List[int]],
+    T: nx.DiGraph, node: int, node_to_characters: Dict[int, List[int]]
 ):
     """A helper function to collapse mutationless edges in a tree in-place.
 
@@ -102,7 +103,7 @@ def collapse_tree(
     tree: nx.DiGraph,
     infer_ancestral_characters: bool,
     character_matrix: Optional[pd.DataFrame] = None,
-    missing_char: Optional[int] = None,
+    missing_state_indicator: Optional[int] = None,
 ):
     """Collapses mutationless edges in a tree in-place.
 
@@ -119,7 +120,7 @@ def collapse_tree(
             the tree
         character_matrix: A character matrix storing character states for each
             leaf
-        missing_char: Character state indicating missing data
+        missing_state_indicator: Character state indicating missing data
 
     Returns:
         A collapsed tree
@@ -139,7 +140,7 @@ def collapse_tree(
     # Populates the internal annotations using either the ground truth
     # annotations, or infers them
     if infer_ancestral_characters:
-        if character_matrix is None or missing_char is None:
+        if character_matrix is None or missing_state_indicator is None:
             raise InferAncestorError(
                 "In order to infer ancestral characters, a character matrix and missing character are needed"
             )
@@ -149,7 +150,7 @@ def collapse_tree(
                 character_matrix_np[name_to_index[i], :]
             )
         annotate_ancestral_characters(
-            tree, root, node_to_characters, missing_char
+            tree, root, node_to_characters, missing_state_indicator
         )
     else:
         for i in tree.nodes():
@@ -254,12 +255,7 @@ def convert_sample_names_to_indices(
     Returns:
         A list of samples mapped to integer indices
     """
-    name_to_index = dict(
-        zip(
-            names,
-            range(len(names)),
-        )
-    )
+    name_to_index = dict(zip(names, range(len(names))))
 
     return list(map(lambda x: name_to_index[x], samples))
 

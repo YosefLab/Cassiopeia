@@ -8,14 +8,17 @@ criterion on a connectivity graph built from the observed mutations in the
 samples representing a supertree of phylogenetic trees on each individual 
 character.
 """
-import numpy as np
-import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import missing_data_methods
-from cassiopeia.solver import solver_utilities
+import numpy as np
+import pandas as pd
+
+from cassiopeia.solver import (
+    graph_utilities,
+    GreedySolver,
+    missing_data_methods,
+    solver_utilities,
+)
 
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
@@ -33,25 +36,20 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
     ambiguous. The user can also specify a missing data method.
 
     Args:
-        missing_data_classifier: Takes either a string specifying one of the
-            included missing data imputation methods, or a function
-            implementing the user-specified missing data method. The default is
-            the "average" method
         prior_transformation: A function defining a transformation on the priors
             in forming weights to scale frequencies and the contribution of
-            each mutation in the connectivity graph
+            each mutation in the connectivity graph. One of the following:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered
-        duplicate_groups: A mapping of samples to the set of duplicates that
-            share the same character vector. Uses the original sample names
+        prior_transformation: Function to transform priors, if these are
+            available.
+        missing_data_classifier: Function to classify missing data during
+            character splits.
     """
 
     def __init__(
@@ -79,8 +77,11 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         method.
 
         Args:
-            samples: A list of samples, represented by their names in the
-                original character matrix
+            character_matrix: Character matrix
+            samples: A list of samples to partition
+            weights: Weighting of each (character, state) pair. Typically a
+                transformation of the priors.
+            missing_state_indicator: Character representing missing data.
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -89,7 +90,9 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         sample_indices = solver_utilities.convert_sample_names_to_indices(
             character_matrix.index, samples
         )
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         best_frequency = 0
         chosen_character = 0
@@ -101,7 +104,9 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                     if (
                         mutation_frequencies[character][state]
                         < len(samples)
-                        - mutation_frequencies[character][missing_state_indicator]
+                        - mutation_frequencies[character][
+                            missing_state_indicator
+                        ]
                     ):
                         if weights:
                             if (
@@ -144,7 +149,8 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
             if unique_character_array[i, chosen_character] == chosen_state:
                 left_set.append(sample_names[i])
             elif (
-                unique_character_array[i, chosen_character] == missing_state_indicator
+                unique_character_array[i, chosen_character]
+                == missing_state_indicator
             ):
                 missing.append(sample_names[i])
             else:

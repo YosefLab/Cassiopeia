@@ -4,36 +4,37 @@ inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
+from typing import Callable, Dict, Optional, Tuple, Union
+
 import abc
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, Optional, Tuple, Union
 
 from cassiopeia.solver import DistanceSolver
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """
+    """Neighbor-Joining class for Cassiopeia.
+
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
     `solve` method, but implements its own procedure for finding cherries by
     minimizing the Q-criterion between samples.
 
     Args:
-        dissimilarity_map: A dissimilarity map describing the distances between
-            samples.
         dissimilarity_function: A function by which to compute the dissimilarity
             map. Optional if a dissimilarity map is already provided.
-        root_sample: A sample in the character matrix to treat as the root. If
-            not provided, a root of (0,...,0) is added to the character matrix.
-            Throws an error is a root_sample is not provided and no dissimilarity
-            function is provided.
-
-    Attributes:
-        dissimilarity_function: Function to compute the dissimilarity between
-            samples.
+        add_root: Whether or not to root the tree. Only pertinent in algorithms
+            that return an unrooted tree, by default (e.g. Neighbor Joining)
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     """
 
@@ -84,13 +85,17 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return (i, j)
 
-    def root_tree(self, tree: nx.DiGraph, root_sample = str):
+    def root_tree(self, tree: nx.DiGraph, root_sample=str):
         """Roots a tree at the inferred ancestral root.
 
         Uses the specified root to root the tree passed in.
 
         Args:
-            tree: 
+            tree: Networkx object representing the tree topology
+            root_sample: Sample to treat as the root.
+
+        Returns:
+            A rooted tree.
         """
 
         rooted_tree = nx.DiGraph()
@@ -179,9 +184,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     @staticmethod
     @numba.jit(nopython=True)
     def update_dissimilarity_map_numba(
-        dissimilarity_map: np.array,
-        cherry_i: int,
-        cherry_j: int,
+        dissimilarity_map: np.array, cherry_i: int, cherry_j: int
     ) -> np.array:
         """An optimized function for updating dissimilarities.
 
@@ -192,7 +195,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             dissimilarity_map: A matrix of dissimilarities to update
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
-
 
         Returns:
             An updated dissimilarity map
@@ -211,12 +213,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[
-                new_node_index, v
-            ] = 0.5 * (
-                dissimilarity_map[v, cherry_i]
-                + dissimilarity_map[v, cherry_j]
-                - dissimilarity_map[cherry_i, cherry_j]
+            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
+                0.5
+                * (
+                    dissimilarity_map[v, cherry_i]
+                    + dissimilarity_map[v, cherry_j]
+                    - dissimilarity_map[cherry_i, cherry_j]
+                )
             )
 
         updated_map[new_node_index, new_node_index] = 0

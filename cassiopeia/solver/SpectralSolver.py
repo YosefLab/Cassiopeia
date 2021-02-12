@@ -6,17 +6,18 @@ the observed mutations on a group of samples. The goal is to find a partition
 on a graph that minimizes seperation in samples that share mutations, normalizing 
 for the sizes of each of the sides of the partition.
 """
-import matplotlib.pyplot as plt
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy as sp
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
-
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.solver import (
+    dissimilarity_functions,
+    graph_utilities,
+    GreedySolver,
+)
 
 
 class SpectralSolver(GreedySolver.GreedySolver):
@@ -40,22 +41,19 @@ class SpectralSolver(GreedySolver.GreedySolver):
             similarity graph
         prior_function: A function defining a transformation on the priors
             in forming weights to scale the contribution of each mutation in
-            the similarity graph
+            the similarity graph. One of the following:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered
-        duplicate_groups: A mapping of samples to the set of duplicates that
-            share the same character vector. Uses the original sample names
-        weights: Weights on character/mutation pairs, derived from priors
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
+        prior_transformation: Function to use when transforming priors into
+            weights.
     """
 
     def __init__(
@@ -88,8 +86,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
-        """The function used by the spectral algorithm to generate a partition
-        of the samples.
+        """Partitions the samples using the spectral algorithm.
+
         First, a similarity graph is generated with samples as nodes such that
         edges between a pair of nodes is some provided function on the number
         of character/state mutations shared. Then, Fiedler's algorithm is used
@@ -104,8 +102,11 @@ class SpectralSolver(GreedySolver.GreedySolver):
         cuts needed to be explored.
 
         Args:
-            samples: A list of samples, represented by their names in the
-                original character matrix
+            character_matrix: Character matrix
+            samples: A list of samples to partition
+            weights: Weighting of each (character, state) pair. Typically a
+                transformation of the priors.
+            missing_state_indicator: Character representing missing data.
 
         Returns:
             A tuple of lists, representing the left and right partition groups

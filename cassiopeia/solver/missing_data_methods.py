@@ -1,15 +1,15 @@
 """This file contains included missing data imputation methods."""
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple, Union
 
 from cassiopeia.solver import solver_utilities
 
 
 def assign_missing_average(
     character_matrix: pd.DataFrame,
-    missing_char: int,
+    missing_state_indicator: int,
     left_set: List[str],
     right_set: List[str],
     missing: List[str],
@@ -27,7 +27,7 @@ def assign_missing_average(
     Args:
         character_matrix: The character matrix containing the observed
             character states for the samples
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
         left_set: A list of the samples on the left of the partition,
             represented by their names in the original character matrix
         right_set: A list of the samples on the right of the partition,
@@ -59,7 +59,7 @@ def assign_missing_average(
         score = 0
         for char in range(character_matrix.shape[1]):
             state = character_array[missing_sample, char]
-            if state != missing_char and state != 0:
+            if state != missing_state_indicator and state != 0:
                 state_counts = np.unique(
                     subset_character_matrix[:, char], return_counts=True
                 )

@@ -3,6 +3,7 @@ Test NeighborJoiningSolver in Cassiopeia.solver.
 """
 import os
 import unittest
+from typing import Dict, Optional
 
 import itertools
 import networkx as nx
@@ -10,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
+
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
@@ -32,8 +34,19 @@ def find_triplet_structure(triplet, T):
 class TestNeighborJoiningSolver(unittest.TestCase):
     def setUp(self):
 
-        delta_fn = lambda x, y, priors, missing_state: np.sum([x[i] != y[i] for i in range(len(x))])
-        
+        # specify dissimilarity function for solvers to use
+        def delta_fn(
+            x: np.array,
+            y: np.array,
+            missing_state: int,
+            priors: Optional[Dict[int, Dict[int, float]]],
+        ):
+            d = 0
+            for i in range(len(x)):
+                if x[i] != y[i]:
+                    d += 1
+            return d
+
         # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
             {
@@ -60,7 +73,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         )
 
         self.basic_dissimilarity_map = delta
-        self.basic_tree = cas.data.CassiopeiaTree(character_matrix = cm)
+        self.basic_tree = cas.data.CassiopeiaTree(
+            character_matrix=cm, dissimilarity_map=delta, root_sample_name="b"
+        )
 
         self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True)
 
@@ -78,8 +93,10 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        self.pp_tree = cas.data.CassiopeiaTree(character_matrix = pp_cm)
-        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(dissimilarity_function=delta_fn, add_root=True)
+        self.pp_tree = cas.data.CassiopeiaTree(character_matrix=pp_cm)
+        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=delta_fn, add_root=True
+        )
 
         # ------------- CM with Duplictes -----------------------
         duplicates_cm = pd.DataFrame.from_dict(
@@ -95,19 +112,19 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        self.duplicate_tree = cas.data.CassiopeiaTree(character_matrix=duplicates_cm)
-
+        self.duplicate_tree = cas.data.CassiopeiaTree(
+            character_matrix=duplicates_cm
+        )
 
     def test_constructor(self):
 
         self.assertIsNone(self.nj_solver.dissimilarity_function)
         self.assertIsNotNone(self.nj_solver_delta.dissimilarity_function)
+        self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
     def test_compute_q(self):
 
-        q_vals = self.nj_solver.compute_q(
-            self.basic_dissimilarity_map.values
-        )
+        q_vals = self.nj_solver.compute_q(self.basic_dissimilarity_map.values)
 
         expected_q = pd.DataFrame.from_dict(
             {
@@ -125,9 +142,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_find_cherry(self):
 
-        cherry = self.nj_solver.find_cherry(
-            self.basic_dissimilarity_map.values
-        )
+        cherry = self.nj_solver.find_cherry(self.basic_dissimilarity_map.values)
         delta = self.basic_dissimilarity_map
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
@@ -164,7 +179,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_basic_solver(self):
 
-        self.nj_solver.solve(self.basic_tree, dissimilarity_map = self.basic_dissimilarity_map, root_sample = "b")
+        self.nj_solver.solve(self.basic_tree)
 
         # test leaves exist in tree
         _leaves = self.basic_tree.leaves
@@ -173,7 +188,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             len(_leaves), self.basic_dissimilarity_map.shape[0] - 1
         )
         for _leaf in _leaves:
-            self.assertIn(_leaf,self.basic_dissimilarity_map.index.values)
+            self.assertIn(_leaf, self.basic_dissimilarity_map.index.values)
 
         # test for expected number of edges
         edges = list(self.basic_tree.edges)
@@ -194,7 +209,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
-        T = self.basic_tree.get_network()
+        T = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
 
@@ -217,7 +232,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_pp_solver(self):
 
         self.nj_solver_delta.solve(self.pp_tree)
-        T = self.pp_tree.get_network()
+        T = self.pp_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -246,7 +261,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
     def test_duplicate_sample_neighbor_joining(self):
 
         self.nj_solver_delta.solve(self.duplicate_tree)
-        T = self.duplicate_tree.get_network()
+        T = self.duplicate_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -273,7 +288,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
-
 
 
 if __name__ == "__main__":

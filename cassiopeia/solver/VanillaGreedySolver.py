@@ -5,24 +5,29 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
-import numpy as np
-import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cassiopeia.solver import GreedySolver
-from cassiopeia.solver import missing_data_methods
-from cassiopeia.solver import solver_utilities
+import numpy as np
+import pandas as pd
+
+from cassiopeia.solver import (
+    GreedySolver,
+    missing_data_methods,
+    solver_utilities,
+)
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
-    """
-    TODO: Implement fuzzysolver
+    """A class for the basic Cassiopeia-Greedy solver.
+
     The VanillaGreedySolver implements a top-down algorithm that optimizes
     for parsimony by recursively splitting the sample set based on the most
     presence, or absence, of the most frequent mutation. Multiple missing data
     imputation methods are included for handling the case when a sample has a
     missing value on the character being split, where presence or absence of the
     character is ambiguous. The user can also specify a missing data method.
+    
+    TODO(richardyz98): Implement fuzzysolver
 
     Args:
         missing_data_classifier: Takes either a string specifying one of the
@@ -30,19 +35,18 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             implementing the user-specified missing data method. The default is
             the "average" method
         prior_transformation: A function defining a transformation on the priors
-            in forming weights to scale frequencies
+            in forming weights to scale frequencies. One of the following:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
 
     Attributes:
-        character_matrix: The character matrix describing the samples
-        missing_char: The character representing missing values
-        meta_data: Data table storing meta data for each sample
-        priors: Prior probabilities of character state transitions
-        weights: Weights on character/mutation pairs, derived from priors
-        tree: The tree built by `self.solve()`. None if `solve` has not been
-            called yet
-        unique_character_matrix: A character matrix with duplicate rows filtered
-        duplicate_groups: A mapping of samples to the set of duplicates that
-            share the same character vector. Uses the original sample names
+        prior_transformation: Function to transform priors, if these are
+            available.
+        missing_data_classifier: Function to classify missing data during
+            character splits.
     """
 
     def __init__(
@@ -62,7 +66,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
-        """Performs a partition based on the most frequent (character, state) pair.
+        """Partitions based on the most frequent (character, state) pair.
 
         Uses the (character, state) pair to split the list of samples into
         two partitions. In doing so, the procedure makes use of the missing
@@ -70,8 +74,11 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         character where presence or absence of the character is ambiguous.
 
         Args:
-            samples: A list of samples, represented by their names in the
-                original character matrix
+            character_matrix: Character matrix
+            samples: A list of samples to partition
+            weights: Weighting of each (character, state) pair. Typically a
+                transformation of the priors.
+            missing_state_indicator: Character representing missing data.
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -80,7 +87,9 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         sample_indices = solver_utilities.convert_sample_names_to_indices(
             character_matrix.index, samples
         )
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         best_frequency = 0
         chosen_character = 0
@@ -137,7 +146,8 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             if unique_character_array[i, chosen_character] == chosen_state:
                 left_set.append(sample_names[i])
             elif (
-                unique_character_array[i, chosen_character] == missing_state_indicator
+                unique_character_array[i, chosen_character]
+                == missing_state_indicator
             ):
                 missing.append(sample_names[i])
             else:

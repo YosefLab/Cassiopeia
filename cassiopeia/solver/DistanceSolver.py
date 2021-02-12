@@ -14,8 +14,7 @@ import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolverError(Exception):
@@ -25,23 +24,49 @@ class DistanceSolverError(Exception):
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    
-    def __init__(self,
-                dissimilarity_function: Optional[Callable] = None,
-                add_root: bool = False,
-                prior_transformation: str = "negative_log",):
+    """Distance based solver class
+
+    This solver serves as a generic Distance-based solver. Briefly, all of the
+    classes that derive from this class will use a dissimilarity map to 
+    iteratively choose samples to merge and update the dissimilarity map
+    based on this merging. An example of a derived class is the
+    NeighborJoiningSolver which uses the Q-criterion to iteratively join
+    samples until no samples remain.
+
+    TODO(mgjones, sprillo): Specify functions to use for rooting, etc. the
+        trees that are produced via a DistanceSolver.
+
+    Args:
+        dissimilarity_function: Function that can be used to compute the
+            dissimilarity between samples.
+        add_root: Whether or not to root the tree. Only pertinent in algorithms
+            that return an unrooted tree, by default (e.g. Neighbor Joining)
+        prior_transformation: Function to use when transforming priors into
+            weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative
+                    log (default)
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    the square root of 1/p
+    """
+
+    def __init__(
+        self,
+        dissimilarity_function: Optional[
+            Callable[
+                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+            ]
+        ] = None,
+        add_root: bool = False,
+        prior_transformation: str = "negative_log",
+    ):
 
         super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
-    def solve(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        dissimilarity_map: Optional[pd.DataFrame] = None,
-        root_sample: Optional[str] = None,
-    ) -> None:
+    def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """A general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
@@ -53,33 +78,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
-            dissimilarity_map: Dissimilarity map storing the distances
-                between samples
-            root_sample: Sample to treat as a root
-            root_tree: Whether or not to root the tree after the routine
-            prior_transformation: Function to use when transforming priors into
-                weights. Supports the following transformations:
-                    "negative_log": Transforms each probability by the negative
-                        log (default)
-                    "inverse": Transforms each probability p by taking 1/p
-                    "square_root_inverse": Transforms each probability by the
-                        the square root of 1/p
         """
 
-        weights = None
-        if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+        self.setup_dissimilarity_map(cassiopeia_tree)
 
-        (
-            unique_character_matrix,
-            dissimilarity_map,
-            state_to_sample_mapping,
-            root_sample,
-        ) = self.setup_solver(
-            cassiopeia_tree, dissimilarity_map, root_sample, weights
-        )
+        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
 
         N = dissimilarity_map.shape[0]
 
@@ -121,21 +124,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree.add_edge(remaining_samples[0], remaining_samples[1])
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
-        tree = self.append_sample_names(
-            tree, state_to_sample_mapping
-        )
 
-        if root_sample is not None:
-            tree = self.root_tree(tree, root_sample)
+        if cassiopeia_tree.root_sample_name is not None:
+            tree = self.root_tree(tree, cassiopeia_tree.root_sample_name)
 
         cassiopeia_tree.populate_tree(tree)
 
-    def setup_solver(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        dissimilarity_map: Optional[pd.DataFrame] = None,
-        root_sample: Optional[str] = None,
-        weights: Optional[Dict[int, Dict[int, float]]] = None
+    def setup_dissimilarity_map(
+        self, cassiopeia_tree: CassiopeiaTree
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, List[str]], str]:
         """Sets up the solver.
 
@@ -145,11 +141,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`.
-            dissimilarity_map: Dissimilarity map. If this is None, the function
-                will create it using the dissimilarity function specified.
-            root_sample: Sample to treat as the root.
-            root_tree: Whether or not to root the tree after inference.
-            prior_transformation: Function to apply to priors to create weights.
 
         Returns:
             A character matrix with duplicate rows filtered out, a
@@ -157,109 +148,38 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 the sample to treat as a root.
         """
 
-        if self.dissimilarity_function is None and dissimilarity_map is None:
+        if (
+            self.dissimilarity_function is None
+            and cassiopeia_tree.get_dissimilarity_map() is None
+        ):
             raise DistanceSolverError(
-                "Please specify a dissimilarity map or dissimilarity function"
+                "Please specify a dissimilarity function or populate the "
+                "CassiopeiaTree object with a dissimilarity map"
             )
 
         character_matrix = (
             cassiopeia_tree.get_original_character_matrix().copy()
         )
 
-        if root_sample is None and self.add_root:
+        if cassiopeia_tree.root_sample_name is None and self.add_root:
 
             if self.dissimilarity_function is None:
                 raise DistanceSolverError(
-                    "Please specify a root sample or provide a dissimilarity "
-                    "function by which to add a root to the dissimilarity map"
+                    "Please specify a root sample in CassiopeiaTree or provide "
+                    "a dissimilarity function by which to add a root to the "
+                    "dissimilarity map"
                 )
 
             root = [0] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
-            root_sample = "root"
+            cassiopeia_tree.root_sample_name = "root"
 
             # if root sample is not specified, we'll add the implicit root
             # and recompute the dissimilarity map
-            dissimilarity_map = None
-
-            root_sample = "root"
-
-        unique_character_matrix = character_matrix.drop_duplicates().copy()
-        unique_character_matrix.index = [
-            f"state{i}" for i in range(unique_character_matrix.shape[0])
-        ]
-
-        # Create the dissimilarity map if not specified
-        if dissimilarity_map is None:
-            N = unique_character_matrix.shape[0]
-            dissimilarity_map = self.compute_dissimilarity_map(
-                unique_character_matrix.to_numpy(),
-                N,
-                weights,
-                cassiopeia_tree.missing_state_indicator,
+            cassiopeia_tree.set_character_matrix(character_matrix)
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
             )
-            dissimilarity_map = scipy.spatial.distance.squareform(
-                dissimilarity_map
-            )
-
-            dissimilarity_map = pd.DataFrame(
-                dissimilarity_map,
-                index=unique_character_matrix.index,
-                columns=unique_character_matrix.index,
-            )
-
-        # create state to sample name mapping
-        state_to_sample_mapping = {}
-        state_lookup = character_matrix.apply(lambda x: tuple(x.values), axis=1)
-        for state in unique_character_matrix.index:
-            characters = tuple(unique_character_matrix.loc[state].values)
-            samples = state_lookup[state_lookup == characters].index.values
-            state_to_sample_mapping[state] = samples
-
-        return (
-            unique_character_matrix,
-            dissimilarity_map,
-            state_to_sample_mapping,
-            root_sample
-        )
-
-    @numba.jit(forceobj=True)
-    def compute_dissimilarity_map(
-        self,
-        cm: np.array,
-        C: int,
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
-        missing_indicator: int = -1,
-    ) -> np.array:
-        """Compute the dissimilarity between all samples
-
-        An optimized function for computing pairwise dissimilarities between
-        samples in a character matrix according to the dissimilarity function.
-
-        Args:
-            cm: Character matrix
-            C: Number of samples
-            weights: Weights to use for comparing states.
-            missing_indicator: State indicating missing data
-
-        Returns:
-            A dissimilarity mapping as a flattened array.
-        """
-
-        dm = np.zeros(C * (C - 1) // 2, dtype=float)
-        k = 0
-        for i in range(C - 1):
-            for j in range(i + 1, C):
-
-                s1 = cm[i, :]
-                s2 = cm[j, :]
-
-                dm[k] = self.dissimilarity_function(
-                    s1, s2, missing_indicator, weights
-                )
-                k += 1
-
-        return dm
 
     @abc.abstractmethod
     def root_tree(self, tree, root_sample):
@@ -307,7 +227,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def append_sample_names(
+    def __append_sample_names(
         self,
         solution: nx.DiGraph,
         state_to_sample_mapping: Dict[str, List[str]],
@@ -323,6 +243,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             solution: A DistanceSolver solution that we wish to add sample
                 names to.
+            state_to_sample_mapping: A dictionary mapping a state to a set
+                 of samples
 
         Returns:
             A solution with extra leaves corresponding to sample names.

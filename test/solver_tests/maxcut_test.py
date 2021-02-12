@@ -64,13 +64,17 @@ class MaxCutSolverTest(unittest.TestCase):
 
         self.mc_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         self.mc_tree2 = cas.data.CassiopeiaTree(cm2, missing_state_indicator=-1)
-        self.mc_tree3 = cas.data.CassiopeiaTree(cm2, missing_state_indicator=-1, priors=priors)
+        self.mc_tree3 = cas.data.CassiopeiaTree(
+            cm2, missing_state_indicator=-1, priors=priors
+        )
 
         self.mcsolver = MaxCutSolver()
 
-        unique_character_matrix = self.mc_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            self.mc_tree.get_original_character_matrix().drop_duplicates()
+        )
         self.mutation_frequencies = self.mcsolver.compute_mutation_frequencies(
-           unique_character_matrix.index, unique_character_matrix, -1
+            unique_character_matrix.index, unique_character_matrix, -1
         )
 
     def test_check_if_cut(self):
@@ -81,7 +85,9 @@ class MaxCutSolverTest(unittest.TestCase):
 
     def test_evaluate_cut(self):
 
-        unique_character_matrix = self.mc_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            self.mc_tree.get_original_character_matrix().drop_duplicates()
+        )
 
         G = graph_utilities.construct_connectivity_graph(
             unique_character_matrix,
@@ -94,7 +100,9 @@ class MaxCutSolverTest(unittest.TestCase):
 
     def test_graph_construction(self):
 
-        unique_character_matrix = self.mc_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            self.mc_tree.get_original_character_matrix().drop_duplicates()
+        )
 
         G = graph_utilities.construct_connectivity_graph(
             unique_character_matrix,
@@ -113,7 +121,9 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_graph_construction_weights(self):
         weights = {0: {4: 1, 5: 2}, 1: {4: 2}, 2: {1: 1, 3: 1}}
 
-        unique_character_matrix = self.mc_tree.get_original_character_matrix().drop_duplicates()
+        unique_character_matrix = (
+            self.mc_tree.get_original_character_matrix().drop_duplicates()
+        )
 
         G = graph_utilities.construct_connectivity_graph(
             unique_character_matrix,
@@ -170,7 +180,7 @@ class MaxCutSolverTest(unittest.TestCase):
             ]
         )
 
-        observed_tree = self.mc_tree2.get_network()
+        observed_tree = self.mc_tree2.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
         for triplet in triplets:
 
@@ -196,7 +206,7 @@ class MaxCutSolverTest(unittest.TestCase):
                 (8, "c4"),
             ]
         )
-        observed_tree = self.mc_tree3.get_network()
+        observed_tree = self.mc_tree3.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
