@@ -228,7 +228,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def append_sample_names(
+    def __append_sample_names(
         self,
         solution: nx.DiGraph,
         state_to_sample_mapping: Dict[str, List[str]],

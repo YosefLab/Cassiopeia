@@ -174,7 +174,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             unique_character_matrix,
             cassiopeia_tree.missing_state_indicator,
         )
-        self.__tree = self.append_sample_names(self.__tree, character_matrix)
+        self.__tree = self.__append_sample_names(self.__tree, character_matrix)
 
         cassiopeia_tree.populate_tree(self.__tree)
 
@@ -347,7 +347,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return False
 
-    def append_sample_names(
+    def __append_sample_names(
         self, tree: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Append sample names to character states in tree.

@@ -117,7 +117,7 @@ def compute_dissimilarity_map(
     C: int,
     dissimilarity_function: Callable,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
-    missing_indicator: int = -1,
+    missing_state_indicator: int = -1,
 ) -> np.array:
     """Compute the dissimilarity between all samples
 
@@ -128,7 +128,7 @@ def compute_dissimilarity_map(
         cm: Character matrix
         C: Number of samples
         weights: Weights to use for comparing states.
-        missing_indicator: State indicating missing data
+        missing_state_indicator: State indicating missing data
 
     Returns:
         A dissimilarity mapping as a flattened array.
@@ -148,7 +148,7 @@ def compute_dissimilarity_map(
                 s2 = cm[j, :]
 
                 dm[k] = nb_dissimilarity(
-                    s1, s2, missing_indicator, weights
+                    s1, s2, missing_state_indicator, weights
                 )
                 k += 1
 

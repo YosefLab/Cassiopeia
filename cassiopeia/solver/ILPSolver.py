@@ -175,7 +175,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, root, targets, pid
         )
 
-        optimal_solution = self.append_sample_names(
+        optimal_solution = self.__append_sample_names(
             optimal_solution, character_matrix
         )
 
@@ -594,7 +594,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return processed_solution
 
-    def append_sample_names(
+    def __append_sample_names(
         self, solution: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Append sample names to character states in tree.

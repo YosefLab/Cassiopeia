@@ -16,7 +16,9 @@ analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
 from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+import warnings
 
+import collections
 import ete3
 import networkx as nx
 import numpy as np
@@ -32,6 +34,10 @@ class CassiopeiaTreeError(Exception):
 
     pass
 
+class CassiopeiaTreeWarning(UserWarning):
+    """A Warning for the CassiopeiaTree class."""
+
+    pass
 
 class CassiopeiaTree:
     """Basic tree object for Cassiopeia.
@@ -822,7 +828,12 @@ class CassiopeiaTree:
             dissimilarity_map: Dissimilarity map relating all N x N distances
                 between leaves.
         """
+        character_matrix = self.__original_character_matrix
+        if character_matrix is not None:
 
+            if character_matrix.shape[0] != dissimilarity_map.shape[0] or collections.Counter(character_matrix.index) != collections.Counter(dissimilarity_map.index):
+                warnings.warn("The samples in the existing character matrix and specified dissimilarity map do not agree.", CassiopeiaTreeWarning)
+        
         self.__dissimilarity_map = dissimilarity_map.copy()
 
     def compute_dissimilarity_map(
