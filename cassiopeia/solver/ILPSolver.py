@@ -72,11 +72,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         prior_transformation: str = "negative_log",
     ):
 
-        if weighted and not priors:
-            raise ILPSolverError(
-                "Specify prior probabilities for weighted analysis."
-            )
-
         super().__init__(prior_transformation)
         self.convergence_time_limit = convergence_time_limit
         self.convergence_iteration_limit = convergence_iteration_limit
@@ -99,6 +94,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree: Input CassiopeiaTree
             logfile: Location to write standard out.
         """
+
+        if self.weighted and not cassiopeia_tree.priors:
+            raise ILPSolverError(
+                "Specify prior probabilities in the CassiopeiaTree for weighted"
+                " analysis."
+            )
+
         # setup logfile config
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
