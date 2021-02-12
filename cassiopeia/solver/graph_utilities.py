@@ -25,7 +25,7 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
 def construct_connectivity_graph(
     character_matrix: pd.DataFrame,
     mutation_frequencies: Dict[int, Dict[int, int]],
-    missing_char: int,
+    missing_state_indicator: int,
     samples: List[str],
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> nx.Graph:
@@ -47,7 +47,7 @@ def construct_connectivity_graph(
         mutation_frequencies: A dictionary containing the frequencies of
             each character/state pair that appear in the character matrix
             restricted to the sample set
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
         samples: A list of samples to build the graph over, represented by
             their names in the original character matrix
         weights: A set of optional weights for edges in the connectivity graph
@@ -72,7 +72,7 @@ def construct_connectivity_graph(
         for l in range(k):
             x = character_array[i, l]
             y = character_array[j, l]
-            if (x != missing_char and y != missing_char) and (x != 0 or y != 0):
+            if (x != missing_state_indicator and y != missing_state_indicator) and (x != 0 or y != 0):
                 if weights is not None:
                     if x == y:
                         score -= (
@@ -81,7 +81,7 @@ def construct_connectivity_graph(
                             * (
                                 len(samples)
                                 - mutation_frequencies[l][x]
-                                - mutation_frequencies[l][missing_char]
+                                - mutation_frequencies[l][missing_state_indicator]
                             )
                         )
                     elif x == 0:
@@ -101,7 +101,7 @@ def construct_connectivity_graph(
                         score -= 3 * (
                             len(samples)
                             - mutation_frequencies[l][x]
-                            - mutation_frequencies[l][missing_char]
+                            - mutation_frequencies[l][missing_state_indicator]
                         )
                     elif x == 0:
                         score += mutation_frequencies[l][y] - 1
@@ -180,7 +180,7 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
 
 def construct_similarity_graph(
     character_matrix: pd.DataFrame,
-    missing_char: int,
+    missing_state_indicator: int,
     samples: List[str],
     similarity_function: Callable[
         [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
@@ -206,7 +206,7 @@ def construct_similarity_graph(
         mutation_frequencies: A dictionary containing the frequencies of
             each character/state pair that appear in the character matrix
             restricted to the sample set
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
         samples: A list of samples to build the graph over, represented by
             their names in the original character matrix
         similarity_function: A function that calculates a similarity score
@@ -230,7 +230,7 @@ def construct_similarity_graph(
         s = similarity_function(
             list(character_array[i]),
             list(character_array[j]),
-            missing_char,
+            missing_state_indicator,
             weights,
         )
         if s > threshold:

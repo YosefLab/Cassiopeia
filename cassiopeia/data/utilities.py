@@ -9,7 +9,7 @@ import numba
 import numpy as np
 
 
-def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
+def get_lca_characters(vecs: List[List[int]], missing_state_indicator: int) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -19,7 +19,7 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
 
     Args:
         vecs: A list of character vectors to generate an LCA for
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
 
     Returns:
         A list representing the character vector of the LCA
@@ -34,8 +34,8 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
         if len(chars) == 1:
             lca_vec[i] = list(chars)[0]
         else:
-            if missing_char in chars:
-                chars.remove(missing_char)
+            if missing_state_indicator in chars:
+                chars.remove(missing_state_indicator)
                 if len(chars) == 1:
                     lca_vec[i] = list(chars)[0]
     return lca_vec
