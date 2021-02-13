@@ -9,7 +9,8 @@ import pytest
 from parameterized import parameterized
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.tools import (BirthProcess, IIDExponentialBLE,
+from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
+                              IIDExponentialBLE,
                               IIDExponentialBLEGridSearchCV,
                               IIDExponentialLineageTracer,
                               IIDExponentialPosteriorMeanBLE,
@@ -1087,3 +1088,36 @@ class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
         np.testing.assert_almost_equal(model.mutation_rate, 0.75)
         np.testing.assert_almost_equal(model.birth_rate, 0.5)
         np.testing.assert_almost_equal(model.posterior_means["1"], 0.6815, decimal=3)
+
+
+class TestBLEMultifurcationWrapper(unittest.TestCase):
+    def test_smoke(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("0", "3")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0],
+             "1": [0, 1],
+             "2": [0, 1],
+             "3": [0, 1]}
+        )
+        model = BLEMultifurcationWrapper(IIDExponentialBLE())
+        model.estimate_branch_lengths(tree)
+        log_likelihood = model.log_likelihood
+        np.testing.assert_almost_equal(
+            tree.get_branch_length("0", "1"), np.log(2), decimal=3
+        )
+        np.testing.assert_almost_equal(
+            tree.get_branch_length("0", "2"), np.log(2), decimal=3
+        )
+        np.testing.assert_almost_equal(
+            tree.get_branch_length("0", "3"), np.log(2), decimal=3
+        )
+        np.testing.assert_almost_equal(tree.get_time("1"), np.log(2), decimal=3)
+        np.testing.assert_almost_equal(tree.get_time("2"), np.log(2), decimal=3)
+        np.testing.assert_almost_equal(tree.get_time("3"), np.log(2), decimal=3)
+        np.testing.assert_almost_equal(tree.get_time("0"), 0.0)
+        np.testing.assert_almost_equal(log_likelihood, -1.386 * 3, decimal=3)
+        log_likelihood_2 = IIDExponentialBLE.log_likelihood(tree)
+        np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=3)

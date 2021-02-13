@@ -374,7 +374,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         with open(f"{tmp_dir}/log_joints.txt", "r") as fin:
             for line in fin:
                 vals = line.split(" ")
-                assert(len(vals) == discretization_level + 2)
+                assert len(vals) == discretization_level + 2
                 v_id = int(vals[0])
                 log_joint = np.zeros(shape=(discretization_level + 1,))
                 for i, val in enumerate(vals[1:]):
@@ -385,7 +385,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         with open(f"{tmp_dir}/posteriors.txt", "r") as fin:
             for line in fin:
                 vals = line.split(" ")
-                assert(len(vals) == discretization_level + 2)
+                assert len(vals) == discretization_level + 2
                 v_id = int(vals[0])
                 posterior = np.zeros(shape=(discretization_level + 1,))
                 for i, val in enumerate(vals[1:]):
