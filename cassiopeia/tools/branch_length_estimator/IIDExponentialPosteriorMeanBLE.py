@@ -47,6 +47,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         enforce_parsimony: bool = True,
         use_cpp_implementation: bool = False,
         debug_cpp_implementation: bool = False,
+        verbose: bool = False
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
         # descent?
@@ -58,6 +59,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.enforce_parsimony = enforce_parsimony
         self.use_cpp_implementation = use_cpp_implementation
         self.debug_cpp_implementation = debug_cpp_implementation
+        self.verbose = verbose
 
     def _compute_log_likelihood(self):
         tree = self.tree
@@ -133,6 +135,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self._down_cache = {}
         self._up_cache = {}
         self.tree = tree
+        verbose = self.verbose
         if self.debug_cpp_implementation:
             # Write out true dp values to check by eye against c++
             # implementation values.
@@ -149,26 +152,30 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 with tempfile.TemporaryDirectory() as tmp_dir:
                     self._populate_attributes_with_cpp_implementation(tmp_dir)
             time_cpp_end = time.time()
-            print(f"time_cpp = {time_cpp_end - time_cpp_start}")
+            if verbose:
+                print(f"time_cpp = {time_cpp_end - time_cpp_start}")
         else:
             time_compute_log_likelihood_start = time.time()
             self._compute_log_likelihood()
             time_compute_log_likelihood_end = time.time()
-            print(
-                f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}"
-            )
+            if verbose:
+                print(
+                    f"time_compute_log_likelihood (dp_down) = {time_compute_log_likelihood_end - time_compute_log_likelihood_start}"
+                )
             time_compute_posteriors_start = time.time()
             self._compute_posteriors()
             time_compute_posteriors_end = time.time()
-            print(
-                f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}"
-            )
+            if verbose:
+                print(
+                    f"time_compute_posteriors (dp_up) = {time_compute_posteriors_end - time_compute_posteriors_start}"
+                )
         time_populate_branch_lengths_start = time.time()
         self._populate_branch_lengths()
         time_populate_branch_lengths_end = time.time()
-        print(
-            f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}"
-        )
+        if verbose:
+            print(
+                f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}"
+            )
 
     def _write_out_dps(self):
         r"""

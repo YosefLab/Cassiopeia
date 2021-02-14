@@ -997,3 +997,14 @@ class CassiopeiaTree:
         )
 
         self.set_dissimilarity_map(dissimilarity_map)
+
+    def scale_to_unit_length(self) -> None:
+        r"""
+        Scales the tree to have unit length. I.e. the longest path from root to
+        leaf will have length 1 after the scaling.
+        """
+        times = {}
+        max_time = max(self.get_times().values())
+        for node in self.nodes:
+            times[node] = self.get_time(node) / max_time
+        self.set_times(times)

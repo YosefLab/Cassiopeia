@@ -89,6 +89,13 @@ def binarize_topology(tree: nx.DiGraph) -> nx.DiGraph:
     return tree
 
 
+def binarize_cassiopeia_tree(tree: CassiopeiaTree) -> CassiopeiaTree:
+    return CassiopeiaTree(
+        character_matrix=tree.get_current_character_matrix(),
+        tree=binarize_topology(tree.get_tree_topology())
+    )
+
+
 def _resolve_multifurcation(tree, v, subtree_sizes, node_names):
     r"""
     node_names is used to make sure we don't create a node name that already
