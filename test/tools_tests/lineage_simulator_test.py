@@ -7,6 +7,7 @@ from cassiopeia.tools import (
     PerfectBinaryTree,
     PerfectBinaryTreeWithRootBranch,
     BirthProcess,
+    TumorWithAFitSubclone,
 )
 
 
@@ -84,3 +85,42 @@ class TestBirthProcess(unittest.TestCase):
         inferred_birth_rate = np.array(intensities).mean()
         print(f"{birth_rate} == {inferred_birth_rate}")
         assert np.abs(birth_rate - inferred_birth_rate) < 0.05
+
+
+class TestTumorWithAFitSubclone(unittest.TestCase):
+    def test_TumorWithAFitSubclone(self):
+        r"""
+        Small test that can be drawn by hand.
+        Checks that the generated phylogeny is correct.
+        """
+        tree = TumorWithAFitSubclone(
+            branch_length=1,
+            branch_length_fit=0.5,
+            experiment_duration=2,
+            generations_until_fit_subclone=1,
+        ).simulate_lineage()
+        self.assertListEqual(
+            tree.nodes,
+            ["0_unfit", "1_unfit", "2_fit", "3_unfit", "4_fit", "5_fit"],
+        )
+        self.assertListEqual(
+            tree.edges,
+            [
+                ("0_unfit", "1_unfit"),
+                ("1_unfit", "2_fit"),
+                ("1_unfit", "3_unfit"),
+                ("2_fit", "4_fit"),
+                ("2_fit", "5_fit"),
+            ],
+        )
+        self.assertDictEqual(
+            tree.get_times(),
+            {
+                "0_unfit": 0.0,
+                "1_unfit": 1.0,
+                "2_fit": 1.5,
+                "3_unfit": 2.0,
+                "4_fit": 2.0,
+                "5_fit": 2.0,
+            },
+        )

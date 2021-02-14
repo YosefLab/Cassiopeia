@@ -11,6 +11,7 @@ from .lineage_simulator import (
     LineageSimulator,
     PerfectBinaryTree,
     PerfectBinaryTreeWithRootBranch,
+    TumorWithAFitSubclone,
 )
 from .lineage_tracing_simulator import (
     LineageTracingSimulator,
