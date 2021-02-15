@@ -2,14 +2,20 @@
 Tests for the CassiopeiaTree object in the data module.
 """
 import unittest
+from typing import Dict, Optional
 
 import ete3
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTreeError
+from cassiopeia.data.CassiopeiaTree import (
+    CassiopeiaTree,
+    CassiopeiaTreeError,
+    CassiopeiaTreeWarning,
+)
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -156,8 +162,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             self.assertIn(n, expected_nodes)
 
     def test_construction_without_character_matrix(self):
-        
-        tree = cas.data.CassiopeiaTree(tree = self.test_network)
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
 
         test_edges = tree.edges
         expected_edges = [(u, v) for (u, v) in self.test_network.edges()]
@@ -352,9 +358,15 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree.reconstruct_ancestral_characters()
 
-        self.assertCountEqual(tree.get_character_states("node0"), [0,0,0,0,0,0,0,0])
-        self.assertCountEqual(tree.get_character_states("node2"), [2, 0, 0, 0, 0, 0, 0, 0])
-        self.assertCountEqual(tree.get_character_states("node10"), [1, 1, 1, 1, 0, 0, 0, 0])
+        self.assertCountEqual(
+            tree.get_character_states("node0"), [0, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertCountEqual(
+            tree.get_character_states("node2"), [2, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertCountEqual(
+            tree.get_character_states("node10"), [1, 1, 1, 1, 0, 0, 0, 0]
+        )
 
     def test_get_mutations_along_edge(self):
 
@@ -364,13 +376,15 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree.reconstruct_ancestral_characters()
 
-        edge_of_interest = ('node4', 'node8')
+        edge_of_interest = ("node4", "node8")
         expected_mutations = [(2, 1)]
-        observed_mutations = tree.get_mutations_along_edge('node4', 'node8')
+        observed_mutations = tree.get_mutations_along_edge("node4", "node8")
 
         self.assertCountEqual(expected_mutations, observed_mutations)
 
-        self.assertRaises(CassiopeiaTreeError, tree.get_mutations_along_edge, 'node4', 'node6')
+        self.assertRaises(
+            CassiopeiaTreeError, tree.get_mutations_along_edge, "node4", "node6"
+        )
 
     def test_depth_calculations_on_tree(self):
 
@@ -390,14 +404,14 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        relabel_map = {"node0": 'root', 'node1': 'child1', 'node2': 'child2'}
+        relabel_map = {"node0": "root", "node1": "child1", "node2": "child2"}
         tree.relabel_nodes(relabel_map)
 
-        self.assertIn('root', tree.nodes)
-        self.assertNotIn('node0', tree.nodes)
+        self.assertIn("root", tree.nodes)
+        self.assertNotIn("node0", tree.nodes)
 
-        expected_children = ['child1', 'child2']
-        observed_children = tree.children('root')
+        expected_children = ["child1", "child2"]
+        observed_children = tree.children("root")
         self.assertCountEqual(expected_children, observed_children)
 
         self.assertIn("node8", tree.nodes)
@@ -408,20 +422,20 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        self.assertEqual(tree.get_time('node16'), 7)
-        
-        self.assertRaises(CassiopeiaTreeError, tree.set_time, 'node16', 20)
+        self.assertEqual(tree.get_time("node16"), 7)
 
-        tree.set_time('node16', 7.5)
+        self.assertRaises(CassiopeiaTreeError, tree.set_time, "node16", 20)
+
+        tree.set_time("node16", 7.5)
         self.assertEqual(tree.get_time("node16"), 7.5)
-        self.assertEqual(tree.get_time('node17'), 8)
-        self.assertEqual(tree.get_time('node18'), 8)
+        self.assertEqual(tree.get_time("node17"), 8)
+        self.assertEqual(tree.get_time("node18"), 8)
 
         # make sure edges are adjusted accordingly
-        self.assertEqual(tree.get_branch_length('node14', 'node16'), 1.5)
-        self.assertEqual(tree.get_branch_length('node16', 'node17'), 0.5)
+        self.assertEqual(tree.get_branch_length("node14", "node16"), 1.5)
+        self.assertEqual(tree.get_branch_length("node16", "node17"), 0.5)
 
-        self.assertRaises(CassiopeiaTreeError, tree.set_time, 'node14', 1)
+        self.assertRaises(CassiopeiaTreeError, tree.set_time, "node14", 1)
 
     def test_change_branch_length(self):
 
@@ -429,72 +443,102 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        self.assertEqual(tree.get_branch_length('node12', 'node14'), 1)
+        self.assertEqual(tree.get_branch_length("node12", "node14"), 1)
 
-        tree.set_branch_length('node12', 'node14', 0.5)
+        tree.set_branch_length("node12", "node14", 0.5)
 
         # make sure nodes affected have adjusted their edges
-        node_to_time = {'node14': 5.5, 'node15': 6.5, 'node16': 6.5, 'node17': 7.5, 'node18': 7.5}
+        node_to_time = {
+            "node14": 5.5,
+            "node15": 6.5,
+            "node16": 6.5,
+            "node17": 7.5,
+            "node18": 7.5,
+        }
         for n in node_to_time:
             self.assertEqual(node_to_time[n], tree.get_time(n))
 
-        self.assertRaises(CassiopeiaTreeError, tree.set_branch_length, 'node14', 'node6', 10.0)
-        self.assertRaises(CassiopeiaTreeError, tree.set_branch_length, 'node12', 'node14', -1)
+        self.assertRaises(
+            CassiopeiaTreeError, tree.set_branch_length, "node14", "node6", 10.0
+        )
+        self.assertRaises(
+            CassiopeiaTreeError, tree.set_branch_length, "node12", "node14", -1
+        )
 
     def test_set_states_with_pandas_dataframe(self):
 
-        tree = cas.data.CassiopeiaTree(
-            tree=self.test_network
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        self.assertRaises(
+            CassiopeiaTreeError,
+            tree.set_character_states,
+            "node5",
+            [2, 0, 3, 0, 0, 0, 0, 0],
         )
 
-        self.assertRaises(CassiopeiaTreeError, tree.set_character_states, 'node5', [2,0,3,0,0,0,0,0])
-
-        self.assertRaises(CassiopeiaTreeError, tree.initialize_character_states_at_leaves, {'node5': [2,0,3,0,0,0,0,0]})
-
+        self.assertRaises(
+            CassiopeiaTreeError,
+            tree.initialize_character_states_at_leaves,
+            {"node5": [2, 0, 3, 0, 0, 0, 0, 0]},
+        )
 
         tree.initialize_character_states_at_leaves(self.character_matrix)
 
-        self.assertCountEqual(tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0])
-        self.assertCountEqual(tree.get_character_states('node0'), [])
-        tree.set_character_states('node0', [0,0,0,0,0,0,0,0])
+        self.assertCountEqual(
+            tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertCountEqual(tree.get_character_states("node0"), [])
+        tree.set_character_states("node0", [0, 0, 0, 0, 0, 0, 0, 0])
 
-        self.assertCountEqual(tree.get_character_states('node0'), [0,0,0,0,0,0,0,0])
-
-        observed_character_matrix = tree.get_original_character_matrix()
-        pd.testing.assert_frame_equal(observed_character_matrix, self.character_matrix)
-
-        tree.set_character_states("node5", [2,0,3,0,0,0,0,0])
-        self.assertCountEqual(tree.get_character_states('node5'), [2,0,3,0,0,0,0,0])
+        self.assertCountEqual(
+            tree.get_character_states("node0"), [0, 0, 0, 0, 0, 0, 0, 0]
+        )
 
         observed_character_matrix = tree.get_original_character_matrix()
-        pd.testing.assert_frame_equal(observed_character_matrix, self.character_matrix)
+        pd.testing.assert_frame_equal(
+            observed_character_matrix, self.character_matrix
+        )
+
+        tree.set_character_states("node5", [2, 0, 3, 0, 0, 0, 0, 0])
+        self.assertCountEqual(
+            tree.get_character_states("node5"), [2, 0, 3, 0, 0, 0, 0, 0]
+        )
+
+        observed_character_matrix = tree.get_original_character_matrix()
+        pd.testing.assert_frame_equal(
+            observed_character_matrix, self.character_matrix
+        )
 
         observed_character_matrix = tree.get_current_character_matrix()
         expected_character_matrix = self.character_matrix.copy()
-        expected_character_matrix.loc['node5'] = [2,0,3,0,0,0,0,0]
-        pd.testing.assert_frame_equal(observed_character_matrix, expected_character_matrix)
+        expected_character_matrix.loc["node5"] = [2, 0, 3, 0, 0, 0, 0, 0]
+        pd.testing.assert_frame_equal(
+            observed_character_matrix, expected_character_matrix
+        )
 
     def test_set_states_with_dictionary(self):
 
-        tree = cas.data.CassiopeiaTree(
-            tree=self.test_network
-        )
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
 
         character_dictionary = {}
         for ind in self.character_matrix.index:
             character_dictionary[ind] = self.character_matrix.loc[ind].tolist()
 
         tree.initialize_character_states_at_leaves(character_dictionary)
-        self.assertCountEqual(tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0])
-        self.assertCountEqual(tree.get_character_states('node0'), [])
+        self.assertCountEqual(
+            tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertCountEqual(tree.get_character_states("node0"), [])
 
     def test_set_all_states(self):
 
-        tree = cas.data.CassiopeiaTree(
-            tree=self.test_network
-        )
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
 
-        self.assertRaises(CassiopeiaTreeError, tree.initialize_all_character_states, {"node0": [0,0,0,0,0,0,0,0]})
+        self.assertRaises(
+            CassiopeiaTreeError,
+            tree.initialize_all_character_states,
+            {"node0": [0, 0, 0, 0, 0, 0, 0, 0]},
+        )
 
         character_mapping = {}
         for node in tree.nodes:
@@ -505,10 +549,144 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree.initialize_all_character_states(character_mapping)
 
-        self.assertCountEqual(tree.get_character_states('node0'), [0])
-        self.assertCountEqual(tree.get_character_states('node5'), [1])
+        self.assertCountEqual(tree.get_character_states("node0"), [0])
+        self.assertCountEqual(tree.get_character_states("node5"), [1])
 
+    def test_clear_cache(self):
 
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        self.assertEqual(tree.root, "node0")
+
+        new_network = nx.DiGraph()
+        new_network.add_edges_from([("a", "b"), ("b", "c")])
+        tree.populate_tree(new_network)
+        self.assertFalse(tree.root == "node0")
+
+        self.assertEqual(tree.root, "a")
+        self.assertCountEqual(tree.leaves, ["c"])
+
+    def test_check_internal_node(self):
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        self.assertTrue(tree.is_internal_node("node10"))
+        self.assertTrue(tree.is_internal_node("node0"))
+        self.assertFalse(tree.is_internal_node("node5"))
+
+    def test_uninitialized_tree_raises_error(self):
+        r"""
+        Methods of the CassiopeiaTree that operate on the tree (as opposed to,
+        say, just the character matrix) require that the tree has been
+        initialized, and should raise an error otherwise. Here we make sure
+        that one such method raises the error. It is a very minimal test.
+        """
+        tree = cas.data.CassiopeiaTree(character_matrix=self.character_matrix)
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.root
+
+    def test_cache_internals_not_exposed(self):
+        r"""
+        The CassiopeiaTree should not expose the lists in the cache. It should
+        only return copies.
+        """
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        for method in [
+            CassiopeiaTree.leaves,
+            CassiopeiaTree.internal_nodes,
+            CassiopeiaTree.nodes,
+            CassiopeiaTree.edges,
+        ]:
+            res = method.fget(tree)  # Should return a COPY of the list
+            res.clear()  # Thus, this should NOT clear the cache's internal list
+            assert len(method.fget(tree)) > 0
+
+    def test_tree_topology_not_exposed(self):
+        r"""
+        When the CassiopeiaTree is created with a networkx.DiGraph object, a
+        COPY of the networkx.DiGraph object should be stored internally, to
+        avoid aliasing issues.
+        """
+        tree1 = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree2 = cas.data.CassiopeiaTree(tree=self.test_network)
+        a_leaf = tree1.leaves[0]
+        tree1.set_time(a_leaf, 1234)  # Should NOT modify tree2!
+        assert tree2.get_time(a_leaf) != 1234
+
+    def test_set_dissimilarity_map(self):
+
+        dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2, 3, 4],
+                "b": [0, 0, 2, 3, 4],
+                "c": [0, 0, 0, 4, 4],
+                "d": [0, 0, 0, 0, 4],
+                "e": [0, 0, 0, 0, 0],
+            },
+            orient="index",
+        )
+
+        tree = cas.data.CassiopeiaTree(dissimilarity_map=dissimilarity_map)
+
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, dissimilarity_map
+        )
+
+        def delta_fn(
+            x: np.array,
+            y: np.array,
+            missing_state: int,
+            priors: Optional[Dict[int, Dict[int, float]]],
+        ):
+            d = 0
+            for i in range(len(x)):
+                if x[i] != y[i]:
+                    d += 1
+            return d
+
+        tree = cas.data.CassiopeiaTree(self.character_matrix)
+        tree.compute_dissimilarity_map(delta_fn)
+        print(tree.get_dissimilarity_map)
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+
+        expected_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+                "node7": [1, 0, 1, 2, 3, 4, 5, 6, 2, 2],
+                "node9": [2, 1, 0, 1, 2, 3, 4, 5, 3, 3],
+                "node11": [3, 2, 1, 0, 1, 2, 3, 4, 4, 4],
+                "node13": [4, 3, 2, 1, 0, 1, 2, 3, 5, 5],
+                "node15": [5, 4, 3, 2, 1, 0, 1, 2, 6, 6],
+                "node17": [6, 5, 4, 3, 2, 1, 0, 1, 7, 7],
+                "node18": [7, 6, 5, 4, 3, 2, 1, 0, 8, 8],
+                "node5": [1, 2, 3, 4, 5, 6, 7, 8, 0, 1],
+                "node6": [2, 2, 3, 4, 5, 6, 7, 8, 1, 0],
+            },
+            orient="index",
+            columns=[
+                "node3",
+                "node7",
+                "node9",
+                "node11",
+                "node13",
+                "node15",
+                "node17",
+                "node18",
+                "node5",
+                "node6",
+            ],
+            dtype=np.float64,
+        )
+
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, expected_dissimilarity_map
+        )
+
+        tree = cas.data.CassiopeiaTree(self.character_matrix)
+        self.assertWarns(
+            CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
+        )
 
 
 if __name__ == "__main__":

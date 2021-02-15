@@ -1,12 +1,17 @@
 """
 General utilities for the datasets encountered in Cassiopeia.
 """
+from typing import Callable, Dict, List, Optional
+
 import ete3
 import networkx as nx
-from typing import List
+import numba
+import numpy as np
 
 
-def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
+def get_lca_characters(
+    vecs: List[List[int]], missing_state_indicator: int
+) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -16,7 +21,7 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
 
     Args:
         vecs: A list of character vectors to generate an LCA for
-        missing_char: The character representing missing values
+        missing_state_indicator: The character representing missing values
 
     Returns:
         A list representing the character vector of the LCA
@@ -31,11 +36,12 @@ def get_lca_characters(vecs: List[List[int]], missing_char: int) -> List[int]:
         if len(chars) == 1:
             lca_vec[i] = list(chars)[0]
         else:
-            if missing_char in chars:
-                chars.remove(missing_char)
+            if missing_state_indicator in chars:
+                chars.remove(missing_state_indicator)
                 if len(chars) == 1:
                     lca_vec[i] = list(chars)[0]
     return lca_vec
+
 
 def newick_to_networkx(newick_string: str) -> nx.DiGraph:
     """Converts a newick string to a networkx DiGraph.
@@ -107,3 +113,56 @@ def to_newick(tree: nx.DiGraph) -> str:
 
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
+
+
+def compute_dissimilarity_map(
+    cm: np.array,
+    C: int,
+    dissimilarity_function: Callable,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    missing_state_indicator: int = -1,
+) -> np.array:
+    """Compute the dissimilarity between all samples
+
+    An optimized function for computing pairwise dissimilarities between
+    samples in a character matrix according to the dissimilarity function.
+
+    Args:
+        cm: Character matrix
+        C: Number of samples
+        weights: Weights to use for comparing states.
+        missing_state_indicator: State indicating missing data
+
+    Returns:
+        A dissimilarity mapping as a flattened array.
+    """
+
+    nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
+
+    nb_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.DictType(numba.types.int64, numba.types.float64))
+    if weights:
+
+        for k, v in weights.items():
+            nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
+            for state, prior in v.items():
+                nb_char_weights[state] = prior
+            nb_weights[k] = nb_char_weights
+
+    @numba.jit(nopython=True)
+    def _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights):
+
+        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float64)
+        k = 0
+        for i in range(C - 1):
+            for j in range(i + 1, C):
+
+                s1 = cm[i, :]
+                s2 = cm[j, :]
+                dm[k] = nb_dissimilarity(
+                    s1, s2, missing_state_indicator, nb_weights
+                )
+                k += 1
+
+        return dm
+
+    return _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
