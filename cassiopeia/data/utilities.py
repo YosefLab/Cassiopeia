@@ -140,25 +140,33 @@ def compute_dissimilarity_map(
 
     nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
 
-    @numba.jit(nopython=True)
-    def _compute_dissimilarity_map():
+    nb_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.DictType(numba.types.int64, numba.types.float64))
+    if weights:
 
-        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float32)
+        for k, v in weights.items():
+            nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
+            for state, prior in v.items():
+                nb_char_weights[state] = prior
+            nb_weights[k] = nb_char_weights
+
+    @numba.jit(nopython=True)
+    def _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights):
+
+        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float64)
         k = 0
         for i in range(C - 1):
             for j in range(i + 1, C):
 
                 s1 = cm[i, :]
                 s2 = cm[j, :]
-
                 dm[k] = nb_dissimilarity(
-                    s1, s2, missing_state_indicator, weights
+                    s1, s2, missing_state_indicator, nb_weights
                 )
                 k += 1
 
         return dm
 
-    return _compute_dissimilarity_map()
+    return _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
 
 
 def sample_bootstrap_character_matrices(
