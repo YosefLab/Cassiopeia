@@ -2,9 +2,10 @@
 A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
+from typing import Dict, List, Optional
+
 import numba
 import numpy as np
-from typing import Dict, List, Optional
 
 
 def weighted_hamming_distance(

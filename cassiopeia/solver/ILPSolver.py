@@ -131,6 +131,15 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         targets = [tuple(t) for t in character_matrix.values.tolist()]
 
+        if unique_character_matrix.shape[0] == 1:
+            optimal_solution = nx.DiGraph()
+            optimal_solution.add_node(root)
+            optimal_solution = self.__append_sample_names(
+                optimal_solution, character_matrix
+            )
+            cassiopeia_tree.populate_tree(optimal_solution)
+            return
+        
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
         max_lca_distance = 0
@@ -607,7 +616,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
         the tree (especially when using the Hybrid algorithm where parts of
-        the tree are built indepedently), so we make sure we only add a
+        the tree are built independently), so we make sure we only add a
         particular sample once to the tree.
 
         Args:
