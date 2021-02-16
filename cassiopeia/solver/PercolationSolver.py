@@ -9,8 +9,8 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
 from cassiopeia.solver import NeighborJoiningSolver
+from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import similarity_functions
 from cassiopeia.solver import solver_utilities
 
 
@@ -64,7 +64,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 ],
                 float,
             ]
-        ] = similarity_functions.hamming_similarity,
+        ] = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: Optional[int] = 0,
     ):
 
@@ -262,7 +262,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             self.joining_solver.solve(lca_tree)
-            lca_network = lca_tree.get_network()
+            lca_network = lca_tree.get_tree_topology()
             grouped_components = []
             root = [
                 n for n in lca_network if lca_network.in_degree(n) == 0

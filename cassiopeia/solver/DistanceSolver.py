@@ -148,35 +148,30 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 the sample to treat as a root.
         """
 
-        if (
-            self.dissimilarity_function is None
-            and cassiopeia_tree.get_dissimilarity_map() is None
-        ):
-            raise DistanceSolverError(
-                "Please specify a dissimilarity function or populate the "
-                "CassiopeiaTree object with a dissimilarity map"
-            )
-
         character_matrix = (
             cassiopeia_tree.get_original_character_matrix().copy()
         )
 
+        # if root sample is not specified, we'll add the implicit root
+        # and recompute the dissimilarity map
+        if cassiopeia_tree.root_sample_name is None and not self.add_root:
+            raise DistanceSolverError(
+                "Please specify a root sample in CassiopeiaTree or indicate "
+                "that a root is to be added"
+            )
         if cassiopeia_tree.root_sample_name is None and self.add_root:
-
-            if self.dissimilarity_function is None:
-                raise DistanceSolverError(
-                    "Please specify a root sample in CassiopeiaTree or provide "
-                    "a dissimilarity function by which to add a root to the "
-                    "dissimilarity map"
-                )
-
             root = [0] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
             cassiopeia_tree.root_sample_name = "root"
-
-            # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilarity map
             cassiopeia_tree.set_character_matrix(character_matrix)
+
+        if cassiopeia_tree.get_dissimilarity_map() is None:
+            if self.dissimilarity_function is None:
+                raise DistanceSolverError(
+                    "Please specify a dissimilarity function or populate the "
+                    "CassiopeiaTree object with a dissimilarity map"
+                )
+
             cassiopeia_tree.compute_dissimilarity_map(
                 self.dissimilarity_function, self.prior_transformation
             )
