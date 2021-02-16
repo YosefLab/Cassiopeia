@@ -186,6 +186,22 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
 
+    def add_attribute(self, node: str, key: str, value: Any) -> None:
+        """Adds an attribute to the tree.
+        """
+        self.__check_network_initialized
+
+        self.__network.nodes[node][key] = value
+
+    def get_attribute(self, node: str, key: str) -> Any:
+        """Retrieves an attribute.
+        """
+        self.__check_network_initialized
+
+        if key not in self.__network.nodes[node]:
+            raise CassiopeiaTreeError("Attribute is not present in tree.")
+        return self.__network.nodes[node][key]
+
     def set_character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object.
         """
