@@ -162,7 +162,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree = solver_utilities.collapse_tree(
             tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
         )
-        tree = self.add_duplicates_to_tree(tree, character_matrix)
+        tree = self.add_duplicates_to_tree(tree, character_matrix, unique_character_matrix)
         
         cassiopeia_tree.populate_tree(tree)
 
@@ -242,18 +242,18 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             lcas = {}
             component_to_nodes = {}
             # Find the LCA of the nodes in each connected component
-            for i in range(len(connected_components)):
-                component_to_nodes[i] = connected_components[i]
+            for ind in range(len(connected_components)):
+                component_identifier = "component" + str(ind)
+                component_to_nodes[component_identifier] = connected_components[ind]
                 character_vectors = [
                     list(i)
                     for i in list(
-                        unique_character_array[connected_components[i], :]
+                        unique_character_array[connected_components[ind], :]
                     )
                 ]
-                lcas[i] = data_utilities.get_lca_characters(
+                lcas[component_identifier] = data_utilities.get_lca_characters(
                     character_vectors, missing_state_indicator
                 )
-
             # Build a tree on the LCA characters to cluster the components
             lca_tree = CassiopeiaTree(
                 pd.DataFrame.from_dict(lcas, orient="index"),
@@ -268,7 +268,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 n for n in lca_network if lca_network.in_degree(n) == 0
             ][0]
 
-            # Take the bifurcation at the root as the two clusters of components
+            # Take the split at the root as the clusters of components
             # in the split, ignoring unifurcations
             current_node = root
             while len(grouped_components) == 0:
@@ -294,8 +294,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             for c in range(len(connected_components)):
                 partition_sides.append(list(connected_components[c]))
 
-        # Convert from indices back to the sample names in the original
-        # character matrix
+        # Convert from component indices back to the sample names in the 
+        # original character matrix
         sample_names = list(character_matrix.index)
         partition_named = []
         for sample_index_group in partition_sides:
@@ -312,7 +312,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     def add_duplicates_to_tree(
         self,
         tree: nx.DiGraph,
-        character_matrix: pd.DataFrame
+        character_matrix: pd.DataFrame,
+        unique_character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
@@ -322,6 +323,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
+            unique_character_matrix: Character matrix with duplicates filtered
 
         Returns:
             A tree with duplicates added
@@ -337,9 +339,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            new_internal_node = (
-                max([i for i in tree.nodes if type(i) == int]) + 1
-            )
+            if len(tree.nodes) == 1:
+                new_internal_node = len(duplicate_groups[i]) + 1
+            else:
+                new_internal_node = (
+                    max([n for n in tree.nodes if type(n) == int]) + 1
+                )
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)

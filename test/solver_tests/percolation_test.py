@@ -15,8 +15,7 @@ from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 from cassiopeia.solver.NeighborJoiningSolver import NeighborJoiningSolver
 from cassiopeia.solver.PercolationSolver import PercolationSolver
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
+
 
 def neg_hamming_similarity_without_missing(
     s1: np.array,

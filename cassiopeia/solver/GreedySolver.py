@@ -160,7 +160,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix,
             cassiopeia_tree.missing_state_indicator,
         )
-        tree = self.__add_duplicates_to_tree(tree, character_matrix)
+        tree = self.__add_duplicates_to_tree(tree, character_matrix, unique_character_matrix)
 
         cassiopeia_tree.populate_tree(tree)
 
@@ -200,7 +200,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, unique_character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
@@ -210,6 +210,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
+            unique_character_matrix: Character matrix with duplicates filtered
 
         Returns:
             A tree with duplicates added
@@ -225,9 +226,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            new_internal_node = (
-                max([i for i in tree.nodes if type(i) == int]) + 1
-            )
+            if len(tree.nodes) == 1:
+                new_internal_node = len(duplicate_groups[i]) + 1
+            else:
+                new_internal_node = (
+                    max([n for n in tree.nodes if type(n) == int]) + 1
+                )
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)
