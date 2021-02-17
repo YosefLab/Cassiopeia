@@ -1,6 +1,7 @@
 import abc
 import networkx as nx
 import numpy as np
+from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -33,15 +34,29 @@ class CellSubsampler(abc.ABC):
 
 
 class UniformCellSubsampler(CellSubsampler):
-    def __init__(self, ratio: float):
+    def __init__(
+        self, ratio: Optional[float] = None, n_cells: Optional[int] = None
+    ):
         r"""
         Samples 'ratio' of the leaves, rounded down, uniformly at random.
         """
+        if ratio is None and n_cells is None:
+            raise CellSubsamplerError(
+                "At least one of 'ratio' and 'n_cells' " "must be specified."
+            )
+        if ratio is not None and n_cells is not None:
+            raise CellSubsamplerError(
+                "Exactly one of 'ratio' and 'n_cells'" "must be specified."
+            )
         self.__ratio = ratio
+        self.__n_cells = n_cells
 
     def subsample(self, tree: CassiopeiaTree) -> CassiopeiaTree:
         ratio = self.__ratio
-        n_subsample = int(tree.n_cell * ratio)
+        n_cells = self.__n_cells
+        n_subsample = (
+            n_cells if n_cells is not None else int(tree.n_cell * ratio)
+        )
         if n_subsample == 0:
             raise CellSubsamplerError(
                 "ratio too low: no cells would be " "sampled."
