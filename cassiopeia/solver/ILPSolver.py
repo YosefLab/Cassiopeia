@@ -75,6 +75,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
         prior_transformation: str = "negative_log",
+        logfile: str = "stdout.log",
     ):
 
         super().__init__(prior_transformation)
@@ -86,9 +87,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.weighted = weighted
         self.seed = seed
         self.mip_gap = mip_gap
+        self.logfile = logfile
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self, cassiopeia_tree: CassiopeiaTree
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -107,6 +109,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # setup logfile config
+        logfile = self.logfile
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
