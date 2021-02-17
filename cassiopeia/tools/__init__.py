@@ -17,3 +17,4 @@ from .lineage_tracing_simulator import (
     LineageTracingSimulator,
     IIDExponentialLineageTracer,
 )
+from .cell_subsampler import CellSubsampler, UniformCellSubsampler

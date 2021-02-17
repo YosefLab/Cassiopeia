@@ -1008,3 +1008,12 @@ class CassiopeiaTree:
         for node in self.nodes:
             times[node] = self.get_time(node) / max_time
         self.set_times(times)
+
+
+def resolve_multifurcations(tree: CassiopeiaTree) -> None:
+    r"""
+    Resolves the multifurcations of the CassiopeiaTree inplace.
+    """
+    binary_topology = utilities.resolve_multifurcations_networkx(
+        tree.get_tree_topology())
+    tree.populate_tree(binary_topology)

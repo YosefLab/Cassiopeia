@@ -4,7 +4,7 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class BranchLengthEstimatorError(Exception):
-    """An Exception class for the CassiopeiaTree class."""
+    """An Exception class for the BranchLengthEstimator class."""
 
     pass
 

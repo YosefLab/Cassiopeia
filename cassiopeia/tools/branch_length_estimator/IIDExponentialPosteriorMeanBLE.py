@@ -180,12 +180,13 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
     def _write_out_dps(self):
         r"""
         For debugging the c++ implementation:
-        This writes out the down and up values of the correct python implementation to the files
-        tmp/down_true.txt
+        This writes out the down and up values of the correct python
+        implementation to the files tmp/down_true.txt
         and
         tmp/up_true.txt
         respectively.
-        Compare these against tmp/down.txt and tmp/up.txt, which are the values computed by the c++ implementation.
+        Compare these against tmp/down.txt and tmp/up.txt, which are the values
+        computed by the c++ implementation.
         """
         tree = self.tree
         N = len(tree.nodes)

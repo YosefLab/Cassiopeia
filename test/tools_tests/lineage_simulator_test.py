@@ -39,12 +39,13 @@ class TestBirthProcess(unittest.TestCase):
     @pytest.mark.slow
     def test_BirthProcess(self):
         r"""
-        Generate tree, then choose a random lineage can count how many nodes are on
-        the lineage. This is the number of times the process triggered on that
-        lineage.
+        Generate tree, then choose a random lineage can count how many nodes
+        are on the lineage. This is the number of times the process triggered
+        on that lineage.
 
-        Also, the probability that a tree with only one internal node is obtained is
-        e^-lam * (1 - e^-lam) where lam is the birth rate, so we also check this.
+        Also, the probability that a tree with only one internal node is
+        obtained is e^-lam * (1 - e^-lam) where lam is the birth rate, so we
+        also check this.
         """
         np.random.seed(1)
         birth_rate = 0.6

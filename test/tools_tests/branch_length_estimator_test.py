@@ -1118,6 +1118,8 @@ class TestBLEMultifurcationWrapper(unittest.TestCase):
         np.testing.assert_almost_equal(tree.get_time("2"), np.log(2), decimal=3)
         np.testing.assert_almost_equal(tree.get_time("3"), np.log(2), decimal=3)
         np.testing.assert_almost_equal(tree.get_time("0"), 0.0)
-        np.testing.assert_almost_equal(log_likelihood, -1.386 * 3, decimal=3)
+        np.testing.assert_almost_equal(log_likelihood, -1.386, decimal=3)
         log_likelihood_2 = IIDExponentialBLE.log_likelihood(tree)
-        np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=3)
+        # The tree topology that the estimator sees is different from the
+        # one in the final phylogeny, thus the lik will be different!
+        np.testing.assert_almost_equal(log_likelihood * 3, log_likelihood_2, decimal=3)
