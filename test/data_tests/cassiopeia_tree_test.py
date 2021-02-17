@@ -647,7 +647,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
-
+        print(tree.get_dissimilarity_map)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
@@ -676,7 +676,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "node5",
                 "node6",
             ],
-            dtype=np.float32,
+            dtype=np.float64,
         )
 
         pd.testing.assert_frame_equal(

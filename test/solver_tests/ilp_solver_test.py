@@ -55,6 +55,24 @@ class TestILPSolver(unittest.TestCase):
         self.logfile = os.path.join(dir_path, "test.log")
         self.ilp_pp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
+    def test_single_sample_ilp(self):
+
+        # test single sample
+        cm = pd.DataFrame([1], index=['a'])
+        tree = cas.data.CassiopeiaTree(cm)
+        
+        self.ilp_pp_solver.solve(tree, logfile=self.logfile)
+        expected_leaves = ['a']
+        self.assertCountEqual(expected_leaves, tree.leaves)
+
+        # test single unique sample
+        cm = pd.DataFrame([[1], [1], [1]], index=['a', 'b', 'c'])
+        tree = cas.data.CassiopeiaTree(cm)
+
+        self.ilp_pp_solver.solve(tree, logfile=self.logfile)
+        expected_leaves = ['a', 'b', 'c']
+        self.assertCountEqual(expected_leaves, tree.leaves)
+
     def test_basic_ilp_constructor(self):
 
         self.assertEqual(self.ilp_pp_solver.convergence_time_limit, 12600)
