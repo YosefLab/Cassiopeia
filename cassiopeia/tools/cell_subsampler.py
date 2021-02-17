@@ -43,19 +43,25 @@ class UniformCellSubsampler(CellSubsampler):
         ratio = self.__ratio
         n_subsample = int(tree.n_cell * ratio)
         if n_subsample == 0:
-            raise CellSubsamplerError("ratio too low: no cells would be "
-                                    "sampled.")
+            raise CellSubsamplerError(
+                "ratio too low: no cells would be " "sampled."
+            )
 
         # First determine which nodes are part of the induced subgraph.
-        leaf_keep_idx = np.random.choice(range(tree.n_cell), n_subsample,
-                                        replace=False)
+        leaf_keep_idx = np.random.choice(
+            range(tree.n_cell), n_subsample, replace=False
+        )
         leaves_in_induced_subtree = [tree.leaves[i] for i in leaf_keep_idx]
-        induced_subtree_degs = dict([(leaf, 0) for leaf in leaves_in_induced_subtree])
+        induced_subtree_degs = dict(
+            [(leaf, 0) for leaf in leaves_in_induced_subtree]
+        )
 
         nodes_in_induced_subtree = set(leaves_in_induced_subtree)
         for node in tree.depth_first_traverse_nodes(postorder=True):
             children = tree.children(node)
-            induced_subtree_deg = sum([child in nodes_in_induced_subtree for child in children])
+            induced_subtree_deg = sum(
+                [child in nodes_in_induced_subtree for child in children]
+            )
             if induced_subtree_deg > 0:
                 nodes_in_induced_subtree.add(node)
                 induced_subtree_degs[node] = induced_subtree_deg
@@ -81,7 +87,10 @@ class UniformCellSubsampler(CellSubsampler):
             else:
                 up[node] = up[tree.parent(node)]
 
-            if induced_subtree_degs[node] >= 2 or induced_subtree_degs[node] == 0:
+            if (
+                induced_subtree_degs[node] >= 2
+                or induced_subtree_degs[node] == 0
+            ):
                 nodes.append(node)
                 edges.append((up[node], node))
         subtree_topology = nx.DiGraph()

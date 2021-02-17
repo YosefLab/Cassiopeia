@@ -316,7 +316,7 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             state = tree.get_character_states(node)
             train_state = (
                 state[:held_out_character_idx]
-                + state[(held_out_character_idx + 1):]
+                + state[(held_out_character_idx + 1) :]
             )
             valid_state = [state[held_out_character_idx]]
             train_states[node] = train_state

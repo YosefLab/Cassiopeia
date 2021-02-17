@@ -29,7 +29,8 @@ class BLEMultifurcationWrapper(BranchLengthEstimator):
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         binary_topology = resolve_multifurcations_networkx(
-            tree.get_tree_topology())
+            tree.get_tree_topology()
+        )
         # For debugging:
         print(f"binary_topology = {binary_topology.__dict__}")
         tree_binary = CassiopeiaTree(

@@ -47,7 +47,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         enforce_parsimony: bool = True,
         use_cpp_implementation: bool = False,
         debug_cpp_implementation: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
         # descent?
