@@ -149,16 +149,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
 
         character_matrix = (
-            cassiopeia_tree.get_original_character_matrix().copy()
+            cassiopeia_tree.get_current_character_matrix().copy()
         )
 
         # if root sample is not specified, we'll add the implicit root
         # and recompute the dissimilarity map
-        if cassiopeia_tree.root_sample_name is None and not self.add_root:
-            raise DistanceSolverError(
-                "Please specify a root sample in CassiopeiaTree or indicate "
-                "that a root is to be added"
-            )
         if cassiopeia_tree.root_sample_name is None and self.add_root:
             root = [0] * character_matrix.shape[1]
             character_matrix.loc["root"] = root

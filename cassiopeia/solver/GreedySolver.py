@@ -136,7 +136,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.get_current_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -160,7 +160,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix,
             cassiopeia_tree.missing_state_indicator,
         )
-        tree = self.__add_duplicates_to_tree(tree, character_matrix, unique_character_matrix)
+        tree = self.__add_duplicates_to_tree(tree, character_matrix)
 
         cassiopeia_tree.populate_tree(tree)
 
@@ -200,7 +200,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, unique_character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 

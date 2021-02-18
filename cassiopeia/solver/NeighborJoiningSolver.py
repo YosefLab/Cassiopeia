@@ -42,14 +42,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         self,
         dissimilarity_function: Optional[
             Callable[
-                [
-                    int,
-                    int,
-                    pd.DataFrame,
-                    int,
-                    Optional[Dict[int, Dict[str, float]]],
-                ],
-                float,
+                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
             ]
         ] = None,
         add_root: bool = False,

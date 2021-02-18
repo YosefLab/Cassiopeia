@@ -162,7 +162,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree = solver_utilities.collapse_tree(
             tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
         )
-        tree = self.add_duplicates_to_tree(tree, character_matrix, unique_character_matrix)
+        tree = self.__add_duplicates_to_tree(tree, character_matrix)
         
         cassiopeia_tree.populate_tree(tree)
 
@@ -309,11 +309,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         return partition_named
 
 
-    def add_duplicates_to_tree(
+    def __add_duplicates_to_tree(
         self,
         tree: nx.DiGraph,
-        character_matrix: pd.DataFrame,
-        unique_character_matrix: pd.DataFrame
+        character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
