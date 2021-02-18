@@ -210,7 +210,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
-            unique_character_matrix: Character matrix with duplicates filtered
 
         Returns:
             A tree with duplicates added
