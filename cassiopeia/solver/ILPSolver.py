@@ -6,6 +6,7 @@ evolutionary states.
 """
 import datetime
 import logging
+import os
 import time
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -64,6 +65,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        logdir: Directory where the logfiles will be found.
     """
 
     def __init__(
@@ -75,6 +77,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
         prior_transformation: str = "negative_log",
+        logdir: str = ".",
     ):
 
         super().__init__(prior_transformation)
@@ -86,6 +89,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.weighted = weighted
         self.seed = seed
         self.mip_gap = mip_gap
+        if not os.path.exists(logdir):
+            os.mkdir(logdir)
+        self.logdir = logdir
 
     def solve(
         self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
@@ -97,7 +103,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree
-            logfile: Location to write standard out.
+            logfile: Location to write standard out, wrt the logdir.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -107,7 +113,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # setup logfile config
-        logging.basicConfig(filename=logfile, level=logging.INFO)
+        logging.basicConfig(filename=os.path.join(self.logdir, logfile),
+                            level=logging.INFO)
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
