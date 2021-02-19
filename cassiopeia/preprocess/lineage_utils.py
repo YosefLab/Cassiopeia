@@ -472,9 +472,9 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
     """
 
     if not os.path.exists(
-        os.join(output_directory, "/lineageGrp_piv_heatmaps")
+        os.path.join(output_directory, "lineageGrp_piv_heatmaps")
     ):
-        os.makedirs(os.join(output_directory, "/lineageGrp_piv_heatmaps"))
+        os.makedirs(os.path.join(output_directory, "lineageGrp_piv_heatmaps"))
 
     for n, lg_group in at.groupby("lineageGrp"):
 
