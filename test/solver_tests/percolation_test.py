@@ -4,6 +4,7 @@ Test PercolationSolver in Cassiopeia.solver.
 
 import unittest
 
+import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -17,25 +18,31 @@ from cassiopeia.solver.PercolationSolver import PercolationSolver
 from cassiopeia.solver import dissimilarity_functions
 
 
+def find_triplet_structure(triplet, T):
+    a, b, c = triplet[0], triplet[1], triplet[2]
+    a_ancestors = [node for node in nx.ancestors(T, a)]
+    b_ancestors = [node for node in nx.ancestors(T, b)]
+    c_ancestors = [node for node in nx.ancestors(T, c)]
+    ab_common = len(set(a_ancestors) & set(b_ancestors))
+    ac_common = len(set(a_ancestors) & set(c_ancestors))
+    bc_common = len(set(b_ancestors) & set(c_ancestors))
+    structure = "-"
+    if ab_common > bc_common and ab_common > ac_common:
+        structure = "ab"
+    elif ac_common > bc_common and ac_common > ab_common:
+        structure = "ac"
+    elif bc_common > ab_common and bc_common > ac_common:
+        structure = "bc"
+    return structure
+
+
 def neg_hamming_similarity_without_missing(
     s1: np.array,
     s2: np.array,
     missing_state_indicator: int,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
-    """A function to return the number of (non-missing) character/state
-    mutations shared by two samples.
 
-    Args:
-        s1: Character states of the first sample
-        s2: Character states of the second sample
-        missing_state_indicator: The character representing missing values
-        weights: A set of optional weights to weight the similarity of a mutation
-    Returns:
-        The number of shared mutations between two samples, weighted or unweighted
-    """
-
-    # TODO Optimize this using masks
     similarity = 0
     for i in range(len(s1)):
 
@@ -76,6 +83,9 @@ class PercolationSolverTest(unittest.TestCase):
         joining_solver = NeighborJoiningSolver(dissimilarity_function = neg_hamming_similarity_without_missing, add_root = True)
         psolver = PercolationSolver(joining_solver = joining_solver)
         psolver.solve(p_tree)
+    
+
+
         expected_newick_string = "((1,3),(2,0,(4,5)));"
         observed_newick_string = p_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
@@ -117,7 +127,7 @@ class PercolationSolverTest(unittest.TestCase):
             (12, "c5"),
         ]
         for i in expected_edges:
-            self.assertIn(i, p_tree.get_tree_topology().edges)
+            self.assertIn(i, p_tree.edges)
 
     def test_Greedy(self):
         cm = pd.DataFrame.from_dict(
@@ -155,7 +165,7 @@ class PercolationSolverTest(unittest.TestCase):
             (11, "c5"),
         ]
         for i in expected_edges:
-            self.assertIn(i, p_tree.get_tree_topology().edges)
+            self.assertIn(i, p_tree.edges)
 
     def test_priors_case(self):
         cm = pd.DataFrame.from_dict(
@@ -187,14 +197,31 @@ class PercolationSolverTest(unittest.TestCase):
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
-        expected_newick_strings = [
-            "((c2,c4,(c5,c6)),(c1,c3));",
-            "((c2,c4,(c6,c5)),(c1,c3));",
-            "((c2,(c5,c6),c4),(c1,c3));",
-            "((c2,(c6,c5),c4),(c1,c3));",
-        ]
-        observed_newick_string = data_utilities.to_newick(p_tree.get_tree_topology())
-        self.assertIn(observed_newick_string, expected_newick_strings)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from([6, 7, 8, 9, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_edges_from(
+            [
+                (6, 7),
+                (6, 8),
+                (7, "c1"),
+                (7, "c3"),
+                (8, 9),
+                (9, "c2"),
+                (9, "c4"),
+                (9, 10),
+                (10, "c5"),
+                (10, "c6")
+            ]
+        )
+
+        observed_tree = p_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
+        for triplet in triplets:
+
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
 
 if __name__ == "__main__":
     unittest.main()

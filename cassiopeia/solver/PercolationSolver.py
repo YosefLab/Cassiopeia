@@ -21,10 +21,13 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     partitions the sample set based on similarity in the observed mutations.
     It is an implicit version of Aho's algorithm for tree discovery (1981).
     At each recursive step, the similarities of each sample pair are embedded
-    in a graph. The graph is then percolated by removing the minimum edges
-    until multiple connected components are produced. The algorithm enforces
-    binary partitions if there are more than two connected components using a
-    neighbor-joining procedure.
+    as edges in a graph with weight equal to the similarity between the nodes.
+    The graph is then percolated by removing the minimum edges until multiple 
+    connected components are produced. Ultimately, this groups clusters of 
+    samples that share strong similarity amongst themselves. If more than two
+    connected components are produced by the percolation procedure, then the
+    components are clustered by applying the specified solver to the LCAs of
+    the clusters, obeying parsimony
 
     Args:
         joining_solver: The CassiopeiaSolver that is used to cluster groups of
@@ -36,12 +39,16 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations. The default
             is "hamming_distance_without_missing"
-        threshold: A minimum similarity threshold to include an edge in the
-            similarity graph
+        threshold: The minimum similarity threshold. A similarity threshold of 1
+            for example means that only samples with similarities above 1 will 
+            have an edge between them in the graph. Acts as a hyperparameter
+            that controls the sparsity of the graph by filtering low 
+            similarities.
+
 
     Attributes:
-        joining_solver: The Solver that is used to cluster groups of samples
-            after percolation steps that produce more than two groups
+        joining_solver: The CassiopeiaSolver that is used to cluster groups of 
+            samples after percolation steps that produce more than two groups
         prior_transformation: Function to use when transforming priors into
             weights.
         similarity_function: A function that calculates a similarity score
@@ -98,22 +105,18 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         def _solve(
             samples: List[Union[str, int]],
             tree: nx.DiGraph,
-            character_matrix: pd.DataFrame,
             unique_character_matrix: pd.DataFrame,
             priors: Dict[int, Dict[int, float]],
             weights: Dict[int, Dict[int, float]],
             missing_state_indicator: int,
         ):
+            
             if len(samples) == 1:
                 return samples[0]
             # Partitions the set of samples by percolating a similarity graph
             clades = list(self.percolate(unique_character_matrix, samples, priors, weights, missing_state_indicator))
             # Generates a root for this subtree with a unique int identifier
-            root = (
-                len(tree.nodes)
-                - unique_character_matrix.shape[0]
-                + character_matrix.shape[0]
-            )
+            root = len(tree.nodes)+1
             tree.add_node(root)
 
             for clade in clades:
@@ -130,7 +133,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 child = _solve(
                     clade,
                     tree,
-                    character_matrix,
                     unique_character_matrix,
                     priors,
                     weights,
@@ -148,15 +150,13 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             priors = cassiopeia_tree.priors
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.get_current_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
-        samples = list(unique_character_matrix.index)
-        for i in samples:
-            tree.add_node(i)
+        tree.add_nodes_from(list(unique_character_matrix.index))
 
-        _solve(samples, tree, character_matrix, unique_character_matrix, priors, weights, cassiopeia_tree.missing_state_indicator)
+        _solve(list(unique_character_matrix.index), tree, unique_character_matrix, priors, weights, cassiopeia_tree.missing_state_indicator)
 
         # Collapse 0-mutation edges and append duplicate samples
         tree = solver_utilities.collapse_tree(
@@ -190,7 +190,13 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         into two clusters.
 
         Args:
-            samples: A list of samples, represented by their string names
+            character_matrix: Character matrix
+            samples: A list of samples to partition
+            priors: A dictionary storing the probability of each character 
+                mutating to a particular state.
+            weights: Weighting of each (character, state) pair. Typically a
+                transformation of the priors.
+            missing_state_indicator: Character representing missing data.
 
         Returns:
             A tuple of lists, representing the left and right partition groups
@@ -201,8 +207,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         unique_character_array = character_matrix.to_numpy()
 
         G = nx.Graph()
-        for v in sample_indices:
-            G.add_node(v)
+        G.add_nodes_from(sample_indices)
 
         # Add edge weights into the similarity graph
         edge_weight_buckets = defaultdict(list)
@@ -213,7 +218,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 missing_state_indicator,
                 weights,
             )
-            if similarity >= self.threshold:
+            if similarity > self.threshold:
                 edge_weight_buckets[similarity].append((i, j))
                 G.add_edge(i, j)
 
@@ -262,26 +267,18 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             self.joining_solver.solve(lca_tree)
-            lca_network = lca_tree.get_tree_topology()
             grouped_components = []
-            root = [
-                n for n in lca_network if lca_network.in_degree(n) == 0
-            ][0]
 
             # Take the split at the root as the clusters of components
             # in the split, ignoring unifurcations
-            current_node = root
+            current_node = lca_tree.root
             while len(grouped_components) == 0:
-                successors = list(lca_network.successors(current_node))
+                successors = lca_tree.children(current_node)
                 if len(successors) == 1:
                     current_node = successors[0]
                 else:
                     for i in successors:
-                        grouped_components.append(
-                            solver_utilities.get_leaf_children(
-                                lca_network, i
-                            )
-                        )
+                        grouped_components.append(lca_tree.leaves_in_subtree(i))
 
             # For each component in each cluster, take the nodes in that
             # component to form the final split

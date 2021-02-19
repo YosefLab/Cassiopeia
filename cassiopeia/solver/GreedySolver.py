@@ -83,7 +83,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         def _solve(
             samples: List[Union[str, int]],
             tree: nx.DiGraph,
-            character_matrix: pd.DataFrame,
             unique_character_matrix: pd.DataFrame,
             weights: Dict[int, Dict[int, float]],
             missing_state_indicator: int,
@@ -100,11 +99,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = (
-                len(tree.nodes)
-                - unique_character_matrix.shape[0]
-                + character_matrix.shape[0]
-            )
+            root = len(tree.nodes)+1
             tree.add_node(root)
 
             for clade in clades:
@@ -121,7 +116,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 child = _solve(
                     clade,
                     tree,
-                    character_matrix,
                     unique_character_matrix,
                     weights,
                     missing_state_indicator,
@@ -140,14 +134,11 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
-        samples = list(unique_character_matrix.index)
-        for i in samples:
-            tree.add_node(i)
+        tree.add_nodes_from(list(unique_character_matrix.index))
 
         _solve(
-            samples,
+            list(unique_character_matrix.index),
             tree,
-            character_matrix,
             unique_character_matrix,
             weights,
             cassiopeia_tree.missing_state_indicator,

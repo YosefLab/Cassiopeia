@@ -260,23 +260,3 @@ def convert_sample_names_to_indices(
     name_to_index = dict(zip(names, range(len(names))))
 
     return list(map(lambda x: name_to_index[x], samples))
-
-
-def get_leaf_children(
-    tree: nx.DiGraph, node: Union[int, str]
-) -> List[Union[int, str]]:
-    """Gets all leaf descendants of a node in a tree
-
-    Args:
-        tree: The tree to find leaf descendants on
-        node: A node in the tree
-
-    Returns:
-        A list of leaf descendants of a node
-    """
-    if tree.out_degree(node) == 0:
-        return [node]
-    leaves = []
-    for i in tree.successors(node):
-        leaves.extend(get_leaf_children(tree, i))
-    return leaves
