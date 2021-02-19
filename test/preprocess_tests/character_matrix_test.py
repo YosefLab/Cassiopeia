@@ -18,6 +18,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             "r1": ["None", "ATC", "GGG", "None", "GAA"],
             "r2": ["None", "AAA", "GAA", "None", "GAA"],
             "r3": ["ATC", "TTT", "ATA", "ATA", "ATA"],
+            "UMI": [5, 10, 1, 30, 30],
         }
 
         self.alleletable_basic = pd.DataFrame.from_dict(at_dict)
@@ -138,6 +139,68 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                     indel_states[char][state],
                     expected_state_mapping_dictionary[char][state],
                 )
+
+    def test_alleletable_to_lineage_profile(self):
+
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_basic
+        )
+
+        expected_lineage_profile = pd.DataFrame.from_dict(
+            {
+                "cellA": [
+                    "None",
+                    "None",
+                    "ATC",
+                    "ATC",
+                    "AAA",
+                    "TTT",
+                    "GGG",
+                    "GAA",
+                    "ATA",
+                ],
+                "cellB": [
+                    "None",
+                    "None",
+                    "ATA",
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                ],
+                "cellC": [
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    "GAA",
+                    "GAA",
+                    "ATA",
+                ],
+            },
+            orient="index",
+            columns=[
+                "A_r1",
+                "A_r2",
+                "A_r3",
+                "B_r1",
+                "B_r2",
+                "B_r3",
+                "C_r1",
+                "C_r2",
+                "C_r3",
+            ],
+        )
+        expected_lineage_profile.index.name = 'cellBC'
+
+        pd.testing.assert_frame_equal(
+            expected_lineage_profile,
+            lineage_profile[expected_lineage_profile.columns],
+        )
 
 
 if __name__ == "__main__":

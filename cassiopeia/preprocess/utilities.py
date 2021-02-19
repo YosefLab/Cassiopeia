@@ -11,6 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pylab
 import pysam
 from typing import Dict, List, Optional, Tuple
 
@@ -468,9 +469,9 @@ def convert_alleletable_to_character_matrix(
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][
-                                str(len(allele_counter[c]))
-                            ] = float(prob)
+                            prior_probs[i][str(len(allele_counter[c]))] = float(
+                                prob
+                            )
                             indel_to_charstate[i][
                                 str(len(allele_counter[c]))
                             ] = state
@@ -480,7 +481,69 @@ def convert_alleletable_to_character_matrix(
     character_matrix = pd.DataFrame.from_dict(
         character_strings,
         orient="index",
-        columns=[f"r{i}" for i in range(1, len(intbc_uniq)+1)],
+        columns=[f"r{i}" for i in range(1, len(intbc_uniq) + 1)],
     )
 
     return character_matrix, prior_probs, indel_to_charstate
+
+
+def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
+    """Converts an alleletable to a lineage profile.
+
+    Takes in an allele table that summarizes the indels observed at individual
+    cellBC-intBC pairs and produces a lineage profile, which essentially is a 
+    pivot table over the cellBC / intBCs. Conceptually, these lineage profiles
+    are identical to character matrices, only the values in the matrix are the
+    actual indel identities.
+
+    Args:
+        allele_table: AlleleTable.
+
+    Returns:
+        An NxM lineage profile.
+    """
+
+    g = allele_table.groupby(["cellBC", "intBC"]).agg(
+        {"r1": "unique", "r2": "unique", "r3": "unique"}
+    )
+    intbcs = allele_table["intBC"].unique()
+
+    # create mutltindex df by hand
+    i1 = []
+    for i in intbcs:
+        i1 += [i] * 3
+        i2 = ["r1", "r2", "r3"] * len(intbcs)
+
+    indices = [i1, i2]
+
+    allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
+    for j in tqdm(g.index, desc="filling in multiindex table"):
+        vals = map(lambda x: x[0], g.loc[j])
+        (
+            allele_piv.loc[j[0]][j[1], "r1"],
+            allele_piv.loc[j[0]][j[1], "r2"],
+            allele_piv.loc[j[0]][j[1], "r3"],
+        ) = vals
+
+    allele_piv2 = pd.pivot_table(
+        allele_table,
+        index=["cellBC"],
+        columns=["intBC"],
+        values="UMI",
+        aggfunc=pylab.size,
+    )
+    col_order = (
+        allele_piv2.dropna(axis=1, how="all")
+        .sum()
+        .sort_values(ascending=False, inplace=False)
+        .index
+    )
+
+    lineage_profile = allele_piv[col_order]
+
+    # collapse column names here
+    lineage_profile.columns = [
+        "_".join(tup).rstrip("_") for tup in lineage_profile.columns.values
+    ]
+
+    return lineage_profile
