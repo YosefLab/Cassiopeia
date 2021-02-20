@@ -214,7 +214,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A tree with duplicates added
         """
-
+        
+        character_matrix.index.name = "index"
         duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]
             .reset_index()
