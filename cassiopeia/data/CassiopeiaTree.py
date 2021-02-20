@@ -138,7 +138,7 @@ class CassiopeiaTree:
             self.populate_tree(tree)
 
         # these attributes are helpful for distance based solvers
-        self.dissimilarity_map = None
+        self.__dissimilarity_map = None
         if dissimilarity_map is not None:
             self.set_dissimilarity_map(dissimilarity_map)
         self.root_sample_name = root_sample_name
@@ -821,7 +821,10 @@ class CassiopeiaTree:
         """Gets the dissimilarity map.
         """
 
-        return self.__dissimilarity_map.copy()
+        if self.__dissimilarity_map is not None:
+            return self.__dissimilarity_map.copy()
+        else:
+            return None
 
     def set_dissimilarity_map(self, dissimilarity_map: pd.DataFrame):
         """Sets the dissimilarity map variable in this object.
