@@ -46,9 +46,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         expected_df = pd.DataFrame.from_dict(
             {
-                "cellA": ["0", "0", "1", "1", "1", "1", "1", "1", "1"],
-                "cellB": ["0", "0", "2", "-", "-", "-", "-", "-", "-"],
-                "cellC": ["-", "-", "-", "-", "-", "-", "2", "1", "1"],
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1]
             },
             orient="index",
             columns=[f"r{i}" for i in range(1, 10)],
@@ -67,9 +67,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         expected_df = pd.DataFrame.from_dict(
             {
-                "cellA": ["0", "0", "1", "1", "1", "1"],
-                "cellB": ["0", "0", "2", "-", "-", "-"],
-                "cellC": ["-", "-", "-", "2", "1", "1"],
+                "cellA": [0, 0, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1],
             },
             orient="index",
             columns=[f"r{i}" for i in range(1, 7)],
@@ -87,7 +87,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         self.assertEqual(character_matrix.shape[1], 2)
 
         expected_df = pd.DataFrame.from_dict(
-            {"cellA": ["1", "1"], "cellB": ["2", "-"], "cellC": ["-", "2"]},
+            {"cellA": [1, 1], "cellB": [2, -1], "cellC": [-1, 2]},
             orient="index",
             columns=[f"r{i}" for i in range(1, 3)],
         )
@@ -101,13 +101,13 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         expected_priors_dictionary = {
-            2: {"1": 0.5, "2": 0.1},
-            3: {"1": 0.5},
-            4: {"1": 0.05},
-            5: {"1": 0.05},
-            6: {"1": 0.2, "2": 0.1},
-            7: {"1": 0.1},
-            8: {"1": 0.1},
+            2: {1: 0.5, 2: 0.1},
+            3: {1: 0.5},
+            4: {1: 0.05},
+            5: {1: 0.05},
+            6: {1: 0.2, 2: 0.1},
+            7: {1: 0.1},
+            8: {1: 0.1},
         }
 
         for char in expected_priors_dictionary.keys():
@@ -123,13 +123,13 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         expected_state_mapping_dictionary = {
-            2: {"1": "ATC", "2": "ATA"},
-            3: {"1": "ATC"},
-            4: {"1": "AAA"},
-            5: {"1": "TTT"},
-            6: {"1": "GGG", "2": "GAA"},
-            7: {"1": "GAA"},
-            8: {"1": "ATA"},
+            2: {1: "ATC", 2: "ATA"},
+            3: {1: "ATC"},
+            4: {1: "AAA"},
+            5: {1: "TTT"},
+            6: {1: "GGG", 2: "GAA"},
+            7: {1: "GAA"},
+            8: {1: "ATA"},
         }
 
         for char in expected_state_mapping_dictionary.keys():
