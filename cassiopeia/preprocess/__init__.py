@@ -14,6 +14,7 @@ from .pipeline import (
 from .utilities import (
     convert_alleletable_to_character_matrix,
     convert_alleletable_to_lineage_profile,
+    convert_lineage_profile_to_character_matrix,
     filter_cells,
     filter_umis,
 )

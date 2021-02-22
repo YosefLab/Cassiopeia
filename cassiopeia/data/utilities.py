@@ -8,6 +8,9 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
+import re
+
+from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 def get_lca_characters(
@@ -250,10 +253,10 @@ def sample_bootstrap_allele_tables(
         random_state: A numpy random state for reproducibility.
     """
 
-    cut_sites = [column for column in allele_table if column.startswith("r")]
+    cut_sites = [column for column in allele_table.columns if bool(re.search(r"r\d", column))]
     lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(allele_table)
 
-    intbcs = at['intBC'].unique()
+    intbcs = allele_table['intBC'].unique()
     M = len(intbcs)
 
     cms = []
@@ -261,9 +264,15 @@ def sample_bootstrap_allele_tables(
     for _ in B:
 
         if random_state:
-            sampled_intbc = random_state.choice(intbcs, M, replace=True)
+            sampled_intbcs = random_state.choice(intbcs, M, replace=True)
         else:
-            sampled_intbc = np.random.choice(intbcs, M, replace=True)
+            sampled_intbcs = np.random.choice(intbcs, M, replace=True)
 
-        intbc_b = sum([[intbc + cutsite for cutsite in cutsites] for intbc in sampled_intbcs], [])
+        intbc_b = sum([[intbc + f"_{cut_site}" for cut_site in cut_sites] for intbc in sampled_intbcs], [])
         b_sample = lineage_profile[intbc_b]
+
+        cm_b, prior_probs, indel_to_charstate = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors = indel_priors)
+
+        cms.append((cm_b, prior_probs, indel_to_charstate, intbc_b))
+
+    return cms

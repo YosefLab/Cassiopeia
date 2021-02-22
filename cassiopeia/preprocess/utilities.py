@@ -389,7 +389,11 @@ def convert_alleletable_to_character_matrix(
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
-        cut_sites = [f"_{column}" for column in alleletable.columns if bool(re.search(r"r\d", column))]
+        cut_sites = [
+            f"_{column}"
+            for column in alleletable.columns
+            if bool(re.search(r"r\d", column))
+        ]
 
         to_add = []
         i = 1
@@ -440,6 +444,7 @@ def convert_alleletable_to_character_matrix(
     for i in tqdm(range(len(list(intbc_uniq))), desc="Processing characters"):
 
         c = list(intbc_uniq)[i]
+        indel_to_charstate[i] = {}
 
         # for all samples, construct a character string
         for sample in filtered_samples.keys():
@@ -467,15 +472,15 @@ def convert_alleletable_to_character_matrix(
                             allele_counter[c][state]
                         )
 
+                        indel_to_charstate[i][
+                                len(allele_counter[c])
+                            ] = state
+
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][len(allele_counter[c])] = float(
-                                prob
-                            )
-                            indel_to_charstate[i][
-                                len(allele_counter[c])
-                            ] = state
+                            prior_probs[i][len(allele_counter[c])] = float(prob)
+                            
             else:
                 character_strings[sample].append(missing_data_state)
 
@@ -504,8 +509,14 @@ def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
         An NxM lineage profile.
     """
 
-    cutsites = [column for column in allele_table.columns if bool(re.search(r"r\d", column))]
-    agg_recipe = dict(zip([cutsite for cutsite in cutsites], ["unique"]*len(cutsites)))
+    cutsites = [
+        column
+        for column in allele_table.columns
+        if bool(re.search(r"r\d", column))
+    ]
+    agg_recipe = dict(
+        zip([cutsite for cutsite in cutsites], ["unique"] * len(cutsites))
+    )
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
 
@@ -545,3 +556,89 @@ def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
     ]
 
     return lineage_profile
+
+
+def convert_lineage_profile_to_character_matrix(
+    lineage_profile: pd.DataFrame,
+    indel_priors: Optional[pd.DataFrame] = None,
+    missing_state_indicator: int = -1,
+) -> Tuple[
+    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
+]:
+    """Converts a lineage profile to a character matrix.
+
+    Takes in a lineage profile summarizing the explicit indel identities
+    observed at each cut site in a cell and converts this into a character
+    matrix where the indels are abstracted into integers.
+
+    Args:
+        lineage_profile: Lineage profile
+        indel_priors: Dataframe mapping indels to prior probabilities
+        missing_state_indicator: State to indicate missing data
+
+    Returns:
+        A character matrix, prior probability dictionary, and mapping from
+            character/state pairs to indel identities.
+    """
+
+    prior_probs = defaultdict(dict)
+    indel_to_charstate = defaultdict(dict)
+
+    lineage_profile = lineage_profile.fillna("Missing").copy()
+
+    samples = []
+
+    lineage_profile.columns = [f"r{i}" for i in range(lineage_profile.shape[1])]
+    column_to_unique_values = dict(
+        zip(
+            lineage_profile.columns,
+            [
+                lineage_profile[x].factorize()[1].values
+                for x in lineage_profile.columns
+            ],
+        )
+    )
+
+    column_to_number = dict(
+        zip(lineage_profile.columns, range(lineage_profile.shape[1]))
+    )
+
+    mutation_counter = dict(
+        zip(lineage_profile.columns, [0] * lineage_profile.shape[1])
+    )
+    mutation_to_state = defaultdict(dict)
+
+    for col in column_to_unique_values.keys():
+
+        c = column_to_number[col]
+        indel_to_charstate[c] = {}
+
+        for indel in column_to_unique_values[col]:
+            if indel == "Missing" or indel == "NC":
+                mutation_to_state[col][indel] = -1
+
+            elif "none" in indel.lower():
+                mutation_to_state[col][indel] = 0
+
+            else:
+                mutation_to_state[col][indel] = mutation_counter[col] + 1
+                mutation_counter[col] += 1
+
+                
+                
+                indel_to_charstate[c][mutation_to_state[col][indel]] = indel
+
+                if indel_priors is not None:
+                    prob = np.mean(indel_priors.loc[indel]["freq"])
+                    prior_probs[c][mutation_to_state[col][indel]] = float(prob)
+
+    character_matrix = lineage_profile.apply(
+        lambda x: [mutation_to_state[x.name][v] for v in x.values], axis=0
+    )
+
+    character_matrix.index = lineage_profile.index
+    character_matrix.columns = [
+        f"r{i}" for i in range(lineage_profile.shape[1])
+    ]
+
+    return character_matrix, prior_probs, indel_to_charstate

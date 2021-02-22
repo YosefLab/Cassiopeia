@@ -68,7 +68,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         expected_df = pd.DataFrame.from_dict(
             {
-                "cellA": [0,  0, 1, 1, 1, 1], 
+                "cellA": [0, 0, 1, 1, 1, 1],
                 "cellB": [0, 0, 2, -1, -1, -1],
                 "cellC": [-1, -1, -1, 2, 1, 1],
             },
@@ -195,12 +195,79 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 "C_r3",
             ],
         )
-        expected_lineage_profile.index.name = 'cellBC'
+        expected_lineage_profile.index.name = "cellBC"
 
         pd.testing.assert_frame_equal(
             expected_lineage_profile,
             lineage_profile[expected_lineage_profile.columns],
         )
+
+    def test_lineage_profile_to_character_matrix_no_priors(self):
+
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_basic
+        )
+
+        character_matrix, priors, state_to_indel = cas.pp.convert_lineage_profile_to_character_matrix(
+            lineage_profile
+        )
+
+        self.assertEqual(len(priors), 0)
+        self.assertEqual(len(state_to_indel), 9)
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "cellA": [1, 1, 1, 0, 0, 1, 1, 1, 1],
+                "cellB": [-1, -1, -1, 0, 0, 2, -1, -1, -1],
+                "cellC": [2, 1, 1, -1, -1, -1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix.index.name = "cellBC"
+
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, character_matrix
+        )
+
+    def test_lineage_profile_to_character_matrix_no_priors(self):
+
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_basic
+        )
+
+        (
+            character_matrix,
+            priors,
+            state_to_indel,
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(
+            lineage_profile, self.mutation_priors
+        )
+
+        self.assertEqual(len(priors), 7)
+        self.assertEqual(len(state_to_indel), 9)
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "cellA": [1, 1, 1, 0, 0, 1, 1, 1, 1],
+                "cellB": [-1, -1, -1, 0, 0, 2, -1, -1, -1],
+                "cellC": [2, 1, 1, -1, -1, -1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix.index.name = "cellBC"
+
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, character_matrix
+        )
+
+        # test prior dictionary formation
+        for character in priors.keys():
+            for state in priors[character].keys():
+                indel = state_to_indel[character][state]
+                prob = self.mutation_priors.loc[indel].iloc[0]
+                self.assertEqual(prob, priors[character][state])
 
 
 if __name__ == "__main__":
