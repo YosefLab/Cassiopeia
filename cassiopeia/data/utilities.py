@@ -234,7 +234,7 @@ def sample_bootstrap_character_matrices(
 
 def sample_bootstrap_allele_tables(
     allele_table: pd.DataFrame,
-    indel_priors: pd.DataFrame,
+    indel_priors: Optional[pd.DataFrame] = None,
     B: int = 10,
     random_state: Optional[np.random.RandomState] = None,
 ):
@@ -259,20 +259,20 @@ def sample_bootstrap_allele_tables(
     intbcs = allele_table['intBC'].unique()
     M = len(intbcs)
 
-    cms = []
+    bootstrap_samples = []
 
-    for _ in B:
+    for _ in range(B):
 
         if random_state:
             sampled_intbcs = random_state.choice(intbcs, M, replace=True)
         else:
             sampled_intbcs = np.random.choice(intbcs, M, replace=True)
 
-        intbc_b = sum([[intbc + f"_{cut_site}" for cut_site in cut_sites] for intbc in sampled_intbcs], [])
-        b_sample = lineage_profile[intbc_b]
+        bootstrap_intbcs = sum([[intbc + f"_{cut_site}" for cut_site in cut_sites] for intbc in sampled_intbcs], [])
+        b_sample = lineage_profile[bootstrap_intbcs]
 
-        cm_b, prior_probs, indel_to_charstate = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors = indel_priors)
+        bootstrapped_character_matrix, priors, state_to_indel = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors = indel_priors)
 
-        cms.append((cm_b, prior_probs, indel_to_charstate, intbc_b))
+        bootstrap_samples.append((bootstrapped_character_matrix, priors, state_to_indel, bootstrap_intbcs))
 
-    return cms
+    return bootstrap_samples

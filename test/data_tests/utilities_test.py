@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 class TestDataUtilities(unittest.TestCase):
@@ -41,6 +42,30 @@ class TestDataUtilities(unittest.TestCase):
             6: {1: 1.0},
             7: {1: 1.0},
         }
+
+        # Test allele table
+        at_dict = {
+            "cellBC": ["cellA", "cellA", "cellA", "cellB", "cellC"],
+            "intBC": ["A", "B", "C", "A", "C"],
+            "r1": ["None", "ATC", "GGG", "ATA", "GAA"],
+            "r2": ["None", "AAA", "GAA", "TTT", "GAA"],
+            "r3": ["ATC", "TTT", "ATA", "ATA", "ATA"],
+            "UMI": [5, 10, 1, 30, 30],
+        }
+
+        self.allele_table = pd.DataFrame.from_dict(at_dict)
+        self.indel_to_prior = pd.DataFrame.from_dict(
+            {
+                "ATC": 0.5,
+                "GGG": 0.2,
+                "GAA": 0.1,
+                "AAA": 0.05,
+                "TTT": 0.05,
+                "ATA": 0.1,
+            },
+            orient="index",
+            columns=["freq"],
+        )
 
     def test_bootstrap_character_matrices_no_priors(self):
 
@@ -98,6 +123,95 @@ class TestDataUtilities(unittest.TestCase):
             self.assertEqual(
                 len(bootstrap_priors), self.character_matrix.shape[1]
             )
+
+    def test_bootstrap_allele_tables(self):
+
+        random_state = np.random.RandomState(123431235)
+
+        character_matrix, _, _ = preprocessing_utilities.convert_alleletable_to_character_matrix(
+            self.allele_table
+        )
+
+        bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
+            self.allele_table, B=10, random_state=random_state
+        )
+
+        self.assertEqual(len(bootstrap_samples), 10)
+
+        for (
+            bootstrap_matrix,
+            bootstrap_priors,
+            boostarp_state_to_indel,
+            bootstrap_intbcs,
+        ) in bootstrap_samples:
+
+            self.assertEqual(
+                len(bootstrap_intbcs),
+                len(self.allele_table["intBC"].unique()) * 3,
+            )
+
+            self.assertCountEqual(
+                character_matrix.index, bootstrap_matrix.index
+            )
+            self.assertEqual(
+                character_matrix.shape[1], bootstrap_matrix.shape[1]
+            )
+
+            self.assertRaises(
+                AssertionError,
+                pd.testing.assert_frame_equal,
+                character_matrix,
+                bootstrap_matrix,
+            )
+
+    def test_bootstrap_allele_tables_priors(self):
+
+        random_state = np.random.RandomState(12345)
+
+        (
+            character_matrix,
+            _,
+            _,
+        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
+            self.allele_table
+        )
+
+        bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
+            self.allele_table,
+            B=10,
+            indel_priors=self.indel_to_prior,
+            random_state=random_state,
+        )
+
+        self.assertEqual(len(bootstrap_samples), 10)
+
+        for (
+            bootstrap_matrix,
+            bootstrap_priors,
+            boostarp_state_to_indel,
+            bootstrap_intbcs,
+        ) in bootstrap_samples:
+
+            self.assertEqual(
+                len(bootstrap_intbcs),
+                len(self.allele_table["intBC"].unique()) * 3,
+            )
+
+            self.assertCountEqual(
+                character_matrix.index, bootstrap_matrix.index
+            )
+            self.assertEqual(
+                character_matrix.shape[1], bootstrap_matrix.shape[1]
+            )
+
+            self.assertRaises(
+                AssertionError,
+                pd.testing.assert_frame_equal,
+                character_matrix,
+                bootstrap_matrix,
+            )
+
+            self.assertEqual(len(bootstrap_priors), character_matrix.shape[1])
 
 
 if __name__ == "__main__":
