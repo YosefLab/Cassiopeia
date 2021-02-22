@@ -355,10 +355,10 @@ def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
     ignore_intbcs: List[str] = [],
     allele_rep_thresh: float = 1.0,
-    missing_data_state: str = "-",
+    missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
 ) -> Tuple[
-    pd.DataFrame, Dict[int, Dict[str, float]], Dict[int, Dict[str, str]]
+    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
     """Converts an alleletable into a character matrix.
 
@@ -451,28 +451,28 @@ def convert_alleletable_to_character_matrix(
                     continue
 
                 if state == "NONE" or "None" in state:
-                    character_strings[sample].append("0")
+                    character_strings[sample].append(0)
                 else:
                     if state in allele_counter[c]:
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
                     else:
                         # if this is the first time we're seeing the state for this character,
                         # add a new entry to the allele_counter
                         allele_counter[c][state] = len(allele_counter[c]) + 1
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
 
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
                             prior_probs[i][
-                                str(len(allele_counter[c]))
+                                len(allele_counter[c])
                             ] = float(prob)
                             indel_to_charstate[i][
-                                str(len(allele_counter[c]))
+                                len(allele_counter[c])
                             ] = state
             else:
                 character_strings[sample].append(missing_data_state)
