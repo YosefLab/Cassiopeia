@@ -1,8 +1,7 @@
 """
-This file stores a subclass of DistanceSolver, NeighborJoining. The
-inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
-Nei (1987) that iteratively joins together samples that minimize the Q-criterion
-on the dissimilarity map.
+This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
+the Neighbor-Joining algorithm proposed by Sokal and Michener (1958) that 
+iteratively joins together samples with the minimum dissimilarity.
 """
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -16,21 +15,21 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import DistanceSolver
 
 
-class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """Neighbor-Joining class for Cassiopeia.
+class UPGMASolver(DistanceSolver.DistanceSolver):
+    """UPGMA class for Cassiopeia.
 
-    Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
-    as a derived class of DistanceSolver. This class inherits the generic
-    `solve` method, but implements its own procedure for finding cherries by
-    minimizing the Q-criterion between samples.
+    Implements the UPGMA algorithm described as a derived class of 
+    DistanceSolver. This class inherits the generic `solve` method, but 
+    implements its own procedure for finding cherries by minimizing the 
+    dissimilarity between samples. After joining nodes, the dissimilarities
+    are updated by averaging the distances of elements in the new cluster 
+    with each existing node. Produces a rooted tree that is assumed to be
+    ultrametric.
+
 
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
             map. Optional if a dissimilarity map is already provided.
-        add_root: Whether or not to add an implicit root the tree, i.e. a root
-            with unmutated characters. If set to False, and no explicit root is
-            provided in the CassiopeiaTree, then will return an unrooted, 
-            undirected tree
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
                 "negative_log": Transforms each probability by the negative
@@ -48,34 +47,37 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 [np.array, np.array, int, Dict[int, Dict[int, float]]], float
             ]
         ] = None,
-        add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
-            add_root=add_root,
+            add_root=True,
             prior_transformation=prior_transformation,
         )
 
 
     def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]):
-        """Roots a tree at the inferred ancestral root.
+        """Roots the tree.
 
-        Uses the specified root to root the tree passed in
+        Adds the root at the top of the UPGMA reconstructed tree. By the 
+        ultrametric assumption, the root is placed as the parent to the last 
+        two unjoined nodes.
 
         Args:
             tree: Networkx object representing the tree topology
-            root_sample: Sample to treat as the root
+            root_sample: Ignored in this case, the root is known in this case
             remaining_samples: The last two unjoined nodes in the tree
 
         Returns:
-            A rooted tree
+            A rooted tree.
         """
-        tree.add_edge(remaining_samples[0], remaining_samples[1])
 
+        tree.add_node("root")
+        tree.add_edges_from([("root", remaining_samples[0]), ("root", remaining_samples[1])])
+        
         rooted_tree = nx.DiGraph()
-        for e in nx.dfs_edges(tree, source=root_sample):
+        for e in nx.dfs_edges(tree, source="root"):
             rooted_tree.add_edge(e[0], e[1])
 
         return rooted_tree
@@ -84,70 +86,39 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
-        Proceeds by minimizing the Q-criterion as in Saitou and Nei (1987) to
-        select a pair of samples to join.
+        Finds the pair of samples with the minimum dissimilarity by finding the
+        minimum value in the provided dissimilarity matrix
 
         Args:
             dissimilarity_matrix: A sample x sample dissimilarity matrix
 
         Returns:
-            A tuple of intgers representing rows in the dissimilarity matrix
+            A tuple of integers representing rows in the dissimilarity matrix
                 to join.
         """
 
-        q = self.compute_q(dissimilarity_matrix)
-        np.fill_diagonal(q, np.inf)
+        dissimilarity_matrix = dissimilarity_matrix.astype(float)
+        np.fill_diagonal(dissimilarity_matrix, np.inf)
 
-        _min = np.argmin(q)
+        return np.unravel_index(np.argmin(dissimilarity_matrix, axis=None), dissimilarity_matrix.shape)
 
-        i, j = _min % q.shape[0], _min // q.shape[0]
-
-        return (i, j)
-
-
-    @staticmethod
-    @numba.jit(nopython=True)
-    def compute_q(dissimilarity_map: np.array(int)):
-        """Computes the Q-criterion for every pair of samples.
-
-        Computes the Q-criterion defined by Saitou and Nei (1987):
-
-            Q(i,j) = d(i, j) - 1/(n-2) (sum(d(i, :)) + sum(d(j,:)))
-
-        Args:
-            dissimilarity_map: A sample x sample dissimilarity map
-
-        Returns:
-            A matrix storing the Q-criterion for every pair of samples.
-        """
-
-        q = np.zeros(dissimilarity_map.shape)
-        n = dissimilarity_map.shape[0]
-        for i in range(n):
-            for j in range(i):
-                q[i, j] = q[j, i] = (dissimilarity_map[i, j]) - (
-                    1
-                    / (n - 2)
-                    * (
-                        dissimilarity_map[i, :].sum()
-                        + dissimilarity_map[j, :].sum()
-                    )
-                )
-        return q
 
     def update_dissimilarity_map(
         self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
-        cluster_to_cluster_size: Dict[str, int] = None
+        cluster_to_cluster_size: Dict[str, int]
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
 
         Updates the dissimilarity map after joining together two nodes (m1, m2)
-        at a cherry m. For all nodes v, the new dissimilarity map d' is:
+        at a cherry m. For all other nodes v, the new dissimilarity map d' is:
 
-        d'(m, v) = 0.5 * (d(v, m1) + d(v, m2) - d(m1, m2))
+        d'(m, v) = (|m1| * d(m1, v) + |m2| * d(m2, v))/(|m1| + |m2|)
+
+        where |m1| is the size of cluster m1, i.e. the number of sample leaves
+        under node m1.
 
         Args:
             dissimilarity_map: A dissimilarity map to update
@@ -157,6 +128,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Returns:
             A new dissimilarity map, updated with the new node
         """
+        i_size, j_size = cluster_to_cluster_size[cherry[0]], cluster_to_cluster_size[cherry[1]]
+        cluster_to_cluster_size[new_node] = i_size + j_size
 
         i, j = (
             np.where(dissimilarity_map.index == cherry[0])[0][0],
@@ -164,7 +137,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         )
 
         dissimilarity_array = self.update_dissimilarity_map_numba(
-            dissimilarity_map.to_numpy(), i, j
+            dissimilarity_map.to_numpy(), i, j, i_size, j_size
         )
         sample_names = list(dissimilarity_map.index) + [new_node]
 
@@ -184,7 +157,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     @staticmethod
     @numba.jit(nopython=True)
     def update_dissimilarity_map_numba(
-        dissimilarity_map: np.array, cherry_i: int, cherry_j: int
+        dissimilarity_map: np.array, cherry_i: int, cherry_j: int, size_i: int, size_j: int
     ) -> np.array:
         """An optimized function for updating dissimilarities.
 
@@ -214,25 +187,22 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             if v == cherry_i or v == cherry_j:
                 continue
             updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                0.5
-                * (
-                    dissimilarity_map[v, cherry_i]
-                    + dissimilarity_map[v, cherry_j]
-                    - dissimilarity_map[cherry_i, cherry_j]
-                )
+                (size_i * dissimilarity_map[v, cherry_i]
+                + size_j * dissimilarity_map[v, cherry_j])/
+                (size_i + size_j)
             )
 
         updated_map[new_node_index, new_node_index] = 0
 
         return updated_map
 
-    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
-        """Defines the implicit rooting strategy for the NeighborJoiningSolver.
 
-        By default, the NeighborJoining algorithm returns an unrooted tree.
-        To root this tree, an implicit root of all zeros is added to the 
-        character matrix. Then, the dissimilarity map is recalculated using 
-        the updated character matrix.
+    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
+        """Defines the implicit rooting strategy for the UPGMASolver.
+
+        By default, the UPGMA algorithm returns an rooted tree. Therefore,
+        the implicit root will be placed and specified at the end of the 
+        solving procedure as the parent of the last two unjoined nodes.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
@@ -240,21 +210,4 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Returns:
             None, operates on the cassiopeia_tree passed in
         """
-        character_matrix = (
-            cassiopeia_tree.get_current_character_matrix()
-        )
-
-        root = [0] * character_matrix.shape[1]
-        character_matrix.loc["root"] = root
         cassiopeia_tree.root_sample_name = "root"
-        cassiopeia_tree.set_character_matrix(character_matrix)
-
-        if self.dissimilarity_function is None:
-            raise DistanceSolver.DistanceSolverError(
-                "Please specify a dissimilarity function to add an implicit "
-                "root, or specify an explicit root"
-            )
-
-        cassiopeia_tree.compute_dissimilarity_map(
-            self.dissimilarity_function, self.prior_transformation
-        )

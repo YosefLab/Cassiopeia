@@ -86,7 +86,7 @@ class PercolationSolverTest(unittest.TestCase):
     
 
 
-        expected_newick_string = "((1,3),(2,0,(4,5)));"
+        expected_newick_string = "((1,3),(0,2,(4,5)));"
         observed_newick_string = p_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 

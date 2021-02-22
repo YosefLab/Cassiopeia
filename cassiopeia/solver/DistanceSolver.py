@@ -39,8 +39,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     Args:
         dissimilarity_function: Function that can be used to compute the
             dissimilarity between samples.
-        add_root: Whether or not to root the tree. Only pertinent in algorithms
-            that return an unrooted tree, by default (e.g. Neighbor Joining)
+        add_root: Whether or not to add an implicit root the tree, i.e. a root
+            with unmutated characters. Only pertinent in algorithms that return
+            an unrooted tree, by default (e.g. Neighbor Joining). Will not 
+            override an explicitly defined root, specified by the 
+            'root_sample_name' attribute in the CassiopeiaTree
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
                 "negative_log": Transforms each probability by the negative
@@ -97,7 +100,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # instantiate a tree where all samples appear as leaves.
         tree = nx.Graph()
-        tree.add_nodes_from(dissimilarity_map.index)
+        tree.add_nodes_from(_dissimilarity_map.index)
+
+        cluster_to_cluster_size = dict(
+            zip(_dissimilarity_map.index, [1 for i in range(N)])
+        )
 
         while N > 2:
 
@@ -116,20 +123,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             _dissimilarity_map = self.update_dissimilarity_map(
-                _dissimilarity_map, (node_i, node_j), new_node_name
+                _dissimilarity_map, (node_i, node_j), new_node_name, cluster_to_cluster_size
             )
 
             N = _dissimilarity_map.shape[0]
 
-        remaining_samples = _dissimilarity_map.index.values
-        tree.add_edge(remaining_samples[0], remaining_samples[1])
+        tree = self.root_tree(tree, cassiopeia_tree.root_sample_name, _dissimilarity_map.index.values)
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
 
-        if cassiopeia_tree.root_sample_name is not None:
-            tree = self.root_tree(tree, cassiopeia_tree.root_sample_name)
-
         cassiopeia_tree.populate_tree(tree)
+
 
     def setup_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree
@@ -149,28 +153,18 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 the sample to treat as a root.
         """
 
-        character_matrix = (
-            cassiopeia_tree.get_current_character_matrix().copy()
-        )
-
         # if root sample is not specified, we'll add the implicit root
         # and recompute the dissimilarity map
 
-        if cassiopeia_tree.root_sample_name is None and self.add_root:
-            root = [0] * character_matrix.shape[1]
-            character_matrix.loc["root"] = root
-            cassiopeia_tree.root_sample_name = "root"
-            cassiopeia_tree.set_character_matrix(character_matrix)
+        if cassiopeia_tree.root_sample_name is None:
+            if self.add_root:
+                self.setup_implicit_root(cassiopeia_tree)
 
-            if self.dissimilarity_function is None:
+            else:
                 raise DistanceSolverError(
-                    "Please specify a dissimilarity function to add an implicit "
-                    "root, or specify an explicit root"
+                    "Please specify an explicit root sample in the Cassiopeia Tree"
+                    " or specify the solver to add an implicit root"
                 )
-
-            cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation
-            )
 
         if cassiopeia_tree.get_dissimilarity_map() is None:
             if self.dissimilarity_function is None:
@@ -185,7 +179,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
 
     @abc.abstractmethod
-    def root_tree(self, tree, root_sample):
+    def root_tree(self, tree, root_sample, remaining_samples):
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
@@ -215,7 +209,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
-        new_node: str
+        new_node: str,
+        cluster_to_cluster_size: Dict[str, int] = None
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
 
@@ -230,40 +225,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def __append_sample_names(
-        self,
-        solution: nx.DiGraph,
-        state_to_sample_mapping: Dict[str, List[str]],
-    ) -> nx.DiGraph:
-        """Append sample names to character states in tree.
 
-        Given a tree where every node corresponds to a set of character states,
-        append sample names at the deepest node that has its character
-        state. The DistanceSolver by default has observed samples as leaves,
-        so this procedure is simply to stitch samples names onto the leaves
-        at the appropriate location.
+    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
+        """Defines how an implicit root is to be added.
 
         Args:
-            solution: A DistanceSolver solution that we wish to add sample
-                names to.
-            state_to_sample_mapping: A dictionary mapping a state to a set
-                 of samples
-
+            cassiopeia_tree: Input CassiopeiaTree to `solve`
+        
         Returns:
-            A solution with extra leaves corresponding to sample names.
+            None, operates on the cassiopeia_tree passed in
         """
+        pass
 
-        leaves = [n for n in solution if solution.degree(n) == 1]
 
-        for l in leaves:
-
-            if l not in state_to_sample_mapping.keys():
-                continue
-
-            # remove samples with the same name as the leaf
-            samples = [s for s in state_to_sample_mapping[l] if s != l]
-
-            if len(samples) > 0:
-                solution.add_edges_from([(l, sample) for sample in samples])
-
-        return solution
+        
