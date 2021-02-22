@@ -6,6 +6,7 @@ import unittest
 
 import itertools
 import networkx as nx
+import numba
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional
@@ -36,6 +37,11 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
+NB_SIMILARITY = numba.jit(
+    dissimilarity_functions.hamming_similarity_without_missing, nopython=True
+)
+
+
 def neg_hamming_similarity_without_missing(
     s1: np.array,
     s2: np.array,
@@ -43,24 +49,7 @@ def neg_hamming_similarity_without_missing(
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
 
-    similarity = 0
-    for i in range(len(s1)):
-
-        if (
-            s1[i] == missing_state_indicator
-            or s2[i] == missing_state_indicator
-            or s1[i] == 0
-            or s2[i] == 0
-        ):
-            continue
-
-        if s1[i] == s2[i]:
-            if weights:
-                similarity += weights[i][s1[i]]
-            else:
-                similarity += 1
-
-    return -1 * similarity
+    return -1 * NB_SIMILARITY(s1, s2, missing_state_indicator, weights)
 
 
 class PercolationSolverTest(unittest.TestCase):
@@ -76,15 +65,14 @@ class PercolationSolverTest(unittest.TestCase):
                 [5, 0, 0, 0, 0],
             ]
         )
-        p_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1
+        p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        joining_solver = NeighborJoiningSolver(
+            dissimilarity_function=neg_hamming_similarity_without_missing,
+            add_root=True,
         )
-
-        joining_solver = NeighborJoiningSolver(dissimilarity_function = neg_hamming_similarity_without_missing, add_root = True)
-        psolver = PercolationSolver(joining_solver = joining_solver)
+        psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
-    
-
 
         expected_newick_string = "((1,3),(0,2,(4,5)));"
         observed_newick_string = p_tree.get_newick()
@@ -104,12 +92,13 @@ class PercolationSolverTest(unittest.TestCase):
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-        p_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1
-        )
+        p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = NeighborJoiningSolver(dissimilarity_function = dissimilarity_functions.weighted_hamming_distance, add_root = True)
-        psolver = PercolationSolver(joining_solver = joining_solver)
+        joining_solver = NeighborJoiningSolver(
+            dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
+            add_root=True,
+        )
+        psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
@@ -143,12 +132,10 @@ class PercolationSolverTest(unittest.TestCase):
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-        p_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1
-        )
+        p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         joining_solver = VanillaGreedySolver()
-        psolver = PercolationSolver(joining_solver = joining_solver)
+        psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
@@ -192,8 +179,11 @@ class PercolationSolverTest(unittest.TestCase):
         p_tree = cas.data.CassiopeiaTree(
             cm, missing_state_indicator=-1, priors=priors
         )
-        joining_solver = NeighborJoiningSolver(dissimilarity_function = dissimilarity_functions.weighted_hamming_distance, add_root = True)
-        psolver = PercolationSolver(joining_solver = joining_solver)
+        joining_solver = NeighborJoiningSolver(
+            dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
+            add_root=True,
+        )
+        psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
@@ -210,12 +200,14 @@ class PercolationSolverTest(unittest.TestCase):
                 (9, "c4"),
                 (9, 10),
                 (10, "c5"),
-                (10, "c6")
+                (10, "c6"),
             ]
         )
 
         observed_tree = p_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
         for triplet in triplets:
 
             expected_triplet = find_triplet_structure(triplet, expected_tree)
