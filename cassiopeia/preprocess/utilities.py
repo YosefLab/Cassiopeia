@@ -4,6 +4,8 @@ pipeline.
 """
 import os
 import logging
+from typing import Dict, List, Optional, Tuple
+
 
 from collections import defaultdict, OrderedDict
 import Levenshtein
@@ -13,8 +15,7 @@ import numpy as np
 import pandas as pd
 import pylab
 import pysam
-from typing import Dict, List, Optional, Tuple
-
+import re
 from tqdm.auto import tqdm
 
 
@@ -356,10 +357,10 @@ def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
     ignore_intbcs: List[str] = [],
     allele_rep_thresh: float = 1.0,
-    missing_data_state: str = "-",
+    missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
 ) -> Tuple[
-    pd.DataFrame, Dict[int, Dict[str, float]], Dict[int, Dict[str, str]]
+    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
     """Converts an alleletable into a character matrix.
 
@@ -388,13 +389,13 @@ def convert_alleletable_to_character_matrix(
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
-        cut_sites = ["_r1", "_r2", "_r3"]
+        cut_sites = [f"_{column}" for column in alleletable.columns if bool(re.search(r"r\d", column))]
 
         to_add = []
         i = 1
         for c in cut_sites:
             if intBC not in ignore_intbcs:
-                to_add.append(("intBC", c, "r" + str(i)))
+                to_add.append(("intBC", c, f"r{i}"))
 
             i += 1
 
@@ -452,28 +453,28 @@ def convert_alleletable_to_character_matrix(
                     continue
 
                 if state == "NONE" or "None" in state:
-                    character_strings[sample].append("0")
+                    character_strings[sample].append(0)
                 else:
                     if state in allele_counter[c]:
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
                     else:
                         # if this is the first time we're seeing the state for this character,
                         # add a new entry to the allele_counter
                         allele_counter[c][state] = len(allele_counter[c]) + 1
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
 
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][str(len(allele_counter[c]))] = float(
+                            prior_probs[i][len(allele_counter[c])] = float(
                                 prob
                             )
                             indel_to_charstate[i][
-                                str(len(allele_counter[c]))
+                                len(allele_counter[c])
                             ] = state
             else:
                 character_strings[sample].append(missing_data_state)
@@ -503,27 +504,24 @@ def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
         An NxM lineage profile.
     """
 
-    g = allele_table.groupby(["cellBC", "intBC"]).agg(
-        {"r1": "unique", "r2": "unique", "r3": "unique"}
-    )
+    cutsites = [column for column in allele_table.columns if bool(re.search(r"r\d", column))]
+    agg_recipe = dict(zip([cutsite for cutsite in cutsites], ["unique"]*len(cutsites)))
+    g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
 
     # create mutltindex df by hand
     i1 = []
     for i in intbcs:
         i1 += [i] * 3
-        i2 = ["r1", "r2", "r3"] * len(intbcs)
+        i2 = list(cutsites) * len(intbcs)
 
     indices = [i1, i2]
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
         vals = map(lambda x: x[0], g.loc[j])
-        (
-            allele_piv.loc[j[0]][j[1], "r1"],
-            allele_piv.loc[j[0]][j[1], "r2"],
-            allele_piv.loc[j[0]][j[1], "r3"],
-        ) = vals
+        for val, cutsite in zip(vals, cutsites):
+            allele_piv.loc[j[0]][j[1], cutsite] = val
 
     allele_piv2 = pd.pivot_table(
         allele_table,

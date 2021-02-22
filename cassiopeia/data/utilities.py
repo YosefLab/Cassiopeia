@@ -140,11 +140,16 @@ def compute_dissimilarity_map(
 
     nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
 
-    nb_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.DictType(numba.types.int64, numba.types.float64))
+    nb_weights = numba.typed.Dict.empty(
+        numba.types.int64,
+        numba.types.DictType(numba.types.int64, numba.types.float64),
+    )
     if weights:
 
         for k, v in weights.items():
-            nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
+            nb_char_weights = numba.typed.Dict.empty(
+                numba.types.int64, numba.types.float64
+            )
             for state, prior in v.items():
                 nb_char_weights[state] = prior
             nb_weights[k] = nb_char_weights
@@ -166,7 +171,9 @@ def compute_dissimilarity_map(
 
         return dm
 
-    return _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
+    return _compute_dissimilarity_map(
+        cm, C, missing_state_indicator, nb_weights
+    )
 
 
 def sample_bootstrap_character_matrices(
@@ -220,3 +227,43 @@ def sample_bootstrap_character_matrices(
         bootstrap_samples.append((bootstrapped_character_matrix, new_priors))
 
     return bootstrap_samples
+
+
+def sample_bootstrap_allele_tables(
+    allele_table: pd.DataFrame,
+    indel_priors: pd.DataFrame,
+    B: int = 10,
+    random_state: Optional[np.random.RandomState] = None,
+):
+    """Generates bootstrap character matrices from an allele table.
+
+    This function will take in an allele table, generated with the Cassiopeia
+    preprocess pipeline and produce sevreral bootstrap character matrices with
+    respect to intBCs rather than individual cut-sites as in
+    `sample_bootstrap_character_matrices`. This is useful because oftentimes
+    there are dependencies between cut-sites on the same intBC TargetSite.
+
+    Args:
+        allele_table: AlleleTable from the Cassiopeia preprocessing pipeline
+        indel_priors: A dataframe mapping indel identities to prior probabilities
+        B: number of bootstrap samples to create
+        random_state: A numpy random state for reproducibility.
+    """
+
+    cut_sites = [column for column in allele_table if column.startswith("r")]
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(allele_table)
+
+    intbcs = at['intBC'].unique()
+    M = len(intbcs)
+
+    cms = []
+
+    for _ in B:
+
+        if random_state:
+            sampled_intbc = random_state.choice(intbcs, M, replace=True)
+        else:
+            sampled_intbc = np.random.choice(intbcs, M, replace=True)
+
+        intbc_b = sum([[intbc + cutsite for cutsite in cutsites] for intbc in sampled_intbcs], [])
+        b_sample = lineage_profile[intbc_b]
