@@ -38,12 +38,12 @@ def parse_cigar(
         ref: Reference sequence
         ref_start: Position that alignment starts in the reference string
         query_start: Position that alignment starts in the query string
-        barcode_interval: Interval in refernece seqeunce that stores the
+        barcode_interval: Interval in reference sequence that stores the
             integration barcode
         cutsites: A list of cutsite locations in the reference
         cutsite_window: Number of nucleotides to the left and right of the
             cutsite to look for the beginning of an indel
-        context: Include nuceotide sequence around indels
+        context: Include nucleotide sequence around indels
         context_size: Number of bases to report for context
 
     Returns:

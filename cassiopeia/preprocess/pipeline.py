@@ -99,9 +99,7 @@ def collapse_umis(
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
 
     df = utilities.convert_bam_to_df(
-        str(collapsed_file_name),
-        str(collapsed_df_file_name),
-        create_pd=True,
+        str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
@@ -871,7 +869,11 @@ def call_lineage_groups(
     if plot:
         logging.info("Producing Plots...")
         at_pivot_I = pd.pivot_table(
-            allele_table, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
+            allele_table,
+            index="cellBC",
+            columns="intBC",
+            values="UMI",
+            aggfunc="count",
         )
         at_pivot_I.fillna(value=0, inplace=True)
         at_pivot_I[at_pivot_I > 0] = 1
@@ -880,6 +882,8 @@ def call_lineage_groups(
         l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
 
         logging.info("Plotting filtered lineage group pivot table heatmap...")
-        l_utils.plot_overlap_heatmap_lg(allele_table, at_pivot_I, output_directory)
+        l_utils.plot_overlap_heatmap_lg(
+            allele_table, at_pivot_I, output_directory
+        )
 
     return allele_table

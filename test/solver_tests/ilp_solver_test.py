@@ -58,19 +58,19 @@ class TestILPSolver(unittest.TestCase):
     def test_single_sample_ilp(self):
 
         # test single sample
-        cm = pd.DataFrame([1], index=['a'])
+        cm = pd.DataFrame([1], index=["a"])
         tree = cas.data.CassiopeiaTree(cm)
-        
+
         self.ilp_pp_solver.solve(tree, logfile=self.logfile)
-        expected_leaves = ['a']
+        expected_leaves = ["a"]
         self.assertCountEqual(expected_leaves, tree.leaves)
 
         # test single unique sample
-        cm = pd.DataFrame([[1], [1], [1]], index=['a', 'b', 'c'])
+        cm = pd.DataFrame([[1], [1], [1]], index=["a", "b", "c"])
         tree = cas.data.CassiopeiaTree(cm)
 
         self.ilp_pp_solver.solve(tree, logfile=self.logfile)
-        expected_leaves = ['a', 'b', 'c']
+        expected_leaves = ["a", "b", "c"]
         self.assertCountEqual(expected_leaves, tree.leaves)
 
     def test_basic_ilp_constructor(self):

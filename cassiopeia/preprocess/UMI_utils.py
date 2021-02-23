@@ -126,9 +126,7 @@ def sort_cellranger_bam(
         merged_chunks = heapq.merge(*chunk_fhs, key=sort_key)
 
         merged_chunks = progress(
-            merged_chunks,
-            total=total_reads_out,
-            desc="Merging sorted chunks",
+            merged_chunks, total=total_reads_out, desc="Merging sorted chunks"
         )
 
         for al in merged_chunks:
@@ -440,11 +438,7 @@ def call_consensus(
 
     rl_range = np.arange(max_read_length)
 
-    fields = [
-        ("c_above_min_q", int),
-        ("c", int),
-        ("average_q", float),
-    ]
+    fields = [("c_above_min_q", int), ("c", int), ("average_q", float)]
 
     stat_tuples = np.zeros(shape, dtype=fields)
     for k in ["c_above_min_q", "c", "average_q"]:
