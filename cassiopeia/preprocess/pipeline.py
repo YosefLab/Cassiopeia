@@ -849,7 +849,7 @@ def call_lineage_groups(
 
     if verbose:
         logging.info("Final lineage group assignments:")
-        for n, g in at.groupby(["lineageGrp"]):
+        for n, g in allele_table.groupby(["lineageGrp"]):
             logging.info(
                 f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells"
             )
