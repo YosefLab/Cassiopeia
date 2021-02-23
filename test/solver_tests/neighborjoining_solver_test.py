@@ -92,9 +92,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             orient="index",
             columns=["x1", "x2", "x3"],
         )
-        
+
         self.pp_tree = cas.data.CassiopeiaTree(character_matrix=pp_cm)
-        
+
         self.nj_solver_delta = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=delta_fn, add_root=True
         )
@@ -119,9 +119,13 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         # ------------- NJ with modified hamming dissimilarity ------------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
-        self.pp_tree_priors = cas.data.CassiopeiaTree(character_matrix=pp_cm, priors=priors)
-        self.nj_solver_modified = cas.solver.NeighborJoiningSolver(dissimilarity_function=cas.solver.dissimilarity.weighted_hamming_distance, add_root=True)
-
+        self.pp_tree_priors = cas.data.CassiopeiaTree(
+            character_matrix=pp_cm, priors=priors
+        )
+        self.nj_solver_modified = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=cas.solver.dissimilarity.weighted_hamming_distance,
+            add_root=True,
+        )
 
     def test_constructor(self):
 
@@ -248,14 +252,14 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         expected_tree.add_edges_from(
             [
                 ("root", "7"),
-                ('7', '6'),
-                ('6', 'd'),
-                ('6', 'e'),
-                ('7', '8'),
-                ('8', 'a'),
-                ('8', '9'),
-                ('9', 'b'),
-                ('9', 'c'),
+                ("7", "6"),
+                ("6", "d"),
+                ("6", "e"),
+                ("7", "8"),
+                ("8", "a"),
+                ("8", "9"),
+                ("9", "b"),
+                ("9", "c"),
             ]
         )
 
@@ -264,7 +268,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
-
 
     def test_pp_solver(self):
 

@@ -157,7 +157,7 @@ def compute_lg_membership(
         # Calculate the intersect
         intersect = np.intersect1d(ibcs, intbc_sets[i])
         if len(intersect) > 0:
-            # Calculate weighted intersection, normalized by the total cell 
+            # Calculate weighted intersection, normalized by the total cell
             # proportions
             lg_mem[i] = np.sum(1 - lg_do[intersect]) / np.sum(1 - lg_do)
 

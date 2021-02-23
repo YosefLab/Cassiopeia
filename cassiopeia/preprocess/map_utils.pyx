@@ -52,12 +52,13 @@ def map_intbcs(
 
     filter_dict = {}
 
-    # For each intBC/cellBC pair, we want only one allele (select majority 
+    # For each intBC/cellBC pair, we want only one allele (select majority
     # allele for now)
     corrected = 0
     numUMI_corrected = 0
     for n, group in tqdm(
-        moleculetable.groupby(["filter_column"]), desc="Mapping alleles to intBCs"
+        moleculetable.groupby(["filter_column"]),
+        desc="Mapping alleles to intBCs",
     ):
 
         x1 = (
@@ -69,17 +70,17 @@ def map_intbcs(
             .reset_index()
         )
 
-        # If we've found an intBC that corresponds to more than one allele in 
-        # the same cell, then let's error correct towards the more frequently 
+        # If we've found an intBC that corresponds to more than one allele in
+        # the same cell, then let's error correct towards the more frequently
         # occuring allele
 
         # But, this will ALWAYS be the first allele because we sorted above, so
-        # we can generalize and always assign the intBC to the first element in 
+        # we can generalize and always assign the intBC to the first element in
         # x1.
 
         a = x1.iloc[0]["allele"]
 
-        # Let's still keep count of how many times we had to re-assign for 
+        # Let's still keep count of how many times we had to re-assign for
         # logging purposes
         filter_dict[x1.iloc[0]["filter_column2"]] = "good"
         if x1.shape[0] > 1:

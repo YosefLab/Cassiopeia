@@ -236,9 +236,14 @@ def sample_bootstrap_allele_tables(
     indel_priors: Optional[pd.DataFrame] = None,
     num_bootstraps: int = 10,
     random_state: Optional[np.random.RandomState] = None,
-    cut_sites: Optional[List[str]] = None
+    cut_sites: Optional[List[str]] = None,
 ) -> List[
-    Tuple[pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]], List[str]]
+    Tuple[
+        pd.DataFrame,
+        Dict[int, Dict[int, float]],
+        Dict[int, Dict[int, str]],
+        List[str],
+    ]
 ]:
     """Generates bootstrap character matrices from an allele table.
 
@@ -264,7 +269,9 @@ def sample_bootstrap_allele_tables(
     """
 
     if cut_sites is None:
-        cut_sites = preprocessing_utilities.get_default_cut_site_columns(allele_table)
+        cut_sites = preprocessing_utilities.get_default_cut_site_columns(
+            allele_table
+        )
 
     lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
         allele_table, cut_sites

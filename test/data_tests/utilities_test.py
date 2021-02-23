@@ -69,7 +69,9 @@ class TestDataUtilities(unittest.TestCase):
 
         # Test allele table without normal cassiopeia columns
         self.non_cassiopeia_allele_table = self.allele_table.copy()
-        self.non_cassiopeia_allele_table.rename(columns = {"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+        self.non_cassiopeia_allele_table.rename(
+            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
 
     def test_bootstrap_character_matrices_no_priors(self):
 
@@ -173,11 +175,14 @@ class TestDataUtilities(unittest.TestCase):
         random_state = np.random.RandomState(123431235)
 
         character_matrix, _, _ = preprocessing_utilities.convert_alleletable_to_character_matrix(
-            self.non_cassiopeia_allele_table, cut_sites = ["cs1", "cs2", "cs3"]
+            self.non_cassiopeia_allele_table, cut_sites=["cs1", "cs2", "cs3"]
         )
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
-            self.non_cassiopeia_allele_table, num_bootstraps=10, random_state=random_state, cut_sites = ["cs1", "cs2", "cs3"],
+            self.non_cassiopeia_allele_table,
+            num_bootstraps=10,
+            random_state=random_state,
+            cut_sites=["cs1", "cs2", "cs3"],
         )
 
         self.assertEqual(len(bootstrap_samples), 10)

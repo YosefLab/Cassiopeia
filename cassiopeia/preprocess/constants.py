@@ -23,11 +23,7 @@ DNA_SUBSTITUTION_MATRIX = {
 
 DEFAULT_PIPELINE_PARAMETERS = {
     "general": {"entry": "'collapse'", "exit": "'call_lineages'"},
-    "collapse": {
-        "max_hq_mismatches": 3,
-        "max_indels": 2,
-        "force_sort": True,
-    },
+    "collapse": {"max_hq_mismatches": 3, "max_indels": 2, "force_sort": True},
     "resolve": {
         "min_avg_reads_per_umi": 2.0,
         "min_umi_per_cell": 10,

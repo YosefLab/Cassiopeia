@@ -59,7 +59,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         ## set up non-cassiopeia allele table
         self.noncassiopeia_alleletable = self.alleletable_basic.copy()
-        self.noncassiopeia_alleletable.rename(columns = {"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+        self.noncassiopeia_alleletable.rename(
+            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
 
     def test_basic_character_matrix_formation(self):
 
@@ -375,11 +377,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 indel_probabilities.loc[indel, "freq"],
                 delta=0.01,
             )
-    
+
     def test_noncanonical_cut_sites_allele_table_to_character_matrix(self):
 
         character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
-            self.noncassiopeia_alleletable, cut_sites = ['cs1', 'cs2', 'cs3']
+            self.noncassiopeia_alleletable, cut_sites=["cs1", "cs2", "cs3"]
         )
 
         self.assertEqual(character_matrix.shape[0], 3)
@@ -400,7 +402,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
     def test_noncanonical_cut_sites_allele_table_to_lineage_profile(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.noncassiopeia_alleletable, cut_sites = ["cs1", "cs2", "cs3"]
+            self.noncassiopeia_alleletable, cut_sites=["cs1", "cs2", "cs3"]
         )
 
         expected_lineage_profile = pd.DataFrame.from_dict(
@@ -459,12 +461,18 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             lineage_profile[expected_lineage_profile.columns],
         )
 
-    def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(self):
-        
+    def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(
+        self
+    ):
+
         noncassiopeia_at = self.allele_table_mouse.copy()
-        noncassiopeia_at.rename(columns = {"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+        noncassiopeia_at.rename(
+            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
         indel_probabilities = cas.pp.compute_empirical_indel_priors(
-            noncassiopeia_at, grouping_variables=["Mouse", "intBC"], cut_sites = ['cs1', 'cs2', 'cs3']
+            noncassiopeia_at,
+            grouping_variables=["Mouse", "intBC"],
+            cut_sites=["cs1", "cs2", "cs3"],
         )
 
         expected_priors = pd.DataFrame.from_dict(
@@ -514,6 +522,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 indel_probabilities.loc[indel, "freq"],
                 delta=0.01,
             )
+
 
 if __name__ == "__main__":
     unittest.main()

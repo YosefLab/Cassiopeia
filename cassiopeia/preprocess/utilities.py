@@ -401,7 +401,7 @@ def convert_alleletable_to_character_matrix(
         i = 1
         for c in cut_sites:
             if intBC not in ignore_intbcs:
-                to_add.append(("intBC", c, cut_sites[i-1]))
+                to_add.append(("intBC", c, cut_sites[i - 1]))
 
             i += 1
 
@@ -493,7 +493,9 @@ def convert_alleletable_to_character_matrix(
     return character_matrix, prior_probs, indel_to_charstate
 
 
-def convert_alleletable_to_lineage_profile(allele_table, cut_sites: Optional[List[str]] = None) -> pd.DataFrame:
+def convert_alleletable_to_lineage_profile(
+    allele_table, cut_sites: Optional[List[str]] = None
+) -> pd.DataFrame:
     """Converts an AlleleTable to a lineage profile.
 
     Takes in an allele table that summarizes the indels observed at individual
@@ -644,7 +646,9 @@ def convert_lineage_profile_to_character_matrix(
 
 
 def compute_empirical_indel_priors(
-    allele_table: pd.DataFrame, grouping_variables: List[str] = ["intBC"], cut_sites: Optional[List[str]] = None,
+    allele_table: pd.DataFrame,
+    grouping_variables: List[str] = ["intBC"],
+    cut_sites: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """Computes indel prior probabilities.
 
@@ -700,6 +704,7 @@ def compute_empirical_indel_priors(
     indel_priors.index.name = "indel"
 
     return indel_priors
+
 
 def get_default_cut_site_columns(allele_table: pd.DataFrame) -> List[str]:
     """Retrieves the default cut-sites columns of an AlleleTable.
