@@ -358,6 +358,20 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 delta=0.01,
             )
 
+        # make sure permuting grouping variables doesn't change result
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+            self.allele_table_mouse, grouping_variables=["intBC", "Mouse"]
+        )
+
+        for indel in expected_priors.index:
+
+            self.assertIn(indel, indel_probabilities.index.values)
+            self.assertAlmostEqual(
+                expected_priors.loc[indel, "freq"],
+                indel_probabilities.loc[indel, "freq"],
+                delta=0.01,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
