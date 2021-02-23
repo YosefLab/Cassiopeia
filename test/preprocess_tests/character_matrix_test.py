@@ -36,6 +36,27 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=["freq"],
         )
 
+        ## setup complicated allele table
+        at_dict = {
+            "cellBC": [
+                "cellA",
+                "cellA",
+                "cellA",
+                "cellB",
+                "cellB",
+                "cellC",
+                "cellD",
+                "cellD",
+            ],
+            "intBC": ["A", "B", "C", "B", "C", "A", "A", "B"],
+            "r1": ["AAA", "AAB", "AAC", "AAD", "ABA", "ABB", "AAA", "AAB"],
+            "r2": ["BAA", "BAB", "BAC", "BAD", "BBA", "BBB", "BAA", "BAB"],
+            "r3": ["CAA", "CAB", "CAC", "CAD", "CBA", "CBB", "CAA", "CAB"],
+            "UMI": [5, 10, 30, 30, 10, 10, 3, 3],
+            "Mouse": ["M1", "M1", "M1", "M1", "M1", "M1", "M2", "M2"],
+        }
+        self.allele_table_mouse = pd.DataFrame(at_dict)
+
     def test_basic_character_matrix_formation(self):
 
         character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
@@ -268,6 +289,74 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 indel = state_to_indel[character][state]
                 prob = self.mutation_priors.loc[indel].iloc[0]
                 self.assertEqual(prob, priors[character][state])
+
+    def test_compute_empirical_indel_probabilities(self):
+
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+            self.alleletable_basic
+        )
+
+        expected_priors = pd.DataFrame.from_dict(
+            {
+                "GGG": [1, 1 / 3],
+                "GAA": [1, 1 / 3],
+                "ATA": [2, 2 / 3],
+                "ATC": [2, 2 / 3],
+                "AAA": [1, 1 / 3],
+                "TTT": [1, 1 / 3],
+            },
+            orient="index",
+            columns=["count", "freq"],
+        )
+
+        for indel in expected_priors.index:
+
+            self.assertIn(indel, indel_probabilities.index.values)
+            self.assertAlmostEqual(
+                expected_priors.loc[indel, "freq"],
+                indel_probabilities.loc[indel, "freq"],
+                delta=0.01,
+            )
+
+    def test_compute_empirical_indel_probabilities_multiple_variables(self):
+
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+            self.allele_table_mouse, grouping_variables=["Mouse", "intBC"]
+        )
+
+        expected_priors = pd.DataFrame.from_dict(
+            {
+                "AAB": [2, 2 / 5],
+                "BAB": [2, 2 / 5],
+                "CAB": [2, 2 / 5],
+                "AAA": [2, 2 / 5],
+                "BAA": [2, 2 / 5],
+                "CAA": [2, 2 / 5],
+                "AAC": [1, 1 / 5],
+                "BAC": [1, 1 / 5],
+                "CAC": [1, 1 / 5],
+                "AAD": [1, 1 / 5],
+                "BAD": [1, 1 / 5],
+                "CAD": [1, 1 / 5],
+                "ABA": [1, 1 / 5],
+                "BBA": [1, 1 / 5],
+                "CBA": [1, 1 / 5],
+                "ABB": [1, 1 / 5],
+                "BBB": [1, 1 / 5],
+                "CBB": [1, 1 / 5],
+            },
+            orient="index",
+            columns=["count", "freq"],
+        )
+
+        for indel in expected_priors.index:
+
+            self.assertIn(indel, indel_probabilities.index.values)
+            self.assertAlmostEqual(
+                expected_priors.loc[indel, "freq"],
+                indel_probabilities.loc[indel, "freq"],
+                delta=0.01,
+            )
 
 
 if __name__ == "__main__":

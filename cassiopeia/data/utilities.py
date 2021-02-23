@@ -241,22 +241,29 @@ def sample_bootstrap_allele_tables(
     """Generates bootstrap character matrices from an allele table.
 
     This function will take in an allele table, generated with the Cassiopeia
-    preprocess pipeline and produce sevreral bootstrap character matrices with
+    preprocess pipeline and produce several bootstrap character matrices with
     respect to intBCs rather than individual cut-sites as in
     `sample_bootstrap_character_matrices`. This is useful because oftentimes
     there are dependencies between cut-sites on the same intBC TargetSite.
 
     Args:
         allele_table: AlleleTable from the Cassiopeia preprocessing pipeline
-        indel_priors: A dataframe mapping indel identities to prior probabilities
+        indel_priors: A dataframe mapping indel identities to prior
+            probabilities
         B: number of bootstrap samples to create
         random_state: A numpy random state for reproducibility.
     """
 
-    cut_sites = [column for column in allele_table.columns if bool(re.search(r"r\d", column))]
-    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(allele_table)
+    cut_sites = [
+        column
+        for column in allele_table.columns
+        if bool(re.search(r"r\d", column))
+    ]
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table
+    )
 
-    intbcs = allele_table['intBC'].unique()
+    intbcs = allele_table["intBC"].unique()
     M = len(intbcs)
 
     bootstrap_samples = []
@@ -268,11 +275,30 @@ def sample_bootstrap_allele_tables(
         else:
             sampled_intbcs = np.random.choice(intbcs, M, replace=True)
 
-        bootstrap_intbcs = sum([[intbc + f"_{cut_site}" for cut_site in cut_sites] for intbc in sampled_intbcs], [])
+        bootstrap_intbcs = sum(
+            [
+                [intbc + f"_{cut_site}" for cut_site in cut_sites]
+                for intbc in sampled_intbcs
+            ],
+            [],
+        )
         b_sample = lineage_profile[bootstrap_intbcs]
 
-        bootstrapped_character_matrix, priors, state_to_indel = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors = indel_priors)
+        (
+            bootstrapped_character_matrix,
+            priors,
+            state_to_indel,
+        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(
+            b_sample, indel_priors=indel_priors
+        )
 
-        bootstrap_samples.append((bootstrapped_character_matrix, priors, state_to_indel, bootstrap_intbcs))
+        bootstrap_samples.append(
+            (
+                bootstrapped_character_matrix,
+                priors,
+                state_to_indel,
+                bootstrap_intbcs,
+            )
+        )
 
     return bootstrap_samples

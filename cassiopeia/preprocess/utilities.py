@@ -472,15 +472,13 @@ def convert_alleletable_to_character_matrix(
                             allele_counter[c][state]
                         )
 
-                        indel_to_charstate[i][
-                                len(allele_counter[c])
-                            ] = state
+                        indel_to_charstate[i][len(allele_counter[c])] = state
 
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
                             prior_probs[i][len(allele_counter[c])] = float(prob)
-                            
+
             else:
                 character_strings[sample].append(missing_data_state)
 
@@ -624,8 +622,6 @@ def convert_lineage_profile_to_character_matrix(
                 mutation_to_state[col][indel] = mutation_counter[col] + 1
                 mutation_counter[col] += 1
 
-                
-                
                 indel_to_charstate[c][mutation_to_state[col][indel]] = indel
 
                 if indel_priors is not None:
@@ -642,3 +638,62 @@ def convert_lineage_profile_to_character_matrix(
     ]
 
     return character_matrix, prior_probs, indel_to_charstate
+
+
+def compute_empirical_indel_priors(
+    allele_table: pd.DataFrame, grouping_variables: List[str] = ["intBC"]
+) -> pd.DataFrame:
+    """Computes indel prior probabilities.
+
+    Generates indel prior probabilities from the input allele table. The general
+    idea behind this procedure is to count the number of times an indel
+    independently occur. By default, we treat each intBC as an independent,
+    which is true if the input allele table is a clonal population. Here, the
+    procedure will count the number of intBCs that contain a particular indel
+    and divide by the number of intBCs in the allele table. However, a user can
+    be more nuanced in their analysis and group intBC by other variables, such
+    as lineage group (this is especially useful if intBCs might occur several
+    clonal populations). Then, the procedure will count the number of times an
+    indel occurs in a unique lineage-intBC combination.
+
+    Args:
+        allele_table: Alleletable
+        grouping_variables: Variables to stratify data by, to treat as
+            independent groups in counting indel occurrences. These must be
+            columns in the allele table
+
+    Returns:
+        A DataFrame mapping indel identities to the probability.
+    """
+
+    cut_sites = [
+        column
+        for column in allele_table.columns
+        if bool(re.search(r"r\d", column))
+    ]
+
+    agg_recipe = dict(
+        zip([cut_site for cut_site in cut_sites], ["unique"] * len(cut_sites))
+    )
+    groups = allele_table.groupby(grouping_variables).agg(agg_recipe)
+
+    indel_count = defaultdict(int)
+
+    for g in groups.index:
+
+        alleles = np.unique(np.concatenate(groups.loc[g].values))
+        for a in alleles:
+            if "none" not in a.lower():
+                indel_count[a] += 1
+
+    tot = len(groups.index)
+
+    indel_freqs = dict(
+        zip(list(indel_count.keys()), [v / tot for v in indel_count.values()])
+    )
+
+    indel_priors = pd.DataFrame([indel_count, indel_freqs]).T
+    indel_priors.columns = ["count", "freq"]
+    indel_priors.index.name = "indel"
+
+    return indel_priors
