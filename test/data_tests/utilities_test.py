@@ -72,7 +72,7 @@ class TestDataUtilities(unittest.TestCase):
         random_state = np.random.RandomState(123431235)
 
         bootstrap_samples = data_utilities.sample_bootstrap_character_matrices(
-            self.character_matrix, B=10, random_state=random_state
+            self.character_matrix, num_bootstraps=10, random_state=random_state
         )
 
         self.assertEqual(len(bootstrap_samples), 10)
@@ -98,7 +98,7 @@ class TestDataUtilities(unittest.TestCase):
 
         bootstrap_samples = data_utilities.sample_bootstrap_character_matrices(
             self.character_matrix,
-            B=10,
+            num_bootstraps=10,
             prior_probabilities=self.priors,
             random_state=random_state,
         )
@@ -133,7 +133,7 @@ class TestDataUtilities(unittest.TestCase):
         )
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
-            self.allele_table, B=10, random_state=random_state
+            self.allele_table, num_bootstraps=10, random_state=random_state
         )
 
         self.assertEqual(len(bootstrap_samples), 10)
@@ -178,7 +178,7 @@ class TestDataUtilities(unittest.TestCase):
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
             self.allele_table,
-            B=10,
+            num_bootstraps=10,
             indel_priors=self.indel_to_prior,
             random_state=random_state,
         )

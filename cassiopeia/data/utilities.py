@@ -182,13 +182,13 @@ def compute_dissimilarity_map(
 def sample_bootstrap_character_matrices(
     character_matrix: pd.DataFrame,
     prior_probabilities: Optional[Dict[int, Dict[int, float]]] = None,
-    B: int = 10,
+    num_bootstraps: int = 10,
     random_state: Optional[np.random.RandomState] = None,
 ) -> List[Tuple[pd.DataFrame, Dict[int, Dict[int, float]]]]:
     """Generates bootstrapped character matrices from a character matrix.
 
     Ingests a character matrix and randomly creates bootstrap samples by
-    sampling with replacement characters. Each bootstrapped character matrix,
+    sampling characters with replacement. Each bootstrapped character matrix,
     then, retains the same number of characters but some will be repeated and
     some will be ignored. If a prior proability dictionary is also passed in,
     then a new priors dictionary will be created for each bootstrapped character
@@ -197,7 +197,7 @@ def sample_bootstrap_character_matrices(
     Args:
         character_matrix: Character matrix
         prior_probabilities: Probabilities of each (character, state) pair.
-        B: Number of bootstrap samples to create.
+        num_bootstraps: Number of bootstrap samples to create.
         random_state: A numpy random state to draw samples from
 
     Returns:
@@ -207,7 +207,7 @@ def sample_bootstrap_character_matrices(
 
     bootstrap_samples = []
     M = character_matrix.shape[1]
-    for _ in range(B):
+    for _ in range(num_bootstraps):
 
         if random_state:
             sampled_cut_sites = random_state.choice(M, M, replace=True)
@@ -235,7 +235,7 @@ def sample_bootstrap_character_matrices(
 def sample_bootstrap_allele_tables(
     allele_table: pd.DataFrame,
     indel_priors: Optional[pd.DataFrame] = None,
-    B: int = 10,
+    num_bootstraps: int = 10,
     random_state: Optional[np.random.RandomState] = None,
 ):
     """Generates bootstrap character matrices from an allele table.
@@ -250,7 +250,7 @@ def sample_bootstrap_allele_tables(
         allele_table: AlleleTable from the Cassiopeia preprocessing pipeline
         indel_priors: A dataframe mapping indel identities to prior
             probabilities
-        B: number of bootstrap samples to create
+        num_bootstraps: number of bootstrap samples to create
         random_state: A numpy random state for reproducibility.
     """
 
@@ -268,7 +268,7 @@ def sample_bootstrap_allele_tables(
 
     bootstrap_samples = []
 
-    for _ in range(B):
+    for _ in range(num_bootstraps):
 
         if random_state:
             sampled_intbcs = random_state.choice(intbcs, M, replace=True)
