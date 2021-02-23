@@ -32,7 +32,7 @@ class BLEMultifurcationWrapper(BranchLengthEstimator):
             tree.get_tree_topology()
         )
         # For debugging:
-        print(f"binary_topology = {binary_topology.__dict__}")
+        # print(f"binary_topology = {binary_topology.__dict__}")
         tree_binary = CassiopeiaTree(
             character_matrix=tree.get_current_character_matrix(),
             tree=binary_topology,
