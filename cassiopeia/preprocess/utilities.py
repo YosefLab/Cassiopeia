@@ -359,12 +359,13 @@ def convert_alleletable_to_character_matrix(
     allele_rep_thresh: float = 1.0,
     missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
+    cut_sites: Optional[List[str]] = None,
 ) -> Tuple[
     pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
-    """Converts an alleletable into a character matrix.
+    """Converts an AlleleTable into a character matrix.
 
-    Given an alleletable storing the observed mutations for each intBC / cellBC
+    Given an AlleleTable storing the observed mutations for each intBC / cellBC
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
     as '-'. The function also have the ability to ignore certain intBC sets as
@@ -378,7 +379,10 @@ def convert_alleletable_to_character_matrix(
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
-            probability dictionary for reconstruction. 
+            probability dictionary for reconstruction.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r\d" (e.g. "r1")
 
 	Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
@@ -389,17 +393,15 @@ def convert_alleletable_to_character_matrix(
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
-        cut_sites = [
-            f"_{column}"
-            for column in alleletable.columns
-            if bool(re.search(r"r\d", column))
-        ]
+
+        if cut_sites is None:
+            cut_sites = get_default_cut_site_columns(alleletable)
 
         to_add = []
         i = 1
         for c in cut_sites:
             if intBC not in ignore_intbcs:
-                to_add.append(("intBC", c, f"r{i}"))
+                to_add.append(("intBC", c, cut_sites[i-1]))
 
             i += 1
 
@@ -491,8 +493,8 @@ def convert_alleletable_to_character_matrix(
     return character_matrix, prior_probs, indel_to_charstate
 
 
-def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
-    """Converts an alleletable to a lineage profile.
+def convert_alleletable_to_lineage_profile(allele_table, cut_sites: Optional[List[str]] = None) -> pd.DataFrame:
+    """Converts an AlleleTable to a lineage profile.
 
     Takes in an allele table that summarizes the indels observed at individual
     cellBC-intBC pairs and produces a lineage profile, which essentially is a 
@@ -502,18 +504,19 @@ def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
 
     Args:
         allele_table: AlleleTable.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r\d" (e.g. "r1")
 
     Returns:
         An NxM lineage profile.
     """
 
-    cutsites = [
-        column
-        for column in allele_table.columns
-        if bool(re.search(r"r\d", column))
-    ]
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(allele_table)
+
     agg_recipe = dict(
-        zip([cutsite for cutsite in cutsites], ["unique"] * len(cutsites))
+        zip([cutsite for cutsite in cut_sites], ["unique"] * len(cut_sites))
     )
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
@@ -521,15 +524,15 @@ def convert_alleletable_to_lineage_profile(allele_table) -> pd.DataFrame:
     # create mutltindex df by hand
     i1 = []
     for i in intbcs:
-        i1 += [i] * 3
-        i2 = list(cutsites) * len(intbcs)
+        i1 += [i] * len(cut_sites)
+        i2 = list(cut_sites) * len(intbcs)
 
     indices = [i1, i2]
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
         vals = map(lambda x: x[0], g.loc[j])
-        for val, cutsite in zip(vals, cutsites):
+        for val, cutsite in zip(vals, cut_sites):
             allele_piv.loc[j[0]][j[1], cutsite] = val
 
     allele_piv2 = pd.pivot_table(
@@ -641,7 +644,7 @@ def convert_lineage_profile_to_character_matrix(
 
 
 def compute_empirical_indel_priors(
-    allele_table: pd.DataFrame, grouping_variables: List[str] = ["intBC"]
+    allele_table: pd.DataFrame, grouping_variables: List[str] = ["intBC"], cut_sites: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """Computes indel prior probabilities.
 
@@ -657,20 +660,20 @@ def compute_empirical_indel_priors(
     indel occurs in a unique lineage-intBC combination.
 
     Args:
-        allele_table: Alleletable
+        allele_table: AlleleTable
         grouping_variables: Variables to stratify data by, to treat as
             independent groups in counting indel occurrences. These must be
             columns in the allele table
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r\d" (e.g. "r1")
 
     Returns:
         A DataFrame mapping indel identities to the probability.
     """
 
-    cut_sites = [
-        column
-        for column in allele_table.columns
-        if bool(re.search(r"r\d", column))
-    ]
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(allele_table)
 
     agg_recipe = dict(
         zip([cut_site for cut_site in cut_sites], ["unique"] * len(cut_sites))
@@ -697,3 +700,25 @@ def compute_empirical_indel_priors(
     indel_priors.index.name = "indel"
 
     return indel_priors
+
+def get_default_cut_site_columns(allele_table: pd.DataFrame) -> List[str]:
+    """Retrieves the default cut-sites columns of an AlleleTable.
+
+    A basic helper function that will retrieve the cut-sites from an AlleleTable
+    if the AlleleTable was created using the Cassiopeia pipeline. In this case,
+    each cut-site is denoted by an integer preceded by the character "r", for
+    example "r1" or "r2".
+
+    Args:
+        allele_table: AlleleTable
+    
+    Return:
+        Columns in the AlleleTable corresponding to the cut sites.
+    """
+    cut_sites = [
+        column
+        for column in allele_table.columns
+        if bool(re.search(r"r\d", column))
+    ]
+
+    return cut_sites

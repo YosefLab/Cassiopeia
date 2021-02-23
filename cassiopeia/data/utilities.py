@@ -198,7 +198,7 @@ def sample_bootstrap_character_matrices(
         character_matrix: Character matrix
         prior_probabilities: Probabilities of each (character, state) pair.
         num_bootstraps: Number of bootstrap samples to create.
-        random_state: A numpy random state to draw samples from
+        random_state: A numpy random state to from which to draw samples
 
     Returns:
         A list of bootstrap samples in the form
@@ -236,8 +236,9 @@ def sample_bootstrap_allele_tables(
     indel_priors: Optional[pd.DataFrame] = None,
     num_bootstraps: int = 10,
     random_state: Optional[np.random.RandomState] = None,
+    cut_sites: Optional[List[str]] = None
 ) -> List[
-    Tuple[pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]]
+    Tuple[pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]], List[str]]
 ]:
     """Generates bootstrap character matrices from an allele table.
 
@@ -253,15 +254,20 @@ def sample_bootstrap_allele_tables(
             probabilities
         num_bootstraps: number of bootstrap samples to create
         random_state: A numpy random state for reproducibility.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r\d" (e.g. "r1")
+    Returns:
+        A list of bootstrap samples in the form of tuples
+            (bootstrapped character matrix, prior dictionary,
+            state to indel mapping, bootstrapped intBC set)
     """
 
-    cut_sites = [
-        column
-        for column in allele_table.columns
-        if bool(re.search(r"r\d", column))
-    ]
+    if cut_sites is None:
+        cut_sites = preprocessing_utilities.get_default_cut_site_columns(allele_table)
+
     lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
-        allele_table
+        allele_table, cut_sites
     )
 
     intbcs = allele_table["intBC"].unique()

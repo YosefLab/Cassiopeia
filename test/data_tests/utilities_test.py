@@ -67,6 +67,10 @@ class TestDataUtilities(unittest.TestCase):
             columns=["freq"],
         )
 
+        # Test allele table without normal cassiopeia columns
+        self.non_cassiopeia_allele_table = self.allele_table.copy()
+        self.non_cassiopeia_allele_table.rename(columns = {"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+
     def test_bootstrap_character_matrices_no_priors(self):
 
         random_state = np.random.RandomState(123431235)
@@ -148,6 +152,46 @@ class TestDataUtilities(unittest.TestCase):
             self.assertEqual(
                 len(bootstrap_intbcs),
                 len(self.allele_table["intBC"].unique()) * 3,
+            )
+
+            self.assertCountEqual(
+                character_matrix.index, bootstrap_matrix.index
+            )
+            self.assertEqual(
+                character_matrix.shape[1], bootstrap_matrix.shape[1]
+            )
+
+            self.assertRaises(
+                AssertionError,
+                pd.testing.assert_frame_equal,
+                character_matrix,
+                bootstrap_matrix,
+            )
+
+    def test_bootstrap_allele_tables_non_cassiopeia_allele_table(self):
+
+        random_state = np.random.RandomState(123431235)
+
+        character_matrix, _, _ = preprocessing_utilities.convert_alleletable_to_character_matrix(
+            self.non_cassiopeia_allele_table, cut_sites = ["cs1", "cs2", "cs3"]
+        )
+
+        bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
+            self.non_cassiopeia_allele_table, num_bootstraps=10, random_state=random_state, cut_sites = ["cs1", "cs2", "cs3"],
+        )
+
+        self.assertEqual(len(bootstrap_samples), 10)
+
+        for (
+            bootstrap_matrix,
+            bootstrap_priors,
+            boostarp_state_to_indel,
+            bootstrap_intbcs,
+        ) in bootstrap_samples:
+
+            self.assertEqual(
+                len(bootstrap_intbcs),
+                len(self.non_cassiopeia_allele_table["intBC"].unique()) * 3,
             )
 
             self.assertCountEqual(
