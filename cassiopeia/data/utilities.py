@@ -221,9 +221,8 @@ def sample_bootstrap_character_matrices(
             f"random_character{i}" for i in range(M)
         ]
 
-        new_priors = None
+        new_priors = {}
         if prior_probabilities:
-            new_priors = {}
             for i, cut_site in zip(range(M), sampled_cut_sites):
                 new_priors[i] = prior_probabilities[cut_site]
 
@@ -237,7 +236,9 @@ def sample_bootstrap_allele_tables(
     indel_priors: Optional[pd.DataFrame] = None,
     num_bootstraps: int = 10,
     random_state: Optional[np.random.RandomState] = None,
-):
+) -> List[
+    Tuple[pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]]
+]:
     """Generates bootstrap character matrices from an allele table.
 
     This function will take in an allele table, generated with the Cassiopeia
