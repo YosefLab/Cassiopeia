@@ -382,7 +382,7 @@ def convert_alleletable_to_character_matrix(
             probability dictionary for reconstruction.
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
-            "r\d" (e.g. "r1")
+            "r{int}" (e.g. "r1")
 
 	Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
@@ -508,7 +508,7 @@ def convert_alleletable_to_lineage_profile(
         allele_table: AlleleTable.
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
-            "r\d" (e.g. "r1")
+            "r{int}" (e.g. "r1")
 
     Returns:
         An NxM lineage profile.
@@ -670,7 +670,7 @@ def compute_empirical_indel_priors(
             columns in the allele table
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
-            "r\d" (e.g. "r1")
+            "r{int}" (e.g. "r1")
 
     Returns:
         A DataFrame mapping indel identities to the probability.
