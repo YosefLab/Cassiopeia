@@ -42,14 +42,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         self,
         dissimilarity_function: Optional[
             Callable[
-                [
-                    int,
-                    int,
-                    pd.DataFrame,
-                    int,
-                    Optional[Dict[int, Dict[str, float]]],
-                ],
-                float,
+                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
             ]
         ] = None,
         add_root: bool = False,
@@ -141,6 +134,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
+        cluster_to_cluster_size: Dict[str, int] = None
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
 

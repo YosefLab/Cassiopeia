@@ -64,7 +64,7 @@ def main():
         data = pd.read_csv(data_filepath, sep="\t")
 
     data_file_stem = ".".join(data_filepath.split("/")[-1].split(".")[:-1])
-    
+
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
 

@@ -66,6 +66,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
+
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """A general bottom-up distance-based solver routine.
 
@@ -100,7 +101,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         while N > 2:
 
-            i, j = self.find_cherry(_dissimilarity_map.values)
+            i, j = self.find_cherry(_dissimilarity_map.to_numpy())
 
             # get indices in the dissimilarity matrix to join
             node_i, node_j = (
@@ -148,41 +149,43 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 the sample to treat as a root.
         """
 
-        if (
-            self.dissimilarity_function is None
-            and cassiopeia_tree.get_dissimilarity_map() is None
-        ):
-            raise DistanceSolverError(
-                "Please specify a dissimilarity function or populate the "
-                "CassiopeiaTree object with a dissimilarity map"
-            )
-
         character_matrix = (
-            cassiopeia_tree.get_original_character_matrix().copy()
+            cassiopeia_tree.get_current_character_matrix().copy()
         )
 
+        # if root sample is not specified, we'll add the implicit root
+        # and recompute the dissimilarity map
+
         if cassiopeia_tree.root_sample_name is None and self.add_root:
-
-            if self.dissimilarity_function is None:
-                raise DistanceSolverError(
-                    "Please specify a root sample in CassiopeiaTree or provide "
-                    "a dissimilarity function by which to add a root to the "
-                    "dissimilarity map"
-                )
-
             root = [0] * character_matrix.shape[1]
             character_matrix.loc["root"] = root
             cassiopeia_tree.root_sample_name = "root"
-
-            # if root sample is not specified, we'll add the implicit root
-            # and recompute the dissimilarity map
             cassiopeia_tree.set_character_matrix(character_matrix)
+
+            if self.dissimilarity_function is None:
+                raise DistanceSolverError(
+                    "Please specify a dissimilarity function to add an implicit "
+                    "root, or specify an explicit root"
+                )
+
             cassiopeia_tree.compute_dissimilarity_map(
                 self.dissimilarity_function, self.prior_transformation
             )
 
+        if cassiopeia_tree.get_dissimilarity_map() is None:
+            if self.dissimilarity_function is None:
+                raise DistanceSolverError(
+                    "Please specify a dissimilarity function or populate the "
+                    "CassiopeiaTree object with a dissimilarity map"
+                )
+
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
+            )
+
+
     @abc.abstractmethod
-    def root_tree(self, tree):
+    def root_tree(self, tree, root_sample):
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
@@ -212,7 +215,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
-        new_node: str,
+        new_node: str
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
 
