@@ -63,7 +63,8 @@ class TestUPGMASolver(unittest.TestCase):
 
         self.basic_dissimilarity_map = delta
         self.basic_tree = CassiopeiaTree(
-            character_matrix=cm, dissimilarity_map=delta,
+            character_matrix=cm,
+            dissimilarity_map=delta,
         )
 
         self.upgma_solver = UPGMASolver()
@@ -81,9 +82,9 @@ class TestUPGMASolver(unittest.TestCase):
             orient="index",
             columns=["x1", "x2", "x3"],
         )
-        
+
         self.pp_tree = CassiopeiaTree(character_matrix=pp_cm)
-        
+
         self.upgma_solver_delta = UPGMASolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance
         )
@@ -102,15 +103,16 @@ class TestUPGMASolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        self.duplicate_tree = CassiopeiaTree(
-            character_matrix=duplicates_cm
-        )
+        self.duplicate_tree = CassiopeiaTree(character_matrix=duplicates_cm)
 
         # -------------  Hamming dissimilarity with weights  ------------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
-        self.pp_tree_priors = CassiopeiaTree(character_matrix=pp_cm, priors=priors)
-        self.upgma_solver_modified = UPGMASolver(dissimilarity_function=dissimilarity_functions.weighted_hamming_distance)
-
+        self.pp_tree_priors = CassiopeiaTree(
+            character_matrix=pp_cm, priors=priors
+        )
+        self.upgma_solver_modified = UPGMASolver(
+            dissimilarity_function=dissimilarity_functions.weighted_hamming_distance
+        )
 
     def test_constructor(self):
 
@@ -118,10 +120,11 @@ class TestUPGMASolver(unittest.TestCase):
         self.assertIsNotNone(self.upgma_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
-
     def test_find_cherry(self):
 
-        cherry = self.upgma_solver.find_cherry(self.basic_dissimilarity_map.values)
+        cherry = self.upgma_solver.find_cherry(
+            self.basic_dissimilarity_map.values
+        )
         delta = self.basic_dissimilarity_map
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
@@ -131,13 +134,11 @@ class TestUPGMASolver(unittest.TestCase):
 
         delta = self.basic_dissimilarity_map
 
-        cluster_sizes = {"a": 1, "b": 1, "c": 1, "d": 1, "e": 1}
-
         cherry = self.upgma_solver.find_cherry(delta.values)
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
         delta = self.upgma_solver.update_dissimilarity_map(
-            delta, (node_i, node_j), "ab", cluster_sizes
+            delta, (node_i, node_j), "ab"
         )
 
         expected_delta = pd.DataFrame.from_dict(
@@ -158,13 +159,11 @@ class TestUPGMASolver(unittest.TestCase):
                     expected_delta.loc[sample, sample2],
                 )
 
-        self.assertEqual(cluster_sizes, {"a": 1, "b": 1, "c": 1, "d": 1, "e": 1, "ab": 2})
-
         cherry = self.upgma_solver.find_cherry(delta.values)
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
         delta = self.upgma_solver.update_dissimilarity_map(
-            delta, (node_i, node_j), "abe", cluster_sizes
+            delta, (node_i, node_j), "abe"
         )
 
         expected_delta = pd.DataFrame.from_dict(
@@ -184,8 +183,6 @@ class TestUPGMASolver(unittest.TestCase):
                     expected_delta.loc[sample, sample2],
                 )
 
-        self.assertEqual(cluster_sizes, {"a": 1, "b": 1, "c": 1, "d": 1, "e": 1, "ab": 2, "abe": 3})
-
     def test_basic_solver(self):
 
         self.upgma_solver.solve(self.basic_tree)
@@ -193,9 +190,7 @@ class TestUPGMASolver(unittest.TestCase):
         # test leaves exist in tree
         _leaves = self.basic_tree.leaves
 
-        self.assertEqual(
-            len(_leaves), self.basic_dissimilarity_map.shape[0]
-        )
+        self.assertEqual(len(_leaves), self.basic_dissimilarity_map.shape[0])
         for _leaf in _leaves:
             self.assertIn(_leaf, self.basic_dissimilarity_map.index.values)
 
@@ -205,7 +200,9 @@ class TestUPGMASolver(unittest.TestCase):
 
         # test relationships between samples
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "5", "6", "7", "root"])
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "5", "6", "7", "root"]
+        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -215,7 +212,7 @@ class TestUPGMASolver(unittest.TestCase):
                 ("7", "c"),
                 ("7", "d"),
                 ("root", "6"),
-                ("root", "7")
+                ("root", "7"),
             ]
         )
 
@@ -239,12 +236,11 @@ class TestUPGMASolver(unittest.TestCase):
                     nx.shortest_path_length(expected_tree, sample1, sample2),
                 )
 
-
     def test_upgma_solver_weights(self):
 
         self.upgma_solver_modified.solve(self.pp_tree_priors)
         initial_d_map = self.pp_tree_priors.get_dissimilarity_map()
-        expected_dissimilarity = (-np.log(0.2) - np.log(0.8))/3
+        expected_dissimilarity = (-np.log(0.2) - np.log(0.8)) / 3
         self.assertEqual(initial_d_map.loc["a", "b"], expected_dissimilarity)
 
         T = self.pp_tree_priors.get_tree_topology()
@@ -255,14 +251,14 @@ class TestUPGMASolver(unittest.TestCase):
         )
         expected_tree.add_edges_from(
             [
-                ("root", 'a'),
-                ("root", '7'),
-                ('7', '8'),
-                ('7', '9'),
-                ('8', 'd'),
-                ('8', 'e'),
-                ('9', 'b'),
-                ('9', 'c'),
+                ("root", "a"),
+                ("root", "7"),
+                ("7", "8"),
+                ("7", "9"),
+                ("8", "d"),
+                ("8", "e"),
+                ("9", "b"),
+                ("9", "c"),
             ]
         )
 
@@ -272,12 +268,11 @@ class TestUPGMASolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
 
-
     def test_pp_solver(self):
 
         self.upgma_solver_delta.solve(self.pp_tree)
         initial_d_map = self.pp_tree.get_dissimilarity_map()
-        expected_dissimilarity = 1/3
+        expected_dissimilarity = 1 / 3
         self.assertEqual(initial_d_map.loc["d", "e"], expected_dissimilarity)
 
         T = self.pp_tree.get_tree_topology()
@@ -305,7 +300,6 @@ class TestUPGMASolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
-
 
     def test_duplicate(self):
         # In this case, we see that the missing data can break up a duplicate

@@ -29,7 +29,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             map. Optional if a dissimilarity map is already provided.
         add_root: Whether or not to add an implicit root the tree, i.e. a root
             with unmutated characters. If set to False, and no explicit root is
-            provided in the CassiopeiaTree, then will return an unrooted, 
+            provided in the CassiopeiaTree, then will return an unrooted,
             undirected tree
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -58,9 +58,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             prior_transformation=prior_transformation,
         )
 
-
-    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]):
-        """Roots a tree at the inferred ancestral root.
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+    ) -> nx.DiGraph():
+        """Roots a tree produced by Neighbor-Joining at the specified root.
 
         Uses the specified root to root the tree passed in
 
@@ -80,7 +81,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return rooted_tree
 
-
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
@@ -98,16 +98,11 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         q = self.compute_q(dissimilarity_matrix)
         np.fill_diagonal(q, np.inf)
 
-        _min = np.argmin(q)
-
-        i, j = _min % q.shape[0], _min // q.shape[0]
-
-        return (i, j)
-
+        return np.unravel_index(np.argmin(q, axis=None), q.shape)
 
     @staticmethod
     @numba.jit(nopython=True)
-    def compute_q(dissimilarity_map: np.array(int)):
+    def compute_q(dissimilarity_map: np.array(int)) -> np.array:
         """Computes the Q-criterion for every pair of samples.
 
         Computes the Q-criterion defined by Saitou and Nei (1987):
@@ -140,7 +135,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
-        cluster_to_cluster_size: Dict[str, int] = None
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
 
@@ -213,36 +207,33 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                0.5
-                * (
-                    dissimilarity_map[v, cherry_i]
-                    + dissimilarity_map[v, cherry_j]
-                    - dissimilarity_map[cherry_i, cherry_j]
-                )
+            updated_map[v, new_node_index] = updated_map[
+                new_node_index, v
+            ] = 0.5 * (
+                dissimilarity_map[v, cherry_i]
+                + dissimilarity_map[v, cherry_j]
+                - dissimilarity_map[cherry_i, cherry_j]
             )
 
         updated_map[new_node_index, new_node_index] = 0
 
         return updated_map
 
-    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines the implicit rooting strategy for the NeighborJoiningSolver.
 
         By default, the NeighborJoining algorithm returns an unrooted tree.
-        To root this tree, an implicit root of all zeros is added to the 
-        character matrix. Then, the dissimilarity map is recalculated using 
+        To root this tree, an implicit root of all zeros is added to the
+        character matrix. Then, the dissimilarity map is recalculated using
         the updated character matrix.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-        
+
         Returns:
             None, operates on the cassiopeia_tree passed in
         """
-        character_matrix = (
-            cassiopeia_tree.get_current_character_matrix()
-        )
+        character_matrix = cassiopeia_tree.get_current_character_matrix()
 
         root = [0] * character_matrix.shape[1]
         character_matrix.loc["root"] = root

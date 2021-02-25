@@ -27,22 +27,23 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     """Distance based solver class
 
     This solver serves as a generic Distance-based solver. Briefly, all of the
-    classes that derive from this class will use a dissimilarity map to 
+    classes that derive from this class will use a dissimilarity map to
     iteratively choose samples to merge and update the dissimilarity map
     based on this merging. An example of a derived class is the
     NeighborJoiningSolver which uses the Q-criterion to iteratively join
     samples until no samples remain.
 
-    TODO(mgjones, sprillo): Specify functions to use for rooting, etc. the
-        trees that are produced via a DistanceSolver.
+    TODO(mgjones, sprillo, rzhang): Specify functions to use for rooting, etc.
+        the trees that are produced via a DistanceSolver. Add compositional
+        framework.
 
     Args:
         dissimilarity_function: Function that can be used to compute the
             dissimilarity between samples.
         add_root: Whether or not to add an implicit root the tree, i.e. a root
             with unmutated characters. Only pertinent in algorithms that return
-            an unrooted tree, by default (e.g. Neighbor Joining). Will not 
-            override an explicitly defined root, specified by the 
+            an unrooted tree, by default (e.g. Neighbor Joining). Will not
+            override an explicitly defined root, specified by the
             'root_sample_name' attribute in the CassiopeiaTree
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -68,7 +69,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
-
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """A general bottom-up distance-based solver routine.
@@ -102,10 +102,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree = nx.Graph()
         tree.add_nodes_from(_dissimilarity_map.index)
 
-        cluster_to_cluster_size = dict(
-            zip(_dissimilarity_map.index, [1 for i in range(N)])
-        )
-
         while N > 2:
 
             i, j = self.find_cherry(_dissimilarity_map.to_numpy())
@@ -123,34 +119,33 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             _dissimilarity_map = self.update_dissimilarity_map(
-                _dissimilarity_map, (node_i, node_j), new_node_name, cluster_to_cluster_size
+                _dissimilarity_map, (node_i, node_j), new_node_name
             )
 
             N = _dissimilarity_map.shape[0]
 
-        tree = self.root_tree(tree, cassiopeia_tree.root_sample_name, _dissimilarity_map.index.values)
+        tree = self.root_tree(
+            tree,
+            cassiopeia_tree.root_sample_name,
+            _dissimilarity_map.index.values,
+        )
 
         tree = nx.relabel_nodes(tree, identifier_to_sample)
 
         cassiopeia_tree.populate_tree(tree)
 
-
-    def setup_dissimilarity_map(
-        self, cassiopeia_tree: CassiopeiaTree
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, List[str]], str]:
+    def setup_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Sets up the solver.
 
         Sets up the solver with respect to the input CassiopeiaTree by
-        extracting the character matrix, creating the dissimilarity map if
-        needed, and setting up the "root" sample if the tree will be rooted.
+        creating the dissimilarity map if needed and setting up the
+        "root" sample if the tree will be rooted.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`.
 
         Returns:
-            A character matrix with duplicate rows filtered out, a
-                dissimilarity map, a mapping from state to sample name, and
-                the sample to treat as a root.
+            None, operates on the input CassiopeiaTree in place
         """
 
         # if root sample is not specified, we'll add the implicit root
@@ -158,7 +153,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         if cassiopeia_tree.root_sample_name is None:
             if self.add_root:
-                self.setup_implicit_root(cassiopeia_tree)
+                self.setup_root_finder(cassiopeia_tree)
 
             else:
                 raise DistanceSolverError(
@@ -176,7 +171,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.compute_dissimilarity_map(
                 self.dissimilarity_function, self.prior_transformation
             )
-
 
     @abc.abstractmethod
     def root_tree(self, tree, root_sample, remaining_samples):
@@ -210,7 +204,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
-        cluster_to_cluster_size: Dict[str, int] = None
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
 
@@ -225,17 +218,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-
-    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines how an implicit root is to be added.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-        
+
         Returns:
-            None, operates on the cassiopeia_tree passed in
+            None, operates on the input CassiopeiaTree
         """
         pass
-
-
-        

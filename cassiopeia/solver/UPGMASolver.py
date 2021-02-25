@@ -1,11 +1,12 @@
 """
 This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
-the Neighbor-Joining algorithm proposed by Sokal and Michener (1958) that 
+a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that 
 iteratively joins together samples with the minimum dissimilarity.
 """
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import abc
+from collections import defaultdict
 import networkx as nx
 import numba
 import numpy as np
@@ -18,11 +19,11 @@ from cassiopeia.solver import DistanceSolver
 class UPGMASolver(DistanceSolver.DistanceSolver):
     """UPGMA class for Cassiopeia.
 
-    Implements the UPGMA algorithm described as a derived class of 
-    DistanceSolver. This class inherits the generic `solve` method, but 
-    implements its own procedure for finding cherries by minimizing the 
+    Implements the UPGMA algorithm described as a derived class of
+    DistanceSolver. This class inherits the generic `solve` method, but
+    implements its own procedure for finding cherries by minimizing the
     dissimilarity between samples. After joining nodes, the dissimilarities
-    are updated by averaging the distances of elements in the new cluster 
+    are updated by averaging the distances of elements in the new cluster
     with each existing node. Produces a rooted tree that is assumed to be
     ultrametric.
 
@@ -37,6 +38,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        __cluster_to_cluster_size: A dictionary that contains the number of
+            samples in each merged cluster of samples in the dissimilarity map
 
     """
 
@@ -56,12 +59,15 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             prior_transformation=prior_transformation,
         )
 
+        self.__cluster_to_cluster_size = defaultdict(int)
 
-    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]):
-        """Roots the tree.
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+    ):
+        """Roots a tree produced UPGMA.
 
-        Adds the root at the top of the UPGMA reconstructed tree. By the 
-        ultrametric assumption, the root is placed as the parent to the last 
+        Adds the root at the top of the UPGMA reconstructed tree. By the
+        ultrametric assumption, the root is placed as the parent to the last
         two unjoined nodes.
 
         Args:
@@ -74,14 +80,15 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         """
 
         tree.add_node("root")
-        tree.add_edges_from([("root", remaining_samples[0]), ("root", remaining_samples[1])])
-        
+        tree.add_edges_from(
+            [("root", remaining_samples[0]), ("root", remaining_samples[1])]
+        )
+
         rooted_tree = nx.DiGraph()
         for e in nx.dfs_edges(tree, source="root"):
             rooted_tree.add_edge(e[0], e[1])
 
         return rooted_tree
-
 
     def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
@@ -100,15 +107,16 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         dissimilarity_matrix = dissimilarity_matrix.astype(float)
         np.fill_diagonal(dissimilarity_matrix, np.inf)
 
-        return np.unravel_index(np.argmin(dissimilarity_matrix, axis=None), dissimilarity_matrix.shape)
-
+        return np.unravel_index(
+            np.argmin(dissimilarity_matrix, axis=None),
+            dissimilarity_matrix.shape,
+        )
 
     def update_dissimilarity_map(
         self,
         dissimilarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
-        cluster_to_cluster_size: Dict[str, int]
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
 
@@ -128,8 +136,18 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         Returns:
             A new dissimilarity map, updated with the new node
         """
-        i_size, j_size = cluster_to_cluster_size[cherry[0]], cluster_to_cluster_size[cherry[1]]
-        cluster_to_cluster_size[new_node] = i_size + j_size
+
+        i_size, j_size = 0, 0
+        if cherry[0] not in self.__cluster_to_cluster_size:
+            i_size = 1
+        else:
+            i_size += self.__cluster_to_cluster_size[cherry[0]]
+        if cherry[1] not in self.__cluster_to_cluster_size:
+            j_size = 1
+        else:
+            j_size += self.__cluster_to_cluster_size[cherry[1]]
+
+        self.__cluster_to_cluster_size[new_node] = i_size + j_size
 
         i, j = (
             np.where(dissimilarity_map.index == cherry[0])[0][0],
@@ -157,12 +175,16 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     @staticmethod
     @numba.jit(nopython=True)
     def update_dissimilarity_map_numba(
-        dissimilarity_map: np.array, cherry_i: int, cherry_j: int, size_i: int, size_j: int
+        dissimilarity_map: np.array,
+        cherry_i: int,
+        cherry_j: int,
+        size_i: int,
+        size_j: int,
     ) -> np.array:
         """An optimized function for updating dissimilarities.
 
-        A faster implementation of updating the dissimilarity map for Neighbor
-        Joining, invoked by `self.update_dissimilarity_map`.
+        A faster implementation of updating the dissimilarity map for UPGMA,
+        invoked by `self.update_dissimilarity_map`.
 
         Args:
             dissimilarity_map: A matrix of dissimilarities to update
@@ -187,26 +209,24 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             if v == cherry_i or v == cherry_j:
                 continue
             updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                (size_i * dissimilarity_map[v, cherry_i]
-                + size_j * dissimilarity_map[v, cherry_j])/
-                (size_i + size_j)
-            )
+                size_i * dissimilarity_map[v, cherry_i]
+                + size_j * dissimilarity_map[v, cherry_j]
+            ) / (size_i + size_j)
 
         updated_map[new_node_index, new_node_index] = 0
 
         return updated_map
 
-
-    def setup_implicit_root(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines the implicit rooting strategy for the UPGMASolver.
 
         By default, the UPGMA algorithm returns an rooted tree. Therefore,
-        the implicit root will be placed and specified at the end of the 
+        the implicit root will be placed and specified at the end of the
         solving procedure as the parent of the last two unjoined nodes.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-        
+
         Returns:
             None, operates on the cassiopeia_tree passed in
         """
