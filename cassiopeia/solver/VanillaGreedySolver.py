@@ -26,7 +26,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
     imputation methods are included for handling the case when a sample has a
     missing value on the character being split, where presence or absence of the
     character is ambiguous. The user can also specify a missing data method.
-    
+
     TODO(richardyz98): Implement fuzzysolver
 
     Args:

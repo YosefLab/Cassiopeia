@@ -23,6 +23,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     will implement "perform_split", which is the procedure for successively
     partioning the sample set.
 
+
+
     Args:
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -71,7 +73,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         continues until each side of the partition is comprised only of single
         samples. If an algorithm cannot produce a split on a set of samples,
         then those samples are placed as sister nodes and the procedure
-        terminates, generating a polytomy in the tree. This function will 
+        terminates, generating a polytomy in the tree. This function will
         populate a tree inside the input CassiopeiaTree.
 
         Args:
@@ -99,7 +101,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = len(tree.nodes)+1
+            root = len(tree.nodes) + 1
             tree.add_node(root)
 
             for clade in clades:
@@ -205,7 +207,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A tree with duplicates added
         """
-        
+
         character_matrix.index.name = "index"
         duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]

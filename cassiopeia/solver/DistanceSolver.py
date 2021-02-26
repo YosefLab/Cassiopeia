@@ -242,7 +242,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     @abc.abstractmethod
     def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines how an implicit root is to be added.
-        
+
         Sets up the root sample for the tree solver, operating directly on the
         CassiopeiaTree.
 

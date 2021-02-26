@@ -106,7 +106,10 @@ class TestILPSolver(unittest.TestCase):
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
-        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
+        (
+            layer_nodes,
+            layer_edges,
+        ) = ilp_solver_utilities.infer_layer_of_potential_graph(
             source_nodes, 10, self.pp_tree.missing_state_indicator
         )
 

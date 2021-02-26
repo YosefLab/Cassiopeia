@@ -369,7 +369,7 @@ def convert_alleletable_to_character_matrix(
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
     as '-'. The function also have the ability to ignore certain intBC sets as
-    well as cut sites with too little diversity. 
+    well as cut sites with too little diversity.
 
     Args:
         alleletable: Allele Table to be converted into a character matrix
@@ -384,10 +384,10 @@ def convert_alleletable_to_character_matrix(
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
 
-	Returns:
+        Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
-	"""
+    """
 
     filtered_samples = defaultdict(OrderedDict)
     for sample in alleletable.index:
@@ -499,7 +499,7 @@ def convert_alleletable_to_lineage_profile(
     """Converts an AlleleTable to a lineage profile.
 
     Takes in an allele table that summarizes the indels observed at individual
-    cellBC-intBC pairs and produces a lineage profile, which essentially is a 
+    cellBC-intBC pairs and produces a lineage profile, which essentially is a
     pivot table over the cellBC / intBCs. Conceptually, these lineage profiles
     are identical to character matrices, only the values in the matrix are the
     actual indel identities.
@@ -716,7 +716,7 @@ def get_default_cut_site_columns(allele_table: pd.DataFrame) -> List[str]:
 
     Args:
         allele_table: AlleleTable
-    
+
     Return:
         Columns in the AlleleTable corresponding to the cut sites.
     """

@@ -139,7 +139,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
             cassiopeia_tree.populate_tree(optimal_solution)
             return
-        
+
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
         max_lca_distance = 0
@@ -217,7 +217,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         possible ancestor left - this will be the root of the tree.
 
         Args:
-            character_matrix: Character matrix 
+            character_matrix: Character matrix
             root: Specified root node, represented as a list of character states
             pid: Process ID for future reference
             lca_height: Maximum lca height to consider for connecting nodes to
@@ -266,7 +266,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                         prev_graph, weights, missing_state_indicator
                     )
 
-                next_layer, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
+                (
+                    next_layer,
+                    layer_edges,
+                ) = ilp_solver_utilities.infer_layer_of_potential_graph(
                     source_nodes, effective_threshold, missing_state_indicator
                 )
 

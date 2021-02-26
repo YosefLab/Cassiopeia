@@ -273,8 +273,10 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
-        allele_table, cut_sites
+    lineage_profile = (
+        preprocessing_utilities.convert_alleletable_to_lineage_profile(
+            allele_table, cut_sites
+        )
     )
 
     intbcs = allele_table["intBC"].unique()

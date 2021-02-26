@@ -16,7 +16,7 @@ class CassiopeiaSolver(abc.ABC):
     CassiopeiaSolver is an abstract class that all inference algorithms derive
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.
-    
+
     Args:
         prior_transformation: A function defining a transformation on the priors
             in forming weights. Supports the following transformations:
