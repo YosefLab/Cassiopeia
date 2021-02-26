@@ -2,7 +2,7 @@
 This file stores an abstract subclass of DataSimulator, the
 LineageTracingDataSimulator. A LineageTracingDataSimulator overlays lineage
 tracing data onto a CassiopeiaTree, i.e. it sets the character states of a
-CassiopeiaTree.
+CassiopeiaTree (in particular, the character matrix).
 """
 import abc
 from cassiopeia.data import CassiopeiaTree
@@ -19,6 +19,7 @@ class LineageTracingDataSimulator(DataSimulator):
     def overlay_data(self, tree: CassiopeiaTree) -> None:
         """
         Overlay lineage tracing data onto the CassiopeiaTree (in-place).
-        This sets the character states of all nodes in the tree.
+        This sets the character states of all nodes in the tree, as well
+        as the character matrix.
         """
         pass
