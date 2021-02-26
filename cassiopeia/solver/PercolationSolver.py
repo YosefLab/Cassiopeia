@@ -16,7 +16,6 @@ from cassiopeia.solver import solver_utilities
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
-    TODO: Experiment to find the best default similarity function
     The PercolationSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity in the observed mutations.
     It is an implicit version of Aho's algorithm for tree discovery (1981).
@@ -28,6 +27,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     connected components are produced by the percolation procedure, then the
     components are clustered by applying the specified solver to the LCAs of
     the clusters, obeying parsimony
+
+    TODO(richardyz98): Experiment to find the best default similarity function
 
     Args:
         joining_solver: The CassiopeiaSolver that is used to cluster groups of

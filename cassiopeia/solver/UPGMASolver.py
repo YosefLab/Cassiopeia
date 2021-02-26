@@ -226,8 +226,5 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-
-        Returns:
-            None, operates on the cassiopeia_tree passed in
         """
         cassiopeia_tree.root_sample_name = "root"

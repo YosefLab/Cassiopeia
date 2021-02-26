@@ -229,9 +229,6 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-
-        Returns:
-            None, operates on the cassiopeia_tree passed in
         """
         character_matrix = cassiopeia_tree.get_current_character_matrix()
 

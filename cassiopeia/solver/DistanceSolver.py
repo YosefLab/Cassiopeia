@@ -139,13 +139,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Sets up the solver with respect to the input CassiopeiaTree by
         creating the dissimilarity map if needed and setting up the
-        "root" sample if the tree will be rooted.
+        "root" sample if the tree will be rooted. Operates directly on the
+        CassiopeiaTree.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`.
 
-        Returns:
-            None, operates on the input CassiopeiaTree in place
+        Raises:
+            A `DistanceSolverError` if rooting parameters are not passed in
+                correctly (i.e. no root is specified and the user has not
+                asked to find a root) or when a dissimilarity map cannot
+                be found or computed.
         """
 
         # if root sample is not specified, we'll add the implicit root
@@ -173,11 +177,21 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
     @abc.abstractmethod
-    def root_tree(self, tree, root_sample, remaining_samples):
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+    ) -> nx.DiGraph:
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
         graph to a directed graph with respect to that root.
+
+        Args:
+            tree: an undirected networkx tree topology
+            root_sample: node name to treat as the root of the tree topology
+            remaining_samples: samples yet to be added to the tree.
+
+        Returns:
+            A rooted networkx tree
         """
         pass
 
@@ -218,13 +232,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
+    @abc.abstractmethod
     def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines how an implicit root is to be added.
+        
+        Sets up the root sample for the tree solver, operating directly on the
+        CassiopeiaTree.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
-
-        Returns:
-            None, operates on the input CassiopeiaTree
         """
         pass
