@@ -39,6 +39,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
+    Attributes:
+        dissimilarity_function: Function used to compute dissimilarity between
+            samples.
+        add_root: Whether or not to add an implicit root the tree.
+        prior_transformation: Function to use when transforming priors into
+            weights.
+
     """
 
     def __init__(
@@ -157,7 +164,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.update_dissimilarity_map_numba(
+        dissimilarity_array = self.__update_dissimilarity_map_numba(
             dissimilarity_map.to_numpy(), i, j
         )
         sample_names = list(dissimilarity_map.index) + [new_node]
@@ -177,10 +184,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     @staticmethod
     @numba.jit(nopython=True)
-    def update_dissimilarity_map_numba(
+    def __update_dissimilarity_map_numba(
         dissimilarity_map: np.array, cherry_i: int, cherry_j: int
     ) -> np.array:
-        """An optimized function for updating dissimilarities.
+        """A private, optimized function for updating dissimilarities.
 
         A faster implementation of updating the dissimilarity map for Neighbor
         Joining, invoked by `self.update_dissimilarity_map`.

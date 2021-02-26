@@ -61,7 +61,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         joining_solver: CassiopeiaSolver.CassiopeiaSolver,
         prior_transformation: str = "negative_log",
-        collapse_tree: bool = True,
         similarity_function: Optional[
             Callable[
                 [
@@ -81,7 +80,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.joining_solver = joining_solver
         self.threshold = threshold
         self.similarity_function = similarity_function
-        self.collapse_tree = collapse_tree
 
 
     def solve(self,
@@ -161,10 +159,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         _solve(list(unique_character_matrix.index), tree, unique_character_matrix, priors, weights, cassiopeia_tree.missing_state_indicator)
 
         # Collapse 0-mutation edges and append duplicate samples
-        if self.collapse_tree:
-            tree = solver_utilities.collapse_tree(
-                tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
-            )
+        tree = solver_utilities.collapse_tree(
+            tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
+        )
         tree = self.__add_duplicates_to_tree(tree, character_matrix)
         
         cassiopeia_tree.populate_tree(tree)

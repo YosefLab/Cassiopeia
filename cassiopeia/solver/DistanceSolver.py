@@ -40,11 +40,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     Args:
         dissimilarity_function: Function that can be used to compute the
             dissimilarity between samples.
-        add_root: Whether or not to add an implicit root the tree, i.e. a root
-            with unmutated characters. Only pertinent in algorithms that return
-            an unrooted tree, by default (e.g. Neighbor Joining). Will not
-            override an explicitly defined root, specified by the
-            'root_sample_name' attribute in the CassiopeiaTree
+        add_root: Whether or not to add an implicit root the tree. Only
+            pertinent in algorithms that return an unrooted tree, by default
+            (e.g. Neighbor Joining). Will not override an explicitly defined
+            root, specified by the 'root_sample_name' attribute in the
+            CassiopeiaTree
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
                 "negative_log": Transforms each probability by the negative
@@ -52,6 +52,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+
+    Attributes:
+        dissimilarity_function: Function used to compute dissimilarity between
+            samples.
+        add_root: Whether or not to add an implicit root the tree.
+        prior_transformation: Function to use when transforming priors into
+            weights.
     """
 
     def __init__(

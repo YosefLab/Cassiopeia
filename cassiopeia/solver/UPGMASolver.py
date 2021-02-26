@@ -27,7 +27,6 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     with each existing node. Produces a rooted tree that is assumed to be
     ultrametric.
 
-
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
             map. Optional if a dissimilarity map is already provided.
@@ -38,9 +37,12 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
-        __cluster_to_cluster_size: A dictionary that contains the number of
-            samples in each merged cluster of samples in the dissimilarity map
-
+    Attributes:
+        dissimilarity_function: Function used to compute dissimilarity between
+            samples.
+        add_root: Whether or not to add an implicit root the tree.
+        prior_transformation: Function to use when transforming priors into
+            weights.
     """
 
     def __init__(
@@ -64,7 +66,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     def root_tree(
         self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
     ):
-        """Roots a tree produced UPGMA.
+        """Roots a tree produced by UPGMA.
 
         Adds the root at the top of the UPGMA reconstructed tree. By the
         ultrametric assumption, the root is placed as the parent to the last
@@ -137,15 +139,9 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             A new dissimilarity map, updated with the new node
         """
 
-        i_size, j_size = 0, 0
-        if cherry[0] not in self.__cluster_to_cluster_size:
-            i_size = 1
-        else:
-            i_size += self.__cluster_to_cluster_size[cherry[0]]
-        if cherry[1] not in self.__cluster_to_cluster_size:
-            j_size = 1
-        else:
-            j_size += self.__cluster_to_cluster_size[cherry[1]]
+        i_size, j_size = max(1, self.__cluster_to_cluster_size[cherry[0]]), max(
+            1, self.__cluster_to_cluster_size[cherry[1]]
+        )
 
         self.__cluster_to_cluster_size[new_node] = i_size + j_size
 
@@ -154,7 +150,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.update_dissimilarity_map_numba(
+        dissimilarity_array = self.__update_dissimilarity_map_numba(
             dissimilarity_map.to_numpy(), i, j, i_size, j_size
         )
         sample_names = list(dissimilarity_map.index) + [new_node]
@@ -174,14 +170,14 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
     @staticmethod
     @numba.jit(nopython=True)
-    def update_dissimilarity_map_numba(
+    def __update_dissimilarity_map_numba(
         dissimilarity_map: np.array,
         cherry_i: int,
         cherry_j: int,
         size_i: int,
         size_j: int,
     ) -> np.array:
-        """An optimized function for updating dissimilarities.
+        """A private, optimized function for updating dissimilarities.
 
         A faster implementation of updating the dissimilarity map for UPGMA,
         invoked by `self.update_dissimilarity_map`.

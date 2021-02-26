@@ -23,9 +23,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     will implement "perform_split", which is the procedure for successively
     partioning the sample set.
 
-    TODO (rzhang): Change the internal node naming scheme, add checks to make
-        sure internal nodes don't collide with leaf node names 
-
     Args:
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -40,10 +37,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             weights.
     """
 
-    def __init__(self, prior_transformation: str = "negative_log", collapse_tree: bool = True):
+    def __init__(self, prior_transformation: str = "negative_log"):
 
         super().__init__(prior_transformation)
-        self.collapse_tree = collapse_tree
 
     def perform_split(
         self,
@@ -149,13 +145,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # Collapse 0-mutation edges and append duplicate samples
-        if self.collapse_tree:
-            tree = solver_utilities.collapse_tree(
-                tree,
-                True,
-                character_matrix,
-                cassiopeia_tree.missing_state_indicator,
-            )
+        tree = solver_utilities.collapse_tree(
+            tree,
+            True,
+            character_matrix,
+            cassiopeia_tree.missing_state_indicator,
+        )
         tree = self.__add_duplicates_to_tree(tree, character_matrix)
 
         cassiopeia_tree.populate_tree(tree)
@@ -210,7 +205,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A tree with duplicates added
         """
-
+        
+        character_matrix.index.name = "index"
         duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]
             .reset_index()
