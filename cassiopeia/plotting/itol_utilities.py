@@ -6,6 +6,8 @@ on the iTOL software and how to create an account.
 
 import os
 
+import configparser
+import shutil
 import tempfile
 from typing import Dict, List, Tuple, Optional
 
@@ -76,14 +78,16 @@ def upload_and_export_itol(
     # create temporary direcotry with os.path.mktmp
     temporary_directory = tempfile.mkdtemp()
 
-    if os.path.exists(itol_config):
-
+    if os.path.exists(os.path.expanduser(itol_config)):
+        
+        config = configparser.ConfigParser()
         with open(os.path.expanduser(itol_config), "r") as f:
             config_string = f.read()
-
-        config = config.read_string(config_string)
-        api_key = config["DEFAULT"]["api_key"]
-        project_name = config["DEFAULT"]["project_name"]
+        config.read_string(config_string)
+        if api_key is None:
+            api_key = config["DEFAULT"]["api_key"]
+        if project_name is None:
+            project_name = config["DEFAULT"]["project_name"]
 
     if api_key is None or project_name is None:
         raise iTOLError(
@@ -91,7 +95,7 @@ def upload_and_export_itol(
             "config file."
         )
 
-    with open(".tmp/tree_to_plot.tree", "w") as f:
+    with open(os.path.join(temporary_directory, "tree_to_plot.tree"), "w") as f:
         f.write(cassiopeia_tree.get_newick())
 
     file_format = export_filepath.split("/")[-1].split(".")[-1]
@@ -102,7 +106,7 @@ def upload_and_export_itol(
         )
 
     itol_uploader = Itol()
-    itol_uploader.add_file("tree_to_plot.tree")
+    itol_uploader.add_file(os.path.join(temporary_directory, "tree_to_plot.tree"))
 
     files = []
     if allele_table is not None:
@@ -110,7 +114,7 @@ def upload_and_export_itol(
             allele_table,
             cassiopeia_tree,
             f"{tree_name}.allele",
-            ".tmp/",
+            temporary_directory,
             indel_colors,
             indel_priors,
         )
@@ -122,19 +126,23 @@ def upload_and_export_itol(
         values = cassiopeia_tree.cell_meta[meta_item]
 
         if pd.api.types.is_numeric_dtype(values):
-            files += create_gradient_from_df(
-                values, cassiopeia_tree, f"{tree_name}.{meta_item}"
-            )
+            files.append(create_gradient_from_df(
+                values, cassiopeia_tree, f"{tree_name}.{meta_item}", temporary_directory,
+            ))
 
         if pd.api.types.is_string_dtype(values):
-            colormap = palette[: len(values.unique())]
-            files += create_colorbar(
+            colors = palette[: len(values.unique())]
+            colors = [hex_to_rgb(color) for color in colors]
+            colormap = dict(zip(np.unique(values), colors))
+
+            files.append(create_colorbar(
                 values,
                 cassiopeia_tree,
                 colormap,
                 f"{tree_name}.{meta_item}",
+                temporary_directory,
                 create_legend=include_legend,
-            )
+            ))
 
     for _file in files:
         itol_uploader.add_file(_file)
@@ -182,8 +190,7 @@ def upload_and_export_itol(
     itol_exporter.export(export_filepath)
 
     # remove intermediate files
-    os.remove("tree_to_plot.tree")
-    os.remove(temporary_directory)
+    shutil.rmtree(temporary_directory)
 
 
 def create_gradient_from_df(
@@ -234,13 +241,13 @@ def create_colorbar(
     tree: CassiopeiaTree,
     colormap: Dict[str, Tuple[int, int, int]],
     dataset_name: str,
-    output_directory: str = "./.tmp/",
+    output_directory: str = ".tmp/",
     create_legend: bool = False,
 ) -> str:
 
     _leaves = tree.leaves
     labelcolors_iTOL = []
-    for i in labels.loc[_leaves].iloc[:,0].values:
+    for i in labels.loc[_leaves].values:
         colors_i = colormap[i]
         color_i = (
             "rgb("
@@ -308,7 +315,7 @@ def create_indel_heatmap(
     indel_priors: Optional[pd.DataFrame] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    _leaves = tree.leaves
+    _leaves = cassiopeia_tree.leaves
 
     lineage_profile = utilities.convert_alleletable_to_lineage_profile(
         alleletable
@@ -332,10 +339,10 @@ def create_indel_heatmap(
             ind = str(clustered_linprof.iloc[i, j])
             if ind == "nan":
                 r[i, j], g[i, j], b[i, j] = 1, 1, 1
-            elif "None" in ind:
+            elif "none" in ind.lower():
                 r[i, j], g[i, j], b[i, j] = 192 / 255, 192 / 255, 192 / 255
             else:
-                col = hsv_to_rgb(tuple(indel_colors.loc[ind, "colors"]))
+                col = hsv_to_rgb(tuple(indel_colors.loc[ind, "color"]))
                 r[i, j], g[i, j], b[i, j] = col[0], col[1], col[2]
 
     rgb_heatmap = np.stack((r, g, b), axis=2)
@@ -400,13 +407,13 @@ def create_indel_heatmap(
 
         alfiles.append(alleleLabel_fileout)
 
-    return alfiles, rgb_heatmap
+    return alfiles
 
 
 def get_random_indel_colors(
     lineage_profile: pd.DataFrame,
     random_state: Optional[np.random.RandomState] = None,
-) -> pd.Series:
+) -> pd.DataFrame:
     """Assigns random color to each unique indel.
 
     Assigns a random HSV value to each indel observed in the specified
@@ -421,6 +428,7 @@ def get_random_indel_colors(
         A mapping from indel to HSV color.
     """
 
+    lineage_profile.fillna('missing', inplace=True)
     unique_indels = np.unique(
         np.hstack(lineage_profile.apply(lambda x: x.unique(), axis=0))
     )
@@ -438,6 +446,8 @@ def get_random_indel_colors(
             indel2color[indel] = rgb_to_hsv((0.75, 0.75, 0.75))
         elif indel == "NC":
             indel2color[indel] = rgb_to_hsv((0, 0, 0))
+        elif indel == 'missing':
+            indel2color[indel] = rgb_to_hsv((1, 1, 1))
         else:
             # randomly pick a color family and then draw random colors
             # from that family
@@ -464,13 +474,13 @@ def get_random_indel_colors(
     indel_colors = pd.DataFrame(columns=["color"])
     for indel in indel2color.keys():
         indel_colors.loc[indel, "color"] = indel2color[indel]
-    return indel_colors["color"]
+    return pd.DataFrame(indel_colors["color"])
 
 
 def get_indel_colors(
     indel_priors: pd.DataFrame,
     random_state: Optional[np.random.RandomState] = None,
-) -> pd.Series:
+) -> pd.DataFrame:
     """Map indel to HSV colors using prior probabilities.
 
     Given prior probabilities of indels, map each indel to a color reflecting
@@ -503,7 +513,7 @@ def get_indel_colors(
     indel_priors_copy["color"] = indel_priors_copy.apply(
         lambda x: assign_color(x.NormFreq, random_state), axis=1
     )
-    return indel_priors_copy["color"]
+    return pd.DataFrame(indel_priors_copy["color"])
 
 
 def hex_to_rgb(value) -> Tuple[int, int, int]:

@@ -27,15 +27,31 @@ class TestITOLPlotting(unittest.TestCase):
         # set up temporary directory
         self.temporary_directory = tempfile.mkdtemp()
 
+        # random state for reproducibility
         self.random_state = np.random.RandomState(123412334)
 
+        # indel frequency dictionary
         self.indel_priors = pd.DataFrame.from_dict(
             {"i": 0.8, "j": 0.1, "k": 0.01, "m": 0.5, "n": 0.5},
             orient="index",
             columns=["freq"],
         )
 
-        ### create CassiopeiaTree and associated data
+        # test allele table
+        self.allele_table = pd.DataFrame.from_dict(
+            {
+                1: ["2", "A", 10, "i", "j", "k"],
+                2: ["2", "B", 10, "j", "j", "j"],
+                3: ["3", "A", 10, "i", "m", "n"],
+                4: ["5", "A", 10, "i", "j", "k"],
+                5: ["5", "B", 10, "none", "none", "none"],
+                6: ["6", "A", 10, "i", "j", "m"],
+            },
+            orient="index",
+            columns=["cellBC", "intBC", "UMI", "r1", "r2", "r3"],
+        )
+
+        ## create CassiopeiaTree and associated data
 
         # graph
         graph = nx.DiGraph()
@@ -103,7 +119,7 @@ class TestITOLPlotting(unittest.TestCase):
         for indel in indel_to_color.index:
             self.assertIn(indel, expected_values.keys())
 
-            observed_color = indel_to_color.loc[indel]
+            observed_color = indel_to_color.loc[indel, "color"]
             for i in range(len(observed_color)):
                 self.assertAlmostEqual(
                     observed_color[i], expected_values[indel][i], delta=0.01
@@ -126,7 +142,7 @@ class TestITOLPlotting(unittest.TestCase):
         for indel in indel_to_color.index:
             self.assertIn(indel, expected_values.keys())
 
-            observed_color = indel_to_color.loc[indel]
+            observed_color = indel_to_color.loc[indel, "color"]
             for i in range(len(observed_color)):
                 self.assertAlmostEqual(
                     observed_color[i], expected_values[indel][i], delta=0.01
@@ -158,7 +174,7 @@ class TestITOLPlotting(unittest.TestCase):
 
         color_map = {"a": (255, 0, 0), "b": (0, 255, 255)}
         _file = itol_utilities.create_colorbar(
-            pd.DataFrame(self.tree.cell_meta["cluster"]),
+            self.tree.cell_meta["cluster"],
             self.tree,
             color_map,
             "test_colorbar",
@@ -175,9 +191,110 @@ class TestITOLPlotting(unittest.TestCase):
             "\n5\trgb(0,255,255)\n6\trgb(0,255,255)\n"
         )
 
-        with open(_file, 'r') as f:
+        with open(_file, "r") as f:
             content = f.read()
             self.assertEqual(expected_content, content)
+
+    def test_create_allele_heatmap_specified_colors(self):
+
+        indel_colors = {
+            "i": [0.75, 0, 0.5],
+            "j": [0.05, 0.88, 0.94],
+            "k": [0.69, 1.0, 1.0],
+            "m": [0.798, 0.37, 0.68],
+            "n": [0.56, 0.37, 0.68],
+        }
+
+        indel_color_df = pd.DataFrame(columns=["color"])
+        for indel in indel_colors:
+            indel_color_df.loc[indel, "color"] = indel_colors[indel]
+
+        allele_files = itol_utilities.create_indel_heatmap(
+            self.allele_table,
+            self.tree,
+            "test",
+            self.temporary_directory,
+            indel_colors=indel_color_df,
+        )
+
+        self.assertEqual(6, len(allele_files))
+
+        for allele_file in allele_files:
+            self.assertTrue(os.path.exists(allele_file))
+
+    def test_create_allele_heatmap_specified_priors(self):
+
+        allele_files = itol_utilities.create_indel_heatmap(
+            self.allele_table,
+            self.tree,
+            "test",
+            self.temporary_directory,
+            indel_priors=self.indel_priors,
+        )
+
+        self.assertEqual(6, len(allele_files))
+
+        for allele_file in allele_files:
+            self.assertTrue(os.path.exists(allele_file))
+
+    def test_create_allele_heatmap_no_priors_or_colormap(self):
+
+        allele_files = itol_utilities.create_indel_heatmap(
+            self.allele_table, self.tree, "test", self.temporary_directory
+        )
+
+        self.assertEqual(6, len(allele_files))
+
+        for allele_file in allele_files:
+            self.assertTrue(os.path.exists(allele_file))
+
+    def test_integrated_pipeline_simple_tree(self):
+
+        cas.pl.upload_and_export_itol(
+            self.tree,
+            "test_tree",
+            export_filepath=f"{self.temporary_directory}/test_tree.pdf",
+            itol_config="~/.itolconfig",
+        )
+
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.temporary_directory, "test_tree.pdf")
+            )
+        )
+
+    def test_integrated_pipeline_tree_with_allele_heatmap(self):
+
+        cas.pl.upload_and_export_itol(
+            self.tree,
+            "test_tree",
+            export_filepath=f"{self.temporary_directory}/test_tree.pdf",
+            itol_config="~/.itolconfig",
+            allele_table=self.allele_table
+        )
+
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.temporary_directory, "test_tree.pdf")
+            )
+        )
+
+    def test_integrated_pipeline_tree_with_meta_data(self):
+
+        cas.pl.upload_and_export_itol(
+            self.tree,
+            "test_tree",
+            export_filepath=f"{self.temporary_directory}/test_tree.pdf",
+            itol_config="~/.itolconfig",
+            meta_data=["nUMI", "cluster"],
+        )
+
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.temporary_directory, "test_tree.pdf")
+            )
+        )
+        
 
     def tearDown(self):
 
