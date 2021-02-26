@@ -9,6 +9,7 @@ import numba
 import numpy as np
 import pandas as pd
 import re
+import scipy
 
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
@@ -138,7 +139,7 @@ def compute_dissimilarity_map(
         missing_state_indicator: State indicating missing data
 
     Returns:
-        A dissimilarity mapping as a flattened array.
+        An n x n pairwise dissimilarity matrix.
     """
 
     nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
@@ -174,9 +175,8 @@ def compute_dissimilarity_map(
 
         return dm
 
-    return _compute_dissimilarity_map(
-        cm, C, missing_state_indicator, nb_weights
-    )
+    flat_dissimilarity_map = _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
+    return scipy.spatial.distance.squareform(flat_dissimilarity_map)
 
 
 def sample_bootstrap_character_matrices(

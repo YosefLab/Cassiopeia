@@ -23,7 +23,6 @@ import ete3
 import networkx as nx
 import numpy as np
 import pandas as pd
-import scipy
 
 from cassiopeia.data import utilities
 from cassiopeia.solver import solver_utilities
@@ -897,7 +896,6 @@ class CassiopeiaTree:
             weights,
             self.missing_state_indicator,
         )
-        dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
         dissimilarity_map = pd.DataFrame(
             dissimilarity_map,
