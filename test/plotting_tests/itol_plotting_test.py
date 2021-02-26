@@ -3,9 +3,6 @@ Tests for the itol plotting utilities in `cassiopeia.plotting.itol_utilities`.
 
 Currently, this testing module does not test the actual uploading / exporting
 of trees due to difficulties in mock authenticating on the iTOL side.
-
-TODO(mgjones): Add marker to tests here for users to only run the iTOL tests if
-their credentials exist
 """
 import os
 import unittest
