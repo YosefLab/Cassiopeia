@@ -7,6 +7,7 @@ __author__ = "Matt Jones, Alex Khodaveridan, Richard Zhang, Sebastian Prillo"
 __email__ = "mattjones315@berkeley.edu"
 __version__ = "0.0.1"
 
+from . import pl
 from . import pp
 from . import solver
 from . import critique
