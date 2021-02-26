@@ -1,13 +1,16 @@
 """
 General utilities for the datasets encountered in Cassiopeia.
 """
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import ete3
 import networkx as nx
 import numba
 import numpy as np
-import scipy
+import pandas as pd
+import re
+
+from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 def get_lca_characters(
@@ -140,11 +143,16 @@ def compute_dissimilarity_map(
 
     nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
 
-    nb_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.DictType(numba.types.int64, numba.types.float64))
+    nb_weights = numba.typed.Dict.empty(
+        numba.types.int64,
+        numba.types.DictType(numba.types.int64, numba.types.float64),
+    )
     if weights:
 
         for k, v in weights.items():
-            nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
+            nb_char_weights = numba.typed.Dict.empty(
+                numba.types.int64, numba.types.float64
+            )
             for state, prior in v.items():
                 nb_char_weights[state] = prior
             nb_weights[k] = nb_char_weights
@@ -166,5 +174,147 @@ def compute_dissimilarity_map(
 
         return dm
 
-    flat_dissimilarity_map = _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
-    return scipy.spatial.distance.squareform(flat_dissimilarity_map)
+    return _compute_dissimilarity_map(
+        cm, C, missing_state_indicator, nb_weights
+    )
+
+
+def sample_bootstrap_character_matrices(
+    character_matrix: pd.DataFrame,
+    prior_probabilities: Optional[Dict[int, Dict[int, float]]] = None,
+    num_bootstraps: int = 10,
+    random_state: Optional[np.random.RandomState] = None,
+) -> List[Tuple[pd.DataFrame, Dict[int, Dict[int, float]]]]:
+    """Generates bootstrapped character matrices from a character matrix.
+
+    Ingests a character matrix and randomly creates bootstrap samples by
+    sampling characters with replacement. Each bootstrapped character matrix,
+    then, retains the same number of characters but some will be repeated and
+    some will be ignored. If a prior proability dictionary is also passed in,
+    then a new priors dictionary will be created for each bootstrapped character
+    matrix.
+
+    Args:
+        character_matrix: Character matrix
+        prior_probabilities: Probabilities of each (character, state) pair.
+        num_bootstraps: Number of bootstrap samples to create.
+        random_state: A numpy random state to from which to draw samples
+
+    Returns:
+        A list of bootstrap samples in the form
+            (bootstrap_character_matrix, bootstrap_priors).
+    """
+
+    bootstrap_samples = []
+    M = character_matrix.shape[1]
+    for _ in range(num_bootstraps):
+
+        if random_state:
+            sampled_cut_sites = random_state.choice(M, M, replace=True)
+        else:
+            sampled_cut_sites = np.random.choice(M, M, replace=True)
+
+        bootstrapped_character_matrix = character_matrix.iloc[
+            :, sampled_cut_sites
+        ]
+        bootstrapped_character_matrix.columns = [
+            f"random_character{i}" for i in range(M)
+        ]
+
+        new_priors = {}
+        if prior_probabilities:
+            for i, cut_site in zip(range(M), sampled_cut_sites):
+                new_priors[i] = prior_probabilities[cut_site]
+
+        bootstrap_samples.append((bootstrapped_character_matrix, new_priors))
+
+    return bootstrap_samples
+
+
+def sample_bootstrap_allele_tables(
+    allele_table: pd.DataFrame,
+    indel_priors: Optional[pd.DataFrame] = None,
+    num_bootstraps: int = 10,
+    random_state: Optional[np.random.RandomState] = None,
+    cut_sites: Optional[List[str]] = None,
+) -> List[
+    Tuple[
+        pd.DataFrame,
+        Dict[int, Dict[int, float]],
+        Dict[int, Dict[int, str]],
+        List[str],
+    ]
+]:
+    """Generates bootstrap character matrices from an allele table.
+
+    This function will take in an allele table, generated with the Cassiopeia
+    preprocess pipeline and produce several bootstrap character matrices with
+    respect to intBCs rather than individual cut-sites as in
+    `sample_bootstrap_character_matrices`. This is useful because oftentimes
+    there are dependencies between cut-sites on the same intBC TargetSite.
+
+    Args:
+        allele_table: AlleleTable from the Cassiopeia preprocessing pipeline
+        indel_priors: A dataframe mapping indel identities to prior
+            probabilities
+        num_bootstraps: number of bootstrap samples to create
+        random_state: A numpy random state for reproducibility.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r{int}" (e.g. "r1")
+    Returns:
+        A list of bootstrap samples in the form of tuples
+            (bootstrapped character matrix, prior dictionary,
+            state to indel mapping, bootstrapped intBC set)
+    """
+
+    if cut_sites is None:
+        cut_sites = preprocessing_utilities.get_default_cut_site_columns(
+            allele_table
+        )
+
+    lineage_profile = (
+        preprocessing_utilities.convert_alleletable_to_lineage_profile(
+            allele_table, cut_sites
+        )
+    )
+
+    intbcs = allele_table["intBC"].unique()
+    M = len(intbcs)
+
+    bootstrap_samples = []
+
+    for _ in range(num_bootstraps):
+
+        if random_state:
+            sampled_intbcs = random_state.choice(intbcs, M, replace=True)
+        else:
+            sampled_intbcs = np.random.choice(intbcs, M, replace=True)
+
+        bootstrap_intbcs = sum(
+            [
+                [intbc + f"_{cut_site}" for cut_site in cut_sites]
+                for intbc in sampled_intbcs
+            ],
+            [],
+        )
+        b_sample = lineage_profile[bootstrap_intbcs]
+
+        (
+            bootstrapped_character_matrix,
+            priors,
+            state_to_indel,
+        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(
+            b_sample, indel_priors=indel_priors
+        )
+
+        bootstrap_samples.append(
+            (
+                bootstrapped_character_matrix,
+                priors,
+                state_to_indel,
+                bootstrap_intbcs,
+            )
+        )
+
+    return bootstrap_samples

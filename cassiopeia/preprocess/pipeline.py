@@ -99,9 +99,7 @@ def collapse_umis(
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
 
     df = utilities.convert_bam_to_df(
-        str(collapsed_file_name),
-        str(collapsed_df_file_name),
-        create_pd=True,
+        str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
