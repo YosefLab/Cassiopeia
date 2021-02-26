@@ -153,7 +153,7 @@ def collapse_tree(
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_state_indicator
         )
-        
+
     else:
         for i in tree.nodes():
             node_to_characters[i] = tree.nodes[i]["characters"]

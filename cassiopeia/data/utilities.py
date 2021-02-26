@@ -7,6 +7,7 @@ import ete3
 import networkx as nx
 import numba
 import numpy as np
+import scipy
 
 
 def get_lca_characters(
@@ -165,4 +166,5 @@ def compute_dissimilarity_map(
 
         return dm
 
-    return _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
+    flat_dissimilarity_map = _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
+    return scipy.spatial.distance.squareform(flat_dissimilarity_map)

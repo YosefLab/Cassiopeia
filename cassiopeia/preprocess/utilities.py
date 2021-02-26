@@ -366,7 +366,7 @@ def convert_alleletable_to_character_matrix(
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
     as '-'. The function also have the ability to ignore certain intBC sets as
-    well as cut sites with too little diversity. 
+    well as cut sites with too little diversity.
 
     Args:
         alleletable: Allele Table to be converted into a character matrix
@@ -376,12 +376,12 @@ def convert_alleletable_to_character_matrix(
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
-            probability dictionary for reconstruction. 
+            probability dictionary for reconstruction.
 
-	Returns:
+        Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
-	"""
+    """
 
     filtered_samples = defaultdict(OrderedDict)
     for sample in alleletable.index:
@@ -468,9 +468,9 @@ def convert_alleletable_to_character_matrix(
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][
-                                str(len(allele_counter[c]))
-                            ] = float(prob)
+                            prior_probs[i][str(len(allele_counter[c]))] = float(
+                                prob
+                            )
                             indel_to_charstate[i][
                                 str(len(allele_counter[c]))
                             ] = state
@@ -480,7 +480,7 @@ def convert_alleletable_to_character_matrix(
     character_matrix = pd.DataFrame.from_dict(
         character_strings,
         orient="index",
-        columns=[f"r{i}" for i in range(1, len(intbc_uniq)+1)],
+        columns=[f"r{i}" for i in range(1, len(intbc_uniq) + 1)],
     )
 
     return character_matrix, prior_probs, indel_to_charstate
