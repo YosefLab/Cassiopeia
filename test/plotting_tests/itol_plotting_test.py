@@ -20,6 +20,7 @@ import pandas as pd
 import cassiopeia as cas
 from cassiopeia.plotting import itol_utilities
 
+ITOL_FILE = os.path.join(os.path.expanduser("~/itolconfig"))
 
 class TestITOLPlotting(unittest.TestCase):
     def setUp(self):
@@ -248,6 +249,7 @@ class TestITOLPlotting(unittest.TestCase):
         for allele_file in allele_files:
             self.assertTrue(os.path.exists(allele_file))
 
+    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
     def test_integrated_pipeline_simple_tree(self):
 
         cas.pl.upload_and_export_itol(
@@ -263,6 +265,7 @@ class TestITOLPlotting(unittest.TestCase):
             )
         )
 
+    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
     def test_integrated_pipeline_tree_with_allele_heatmap(self):
 
         cas.pl.upload_and_export_itol(
@@ -279,6 +282,7 @@ class TestITOLPlotting(unittest.TestCase):
             )
         )
 
+    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
     def test_integrated_pipeline_tree_with_meta_data(self):
 
         cas.pl.upload_and_export_itol(

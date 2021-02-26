@@ -37,7 +37,7 @@ def upload_and_export_itol(
     export_filepath: str,
     itol_config: str = "~/.itolconfig",
     api_key: Optional[str] = None,
-    projectName: Optional[str] = None,
+    project_name: Optional[str] = None,
     meta_data: List[str] = [],
     allele_table: Optional[pd.DataFrame] = None,
     indel_colors: Optional[pd.DataFrame] = None,
@@ -45,6 +45,7 @@ def upload_and_export_itol(
     rect: bool = False,
     include_legend: bool = False,
     palette: List[str] = palettes.Category20[20],
+    random_state: Optional[np.random.RandomState] = None,
 ):
     """Uploads a tree to iTOL and exports it.
 
@@ -73,6 +74,7 @@ def upload_and_export_itol(
             or rectangle.
         include_legend: Plot legend along with meta data.
         palette: A palette of colors in hex format.
+        random_state: A random state for reproducibility
     """
 
     # create temporary direcotry with os.path.mktmp
@@ -117,6 +119,7 @@ def upload_and_export_itol(
             temporary_directory,
             indel_colors,
             indel_priors,
+            random_state,
         )
 
     for meta_item in meta_data:
@@ -194,13 +197,29 @@ def upload_and_export_itol(
 
 
 def create_gradient_from_df(
-    df: pd.DataFrame,
+    df: pd.Series,
     tree: CassiopeiaTree,
     dataset_name: str,
     output_directory: str = "./tmp/",
     color_min: str = "#ffffff",
     color_max: str = "#000000",
 ) -> str:
+    """Creates a gradient file for the iTOL batch uploader
+
+    Creates a gradient file for iTOL from numerical data. This will write out
+    the file to the specified location, which can then be uploaded to iTOL.
+
+    Args:
+        df: A pandas series with numerical data
+        tree: CassiopeiaTree
+        dataset_name: Name for the dataset
+        output_directory: Where to write the output file
+        color_min: Minimum color for gradient
+        color_max: Maximum color for gradient
+
+    Returns:
+        The filepath to new gradient file.
+    """
 
     _leaves = tree.leaves
     df = df.loc[_leaves].copy()
@@ -244,6 +263,23 @@ def create_colorbar(
     output_directory: str = ".tmp/",
     create_legend: bool = False,
 ) -> str:
+    """Creates a colorbar file for the iTOL batch uploader
+
+    Creates a colorbar file for iTOL from categorical data. This will write out
+    the file to the specified location, which can then be uploaded to iTOL.
+
+    Args:
+        labels: A pandas series with categorical data (can be represented as strings
+            or categories)
+        tree: CassiopeiaTree
+        colormap: A mapping from category to RGB colors
+        dataset_name: Name for the dataset
+        output_directory: Where to write the output file
+        create_legend: Include legend for this colorbar.
+
+    Returns:
+        The filepath to new colorbar file.
+    """
 
     _leaves = tree.leaves
     labelcolors_iTOL = []
@@ -308,14 +344,38 @@ def create_colorbar(
 
 def create_indel_heatmap(
     alleletable: pd.DataFrame,
-    cassiopeia_tree: CassiopeiaTree,
+    tree: CassiopeiaTree,
     dataset_name: str,
     output_directory: str,
     indel_colors: Optional[pd.DataFrame] = None,
     indel_priors: Optional[pd.DataFrame] = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    random_state: Optional[np.random.RandomState] = None,
+) -> List[str]:
+    """Creates a set of files for displaying an indel heatmap with iTOL
 
-    _leaves = cassiopeia_tree.leaves
+    Creates a set of files, each one corresponding to a character, that can be
+    used to display an allele heatmap alongside a tree in iTOL. If neither indel
+    colors nor indel priors are provided, a random color mapping is created for
+    each unique indel.
+
+    Args:
+        alleletable: An AlleleTable for the tree
+        tree: CassiopeiaTree
+        dataset_name: Name for the dataset
+        output_directory: Where to write the output files
+        indel_colors: Mapping of indels to colors.
+        indel_priors: Prior probabilities for each indel. Only `indel_colors`
+            are not provided, in which case a new indel color mapping is created
+            by displaying low-probability indels with bright colors and
+            high-probability ones with dull colors.
+        random_state: Random state for reproducibility
+
+    Returns:
+        A set of filepaths to each cut-site's color bar file for iTOL batch
+            uploading.
+    """
+
+    _leaves = tree.leaves
 
     lineage_profile = utilities.convert_alleletable_to_lineage_profile(
         alleletable
@@ -324,9 +384,9 @@ def create_indel_heatmap(
 
     if indel_colors is None:
         if indel_priors is None:
-            indel_colors = get_random_indel_colors(lineage_profile)
+            indel_colors = get_random_indel_colors(lineage_profile, random_state)
         else:
-            indel_colors = get_indel_colors(indel_priors)
+            indel_colors = get_indel_colors(indel_priors, random_state)
 
     # Convert colors and make colored alleleTable (rgb_heatmap)
     r, g, b = (
