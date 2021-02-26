@@ -55,6 +55,9 @@ def upload_and_export_itol(
     must pass in an `api_key` and a `project_name`, which corresponds to one
     in the user's iTOL account.
 
+    TODO(mgjones): Add the ability to pass in min/max colors for specific
+        numeric meta data to use when creating the gradient files.
+
     Args:
         cassiopeia_tree: A CassiopeiaTree instance, populated with a tree.
         api_key: API key linking to your iTOL account
@@ -77,7 +80,7 @@ def upload_and_export_itol(
         random_state: A random state for reproducibility
     """
 
-    # create temporary direcotry with os.path.mktmp
+    # create temporary directory for storing files we'll upload to iTOL
     temporary_directory = tempfile.mkdtemp()
 
     if os.path.exists(os.path.expanduser(itol_config)):
@@ -556,6 +559,7 @@ def get_indel_colors(
     """
 
     def assign_color(prob, random_state):
+        """Samples a HSV color, with saturation proportional to probability."""
         if random_state:
             H = random_state.rand()
         else:
