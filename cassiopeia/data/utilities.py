@@ -261,7 +261,7 @@ def sample_bootstrap_allele_tables(
         random_state: A numpy random state for reproducibility.
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
-            "r\d" (e.g. "r1")
+            "r{int}" (e.g. "r1")
     Returns:
         A list of bootstrap samples in the form of tuples
             (bootstrapped character matrix, prior dictionary,
