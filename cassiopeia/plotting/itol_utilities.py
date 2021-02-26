@@ -193,60 +193,54 @@ def create_gradient_from_df(
     output_directory: str = "./tmp/",
     color_min: str = "#ffffff",
     color_max: str = "#000000",
-):
+) -> str:
 
     _leaves = tree.leaves
-
-    if type(df) == pd.Series:
-        fcols = [df.name]
-    else:
-        fcols = df.columns
+    df = df.loc[_leaves].copy()
 
     outfps = []
-    for j in range(0, len(fcols)):
 
-        outdf = pd.DataFrame()
-        outdf["cellBC"] = _leaves
-        outdf["gradient"] = df.loc[_leaves, fcols[j]].values
+    outdf = pd.DataFrame()
+    outdf["cellBC"] = _leaves
+    outdf["gradient"] = df.values
 
-        header = [
-            "DATASET_GRADIENT",
-            "SEPARATOR TAB",
-            "COLOR\t#00000",
-            f"COLOR_MIN\t{color_min}",
-            f"COLOR_MAX\t{color_max}",
-            "MARGIN\t100",
-            f"DATASET_LABEL\t{fcols[j]}",
-            "STRIP_WIDTH\t50",
-            "SHOW_INTERNAL\t0",
-            "DATA",
-            "",
-        ]
+    header = [
+        "DATASET_GRADIENT",
+        "SEPARATOR TAB",
+        "COLOR\t#00000",
+        f"COLOR_MIN\t{color_min}",
+        f"COLOR_MAX\t{color_max}",
+        "MARGIN\t100",
+        f"DATASET_LABEL\t{df.name}",
+        "STRIP_WIDTH\t50",
+        "SHOW_INTERNAL\t0",
+        "DATA",
+        "",
+    ]
 
-        outfp = os.path.join(output_directory, f"{dataset_name}.{fcols[j]}.txt")
-        with open(outfp, "w") as fOut:
-            for line in header:
-                fOut.write(line + "\n")
-            df_writeout = outdf.to_csv(
-                None, sep="\t", header=False, index=False
-            )
-            fOut.write(df_writeout)
-        outfps.append(outfp)
-    return outfps
+    outfp = os.path.join(output_directory, f"{dataset_name}.{df.name}.txt")
+    with open(outfp, "w") as fOut:
+        for line in header:
+            fOut.write(line + "\n")
+        df_writeout = outdf.to_csv(
+            None, sep="\t", header=False, index=False
+        )
+        fOut.write(df_writeout)
+    return outfp
 
 
 def create_colorbar(
     labels: pd.DataFrame,
     tree: CassiopeiaTree,
-    colormap: Dict[str, Tuple[float, float, float]],
+    colormap: Dict[str, Tuple[int, int, int]],
     dataset_name: str,
     output_directory: str = "./.tmp/",
     create_legend: bool = False,
-):
+) -> str:
 
-    _leaves = tree.get_leaf_names()
+    _leaves = tree.leaves
     labelcolors_iTOL = []
-    for i in labels.loc[_leaves].values:
+    for i in labels.loc[_leaves].iloc[:,0].values:
         colors_i = colormap[i]
         color_i = (
             "rgb("
