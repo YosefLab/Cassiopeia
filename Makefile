@@ -12,11 +12,5 @@ check_build_reqs:
 	@$(python) -c 'import pytest' \
                 || ( printf "$(redpip)Build requirements are missing. Run 'make prepare' to install them.$(normal)" ; false )
 
-test_basic: check_build_reqs
-	$(python) -m pytest -vv $(tests)
-
-test_all: check_build_reqs
-	$(python) -m pytest -vv $(tests)
-
 test: check_build_reqs
 	$(python) -m pytest -vv $(tests)
