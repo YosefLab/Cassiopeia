@@ -484,6 +484,7 @@ class CassiopeiaTree:
                 character_states, self.missing_state_indicator
             )
             self.__set_character_states(n, reconstructed)
+            
 
     def parent(self, node: str) -> str:
         """Gets the parent of a node.

@@ -73,10 +73,29 @@ class PercolationSolverTest(unittest.TestCase):
         )
         psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
+        T = p_tree.get_tree_topology()
 
-        expected_newick_string = "((1,3),(2,0,(4,5)));"
-        observed_newick_string = p_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        expected_tree.add_edges_from(
+            [
+                (6, 7),
+                (6, 8),
+                (7, 1),
+                (7, 3),
+                (8, 0),
+                (8, 2),
+                (8, 9),
+                (9, 4),
+                (9, 5),
+            ]
+        )
+
+        triplets = itertools.combinations([0, 1, 2, 3, 4, 5], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_NJ_weighted_hamming_distance(self):
         cm = pd.DataFrame.from_dict(
@@ -100,23 +119,35 @@ class PercolationSolverTest(unittest.TestCase):
         )
         psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
-        # Due to the way that networkx finds connected components, the ordering
-        # of nodes is uncertain
-        expected_edges = [
-            (7, 8),
-            (7, 10),
-            (8, "c1"),
-            (8, "c2"),
-            (8, "c3"),
-            (10, 11),
-            (10, 12),
-            (11, "c7"),
-            (11, "c6"),
-            (12, "c4"),
-            (12, "c5"),
-        ]
-        for i in expected_edges:
-            self.assertIn(i, p_tree.edges)
+        T = p_tree.get_tree_topology()
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", 7, 8, 10, 11, 12]
+        )
+        expected_tree.add_edges_from(
+            [
+                (7, 8),
+                (7, 10),
+                (8, "c1"),
+                (8, "c2"),
+                (8, "c3"),
+                (10, 11),
+                (10, 12),
+                (11, "c7"),
+                (11, "c6"),
+                (12, "c4"),
+                (12, "c5"),
+            ]
+        )
+
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_Greedy(self):
         cm = pd.DataFrame.from_dict(
@@ -137,22 +168,34 @@ class PercolationSolverTest(unittest.TestCase):
         joining_solver = VanillaGreedySolver()
         psolver = PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
-        # Due to the way that networkx finds connected components, the ordering
-        # of nodes is uncertain
-        expected_edges = [
-            (7, 8),
-            (7, 10),
-            (7, "c6"),
-            (8, "c1"),
-            (8, "c2"),
-            (8, "c3"),
-            (10, "c7"),
-            (10, 11),
-            (11, "c4"),
-            (11, "c5"),
-        ]
-        for i in expected_edges:
-            self.assertIn(i, p_tree.edges)
+        T = p_tree.get_tree_topology()
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", 7, 8, 10, 11]
+        )
+        expected_tree.add_edges_from(
+            [
+                (7, 8),
+                (7, 10),
+                (7, "c6"),
+                (8, "c1"),
+                (8, "c2"),
+                (8, "c3"),
+                (10, "c7"),
+                (10, 11),
+                (11, "c4"),
+                (11, "c5"),
+            ]
+        )
+
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_priors_case(self):
         cm = pd.DataFrame.from_dict(
