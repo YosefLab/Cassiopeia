@@ -105,7 +105,7 @@ class CassiopeiaTree:
         root_sample_name: The name of the sample to treat as the root. This
             is not always used, but will be added if needed during tree
             reconstruction. If the user already has a sample in the character
-            matrix or dissimilarity map that they would like to use as the 
+            matrix or dissimilarity map that they would like to use as the
             phylogenetic root, they can specify it here.
     """
 
@@ -187,8 +187,7 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Tree has not been initialized.")
 
     def set_character_matrix(self, character_matrix: pd.DataFrame):
-        """Initializes a character matrix in the object.
-        """
+        """Initializes a character matrix in the object."""
 
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
@@ -910,8 +909,7 @@ class CassiopeiaTree:
         self.__cache = {}
 
     def get_dissimilarity_map(self):
-        """Gets the dissimilarity map.
-        """
+        """Gets the dissimilarity map."""
 
         if self.__dissimilarity_map is not None:
             return self.__dissimilarity_map.copy()
@@ -920,7 +918,7 @@ class CassiopeiaTree:
 
     def set_dissimilarity_map(self, dissimilarity_map: pd.DataFrame):
         """Sets the dissimilarity map variable in this object.
-        
+
         Args:
             dissimilarity_map: Dissimilarity map relating all N x N distances
                 between leaves.
