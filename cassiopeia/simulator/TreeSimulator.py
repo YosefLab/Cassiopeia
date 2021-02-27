@@ -13,10 +13,11 @@ class TreeSimulator(abc.ABC):
     """
     TreeSimulator is an abstract class that all tree simulators derive from.
 
-    A TreeSimulator returns a CassiopeiaTree whose tree topology is initialized.
-    The character matrix need not be initialized (this is accomplished instead
-    using a LineageTracingDataSimulator object). The branch lengths may be
-    interpretable or not depending on the specific TreeSimulator.
+    A TreeSimulator returns a CassiopeiaTree with at least its tree topology
+    initialized. The character matrix need not be initialized (this is
+    accomplished instead using a LineageTracingDataSimulator object). The
+    branch lengths may be interpretable or not depending on the specific
+    TreeSimulator.
 
     The purpose of the TreeSimulator is to allow users to perform in silico
     simulations of single-cell phylogenies, such as tumor phylogenies, organism
@@ -30,7 +31,6 @@ class TreeSimulator(abc.ABC):
         """
         Simulate a CassiopeiaTree.
 
-        The returned tree will have its topology initialized. The branch
-        lengths may or may not be meaningful.
+        The returned tree will have at least its tree topology initialized.
         """
         pass
