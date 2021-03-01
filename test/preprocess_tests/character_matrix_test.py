@@ -65,7 +65,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_basic_character_matrix_formation(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.alleletable_basic
         )
 
@@ -86,7 +90,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_ignore_intbc(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.alleletable_basic, ignore_intbcs=["B"]
         )
 
@@ -107,7 +115,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_filter_out_low_diversity_intbcs(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.alleletable_basic, allele_rep_thresh=0.99
         )
 
@@ -124,7 +136,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_mutation_prior_formation(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.alleletable_basic, mutation_priors=self.mutation_priors
         )
 
@@ -146,7 +162,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_indel_state_mapping_formation(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.alleletable_basic, mutation_priors=self.mutation_priors
         )
 
@@ -235,9 +255,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             self.alleletable_basic
         )
 
-        character_matrix, priors, state_to_indel = cas.pp.convert_lineage_profile_to_character_matrix(
-            lineage_profile
-        )
+        (
+            character_matrix,
+            priors,
+            state_to_indel,
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(lineage_profile)
 
         self.assertEqual(len(priors), 0)
         self.assertEqual(len(state_to_indel), 9)
@@ -380,7 +402,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
     def test_noncanonical_cut_sites_allele_table_to_character_matrix(self):
 
-        character_matrix, priors, indel_states = cas.pp.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
             self.noncassiopeia_alleletable, cut_sites=["cs1", "cs2", "cs3"]
         )
 
@@ -462,7 +488,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
     def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(
-        self
+        self,
     ):
 
         noncassiopeia_at = self.allele_table_mouse.copy()

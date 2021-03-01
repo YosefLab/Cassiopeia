@@ -134,7 +134,11 @@ class TestDataUtilities(unittest.TestCase):
 
         random_state = np.random.RandomState(123431235)
 
-        character_matrix, _, _ = preprocessing_utilities.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            _,
+            _,
+        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
             self.allele_table
         )
 
@@ -174,7 +178,11 @@ class TestDataUtilities(unittest.TestCase):
 
         random_state = np.random.RandomState(123431235)
 
-        character_matrix, _, _ = preprocessing_utilities.convert_alleletable_to_character_matrix(
+        (
+            character_matrix,
+            _,
+            _,
+        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
             self.non_cassiopeia_allele_table, cut_sites=["cs1", "cs2", "cs3"]
         )
 

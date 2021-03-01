@@ -16,18 +16,19 @@ from cassiopeia.solver import solver_utilities
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
-    TODO: Experiment to find the best default similarity function
     The PercolationSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity in the observed mutations.
     It is an implicit version of Aho's algorithm for tree discovery (1981).
     At each recursive step, the similarities of each sample pair are embedded
     as edges in a graph with weight equal to the similarity between the nodes.
-    The graph is then percolated by removing the minimum edges until multiple 
-    connected components are produced. Ultimately, this groups clusters of 
+    The graph is then percolated by removing the minimum edges until multiple
+    connected components are produced. Ultimately, this groups clusters of
     samples that share strong similarity amongst themselves. If more than two
     connected components are produced by the percolation procedure, then the
     components are clustered by applying the specified solver to the LCAs of
     the clusters, obeying parsimony
+
+    TODO(richardyz98): Experiment to find the best default similarity function
 
     Args:
         joining_solver: The CassiopeiaSolver that is used to cluster groups of
@@ -40,21 +41,21 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             between two given samples and their observed mutations. The default
             is "hamming_distance_without_missing"
         threshold: The minimum similarity threshold. A similarity threshold of 1
-            for example means that only samples with similarities above 1 will 
+            for example means that only samples with similarities above 1 will
             have an edge between them in the graph. Acts as a hyperparameter
-            that controls the sparsity of the graph by filtering low 
+            that controls the sparsity of the graph by filtering low
             similarities.
 
 
     Attributes:
-        joining_solver: The CassiopeiaSolver that is used to cluster groups of 
+        joining_solver: The CassiopeiaSolver that is used to cluster groups of
             samples after percolation steps that produce more than two groups
         prior_transformation: Function to use when transforming priors into
             weights.
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
-        
+
     """
 
     def __init__(
@@ -81,19 +82,17 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.threshold = threshold
         self.similarity_function = similarity_function
 
-
-    def solve(self,
-            cassiopeia_tree: CassiopeiaTree):
+    def solve(self, cassiopeia_tree: CassiopeiaTree):
         """Implements a solving procedure for the Percolation Algorithm.
 
         The procedure recursively splits a set of samples to build a tree. At
-        each partition of the samples produced by the percolation procedure, 
-        an ancestral node is created and each side of the partition is placed 
-        as a daughter clade of that node. This continues until each side of 
-        the partition is comprised only of single samples. If an algorithm 
-        cannot produce a split on a set of samples, then those samples are 
-        placed as sister nodes and the procedure terminates, generating a 
-        polytomy in the tree. This function will populate a tree inside the 
+        each partition of the samples produced by the percolation procedure,
+        an ancestral node is created and each side of the partition is placed
+        as a daughter clade of that node. This continues until each side of
+        the partition is comprised only of single samples. If an algorithm
+        cannot produce a split on a set of samples, then those samples are
+        placed as sister nodes and the procedure terminates, generating a
+        polytomy in the tree. This function will populate a tree inside the
         input CassiopeiaTree.
 
         Args:
@@ -110,13 +109,21 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Dict[int, Dict[int, float]],
             missing_state_indicator: int,
         ):
-            
+
             if len(samples) == 1:
                 return samples[0]
             # Partitions the set of samples by percolating a similarity graph
-            clades = list(self.percolate(unique_character_matrix, samples, priors, weights, missing_state_indicator))
+            clades = list(
+                self.percolate(
+                    unique_character_matrix,
+                    samples,
+                    priors,
+                    weights,
+                    missing_state_indicator,
+                )
+            )
             # Generates a root for this subtree with a unique int identifier
-            root = len(tree.nodes)+1
+            root = len(tree.nodes) + 1
             tree.add_node(root)
 
             for clade in clades:
@@ -156,16 +163,25 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree = nx.DiGraph()
         tree.add_nodes_from(list(unique_character_matrix.index))
 
-        _solve(list(unique_character_matrix.index), tree, unique_character_matrix, priors, weights, cassiopeia_tree.missing_state_indicator)
+        _solve(
+            list(unique_character_matrix.index),
+            tree,
+            unique_character_matrix,
+            priors,
+            weights,
+            cassiopeia_tree.missing_state_indicator,
+        )
 
         # Collapse 0-mutation edges and append duplicate samples
         tree = solver_utilities.collapse_tree(
-            tree, True, character_matrix, cassiopeia_tree.missing_state_indicator
+            tree,
+            True,
+            character_matrix,
+            cassiopeia_tree.missing_state_indicator,
         )
         tree = self.__add_duplicates_to_tree(tree, character_matrix)
-        
-        cassiopeia_tree.populate_tree(tree)
 
+        cassiopeia_tree.populate_tree(tree)
 
     def percolate(
         self,
@@ -175,7 +191,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
-        """The function used by the percolation algorithm to partition the 
+        """The function used by the percolation algorithm to partition the
         set of samples in two.
 
         First, a pairwise similarity graph is generated with samples as nodes
@@ -192,7 +208,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             character_matrix: Character matrix
             samples: A list of samples to partition
-            priors: A dictionary storing the probability of each character 
+            priors: A dictionary storing the probability of each character
                 mutating to a particular state.
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
@@ -249,7 +265,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             # Find the LCA of the nodes in each connected component
             for ind in range(len(connected_components)):
                 component_identifier = "component" + str(ind)
-                component_to_nodes[component_identifier] = connected_components[ind]
+                component_to_nodes[component_identifier] = connected_components[
+                    ind
+                ]
                 character_vectors = [
                     list(i)
                     for i in list(
@@ -291,25 +309,20 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             for c in range(len(connected_components)):
                 partition_sides.append(list(connected_components[c]))
 
-        # Convert from component indices back to the sample names in the 
+        # Convert from component indices back to the sample names in the
         # original character matrix
         sample_names = list(character_matrix.index)
         partition_named = []
         for sample_index_group in partition_sides:
             sample_name_group = []
             for sample_index in sample_index_group:
-                sample_name_group.append(
-                    sample_names[sample_index]
-                )
+                sample_name_group.append(sample_names[sample_index])
             partition_named.append(sample_name_group)
 
         return partition_named
 
-
     def __add_duplicates_to_tree(
-        self,
-        tree: nx.DiGraph,
-        character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
