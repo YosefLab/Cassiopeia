@@ -94,6 +94,10 @@ class TestITOLPlotting(unittest.TestCase):
         rgb = itol_utilities.hex_to_rgb(_hex)
         self.assertEqual(rgb, (129, 45, 211))
 
+        rgb = (129, 45, 211)
+        _hex= itol_utilities.rgb_to_hex(rgb)
+        self.assertEqual(_hex, "#812dd3")
+
     def test_generate_random_indel_colors(self):
 
         lineage_profile = pd.DataFrame.from_dict(
@@ -186,6 +190,33 @@ class TestITOLPlotting(unittest.TestCase):
             "DATASET_COLORSTRIP\nSEPARATOR TAB\nCOLOR\t#FF0000"
             "\nMARGIN\t100\nDATASET_LABEL\ttest_colorbar\nSTRIP_WIDTH\t100"
             "\nSHOW_INTERNAL\t0\n\n\nDATA\n2\trgb(255,0,0)\n3\trgb(255,0,0)"
+            "\n5\trgb(0,255,255)\n6\trgb(0,255,255)\n"
+        )
+
+        with open(_file, "r") as f:
+            content = f.read()
+            self.assertEqual(expected_content, content)
+
+    def test_generate_colorbar_file_with_legend(self):
+
+        color_map = {"a": (255, 0, 0), "b": (0, 255, 255)}
+        _file = itol_utilities.create_colorbar(
+            self.tree.cell_meta["cluster"],
+            self.tree,
+            color_map,
+            "test_colorbar",
+            self.temporary_directory,
+            create_legend=True,
+        )
+
+        self.assertTrue(os.path.exists(_file))
+
+        expected_content = (
+            "DATASET_COLORSTRIP\nSEPARATOR TAB\nCOLOR\t#FF0000"
+            "\nMARGIN\t100\nDATASET_LABEL\ttest_colorbar\nSTRIP_WIDTH\t100"
+            "\nSHOW_INTERNAL\t0\n\nLEGEND_TITLE\ttest_colorbar legend\n"
+            "LEGEND_SHAPES\t1\t1\nLEGEND_COLORS\t#ff0000\t#00ffff"
+            "\nLEGEND_LABELS\ta\tb\n\nDATA\n2\trgb(255,0,0)\n3\trgb(255,0,0)"
             "\n5\trgb(0,255,255)\n6\trgb(0,255,255)\n"
         )
 

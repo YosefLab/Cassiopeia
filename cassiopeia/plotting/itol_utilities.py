@@ -12,9 +12,7 @@ import tempfile
 from typing import Dict, List, Tuple, Optional
 
 from bokeh import palettes
-from ete3 import Tree
-from itolapi import Itol
-from itolapi import ItolExport
+from itolapi import Itol, ItolExport
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
 import numpy as np
 import pandas as pd
@@ -44,28 +42,42 @@ def upload_and_export_itol(
     indel_priors: Optional[pd.DataFrame] = None,
     rect: bool = False,
     include_legend: bool = False,
+    use_branch_lengths: bool = False,
     palette: List[str] = palettes.Category20[20],
     random_state: Optional[np.random.RandomState] = None,
+    verbose: bool = True,
 ):
     """Uploads a tree to iTOL and exports it.
 
-    This function takes in a tree, plots in with iTOL, and exports it locally.
+    This function takes in a tree, plots it with iTOL, and exports it locally.
     A user can also specify meta data and allele tables to visualize alongside
     their tree. The function requires a user to have an account with iTOL and
-    must pass in an `api_key` and a `project_name`, which corresponds to one
-    in the user's iTOL account.
+    can pass these credentials to the function in one of two ways: first, the
+    user can specify an `api_key` and a `project_name`, which corresponds to one
+    in the user's iTOL account' second, the user can have a hidden `itolconfig`
+    file that can store these credentials (the default location we will check
+    is in ~/.itolconfig, though this can be overridden by the user). We
+    preferentially take values passed in explicitly to the function in the
+    `api_key` and `project_name` arguments.
 
     TODO(mgjones): Add the ability to pass in min/max colors for specific
         numeric meta data to use when creating the gradient files.
 
     Args:
         cassiopeia_tree: A CassiopeiaTree instance, populated with a tree.
-        api_key: API key linking to your iTOL account
-        project_name: Project name to upload to.
         tree_name: Name of the tree. This is what the tree will be called
             within your project directory on iTOL
         export_filepath: Output file path to save your tree. Must end with
             one of the following suffixes: ['png', 'svg', 'eps', 'ps', 'pdf'].
+        itol_config: A configuration file that a user can maintain for storing
+            iTOL account details (specifically, an API key and a project name
+            for uploading trees). We assume that the information is stored under
+            the [DEFAULT] header. We also will be default check the path
+            `~/itolconfig` but the user can pass in another path should they
+            wish. If an `api_key` and `project_name` are also passed in, we
+            will preferentially take those values.
+        api_key: API key linking to your iTOL account
+        project_name: Project name to upload to.
         meta_data: Meta data to plot alongside the tree, which must be columns
             in the CassiopeiaTree.cell_meta variable.
         allele_table: Alleletable to plot alongside the tree.
@@ -75,26 +87,36 @@ def upload_and_export_itol(
             allele table is to be plotted and `indel_colors` is None.           
         rect: Boolean indicating whether or not to save your tree as a circle
             or rectangle.
+        use_branch_lengths: Whether or not to use branch lengths when exporting
+            the tree.
         include_legend: Plot legend along with meta data.
         palette: A palette of colors in hex format.
         random_state: A random state for reproducibility
+        verbose: Include extra print statements.
+
+    Raises:
+        iTOLError if iTOL credentials cannot be found, if the output format is
+            not supported, if meta data to be plotted cannot be found, or if
+            an error with iTOL is encountered.
     """
 
     # create temporary directory for storing files we'll upload to iTOL
     temporary_directory = tempfile.mkdtemp()
 
-    if os.path.exists(os.path.expanduser(itol_config)):
+    if (api_key is None or project_name is None) and os.path.exists(os.path.expanduser(itol_config)):
         
         config = configparser.ConfigParser()
         with open(os.path.expanduser(itol_config), "r") as f:
             config_string = f.read()
         config.read_string(config_string)
-        if api_key is None:
-            api_key = config["DEFAULT"]["api_key"]
-        if project_name is None:
-            project_name = config["DEFAULT"]["project_name"]
 
-    if api_key is None or project_name is None:
+        try:
+            api_key = config["DEFAULT"]["api_key"]
+            project_name = config["DEFAULT"]["project_name"]
+        except KeyError:
+            raise iTOLError("Error reading the itol config file passed in.")
+
+    else:
         raise iTOLError(
             "Specify an api_key and project_name, or a valid iTOL "
             "config file."
@@ -160,10 +182,11 @@ def upload_and_export_itol(
     good_upload = itol_uploader.upload()
     if not good_upload:
         raise iTOLError(itol_uploader.comm.upload_output)
-
-    print("iTOL output: " + str(itol_uploader.comm.upload_output))
-    print("Tree Web Page URL: " + itol_uploader.get_webpage())
-    print("Warnings: " + str(itol_uploader.comm.warnings))
+    
+    if verbose:
+        print("iTOL output: " + str(itol_uploader.comm.upload_output))
+        print("Tree Web Page URL: " + itol_uploader.get_webpage())
+        print("Warnings: " + str(itol_uploader.comm.warnings))
 
     tree_id = itol_uploader.comm.tree_id
 
@@ -184,7 +207,7 @@ def upload_and_export_itol(
     itol_exporter.set_export_param_value("leaf_sorting", 1)
     itol_exporter.set_export_param_value("label_display", 0)
     itol_exporter.set_export_param_value("internal_marks", 0)
-    itol_exporter.set_export_param_value("ignore_branch_length", 1)
+    itol_exporter.set_export_param_value("ignore_branch_length", 1-int(use_branch_lengths))
 
     itol_exporter.set_export_param_value(
         "datasets_visible", ",".join([str(i) for i in range(len(files))])
@@ -226,8 +249,6 @@ def create_gradient_from_df(
 
     _leaves = tree.leaves
     df = df.loc[_leaves].copy()
-
-    outfps = []
 
     outdf = pd.DataFrame()
     outdf["cellBC"] = _leaves
@@ -410,7 +431,7 @@ def create_indel_heatmap(
 
     rgb_heatmap = np.stack((r, g, b), axis=2)
 
-    alfiles = []
+    allele_files = []
     for j in range(0, rgb_heatmap.shape[1]):
         item_list = []
         for i in rgb_heatmap[:, j]:
@@ -468,9 +489,9 @@ def create_indel_heatmap(
             )
             ALout.write(df_writeout)
 
-        alfiles.append(alleleLabel_fileout)
+        allele_files.append(alleleLabel_fileout)
 
-    return alfiles
+    return allele_files
 
 
 def get_random_indel_colors(
@@ -592,6 +613,19 @@ def hex_to_rgb(value) -> Tuple[int, int, int]:
     value = value.lstrip("#")
     lv = len(value)
     return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def rgb_to_hex(rgb) -> str:
+    """Converts (r, g, b) tuple to hex
+
+    Args:
+        rgb: A tuple denoting (R, G, B) values
+
+    Returns:
+        A hex string.
+    """
+    
+    r, g, b = rgb[0], rgb[1], rgb[2]
+    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
 
 def generate_random_color(
