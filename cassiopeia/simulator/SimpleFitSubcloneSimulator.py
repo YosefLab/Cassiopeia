@@ -1,20 +1,20 @@
 """
-This file stores a subclass of TreeSolver, the TumorWithAFitSubclone. The
-TumorWithAFitSubclone simulates a tumor phylogeny which develops one fit
-subclone.
+This file stores a subclass of TreeSolver, the SimpleFitSubcloneSimulator. The
+SimpleFitSubcloneSimulator simulates a clonal population which develops one
+fit subclone.
 """
 import networkx as nx
 from queue import Queue
 
 from cassiopeia.data import CassiopeiaTree
-from .TreeSimulator import TreeSimulator
+from cassiopeia.simulator import TreeSimulator
 
 
-class TumorWithAFitSubclone(TreeSimulator):
+class SimpleFitSubcloneSimulator(TreeSimulator):
     r"""
-    Simulates a tumor phylogeny which develops one fit subclone.
+    Simulates a clonal population which develops one fit subclone.
 
-    This TreeSimulator simulates a (binary) tumor phylogeny that evolves
+    This TreeSimulator simulates a (binary) clonal population that evolves
     neutrally with constant branch length 'branch_length_neutral', until in
     generation 'generations_until_fit_subclone' one of the lineages develops
     fitness and starts to expand with the new branch length 'branch_length_fit'.
@@ -22,25 +22,26 @@ class TumorWithAFitSubclone(TreeSimulator):
     This TreeSimulator is useful because (1) it generates deterministic
     phylogenies and (2) the phylogenies are as simple as possible while being
     non-neutral. The ability to control the branch lengths of the neutrally
-    evolving cells and of the fit cells allows us to simulate different degrees
-    of fitness.
+    evolving population and of the fit subpopulation allows us to simulate
+    different degrees of fitness.
 
     Note that the branches for the leaves of the tree need not have length
-    exactly equal to branch_length_neutral nor branch_length_fit, because the
-    cells get assayed at the arbitrary time specified by 'experiment_duration',
-    which is not necessarily the time at which they divide.
+    exactly equal to 'branch_length_neutral' nor 'branch_length_fit', because
+    the population gets assayed at the arbitrary time specified by
+    'experiment_duration', which is not necessarily the time at which a
+    division even happens.
 
     The names of the leaf nodes will be given by a unique integer ID, followed
-    by "_neutral" for the neutrally evolving cells, and by "_fit" for the fit
-    cells.
+    by "_neutral" for the neutrally evolving individuals, and by "_fit" for the
+    fit individuals.
 
     Finally, note that we do not enforce the condition branch_length_neutral >
     branch_length_fit, therefore it is possible to make the subclone less fit,
     i.e. expand slower.
 
     Args:
-        branch_length_neutral: Branch length of the neutrally evolving cells.
-            All cells are neutrally evolving until generation
+        branch_length_neutral: Branch length of the neutrally evolving
+            individuals. All individuals are neutrally evolving until generation
             'generations_until_fit_subclone', when exactly one of the lineages
             develops fitness.
         branch_length_fit: The branch length of the fit subclone, which appears
@@ -101,7 +102,7 @@ class TumorWithAFitSubclone(TreeSimulator):
             )
             time_of_division = time + time_till_division
             if time_of_division >= experiment_duration:
-                # Not enough time left for the cell to divide.
+                # Not enough time left for the individual to divide.
                 times[node] = experiment_duration
                 continue
             # Create children, add edges to them, and push children to the

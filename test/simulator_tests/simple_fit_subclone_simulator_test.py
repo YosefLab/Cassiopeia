@@ -1,14 +1,14 @@
 import unittest
-from cassiopeia.simulator import TumorWithAFitSubclone
+from cassiopeia.simulator import SimpleFitSubcloneSimulator
 
 
-class TestTumorWithAFitSubclone(unittest.TestCase):
-    def test_TumorWithAFitSubclone(self):
+class TestSimpleFitSubcloneSimulator(unittest.TestCase):
+    def test_SimpleFitSubcloneSimulator(self):
         r"""
         Small test that can be drawn by hand.
         Checks that the generated phylogeny is correct.
         """
-        tree = TumorWithAFitSubclone(
+        tree = SimpleFitSubcloneSimulator(
             branch_length_neutral=1,
             branch_length_fit=0.5,
             experiment_duration=1.9,
