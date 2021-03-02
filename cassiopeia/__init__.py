@@ -9,5 +9,6 @@ __version__ = "0.0.1"
 
 from . import pp
 from . import solver
-from . import critique
+from . import pl
 from . import data
+from . import critique
