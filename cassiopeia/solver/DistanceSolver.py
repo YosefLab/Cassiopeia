@@ -78,7 +78,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.add_root = add_root
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
-        """A general bottom-up distance-based solver routine.
+        """Solves a tree for a general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
         samples to join together into a "cherry" and then reform the

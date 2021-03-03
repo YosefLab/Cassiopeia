@@ -34,8 +34,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     process.
 
     Args:
-        dissimilarity_function: Function that can be used to compute the
-            dissimilarity between samples.
+        similarity_function: Function that can be used to compute the
+            similarity between samples.
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
                 "negative_log": Transforms each probability by the negative
@@ -45,7 +45,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                     the square root of 1/p
 
     Attributes:
-        dissimilarity_function: Function used to compute dissimilarity between
+        similarity_function: Function used to compute similarity between
             samples.
         prior_transformation: Function to use when transforming priors into
             weights.
@@ -64,7 +64,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.similarity_function = similarity_function
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
-        """The solver routine for the SharedMutationJoiningSolver.
+        """Solves a tree for the SharedMutationJoiningSolver.
 
         The solver routine calculates an n x n similarity matrix of all
         pairwise sample similarities based on a provided similarity function on
@@ -181,7 +181,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     def update_similarity_map_and_character_matrix(
         self,
         character_matrix: pd.DataFrame,
-        nb_similarity_function,
+        nb_similarity_function: Callable[
+            [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+        ],
         similarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
@@ -259,13 +261,15 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: np.array,
         similarity_map: np.array,
         lca: np.array,
-        nb_similarity_function,
+        nb_similarity_function: Callable[
+            [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+        ],
         missing_state_indicator: int = -1,
         weights=None,
     ) -> np.array:
         """A private, optimized function for updating similarities.
 
-        A faster implementation of updating the similarity map for the
+        A faster implementation of updating the similarity map for the 
         SharedMutationJoiner, invoked by
         `self.update_similarity_map_and_character_matrix`.
 
