@@ -23,12 +23,17 @@ class GeneralBirthDeathSimulator(TreeSimulator):
         birth_waiting_dist,
         death_waiting_dist,
         birth_scale_param,
-        death_scale_param,
         fitness_num_dist=None,
         fitness_strength_dist=None,
         num_extant=None,
         experiment_time=None,
     ):
+        if num_extant is None and experiment_time is None:
+            raise GeneralBirthDeathError("Please specify a stopping condition")
+
+        if fitness_num_dist is not None and fitness_strength_dist is None:
+            raise GeneralBirthDeathError("Please specify a fitness strength distribution")
+
         unique_id = 0
         tree = nx.DiGraph()
         tree.add_node(unique_id)
@@ -39,7 +44,6 @@ class GeneralBirthDeathSimulator(TreeSimulator):
             {
                 "id": unique_id,
                 "birth_scale": birth_scale_param,
-                "death_scale": death_scale_param,
                 "total_time": 0,
             }
         )
@@ -48,7 +52,7 @@ class GeneralBirthDeathSimulator(TreeSimulator):
         while len(current_lineages) > 0:
             lineage = current_lineages.pop(0)  # Make sure to pop from front
             birth_waiting_time = birth_waiting_dist(lineage["birth_scale"])
-            death_waiting_time = death_waiting_dist(lineage["death_scale"])
+            death_waiting_time = death_waiting_dist()
             # Take the minimum waiting time to dictate which event happens
             if birth_waiting_time < death_waiting_time:
                 # If time is the stopping condition, if the next birth would
@@ -65,12 +69,12 @@ class GeneralBirthDeathSimulator(TreeSimulator):
                         )
                         continue
                 # Determine the number of mutations acquired, and then determine
-                # If they are mutations that affect birth or death. Then
-                # determine their strength
-                num_mutations = int(fitness_num_dist())
+                # their strength
                 total_birth_mutation_strength = 1
-                for _ in range(num_mutations):
-                    total_birth_mutation_strength *= fitness_strength_dist()
+                if fitness_num_dist:
+                    num_mutations = int(fitness_num_dist())
+                    for _ in range(num_mutations):
+                        total_birth_mutation_strength *= fitness_strength_dist()
                 # Add two daughters with updated total time, and scale parameters
                 for i in range(unique_id + 1, unique_id + 3):
                     tree.add_node(i)
@@ -79,7 +83,6 @@ class GeneralBirthDeathSimulator(TreeSimulator):
                             "id": i,
                             "birth_scale": lineage["birth_scale"]
                             * total_birth_mutation_strength,
-                            "death_scale": lineage["death_scale"],
                             "total_time": lineage["total_time"]
                             + birth_waiting_time,
                         }
@@ -109,22 +112,23 @@ class GeneralBirthDeathSimulator(TreeSimulator):
                 self.remove_and_prune(lineage["id"], tree)
             
 
-        if len(tree.nodes) == 0:
+        if len(tree.nodes) == 1:
             raise GeneralBirthDeathError("All lineages dead before end of experiment")
 
         return tree
 
 
     def remove_and_prune(self, node, network):
-        curr_parent = list(network.predecessors(node))[0]
-        network.remove_node(node)
-        while (
-            network.out_degree(curr_parent) < 1
-            and network.in_degree(curr_parent) > 0
-        ):
-            next_parent = list(network.predecessors(curr_parent))[0]
-            network.remove_node(curr_parent)
-            curr_parent = next_parent
+        if len(network.nodes) > 1:
+            curr_parent = list(network.predecessors(node))[0]
+            network.remove_node(node)
+            while (
+                network.out_degree(curr_parent) < 1
+                and network.in_degree(curr_parent) > 0
+            ):
+                next_parent = list(network.predecessors(curr_parent))[0]
+                network.remove_node(curr_parent)
+                curr_parent = next_parent
 
 
 """Example use snippet:
@@ -132,9 +136,8 @@ note that numpy uses a different parameterization of the exponential with the sc
 
 
 birth_waiting_dist = np.random.exponential
-death_waiting_dist = np.random.exponential
+death_waiting_dist = np.random.exponential(1.5)
 birth_scale_param = 0.5
-death_scale_param = 1.5 
 fitness_num_dist = lambda: 1 if np.random.uniform() > 0.5 else 0
 fitness_strength_dist = lambda: 2 ** np.random.uniform(-1,1)
 
@@ -142,11 +145,10 @@ tree = generate_birth_death(
     birth_waiting_dist,
     death_waiting_dist,
     birth_scale_param,
-    death_scale_param,
     fitness_num_dist = fitness_num_dist,
     fitness_strength_dist=fitness_strength_dist,
     num_extant=8,
-#     experiment_time = 2
+#     experiment_time = 1
 )
 
 """
