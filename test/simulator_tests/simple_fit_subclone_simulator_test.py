@@ -1,9 +1,12 @@
+import numpy as np
+from typing import Generator
 import unittest
+
 from cassiopeia.simulator import SimpleFitSubcloneSimulator
 
 
 class TestSimpleFitSubcloneSimulator(unittest.TestCase):
-    def test_SimpleFitSubcloneSimulator(self):
+    def test_deterministic(self):
         r"""
         Small test that can be drawn by hand.
         Checks that the generated phylogeny is correct.
@@ -39,3 +42,35 @@ class TestSimpleFitSubcloneSimulator(unittest.TestCase):
                 "5_fit": 1.9,
             },
         )
+
+    def test_stochastic(self):
+        r"""
+        We test the functionality that allows providing a generator of branch
+        lengths. Because the test is stochastic, we don't assert anything
+        besides the branch lengths being all different.
+        """
+        np.random.seed(1)
+
+        def branch_length_neutral_generator() -> Generator[float, None, None]:
+            while True:
+                yield np.random.exponential(1.0)
+
+        def branch_length_fit_generator() -> Generator[float, None, None]:
+            while True:
+                yield np.random.exponential(0.5)
+
+        tree = SimpleFitSubcloneSimulator(
+            branch_length_neutral=branch_length_neutral_generator(),
+            branch_length_fit=branch_length_fit_generator(),
+            experiment_duration=4.9,
+            generations_until_fit_subclone=2,
+        ).simulate_tree()
+        # Just check that all branch lengths are distinct to confirm
+        # non-determinism. We exclude the leaves because sister leaves have the
+        # same branch length.
+        branch_lengths = [
+            tree.get_branch_length(p, c)
+            for (p, c) in tree.edges
+            if not tree.is_leaf(c)
+        ]
+        assert len(branch_lengths) == len(set(branch_lengths))
