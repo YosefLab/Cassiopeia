@@ -897,6 +897,7 @@ class CassiopeiaTree:
             weights,
             self.missing_state_indicator,
         )
+
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
         dissimilarity_map = pd.DataFrame(
