@@ -11,6 +11,7 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
+import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
@@ -32,6 +33,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     algorithm has theoretical guarantees on correctness given a sufficiently
     large number of characters and bounds on edge lengths in the tree generative
     process.
+
+    TODO(mgjones, rzhang): Make the solver work with similarity maps as
+        flattened arrays
 
     Args:
         similarity_function: Function that can be used to compute the
@@ -94,6 +98,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights,
             cassiopeia_tree.missing_state_indicator,
         )
+
+        similarity_map = scipy.spatial.distance.squareform(similarity_map)
+
         similarity_map = pd.DataFrame(
             similarity_map,
             index=character_matrix.index,
@@ -269,7 +276,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     ) -> np.array:
         """A private, optimized function for updating similarities.
 
-        A faster implementation of updating the similarity map for the 
+        A faster implementation of updating the similarity map for the
         SharedMutationJoiner, invoked by
         `self.update_similarity_map_and_character_matrix`.
 

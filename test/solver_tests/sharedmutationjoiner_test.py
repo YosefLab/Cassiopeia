@@ -10,6 +10,7 @@ import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
+import scipy
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
@@ -141,6 +142,9 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             weights,
             self.pp_tree_priors.missing_state_indicator,
         )
+
+        similarity_map = scipy.spatial.distance.squareform(similarity_map)
+
         similarity_map = pd.DataFrame(
             similarity_map,
             index=character_matrix.index,
