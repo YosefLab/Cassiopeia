@@ -48,7 +48,7 @@ class TestILPSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        # basic PP example with no missing data
+        # basic PP example with duplicates
         cm_duplicates = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0],
@@ -62,12 +62,30 @@ class TestILPSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
+        # basic example with missing data
+        cm_missing = pd.DataFrame.from_dict(
+            {
+                "a": [1, 3, 1, 1],
+                "b": [1, 3, 1, -1],
+                "c": [1, 0, 1, 0],
+                "d": [1, 1, 3, 0],
+                "e": [1, 1, 0, 0],
+                "f": [2, 0, 0, 0],
+                "g": [2, 4, -1, -1],
+                "h": [2, 4, 2, 0],
+            },
+            orient="index",
+        )
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         open(os.path.join(dir_path, "test.log"), "a").close()
         self.pp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         self.duplicates_tree = cas.data.CassiopeiaTree(
             cm_duplicates, missing_state_indicator=-1
+        )
+        self.missing_tree = cas.data.CassiopeiaTree(
+            cm_missing, missing_state_indicator=-1
         )
         self.logfile = os.path.join(dir_path, "test.log")
 
@@ -387,6 +405,49 @@ class TestILPSolver(unittest.TestCase):
         )
 
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_ilp_solver_missing_data(self):
+
+        self.ilp_solver.solve(self.missing_tree, self.logfile)
+        tree = self.missing_tree.get_tree_topology()
+
+        # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("node0", "node1"),
+                ("node0", "node2"),
+                ("node1", "node3"),
+                ("node1", "node4"),
+                ("node3", "c"),
+                ("node3", "node6"),
+                ("node6", "a"),
+                ("node6", "b"),
+                ("node4", "d"),
+                ("node4", "e"),
+                ("node2", "f"),
+                ("node2", "node5"),
+                ("node5", "g"),
+                ("node5", "h"),
+            ]
+        )
+
+        triplets = itertools.combinations(
+            ["a", "b", "c", "d", "e", "f", "g", "h"], 3
+        )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
