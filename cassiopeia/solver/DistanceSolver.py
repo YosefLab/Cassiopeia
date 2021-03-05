@@ -36,6 +36,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     TODO(mgjones, sprillo, rzhang): Specify functions to use for rooting, etc.
         the trees that are produced via a DistanceSolver. Add compositional
         framework.
+
     TODO(mgjones, rzhang): Make the solver work with similarity maps as
         flattened arrays
 
