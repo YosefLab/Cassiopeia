@@ -334,7 +334,6 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
-
     def test_ilp_solver_with_duplicates(self):
 
         self.ilp_solver.solve(self.duplicates_tree, self.logfile)
