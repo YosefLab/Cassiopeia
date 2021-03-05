@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Generator
 import unittest
 
 from cassiopeia.simulator import SimpleFitSubcloneSimulator
@@ -45,23 +44,21 @@ class TestSimpleFitSubcloneSimulator(unittest.TestCase):
 
     def test_stochastic(self):
         r"""
-        We test the functionality that allows providing a generator of branch
+        We test the functionality that allows providing a callable for branch
         lengths. Because the test is stochastic, we don't assert anything
         besides the branch lengths being all different.
         """
         np.random.seed(1)
 
-        def branch_length_neutral_generator() -> Generator[float, None, None]:
-            while True:
-                yield np.random.exponential(1.0)
+        def branch_length_neutral() -> float:
+            return np.random.exponential(1.0)
 
-        def branch_length_fit_generator() -> Generator[float, None, None]:
-            while True:
-                yield np.random.exponential(0.5)
+        def branch_length_fit() -> float:
+            return np.random.exponential(0.5)
 
         tree = SimpleFitSubcloneSimulator(
-            branch_length_neutral=branch_length_neutral_generator(),
-            branch_length_fit=branch_length_fit_generator(),
+            branch_length_neutral=branch_length_neutral,
+            branch_length_fit=branch_length_fit,
             experiment_duration=4.9,
             generations_until_fit_subclone=2,
         ).simulate_tree()

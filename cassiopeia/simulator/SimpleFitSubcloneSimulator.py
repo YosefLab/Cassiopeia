@@ -5,7 +5,7 @@ fit subclone.
 """
 import networkx as nx
 from queue import Queue
-from typing import Generator, Tuple, Union
+from typing import Callable, Generator, Tuple, Union
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.simulator.TreeSimulator import TreeSimulator
@@ -45,10 +45,10 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
         branch_length_neutral: Branch length of the neutrally evolving
             individuals. All individuals are neutrally evolving until generation
             'generations_until_fit_subclone', when exactly one of the lineages
-            develops fitness. A generator can be provided instead of a constant,
+            develops fitness. A callable can be provided instead of a constant,
             which is useful for simulating random branch lengths.
         branch_length_fit: The branch length of the fit subclone, which appears
-            exactly at generation 'generations_until_fit_subclone'. A generator
+            exactly at generation 'generations_until_fit_subclone'. A callable
             can be provided instead of a constant, which is useful for
             simulating random branch lengths.
         experiment_duration: The total length of the experiment.
@@ -58,31 +58,28 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
 
     def __init__(
         self,
-        branch_length_neutral: Union[float, Generator[float, None, None]],
-        branch_length_fit: Union[float, Generator[float, None, None]],
+        branch_length_neutral: Union[float, Callable[[], float]],
+        branch_length_fit: Union[float, Callable[[], float]],
         experiment_duration: float,
         generations_until_fit_subclone: int,
     ):
-        self.branch_length_neutral = self._create_generator(
+        self.branch_length_neutral = self._create_callable(
             branch_length_neutral
         )
-        self.branch_length_fit = self._create_generator(branch_length_fit)
+        self.branch_length_fit = self._create_callable(branch_length_fit)
         self.experiment_duration = experiment_duration
         self.generations_until_fit_subclone = generations_until_fit_subclone
 
-    def _create_generator(
-        self, x: Union[float, Generator[float, None, None]]
-    ) -> Generator[float, None, None]:
+    def _create_callable(
+        self, x: Union[float, Callable[[], float]]
+    ) -> Callable[[], float]:
         # In case the user provides an int, we still hold their back...
         if type(x) in [int, float]:
 
-            def constant_branch_length_generator() -> Generator[
-                float, None, None
-            ]:
-                while True:
-                    yield x
+            def constant_branch_length_callable() -> float:
+                return x
 
-            return constant_branch_length_generator()
+            return constant_branch_length_callable
         else:
             return x
 
@@ -120,9 +117,9 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
             # Pop next node
             (node, time, node_fitness, generation) = q.get()
             time_till_division = (
-                next(branch_length_neutral)
+                branch_length_neutral()
                 if node_fitness == "neutral"
-                else next(branch_length_fit)
+                else branch_length_fit()
             )
             time_of_division = time + time_till_division
             if time_of_division >= experiment_duration:
