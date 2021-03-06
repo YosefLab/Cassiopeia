@@ -31,4 +31,3 @@ class DataSimulator(abc.ABC):
             tree: the CassiopeiaTree to overlay the data on. The tree topology
                 must be initialized.
         """
-        pass

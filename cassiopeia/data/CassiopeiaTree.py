@@ -557,6 +557,40 @@ class CassiopeiaTree:
                 self.get_time(child) - new_time
             )
 
+    def set_times(self, time_dict: Dict[str, float]) -> None:
+        """Sets the time of all nodes in the tree.
+
+        Importantly, this maintains consistency with the rest of the tree. In
+        other words, setting the time of all nodes will change the length of
+        the edges too. This function requires monotonicity of times are
+        maintained (i.e. no negative branch lengths).
+
+        Args:
+            time_dict: Dictionary mapping nodes to their time.
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized, or if the time
+            of any parent is greater than that of a child.
+        """
+        self.__check_network_initialized()
+
+        # TODO: Check that the keys of time_dict match exactly the nodes in the
+        # tree and raise otherwise?
+        # Currently, if nodes are missing in time_dict, code below blows up. If
+        # extra nodes are present, they are ignored.
+
+        for (parent, child) in self.edges:
+            time_parent = time_dict[parent]
+            time_child = time_dict[child]
+            if time_parent > time_child:
+                raise CassiopeiaTreeError(
+                    "Time of parent greater than that of child: "
+                    f"{time_parent} > {time_child}"
+                )
+            self.__network[parent][child]["length"] = time_child - time_parent
+        for node, time in time_dict.items():
+            self.__network.nodes[node]["time"] = time
+
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
 
@@ -569,6 +603,19 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         return self.__network.nodes[node]["time"]
+
+    def get_times(self) -> Dict[str, float]:
+        """Gets the times of all nodes.
+
+        Returns the times of all nodes, defined as the sum of edge lengths from
+        the root to that node.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        return dict([(node, self.get_time(node)) for node in self.nodes])
 
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.

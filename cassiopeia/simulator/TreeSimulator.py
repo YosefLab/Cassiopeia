@@ -33,4 +33,3 @@ class TreeSimulator(abc.ABC):
 
         The returned tree will have at least its tree topology initialized.
         """
-        pass

@@ -42,4 +42,3 @@ class LineageTracingDataSimulator(DataSimulator):
             tree: the CassiopeiaTree to overlay the lineage tracing data on.
                 The tree topology must be initialized.
         """
-        pass
