@@ -590,11 +590,16 @@ class CassiopeiaTree:
     def set_times(self, time_dict: Dict[str, float]) -> None:
         """Sets the time of all nodes in the tree.
 
+        Importantly, this maintains consistency with the rest of the tree. In
+        other words, setting the time of all nodes will change the length of
+        the edges too. This function requires monotonicity of times are
+        maintained (i.e. no negative branch lengths).
+
         Args:
             time_dict: Dictionary mapping nodes to their time.
 
         Raises:
-            CassiopeiaTreeError if the tree is not initialized, if the time
+            CassiopeiaTreeError if the tree is not initialized, or if the time
             of any parent is greater than that of a child.
         """
         self.__check_network_initialized()
@@ -610,7 +615,8 @@ class CassiopeiaTree:
             if time_parent > time_child:
                 raise CassiopeiaTreeError(
                     "Time of parent greater than that of child: "
-                    f"{time_parent} > {time_child}")
+                    f"{time_parent} > {time_child}"
+                )
             self.__network[parent][child]["length"] = time_child - time_parent
         for node, time in time_dict.items():
             self.__network.nodes[node]["time"] = time
@@ -630,6 +636,9 @@ class CassiopeiaTree:
 
     def get_times(self) -> Dict[str, float]:
         """Gets the times of all nodes.
+
+        Returns the times of all nodes, defined as the sum of edge lengths from
+        the root to that node.
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
@@ -989,6 +998,7 @@ class CassiopeiaTree:
             weights,
             self.missing_state_indicator,
         )
+
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
         dissimilarity_map = pd.DataFrame(
