@@ -31,6 +31,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
     ):
         if num_extant is None and experiment_time is None:
             raise BirthDeathFitnessError("Please specify a stopping condition")
+        if num_extant and experiment_time:
+            raise BirthDeathFitnessError("Please choose only one stopping condition")
         if fitness_num_dist is not None and fitness_strength_dist is None:
             raise BirthDeathFitnessError("Please specify a fitness strength distribution")
         if num_extant is not None and num_extant <= 0:
@@ -38,101 +40,98 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         if experiment_time is not None and experiment_time <= 0:
             raise BirthDeathFitnessError("Please specify an experiment time greater than 0")
 
+
+        def sample_event(unique_id, lineage):
+            birth_waiting_time = birth_waiting_dist(lineage["birth_scale"])
+            death_waiting_time = death_waiting_dist()
+            if birth_waiting_time <= 0 or death_waiting_time <= 0:
+                raise BirthDeathFitnessError("0 or negative waiting time detected")
+
+            if experiment_time and lineage["total_time"] + birth_waiting_time >= experiment_time and lineage["total_time"] + death_waiting_time >= experiment_time:
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+                tree.add_edge(lineage["id"], unique_id, weight = experiment_time - lineage["total_time"])
+                tree.nodes[unique_id]["total_time"] = experiment_time
+                return unique_id + 1
+
+            if birth_waiting_time < death_waiting_time:
+                total_birth_mutation_strength = 1
+                if fitness_num_dist:
+                    num_mutations = int(fitness_num_dist())
+                    if num_mutations < 0:
+                        raise BirthDeathFitnessError("Negative number of mutations detected")
+                    for _ in range(num_mutations):
+                        total_birth_mutation_strength *= fitness_strength_dist()
+                    if total_birth_mutation_strength < 0:
+                        raise BirthDeathFitnessError("Negative mutation strength detected")
+                
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"] * total_birth_mutation_strength
+                tree.add_edge(lineage["id"], unique_id, weight = birth_waiting_time)
+                tree.nodes[unique_id]["total_time"] = birth_waiting_time + lineage["total_time"]
+                current_lineages.append(
+                    {
+                        "id": unique_id,
+                        "birth_scale": lineage["birth_scale"] * total_birth_mutation_strength,
+                        "total_time": birth_waiting_time + lineage["total_time"]
+                    }
+                )
+                return unique_id + 1
+            else:
+                return unique_id
+            
+        
         tree = nx.DiGraph()
         tree.add_node(0)
+        tree.nodes[0]["birth_scale"] = birth_scale_param
+        tree.nodes[0]["total_time"] = 0
         # Sample the waiting time until the first division
-        birth_time_before_first_division = birth_waiting_dist(birth_scale_param)
-        death_time_before_first_division = death_waiting_dist()
-        if birth_time_before_first_division <= 0 or death_time_before_first_division <= 0:
-            raise BirthDeathFitnessError("0 or negative waiting time detected")
-        if birth_time_before_first_division < death_time_before_first_division:
-            tree.add_node(1)
-            tree.add_edge(0, 1, weight = birth_waiting_dist(birth_time_before_first_division))
-            # Keep a list of extant lineages and a dict of lineage specific parameters
-            # for each
-            unique_id = 1
-            current_lineages = []
-            current_lineages.append(
-                {
-                    "id": unique_id,
-                    "birth_scale": birth_scale_param,
-                    "total_time": birth_time_before_first_division,
-                }
-            )
-            # Record the scale parameter of each node
-            tree.nodes[unique_id]["birth_scale"] = birth_scale_param
-            # Perform the process until there are no active extant lineages left
-            while len(current_lineages) > 0:
-                # If number of extant lineages is the stopping criterion, at the
-                # first instance of having n extant tips, stop the experiment
-                # and set the total lineage time for each lineage to be equal to
-                # the maximum, to produce ultrametric trees
-                if num_extant:
-                    if len(current_lineages) == num_extant:
-                        max_total_time = 0
-                        for remaining_lineage in current_lineages:
-                            if remaining_lineage["total_time"] > max_total_time:
-                                max_total_time = remaining_lineage["total_time"]
-                        for remaining_lineage in current_lineages:
-                            parent = list(tree.predecessors(remaining_lineage["id"]))[0]
-                            tree.edges[parent, remaining_lineage["id"]]["weight"] += (
-                                max_total_time - remaining_lineage["total_time"]
-                            )
-                        break
 
-                lineage = current_lineages.pop(0)  # Make sure to pop from front
-                birth_waiting_time = birth_waiting_dist(lineage["birth_scale"])
-                death_waiting_time = death_waiting_dist()
-                if birth_waiting_time <= 0 or death_waiting_time <= 0:
-                    raise BirthDeathFitnessError("0 or negative waiting time detected")
-                # Take the minimum waiting time to dictate which event happens
-                if birth_waiting_time < death_waiting_time:
-                    # If time is the stopping condition, if the next birth would
-                    # happen after the time of the experiment, cut the lineage off
-                    # at the total stopping time and produce no additional daughters
-                    if experiment_time:
-                        if (
-                            birth_waiting_time + lineage["total_time"]
-                            >= experiment_time
-                        ):
-                            parent = list(tree.predecessors(lineage["id"]))[0]
-                            tree.edges[parent, lineage["id"]]["weight"] += (
-                                experiment_time - lineage["total_time"]
-                            )
-                            continue
-                    # Determine the number of mutations acquired, and then determine
-                    # their strength
-                    total_birth_mutation_strength = 1
-                    if fitness_num_dist:
-                        num_mutations = int(fitness_num_dist())
-                        if num_mutations < 0:
-                            raise BirthDeathFitnessError("Negative number of mutations detected")
-                        for _ in range(num_mutations):
-                            total_birth_mutation_strength *= fitness_strength_dist()
-                        if total_birth_mutation_strength < 0:
-                            raise BirthDeathFitnessError("Negative mutation strength detected")
-                    # Add two daughters with updated total time, and scale parameters
-                    for i in range(unique_id + 1, unique_id + 3):
-                        tree.add_node(i)
-                        current_lineages.append(
-                            {
-                                "id": i,
-                                "birth_scale": lineage["birth_scale"]
-                                * total_birth_mutation_strength,
-                                "total_time": lineage["total_time"]
-                                + birth_waiting_time,
-                            }
+        current_lineages = []
+        starting_lineage = {
+            "id": 0,
+            "birth_scale": birth_scale_param,
+            "total_time": 0
+        }
+        unique_id = 1
+        unique_id = sample_event(unique_id, starting_lineage)
+
+        # Perform the process until there are no active extant lineages left
+        while len(current_lineages) > 0:
+            # If number of extant lineages is the stopping criterion, at the
+            # first instance of having n extant tips, stop the experiment
+            # and set the total lineage time for each lineage to be equal to
+            # the minimum, to produce ultrametric trees
+            if num_extant:
+                if len(current_lineages) == num_extant:
+                    min_total_time = min([i["total_time"] for i in current_lineages])
+                    for remaining_lineage in current_lineages:
+                        parent = list(tree.predecessors(remaining_lineage["id"]))[0]
+                        tree.edges[parent, remaining_lineage["id"]]["weight"] += (
+                            min_total_time - remaining_lineage["total_time"]
                         )
-                        tree.add_edge(lineage["id"], i, weight=birth_waiting_time)
-                        # Record the scale parameter of each node
-                        tree.nodes[i]["birth_scale"] = lineage["birth_scale"] * total_birth_mutation_strength
-                    unique_id += 2
+                    break
+            # If extant tips are the stopping criteria, pop the minimum age 
+            # lineage at each step
+            if num_extant:
+                min_age_ind = np.argmin([i["total_time"] for i in current_lineages])
+                lineage = current_lineages.pop(min_age_ind)
+            else:
+                lineage = current_lineages.pop(0)
+            for _ in range(2):
+                unique_id = sample_event(unique_id, lineage)
 
-                else:
-                    # If the lineage dies, prune the entire lineage from the tree
-                    self.remove_and_prune(lineage["id"], tree)
-
-            if death_waiting_dist:
+        if death_waiting_dist and len(tree.nodes) > 1:
+            if experiment_time:
+                for i in list(tree.nodes):
+                    if tree.out_degree(i) == 0 and tree.nodes[i]["total_time"] < experiment_time:
+                        self.remove_and_prune(i, tree)
+            if num_extant:
+                surviving_ids = [i["id"] for i in current_lineages] 
+                for i in list(tree.nodes):
+                    if tree.out_degree(i) == 0 and i not in surviving_ids:
+                        self.remove_and_prune(i, tree)
+            if len(tree.nodes) > 1:
                 self.collapse_unifurcations(tree, source = 1)
 
         if len(tree.nodes) == 1:
@@ -165,14 +164,20 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             else:
                 for i in succs:
                     _collapse_unifurcations(network, i, node)
+
+        if not source:
+            source = [n for n in network if network.in_degree(n) == 0][0]
         
-        if source:
-            for node in network.successors(source):
-                _collapse_unifurcations(network, node, source)
-        else:
-            root = [n for n in network if network.in_degree(n) == 0][0]
-            for node in network.successors(root):
-                _collapse_unifurcations(network, node, root)
+        for node in network.successors(source):
+            _collapse_unifurcations(network, node, source)
+        
+        succs = list(network.successors(source))
+        if len(succs) == 1:
+            t = network.get_edge_data(source, succs[0])["weight"]
+            for i in network.successors(succs[0]):
+                t_ = network.get_edge_data(succs[0], i)["weight"]
+                network.add_edge(source, i, weight=t + t_)
+            network.remove_node(succs[0])
 
 
 
