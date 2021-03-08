@@ -17,7 +17,7 @@ import pandas as pd
 import cassiopeia as cas
 from cassiopeia.plotting import itol_utilities
 
-ITOL_FILE = os.path.join(os.path.expanduser("~/itolconfig"))
+ITOL_FILE = os.path.join(os.path.expanduser("~/.itolconfig"))
 
 class TestITOLPlotting(unittest.TestCase):
     def setUp(self):
