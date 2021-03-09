@@ -90,6 +90,8 @@ class CassiopeiaTree:
         branch lengths to newick strings
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
+    TODO(richardyz98): Make the naming conventions for time and branch lengths
+        compatible with the simulators, also make sure they aren't overridden
 
     Args:
         character_matrix: The character matrix for the lineage.
