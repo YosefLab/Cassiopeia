@@ -1,4 +1,5 @@
 from .DataSimulator import DataSimulator
+from .IIDExponentialLineageTracer import IIDExponentialLineageTracer
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
 from .TreeSimulator import TreeSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
