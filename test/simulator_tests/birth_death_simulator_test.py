@@ -15,7 +15,14 @@ def get_leaves(tree):
     return [n for n in tree.nodes if tree.out_degree(n) == 0]
 
 
-def test_tree(tree):
+def test_tree(tree: nx.DiGraph):
+    """A helper function for testing simulated trees.
+    
+    Outputs the (independently calculated) total lived time for each extant 
+    lineage, the number of extant lineages, and whether the tree has the 
+    expected node degrees (to ensure unifurcation collapsing was done 
+    correctly).
+    """
     tree = tree.copy()
     tree.nodes[0]["total_time"] = 0
     for i in nx.edge_dfs(tree):
@@ -172,6 +179,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertEqual(list(tree.edges(data=True)), expected_edges)
 
     def test_bad_waiting_distributions(self):
+        """Ensures errors when invalid waiting distributions are given."""
         bd_sim = BirthDeathFitnessSimulator()
         with self.assertRaises(BirthDeathFitnessError):
             birth_waiting_dist = lambda _: -1
@@ -214,6 +222,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             )
 
     def test_bad_stopping_conditions(self):
+        """Ensures errors when an invalid stopping conditions are given."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda _: 1
         death_waiting_dist = lambda: 2
@@ -260,6 +269,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             )
 
     def test_dead_at_start(self):
+        """Ensures errors when all lineages die before stopping condition."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda _: 2
         death_waiting_dist = lambda: 1
@@ -282,6 +292,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             )
 
     def test_single_lineage(self):
+        """Tests base case that stopping conditions work before divisions."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda _: 1
         birth_scale_param = 1
@@ -306,6 +317,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertEqual(results[0], [1])
 
     def test_constant_yule(self):
+        """Tests small case without death with constant waiting times."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda _: 1
         birth_scale_param = 1
@@ -331,6 +343,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(results[2])
 
     def test_nonconstant_yule(self):
+        """Tests case without death with variable waiting times."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda scale: np.random.exponential(scale)
         birth_scale_param = 1
@@ -357,6 +370,8 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(results[2])
 
     def test_nonconstant_birth_death(self):
+        """Tests case with with variable birth and death waiting times.
+        Also, tests pruning dead lineages and unifurcation collapsing."""
         bd_sim = BirthDeathFitnessSimulator()
         np.random.seed(1234)
         birth_waiting_dist = lambda scale: np.random.exponential(scale)
@@ -395,6 +410,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertNotIn(2, tree_top.nodes)
 
     def test_nonconstant_yule_with_predictable_fitness(self):
+        """Tests case with birth and death with constant fitness."""
         bd_sim = BirthDeathFitnessSimulator()
         np.random.seed(1234)
         birth_waiting_dist = lambda scale: np.random.exponential(scale)
@@ -481,6 +497,8 @@ class BirthDeathSimulatorTest(unittest.TestCase):
                 )
 
     def test_nonconstant_birth_death_with_variable_fitness(self):
+        """Tests a case with variable birth and death waiting times, as well
+        as variable fitness evolution. Also tests pruning and collapsing."""
         bd_sim = BirthDeathFitnessSimulator()
         np.random.seed(12364)
         birth_waiting_dist = lambda scale: np.random.exponential(scale)

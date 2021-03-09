@@ -7,7 +7,7 @@ mutations.
 import networkx as nx
 import numpy as np
 
-from typing import Callable
+from typing import Callable, Dict, Optional, Union
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator import TreeSimulator
@@ -25,29 +25,29 @@ class BirthDeathFitnessSimulator(TreeSimulator):
     def simulate_tree(
         self,
         birth_waiting_dist: Callable[[float], float],
-        birth_scale_param: float,
-        death_waiting_dist: Callable[[], float] = None,
-        fitness_num_dist: Callable[[], int] = None,
-        fitness_strength_dist: Callable[[], float] = None,
-        num_extant: int = None,
-        experiment_time: float = None,
+        initial_birth_scale: float,
+        death_waiting_dist: Optional[Callable[[], float]] = None,
+        fitness_num_dist: Optional[Callable[[], int]] = None,
+        fitness_strength_dist: Optional[Callable[[], float]] = None,
+        num_extant: Optional[int] = None,
+        experiment_time: Optional[float] = None,
     ) -> CassiopeiaTree:
         """Simulates trees from a general birth/death process with fitness.
 
         The birth/death process is simulated by maintaining a list of living
         lineages and updating them with birth and death events. At each
-        currently extant node in the tree, two events are sampled for two
-        children. For each sampled event, waiting times are sampled from the
-        birth and death distributions, and the smaller time is used to
-        represent the next event. If a death event is sampled, no child is
-        added to the tree and the lineage is no longer updated. If a birth
-        event is sampled, then a new internal node representing a division
-        event is added, with the edge weight representing how long this node
-        lived before dividing. The total time the lineage has existed is also
-        record for each lineage. If no death waiting time distribution is
-        provided, the process reduces to a Yule birth process.
+        currently extant node in the tree representing a division event, 
+        the lifespan of two potential descendants is simulated. For each 
+        descendant, waiting times are sampled from the birth and death 
+        distributions, and the smaller time is used to represent the next 
+        event. If a death occurs, no child is added to the tree. If a birth 
+        event is sampled, then the lineage is assumed to have survived long 
+        enough to divide and a new internal node representing a division event
+        is added, with the edge weight representing how long this node lived 
+        before dividing. If no death waiting time distribution is provided, 
+        the process reduces to a Yule birth process.
 
-        Fitness is represented by each lineage mainting its own birth scale
+        Fitness is represented by each lineage maintaining its own birth scale
         parameter. This parameter determines the shape of the distribution
         from which birth waiting times are sampled and thus affects how
         quickly cells divide. At each division event, the fitness is updated
@@ -55,34 +55,55 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         and the multiplicative strength of each mutation is determined by
         another distribution. The birth scale parameter of the lineage is
         then updated by the total multiplicative strength factor across all
-        mutations and passed on to the child nodes.
+        mutations and passed on to the descendant nodes.
 
         There are two stopping conditions for the simulation. The first is
         "number of extant nodes", which specifies the simulation to stop the
         first moment the specified number of extant nodes exist. The second is
         "experiment time", which specifies the time at which to end the
         experiment, i.e. the experiment ends when all living lineages reach
-        this time in their total lived time.
+        this time in their total lived time. At least one of these two stopping
+        criteria must be provided.
+
+        Example use snippet:
+            # note that numpy uses a different parameterization of the 
+            # exponential distribution with the scale parameter, which is 1/rate
+
+            birth_waiting_dist = lambda scale: np.random.exponential(scale)
+            death_waiting_dist = np.random.exponential(1.5)
+            initial_birth_scale = 0.5
+            fitness_num_dist = lambda: 1 if np.random.uniform() > 0.5 else 0
+            fitness_strength_dist = lambda: 2 ** np.random.uniform(-1,1)
+
+            tree = generate_birth_death(
+                birth_waiting_dist,
+                initial_birth_scale,
+                death_waiting_dist=death_waiting_dist,
+                fitness_num_dist=fitness_num_dist,
+                fitness_strength_dist=fitness_strength_dist,
+                num_extant=8
+            )
 
         Args:
             birth_waiting_dist: A function that samples waiting times from the
                 birth distribution. Must take a scale parameter as the input
-            birth_scale_param: The global scale parameter that is used at the
+            initial_birth_scale: The global scale parameter that is used at the
                 start of the experiment
             death_waiting_dist: A function that samples waiting times from the
                 death distribution
             fitness_num_dist: A function that samples the number of mutations
-                that occurs at a division event
+                that occur at a division event. If None, then no mutations are
+                sampled
             fitness_strength_dist: A function that samples the multiplicative
                 update to the scale parameter of the current lineage at a
-                division event
+                division event. Must not be None if fitness_num_dist provided
             num_extant: Specifies the number of extant lineages living at one
                 time as a stopping condition for the experiment
             experiment_time: Specifies the time that the experiment runs as a
                 stopping condition for the experiment
 
         Returns:
-            A CassiopeiaTree with the 'tree' field populated
+            A CassiopeiaTree with the tree topology initialized
         """
         if num_extant is None and experiment_time is None:
             raise BirthDeathFitnessError("Please specify a stopping condition")
@@ -108,7 +129,39 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         # Samples whether birth, death, or the end of the experiment comes next
         # for a given lineage, and any fitness changes
-        def sample_event(unique_id, lineage):
+        def sample_event(unique_id: int, lineage: Dict[str, Union[int, float]]) -> int:
+            """A helper function that samples an event for a living lineage.
+
+            Takes the most extant node of a lineage representing the most 
+            recent birth event and simulates the lifespan of a new descendant 
+            node. First, birth and death waiting times are sampled, and the 
+            minimum is taken as the next event to occur. If death occurs, then 
+            the new descendant is assumed to have died before dividing and the 
+            lineage ceases along this branch. If birth occurs, then the 
+            descendant node is assumed to have lived long enough to divide and 
+            continue the lineage. The descendant node is added to the tree 
+            object, with the edge weight between the current node and the 
+            descendant representing the lifespan of the descendant. The 
+            descendant is also added to 'current_lineages' as a living lineage 
+            with updated time and birth scale parameters. Additionally, the 
+            case in which the end of the experiment is reached is handled. 
+            If a sample would live past the total experiment time, then the 
+            lifespan is cut off at the experiment time and a final observed 
+            sample is added to the tree. The lineage is also no longer updated
+            in this case as it has reached the end of the experiment.
+
+            Args:
+                unique_id: The unique ID number to be used to name a new node
+                    added to the tree
+                lineage: The current extent lineage to extend. Contains the ID
+                    of the internal node to attach the descendant to, the
+                    current birth scale parameter of the lineage, and the 
+                    current total lived time of the lineage
+
+            Returns:
+                The new unique ID to use for the next event, incremented only if
+                a new descendant is born
+            """
             birth_waiting_time = birth_waiting_dist(lineage["birth_scale"])
             death_waiting_time = death_waiting_dist()
             if birth_waiting_time <= 0 or death_waiting_time <= 0:
@@ -116,7 +169,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     "0 or negative waiting time detected"
                 )
 
-            # If birth or death would happen after the total experiment time,
+            # If birth and death would happen after the total experiment time,
             # just cut off the living branch length at the experiment time
             if (
                 experiment_time
@@ -146,10 +199,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         )
                     for _ in range(num_mutations):
                         total_birth_mutation_strength *= fitness_strength_dist()
-                    if total_birth_mutation_strength < 0:
-                        raise BirthDeathFitnessError(
-                            "Negative mutation strength detected"
-                        )
+                        if total_birth_mutation_strength < 0:
+                            raise BirthDeathFitnessError(
+                                "Negative mutation strength detected"
+                            )
 
                 # Annotate parameters for a given node in the tree
                 tree.add_node(unique_id)
@@ -179,12 +232,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         # Instantiate the implicit root
         tree = nx.DiGraph()
         tree.add_node(0)
-        tree.nodes[0]["birth_scale"] = birth_scale_param
+        tree.nodes[0]["birth_scale"] = initial_birth_scale
         tree.nodes[0]["total_time"] = 0
-        current_lineages = []
+        current_lineages = [] # type: List[Dict[str, Union[int, float]]]
         starting_lineage = {
             "id": 0,
-            "birth_scale": birth_scale_param,
+            "birth_scale": initial_birth_scale,
             "total_time": 0,
         }
 
@@ -311,26 +364,3 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 t_ = tree.get_edge_data(succs[0], i)["weight"]
                 tree.add_edge(source, i, weight=t + t_)
             tree.remove_node(succs[0])
-
-
-"""Example use snippet:
-note that numpy uses a different parameterization of the exponential with the scale parameter, which is 1/rate
-
-
-birth_waiting_dist = np.random.exponential
-death_waiting_dist = np.random.exponential(1.5)
-birth_scale_param = 0.5
-fitness_num_dist = lambda: 1 if np.random.uniform() > 0.5 else 0
-fitness_strength_dist = lambda: 2 ** np.random.uniform(-1,1)
-
-tree = generate_birth_death(
-    birth_waiting_dist,
-    birth_scale_param,
-    death_waiting_dist,
-    fitness_num_dist = fitness_num_dist,
-    fitness_strength_dist=fitness_strength_dist,
-    num_extant=8,
-#     experiment_time = 1
-)
-
-"""
