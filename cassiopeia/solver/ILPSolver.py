@@ -129,7 +129,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             "|".join([str(r) for r in root]).encode("utf-8")
         ).hexdigest()
 
-        targets = [tuple(t) for t in character_matrix.values.tolist()]
+        targets = [tuple(t) for t in unique_character_matrix.values.tolist()]
 
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
@@ -155,7 +155,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
-            character_matrix,
+            unique_character_matrix,
             root,
             pid,
             max_lca_distance,
@@ -373,7 +373,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A Gurobipy Model instance and the edge variables involved.
         """
-
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
         if root not in potential_graph.nodes:

@@ -37,6 +37,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         the trees that are produced via a DistanceSolver. Add compositional
         framework.
 
+    TODO(mgjones, rzhang): Make the solver work with similarity maps as
+        flattened arrays
+
     Args:
         dissimilarity_function: Function that can be used to compute the
             dissimilarity between samples.
@@ -78,7 +81,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.add_root = add_root
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
-        """A general bottom-up distance-based solver routine.
+        """Solves a tree for a general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
         samples to join together into a "cherry" and then reform the
