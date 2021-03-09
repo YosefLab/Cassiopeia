@@ -32,7 +32,10 @@ requirements = [
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0',
         'hits',
-        'scikit-bio >= 0.5.6'
+        'scikit-bio >= 0.5.6',
+        'cvxpy',
+        'parameterized',
+        'seaborn',
 ]
 
 
@@ -42,6 +45,7 @@ cmdclass = {'build_ext': build_ext}
 
 # files to wrap with cython
 to_cythonize = [Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/preprocess/doublet_utils.pyx"]),
+                Extension("cassiopeia.tools.branch_length_estimator.IIDExponentialPosteriorMeanBLE", ["cassiopeia/tools/branch_length_estimator/IIDExponentialPosteriorMeanBLE.py"]),
                 Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
                 Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
                 Extension("cassiopeia.solver.ilp_solver_utilities", ["cassiopeia/solver/ilp_solver_utilities.pyx"])]

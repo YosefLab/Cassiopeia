@@ -10,7 +10,9 @@ from .MaxCutGreedySolver import MaxCutGreedySolver
 from .MaxCutSolver import MaxCutSolver
 from .NeighborJoiningSolver import NeighborJoiningSolver
 from .solver_utilities import collapse_tree, collapse_unifurcations
+from .ResolveMultifurcationsWrapper import ResolveMultifurcationsWrapper
 from .SpectralGreedySolver import SpectralGreedySolver
 from .SpectralSolver import SpectralSolver
+from .StringifyNodeNamesWrapper import StringifyNodeNamesWrapper
 from .VanillaGreedySolver import VanillaGreedySolver
 from . import dissimilarity_functions as dissimilarity

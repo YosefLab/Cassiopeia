@@ -391,9 +391,30 @@ class CassiopeiaTree:
 
         if "internal_nodes" not in self.__cache:
             self.__cache["internal_nodes"] = [
-                n for n in self.__network if self.__network.out_degree(n) > 1
+                n for n in self.__network if self.__network.out_degree(n) > 0
             ]
         return self.__cache["internal_nodes"][:]
+
+    @property
+    def non_root_internal_nodes(self) -> List[str]:
+        """Returns internal nodes in tree (excluding the root).
+
+        Returns:
+            The internal nodes of the tree that are not the root (i.e. all
+            nodes not at the leaves, and not the root)
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        if "non_root_internal_nodes" not in self.__cache:
+            res = [
+                n for n in self.__network if self.__network.out_degree(n) > 0
+            ]
+            res.remove(self.root)
+            self.__cache["non_root_internal_nodes"] = res
+        return self.__cache["non_root_internal_nodes"][:]
 
     @property
     def nodes(self) -> List[str]:
@@ -465,12 +486,16 @@ class CassiopeiaTree:
         self.__check_network_initialized()
         return self.__network.out_degree(node) > 0
 
-    def reconstruct_ancestral_characters(self) -> None:
+    def reconstruct_ancestral_characters(self, zero_the_root: bool = False):
         """Reconstruct ancestral character states.
 
         Reconstructs ancestral states (i.e., those character states in the
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
+
+        Args:
+            zero_the_root: If True, the root will be forced to have unmutated
+                chracters.
         """
         self.__check_network_initialized()
 
@@ -483,6 +508,9 @@ class CassiopeiaTree:
                 character_states, self.missing_state_indicator
             )
             self.__set_character_states(n, reconstructed)
+
+        if zero_the_root:
+            self.__set_character_states(self.root, [0] * self.n_character)
 
     def parent(self, node: str) -> str:
         """Gets the parent of a node.
@@ -535,23 +563,25 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        parent = self.parent(node)
-        if new_time < self.get_time(parent):
-            raise CassiopeiaTreeError(
-                "New age is less than the age of the parent."
-            )
+        if node != self.root:
+            parent = self.parent(node)
+            if new_time < self.get_time(parent):
+                raise CassiopeiaTreeError(
+                    "New time is less than the time of the parent."
+                )
 
         for child in self.children(node):
             if new_time > self.get_time(child):
                 raise CassiopeiaTreeError(
-                    "New age is greater than than a child."
+                    "New time is greater than than a child."
                 )
 
         self.__network.nodes[node]["time"] = new_time
 
-        self.__network[parent][node]["length"] = new_time - self.get_time(
-            parent
-        )
+        if node != self.root:
+            self.__network[parent][node]["length"] = new_time - self.get_time(
+                parent
+            )
         for child in self.children(node):
             self.__network[node][child]["length"] = (
                 self.get_time(child) - new_time
@@ -712,6 +742,8 @@ class CassiopeiaTree:
         Returns:
             The full character state array of the specified node.
         """
+        if node not in self.__network.nodes:
+            raise CassiopeiaTreeError(f"Node {node} does not exist!")
         return self.__network.nodes[node]["character_states"][:]
 
     def depth_first_traverse_nodes(
@@ -817,6 +849,8 @@ class CassiopeiaTree:
         Returns a list of tuples (character, state) of mutations that occur
         along an edge. Characters are 0-indexed.
 
+        WARNING: A character dropout event will also be considered a mutation!
+
         Args:
             parent: parent in tree
             child: child in tree
@@ -843,6 +877,26 @@ class CassiopeiaTree:
                 mutations.append((i, child_states[i]))
 
         return mutations
+
+    def get_number_of_mutations_along_edge(
+        self, parent: str, child: str
+    ) -> int:
+        return len(self.get_mutations_along_edge(parent, child))
+
+    def get_number_of_unmutated_characters_in_node(
+        self, node: str
+    ) -> int:
+        states = self.get_character_states(node)
+        return states.count(0)
+
+    def get_number_of_mutated_characters_in_node(
+        self, node: str
+    ) -> int:
+        r"""
+        WARNING: dropped out characters will be considered as mutated too!
+        """
+        return self.n_character -\
+            self.get_number_of_unmutated_characters_in_node(node)
 
     def relabel_nodes(self, relabel_map: Dict[str, str]) -> None:
         """Relabels the nodes in the tree.
@@ -954,3 +1008,23 @@ class CassiopeiaTree:
         )
 
         self.set_dissimilarity_map(dissimilarity_map)
+
+    def scale_to_unit_length(self) -> None:
+        r"""
+        Scales the tree to have unit length. I.e. the longest path from root to
+        leaf will have length 1 after the scaling.
+        """
+        times = {}
+        max_time = max(self.get_times().values())
+        for node in self.nodes:
+            times[node] = self.get_time(node) / max_time
+        self.set_times(times)
+
+
+def resolve_multifurcations(tree: CassiopeiaTree) -> None:
+    r"""
+    Resolves the multifurcations of the CassiopeiaTree inplace.
+    """
+    binary_topology = utilities.resolve_multifurcations_networkx(
+        tree.get_tree_topology())
+    tree.populate_tree(binary_topology)
