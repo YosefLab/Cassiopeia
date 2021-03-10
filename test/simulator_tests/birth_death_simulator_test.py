@@ -17,10 +17,10 @@ def get_leaves(tree):
 
 def test_tree(tree: nx.DiGraph):
     """A helper function for testing simulated trees.
-    
-    Outputs the (independently calculated) total lived time for each extant 
-    lineage, the number of extant lineages, and whether the tree has the 
-    expected node degrees (to ensure unifurcation collapsing was done 
+
+    Outputs the (independently calculated) total lived time for each extant
+    lineage, the number of extant lineages, and whether the tree has the
+    expected node degrees (to ensure unifurcation collapsing was done
     correctly).
     """
     tree = tree.copy()
@@ -269,7 +269,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             )
 
     def test_dead_at_start(self):
-        """Ensures errors when all lineages die before stopping condition."""
+        """Ensures errors when all lineages die on the first event."""
         bd_sim = BirthDeathFitnessSimulator()
         birth_waiting_dist = lambda _: 2
         death_waiting_dist = lambda: 1
@@ -289,6 +289,31 @@ class BirthDeathSimulatorTest(unittest.TestCase):
                 birth_scale_param,
                 death_waiting_dist=death_waiting_dist,
                 experiment_time=4,
+            )
+
+    def test_dead_before_end(self):
+        """Ensures errors when all lineages die before stopping condition."""
+        bd_sim = BirthDeathFitnessSimulator()
+        np.random.seed(5)
+        birth_waiting_dist = lambda scale: np.random.exponential(scale)
+        death_waiting_dist = lambda: np.random.exponential(0.6)
+        birth_scale_param = 0.5
+
+        with self.assertRaises(BirthDeathFitnessError):
+            tree = bd_sim.simulate_tree(
+                birth_waiting_dist,
+                birth_scale_param,
+                death_waiting_dist=death_waiting_dist,
+                num_extant=8,
+            )
+
+        np.random.seed(5)
+        with self.assertRaises(BirthDeathFitnessError):
+            tree = bd_sim.simulate_tree(
+                birth_waiting_dist,
+                birth_scale_param,
+                death_waiting_dist=death_waiting_dist,
+                experiment_time=2,
             )
 
     def test_single_lineage(self):
@@ -406,7 +431,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         for i in results[0]:
             self.assertTrue(np.isclose(i, 2))
         self.assertTrue(results[2])
-        self.assertNotIn(10, tree_top.nodes)
+        self.assertNotIn(9, tree_top.nodes)
         self.assertNotIn(2, tree_top.nodes)
 
     def test_nonconstant_yule_with_predictable_fitness(self):
