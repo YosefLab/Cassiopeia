@@ -3,6 +3,8 @@ import unittest
 import networkx as nx
 import numpy as np
 
+from typing import List, Tuple
+
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
@@ -13,11 +15,11 @@ from cassiopeia.simulator.TreeSimulator import (
 import cassiopeia.data.utilities as utilities
 
 
-def get_leaves(tree):
+def get_leaves(tree: nx.DiGraph) -> List[str]:
     return [n for n in tree.nodes if tree.out_degree(n) == 0]
 
 
-def test_tree(tree: nx.DiGraph):
+def test_tree(tree: nx.DiGraph) -> Tuple[List[float], int, bool]:
     """A helper function for testing simulated trees.
 
     Outputs the (independently calculated) total lived time for each extant
@@ -47,7 +49,7 @@ def test_tree(tree: nx.DiGraph):
 
 class BirthDeathSimulatorTest(unittest.TestCase):
     def test_bad_waiting_distributions(self):
-        """Ensures errors when invalid waiting distributions are given."""
+        """Ensures errors when invalid distributions are given."""
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: -1, 1, experiment_time=1
@@ -70,6 +72,17 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             )
             tree = bd_sim.simulate_tree()
 
+        with self.assertRaises(TreeSimulatorError):
+            bd_sim = BirthDeathFitnessSimulator(
+                lambda _: 1,
+                1,
+                lambda: 0,
+                mutation_distribution=lambda: -1,
+                fitness_distribution=lambda: 1,
+                experiment_time=1,
+            )
+            tree = bd_sim.simulate_tree()
+
     def test_bad_stopping_conditions(self):
         """Ensures errors when an invalid stopping conditions are given."""
         with self.assertRaises(TreeSimulatorError):
@@ -77,7 +90,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
-                lambda _: 1, 1, lambda: 2, num_extant=4, experiment_time=4
+                lambda _: 1, 1, lambda: 2, num_extant=0.5
             )
 
         with self.assertRaises(TreeSimulatorError):
@@ -209,8 +222,8 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
-        self.assertNotIn(9, tree_top.nodes)
-        self.assertNotIn(2, tree_top.nodes)
+        self.assertNotIn("9", tree_top.nodes)
+        self.assertNotIn("2", tree_top.nodes)
 
         np.random.seed(1234)
         bd_sim = BirthDeathFitnessSimulator(
@@ -223,8 +236,77 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         for i in results[0]:
             self.assertTrue(np.isclose(i, 2))
         self.assertTrue(results[2])
-        self.assertNotIn(9, tree_top.nodes)
-        self.assertNotIn(2, tree_top.nodes)
+        self.assertNotIn("9", tree_top.nodes)
+        self.assertNotIn("2", tree_top.nodes)
+
+    def test_nonconstant_birth_death_no_unifurcation_collapsing(self):
+        """Tests case with with variable birth and death waiting times.
+        Checks that unifurcations are not collapsed."""
+        birth_wd = lambda scale: np.random.exponential(scale)
+        death_wd = lambda: np.random.exponential(1.5)
+
+        np.random.seed(12)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 0.5, death_wd, num_extant=8, collapse_unifurcations=False
+        )
+        tree = bd_sim.simulate_tree()
+
+        tree_top = tree.get_tree_topology()
+        results = test_tree(tree_top)
+        self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
+        self.assertEqual(results[1], 8)
+        self.assertFalse(results[2])
+        self.assertNotIn("3", tree_top.nodes)
+        self.assertIn("2", tree_top.nodes)
+        self.assertIn("6", tree_top.nodes)
+
+        np.random.seed(12)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd,
+            0.5,
+            death_wd,
+            experiment_time=1.3,
+            collapse_unifurcations=False,
+        )
+        tree = bd_sim.simulate_tree()
+
+        tree_top = tree.get_tree_topology()
+        results = test_tree(tree_top)
+        for i in results[0]:
+            self.assertTrue(np.isclose(i, 1.3))
+        self.assertFalse(results[2])
+        self.assertNotIn("3", tree_top.nodes)
+        self.assertIn("2", tree_top.nodes)
+        self.assertIn("6", tree_top.nodes)
+
+    def test_nonconstant_birth_death_both_stopping_conditions(self):
+        """Tests case with with variable birth and death waiting times.
+        Checks that using both stopping conditions works fine."""
+        birth_wd = lambda scale: np.random.exponential(scale)
+        death_wd = lambda: np.random.exponential(1.5)
+
+        np.random.seed(17)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 0.5, death_wd, num_extant=8, experiment_time=2
+        )
+        tree = bd_sim.simulate_tree()
+        tree_top = tree.get_tree_topology()
+        results = test_tree(tree_top)
+        self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
+        self.assertEqual(results[1], 8)
+        self.assertTrue(results[2])
+
+        np.random.seed(17)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 0.5, death_wd, num_extant=8, experiment_time=1
+        )
+        tree = bd_sim.simulate_tree()
+        tree_top = tree.get_tree_topology()
+        results = test_tree(tree_top)
+        for i in results[0]:
+            self.assertTrue(np.isclose(i, 1))
+        self.assertEqual(results[1], 3)
+        self.assertTrue(results[2])
 
     def test_nonconstant_yule_with_predictable_fitness(self):
         """Tests case with birth and death with constant fitness."""
