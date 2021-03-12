@@ -293,6 +293,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree_top = tree.get_tree_topology()
         results = test_tree(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
+        self.assertTrue(all(x > 1 for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
 
