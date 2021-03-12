@@ -405,6 +405,73 @@ class TestDataUtilities(unittest.TestCase):
         ]
         self.assertEqual(list(tree.edges(data=True)), expected_edges)
 
+    def test_collapse_unifurcations_no_edge_weights(self):
+        """Tests a case where the tree doesn't have edge weights."""
+        tree = nx.DiGraph()
+        tree.add_nodes_from(list(range(10)))
+        tree.add_edges_from(
+            [
+                (0, 1),
+                (0, 2),
+                (2, 3),
+                (3, 4),
+                (2, 5),
+                (5, 6),
+                (6, 7),
+                (6, 8),
+                (2, 9),
+            ]
+        )
+
+        data_utilities.collapse_unifurcations(tree)
+        expected_edges = [
+            (0, 1, {}),
+            (0, 2, {}),
+            (2, 9, {}),
+            (2, 4, {}),
+            (2, 6, {}),
+            (6, 7, {}),
+            (6, 8, {}),
+        ]
+        self.assertEqual(list(tree.edges(data=True)), expected_edges)
+
+    def test_collapse_unifurcations_long_root_unifurcation_no_weights(self):
+        """Tests a case where there is a long chain at the root, no edge 
+        weights."""
+        tree = nx.DiGraph()
+        tree.add_nodes_from(list(range(15)))
+        tree.add_edges_from(
+            [
+                (0, 1),
+                (1, 2),
+                (2, 3),
+                (3, 4),
+                (3, 5),
+                (4, 6),
+                (6, 7),
+                (6, 8),
+                (5, 9),
+                (5, 10),
+                (5, 11),
+                (10, 12),
+                (12, 13),
+                (13, 14),
+            ]
+        )
+
+        data_utilities.collapse_unifurcations(tree)
+
+        expected_edges = [
+            (0, 5, {}),
+            (0, 6, {}),
+            (5, 9, {}),
+            (5, 11, {}),
+            (5, 14, {}),
+            (6, 7, {}),
+            (6, 8, {}),
+        ]
+        self.assertEqual(list(tree.edges(data=True)), expected_edges)
+
 
 if __name__ == "__main__":
     unittest.main()

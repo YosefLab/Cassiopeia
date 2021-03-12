@@ -118,6 +118,7 @@ def to_newick(tree: nx.DiGraph) -> str:
     root = [node for node in tree if tree.in_degree(node) == 0][0]
     return _to_newick_str(tree, root) + ";"
 
+
 def remove_and_prune_lineage(node: int, tree: nx.DiGraph) -> None:
     """Removes a node and prunes the lineage.
 
@@ -135,16 +136,14 @@ def remove_and_prune_lineage(node: int, tree: nx.DiGraph) -> None:
         curr_parent = list(tree.predecessors(node))[0]
         tree.remove_node(node)
         while (
-            tree.out_degree(curr_parent) < 1
-            and tree.in_degree(curr_parent) > 0
+            tree.out_degree(curr_parent) < 1 and tree.in_degree(curr_parent) > 0
         ):
             next_parent = list(tree.predecessors(curr_parent))[0]
             tree.remove_node(curr_parent)
             curr_parent = next_parent
 
-def collapse_unifurcations(
-    tree: nx.DiGraph, source: int = None
-) -> None:
+
+def collapse_unifurcations(tree: nx.DiGraph, source: int = None) -> None:
     """Collapses unifurcations in a given tree.
 
     Args:
@@ -152,12 +151,20 @@ def collapse_unifurcations(
         source: The node at which to begin the tree traversal
     """
 
+    weighted = True
+    for u, v in tree.edges:
+        if not tree.get_edge_data(u, v):
+            weighted = False
+
     def _collapse_unifurcations(tree, node, parent):
         succs = list(tree.successors(node))
         if len(succs) == 1:
-            t = tree.get_edge_data(parent, node)["weight"]
-            t_ = tree.get_edge_data(node, succs[0])["weight"]
-            tree.add_edge(parent, succs[0], weight=t + t_)
+            if weighted:
+                t = tree.get_edge_data(parent, node)["weight"]
+                t_ = tree.get_edge_data(node, succs[0])["weight"]
+                tree.add_edge(parent, succs[0], weight=t + t_)
+            else:
+                tree.add_edge(parent, succs[0])
             _collapse_unifurcations(tree, succs[0], parent)
             tree.remove_node(node)
         else:
@@ -172,11 +179,16 @@ def collapse_unifurcations(
 
     succs = list(tree.successors(source))
     if len(succs) == 1:
-        t = tree.get_edge_data(source, succs[0])["weight"]
-        for i in tree.successors(succs[0]):
-            t_ = tree.get_edge_data(succs[0], i)["weight"]
-            tree.add_edge(source, i, weight=t + t_)
+        if weighted:
+            t = tree.get_edge_data(source, succs[0])["weight"]
+            for i in tree.successors(succs[0]):
+                t_ = tree.get_edge_data(succs[0], i)["weight"]
+                tree.add_edge(source, i, weight=t + t_)
+        else:
+            for i in tree.successors(succs[0]):
+                tree.add_edge(source, i)
         tree.remove_node(succs[0])
+
 
 def compute_dissimilarity_map(
     cm: np.array,

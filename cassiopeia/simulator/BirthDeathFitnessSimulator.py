@@ -16,7 +16,6 @@ from cassiopeia.simulator.TreeSimulator import TreeSimulator, TreeSimulatorError
 
 
 class BirthDeathFitnessSimulator(TreeSimulator):
-
     def __init__(
         self,
         birth_waiting_distribution: Callable[[float], float],
@@ -139,8 +138,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         # Samples whether birth, death, or the end of the experiment comes next
         # for a given lineage, and any fitness changes
-        def sample_lineage_event(lineage: Dict[str, Union[int, float]]
-        ) -> None:
+        def sample_lineage_event(lineage: Dict[str, Union[int, float]]) -> None:
             """A helper function that samples an event for a lineage.
 
             Takes a lineage and determines the next event in that lineage's
@@ -174,16 +172,16 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 The new unique ID to use for the next event, incremented only if
                 a new descendant is added to the tree
             """
-            assert(lineage["active"])
+            assert lineage["active"]
 
             unique_id = next(names)
 
-            birth_waiting_time = self.birth_waiting_distribution(lineage["birth_scale"])
+            birth_waiting_time = self.birth_waiting_distribution(
+                lineage["birth_scale"]
+            )
             death_waiting_time = self.death_waiting_distribution()
             if birth_waiting_time <= 0 or death_waiting_time <= 0:
-                raise TreeSimulatorError(
-                    "0 or negative waiting time detected"
-                )
+                raise TreeSimulatorError("0 or negative waiting time detected")
 
             # If birth and death would happen after the total experiment time,
             # just cut off the living branch length at the experiment time
@@ -196,12 +194,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             ):
                 tree.add_node(unique_id)
                 tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
-                tree.add_edge(
-                    lineage["id"],
-                    unique_id,
-                    weight=self.experiment_time - lineage["total_time"],
-                )
-                tree.nodes[unique_id]["total_time"] = self.experiment_time
+                tree.add_edge(lineage["id"], unique_id)
+                tree.nodes[unique_id]["time"] = self.experiment_time
 
                 current_lineages.put(
                     (
@@ -228,7 +222,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                                 "Negative number of mutations detected"
                             )
                         for _ in range(num_mutations):
-                            base_selection_coefficient *= self.fitness_distribution()
+                            base_selection_coefficient *= (
+                                self.fitness_distribution()
+                            )
                             if base_selection_coefficient < 0:
                                 raise TreeSimulatorError(
                                     "Negative mutation strength detected"
@@ -239,10 +235,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     tree.nodes[unique_id]["birth_scale"] = (
                         lineage["birth_scale"] * base_selection_coefficient
                     )
-                    tree.add_edge(
-                        lineage["id"], unique_id, weight=birth_waiting_time
-                    )
-                    tree.nodes[unique_id]["total_time"] = (
+                    tree.add_edge(lineage["id"], unique_id)
+                    tree.nodes[unique_id]["time"] = (
                         birth_waiting_time + lineage["total_time"]
                     )
                     # Add the newly generated cell to the list of living lineages
@@ -263,11 +257,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
                 else:
                     tree.add_node(unique_id)
-                    tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
-                    tree.add_edge(
-                        lineage["id"], unique_id, weight=death_waiting_time
-                    )
-                    tree.nodes[unique_id]["total_time"] = (
+                    tree.nodes[unique_id]["birth_scale"] = lineage[
+                        "birth_scale"
+                    ]
+                    tree.add_edge(lineage["id"], unique_id)
+                    tree.nodes[unique_id]["time"] = (
                         death_waiting_time + lineage["total_time"]
                     )
                     current_lineages.put(
@@ -289,6 +283,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             while True:
                 yield str(i)
                 i += 1
+
         names = node_name_generator()
 
         # Instantiate the implicit root
@@ -296,7 +291,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         root = next(names)
         tree.add_node(root)
         tree.nodes[root]["birth_scale"] = self.initial_birth_scale
-        tree.nodes[root]["total_time"] = 0
+        tree.nodes[root]["time"] = 0
         current_lineages = PriorityQueue()
         # Records the nodes that are observed at the end of the experiment
         observed_nodes = []
@@ -326,7 +321,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     min_total_time = remaining_lineages[0]["total_time"]
                     for lineage in remaining_lineages:
                         parent = list(tree.predecessors(lineage["id"]))[0]
-                        tree.edges[parent, lineage["id"]]["weight"] += (
+                        tree.nodes[lineage["id"]]["time"] += (
                             min_total_time - lineage["total_time"]
                         )
                         tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[
@@ -356,6 +351,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 "All lineages died before stopping condition"
             )
 
-        return CassiopeiaTree(tree=tree)
+        cassiopeia_tree = CassiopeiaTree(tree=tree)
+        time_dictionary = {}
+        for i in tree.nodes:
+            time_dictionary[i] = tree.nodes[i]["time"]
+        cassiopeia_tree.set_times(time_dictionary)
 
-
+        return cassiopeia_tree

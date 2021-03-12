@@ -29,7 +29,7 @@ def test_tree(tree: nx.DiGraph):
     tree.nodes["0"]["total_time"] = 0
     for i in nx.edge_dfs(tree):
         tree.nodes[i[1]]["total_time"] = (
-            tree.nodes[i[0]]["total_time"] + tree.edges[i]["weight"]
+            tree.nodes[i[0]]["total_time"] + tree.edges[i]["length"]
         )
 
     leaves = get_leaves(tree)
@@ -140,7 +140,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         results = test_tree(tree.get_tree_topology())
         self.assertEqual(results[1], 1)
         self.assertEqual(
-            tree.get_tree_topology().get_edge_data("0", "1")["weight"], 1.0
+            tree.get_tree_topology().get_edge_data("0", "1")["length"], 1.0
         )
         self.assertEqual(results[0], [1])
 
@@ -148,7 +148,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
         self.assertEqual(results[1], 1)
         self.assertEqual(
-            tree.get_tree_topology().get_edge_data("0", "1")["weight"], 1.0
+            tree.get_tree_topology().get_edge_data("0", "1")["length"], 1.0
         )
         self.assertEqual(results[0], [1])
 

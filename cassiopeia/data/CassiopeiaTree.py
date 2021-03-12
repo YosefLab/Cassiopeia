@@ -241,8 +241,8 @@ class CassiopeiaTree:
         must have an entry for every node in the tree.
 
         Args:
-            character_state_mapping: A mapping containing character state assignments for every
-                node
+            character_state_mapping: A mapping containing character state 
+                assignments for every node
 
         Raises:
             CassiopeiaTreeError if the tree is not initialized or if the
