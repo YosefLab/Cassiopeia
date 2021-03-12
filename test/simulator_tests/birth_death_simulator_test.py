@@ -263,7 +263,8 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             birth_wd,
             0.5,
             mutation_distribution=lambda: 2,
-            fitness_distribution=lambda: 0.98,
+            fitness_distribution=lambda: 1,
+            fitness_base=0.98,
             num_extant=8,
         )
         tree = bd_sim.simulate_tree()
@@ -280,7 +281,8 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             birth_wd,
             0.5,
             mutation_distribution=lambda: 2,
-            fitness_distribution=lambda: 0.98,
+            fitness_distribution=lambda: 1,
+            fitness_base=0.98,
             experiment_time=0.6,
         )
         tree = bd_sim.simulate_tree()
@@ -299,11 +301,11 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         birth_wd = lambda scale: np.random.exponential(scale)
         death_wd = lambda: np.random.exponential(0.6)
         mut_dist = lambda: 1 if np.random.uniform() < 0.2 else 0
-        fit_dist = lambda: 1.5 ** np.random.uniform(-1, 1)
+        fit_dist = lambda: np.random.uniform(-1, 1)
 
         np.random.seed(12364)
         bd_sim = BirthDeathFitnessSimulator(
-            birth_wd, 0.5, death_wd, mut_dist, fit_dist, num_extant=8
+            birth_wd, 0.5, death_wd, mut_dist, fit_dist, 1.5, num_extant=8
         )
         tree = bd_sim.simulate_tree()
 
@@ -317,7 +319,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         np.random.seed(12364)
         bd_sim = BirthDeathFitnessSimulator(
-            birth_wd, 0.5, death_wd, mut_dist, fit_dist, experiment_time=3
+            birth_wd, 0.5, death_wd, mut_dist, fit_dist, 1.5, experiment_time=3
         )
         tree = bd_sim.simulate_tree()
 

@@ -1,7 +1,7 @@
 """
-A general simulator for a birth-death tree simulation process, including 
-fitness. Takes any given distribution on waiting times and fitness 
-mutations.
+This file stores a general phylogenetic tree simulator using forward birth-death
+process, including differing fitness on lineages on the tree. Allows for a 
+variety of division and fitness regimes to be specified by the user.
 """
 
 import networkx as nx
@@ -16,13 +16,52 @@ from cassiopeia.simulator.TreeSimulator import TreeSimulator, TreeSimulatorError
 
 
 class BirthDeathFitnessSimulator(TreeSimulator):
+    """Simulator class for a general forward birth-death process with fitness.
+
+    Implements a flexible phylogenetic tree simulator using a forward 
+    birth-death process. Allows any distribution on birth and death waiting 
+    times to be specified, including constant, exponential, weibull, etc. 
+    Also robustly simulates differing fitness on lineages within a simulated 
+    tree. Fitness in this context represents potential mutations that may be
+    acquired on a lineage that change the rate at which new members are born
+    Each lineage maintains its own birth scale parameter, altered from an 
+    initial specified experiment-wide birth scale parameter by accrued 
+    mutations. Different fitness regimes can be specified based on user 
+    provided distributions on how often fitness mutations occur and their 
+    respective strengths. 
+
+    Args:
+        birth_waiting_distribution: A function that samples waiting times 
+            from the birth distribution. Must take a scale parameter as 
+            the input
+        initial_birth_scale: The initial scale parameter that is used at the
+            start of the experiment
+        death_waiting_distribution: A function that samples waiting times 
+            from the death distribution
+        mutation_distribution: A function that samples the number of 
+            mutations that occur at a division event. If None, then no 
+            mutations are sampled
+        fitness_distribution: One of the two elements in determining the 
+            multiplicative strength of a fitness mutation. A function that
+            samples the exponential that the mutation base is raised by.
+            Must not be None if mutation_distribution provided
+        fitness_base: One of the two elements in determining the 
+            multiplicative strength of a fitness mutation. The base that 
+            is raised by the value given by the fitness distribution.
+            By default is e, Euler's Constant
+        num_extant: Specifies the number of extant lineages living at one
+            time as a stopping condition for the experiment
+        experiment_time: Specifies the time that the experiment runs as a
+            stopping condition for the experiment
+    """
     def __init__(
         self,
         birth_waiting_distribution: Callable[[float], float],
         initial_birth_scale: float,
-        death_waiting_distribution: Optional[Callable[[], float]] = None,
+        death_waiting_distribution: Optional[Callable[[], float]] = lambda: np.inf,
         mutation_distribution: Optional[Callable[[], int]] = None,
         fitness_distribution: Optional[Callable[[], float]] = None,
+        fitness_base: float = np.e,
         num_extant: Optional[int] = None,
         experiment_time: Optional[float] = None,
     ):
@@ -45,14 +84,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 "Please specify an experiment time greater than 0"
             )
 
-        if death_waiting_distribution is None:
-            death_waiting_distribution = lambda: np.inf
-
         self.birth_waiting_distribution = birth_waiting_distribution
         self.initial_birth_scale = initial_birth_scale
         self.death_waiting_distribution = death_waiting_distribution
         self.mutation_distribution = mutation_distribution
         self.fitness_distribution = fitness_distribution
+        self.fitness_base = fitness_base
         self.num_extant = num_extant
         self.experiment_time = experiment_time
 
@@ -81,11 +118,15 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         parameter. This parameter determines the shape of the distribution
         from which birth waiting times are sampled and thus affects how
         quickly cells divide. At each division event, the fitness is updated
-        by sampling from a distribution determining the number of mutations,
-        and the multiplicative strength of each mutation is determined by
-        another distribution. The birth scale parameter of the lineage is
-        then updated by the total multiplicative strength factor across all
-        mutations and passed on to the descendant nodes.
+        by sampling from a distribution determining the number of mutations.
+        The birth scale parameter of the lineage is then scaled by the total 
+        multiplicative coefficient across all mutations and passed on to the
+        descendant nodes. The multiplicative factor of each mutation is 
+        determined by exponentiating a base parameter by a value drawn from 
+        another 'fitness' distribution. Therefore, negative values from the 
+        fitness distribution are valid and down-scale the birth scale parameter.
+        The base determines the base strength of the mutations and the fitness
+        distribution determines how the mutations are distributed.
 
         There are two stopping conditions for the simulation. The first is
         "number of extant nodes", which specifies the simulation to stop the
@@ -103,7 +144,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             death_waiting_distribution = np.random.exponential(1.5)
             initial_birth_scale = 0.5
             mutation_distribution = lambda: 1 if np.random.uniform() > 0.5 else 0
-            fitness_distribution = lambda: 2 ** np.random.uniform(-1,1)
+            fitness_distribution = lambda: np.random.uniform(-1,1)
+            fitness_base = 2
 
             tree = generate_birth_death(
                 birth_waiting_distribution,
@@ -111,29 +153,13 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 death_waiting_distribution=death_waiting_distribution,
                 mutation_distribution=mutation_distribution,
                 fitness_distribution=fitness_distribution,
+                fitness_base=fitness_base,
                 num_extant=8
             )
 
-        Args:
-            birth_waiting_distribution: A function that samples waiting times from the
-                birth distribution. Must take a scale parameter as the input
-            initial_birth_scale: The global scale parameter that is used at the
-                start of the experiment
-            death_waiting_distribution: A function that samples waiting times from the
-                death distribution
-            mutation_distribution: A function that samples the number of mutations
-                that occur at a division event. If None, then no mutations are
-                sampled
-            fitness_distribution: A function that samples the multiplicative
-                update to the scale parameter of the current lineage at a
-                division event. Must not be None if mutation_distribution provided
-            num_extant: Specifies the number of extant lineages living at one
-                time as a stopping condition for the experiment
-            experiment_time: Specifies the time that the experiment runs as a
-                stopping condition for the experiment
-
         Returns:
-            A CassiopeiaTree with the tree topology initialized
+            A CassiopeiaTree with the tree topology initialized with the 
+            simulated tree
         """
 
         # Samples whether birth, death, or the end of the experiment comes next
@@ -223,7 +249,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                             )
                         for _ in range(num_mutations):
                             base_selection_coefficient *= (
-                                self.fitness_distribution()
+                                self.fitness_base ** self.fitness_distribution()
                             )
                             if base_selection_coefficient < 0:
                                 raise TreeSimulatorError(
