@@ -3,15 +3,13 @@ This file stores a general phylogenetic tree simulator using forward birth-death
 process, including differing fitness on lineages on the tree. Allows for a 
 variety of division and fitness regimes to be specified by the user.
 """
+from typing import Callable, Dict, Generator, Optional, Union
 
 import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 
-from typing import Callable, Dict, Generator, Optional, Union
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-import cassiopeia.data.utilities as utilities
 from cassiopeia.simulator.TreeSimulator import TreeSimulator, TreeSimulatorError
 
 
@@ -80,7 +78,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             mutations are sampled
         fitness_distribution: One of the two elements in determining the
             multiplicative coefficient of a fitness mutation. A function that
-            samples the exponential that the mutation base is raised by.
+            samples the exponential that the fitness base is raised by.
             Determines the distribution of fitness mutation strengths. Must not
             be None if mutation_distribution provided
         fitness_base: One of the two elements in determining the
@@ -94,6 +92,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             stopping condition for the experiment
         collapse_unifurcations: Specifies whether to collapse unifurcations in
             the tree resulting from pruning dead lineages
+        random_seed: A seed for reproducibility
     """
 
     def __init__(
@@ -109,6 +108,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         num_extant: Optional[int] = None,
         experiment_time: Optional[float] = None,
         collapse_unifurcations: bool = True,
+        random_seed: int = None,
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError(
@@ -140,6 +140,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.num_extant = num_extant
         self.experiment_time = experiment_time
         self.collapse_unifurcations = collapse_unifurcations
+        self.random_seed = random_seed
 
     def simulate_tree(
         self,
@@ -192,7 +193,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     total lived time of the lineage, and the status of whether
                     the lineage is still dividing
             """
-            assert lineage["active"]
+            if not lineage["active"]:
+                raise TreeSimulatorError(
+                    "Cannot sample event for non-active lineage"
+                )
 
             unique_id = next(names)
 
@@ -234,9 +238,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             else:
                 if birth_waiting_time < death_waiting_time:
                     # Update birth rate
-                    updated_birth_scale = update_birth_scale(
-                        lineage["birth_scale"]
-                    )
+                    updated_birth_scale = update_fitness(lineage["birth_scale"])
 
                     # Annotate parameters for a given node in the tree
                     tree.add_node(unique_id)
@@ -283,8 +285,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         )
                     )
 
-        def update_birth_scale(birth_scale):
-            """Performs an update on a lineage birth scale.
+        def update_fitness(birth_scale):
+            """Updates a lineage birth scale, which represents its fitness.
 
             At each division event, the fitness is updated by sampling from a
             distribution determining the number of mutations. The birth scale
@@ -324,6 +326,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 i += 1
 
         names = node_name_generator()
+
+        # Set the seed
+        if self.random_seed:
+            np.random.seed(self.random_seed)
 
         # Instantiate the implicit root
         tree = nx.DiGraph()
@@ -376,24 +382,23 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 for _ in range(2):
                     sample_lineage_event(lineage)
 
-        # Prune dead lineages and collapse resulting unifurcations
-        if len(tree.nodes) > 1:
-            for i in list(tree.nodes):
-                if tree.out_degree(i) == 0 and i not in observed_nodes:
-                    utilities.remove_and_prune_lineage(i, tree)
-            if self.collapse_unifurcations and len(tree.nodes) > 1:
-                utilities.collapse_unifurcations(tree, source="1")
-
-        # If only implicit root remains after pruning dead lineages, error
-        if len(tree.nodes) == 1:
-            raise TreeSimulatorError(
-                "All lineages died before stopping condition"
-            )
-
         cassiopeia_tree = CassiopeiaTree(tree=tree)
         time_dictionary = {}
         for i in tree.nodes:
             time_dictionary[i] = tree.nodes[i]["time"]
         cassiopeia_tree.set_times(time_dictionary)
+
+        # Prune dead lineages and collapse resulting unifurcations
+        for i in cassiopeia_tree.nodes:
+            if cassiopeia_tree.is_leaf(i) and i not in observed_nodes:
+                cassiopeia_tree.remove_and_prune_lineage(i)
+        if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
+            cassiopeia_tree.collapse_unifurcations(source="1")
+
+        # If only implicit root remains after pruning dead lineages, error
+        if len(cassiopeia_tree.nodes) == 1:
+            raise TreeSimulatorError(
+                "All lineages died before stopping condition"
+            )
 
         return cassiopeia_tree

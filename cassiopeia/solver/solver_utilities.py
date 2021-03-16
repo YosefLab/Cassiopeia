@@ -163,30 +163,6 @@ def collapse_tree(
     return tree
 
 
-def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
-    """Collapse unifurcations.
-
-    Collapse all unifurcations in the tree, namely any node with only one child
-    should be removed and all children should be connected to the parent node.
-
-    Args:
-        tree: tree to be collapsed
-
-    Returns:
-        A collapsed tree.
-    """
-
-    collapse_fn = lambda x: (len(x.children) == 1)
-
-    collapsed_tree = tree.copy()
-    to_collapse = [n for n in collapsed_tree.traverse() if collapse_fn(n)]
-
-    for n in to_collapse:
-        n.delete()
-
-    return collapsed_tree
-
-
 def transform_priors(
     priors: Optional[Dict[int, Dict[int, float]]],
     prior_transformation: str = "negative_log",
