@@ -19,7 +19,7 @@ def get_leaves(tree: nx.DiGraph) -> List[str]:
     return [n for n in tree.nodes if tree.out_degree(n) == 0]
 
 
-def test_tree(tree: nx.DiGraph) -> Tuple[List[float], int, bool]:
+def extract_tree_statistics(tree: nx.DiGraph) -> Tuple[List[float], int, bool]:
     """A helper function for testing simulated trees.
 
     Outputs the (independently calculated) total lived time for each extant
@@ -148,7 +148,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         """Tests base case that stopping conditions work before divisions."""
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, num_extant=1)
         tree = bd_sim.simulate_tree()
-        results = test_tree(tree.get_tree_topology())
+        results = extract_tree_statistics(tree.get_tree_topology())
         self.assertEqual(results[1], 1)
         self.assertEqual(
             tree.get_tree_topology().get_edge_data("0", "1")["length"], 1.0
@@ -167,7 +167,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         """Tests small case without death with constant waiting times."""
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, num_extant=32)
         tree = bd_sim.simulate_tree()
-        results = test_tree(tree.get_tree_topology())
+        results = extract_tree_statistics(tree.get_tree_topology())
         for i in results[0]:
             self.assertEqual(i, 6)
         self.assertEqual(results[1], 32)
@@ -175,7 +175,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, experiment_time=6)
         tree = bd_sim.simulate_tree()
-        results = test_tree(tree.get_tree_topology())
+        results = extract_tree_statistics(tree.get_tree_topology())
         for i in results[0]:
             self.assertEqual(i, 6)
         self.assertEqual(results[1], 32)
@@ -188,7 +188,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 16)
         self.assertTrue(results[2])
@@ -198,7 +198,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertEqual(i, 2)
         self.assertTrue(results[2])
@@ -215,7 +215,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
@@ -228,7 +228,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 2))
         self.assertTrue(results[2])
@@ -252,7 +252,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertFalse(results[2])
@@ -271,7 +271,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 1.3))
         self.assertFalse(results[2])
@@ -295,7 +295,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         )
         tree = bd_sim.simulate_tree()
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertTrue(all(x > 1 for x in results[0]))
         self.assertEqual(results[1], 8)
@@ -311,7 +311,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         )
         tree = bd_sim.simulate_tree()
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 1))
         self.assertEqual(results[1], 3)
@@ -361,7 +361,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
@@ -379,7 +379,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 0.6))
         self.assertTrue(results[2])
@@ -407,7 +407,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
@@ -427,7 +427,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
-        results = test_tree(tree_top)
+        results = extract_tree_statistics(tree_top)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 3))
         self.assertTrue(results[2])
