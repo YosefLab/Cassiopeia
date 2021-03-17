@@ -184,7 +184,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
     def test_nonconstant_yule(self):
         """Tests case without death with variable waiting times."""
         birth_wd = lambda scale: np.random.exponential(scale)
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, num_extant=16)
+        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, num_extant=16, random_seed = 54)
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()
@@ -194,7 +194,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(results[2])
         self.assertEqual(max([int(i) for i in tree.nodes]), 31)
 
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, experiment_time=2)
+        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, experiment_time=2, random_seed = 54)
         tree = bd_sim.simulate_tree()
 
         tree_top = tree.get_tree_topology()

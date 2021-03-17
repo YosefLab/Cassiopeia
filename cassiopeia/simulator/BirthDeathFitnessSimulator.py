@@ -114,11 +114,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             raise TreeSimulatorError(
                 "Please specify at least one stopping condition"
             )
-        if mutation_distribution is not None and fitness_distribution is None:
+        if mutation_distribution and fitness_distribution is None:
             raise TreeSimulatorError(
                 "Please specify a fitness strength distribution"
             )
-        if num_extant is not None and num_extant <= 0:
+        if num_extant and num_extant <= 0:
             raise TreeSimulatorError(
                 "Please specify number of extant lineages greater than 0"
             )
@@ -126,7 +126,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             raise TreeSimulatorError(
                 "Please specify an integer number of extant tips"
             )
-        if experiment_time is not None and experiment_time <= 0:
+        if experiment_time and experiment_time <= 0:
             raise TreeSimulatorError(
                 "Please specify an experiment time greater than 0"
             )
