@@ -78,9 +78,9 @@ class CassiopeiaTree:
     of states. These are good statistics to have for feature selection.
 
     TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315): Add functionality that mutates the underlying tree
-        structure: collapsing mutationless edges. When this happens, be sure
-        to make sure the cached properties update.
+    TODO(mattjones315, rzhang): Add functionality that mutates the underlying 
+        tree structure: collapsing mutationless edges. When this happens, be 
+        sure to make sure the cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
     TODO(sprillo): Add bulk set_branch_lengths method
@@ -772,9 +772,9 @@ class CassiopeiaTree:
             if self.__network.out_degree(n) == 0
         ]
 
-    def get_newick(self) -> str:
+    def get_newick(self, record_edge_weights) -> str:
         """Returns newick format of tree."""
-        return utilities.to_newick(self.__network)
+        return utilities.to_newick(self.__network, record_edge_weights)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format."""
@@ -866,13 +866,12 @@ class CassiopeiaTree:
         self.__cache = {}
 
     def remove_and_prune_lineage(self, node: int) -> None:
-        """Removes a node and prunes the lineage.
+        """Removes a node from the tree and prunes the lineage.
 
         Removes a node and all ancestors of that node that are no longer the
-        ancestor of any leaves. In the context of a lineage tracing
-        experiment, this removes all ancestral nodes that are not the
-        ancestors of any observed samples at the end of the experiment, thus
-        pruning all lineages that died.
+        ancestor of any leaves. In the context of a phylogeny, this removes 
+        all ancestral nodes that are not the ancestors of any observed samples,
+        thus pruning all lineages that died.
 
         Args:
             node: The node to be removed
@@ -894,10 +893,9 @@ class CassiopeiaTree:
             self.__cache = {}
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:
-        """Collapses unifurcations in a given tree.
+        """Collapses unifurcations on the tree.
 
         Args:
-            tree: The tree to collapse unifurcations on
             source: The node at which to begin the tree traversal
         """
 
