@@ -100,7 +100,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
-                birth_waiting_distribution = lambda _: 1, initial_birth_scale = 1, death_waiting_distribution = lambda: 2, num_extant=0
+                lambda _: 1, 1, lambda: 2, num_extant=0
             )
 
         with self.assertRaises(TreeSimulatorError):

@@ -94,7 +94,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
 
-
+    Raises:
+        TreeSimulatorError if invalid stopping conditions are provided or if a
+        fitness distribution is not provided when a mutation distribution isn't
     """
 
     def __init__(
@@ -161,6 +163,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         Returns:
             A CassiopeiaTree with the tree topology initialized with the
             simulated tree
+
+        Raises:
+            TreeSimulatorError if all lineages die before a stopping condition
         """
 
         # Samples whether birth, death, or the end of the experiment comes next
@@ -194,6 +199,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     current birth scale parameter of the lineage, the current
                     total lived time of the lineage, and the status of whether
                     the lineage is still dividing
+            
+            Raises:
+                TreeSimulatorError if a negative waiting time is sampled or a
+                non-active lineage is passed in
             """
             if not lineage["active"]:
                 raise TreeSimulatorError(
@@ -304,8 +313,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
             Args:
                 birth_scale: The birth_scale to be updated
+
             Returns:
                 The updated birth_scale
+
+            Raises:
+                TreeSimulatorError if a negative number of mutations is sampled
             """
             base_selection_coefficient = 1
             if self.mutation_distribution:
