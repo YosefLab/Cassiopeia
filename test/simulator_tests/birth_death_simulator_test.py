@@ -22,10 +22,16 @@ def extract_tree_statistics(
 ) -> Tuple[List[float], int, bool]:
     """A helper function for testing simulated trees.
 
-    Outputs the total lived time for each extant
-    lineage, the number of extant lineages, and whether the tree has the
-    expected node degrees (to ensure unifurcation collapsing was done
-    correctly).
+    Outputs the total lived time for each extant lineage, the number of extant
+    lineages, and whether the tree has the expected node degrees (to ensure
+    unifurcations were collapsed).
+
+    Args:
+        tree: The tree to test
+
+    Returns:
+        The total time lived for each leaf, the number of leaves, and if the
+        degrees only have degree 0 or 2
     """
 
     times = []
