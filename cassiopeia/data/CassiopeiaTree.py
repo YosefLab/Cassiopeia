@@ -772,9 +772,17 @@ class CassiopeiaTree:
             if self.__network.out_degree(n) == 0
         ]
 
-    def get_newick(self) -> str:
-        """Returns newick format of tree."""
-        return utilities.to_newick(self.__network)
+    def get_newick(self, record_branch_lengths = False) -> str:
+        """Returns newick format of tree.
+        
+        Args:
+            record_edge_weights: Whether to record branch lengths on the tree
+            in the newick string
+
+        Returns:
+            The tree in the form of a newick string
+        """
+        return utilities.to_newick(self.__network, record_branch_lengths)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format."""

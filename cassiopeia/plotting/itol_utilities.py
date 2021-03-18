@@ -103,27 +103,28 @@ def upload_and_export_itol(
     # create temporary directory for storing files we'll upload to iTOL
     temporary_directory = tempfile.mkdtemp()
 
-    if (api_key is None or project_name is None) and os.path.exists(os.path.expanduser(itol_config)):
+    if (api_key is None or project_name is None):
+        if os.path.exists(os.path.expanduser(itol_config)):
         
-        config = configparser.ConfigParser()
-        with open(os.path.expanduser(itol_config), "r") as f:
-            config_string = f.read()
-        config.read_string(config_string)
+            config = configparser.ConfigParser()
+            with open(os.path.expanduser(itol_config), "r") as f:
+                config_string = f.read()
+            config.read_string(config_string)
 
-        try:
-            api_key = config["DEFAULT"]["api_key"]
-            project_name = config["DEFAULT"]["project_name"]
-        except KeyError:
-            raise iTOLError("Error reading the itol config file passed in.")
+            try:
+                api_key = config["DEFAULT"]["api_key"]
+                project_name = config["DEFAULT"]["project_name"]
+            except KeyError:
+                raise iTOLError("Error reading the itol config file passed in.")
 
-    else:
-        raise iTOLError(
-            "Specify an api_key and project_name, or a valid iTOL "
-            "config file."
-        )
+        else:
+            raise iTOLError(
+                "Specify an api_key and project_name, or a valid iTOL "
+                "config file."
+            )
 
     with open(os.path.join(temporary_directory, "tree_to_plot.tree"), "w") as f:
-        f.write(cassiopeia_tree.get_newick())
+        f.write(cassiopeia_tree.get_newick(record_branch_lengths = True))
 
     file_format = export_filepath.split("/")[-1].split(".")[-1]
 
