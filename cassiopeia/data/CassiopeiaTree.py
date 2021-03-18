@@ -776,7 +776,7 @@ class CassiopeiaTree:
         """Returns newick format of tree.
         
         Args:
-            record_edge_weights: Whether to record branch lengths on the tree
+            record_branch_lengths: Whether to record branch lengths on the tree
             in the newick string
 
         Returns:
