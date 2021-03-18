@@ -5,6 +5,8 @@ import numpy as np
 
 from typing import List, Tuple
 
+
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
@@ -15,36 +17,28 @@ from cassiopeia.simulator.TreeSimulator import (
 import cassiopeia.data.utilities as utilities
 
 
-def get_leaves(tree: nx.DiGraph) -> List[str]:
-    return [n for n in tree.nodes if tree.out_degree(n) == 0]
-
-
-def extract_tree_statistics(tree: nx.DiGraph) -> Tuple[List[float], int, bool]:
+def extract_tree_statistics(
+    tree: CassiopeiaTree,
+) -> Tuple[List[float], int, bool]:
     """A helper function for testing simulated trees.
 
-    Outputs the (independently calculated) total lived time for each extant
+    Outputs the total lived time for each extant
     lineage, the number of extant lineages, and whether the tree has the
     expected node degrees (to ensure unifurcation collapsing was done
     correctly).
     """
-    tree = tree.copy()
-    tree.nodes["0"]["total_time"] = 0
-    for i in nx.edge_dfs(tree):
-        tree.nodes[i[1]]["total_time"] = (
-            tree.nodes[i[0]]["total_time"] + tree.edges[i]["length"]
-        )
 
-    leaves = get_leaves(tree)
     times = []
-    for i in leaves:
-        times.append(tree.nodes[i]["total_time"])
-
-    out_degrees = [tree.out_degree(n) for n in tree.nodes]
+    out_degrees = []
+    for i in tree.nodes:
+        if tree.is_leaf(i):
+            times.append(tree.get_time(i))
+        out_degrees.append(len(tree.children(i)))
     out_degrees.pop(0)
 
     correct_degrees = all(x == 2 or x == 0 for x in out_degrees)
 
-    return times, len(leaves), correct_degrees
+    return times, len(times), correct_degrees
 
 
 class BirthDeathSimulatorTest(unittest.TestCase):
@@ -148,26 +142,23 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         """Tests base case that stopping conditions work before divisions."""
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, num_extant=1)
         tree = bd_sim.simulate_tree()
-        results = extract_tree_statistics(tree.get_tree_topology())
+        results = extract_tree_statistics(tree)
         self.assertEqual(results[1], 1)
-        self.assertEqual(
-            tree.get_tree_topology().get_edge_data("0", "1")["length"], 1.0
-        )
+        self.assertEqual(tree.get_branch_length("0", "1"), 1.0)
         self.assertEqual(results[0], [1])
 
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, experiment_time=1)
         tree = bd_sim.simulate_tree()
+        results = extract_tree_statistics(tree)
         self.assertEqual(results[1], 1)
-        self.assertEqual(
-            tree.get_tree_topology().get_edge_data("0", "1")["length"], 1.0
-        )
+        self.assertEqual(tree.get_branch_length("0", "1"), 1.0)
         self.assertEqual(results[0], [1])
 
     def test_constant_yule(self):
         """Tests small case without death with constant waiting times."""
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, num_extant=32)
         tree = bd_sim.simulate_tree()
-        results = extract_tree_statistics(tree.get_tree_topology())
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertEqual(i, 6)
         self.assertEqual(results[1], 32)
@@ -175,7 +166,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, experiment_time=6)
         tree = bd_sim.simulate_tree()
-        results = extract_tree_statistics(tree.get_tree_topology())
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertEqual(i, 6)
         self.assertEqual(results[1], 32)
@@ -184,21 +175,22 @@ class BirthDeathSimulatorTest(unittest.TestCase):
     def test_nonconstant_yule(self):
         """Tests case without death with variable waiting times."""
         birth_wd = lambda scale: np.random.exponential(scale)
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, num_extant=16, random_seed = 54)
-        tree = bd_sim.simulate_tree()
 
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=16, random_seed=54
+        )
+        tree = bd_sim.simulate_tree()
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 16)
         self.assertTrue(results[2])
         self.assertEqual(max([int(i) for i in tree.nodes]), 31)
 
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, experiment_time=2, random_seed = 54)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 1, experiment_time=2, random_seed=54
+        )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertEqual(i, 2)
         self.assertTrue(results[2])
@@ -213,27 +205,23 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             birth_wd, 0.5, death_wd, num_extant=8, random_seed=1234
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
-        self.assertNotIn("9", tree_top.nodes)
-        self.assertNotIn("2", tree_top.nodes)
+        self.assertNotIn("9", tree.nodes)
+        self.assertNotIn("2", tree.nodes)
 
         bd_sim = BirthDeathFitnessSimulator(
             birth_wd, 0.5, death_wd, experiment_time=2, random_seed=1234
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 2))
         self.assertTrue(results[2])
-        self.assertNotIn("9", tree_top.nodes)
-        self.assertNotIn("2", tree_top.nodes)
+        self.assertNotIn("9", tree.nodes)
+        self.assertNotIn("2", tree.nodes)
 
     def test_nonconstant_birth_death_no_unifurcation_collapsing(self):
         """Tests case with with variable birth and death waiting times.
@@ -250,15 +238,13 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=12,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertFalse(results[2])
-        self.assertNotIn("3", tree_top.nodes)
-        self.assertIn("2", tree_top.nodes)
-        self.assertIn("6", tree_top.nodes)
+        self.assertNotIn("3", tree.nodes)
+        self.assertIn("2", tree.nodes)
+        self.assertIn("6", tree.nodes)
 
         bd_sim = BirthDeathFitnessSimulator(
             birth_wd,
@@ -269,15 +255,13 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=12,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 1.3))
         self.assertFalse(results[2])
-        self.assertNotIn("3", tree_top.nodes)
-        self.assertIn("2", tree_top.nodes)
-        self.assertIn("6", tree_top.nodes)
+        self.assertNotIn("3", tree.nodes)
+        self.assertIn("2", tree.nodes)
+        self.assertIn("6", tree.nodes)
 
     def test_nonconstant_birth_death_both_stopping_conditions(self):
         """Tests case with with variable birth and death waiting times.
@@ -294,8 +278,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=17,
         )
         tree = bd_sim.simulate_tree()
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertTrue(all(x > 1 for x in results[0]))
         self.assertEqual(results[1], 8)
@@ -310,8 +293,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=17,
         )
         tree = bd_sim.simulate_tree()
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 1))
         self.assertEqual(results[1], 3)
@@ -320,9 +302,10 @@ class BirthDeathSimulatorTest(unittest.TestCase):
     def test_nonconstant_yule_with_predictable_fitness(self):
         """Tests case with birth and death with constant fitness."""
 
-        def check_fitness_values_as_expected(tree):
+        def check_fitness_values_as_expected(tree: nx.DiGraph):
             """Checks if the fitness value stored at each node is what we
             expect given deterministic fitness evolution"""
+            tree = tree.copy()
             for u, v in tree.edges:
                 tree[u][v]["val"] = 1
             tree.nodes["0"]["depth"] = 0
@@ -330,7 +313,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
                 tree.nodes[v]["depth"] = (
                     tree.nodes[u]["depth"] + tree[u][v]["val"]
                 )
-            leaves = get_leaves(tree)
+            leaves = [n for n in tree if tree.out_degree(n) == 0]
             for i in tree.nodes:
                 if i in leaves:
                     self.assertTrue(
@@ -359,13 +342,11 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=1234,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
-        check_fitness_values_as_expected(tree_top)
+        check_fitness_values_as_expected(tree.get_tree_topology())
 
         bd_sim = BirthDeathFitnessSimulator(
             birth_wd,
@@ -377,13 +358,11 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=1234,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 0.6))
         self.assertTrue(results[2])
-        check_fitness_values_as_expected(tree_top)
+        check_fitness_values_as_expected(tree.get_tree_topology())
 
     def test_nonconstant_birth_death_with_variable_fitness(self):
         """Tests a case with variable birth and death waiting times, as well
@@ -405,14 +384,12 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=12364,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         self.assertTrue(all(np.isclose(x, results[0][0]) for x in results[0]))
         self.assertEqual(results[1], 8)
         self.assertTrue(results[2])
-        self.assertNotIn(2, tree_top.nodes)
-        self.assertNotIn(3, tree_top.nodes)
+        self.assertNotIn(2, tree.nodes)
+        self.assertNotIn(3, tree.nodes)
 
         bd_sim = BirthDeathFitnessSimulator(
             birth_wd,
@@ -425,14 +402,12 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             random_seed=12364,
         )
         tree = bd_sim.simulate_tree()
-
-        tree_top = tree.get_tree_topology()
-        results = extract_tree_statistics(tree_top)
+        results = extract_tree_statistics(tree)
         for i in results[0]:
             self.assertTrue(np.isclose(i, 3))
         self.assertTrue(results[2])
-        self.assertNotIn(2, tree_top.nodes)
-        self.assertNotIn(3, tree_top.nodes)
+        self.assertNotIn(2, tree.nodes)
+        self.assertNotIn(3, tree.nodes)
 
 
 if __name__ == "__main__":

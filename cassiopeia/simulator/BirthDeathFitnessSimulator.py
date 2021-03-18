@@ -199,7 +199,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     current birth scale parameter of the lineage, the current
                     total lived time of the lineage, and the status of whether
                     the lineage is still dividing
-            
+
             Raises:
                 TreeSimulatorError if a negative waiting time is sampled or a
                 non-active lineage is passed in
