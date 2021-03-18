@@ -91,13 +91,7 @@ def _N(T, possible_assignments, node_to_i, label_to_j):
     return L
 
 
-def _C(
-    T,
-    L,
-    possible_labels,
-    node_to_i,
-    label_to_j,
-):
+def _C(T, L, possible_labels, node_to_i, label_to_j):
     def fill_transition_DP(v, s, s1, s2, obs_transitions):
 
         if T.out_degree(v) == 0:

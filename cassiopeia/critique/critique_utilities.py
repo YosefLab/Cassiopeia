@@ -90,7 +90,9 @@ def sample_triplet_at_depth(
     probs = [val / denom for val in probs]
 
     # choose daughter clades
-    ind = np.random.choice(range(len(combos)), size=1, replace=False, p=probs)[0]
+    ind = np.random.choice(range(len(combos)), size=1, replace=False, p=probs)[
+        0
+    ]
     (i, j, k) = combos[ind]
 
     if i == j:

@@ -146,9 +146,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
 
-    def simulate_tree(
-        self,
-    ) -> CassiopeiaTree:
+    def simulate_tree(self,) -> CassiopeiaTree:
         """Simulates trees from a general birth/death process with fitness.
 
         A forward-time birth/death process is simulated by tracking a series of

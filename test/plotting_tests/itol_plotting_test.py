@@ -19,6 +19,7 @@ from cassiopeia.plotting import itol_utilities
 
 ITOL_FILE = os.path.join(os.path.expanduser("~/.itolconfig"))
 
+
 class TestITOLPlotting(unittest.TestCase):
     def setUp(self):
 
@@ -95,7 +96,7 @@ class TestITOLPlotting(unittest.TestCase):
         self.assertEqual(rgb, (129, 45, 211))
 
         rgb = (129, 45, 211)
-        _hex= itol_utilities.rgb_to_hex(rgb)
+        _hex = itol_utilities.rgb_to_hex(rgb)
         self.assertEqual(_hex, "#812dd3")
 
     def test_generate_random_indel_colors(self):
@@ -277,7 +278,9 @@ class TestITOLPlotting(unittest.TestCase):
         for allele_file in allele_files:
             self.assertTrue(os.path.exists(allele_file))
 
-    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
+    @unittest.skipUnless(
+        os.path.exists(ITOL_FILE), "iTOL config file does not exist"
+    )
     def test_integrated_pipeline_simple_tree(self):
 
         cas.pl.upload_and_export_itol(
@@ -293,7 +296,9 @@ class TestITOLPlotting(unittest.TestCase):
             )
         )
 
-    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
+    @unittest.skipUnless(
+        os.path.exists(ITOL_FILE), "iTOL config file does not exist"
+    )
     def test_integrated_pipeline_tree_with_allele_heatmap(self):
 
         cas.pl.upload_and_export_itol(
@@ -301,7 +306,7 @@ class TestITOLPlotting(unittest.TestCase):
             "test_tree",
             export_filepath=f"{self.temporary_directory}/test_tree.pdf",
             itol_config="~/.itolconfig",
-            allele_table=self.allele_table
+            allele_table=self.allele_table,
         )
 
         self.assertTrue(
@@ -310,7 +315,9 @@ class TestITOLPlotting(unittest.TestCase):
             )
         )
 
-    @unittest.skipUnless(os.path.exists(ITOL_FILE), "iTOL config file does not exist")
+    @unittest.skipUnless(
+        os.path.exists(ITOL_FILE), "iTOL config file does not exist"
+    )
     def test_integrated_pipeline_tree_with_meta_data(self):
 
         cas.pl.upload_and_export_itol(
@@ -326,7 +333,6 @@ class TestITOLPlotting(unittest.TestCase):
                 os.path.join(self.temporary_directory, "test_tree.pdf")
             )
         )
-        
 
     def tearDown(self):
 

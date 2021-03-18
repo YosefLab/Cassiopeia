@@ -56,7 +56,7 @@ class TestILPSolver(unittest.TestCase):
                 "c": [1, 2, 1],
                 "d": [2, 0, 0],
                 "e": [2, 0, 2],
-                "f": [1, 1, 0]
+                "f": [1, 1, 0],
             },
             orient="index",
             columns=["x1", "x2", "x3"],
