@@ -93,6 +93,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         collapse_unifurcations: Specifies whether to collapse unifurcations in
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
+
+
     """
 
     def __init__(
