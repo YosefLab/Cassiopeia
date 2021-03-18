@@ -246,7 +246,7 @@ class TestDataUtilities(unittest.TestCase):
         for (
             bootstrap_matrix,
             bootstrap_priors,
-            boostarp_state_to_indel,
+            boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
 
@@ -270,6 +270,30 @@ class TestDataUtilities(unittest.TestCase):
             )
 
             self.assertEqual(len(bootstrap_priors), character_matrix.shape[1])
+
+    def test_to_newick_no_branch_lengths(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F","A",length=0.1)
+        tree.add_edge("F","B",length=0.2)
+        tree.add_edge("F","E",length=0.5)
+        tree.add_edge("E","C",length=0.3)
+        tree.add_edge("E","D",length=0.4)
+
+        newick_string = data_utilities.to_newick(tree)
+        self.assertEqual(newick_string, "(A,B,(C,D));")
+
+    def test_to_newick_branch_lengths(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F","A",length=0.1)
+        tree.add_edge("F","B",length=0.2)
+        tree.add_edge("F","E",length=0.5)
+        tree.add_edge("E","C",length=0.3)
+        tree.add_edge("E","D",length=0.4)
+
+        newick_string = data_utilities.to_newick(tree, record_branch_lengths = True)
+        self.assertEqual(newick_string, "(A:0.1,B:0.2,(C:0.3,D:0.4):0.5);")
 
 
 if __name__ == "__main__":
