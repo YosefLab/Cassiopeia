@@ -178,50 +178,6 @@ class TestCollapseEdges(unittest.TestCase):
 
         self.assertEqual(expected_newick_string, observed_newick_string)
 
-    def test_basic_unifurcation_collapsing(self):
-
-        T = nx.DiGraph()
-        T.add_edges_from([(0, 1), (0, 2), (2, 3), (3, 4), (3, 5)])
-
-        tree = ete3.Tree(to_newick_with_internal(T), format=1)
-
-        collapsed_tree = solver_utilities.collapse_unifurcations(tree)
-
-        # make sure all leaves remain
-        self.assertEqual(len(tree), len(collapsed_tree))
-        for n in tree:
-            self.assertIn(n.name, collapsed_tree.get_leaf_names())
-
-        # make sure there are no singletons left
-        for n in collapsed_tree.traverse():
-            self.assertFalse(len(n.children) == 1)
-
-        # make sure 0 is connected to 3 now
-        children_of_root = [n.name for n in collapsed_tree.children]
-        self.assertIn("3", children_of_root)
-
-    def test_longer_caterpillar_tree_unifurcation_collapsing(self):
-
-        T = nx.DiGraph()
-        T.add_edges_from(
-            [(0, 1), (0, 2), (2, 3), (3, 4), (4, 5), (5, 6), (5, 7)]
-        )
-
-        tree = ete3.Tree(to_newick_with_internal(T), format=1)
-
-        collapsed_tree = solver_utilities.collapse_unifurcations(tree)
-
-        # make sure all leaves remain
-        self.assertEqual(len(tree), len(collapsed_tree))
-        for n in tree:
-            self.assertIn(n.name, collapsed_tree.get_leaf_names())
-
-        # make sure there are no singletons left
-        for n in collapsed_tree.traverse():
-            self.assertFalse(len(n.children) == 1)
-
-        self.assertEqual((collapsed_tree & 5).up.name, "0")
-
 
 if __name__ == "__main__":
     unittest.main()

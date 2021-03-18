@@ -5,6 +5,7 @@ This file tests the utilities stored in cassiopeia/data/utilities.py
 import unittest
 from typing import Dict, Optional
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -198,7 +199,7 @@ class TestDataUtilities(unittest.TestCase):
         for (
             bootstrap_matrix,
             bootstrap_priors,
-            boostarp_state_to_indel,
+            boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
 

@@ -165,13 +165,10 @@ def collapse_tree(
 
 def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     """Collapse unifurcations.
-
     Collapse all unifurcations in the tree, namely any node with only one child
     should be removed and all children should be connected to the parent node.
-
     Args:
         tree: tree to be collapsed
-
     Returns:
         A collapsed tree.
     """
