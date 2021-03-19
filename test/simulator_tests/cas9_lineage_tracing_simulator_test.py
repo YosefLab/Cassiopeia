@@ -85,7 +85,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            0.1, self.basic_lineage_tracing_data_simulator.mutation_rate
+            0.3, self.basic_lineage_tracing_data_simulator.mutation_rate
         )
 
         self.assertAlmostEqual(
