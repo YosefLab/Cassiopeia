@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 
 import cassiopeia as cas
+from cassiopeia.simulator.DataSimulator import DataSimulatorError
 
 
 class TestCas9LineageTracingDataSimulator(unittest.TestCase):
@@ -54,17 +55,15 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             }
         )
 
-        self.test_simple_tree = tree
+        self.basic_tree = tree
 
         self.basic_lineage_tracing_data_simulator = cas.sim.Cas9LineageTracingDataSimulator(
             number_of_cassettes=3,
             size_of_cassette=3,
             mutation_rate=0.3,
-            state_distribution=lambda: np.random.RandomState(
-                123412232
-            ).exponential(1e-5),
-            number_of_states=10,
-            silencing_rate=0.1,
+            mutation_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+            heritable_silencing_rate=1e-5,
+            stochastic_silencing_rate=1e-2,
             random_seed=123412232,
         )
 
@@ -72,20 +71,27 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         number_of_characters = (
             self.basic_lineage_tracing_data_simulator.number_of_cassettes
-            * self.basic_lineage_tracing_data_simulator.number_of_cut_sites
+            * self.basic_lineage_tracing_data_simulator.size_of_cassette
         )
         self.assertEqual(9, number_of_characters)
 
         self.assertEqual(
-            0.1, self.basic_lineage_tracing_data_simulator.silencing_rate
+            1e-5,
+            self.basic_lineage_tracing_data_simulator.heritable_silencing_rate,
         )
 
         self.assertEqual(
-            10, len(self.basic_lineage_tracing_data_simulator.mutation_priors)
+            1e-2,
+            self.basic_lineage_tracing_data_simulator.stochastic_silencing_rate,
         )
 
         self.assertEqual(
-            0.3, self.basic_lineage_tracing_data_simulator.mutation_rate
+            4, len(self.basic_lineage_tracing_data_simulator.mutation_priors)
+        )
+
+        self.assertEqual(
+            [0.3] * number_of_characters,
+            self.basic_lineage_tracing_data_simulator.mutation_rate_per_character,
         )
 
         self.assertAlmostEqual(
@@ -97,6 +103,67 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 ]
             ),
         )
+
+    def test_setup_errors(self):
+
+        # test number of cassettes is not a positive integer
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=0, size_of_cassette=2
+            )
+
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=0.1, size_of_cassette=2
+            )
+
+        # test size of cassette is not a positive integer
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=0
+            )
+
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=0.1
+            )
+
+        # test for positive mutation rates
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2, mutation_rate=-0.2
+            )
+
+        # test for correct number of mutation rates (one per character)
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_rate=[0.1, 0.1, 0.2],
+            )
+
+        # check for postive mutation rates in a specified array
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_rate=[0.1, 0.1, 0.2, -0.1],
+            )
+
+        # test that state distribution adds up to 1
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_priors={1: 0.5, 2: 0.2},
+            )
+
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_priors={1: 0.5, 2: 0.6},
+            )
 
     def test_get_cassettes(self):
 
@@ -116,7 +183,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             character_array, [0, 3, 5, 6]
         )
 
-        expected_character_array = [3, 0, 0, 4, 0, 8, 9, 0, 0]
+        expected_character_array = [3, 0, 0, 3, 0, 3, 3, 0, 0]
 
         for i in range(len(expected_character_array)):
             self.assertEqual(
@@ -131,7 +198,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         updated_character_array = self.basic_lineage_tracing_data_simulator.silence_cassettes(
-            character_array
+            character_array, 0.1
         )
 
         expected_character_array = [0, 0, 0, 0, 0, 0, -1, -1, -1]
@@ -164,7 +231,6 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             self.assertEqual(
                 expected_character_array[i], updated_character_array[i]
             )
-
 
 if __name__ == "__main__":
     unittest.main()
