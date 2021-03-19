@@ -204,11 +204,14 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         updated_character_array = character_array.copy()
 
+        states = list(self.mutation_priors.keys())
+        probabilities = list(self.mutation_priors.values())
+
         for i in cuts:
             state = np.random.choice(
-                list(self.mutation_priors.keys()),
+                states,
                 1,
-                p=list(self.mutation_priors.values()),
+                p=probabilities,
             )[0]
             updated_character_array[i] = state
 
