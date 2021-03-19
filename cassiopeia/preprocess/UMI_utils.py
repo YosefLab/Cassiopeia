@@ -1,7 +1,7 @@
 """
 This file contains all functions pertaining to UMI collapsing and preprocessing.
-Invoked through pipeline.py and supports the collapseUMIs and 
-errorCorrectUMIs functions. 
+Invoked through pipeline.py and supports the collapseUMIs and
+errorCorrectUMIs functions.
 """
 import os
 
@@ -95,7 +95,7 @@ def sort_cellranger_bam(
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
-    bam_fh = pysam.AlignmentFile(str(bam_fp))
+    bam_fh = pysam.AlignmentFile(str(bam_fp), check_sq=False)
 
     relevant = filter(filter_func, bam_fh)
 
