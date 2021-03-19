@@ -169,18 +169,19 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             parent = tree.parent(node)
             t = tree.get_time(node) - tree.get_time(parent)
 
-            p = 1 - (np.exp(-t * self.mutation_rate))
-
             character_array = character_matrix[parent]
             open_sites = [
                 c
                 for c in range(len(character_array))
                 if character_array[c] == 0
             ]
-            
+
             new_cuts = []
             for site in open_sites:
-                if np.random.uniform < self.mutation_rate_per_character[site]:
+                mutation_rate = self.mutation_rate_per_character[site]
+                p = 1 - (np.exp(-t*mutation_rate))
+
+                if np.random.uniform() < p:
                     new_cuts.append(site)
 
             # collapse cuts that are on the same cassette

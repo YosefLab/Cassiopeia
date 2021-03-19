@@ -6,6 +6,7 @@ import unittest
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.simulator.DataSimulator import DataSimulatorError
@@ -142,7 +143,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 mutation_rate=[0.1, 0.1, 0.2],
             )
 
-        # check for postive mutation rates in a specified array
+        # check for positive mutation rates in a specified array
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
@@ -231,6 +232,48 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             self.assertEqual(
                 expected_character_array[i], updated_character_array[i]
             )
+
+    def test_simulator_basic(self):
+
+        self.basic_lineage_tracing_data_simulator.overlay_data(self.basic_tree)
+
+        character_matrix = self.basic_tree.get_original_character_matrix()
+
+        self.assertEqual(9, character_matrix.shape[1])
+        self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
+
+        expected_character_matrix = pd.DataFrame.from_dict({
+            "7": [0, 0, 0, 0, 3, 0, 0, 0, 3],
+            "8": [0, 0, 3, 0, 0, 3, 0, 0, 3],
+            "9": [3, 4, 0, 0, 0, 0, 3, 0, 0],
+            "10": [3, 1, 0, 0, 0, 0, 0, 0, 3],
+            "11": [-1, -1, -1, -1, -1, -1, 0, -1, -1],
+            "12": [-1, -1, -1, -1, -1, -1, 3, 0, 0],
+            "13": [-1, -1, -1, 0, -1, -1, -1, -1, -1],
+            "14": [-1, -1, -1, 0, -1, -1, 0, 3, 0],
+        }, orient='index', columns = [0, 1, 2, 3, 4, 5, 6, 7, 8])
+
+        pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
+
+        # check inheritance patterns
+        for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):
+
+            if self.basic_tree.is_root(n):
+                self.assertCountEqual([0]*9, self.basic_tree.get_character_states(n))
+                continue
+
+            parent = self.basic_tree.parent(n)
+
+            child_array = self.basic_tree.get_character_states(n)
+            parent_array = self.basic_tree.get_character_states(parent)
+            for i in range(len(child_array)):
+
+                if parent_array[i] == -1:
+                    self.assertEqual(-1, child_array[i])
+
+                if parent_array[i] != 0:
+                    self.assertNotEqual(0, child_array[i])
+        
 
 if __name__ == "__main__":
     unittest.main()
