@@ -5,6 +5,9 @@ technologies (e.g, as described in Chan et al, Nature 2019 or McKenna et al,
 Science 2016). This simulator implements the method `overlay_data` which takes
 in a CassiopeiaTree with edge lengths and overlays states onto cut-sites.
 """
+import copy
+from typing import Callable, List, Optional, Tuple
+
 import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
@@ -53,6 +56,10 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             likelihoods
         number_of_states: Number of states to simulate
         silencing_rate: Silencing rate for the cassettes, per node
+        random_seed: Random seed to use for deterministic simulations. Note
+            that the random seed gets set during every call to `overlay_data`,
+            thereby producing deterministic simulations every time this function
+            is called.
     """
 
     def __init__(
@@ -60,14 +67,15 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         number_of_cassettes: int = 10,
         size_of_cassette: int = 3,
         mutation_rate: float = 0.01,
-        state_distribution: Callable[
-            None, float
-        ] = lambda: np.random.exponential(1e-5),
+        state_distribution: Callable[[], float] = lambda: np.random.exponential(
+            1e-5
+        ),
         number_of_states: int = 100,
-        silencing_rate: float = 1e4,
+        silencing_rate: float = 1e-4,
+        random_seed: Optional[int] = None,
     ):
 
-        self.number_of_cut_sites = number_of_cut_sites
+        self.number_of_cut_sites = size_of_cassette
         self.number_of_cassettes = number_of_cassettes
         self.mutation_rate = mutation_rate
 
@@ -79,6 +87,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         self.silencing_rate = silencing_rate
 
+        self.random_seed = random_seed
+
     def overlay_data(self, tree: CassiopeiaTree):
         """Overlays Cas9-based lineage tracing data onto the CassiopeiaTree.
 
@@ -86,16 +96,27 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             tree: Input CassiopeiaTree
         """
 
+        if self.random_seed is not None:
+            np.random.seed(self.random_seed)
+
         number_of_characters = (
             self.number_of_cassettes * self.number_of_cut_sites
         )
+
+        # initialize character states
+        dummy_character_matrix = {}
+        for node in tree.nodes:
+            dummy_character_matrix[node] = [-1] * number_of_characters
+
+        tree.initialize_all_character_states(dummy_character_matrix)
+
         for node in tree.depth_first_traverse_nodes(tree.root, postorder=False):
 
             if tree.is_root(node):
-                tree.set_character_states = [0] * number_of_characters
+                tree.set_character_states(node, [0] * number_of_characters)
                 continue
 
-            parent = tree.get_parent(node)
+            parent = tree.parent(node)
             t = tree.get_time(node) - tree.get_time(parent)
 
             p = 1 - (np.exp(-t * self.mutation_rate))
@@ -111,9 +132,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             new_cuts = np.random.choice(open_sites, number_of_mutations)
 
             # collapse cuts that are on the same cassette
-            character_array, cuts_remaining = self.collapse_sites(
-                character_array, new_cuts
-            )
+            cuts_remaining = new_cuts
+            if self.number_of_cut_sites > 1:
+                character_array, cuts_remaining = self.collapse_sites(
+                    character_array, new_cuts
+                )
 
             # introduce new states at cut sites
             character_array = self.introduce_states(
@@ -143,20 +166,25 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 cassette collapse.
         """
 
+        updated_character_array = character_array.copy()
+
         cassettes = self.get_cassettes()
         cut_to_cassette = np.digitize(cuts, cassettes)
         cuts_remaining = []
         for cassette in np.unique(cut_to_cassette):
             cut_indices = np.where(cut_to_cassette == cassette)[0]
             if len(cut_indices) > 1:
-                cuts = new_cuts[cut_indices]
-                left, right = np.min(cuts), np.max(cuts)
+                sites_to_collapse = np.array(cuts)[cut_indices]
+                left, right = (
+                    np.min(sites_to_collapse),
+                    np.max(sites_to_collapse),
+                )
                 for site in range(left, right + 1):
-                    character_array[site] = -1
+                    updated_character_array[site] = -1
             else:
-                cuts_remaining.append(cut_indices[0])
+                cuts_remaining.append(np.array(cuts)[cut_indices[0]])
 
-        return character_array, cuts_remaining
+        return updated_character_array, cuts_remaining
 
     def introduce_states(
         self, character_array: List[int], cuts: List[int]
@@ -174,17 +202,19 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             An updated character array.
         """
 
+        updated_character_array = character_array.copy()
+
         for i in cuts:
-            state = self.random.choice(
+            state = np.random.choice(
                 list(self.mutation_priors.keys()),
                 1,
                 p=list(self.mutation_priors.values()),
-            )
-            character_array[i] = state
+            )[0]
+            updated_character_array[i] = state
 
-        return character_array
+        return updated_character_array
 
-    def silence_cassettes(self, character_array: List[int]):
+    def silence_cassettes(self, character_array: List[int]) -> List[int]:
         """Silences cassettes.
 
         Using the predefined silencing rate of this simulator, this function
@@ -197,16 +227,22 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             An updated character array.
 
         """
+
+        updated_character_array = character_array.copy()
+
         cassettes = self.get_cassettes()
         cut_site_by_cassette = np.digitize(
             range(len(character_array)), cassettes
         )
-        for cassette in cassettes:
+
+        for cassette in range(1, self.number_of_cassettes + 1):
             if np.random.uniform() < self.silencing_rate:
-                indices = np.where(cut_site_by_cassette)
+                indices = np.where(cut_site_by_cassette == cassette)
                 left, right = np.min(indices), np.max(indices)
                 for site in range(left, right + 1):
-                    character_array[site] = -1
+                    updated_character_array[site] = -1
+
+        return updated_character_array
 
     def get_cassettes(self) -> List[int]:
         """Obtain indices of individual cassettes.
@@ -221,6 +257,6 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         cassettes = [
             (self.number_of_cut_sites * j)
-            for j in range(1, self.number_of_cassettes)
+            for j in range(0, self.number_of_cassettes)
         ]
         return cassettes
