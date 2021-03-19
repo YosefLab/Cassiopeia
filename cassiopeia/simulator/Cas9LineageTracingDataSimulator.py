@@ -106,7 +106,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     "Mutation rate needs to be" " non-negative."
                 )
             number_of_characters = size_of_cassette * number_of_cassettes
-            self.mutation_rate_per_character = [mutation_rate] * number_of_characters
+            self.mutation_rate_per_character = [
+                mutation_rate
+            ] * number_of_characters
         else:
             if len(mutation_rate) != (
                 self.number_of_cassettes * self.size_of_cassette
@@ -151,9 +153,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
-        number_of_characters = (
-            self.number_of_cassettes * self.size_of_cassette
-        )
+        number_of_characters = self.number_of_cassettes * self.size_of_cassette
 
         # initialize character states
         character_matrix = {}
@@ -179,7 +179,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             new_cuts = []
             for site in open_sites:
                 mutation_rate = self.mutation_rate_per_character[site]
-                p = 1 - (np.exp(-t*mutation_rate))
+                p = 1 - (np.exp(-t * mutation_rate))
 
                 if np.random.uniform() < p:
                     new_cuts.append(site)

@@ -242,24 +242,32 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         self.assertEqual(9, character_matrix.shape[1])
         self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
 
-        expected_character_matrix = pd.DataFrame.from_dict({
-            "7": [0, 0, 0, 0, 3, 0, 0, 0, 3],
-            "8": [0, 0, 3, 0, 0, 3, 0, 0, 3],
-            "9": [3, 4, 0, 0, 0, 0, 3, 0, 0],
-            "10": [3, 1, 0, 0, 0, 0, 0, 0, 3],
-            "11": [-1, -1, -1, -1, -1, -1, 0, -1, -1],
-            "12": [-1, -1, -1, -1, -1, -1, 3, 0, 0],
-            "13": [-1, -1, -1, 0, -1, -1, -1, -1, -1],
-            "14": [-1, -1, -1, 0, -1, -1, 0, 3, 0],
-        }, orient='index', columns = [0, 1, 2, 3, 4, 5, 6, 7, 8])
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "7": [0, 0, 0, 0, 3, 0, 0, 0, 3],
+                "8": [0, 0, 3, 0, 0, 3, 0, 0, 3],
+                "9": [3, 4, 0, 0, 0, 0, 3, 0, 0],
+                "10": [3, 1, 0, 0, 0, 0, 0, 0, 3],
+                "11": [-1, -1, -1, -1, -1, -1, 0, -1, -1],
+                "12": [-1, -1, -1, -1, -1, -1, 3, 0, 0],
+                "13": [-1, -1, -1, 0, -1, -1, -1, -1, -1],
+                "14": [-1, -1, -1, 0, -1, -1, 0, 3, 0],
+            },
+            orient="index",
+            columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        )
 
-        pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, character_matrix
+        )
 
         # check inheritance patterns
         for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):
 
             if self.basic_tree.is_root(n):
-                self.assertCountEqual([0]*9, self.basic_tree.get_character_states(n))
+                self.assertCountEqual(
+                    [0] * 9, self.basic_tree.get_character_states(n)
+                )
                 continue
 
             parent = self.basic_tree.parent(n)
@@ -273,7 +281,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
                 if parent_array[i] != 0:
                     self.assertNotEqual(0, child_array[i])
-        
+
 
 if __name__ == "__main__":
     unittest.main()
