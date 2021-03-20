@@ -62,7 +62,18 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             number_of_cassettes=3,
             size_of_cassette=3,
             mutation_rate=0.3,
-            mutation_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+            heritable_silencing_rate=1e-5,
+            stochastic_silencing_rate=1e-2,
+            random_seed=123412232,
+        )
+
+        self.lineage_tracing_data_simulator_state_distribution = cas.sim.Cas9LineageTracingDataSimulator(
+            number_of_cassettes=3,
+            size_of_cassette=3,
+            mutation_rate=0.3,
+            state_generating_distribution=lambda: np.random.exponential(1e-5),
+            number_of_states = 10,
             heritable_silencing_rate=1e-5,
             stochastic_silencing_rate=1e-2,
             random_seed=123412232,
@@ -156,14 +167,14 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
-                mutation_priors={1: 0.5, 2: 0.2},
+                state_priors={1: 0.5, 2: 0.2},
             )
 
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
-                mutation_priors={1: 0.5, 2: 0.6},
+                state_priors={1: 0.5, 2: 0.6},
             )
 
     def test_get_cassettes(self):
@@ -260,6 +271,40 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_character_matrix, character_matrix
         )
+
+        # check inheritance patterns
+        for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):
+
+            if self.basic_tree.is_root(n):
+                self.assertCountEqual(
+                    [0] * 9, self.basic_tree.get_character_states(n)
+                )
+                continue
+
+            parent = self.basic_tree.parent(n)
+
+            child_array = self.basic_tree.get_character_states(n)
+            parent_array = self.basic_tree.get_character_states(parent)
+            for i in range(len(child_array)):
+
+                if parent_array[i] == -1:
+                    self.assertEqual(-1, child_array[i])
+
+                if parent_array[i] != 0:
+                    self.assertNotEqual(0, child_array[i])
+
+    def test_simulator_with_state_generating_distribution(self):
+
+        self.assertEqual(
+            10, len(self.lineage_tracing_data_simulator_state_distribution.mutation_priors)
+        )
+
+        self.lineage_tracing_data_simulator_state_distribution.overlay_data(self.basic_tree)
+
+        character_matrix = self.basic_tree.get_original_character_matrix()
+
+        self.assertEqual(9, character_matrix.shape[1])
+        self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
 
         # check inheritance patterns
         for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):

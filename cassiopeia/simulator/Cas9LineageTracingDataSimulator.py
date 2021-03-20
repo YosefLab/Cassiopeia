@@ -56,8 +56,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         number_of_cassettes: Number of cassettes (i.e., arrays of target sites)
         size_of_cassette: Number of editable target sites per cassette
         mutation_rate: Exponential parameter for the Cas9 cutting rate.
-        state_distribution: Distribution from which to simulate state
-            likelihoods
+        state_generating_distribution: Distribution from which to simulate state
+            likelihoods. This is only used if mutation priors are not
+            specified to the simulator.
         number_of_states: Number of states to simulate
         mutation_priors: A mapping from state to probability that a user
             can specify. If this argument is not None, states will not be
@@ -80,11 +81,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         number_of_cassettes: int = 10,
         size_of_cassette: int = 3,
         mutation_rate: Union[float, List[float]] = 0.01,
-        state_distribution: Callable[[], float] = lambda: np.random.exponential(
+        state_generating_distribution: Callable[[], float] = lambda: np.random.exponential(
             1e-5
         ),
         number_of_states: int = 100,
-        mutation_priors: Optional[Dict[int, float]] = None,
+        state_priors: Optional[Dict[int, float]] = None,
         heritable_silencing_rate: float = 1e-4,
         stochastic_silencing_rate: float = 1e-2,
         random_seed: Optional[int] = None,
@@ -124,11 +125,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 )
             self.mutation_rate_per_character = mutation_rate
 
-        self.mutation_priors = mutation_priors
+        self.mutation_priors = state_priors
         if self.mutation_priors is None:
             self.mutation_priors = {}
             probabilites = [
-                state_distribution() for _ in range(number_of_states)
+                state_generating_distribution() for _ in range(number_of_states)
             ]
             Z = np.sum(probabilites)
             for i in range(number_of_states):
