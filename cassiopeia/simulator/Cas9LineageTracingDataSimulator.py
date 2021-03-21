@@ -202,7 +202,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 continue
 
             parent = tree.parent(node)
-            t = tree.get_time(node) - tree.get_time(parent)
+            life_time = tree.get_time(node) - tree.get_time(parent)
 
             character_array = character_matrix[parent]
             open_sites = [
@@ -214,7 +214,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             new_cuts = []
             for site in open_sites:
                 mutation_rate = self.mutation_rate_per_character[site]
-                mutation_probability = 1 - (np.exp(-t * mutation_rate))
+                mutation_probability = 1 - (np.exp(-life_time * mutation_rate))
 
                 if np.random.uniform() < mutation_probability:
                     new_cuts.append(site)
@@ -232,8 +232,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             )
 
             # silence cassettes
+            silencing_probability = 1 - (np.exp(-life_time * self.heritable_silencing_rate))
             character_array = self.silence_cassettes(
-                character_array, self.heritable_silencing_rate, self.heritable_missing_data_state
+                character_array, silencing_probability, self.heritable_missing_data_state
             )
 
             character_matrix[node] = character_array
