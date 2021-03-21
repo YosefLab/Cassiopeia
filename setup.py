@@ -12,7 +12,7 @@ with open("README.md") as readme_file:
 
 
 requirements = [
-        "numpy > 1.17",
+        "numpy > 1.19",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
         "networkx >= 2.5",
