@@ -19,13 +19,13 @@ from cassiopeia.simulator import LineageTracingDataSimulator
 class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     """Simulates Cas9-based lineage tracing data.
 
-    This subclass of `LineageTracingDataSimulator` extends the `overlay_data`
-    function to simulate Cas9-based mutations onto a defined "cassette". These
-    cassettes emulate the TargetSites described in Chan et al, Nature 2019 and
-    the GESTALT arrays described in McKenna et al, Science 2020 in which several
-    Cas9 cut-sites are arrayed together. In the Chan et al technology, these
-    cassettes are of length 3; in McKenna et al, these cassettes are of length
-    10.
+    This subclass of `LineageTracingDataSimulator` implements the `overlay_data`
+    function to simulate Cas9-based mutations onto a defined set of "cassette".
+    These cassettes emulate the TargetSites described in Chan et al, Nature 2019
+    and the GESTALT arrays described in McKenna et al, Science 2020 in which
+    several Cas9 cut-sites are arrayed together. In the Chan et al technology,
+    these cassettes are of length 3; in McKenna et al, these cassettes are of
+    length 10.
 
     The class accepts several parameters that govern the Cas9-based tracer.
     First and foremost is the cutting rate, describing how fast Cas9 is able to
@@ -34,9 +34,20 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     `lambda`, the expected probability of Cas9 mutation, per site, is
     `exp(-lambda * t)`.
     
-    Second, the class accepts architecture of the recorder - described by the
-    size of the cassette (by default 3) and the number of cassettes. The
-    resulting lineage will have |cassette|*(# of cassettes) characters.
+    Second, the class accepts the architecture of the recorder - described by
+    the size of the cassette (by default 3) and the number of cassettes. The
+    resulting lineage will have (size_of_cassette * number_of_cassettes)
+    characters. The architecture is important in the sense that it encodes
+    the correlation between characters. This is critical in two ways: the
+    first is with respect to silencing -- entire cassettes are lost from
+    silencing, either transcriptional or stochastic events. The second is with
+    respect to Cas9 resections, in which more than one Cas9 molecule introduces
+    a cut to the same cassette. In this event, all cut sites intermediate will
+    be observed as missing. In this simulation, we allow this event to occur
+    if Cas9 molecules perform cuts on the same cassette at any point in a cell's
+    lifetime. Importantly, setting the cassette length to 1 will remove any
+    resection events due to Cas9 cutting, and will reduce the amount of
+    transcriptionally silencing observed.
 
     Third, the class accepts a state distribution describing the relative
     likelihoods of various indels. This is very useful, as it is typical that a
@@ -67,10 +78,16 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             simulating heritable missing data events.
         stochastic_silencing_rate: Rate at which to randomly drop out cassettes,
             to simulate dropout due to low sensitivity of assays.
-        random_seed: Random seed to use for deterministic simulations. Note
-            that the random seed gets set during every call to `overlay_data`,
-            thereby producing deterministic simulations every time this function
-            is called.
+        heritable_missing_data_state: Integer representing data that has gone
+            missing due to a heritable event (i.e. Cas9 resection or heritable
+            silencing).
+        stochastic_missing_data_state: Integer representing data that has
+            gone missing due to the stochastic dropout from single-cell assay
+            sensitivity.
+        random_seed: Numpy random seed to use for deterministic simulations.
+            Note that the numpy random seed gets set during every call to
+            `overlay_data`, thereby producing deterministic simulations every
+            time this function is called.
 
     Raises:
         DataSimulatorError if assumptions about the system are broken.
@@ -88,6 +105,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         state_priors: Optional[Dict[int, float]] = None,
         heritable_silencing_rate: float = 1e-4,
         stochastic_silencing_rate: float = 1e-2,
+        heritable_missing_data_state: int = -1,
+        stochastic_missing_data_state: int = -1,
         random_seed: Optional[int] = None,
     ):
 
@@ -125,22 +144,24 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 )
             self.mutation_rate_per_character = mutation_rate
 
-        self.mutation_priors = state_priors
-        if self.mutation_priors is None:
-            self.mutation_priors = {}
-            probabilites = [
-                state_generating_distribution() for _ in range(number_of_states)
-            ]
-            Z = np.sum(probabilites)
-            for i in range(number_of_states):
-                self.mutation_priors[i + 1] = probabilites[i] / Z
+
+        if state_priors is None:
+            self.number_of_states = number_of_states
+            self.state_generating_distribution = state_generating_distribution
         else:
-            Z = np.sum([v for v in self.mutation_priors.values()])
+            Z = np.sum([v for v in state_priors.values()])
             if not math.isclose(Z, 1.0):
                 raise DataSimulatorError("Mutation priors do not sum to 1.")
+            self.number_of_states = len(state_priors)
+            self.state_generating_distribution = None
+
+        self.mutation_priors = state_priors
 
         self.heritable_silencing_rate = heritable_silencing_rate
         self.stochastic_silencing_rate = stochastic_silencing_rate
+
+        self.heritable_missing_data_state = heritable_missing_data_state
+        self.stochastic_missing_data_state = stochastic_missing_data_state
 
         self.random_seed = random_seed
 
@@ -153,6 +174,19 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
+
+        # create state priors if they don't exist.
+        # This will set the instance's variable for mutation priors and will
+        # use this for all future simulations.
+        if self.mutation_priors is None:
+            self.mutation_priors = {}
+            probabilites = [
+                self.state_generating_distribution() for _ in range(self.number_of_states)
+            ]
+            Z = np.sum(probabilites)
+            for i in range(self.number_of_states):
+                self.mutation_priors[i + 1] = probabilites[i] / Z
+
 
         number_of_characters = self.number_of_cassettes * self.size_of_cassette
 
@@ -180,9 +214,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             new_cuts = []
             for site in open_sites:
                 mutation_rate = self.mutation_rate_per_character[site]
-                p = 1 - (np.exp(-t * mutation_rate))
+                mutation_probability = 1 - (np.exp(-t * mutation_rate))
 
-                if np.random.uniform() < p:
+                if np.random.uniform() < mutation_probability:
                     new_cuts.append(site)
 
             # collapse cuts that are on the same cassette
@@ -199,7 +233,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
             # silence cassettes
             character_array = self.silence_cassettes(
-                character_array, self.heritable_silencing_rate
+                character_array, self.heritable_silencing_rate, self.heritable_missing_data_state
             )
 
             character_matrix[node] = character_array
@@ -207,7 +241,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         # apply stochastic silencing
         for leaf in tree.leaves:
             character_matrix[leaf] = self.silence_cassettes(
-                character_matrix[leaf], self.stochastic_silencing_rate
+                character_matrix[leaf], self.stochastic_silencing_rate, self.stochastic_missing_data_state
             )
 
         tree.initialize_all_character_states(character_matrix)
@@ -244,7 +278,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     np.max(sites_to_collapse),
                 )
                 for site in range(left, right + 1):
-                    updated_character_array[site] = -1
+                    updated_character_array[site] = self.heritable_missing_data_state
             else:
                 cuts_remaining.append(np.array(cuts)[cut_indices[0]])
 
@@ -278,7 +312,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         return updated_character_array
 
     def silence_cassettes(
-        self, character_array: List[int], silencing_rate: float
+        self, character_array: List[int], silencing_rate: float, missing_state: int = -1
     ) -> List[int]:
         """Silences cassettes.
 
@@ -288,6 +322,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         Args:
             character_array: Character array
             silencing_rate: Silencing rate.
+            missing_state: State to use for encoding missing data.
 
         Returns:
             An updated character array.
@@ -306,7 +341,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 indices = np.where(cut_site_by_cassette == cassette)
                 left, right = np.min(indices), np.max(indices)
                 for site in range(left, right + 1):
-                    updated_character_array[site] = -1
+                    updated_character_array[site] = missing_state
 
         return updated_character_array
 
