@@ -4,7 +4,7 @@
 from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
-from cython.Distutils import build_ext
+from Cython.Distutils import build_ext
 
 
 with open("README.md") as readme_file:
