@@ -44,10 +44,7 @@ Filtering of cells and all main pipeline procedures.
    :toctree: reference/
    
    solver.collapse_tree
-   solver.collapse_unifurcations
    solver.MaxCutSolver
    solver.NeighborJoiningSolver
    solver.SpectralSolver
-   solver.to_newick
    solver.VanillaGreedySolver
-   solver.weighted_hamming_distance
