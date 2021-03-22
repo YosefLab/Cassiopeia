@@ -30,6 +30,7 @@ requirements = [
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0',
         'hits',
+        'scikit-bio >= 0.5.6'
 ]
 
 
