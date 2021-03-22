@@ -1,6 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
+import pip
+pip.main(['install', 'numpy'])    # call pip to install them
+
 from setuptools import setup, Extension, Distribution, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
