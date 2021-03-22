@@ -8,7 +8,7 @@ numpy>1.19
 networkx >= 2.0
 tqdm
 ete3
-numpy >= 1.9.2
+numpy
 matplotlib
 argparse
 Biopython
@@ -22,5 +22,6 @@ scanpydoc>=0.4.5
 pydata-sphinx-theme>=0.4.0
 python-Levenshtein
 pathlib
+scikit-bio
 typing_extensions; python_version < '3.8'
 
