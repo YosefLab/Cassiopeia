@@ -10,6 +10,7 @@ python:
     path: .
     extra_requirements:
     - docs
+    - numpy
 submodules:
   include:
      - "docs/user_guide/notebooks"
