@@ -8,7 +8,7 @@ numpy>1.19
 networkx >= 2.0
 tqdm
 ete3
-numpy > 1.19
+numpy >= 1.9.2
 matplotlib
 argparse
 Biopython
