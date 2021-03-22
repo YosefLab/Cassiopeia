@@ -31,6 +31,8 @@ import cassiopeia # noqa
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
+autodoc_mock_imports = ["skbio", "gurobipy"]
+
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
