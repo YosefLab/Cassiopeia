@@ -24,7 +24,7 @@ import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
-sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+# sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 import cassiopeia # noqa
 
@@ -58,7 +58,8 @@ extensions = [
     "scanpydoc.elegant_typehints",
     "scanpydoc.definition_list_typed_field",
     "scanpydoc.autosummary_generate_imported",
-    *[p.stem for p in (HERE / "extensions").glob("*.py")],
+    *[p.stem for p in (HERE / "extensions").glob("*.py"),
+    *[p.stem for p in (HERE / "extensions").glob("*.pyx")]],
 ]
 
 # nbsphinx specific settings
