@@ -5,8 +5,6 @@ from setuptools import setup, Extension, Distribution, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-import numpy
-
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
