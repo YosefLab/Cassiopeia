@@ -10,6 +10,7 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 requirements = [
+        "numba>=0.52.0",
         "numpy>=1.19",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
