@@ -59,7 +59,7 @@ extensions = [
     "scanpydoc.definition_list_typed_field",
     "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
-    *[p.stem for p in (HERE / "extensions").glob("*.pyx")]],
+    *[p.stem for p in (HERE / "extensions").glob("*.pyx")],
 ]
 
 # nbsphinx specific settings
