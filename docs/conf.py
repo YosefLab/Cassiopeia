@@ -22,9 +22,10 @@ import os
 import sys
 import warnings
 from pathlib import Path
+sys.path.insert(0, os.path.abspath('..'))
 
-HERE = Path(__file__).parent
-sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+#HERE = Path(__file__).parent
+#sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 import cassiopeia # noqa
 
