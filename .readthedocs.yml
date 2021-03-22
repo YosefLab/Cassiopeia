@@ -6,11 +6,11 @@ sphinx:
 python:
   version: 3.6
   install:
-  - method: pip
-    path: .
-    extra_requirements: 
-    - docs/requirements.txt
-    - docs
+    - method: pip
+      path: .
+      extra_requirements: 
+      - docs
+    - requirements: docs/requirements.txt
 submodules:
   include:
      - "docs/user_guide/notebooks"
