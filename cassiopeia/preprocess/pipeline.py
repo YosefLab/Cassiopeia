@@ -17,19 +17,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-# try:
-from skbio import alignment
-# except ModuleNotFoundError:
-    # warnings.warn("Scikit-bio is not installed. Please pip install separately.")
+try:
+    from skbio import alignment
+except ModuleNotFoundError:
+    warnings.warn("Scikit-bio is not installed. Please pip install separately.")
   
 from pathlib import Path
 from tqdm.auto import tqdm
 
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
-from cassiopeia.preprocess import map_utils as m_utils
 from cassiopeia.preprocess import doublet_utils as d_utils
 from cassiopeia.preprocess import lineage_utils as l_utils
+from cassiopeia.preprocess import map_utils as m_utils
 from cassiopeia.preprocess import UMI_utils
 from cassiopeia.preprocess import utilities
 
