@@ -15,7 +15,11 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from skbio import alignment
+
+try:
+    from skbio import alignment
+except:
+    continue
 
 from pathlib import Path
 from tqdm.auto import tqdm
