@@ -19,7 +19,8 @@ import pandas as pd
 try:
     from skbio import alignment
 except:
-    continue
+    print("Warning: Scikit-bio is not installed. You should install this"
+            " before proceeding.")
 
 from pathlib import Path
 from tqdm.auto import tqdm
