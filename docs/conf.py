@@ -31,7 +31,11 @@ import cassiopeia # noqa
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
-autodoc_mock_imports = ["skbio", "gurobipy"]
+autodoc_mock_imports = ["skbio",
+                        "gurobipy",
+                        "cassiopeia/preprocess/map_utils.pyx",
+                        "cassiopeia/preprocess/doublet_utils.pyx",
+                        "cassiopeia/preprocess/lineage_utils.pyx"]
 
 # -- General configuration ---------------------------------------------
 
