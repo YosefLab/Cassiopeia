@@ -52,6 +52,7 @@ setup(
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
         setup_requires=['cython', 'numpy'],
+        extras_require={'scikit-bio': ['numpy']},
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
