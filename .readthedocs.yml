@@ -6,11 +6,12 @@ sphinx:
 python:
   version: 3.6
   install:
-    - method: setuptools
-      path: .
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
-    - requirements: docs/requirements.txt
+      extra_requirements:
+        - docs
+    - system_packages: true
 submodules:
   include:
      - "docs/user_guide/notebooks"
