@@ -17,10 +17,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-try:
-    from skbio import alignment
-except ModuleNotFoundError:
-    warnings.warn("Scikit-bio is not installed. Please pip install separately.")
+# try:
+from skbio import alignment
+# except ModuleNotFoundError:
+    # warnings.warn("Scikit-bio is not installed. Please pip install separately.")
   
 from pathlib import Path
 from tqdm.auto import tqdm
