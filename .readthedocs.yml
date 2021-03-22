@@ -6,7 +6,7 @@ sphinx:
 python:
   version: 3.6
   install:
-  - method: pip
+  - method: pip3
     path: .
     extra_requirements:
     - docs
