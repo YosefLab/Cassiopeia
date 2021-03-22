@@ -22,6 +22,5 @@ scanpydoc>=0.4.5
 pydata-sphinx-theme>=0.4.0
 python-Levenshtein
 pathlib
-scikit-bio
 typing_extensions; python_version < '3.8'
 
