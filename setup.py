@@ -23,7 +23,7 @@ requirements = [
         'pysam >= 0.14.1',
         'bokeh >= 0.12.15',
         'PyYAML >= 3.12',
-        'cython >= 0.29.2',
+        'Cython >= 0.29.2',
         'scipy >= 1.2.0',
         "python-Levenshtein",
         'nbconvert >= 5.4.0',
@@ -47,7 +47,7 @@ setup(
         name="cassiopeia-lineage",
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
-        setup_requires=['cython', 'numpy'],
+        setup_requires=['Cython', 'numpy'],
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
