@@ -1,5 +1,4 @@
-include cassiopeia/ProcessingPipeline/process/*.pl
-include cassiopeia/ProcessingPipeline/process/*.pyx
-include cassiopeia/TreeSolver/lineage_solver/*.pyx
-include cassiopeia/TreeSolver/simulation_tools/*.pyx
+include cassiopeia/preprocess/*.pyx
+include cassiopeia/solver/process/*.pyx
+include *.toml
 recursive-include cython *
