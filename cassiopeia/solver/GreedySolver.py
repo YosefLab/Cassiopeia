@@ -17,6 +17,8 @@ from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    A Greedy Cassiopeia solver.
+    
     GreedySolver is an abstract class representing the structure of top-down
     inference algorithms. The solver procedure contains logic to build a tree
     from the root by recursively partitioning the set of samples. Each subclass

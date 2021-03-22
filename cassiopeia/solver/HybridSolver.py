@@ -35,6 +35,8 @@ class HybridSolverError(Exception):
 
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    The Hybrid Cassiopeia solver.
+    
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
     starting with a top-down greedy algorithm until a predetermined criteria is reached

@@ -24,7 +24,8 @@ class DistanceSolverError(Exception):
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """Distance based solver class
+    """
+    Distance based solver class.
 
     This solver serves as a generic Distance-based solver. Briefly, all of the
     classes that derive from this class will use a dissimilarity map to

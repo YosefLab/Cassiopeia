@@ -12,7 +12,7 @@ from typing import Dict, Optional
 
 
 class CassiopeiaSolver(abc.ABC):
-    """
+    """    
     CassiopeiaSolver is an abstract class that all inference algorithms derive
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.

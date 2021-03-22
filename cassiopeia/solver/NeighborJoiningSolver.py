@@ -17,7 +17,8 @@ from cassiopeia.solver import DistanceSolver
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """Neighbor-Joining class for Cassiopeia.
+    """
+    Neighbor-Joining class for Cassiopeia.
 
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic

@@ -16,6 +16,8 @@ from cassiopeia.solver import solver_utilities
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    A top-down percolatin-based CassiopeiaSolver.
+
     The PercolationSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity in the observed mutations.
     It is an implicit version of Aho's algorithm for tree discovery (1981).
@@ -55,7 +57,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
-
     """
 
     def __init__(

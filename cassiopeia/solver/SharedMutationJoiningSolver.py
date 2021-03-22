@@ -25,7 +25,8 @@ class SharedMutationJoiningSolverError(Exception):
 
 
 class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """Shared-Mutation-Joining class for Cassiopeia.
+    """
+    Shared-Mutation-Joining class for Cassiopeia.
 
     Implements an iterative, bottom-up agglomerative clustering procedure. The
     algorithm iteratively clusters the samples in the sample pool by the number

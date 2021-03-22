@@ -35,6 +35,8 @@ class ILPSolverError(Exception):
 
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    The Cassiopeia ILP-based maximum parsimony solver.
+    
     ILPSolver is a subclass of CassiopeiaSolver and implements the
     Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The solver
     proceeds by constructing a tree over a network of possible evolutionary states
