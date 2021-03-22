@@ -29,6 +29,7 @@ requirements = [
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0',
         'hits',
+        "scikit-bio>0.5.6",
 ]
 
 
@@ -46,7 +47,7 @@ setup(
         name="cassiopeia-lineage",
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
-        setup_requires=['cython', 'numpy>=1.9.2'],
+        setup_requires=['cython', 'numpy'],
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
