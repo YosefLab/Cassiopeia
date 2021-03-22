@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension, Distribution, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
@@ -44,6 +44,7 @@ to_cythonize = [Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/pr
                 Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
                 Extension("cassiopeia.solver.ilp_solver_utilities", ["cassiopeia/solver/ilp_solver_utilities.pyx"])]
 
+Distribution().fetch_build_eggs(['Cython>=0.29.2', 'numpy>=1.19'])
 
 setup(
         name="cassiopeia-lineage",
