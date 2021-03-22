@@ -12,7 +12,6 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 requirements = [
-        "numpy >= 1.9.2",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
         "networkx >= 2.5",
@@ -44,8 +43,6 @@ to_cythonize = [Extension("cassiopeia.preprocess.doublet_utils", ["cassiopeia/pr
                 Extension("cassiopeia.preprocess.map_utils", ["cassiopeia/preprocess/map_utils.pyx"]),
                 Extension("cassiopeia.preprocess.collapse_cython", ["cassiopeia/preprocess/collapse_cython.pyx"]),
                 Extension("cassiopeia.solver.ilp_solver_utilities", ["cassiopeia/solver/ilp_solver_utilities.pyx"])]
-
-Distribution().fetch_build_eggs(['Cython>=0.29.2', 'numpy>=1.9.2'])
 
 setup(
         name="cassiopeia-lineage",
