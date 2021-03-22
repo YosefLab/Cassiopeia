@@ -53,7 +53,7 @@ setup(
         name="cassiopeia-lineage",
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
-        setup_requires=['cython', 'numpy'],
+        setup_requires=['cython', 'numpy>=1.9.2'],
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
