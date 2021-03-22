@@ -12,7 +12,6 @@ with open("README.md") as readme_file:
 requirements = [
         "numba>=0.52.0",
         "numpy>=1.19",
-        "gurobipy",
         "matplotlib >= 2.2.2",
         "pandas >= 0.22.0",
         "networkx >= 2.5",

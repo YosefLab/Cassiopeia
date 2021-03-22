@@ -8,8 +8,12 @@ import datetime
 import logging
 import time
 from typing import Callable, Dict, List, Optional, Tuple
+import warnings
 
-import gurobipy
+try:
+    import gurobipy
+except ModuleNotFoundError:
+    warnings.warn("Gurobi not found. You must install Gurobi & gurobipy from source.")
 import hashlib
 import itertools
 import networkx as nx
