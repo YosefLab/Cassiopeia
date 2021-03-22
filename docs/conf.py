@@ -22,20 +22,20 @@ import os
 import sys
 import warnings
 from pathlib import Path
-sys.path.insert(0, os.path.abspath('..'))
 
-#HERE = Path(__file__).parent
-#sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+HERE = Path(__file__).parent
+sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 import cassiopeia # noqa
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
-autodoc_mock_imports = ["skbio",
-                        "gurobipy",
-                        "cassiopeia/preprocess/map_utils.pyx",
+autodoc_mock_imports = ["cassiopeia/preprocess/map_utils.pyx",
                         "cassiopeia/preprocess/doublet_utils.pyx",
-                        "cassiopeia/preprocess/lineage_utils.pyx"]
+                        "cassiopeia/preprocess/lineage_utils.pyx",
+                        "gurobipy",
+                        "skbio",
+                        ]
 
 # -- General configuration ---------------------------------------------
 
