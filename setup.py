@@ -16,7 +16,6 @@ requirements = [
         "pandas >= 0.22.0",
         "networkx >= 2.5",
         "tqdm >= 4",
-        # "gurobipy",
         'ete3 >= 3.1.1',
         'argparse >= 1.1', 
         "Biopython >= 1.71",
@@ -51,7 +50,6 @@ setup(
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
         setup_requires=['cython', 'numpy'],
-        install_requires=['numpy'],
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
