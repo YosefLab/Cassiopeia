@@ -3,5 +3,3 @@
 *.pyc
 *.so
 _build
-_static
-_templates
