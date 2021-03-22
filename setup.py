@@ -10,7 +10,6 @@ from Cython.Distutils import build_ext
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
-
 requirements = [
         "numpy > 1.19",
         "matplotlib >= 2.2.2",
@@ -52,7 +51,7 @@ setup(
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
         setup_requires=['cython', 'numpy'],
-        extras_require={'scikit-bio': ['numpy']},
+        install_requires=['numpy'],
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': ['scLT = cassiopeia.__main__:main']
