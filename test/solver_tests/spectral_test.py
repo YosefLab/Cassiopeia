@@ -234,7 +234,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver.solve(sp_tree)
         expected_newick_string = "(0,1,(2,3));"
         observed_newick_string = sp_tree.get_newick()
-    #     self.assertEqual(expected_newick_string, observed_newick_string)
+        self.assertEqual(expected_newick_string, observed_newick_string)
 
 
 if __name__ == "__main__":
