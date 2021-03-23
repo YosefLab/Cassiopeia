@@ -1,5 +1,5 @@
 ===========
-Solver
+Simulator
 ===========
 .. module:: cassiopeia.sim
 .. currentmodule:: cassiopeia
