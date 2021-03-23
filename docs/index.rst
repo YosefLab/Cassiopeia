@@ -11,9 +11,10 @@ Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of
 
 * ``preprocess`` for processing sequencing Fastq data to character matrices
 * ``solver`` for performing tree inference
-* ``analysis`` for post-tree inference analysis
+* ``simulator`` for simulating trees and character-level data
+* ``plotting`` for plotting trees.
 
-If you find this useful for your research, please consider citing Cassiopeia.
+If you find this useful for your research, please consider citing Cassiopeia [Jones20]_.
 
 .. toctree::
    :maxdepth: 1

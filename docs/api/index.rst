@@ -13,4 +13,5 @@ Import Cassiopeia as::
    preprocess
    data
    solver
+   simulator
    plotting
