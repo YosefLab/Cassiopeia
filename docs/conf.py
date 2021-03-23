@@ -24,6 +24,8 @@ import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
+sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+
 
 import cassiopeia # noqa
 
@@ -97,8 +99,8 @@ intersphinx_mapping = dict(
 
 # General information about the project.
 project = u"cassiopeia"
-copyright = u"2020, Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
-author = u"Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
+copyright = u"2020, Matthew G Jones, Richard Zhang, Sebastian Prillo, Jeffrey J Quinn, Alex Khodaverdian"
+author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -150,10 +152,10 @@ html_theme_options = {
     # "use_edit_page_button": True,
 }
 html_context = dict(
-    # display_github=True,  # Integrate GitHub
+    display_github=True,  # Integrate GitHub
     github_user="YosefLab",  # Username
     github_repo="Cassiopeia",  # Repo name
-    github_version="master",  # Version
+    github_version="refactor",  # Version
     doc_path="docs/",  # Path in the checkout to the docs root
 )
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -161,7 +163,7 @@ html_context = dict(
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_css_files = ["css/user_guide.css", "css/custom.css"]
+# html_css_files = ["css/user_guide.css", "css/custom.css"]
 
 html_show_sphinx = False
 

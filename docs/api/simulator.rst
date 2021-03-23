@@ -15,7 +15,7 @@ We have several frameworks available for simulating topologies:
 .. autosummary::
    :toctree: reference/
    
-   sim.BirthDeathSimulator
+   sim.BirthDeathFitnessSimulator
    sim.SimpleFitSubcloneSimulator
 
 
