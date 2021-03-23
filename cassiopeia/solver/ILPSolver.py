@@ -456,7 +456,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def solve_steiner_instance(
         self,
-        model
+        model,
         edge_variables,
         potential_graph: nx.DiGraph,
         pid: int,
