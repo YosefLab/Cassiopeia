@@ -28,6 +28,7 @@ requirements = [
         'Cython >= 0.29.2',
         'scipy >= 1.2.0',
         "sphinx>=2.0.1",
+        "nbsphinx",
         "python-Levenshtein",
         'nbconvert >= 5.4.0',
         'nbformat >= 4.4.0',
