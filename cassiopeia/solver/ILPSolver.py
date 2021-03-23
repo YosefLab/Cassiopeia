@@ -456,8 +456,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def solve_steiner_instance(
         self,
-        model: gurobipy.Model,
-        edge_variables: gurobipy.Var,
+        model
+        edge_variables,
         potential_graph: nx.DiGraph,
         pid: int,
         logfile: str,
