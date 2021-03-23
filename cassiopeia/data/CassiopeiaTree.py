@@ -78,9 +78,6 @@ class CassiopeiaTree:
     of states. These are good statistics to have for feature selection.
 
     TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315, rzhang): Add functionality that mutates the underlying 
-        tree structure: collapsing mutationless edges. When this happens, be 
-        sure to make sure the cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
     TODO(sprillo): Add bulk set_branch_lengths method
@@ -89,6 +86,8 @@ class CassiopeiaTree:
         branch lengths to newick strings
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
+    TODO(rzhang): Figure out if `get_mutations_on_edge` should include missing
+        data mutations
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -475,6 +474,10 @@ class CassiopeiaTree:
 
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
+                if len(self.get_character_states(n)) == 0:
+                    raise CassiopeiaTreeError("No character states annotated "
+                    "at node " + str(n) + ", try initializing character states"
+                    )
                 continue
             children = self.children(n)
             character_states = [self.get_character_states(c) for c in children]
@@ -858,7 +861,7 @@ class CassiopeiaTree:
         """Relabels the nodes in the tree.
 
         Renames the nodes in the tree according to the relabeling map. Modifies
-        the tree inplace.
+        the tree in-place.
 
         Args:
             relabel_map: A mapping of old names to new names.
@@ -908,16 +911,16 @@ class CassiopeiaTree:
         """
 
         def _collapse_unifurcations(network, node, parent):
-            succs = list(network.successors(node))
-            if len(succs) == 1:
+            successors = list(network.successors(node))
+            if len(successors) == 1:
                 t = network.get_edge_data(parent, node)["length"]
-                t_ = network.get_edge_data(node, succs[0])["length"]
-                network.add_edge(parent, succs[0])
-                network[parent][succs[0]]["length"] = t + t_
-                _collapse_unifurcations(network, succs[0], parent)
+                t_ = network.get_edge_data(node, successors[0])["length"]
+                network.add_edge(parent, successors[0])
+                network[parent][successors[0]]["length"] = t + t_
+                _collapse_unifurcations(network, successors[0], parent)
                 network.remove_node(node)
             else:
-                for i in succs:
+                for i in successors:
                     _collapse_unifurcations(network, i, node)
 
         self.__check_network_initialized()
@@ -930,14 +933,49 @@ class CassiopeiaTree:
         for node in self.__network.successors(source):
             _collapse_unifurcations(self.__network, node, source)
 
-        succs = list(self.__network.successors(source))
-        if len(succs) == 1:
-            t = self.__network.get_edge_data(source, succs[0])["length"]
-            for i in self.__network.successors(succs[0]):
-                t_ = self.__network.get_edge_data(succs[0], i)["length"]
+        successors = list(self.__network.successors(source))
+        if len(successors) == 1:
+            t = self.__network.get_edge_data(source, successors[0])["length"]
+            for i in self.__network.successors(successors[0]):
+                t_ = self.__network.get_edge_data(successors[0], i)["length"]
                 self.__network.add_edge(source, i)
                 self.__network[source][i]["length"] = t + t_
-            self.__network.remove_node(succs[0])
+            self.__network.remove_node(successors[0])
+
+        # reset cache because we've changed the tree topology
+        self.__cache = {}
+
+    def collapse_mutationless_edges(
+        self,
+        infer_ancestral_characters: bool,
+    ):
+        """Collapses mutationless edges in the tree in-place.
+
+        Uses the internal node annotations of a tree to collapse edges with no
+        mutations. The introduction of a missing data event is considered a 
+        mutation in this context. Either takes the existing character states on
+        the tree or infers the annotations bottom-up from the samples obeying 
+        Camin-Sokal Parsimony.
+
+        Args:
+            tree: A networkx DiGraph object representing the tree
+            infer_ancestral_characters: Infer the ancestral characters states 
+                of the tree
+        """
+        if infer_ancestral_characters:
+            self.reconstruct_ancestral_characters()
+
+        for n in self.depth_first_traverse_nodes(postorder = True):
+            if self.is_leaf(n):
+                continue
+            for child in self.children(n):
+                if not self.is_leaf(child):
+                    t = self.get_branch_length(n, child)
+                    if self.get_character_states(n) == self.get_character_states(child):
+                        for grandchild in self.children(child):
+                            t_ = self.get_branch_length(child, grandchild)
+                            self.__network.add_edge(n, grandchild, length = t + t_)
+                        self.__network.remove_node(child)
 
         # reset cache because we've changed the tree topology
         self.__cache = {}
@@ -968,7 +1006,8 @@ class CassiopeiaTree:
                 dissimilarity_map.index
             ):
                 warnings.warn(
-                    "The samples in the existing character matrix and specified dissimilarity map do not agree.",
+                    "The samples in the existing character matrix and "
+                    "specified dissimilarity map do not agree.",
                     CassiopeiaTreeWarning,
                 )
 
