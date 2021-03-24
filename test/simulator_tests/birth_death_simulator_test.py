@@ -10,9 +10,7 @@ from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
-from cassiopeia.simulator.TreeSimulator import (
-    TreeSimulatorError,
-)
+from cassiopeia.simulator.TreeSimulator import TreeSimulatorError
 
 import cassiopeia.data.utilities as utilities
 

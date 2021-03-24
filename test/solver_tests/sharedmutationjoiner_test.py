@@ -69,8 +69,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
         self.basic_similarity_map = delta
         self.basic_tree = CassiopeiaTree(
-            character_matrix=cm,
-            dissimilarity_map=delta,
+            character_matrix=cm, dissimilarity_map=delta
         )
 
         self.smj_solver = SharedMutationJoiningSolver(
@@ -208,11 +207,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         )
 
         expected_delta = pd.DataFrame.from_dict(
-            {
-                "abc": [0, 0, 0],
-                "d": [0, 0, 0],
-                "e": [0, 0, 0],
-            },
+            {"abc": [0, 0, 0], "d": [0, 0, 0], "e": [0, 0, 0]},
             orient="index",
             columns=["abc", "d", "e"],
         )
@@ -225,11 +220,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
                 )
 
         expected_cm = pd.DataFrame.from_dict(
-            {
-                "abc": [0, 0, 2],
-                "d": [1, 1, 1],
-                "e": [0, 0, 0],
-            },
+            {"abc": [0, 0, 2], "d": [1, 1, 1], "e": [0, 0, 0]},
             orient="index",
             columns=["x1", "x2", "x3"],
         )
@@ -237,8 +228,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         for sample in expected_cm.index:
             for col in expected_cm.columns:
                 self.assertEqual(
-                    cm.loc[sample, col],
-                    expected_cm.loc[sample, col],
+                    cm.loc[sample, col], expected_cm.loc[sample, col]
                 )
 
     def test_basic_solver(self):

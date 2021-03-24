@@ -63,8 +63,7 @@ class TestUPGMASolver(unittest.TestCase):
 
         self.basic_dissimilarity_map = delta
         self.basic_tree = CassiopeiaTree(
-            character_matrix=cm,
-            dissimilarity_map=delta,
+            character_matrix=cm, dissimilarity_map=delta
         )
 
         self.upgma_solver = UPGMASolver()
@@ -167,11 +166,7 @@ class TestUPGMASolver(unittest.TestCase):
         )
 
         expected_delta = pd.DataFrame.from_dict(
-            {
-                "abe": [0, 30, 36],
-                "c": [30, 0, 28],
-                "d": [36, 28, 0],
-            },
+            {"abe": [0, 30, 36], "c": [30, 0, 28], "d": [36, 28, 0]},
             orient="index",
             columns=["abe", "c", "d"],
         )
