@@ -145,7 +145,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 raise DataSimulatorError(
                     "Mutation rate needs to be" " non-negative."
                 )
-            self.mutation_rate_per_character = mutation_rate
+            self.mutation_rate_per_character = mutation_rate[:]
 
 
         if state_priors is None:
@@ -320,7 +320,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     ) -> List[int]:
         """Silences cassettes.
 
-        Using the specied silencing rate, this function will randomly select
+        Using the specified silencing rate, this function will randomly select
         cassettes to silence.
 
         Args:
