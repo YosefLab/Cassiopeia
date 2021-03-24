@@ -67,7 +67,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         number_of_cassettes: Number of cassettes (i.e., arrays of target sites)
         size_of_cassette: Number of editable target sites per cassette
         mutation_rate: Exponential parameter for the Cas9 cutting rate. The user
-            can optionally pass in a float, in which every site will mutate at
+            can either pass in a float, in which every site will mutate at
             the same rate, or a list with an entry for each cut site indicating
             potentially a different mutation rate for every site.
         state_generating_distribution: Distribution from which to simulate state
