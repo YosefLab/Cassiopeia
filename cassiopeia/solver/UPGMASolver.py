@@ -140,8 +140,9 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             A new dissimilarity map, updated with the new node
         """
 
-        i_size, j_size = max(1, self.__cluster_to_cluster_size[cherry[0]]), max(
-            1, self.__cluster_to_cluster_size[cherry[1]]
+        i_size, j_size = (
+            max(1, self.__cluster_to_cluster_size[cherry[0]]),
+            max(1, self.__cluster_to_cluster_size[cherry[1]]),
         )
 
         self.__cluster_to_cluster_size[new_node] = i_size + j_size

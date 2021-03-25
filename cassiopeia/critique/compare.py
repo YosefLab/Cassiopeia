@@ -13,6 +13,7 @@ from cassiopeia.critique import critique_utilities
 from cassiopeia.solver import solver_utilities
 from cassiopeia.data import utilities as tree_utilities
 
+
 def triplets_correct(
     tree1: nx.DiGraph, tree2: nx.DiGraph, number_of_trials: int = 1000
 ) -> Tuple[
@@ -167,6 +168,5 @@ def robinson_foulds(
         discarded_edges_t1,
         discarded_edges_t2,
     ) = T1.robinson_foulds(T2, unrooted_trees=True)
-
 
     return rf, rf_max
