@@ -130,7 +130,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         )
 
     def test_constructor(self):
-        self.assertIsNone(self.nj_solver.dissimilarity_function)
         self.assertIsNotNone(self.nj_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 

@@ -115,7 +115,6 @@ class TestUPGMASolver(unittest.TestCase):
 
     def test_constructor(self):
 
-        self.assertIsNone(self.upgma_solver.dissimilarity_function)
         self.assertIsNotNone(self.upgma_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
