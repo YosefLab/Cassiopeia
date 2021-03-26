@@ -139,10 +139,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             i, j = self.find_cherry(similarity_map.values)
 
             # get indices in the similarity matrix to join
-            node_i, node_j = (
-                similarity_map.index[i],
-                similarity_map.index[j],
-            )
+            node_i, node_j = (similarity_map.index[i], similarity_map.index[j])
 
             new_node_name = str(len(tree.nodes))
             tree.add_node(new_node_name)
@@ -255,10 +252,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             inplace=True,
         )
 
-        character_matrix.drop(
-            index=[cherry[0], cherry[1]],
-            inplace=True,
-        )
+        character_matrix.drop(index=[cherry[0], cherry[1]], inplace=True)
 
         return similarity_map
 
