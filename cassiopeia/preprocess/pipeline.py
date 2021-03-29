@@ -570,7 +570,7 @@ def filter_molecule_table(
     t0 = time.time()
     logging.info("Begin filtering reads...")
     input_df["status"] = "good"
-    input_df.sort_values("readCount", ascending=False)
+    input_df.sort_values("readCount", ascending=False, inplace=True)
     rc_profile, upi_profile, upc_profile = {}, {}, {}
     utilities.generate_log_output(input_df, begin=True)
 
