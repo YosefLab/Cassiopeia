@@ -15,7 +15,6 @@ requirements = [
     "pandas >= 0.22.0",
     "networkx >= 2.5",
     "tqdm >= 4",
-    # "gurobipy",
     "ete3 >= 3.1.1",
     "argparse >= 1.1",
     "Biopython >= 1.71",
@@ -30,7 +29,6 @@ requirements = [
     "nbconvert >= 5.4.0",
     "nbformat >= 4.4.0",
     "hits",
-    "scikit-bio >= 0.5.6",
 ]
 
 
@@ -59,7 +57,6 @@ to_cythonize = [
 ]
 
 setup(
-<<<<<<< HEAD
         name="cassiopeia-lineage",
         ext_modules=cythonize(to_cythonize),
         #ext_modules=to_cythonize,
@@ -92,35 +89,4 @@ setup(
         zip_safe=False,
         test_suite='nose.collector',
         test_require=['nose']
-=======
-    name="cassiopeia-lineage",
-    ext_modules=cythonize(to_cythonize),
-    # ext_modules=to_cythonize,
-    setup_requires=["cython", "numpy"],
-    cmdclass=cmdclass,
-    entry_points={"console_scripts": ["scLT = cassiopeia.__main__:main"]},
-    author_email="mattjones315@berkeley.edu",
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: POSIX :: Linux",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
-    ],
-    long_description=readme + "\n\n",
-    description="Single Cell Lineage Reconstruction with Cas9-Enabled Lineage Recorders",
-    install_requires=requirements,
-    license="MIT license",
-    include_package_data=True,
-    packages=find_packages(),
-    keywords="scLT",
-    url="https://github.com/YosefLab/Cassiopeia",
-    version="1.0.4",
-    zip_safe=False,
-    test_suite="nose.collector",
-    test_require=["nose"],
->>>>>>> 30907209afefbbf353383d8fea30708d7b43ac7d
 )
