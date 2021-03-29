@@ -925,7 +925,7 @@ class CassiopeiaTree:
 
         self.__check_network_initialized()
 
-        if not source:
+        if source is None:
             source = [
                 n for n in self.__network if self.__network.in_degree(n) == 0
             ][0]
