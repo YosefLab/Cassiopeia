@@ -109,13 +109,12 @@ def sort_cellranger_bam(
         chunk_fn = Path(sorted_fn).with_suffix(suffix)
         sorted_chunk = sorted(chunk, key=sort_key)
 
-    with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
-        for al in sorted_chunk:
-            max_read_length = max(max_read_length, al.query_length)
-            total_reads_out += 1
-            fh.write(al)
-
-    chunk_fns.append(chunk_fn)
+        with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
+            for al in sorted_chunk:
+                max_read_length = max(max_read_length, al.query_length)
+                total_reads_out += 1
+                fh.write(al)
+        chunk_fns.append(chunk_fn)
 
     chunk_fhs = [
         pysam.AlignmentFile(str(fn), check_header=False, check_sq=False)
