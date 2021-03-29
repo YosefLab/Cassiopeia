@@ -172,7 +172,7 @@ def resolve_umi_sequence(
 
     for _, group in tqdm(
         unique_pairs,
-        total=sum(unique_pairs.size()),
+        total=len(unique_pairs.size()),
         desc="Resolving UMI sequences",
     ):
 
