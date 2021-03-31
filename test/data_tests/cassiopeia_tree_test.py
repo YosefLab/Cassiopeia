@@ -863,6 +863,62 @@ class TestCassiopeiaTree(unittest.TestCase):
                 cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
             )
 
+    def test_set_and_add_attribute(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        tree.set_attribute("node3", "test_attribute", 5)
+        tree.set_attribute("node5", "test_attribute", 10)
+
+        self.assertEqual(5, tree.get_attribute("node3", "test_attribute"))
+        self.assertEqual(10, tree.get_attribute("node5", "test_attribute"))
+
+        self.assertRaises(CassiopeiaTreeError, tree.get_attribute, "node10", "test_attribute")
+
+    def test_breadth_first_traversal_edges(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        obs_ordering = tree.breadth_first_traverse_edges(source="node0")
+        expected_ordering = [
+            ("node0", "node1"),
+            ("node0", "node2"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+            ("node2", "node5"),
+            ("node2", "node6"),
+            ("node4", "node7"),
+            ("node4", "node8"),
+            ("node8", "node9"),
+            ("node8", "node10"),
+            ("node10", "node11"),
+            ("node10", "node12"),
+            ("node12", "node13"),
+            ("node12", "node14"),
+            ("node14", "node15"),
+            ("node14", "node16"),
+            ("node16", "node17"),
+            ("node16", "node18")
+        ]
+        self.assertCountEqual(obs_ordering, expected_ordering)
+
+    def test_get_nodes_at_time(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        nodes_at_depth = tree.get_nodes_at_time(0)
+        self.assertCountEqual(nodes_at_depth, ["node0"])
+
+        nodes_at_depth = tree.get_nodes_at_time(2)
+        expected_nodes = ["node5", "node6", "node3", "node4"]
+        self.assertCountEqual(nodes_at_depth, expected_nodes)
+
 
 if __name__ == "__main__":
     unittest.main()

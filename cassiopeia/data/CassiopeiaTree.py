@@ -15,7 +15,7 @@ This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
-from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 import warnings
 
 import collections
@@ -744,6 +744,7 @@ class CassiopeiaTree:
         Returns:
             A list of nodes from the depth first traversal.
         """
+        self.__check_network_initialized()
 
         if source is None:
             source = self.root
@@ -754,7 +755,7 @@ class CassiopeiaTree:
             return nx.dfs_preorder_nodes(self.__network, source=source)
 
     def depth_first_traverse_edges(
-        self, source: Optional[int] = None
+        self, source: Optional[str] = None
     ) -> Iterator[Tuple[str, str]]:
         """Edges from depth first traversal of the tree.
 
@@ -766,11 +767,31 @@ class CassiopeiaTree:
         Returns:
             A list of edges from the depth first traversal.
         """
+        self.__check_network_initialized()
 
         if source is None:
             source = self.root
 
         return nx.dfs_edges(self.__network, source=source)
+
+    def breadth_first_traverse_edges(self, source: Optional[str] = None) -> Iterator[Tuple[str, str]]:
+        """Edges from a breadth first traversal on the tree.
+
+        Returns the edges from a BFS on the tree.
+
+        Args:
+            source: Where to begin the breadth first traversal.
+
+        Returns:
+            An iterator over the edges from the traversal.
+        """
+        self.__check_network_initialized()
+
+        if source is None:
+            source = self.root
+
+        return nx.bfs_edges(self.__network, source=source)
+
 
     def leaves_in_subtree(self, node) -> List[str]:
         """Get leaves in subtree below a given node.
@@ -834,6 +855,20 @@ class CassiopeiaTree:
 
         depths = [self.get_time(l) for l in self.leaves]
         return np.max(depths)
+
+    def get_nodes_at_time(self, time: float) -> List[str]:
+        """Cuts tree at time and returns nodes at this depth.
+
+        Returns the internal nodes that exist exactly at the time specified.
+
+        Args:
+            time: Time (depth) to cut the tree at.
+
+        Returns:
+            A list of nodes.
+        """
+
+        return [n for n in self.nodes if self.get_time(n) == time]
 
     def get_mutations_along_edge(
         self, parent: str, child: str
@@ -1049,3 +1084,36 @@ class CassiopeiaTree:
         )
 
         self.set_dissimilarity_map(dissimilarity_map)
+
+    def set_attribute(self, node: str, attribute_name: str, value: Any):
+        """Sets an attribute in the tree.
+
+        Args:
+            node: Node name
+            attribute_name: Name for the new attribute
+            value: Value for the attribute.
+        """
+        self.__check_network_initialized()
+
+        self.__network.nodes[node][attribute_name] = value
+
+    def get_attribute(self, node: str, attribute_name: str) -> Any:
+        """Retrieves the value of an attribute for a node.
+
+        Args:
+            node: Node name
+            attribute_name: Name of the attribute.
+        
+        Returns:
+            The value of the attribute for that node.
+
+        Raises:
+            CassiopeiaTreeError if the attribute has not been set for this node.
+        """
+        self.__check_network_initialized()
+
+        try:
+            return self.__network.nodes[node][attribute_name]
+        except KeyError:
+            raise CassiopeiaTreeError("Attribute {attribute_namae} not " 
+                                    "detected for this node.")
