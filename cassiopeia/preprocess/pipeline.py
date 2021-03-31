@@ -469,7 +469,7 @@ def error_correct_umis(
 
     if max_umi_distance == 0:
         logging.info(
-            "Distance of 0, no correction occured, all alignments returned"
+            "Distance of 0, no correction occurred, all alignments returned"
         )
         return sorted_df
 
