@@ -48,38 +48,74 @@ class TestILPSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
+        # basic PP example with duplicates
+        cm_duplicates = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 0],
+                "b": [1, 2, 0],
+                "c": [1, 2, 1],
+                "d": [2, 0, 0],
+                "e": [2, 0, 2],
+                "f": [1, 1, 0],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
+
+        # basic example with missing data
+        cm_missing = pd.DataFrame.from_dict(
+            {
+                "a": [1, 3, 1, 1],
+                "b": [1, 3, 1, -1],
+                "c": [1, 0, 1, 0],
+                "d": [1, 1, 3, 0],
+                "e": [1, 1, 0, 0],
+                "f": [2, 0, 0, 0],
+                "g": [2, 4, -1, -1],
+                "h": [2, 4, 2, 0],
+            },
+            orient="index",
+        )
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         open(os.path.join(dir_path, "test.log"), "a").close()
         self.pp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        self.duplicates_tree = cas.data.CassiopeiaTree(
+            cm_duplicates, missing_state_indicator=-1
+        )
+        self.missing_tree = cas.data.CassiopeiaTree(
+            cm_missing, missing_state_indicator=-1
+        )
         self.logfile = os.path.join(dir_path, "test.log")
-        self.ilp_pp_solver = cas.solver.ILPSolver(mip_gap=0.0)
+
+        self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
     def test_single_sample_ilp(self):
 
         # test single sample
-        cm = pd.DataFrame([1], index=['a'])
+        cm = pd.DataFrame([1], index=["a"])
         tree = cas.data.CassiopeiaTree(cm)
-        
-        self.ilp_pp_solver.solve(tree, logfile=self.logfile)
-        expected_leaves = ['a']
+
+        self.ilp_solver.solve(tree, logfile=self.logfile)
+        expected_leaves = ["a"]
         self.assertCountEqual(expected_leaves, tree.leaves)
 
         # test single unique sample
-        cm = pd.DataFrame([[1], [1], [1]], index=['a', 'b', 'c'])
+        cm = pd.DataFrame([[1], [1], [1]], index=["a", "b", "c"])
         tree = cas.data.CassiopeiaTree(cm)
 
-        self.ilp_pp_solver.solve(tree, logfile=self.logfile)
-        expected_leaves = ['a', 'b', 'c']
+        self.ilp_solver.solve(tree, logfile=self.logfile)
+        expected_leaves = ["a", "b", "c"]
         self.assertCountEqual(expected_leaves, tree.leaves)
 
     def test_basic_ilp_constructor(self):
 
-        self.assertEqual(self.ilp_pp_solver.convergence_time_limit, 12600)
+        self.assertEqual(self.ilp_solver.convergence_time_limit, 12600)
         self.assertEqual(
-            self.ilp_pp_solver.maximum_potential_graph_layer_size, 10000
+            self.ilp_solver.maximum_potential_graph_layer_size, 10000
         )
-        self.assertFalse(self.ilp_pp_solver.weighted)
+        self.assertFalse(self.ilp_solver.weighted)
 
         expected_character_matrix = pd.DataFrame.from_dict(
             {
@@ -106,7 +142,10 @@ class TestILPSolver(unittest.TestCase):
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
-        layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
+        (
+            layer_nodes,
+            layer_edges,
+        ) = ilp_solver_utilities.infer_layer_of_potential_graph(
             source_nodes, 10, self.pp_tree.missing_state_indicator
         )
 
@@ -156,7 +195,7 @@ class TestILPSolver(unittest.TestCase):
             self.pp_tree.missing_state_indicator,
         )
         max_lca_height = 10
-        potential_graph = self.ilp_pp_solver.infer_potential_graph(
+        potential_graph = self.ilp_solver.infer_potential_graph(
             unique_character_matrix,
             root,
             0,
@@ -203,7 +242,7 @@ class TestILPSolver(unittest.TestCase):
 
     def test_ilp_solver_perfect_phylogeny(self):
 
-        self.ilp_pp_solver.solve(self.pp_tree, self.logfile)
+        self.ilp_solver.solve(self.pp_tree, self.logfile)
         tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
@@ -253,6 +292,162 @@ class TestILPSolver(unittest.TestCase):
         )
 
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_potential_graph_inference_with_duplicates(self):
+
+        unique_character_matrix = (
+            self.duplicates_tree.get_original_character_matrix().drop_duplicates()
+        )
+        root = data_utilities.get_lca_characters(
+            unique_character_matrix.values.tolist(),
+            self.duplicates_tree.missing_state_indicator,
+        )
+        max_lca_height = 10
+        potential_graph = self.ilp_solver.infer_potential_graph(
+            unique_character_matrix,
+            root,
+            0,
+            max_lca_height,
+            self.duplicates_tree.priors,
+            self.duplicates_tree.missing_state_indicator,
+        )
+
+        # expected nodes
+        expected_nodes = [
+            (1, 1, 0),
+            (1, 2, 0),
+            (1, 2, 1),
+            (2, 0, 0),
+            (2, 0, 2),
+            (1, 0, 0),
+            (1, 2, 0),
+            (0, 0, 0),
+            (2, 0, 0),
+        ]
+
+        for node in expected_nodes:
+            self.assertIn(node, potential_graph.nodes())
+
+        # expected edges
+        expected_edges = [
+            ((1, 0, 0), (1, 1, 0)),
+            ((1, 0, 0), (1, 2, 0)),
+            ((1, 0, 0), (1, 2, 1)),
+            ((1, 2, 0), (1, 2, 1)),
+            ((0, 0, 0), (1, 1, 0)),
+            ((0, 0, 0), (1, 2, 0)),
+            ((0, 0, 0), (1, 2, 1)),
+            ((0, 0, 0), (2, 0, 0)),
+            ((0, 0, 0), (2, 0, 2)),
+            ((2, 0, 0), (2, 0, 2)),
+            ((0, 0, 0), (1, 0, 0)),
+        ]
+
+        for edge in expected_edges:
+            self.assertIn(edge, potential_graph.edges())
+
+        self.assertEqual(len(potential_graph.edges()), len(expected_edges))
+
+    def test_ilp_solver_with_duplicates(self):
+
+        self.ilp_solver.solve(self.duplicates_tree, self.logfile)
+        tree = self.duplicates_tree.get_tree_topology()
+
+        # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e", "f"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+        # make sure every node has at most one parent
+        multi_parents = [n for n in tree if tree.in_degree(n) > 1]
+        self.assertEqual(len(multi_parents), 0)
+
+        # expected parsimony
+        expected_parsimony = 6
+        root = roots[0]
+
+        observed_parsimony = 0
+        for e in nx.dfs_edges(tree, source=root):
+            if tree.out_degree(e[1]) > 0:
+                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                    e[0], e[1]
+                )
+
+        self.assertEqual(observed_parsimony, expected_parsimony)
+
+        # expected tree structure
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "f", "root", "6", "7", "8", "9"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("root", "9"),
+                ("9", "8"),
+                ("9", "7"),
+                ("7", "6"),
+                ("7", "a"),
+                ("7", "f"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "e"),
+                ("8", "d"),
+            ]
+        )
+
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_ilp_solver_missing_data(self):
+
+        self.ilp_solver.solve(self.missing_tree, self.logfile)
+        tree = self.missing_tree.get_tree_topology()
+
+        # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("node0", "node1"),
+                ("node0", "node2"),
+                ("node1", "node3"),
+                ("node1", "node4"),
+                ("node3", "c"),
+                ("node3", "node6"),
+                ("node6", "a"),
+                ("node6", "b"),
+                ("node4", "d"),
+                ("node4", "e"),
+                ("node2", "f"),
+                ("node2", "node5"),
+                ("node5", "g"),
+                ("node5", "h"),
+            ]
+        )
+
+        triplets = itertools.combinations(
+            ["a", "b", "c", "d", "e", "f", "g", "h"], 3
+        )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)

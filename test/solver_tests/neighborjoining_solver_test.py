@@ -31,21 +31,22 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
+# specify dissimilarity function for solvers to use
+def delta_fn(
+    x: np.array,
+    y: np.array,
+    missing_state: int,
+    priors: Optional[Dict[int, Dict[int, float]]],
+):
+    d = 0
+    for i in range(len(x)):
+        if x[i] != y[i]:
+            d += 1
+    return d
+
+
 class TestNeighborJoiningSolver(unittest.TestCase):
     def setUp(self):
-
-        # specify dissimilarity function for solvers to use
-        def delta_fn(
-            x: np.array,
-            y: np.array,
-            missing_state: int,
-            priors: Optional[Dict[int, Dict[int, float]]],
-        ):
-            d = 0
-            for i in range(len(x)):
-                if x[i] != y[i]:
-                    d += 1
-            return d
 
         # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
@@ -72,6 +73,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
+        self.cm = cm
         self.basic_dissimilarity_map = delta
         self.basic_tree = cas.data.CassiopeiaTree(
             character_matrix=cm, dissimilarity_map=delta, root_sample_name="b"
@@ -92,9 +94,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             orient="index",
             columns=["x1", "x2", "x3"],
         )
-        
+
         self.pp_tree = cas.data.CassiopeiaTree(character_matrix=pp_cm)
-        
+
         self.nj_solver_delta = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=delta_fn, add_root=True
         )
@@ -119,18 +121,55 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         # ------------- NJ with modified hamming dissimilarity ------------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
-        self.pp_tree_priors = cas.data.CassiopeiaTree(character_matrix=pp_cm, priors=priors)
-        self.nj_solver_modified = cas.solver.NeighborJoiningSolver(dissimilarity_function=cas.solver.dissimilarity.weighted_hamming_distance, add_root=True)
-
+        self.pp_tree_priors = cas.data.CassiopeiaTree(
+            character_matrix=pp_cm, priors=priors
+        )
+        self.nj_solver_modified = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=cas.solver.dissimilarity.weighted_hamming_distance,
+            add_root=True,
+        )
 
     def test_constructor(self):
-
         self.assertIsNone(self.nj_solver.dissimilarity_function)
         self.assertIsNotNone(self.nj_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
-    def test_compute_q(self):
+        nothing_solver = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=None, add_root=False
+        )
 
+        no_root_tree = cas.data.CassiopeiaTree(
+            character_matrix=self.cm,
+            dissimilarity_map=self.basic_dissimilarity_map,
+        )
+
+        with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
+            nothing_solver.solve(no_root_tree)
+
+        no_root_solver = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=None, add_root=True
+        )
+
+        with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
+            no_root_solver.solve(no_root_tree)
+
+        root_only_tree = cas.data.CassiopeiaTree(
+            character_matrix=self.cm, root_sample_name="b"
+        )
+
+        with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
+            nothing_solver.solve(root_only_tree)
+
+        nj_solver_fn = cas.solver.NeighborJoiningSolver(
+            add_root=True, dissimilarity_function=delta_fn
+        )
+        nj_solver_fn.solve(self.basic_tree)
+
+        self.assertEqual(
+            self.basic_tree.get_dissimilarity_map().loc["a", "b"], 15
+        )
+
+    def test_compute_q(self):
         q_vals = self.nj_solver.compute_q(self.basic_dissimilarity_map.values)
 
         expected_q = pd.DataFrame.from_dict(
@@ -248,14 +287,14 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         expected_tree.add_edges_from(
             [
                 ("root", "7"),
-                ('7', '6'),
-                ('6', 'd'),
-                ('6', 'e'),
-                ('7', '8'),
-                ('8', 'a'),
-                ('8', '9'),
-                ('9', 'b'),
-                ('9', 'c'),
+                ("7", "6"),
+                ("6", "d"),
+                ("6", "e"),
+                ("7", "8"),
+                ("8", "a"),
+                ("8", "9"),
+                ("9", "b"),
+                ("9", "c"),
             ]
         )
 
@@ -264,7 +303,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
-
 
     def test_pp_solver(self):
 

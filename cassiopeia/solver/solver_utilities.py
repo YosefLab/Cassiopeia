@@ -126,11 +126,6 @@ def collapse_tree(
         A collapsed tree
 
     """
-    name_to_index = dict(
-        zip(character_matrix.index, range(character_matrix.shape[0]))
-    )
-    character_matrix_np = character_matrix.to_numpy()
-
     leaves = [
         n for n in tree if tree.out_degree(n) == 0 and tree.in_degree(n) == 1
     ]
@@ -145,13 +140,20 @@ def collapse_tree(
                 "In order to infer ancestral characters, a character matrix and missing character are needed"
             )
 
+        name_to_index = dict(
+            zip(character_matrix.index, range(character_matrix.shape[0]))
+        )
+        character_matrix_np = character_matrix.to_numpy()
+
         for i in leaves:
             node_to_characters[i] = tree.nodes[i]["characters"] = list(
                 character_matrix_np[name_to_index[i], :]
             )
+
         annotate_ancestral_characters(
             tree, root, node_to_characters, missing_state_indicator
         )
+
     else:
         for i in tree.nodes():
             node_to_characters[i] = tree.nodes[i]["characters"]
@@ -163,13 +165,10 @@ def collapse_tree(
 
 def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     """Collapse unifurcations.
-
     Collapse all unifurcations in the tree, namely any node with only one child
     should be removed and all children should be connected to the parent node.
-
     Args:
         tree: tree to be collapsed
-
     Returns:
         A collapsed tree.
     """

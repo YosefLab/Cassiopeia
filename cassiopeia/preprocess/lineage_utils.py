@@ -415,9 +415,9 @@ def filtered_lineage_group_to_allele_table(
 
 def plot_overlap_heatmap(at, at_pivot_I, output_directory):
     """Generates a plot showing the overlap of intBC sets, indicating clones.
-    
+
     Generates a plot with cellBCs as the rows and intBCs as the columns. Shows
-    which intBCs are contained by which cells, with cells sharing a lot of 
+    which intBCs are contained by which cells, with cells sharing a lot of
     overlap indicating that they might belong to the same clonal population.
 
     Args:
@@ -454,11 +454,11 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
 
     Generates a plot where the rows are cellBCs and the columns are cutsites
     for the sequence of each intBC. Colors indicate the allele information
-    relative to the reference sequence, with red indicating a deletion, blue 
-    indicating an insertion, gray indicating an uncut site (matches the 
-    reference), and white indicating that intBC is not found in that cell. The 
-    bar chart on the left indicates the UMI count of each cellBC, and the bars 
-    on the bottom indicate the number of unique mutations observed at each 
+    relative to the reference sequence, with red indicating a deletion, blue
+    indicating an insertion, gray indicating an uncut site (matches the
+    reference), and white indicating that intBC is not found in that cell. The
+    bar chart on the left indicates the UMI count of each cellBC, and the bars
+    on the bottom indicate the number of unique mutations observed at each
     cutsite.
 
     Args:
@@ -472,9 +472,9 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
     """
 
     if not os.path.exists(
-        os.join(output_directory, "/lineageGrp_piv_heatmaps")
+        os.path.join(output_directory, "lineageGrp_piv_heatmaps")
     ):
-        os.makedirs(os.join(output_directory, "/lineageGrp_piv_heatmaps"))
+        os.makedirs(os.path.join(output_directory, "lineageGrp_piv_heatmaps"))
 
     for n, lg_group in at.groupby("lineageGrp"):
 

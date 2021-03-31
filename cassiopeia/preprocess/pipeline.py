@@ -99,9 +99,7 @@ def collapse_umis(
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
 
     df = utilities.convert_bam_to_df(
-        str(collapsed_file_name),
-        str(collapsed_df_file_name),
-        create_pd=True,
+        str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True
     )
     logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
@@ -174,7 +172,7 @@ def resolve_umi_sequence(
 
     for _, group in tqdm(
         unique_pairs,
-        total=sum(unique_pairs.size()),
+        total=len(unique_pairs.size()),
         desc="Resolving UMI sequences",
     ):
 
@@ -471,7 +469,7 @@ def error_correct_umis(
 
     if max_umi_distance == 0:
         logging.info(
-            "Distance of 0, no correction occured, all alignments returned"
+            "Distance of 0, no correction occurred, all alignments returned"
         )
         return sorted_df
 
@@ -851,7 +849,7 @@ def call_lineage_groups(
 
     if verbose:
         logging.info("Final lineage group assignments:")
-        for n, g in at.groupby(["lineageGrp"]):
+        for n, g in allele_table.groupby(["lineageGrp"]):
             logging.info(
                 f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells"
             )
@@ -871,7 +869,11 @@ def call_lineage_groups(
     if plot:
         logging.info("Producing Plots...")
         at_pivot_I = pd.pivot_table(
-            allele_table, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
+            allele_table,
+            index="cellBC",
+            columns="intBC",
+            values="UMI",
+            aggfunc="count",
         )
         at_pivot_I.fillna(value=0, inplace=True)
         at_pivot_I[at_pivot_I > 0] = 1
@@ -880,6 +882,8 @@ def call_lineage_groups(
         l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
 
         logging.info("Plotting filtered lineage group pivot table heatmap...")
-        l_utils.plot_overlap_heatmap_lg(allele_table, at_pivot_I, output_directory)
+        l_utils.plot_overlap_heatmap_lg(
+            allele_table, at_pivot_I, output_directory
+        )
 
     return allele_table

@@ -1,7 +1,7 @@
 """
 This file contains all functions pertaining to UMI collapsing and preprocessing.
-Invoked through pipeline.py and supports the collapseUMIs and 
-errorCorrectUMIs functions. 
+Invoked through pipeline.py and supports the collapseUMIs and
+errorCorrectUMIs functions.
 """
 import os
 
@@ -95,7 +95,7 @@ def sort_cellranger_bam(
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
-    bam_fh = pysam.AlignmentFile(str(bam_fp))
+    bam_fh = pysam.AlignmentFile(str(bam_fp), check_sq=False)
 
     relevant = filter(filter_func, bam_fh)
 
@@ -109,13 +109,12 @@ def sort_cellranger_bam(
         chunk_fn = Path(sorted_fn).with_suffix(suffix)
         sorted_chunk = sorted(chunk, key=sort_key)
 
-    with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
-        for al in sorted_chunk:
-            max_read_length = max(max_read_length, al.query_length)
-            total_reads_out += 1
-            fh.write(al)
-
-    chunk_fns.append(chunk_fn)
+        with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
+            for al in sorted_chunk:
+                max_read_length = max(max_read_length, al.query_length)
+                total_reads_out += 1
+                fh.write(al)
+        chunk_fns.append(chunk_fn)
 
     chunk_fhs = [
         pysam.AlignmentFile(str(fn), check_header=False, check_sq=False)
@@ -126,9 +125,7 @@ def sort_cellranger_bam(
         merged_chunks = heapq.merge(*chunk_fhs, key=sort_key)
 
         merged_chunks = progress(
-            merged_chunks,
-            total=total_reads_out,
-            desc="Merging sorted chunks",
+            merged_chunks, total=total_reads_out, desc="Merging sorted chunks"
         )
 
         for al in merged_chunks:
@@ -440,11 +437,7 @@ def call_consensus(
 
     rl_range = np.arange(max_read_length)
 
-    fields = [
-        ("c_above_min_q", int),
-        ("c", int),
-        ("average_q", float),
-    ]
+    fields = [("c_above_min_q", int), ("c", int), ("average_q", float)]
 
     stat_tuples = np.zeros(shape, dtype=fields)
     for k in ["c_above_min_q", "c", "average_q"]:

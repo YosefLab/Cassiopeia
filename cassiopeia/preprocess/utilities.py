@@ -4,6 +4,8 @@ pipeline.
 """
 import os
 import logging
+from typing import Dict, List, Optional, Tuple
+
 
 from collections import defaultdict, OrderedDict
 import Levenshtein
@@ -11,9 +13,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pylab
 import pysam
-from typing import Dict, List, Optional, Tuple
-
+import re
 from tqdm.auto import tqdm
 
 
@@ -355,18 +357,19 @@ def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
     ignore_intbcs: List[str] = [],
     allele_rep_thresh: float = 1.0,
-    missing_data_state: str = "-",
+    missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
+    cut_sites: Optional[List[str]] = None,
 ) -> Tuple[
-    pd.DataFrame, Dict[int, Dict[str, float]], Dict[int, Dict[str, str]]
+    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
-    """Converts an alleletable into a character matrix.
+    """Converts an AlleleTable into a character matrix.
 
-    Given an alleletable storing the observed mutations for each intBC / cellBC
+    Given an AlleleTable storing the observed mutations for each intBC / cellBC
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
     as '-'. The function also have the ability to ignore certain intBC sets as
-    well as cut sites with too little diversity. 
+    well as cut sites with too little diversity.
 
     Args:
         alleletable: Allele Table to be converted into a character matrix
@@ -376,24 +379,29 @@ def convert_alleletable_to_character_matrix(
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
-            probability dictionary for reconstruction. 
+            probability dictionary for reconstruction.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r{int}" (e.g. "r1")
 
-	Returns:
+        Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
-	"""
+    """
 
     filtered_samples = defaultdict(OrderedDict)
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
-        cut_sites = ["_r1", "_r2", "_r3"]
+
+        if cut_sites is None:
+            cut_sites = get_default_cut_site_columns(alleletable)
 
         to_add = []
         i = 1
         for c in cut_sites:
             if intBC not in ignore_intbcs:
-                to_add.append(("intBC", c, "r" + str(i)))
+                to_add.append(("intBC", c, cut_sites[i - 1]))
 
             i += 1
 
@@ -438,6 +446,7 @@ def convert_alleletable_to_character_matrix(
     for i in tqdm(range(len(list(intbc_uniq))), desc="Processing characters"):
 
         c = list(intbc_uniq)[i]
+        indel_to_charstate[i] = {}
 
         # for all samples, construct a character string
         for sample in filtered_samples.keys():
@@ -451,36 +460,270 @@ def convert_alleletable_to_character_matrix(
                     continue
 
                 if state == "NONE" or "None" in state:
-                    character_strings[sample].append("0")
+                    character_strings[sample].append(0)
                 else:
                     if state in allele_counter[c]:
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
                     else:
                         # if this is the first time we're seeing the state for this character,
                         # add a new entry to the allele_counter
                         allele_counter[c][state] = len(allele_counter[c]) + 1
                         character_strings[sample].append(
-                            str(allele_counter[c][state])
+                            allele_counter[c][state]
                         )
+
+                        indel_to_charstate[i][len(allele_counter[c])] = state
 
                         # add a new entry to the character's probability map
                         if mutation_priors is not None:
                             prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][
-                                str(len(allele_counter[c]))
-                            ] = float(prob)
-                            indel_to_charstate[i][
-                                str(len(allele_counter[c]))
-                            ] = state
+                            prior_probs[i][len(allele_counter[c])] = float(prob)
+
             else:
                 character_strings[sample].append(missing_data_state)
 
     character_matrix = pd.DataFrame.from_dict(
         character_strings,
         orient="index",
-        columns=[f"r{i}" for i in range(1, len(intbc_uniq)+1)],
+        columns=[f"r{i}" for i in range(1, len(intbc_uniq) + 1)],
     )
 
     return character_matrix, prior_probs, indel_to_charstate
+
+
+def convert_alleletable_to_lineage_profile(
+    allele_table, cut_sites: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """Converts an AlleleTable to a lineage profile.
+
+    Takes in an allele table that summarizes the indels observed at individual
+    cellBC-intBC pairs and produces a lineage profile, which essentially is a
+    pivot table over the cellBC / intBCs. Conceptually, these lineage profiles
+    are identical to character matrices, only the values in the matrix are the
+    actual indel identities.
+
+    Args:
+        allele_table: AlleleTable.
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r{int}" (e.g. "r1")
+
+    Returns:
+        An NxM lineage profile.
+    """
+
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(allele_table)
+
+    agg_recipe = dict(
+        zip([cutsite for cutsite in cut_sites], ["unique"] * len(cut_sites))
+    )
+    g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
+    intbcs = allele_table["intBC"].unique()
+
+    # create mutltindex df by hand
+    i1 = []
+    for i in intbcs:
+        i1 += [i] * len(cut_sites)
+        i2 = list(cut_sites) * len(intbcs)
+
+    indices = [i1, i2]
+
+    allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
+    for j in tqdm(g.index, desc="filling in multiindex table"):
+        vals = map(lambda x: x[0], g.loc[j])
+        for val, cutsite in zip(vals, cut_sites):
+            allele_piv.loc[j[0]][j[1], cutsite] = val
+
+    allele_piv2 = pd.pivot_table(
+        allele_table,
+        index=["cellBC"],
+        columns=["intBC"],
+        values="UMI",
+        aggfunc=pylab.size,
+    )
+    col_order = (
+        allele_piv2.dropna(axis=1, how="all")
+        .sum()
+        .sort_values(ascending=False, inplace=False)
+        .index
+    )
+
+    lineage_profile = allele_piv[col_order]
+
+    # collapse column names here
+    lineage_profile.columns = [
+        "_".join(tup).rstrip("_") for tup in lineage_profile.columns.values
+    ]
+
+    return lineage_profile
+
+
+def convert_lineage_profile_to_character_matrix(
+    lineage_profile: pd.DataFrame,
+    indel_priors: Optional[pd.DataFrame] = None,
+    missing_state_indicator: int = -1,
+) -> Tuple[
+    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
+]:
+    """Converts a lineage profile to a character matrix.
+
+    Takes in a lineage profile summarizing the explicit indel identities
+    observed at each cut site in a cell and converts this into a character
+    matrix where the indels are abstracted into integers.
+
+    Args:
+        lineage_profile: Lineage profile
+        indel_priors: Dataframe mapping indels to prior probabilities
+        missing_state_indicator: State to indicate missing data
+
+    Returns:
+        A character matrix, prior probability dictionary, and mapping from
+            character/state pairs to indel identities.
+    """
+
+    prior_probs = defaultdict(dict)
+    indel_to_charstate = defaultdict(dict)
+
+    lineage_profile = lineage_profile.fillna("Missing").copy()
+
+    samples = []
+
+    lineage_profile.columns = [f"r{i}" for i in range(lineage_profile.shape[1])]
+    column_to_unique_values = dict(
+        zip(
+            lineage_profile.columns,
+            [
+                lineage_profile[x].factorize()[1].values
+                for x in lineage_profile.columns
+            ],
+        )
+    )
+
+    column_to_number = dict(
+        zip(lineage_profile.columns, range(lineage_profile.shape[1]))
+    )
+
+    mutation_counter = dict(
+        zip(lineage_profile.columns, [0] * lineage_profile.shape[1])
+    )
+    mutation_to_state = defaultdict(dict)
+
+    for col in column_to_unique_values.keys():
+
+        c = column_to_number[col]
+        indel_to_charstate[c] = {}
+
+        for indel in column_to_unique_values[col]:
+            if indel == "Missing" or indel == "NC":
+                mutation_to_state[col][indel] = -1
+
+            elif "none" in indel.lower():
+                mutation_to_state[col][indel] = 0
+
+            else:
+                mutation_to_state[col][indel] = mutation_counter[col] + 1
+                mutation_counter[col] += 1
+
+                indel_to_charstate[c][mutation_to_state[col][indel]] = indel
+
+                if indel_priors is not None:
+                    prob = np.mean(indel_priors.loc[indel]["freq"])
+                    prior_probs[c][mutation_to_state[col][indel]] = float(prob)
+
+    character_matrix = lineage_profile.apply(
+        lambda x: [mutation_to_state[x.name][v] for v in x.values], axis=0
+    )
+
+    character_matrix.index = lineage_profile.index
+    character_matrix.columns = [
+        f"r{i}" for i in range(lineage_profile.shape[1])
+    ]
+
+    return character_matrix, prior_probs, indel_to_charstate
+
+
+def compute_empirical_indel_priors(
+    allele_table: pd.DataFrame,
+    grouping_variables: List[str] = ["intBC"],
+    cut_sites: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Computes indel prior probabilities.
+
+    Generates indel prior probabilities from the input allele table. The general
+    idea behind this procedure is to count the number of times an indel
+    independently occur. By default, we treat each intBC as an independent,
+    which is true if the input allele table is a clonal population. Here, the
+    procedure will count the number of intBCs that contain a particular indel
+    and divide by the number of intBCs in the allele table. However, a user can
+    be more nuanced in their analysis and group intBC by other variables, such
+    as lineage group (this is especially useful if intBCs might occur several
+    clonal populations). Then, the procedure will count the number of times an
+    indel occurs in a unique lineage-intBC combination.
+
+    Args:
+        allele_table: AlleleTable
+        grouping_variables: Variables to stratify data by, to treat as
+            independent groups in counting indel occurrences. These must be
+            columns in the allele table
+        cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
+            we assume that the cut-sites are denoted by columns of the form
+            "r{int}" (e.g. "r1")
+
+    Returns:
+        A DataFrame mapping indel identities to the probability.
+    """
+
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(allele_table)
+
+    agg_recipe = dict(
+        zip([cut_site for cut_site in cut_sites], ["unique"] * len(cut_sites))
+    )
+    groups = allele_table.groupby(grouping_variables).agg(agg_recipe)
+
+    indel_count = defaultdict(int)
+
+    for g in groups.index:
+
+        alleles = np.unique(np.concatenate(groups.loc[g].values))
+        for a in alleles:
+            if "none" not in a.lower():
+                indel_count[a] += 1
+
+    tot = len(groups.index)
+
+    indel_freqs = dict(
+        zip(list(indel_count.keys()), [v / tot for v in indel_count.values()])
+    )
+
+    indel_priors = pd.DataFrame([indel_count, indel_freqs]).T
+    indel_priors.columns = ["count", "freq"]
+    indel_priors.index.name = "indel"
+
+    return indel_priors
+
+
+def get_default_cut_site_columns(allele_table: pd.DataFrame) -> List[str]:
+    """Retrieves the default cut-sites columns of an AlleleTable.
+
+    A basic helper function that will retrieve the cut-sites from an AlleleTable
+    if the AlleleTable was created using the Cassiopeia pipeline. In this case,
+    each cut-site is denoted by an integer preceded by the character "r", for
+    example "r1" or "r2".
+
+    Args:
+        allele_table: AlleleTable
+
+    Return:
+        Columns in the AlleleTable corresponding to the cut sites.
+    """
+    cut_sites = [
+        column
+        for column in allele_table.columns
+        if bool(re.search(r"r\d", column))
+    ]
+
+    return cut_sites

@@ -70,7 +70,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         missing_state_indicator: int = -1,
     ) -> Tuple[List[str], List[str]]:
         """Generate a partition of the samples by finding the max-cut.
-        
+
         First, a connectivity graph is generated with samples as nodes such
         that samples with shared mutations have strong negative edge weight
         and samples with distant mutations have positive edge weight. Then,

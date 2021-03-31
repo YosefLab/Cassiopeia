@@ -23,6 +23,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     will implement "perform_split", which is the procedure for successively
     partioning the sample set.
 
+
+
     Args:
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -71,7 +73,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         continues until each side of the partition is comprised only of single
         samples. If an algorithm cannot produce a split on a set of samples,
         then those samples are placed as sister nodes and the procedure
-        terminates, generating a polytomy in the tree. This function will 
+        terminates, generating a polytomy in the tree. This function will
         populate a tree inside the input CassiopeiaTree.
 
         Args:
@@ -83,7 +85,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         def _solve(
             samples: List[Union[str, int]],
             tree: nx.DiGraph,
-            character_matrix: pd.DataFrame,
             unique_character_matrix: pd.DataFrame,
             weights: Dict[int, Dict[int, float]],
             missing_state_indicator: int,
@@ -100,11 +101,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = (
-                len(tree.nodes)
-                - unique_character_matrix.shape[0]
-                + character_matrix.shape[0]
-            )
+            root = len(tree.nodes) + 1
             tree.add_node(root)
 
             for clade in clades:
@@ -121,7 +118,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 child = _solve(
                     clade,
                     tree,
-                    character_matrix,
                     unique_character_matrix,
                     weights,
                     missing_state_indicator,
@@ -136,18 +132,15 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.get_current_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
-        samples = list(unique_character_matrix.index)
-        for i in samples:
-            tree.add_node(i)
+        tree.add_nodes_from(list(unique_character_matrix.index))
 
         _solve(
-            samples,
+            list(unique_character_matrix.index),
             tree,
-            character_matrix,
             unique_character_matrix,
             weights,
             cassiopeia_tree.missing_state_indicator,
@@ -215,6 +208,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             A tree with duplicates added
         """
 
+        character_matrix.index.name = "index"
         duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]
             .reset_index()
@@ -225,9 +219,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            new_internal_node = (
-                max([i for i in tree.nodes if type(i) == int]) + 1
-            )
+            if len(tree.nodes) == 1:
+                new_internal_node = len(duplicate_groups[i]) + 1
+            else:
+                new_internal_node = (
+                    max([n for n in tree.nodes if type(n) == int]) + 1
+                )
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)

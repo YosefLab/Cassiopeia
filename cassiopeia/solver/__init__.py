@@ -9,7 +9,7 @@ from .ILPSolver import ILPSolver
 from .MaxCutGreedySolver import MaxCutGreedySolver
 from .MaxCutSolver import MaxCutSolver
 from .NeighborJoiningSolver import NeighborJoiningSolver
-from .solver_utilities import collapse_tree, collapse_unifurcations
+from .solver_utilities import collapse_tree
 from .SpectralGreedySolver import SpectralGreedySolver
 from .SpectralSolver import SpectralSolver
 from .VanillaGreedySolver import VanillaGreedySolver
