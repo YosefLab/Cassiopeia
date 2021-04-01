@@ -863,6 +863,36 @@ class TestCassiopeiaTree(unittest.TestCase):
                 cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
             )
 
+    def test_set_and_add_attribute(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        tree.set_attribute("node3", "test_attribute", 5)
+        tree.set_attribute("node5", "test_attribute", 10)
+
+        self.assertEqual(5, tree.get_attribute("node3", "test_attribute"))
+        self.assertEqual(10, tree.get_attribute("node5", "test_attribute"))
+
+        self.assertRaises(CassiopeiaTreeError, tree.get_attribute, "node10", "test_attribute")
+
+    def test_filter_nodes(self):
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        for n in tree.depth_first_traverse_nodes(postorder=False):
+            if tree.is_root(n):
+                tree.set_attribute(n, "depth", 0)
+                continue
+            tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth")+1)
+        
+        nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == 2)
+        expected_nodes = ["node5", "node6", "node3", "node4"]
+
+        self.assertCountEqual(nodes, expected_nodes)
+
+
 
 if __name__ == "__main__":
     unittest.main()

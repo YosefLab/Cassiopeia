@@ -8,8 +8,9 @@ import numpy as np
 from scipy import special
 from typing import List, Tuple
 
+from cassiopeia.data import CassiopeiaTree
 
-def annotate_tree_depths(tree: ete3.Tree) -> None:
+def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     """Annotates tree depth at every node.
 
     Adds two attributes to the tree: how far away each node is from the root of
@@ -19,23 +20,22 @@ def annotate_tree_depths(tree: ete3.Tree) -> None:
     Args:
         tree: An ete3 Tree
     """
-    for n in tree.traverse():
-        if n.is_root():
-            n.depth = 0
+    for n in tree.depth_first_traverse_nodes(source = tree.root, postorder=False):
+        if tree.is_root(n):
+            tree.set_attribute(n, "depth", 0)
         else:
-            n.depth = n.up.depth + 1
+            tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth") + 1)
 
         number_of_leaves = 0
         correction = 0
-        for child in n.children:
-            number_of_leaves += len(child)
-            correction += special.comb(len(child), 3)
+        for child in tree.children(n):
+            number_of_leaves += len(tree.leaves_in_subtree(child))
+            correction += special.comb(len(tree.leaves_in_subtree(child)), 3)
 
-        n.number_of_triplets = special.comb(number_of_leaves, 3) - correction
-
+        tree.set_attribute(n, "number_of_triplets", special.comb(number_of_leaves, 3) - correction)
 
 def sample_triplet_at_depth(
-    tree: ete3.Tree, depth: int
+    tree: CassiopeiaTree, depth: int
 ) -> Tuple[List[int], str]:
     """Samples a triplet at a given depth.
 
@@ -43,7 +43,7 @@ def sample_triplet_at_depth(
     is at the specified depth. 
 
     Args:
-        tree: An ete3 Tree object
+        tree: CassiopeiaTree
         depth: Depth at which to sample the triplet
 
     Returns:
@@ -51,12 +51,12 @@ def sample_triplet_at_depth(
             of the triplet.
     """
 
-    candidate_nodes = tree.search_nodes(depth=depth)
-    total_triplets = sum([v.number_of_triplets for v in candidate_nodes])
+    candidate_nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == depth)
+    total_triplets = sum([tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
 
     # sample a  node from this depth with probability proportional to the number
     # of triplets underneath it
-    probs = [v.number_of_triplets / total_triplets for v in candidate_nodes]
+    probs = [tree.get_attribute(v, "number_of_triplets") / total_triplets for v in candidate_nodes]
     node = np.random.choice(candidate_nodes, size=1, replace=False, p=probs)[0]
 
     # Generate the probilities to sample each combination of 3 daughter clades
@@ -67,7 +67,7 @@ def sample_triplet_at_depth(
     combos = []
     denom = 0
     for (i, j, k) in itertools.combinations_with_replacement(
-        list(node.children), 3
+        list(tree.children(node)), 3
     ):
 
         if i == j and j == k:
@@ -75,15 +75,19 @@ def sample_triplet_at_depth(
 
         combos.append((i, j, k))
 
+        size_of_i = len(tree.leaves_in_subtree(i))
+        size_of_j = len(tree.leaves_in_subtree(j))
+        size_of_k = len(tree.leaves_in_subtree(k))
+
         val = 0
         if i == j:
-            val = special.comb(len(i), 2) * len(k)
+            val = special.comb(size_of_i, 2) * size_of_k
         elif j == k:
-            val = special.comb(len(j), 2) * len(i)
+            val = special.comb(size_of_j, 2) * size_of_i
         elif i == k:
-            val = special.comb(len(k), 2) * len(j)
+            val = special.comb(size_of_k, 2) * size_of_j
         else:
-            val = len(i) * len(j) * len(k)
+            val = size_of_i * size_of_j * size_of_k
         probs.append(val)
         denom += val
 
@@ -96,21 +100,21 @@ def sample_triplet_at_depth(
     (i, j, k) = combos[ind]
 
     if i == j:
-        in_group = np.random.choice(i.get_leaf_names(), 2, replace=False)
-        out_group = np.random.choice(k.get_leaf_names())
+        in_group = np.random.choice(tree.leaves_in_subtree(i), 2, replace=False)
+        out_group = np.random.choice(tree.leaves_in_subtree(k))
     elif j == k:
-        in_group = np.random.choice(j.get_leaf_names(), 2, replace=False)
-        out_group = np.random.choice(i.get_leaf_names())
+        in_group = np.random.choice(tree.leaves_in_subtree(j), 2, replace=False)
+        out_group = np.random.choice(tree.leaves_in_subtree(i))
     elif i == k:
-        in_group = np.random.choice(k.get_leaf_names(), 2, replace=True)
-        out_group = np.random.choice(j.get_leaf_names())
+        in_group = np.random.choice(tree.leaves_in_subtree(k), 2, replace=True)
+        out_group = np.random.choice(tree.leaves_in_subtree(j))
     else:
 
         return (
             (
-                str(np.random.choice(i.get_leaf_names())),
-                str(np.random.choice(j.get_leaf_names())),
-                str(np.random.choice(k.get_leaf_names())),
+                str(np.random.choice(tree.leaves_in_subtree(i))),
+                str(np.random.choice(tree.leaves_in_subtree(j))),
+                str(np.random.choice(tree.leaves_in_subtree(k))),
             ),
             "None",
         )
