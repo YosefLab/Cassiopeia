@@ -1115,5 +1115,5 @@ class CassiopeiaTree:
         try:
             return self.__network.nodes[node][attribute_name]
         except KeyError:
-            raise CassiopeiaTreeError("Attribute {attribute_namae} not " 
+            raise CassiopeiaTreeError(f"Attribute {attribute_name} not " 
                                     "detected for this node.")
