@@ -15,7 +15,7 @@ This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
-from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 import warnings
 
 import collections
@@ -153,6 +153,13 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError(
                 "Please pass an ete3 Tree, a newick string, or a Networkx object."
             )
+
+        # enforce all names to be strings
+        rename_dictionary = {}
+        for n in self.__network.nodes:
+            rename_dictionary[n] = str(n)
+
+        self.__network = nx.relabel_nodes(self.__network, rename_dictionary)
 
         # clear cache if we're changing the topology of the tree
         self.__cache = {}
@@ -1072,3 +1079,56 @@ class CassiopeiaTree:
         )
 
         self.set_dissimilarity_map(dissimilarity_map)
+
+    def set_attribute(self, node: str, attribute_name: str, value: Any):
+        """Sets an attribute in the tree.
+        Args:
+            node: Node name
+            attribute_name: Name for the new attribute
+            value: Value for the attribute.
+        """
+        self.__check_network_initialized()
+
+        self.__network.nodes[node][attribute_name] = value
+
+    def get_attribute(self, node: str, attribute_name: str) -> Any:
+        """Retrieves the value of an attribute for a node.
+        Args:
+            node: Node name
+            attribute_name: Name of the attribute.
+        
+        Returns:
+            The value of the attribute for that node.
+        Raises:
+            CassiopeiaTreeError if the attribute has not been set for this node.
+        """
+        self.__check_network_initialized()
+
+        try:
+            return self.__network.nodes[node][attribute_name]
+        except KeyError:
+            raise CassiopeiaTreeError(f"Attribute {attribute_name} not " 
+                                    "detected for this node.")
+
+    def filter_nodes(self, condition: Callable[[str], bool]) -> List[str]:
+
+        self.__check_network_initialized()
+
+        _filter = []
+        for n in self.depth_first_traverse_nodes():
+            if condition(n):
+                _filter.append(n)
+
+        return _filter
+
+    def find_lcas_of_pairs(self, pairs: Union[Iterator[str], List[str]]) -> Iterator[Tuple[Tuple[str, str], str]]:
+        """Finds LCAs of all pairs.
+
+        Args:
+            pairs: Pairs of nodes for which to find LCAs
+
+        Returns:
+            A generator of ((u, v), LCA) tuples.
+        """
+        self.__check_network_initialized()
+        return nx.tree_all_pairs_lowest_common_ancestor(self.__network, root=self.root, pairs=pairs)
