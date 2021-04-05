@@ -229,7 +229,7 @@ def upload_and_export_itol(
     itol_exporter.set_export_param_value("horizontal_scale_factor", 1)
 
     for key, value in kwargs.items():
-        itol_exporter.set_export_param_value(kwargs, value)
+        itol_exporter.set_export_param_value(key, value)
 
     # export!
     itol_exporter.export(export_filepath)
