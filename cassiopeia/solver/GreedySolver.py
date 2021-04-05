@@ -4,7 +4,7 @@ represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
 import logging
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import abc
 import networkx as nx
@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
@@ -23,8 +24,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     will implement "perform_split", which is the procedure for successively
     partioning the sample set.
 
-
-
     Args:
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -35,13 +34,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                     the square root of 1/p
 
     Attributes:
-       prior_transformation: Function to use when transforming priors into
+        prior_transformation: Function to use when transforming priors into
             weights.
     """
 
-    def __init__(self, prior_transformation: str = "negative_log"):
+    def __init__(self, prior_transformation: str = "negative_log", collapse_tree: bool = True):
 
         super().__init__(prior_transformation)
+        self.collapse_tree = collapse_tree
 
     def perform_split(
         self,
@@ -81,6 +81,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 priors.
         """
 
+        names = solver_utilities.node_name_generator()
+
         # A helper function that builds the subtree given a set of samples
         def _solve(
             samples: List[Union[str, int]],
@@ -101,7 +103,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = len(tree.nodes) + 1
+            root = next(names)
             tree.add_node(root)
 
             for clade in clades:
@@ -149,8 +151,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix)
+        if self.collapse_tree:
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, names)
         cassiopeia_tree.populate_tree(duplicates_tree)
 
     def compute_mutation_frequencies(
@@ -189,7 +192,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
@@ -215,12 +218,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            if len(tree.nodes) == 1:
-                new_internal_node = len(duplicate_groups[i]) + 1
-            else:
-                new_internal_node = (
-                    max([n for n in tree.nodes if type(n) == int]) + 1
-                )
+            new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)

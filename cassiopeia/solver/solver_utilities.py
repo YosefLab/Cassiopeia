@@ -2,7 +2,7 @@
 the solver module"""
 
 import logging
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import ete3
 import networkx as nx
@@ -16,6 +16,14 @@ class PriorTransformationError(Exception):
     """An Exception class for generating weights from priors."""
 
     pass
+
+
+def node_name_generator() -> Generator[str, None, None]:
+    """Generates unique node names for the tree."""
+    i = 0
+    while True:
+        yield "cassiopeia_internal_node_" + str(i)
+        i += 1
 
 
 def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:

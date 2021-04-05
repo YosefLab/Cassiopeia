@@ -194,6 +194,10 @@ class CassiopeiaTree:
     def set_character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object."""
 
+        if not all(type(i) == str for i in character_matrix.index):
+            raise CassiopeiaTreeError("Index of character matrix must consist" 
+            " of strings.")
+
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
 

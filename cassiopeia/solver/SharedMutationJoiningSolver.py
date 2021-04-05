@@ -15,7 +15,7 @@ import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver, solver_utilities
+from cassiopeia.solver import CassiopeiaSolver, dissimilarity_functions, solver_utilities
 
 
 class SharedMutationJoiningSolverError(Exception):
@@ -57,15 +57,24 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        similarity_function: Callable[
-            [np.array, np.array, int, Dict[int, Dict[int, float]]], float
-        ],
+        similarity_function: Optional[
+            Callable[
+                [
+                    List[int],
+                    List[int],
+                    int,
+                    Optional[Dict[int, Dict[int, float]]],
+                ],
+                float,
+            ]
+        ] = dissimilarity_functions.hamming_similarity_without_missing,
         prior_transformation: str = "negative_log",
     ):
 
         super().__init__(prior_transformation)
 
         self.similarity_function = similarity_function
+
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
@@ -84,6 +93,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
         """
+
+        names = solver_utilities.node_name_generator()
+
         character_matrix = cassiopeia_tree.get_current_character_matrix()
         weights = None
         if cassiopeia_tree.priors:
@@ -108,10 +120,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         N = similarity_map.shape[0]
-
-        identifier_to_sample = dict(
-            zip([str(i) for i in range(N)], similarity_map.index)
-        )
 
         # Numba-ize the similarity function and weights
         nb_similarity_function = numba.jit(
@@ -141,7 +149,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             # get indices in the similarity matrix to join
             node_i, node_j = (similarity_map.index[i], similarity_map.index[j])
 
-            new_node_name = str(len(tree.nodes))
+            new_node_name = next(names)
             tree.add_node(new_node_name)
             tree.add_edges_from(
                 [(new_node_name, node_i), (new_node_name, node_j)]
@@ -158,8 +166,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             N = similarity_map.shape[0]
-
-        tree = nx.relabel_nodes(tree, identifier_to_sample)
 
         cassiopeia_tree.populate_tree(tree)
 

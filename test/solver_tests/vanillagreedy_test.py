@@ -132,25 +132,34 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertEqual(right_set, ["c4", "c5"])
 
     def test_all_duplicates_base_case(self):
-        cm = pd.DataFrame([[5, 0, 1, 2, 0], [5, 0, 1, 2, 0], [5, 0, 1, 2, 0]])
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 0, 1, 2, 0], 
+                "c2": [5, 0, 1, 2, 0], 
+                "c3": [5, 0, 1, 2, 0],
+            },             
+            orient="index",
+            columns=["a", "b", "c", "d", "e"])
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
         vgsolver.solve(vg_tree)
-        expected_newick_string = "(0,1,2);"
+        expected_newick_string = "(c1,c2,c3);"
         observed_newick_string = vg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_case_1(self):
-        cm = pd.DataFrame(
-            [
-                [5, 0, 1, 2, 0],
-                [5, 0, 0, 2, -1],
-                [4, 0, 3, 2, -1],
-                [-1, 4, 0, 2, 2],
-                [0, 4, 1, 2, 2],
-                [4, 0, 0, 2, 2],
-            ]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 0, 1, 2, 0],
+                "c2": [5, 0, 0, 2, -1],
+                "c3": [4, 0, 3, 2, -1],
+                "c4": [-1, 4, 0, 2, 2],
+                "c5": [0, 4, 1, 2, 2],
+                "c6": [4, 0, 0, 2, 2],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -162,14 +171,14 @@ class VanillaGreedySolverTest(unittest.TestCase):
         )
 
         left, right = vgsolver.perform_split(
-            unique_character_matrix, list(range(6))
+            unique_character_matrix, unique_character_matrix.index
         )
 
-        self.assertListEqual(left, [3, 4, 5, 2])
-        self.assertListEqual(right, [0, 1])
+        self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
+        self.assertListEqual(right, ["c1", "c2"])
 
         vgsolver.solve(vg_tree)
-        expected_newick_string = "(((2,5),(4,3)),(0,1));"
+        expected_newick_string = "(((c3,c6),(c5,c4)),(c1,c2));"
         observed_newick_string = vg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 

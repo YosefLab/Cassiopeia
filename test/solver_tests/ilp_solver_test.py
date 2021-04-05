@@ -414,6 +414,7 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver.solve(self.missing_tree, self.logfile)
         tree = self.missing_tree.get_tree_topology()
+        print(tree.nodes)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]

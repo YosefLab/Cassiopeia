@@ -11,6 +11,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.solver import solver_utilities
 
 
 def find_triplet_structure(triplet, T):
@@ -205,9 +206,10 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.pp_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"])
@@ -221,9 +223,10 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.large_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver_large.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (
@@ -245,9 +248,10 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.missing_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver_missing.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"], ["f", "g", "h"])
@@ -351,6 +355,7 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
 
         tree = self.large_tree.get_tree_topology()
+        print(tree.nodes)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]

@@ -9,7 +9,7 @@ In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
 import copy
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Generator, Optional, Tuple
 
 import multiprocessing
 import networkx as nx
@@ -111,6 +111,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 and priors for reconstruction.
             logfile: Location to log progress.
         """
+        names = solver_utilities.node_name_generator()
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
@@ -125,6 +126,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         _, subproblems = self.apply_top_solver(
             unique_character_matrix,
             list(unique_character_matrix.index),
+            names,
             weights=weights,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
@@ -157,13 +159,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
             existing_nodes = [n for n in self.__tree]
-            unique_iter = root = len(self.__tree.nodes) + 1
 
             mapping = {}
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
-                    mapping[n] = unique_iter
-                    unique_iter += 1
+                    mapping[n] = next(names)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
@@ -180,6 +180,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         character_matrix: pd.DataFrame,
         samples: List[str],
+        node_name_generator: Generator[str, None, None],
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
         root: Optional[int] = None,
@@ -209,7 +210,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
         )
 
-        root = len(self.__tree.nodes) + 1
+        root = next(node_name_generator)
 
         self.__tree.add_node(root)
         if len(clades) == 1:
@@ -234,7 +235,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         for clade in new_clades:
             child, new_subproblems = self.apply_top_solver(
-                character_matrix, clade, weights, missing_state_indicator, root
+                character_matrix, clade, node_name_generator, weights, missing_state_indicator, root
             )
             self.__tree.add_edge(root, child)
 

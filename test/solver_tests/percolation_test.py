@@ -55,15 +55,17 @@ def neg_hamming_similarity_without_missing(
 class PercolationSolverTest(unittest.TestCase):
     def test_NJ_negative_similarity(self):
 
-        cm = pd.DataFrame(
-            [
-                [5, 3, 0, 0, 0],
-                [0, 3, 4, 2, 1],
-                [5, 0, 0, 0, 1],
-                [5, 0, 4, 2, 0],
-                [5, 0, 0, 0, 0],
-                [5, 0, 0, 0, 0],
-            ]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
+                "c4": [5, 0, 4, 2, 0],
+                "c5": [5, 0, 0, 0, 0],
+                "c6": [5, 0, 0, 0, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
@@ -76,22 +78,22 @@ class PercolationSolverTest(unittest.TestCase):
         T = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+        expected_tree.add_nodes_from(["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8", "9"])
         expected_tree.add_edges_from(
             [
                 ("6", "7"),
                 ("6", "8"),
-                ("7", "1"),
-                ("7", "3"),
-                ("8", "0"),
-                ("8", "2"),
+                ("7", "c2"),
+                ("7", "c4"),
+                ("8", "c1"),
+                ("8", "c3"),
                 ("8", "9"),
-                ("9", "4"),
-                ("9", "5"),
+                ("9", "c5"),
+                ("9", "c6"),
             ]
         )
 
-        triplets = itertools.combinations(["0", "1", "2", "3", "4", "5"], 3)
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)

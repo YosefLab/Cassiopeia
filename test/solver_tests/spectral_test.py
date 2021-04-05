@@ -157,22 +157,24 @@ class SpectralSolverTest(unittest.TestCase):
 
     def test_simple_base_case(self):
         cm = pd.DataFrame.from_dict(
-            [
-                [2, -1, 3, -1, 0],
-                [2, 3, 3, 0, 0],
-                [3, 4, 3, 0, 0],
-                [4, -1, 3, -1, 0],
-                [4, 2, 3, 0, 0],
-                [5, 1, -1, 0, 1],
-                [1, -1, 3, 1, 2],
-            ]
+            {
+                "c1": [2, -1, 3, -1, 0],
+                "c2": [2, 3, 3, 0, 0],
+                "c3": [3, 4, 3, 0, 0],
+                "c4": [4, -1, 3, -1, 0],
+                "c5": [4, 2, 3, 0, 0],
+                "c6": [5, 1, -1, 0, 1],
+                "c7": [1, -1, 3, 1, 2],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
 
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree)
-        expected_newick_string = "(2,(0,1),(5,6),(3,4));"
+        expected_newick_string = "(c3,(c1,c2),(c6,c7),(c4,c5));"
         observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
@@ -201,22 +203,37 @@ class SpectralSolverTest(unittest.TestCase):
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2(self):
-        cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 3, 0, 0, 0], 
+                "c2": [0, 3, 4, 2, 1], 
+                "c3": [5, 0, 0, 0, 1], 
+                "c4": [5, 0, 4, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
 
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree)
-        expected_newick_string = "((0,2),(1,3));"
+        expected_newick_string = "((c1,c3),(c2,c4));"
         observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_simple_base_case2_priors(self):
-        cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 3, 0, 0, 0], 
+                "c2": [0, 3, 4, 2, 1], 
+                "c3": [5, 0, 0, 0, 1], 
+                "c4": [5, 0, 4, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
+
 
         priors = {
             0: {5: 0.8},
@@ -232,7 +249,7 @@ class SpectralSolverTest(unittest.TestCase):
 
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree)
-        expected_newick_string = "(0,1,(2,3));"
+        expected_newick_string = "(c1,c2,(c3,c4));"
         observed_newick_string = sp_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
