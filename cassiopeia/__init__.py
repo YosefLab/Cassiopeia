@@ -12,4 +12,5 @@ from . import solver
 from . import pl
 from . import data
 from . import critique
+from . import critique_old
 from . import sim
