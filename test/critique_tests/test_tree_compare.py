@@ -96,6 +96,15 @@ class TestTreeComparisons(unittest.TestCase):
 
         self.ground_truth_rake = cas.data.CassiopeiaTree(tree=ground_truth_rake)
 
+    def test_out_group(self):
+
+        out_group = cas.critique.critique_utilities.get_outgroup(self.tree1, ("11", "14", "9"))
+
+        self.assertEqual("9", out_group)
+
+        out_group = cas.critique.critique_utilities.get_outgroup(self.ground_truth_rake, ("4", "5", "6"))
+        self.assertEqual("None", out_group)
+
     def test_same_tree_gives_perfect_triplets_correct(self):
 
         (

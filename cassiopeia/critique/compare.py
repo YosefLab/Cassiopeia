@@ -56,10 +56,9 @@ def triplets_correct(
     T1.collapse_unifurcations()
     T2.collapse_unifurcations()
 
-    # set depths in T1 and T2 and compute number of triplets that are rooted at
+    # set depths in T1 and compute number of triplets that are rooted at
     # ancestors at each depth
-    critique_utilities.annotate_tree_depths(T1)
-    critique_utilities.annotate_tree_depths(T2)
+    depth_to_nodes = critique_utilities.annotate_tree_depths(T1)
 
     max_depth = np.max([T1.get_attribute(n, "depth") for n in T1.nodes])
     for depth in range(max_depth):
@@ -68,52 +67,28 @@ def triplets_correct(
         number_unresolvable_triplets = 0
 
         # check that there are triplets at this depth
-        candidate_nodes = T1.filter_nodes(lambda x: T1.get_attribute(x, "depth") == depth)
+        candidate_nodes = depth_to_nodes[depth]
         total_triplets = sum([T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
         if total_triplets == 0:
             continue
 
-        # precompute all LCAs for T2
-        lca_dictionary = {}
-        lcas = T2.find_lcas_of_pairs(itertools.combinations(T2.leaves, 2))
-
-        for lca in lcas:
-            lca_dictionary[tuple(sorted(lca[0]))] = lca[1]
 
         for _ in range(number_of_trials):
 
             (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
-                T1, depth
+                T1, depth, depth_to_nodes
             )
 
-            ij_lca = lca_dictionary[tuple(sorted((i, j)))]
-            ik_lca = lca_dictionary[tuple(sorted((i, k)))]
-            jk_lca = lca_dictionary[tuple(sorted((j, k)))]
+            reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
 
             is_resolvable = True
             if out_group == "None":
                 number_unresolvable_triplets += 1
                 is_resolvable = False
-
-            # find outgroup based on the depth of the latest-common-ancestors
-            # of each pair of items. The pair with the deepest LCA is the
-            # ingroup and the remaining leaf is the outgroup. The score is
-            # incremented if the compared tree (T2) has the same outgroup as
-            # T1.
-            score = 0
-
-            ij_lca_depth = T2.get_attribute(ij_lca, "depth")
-            jk_lca_depth = T2.get_attribute(jk_lca, "depth")
-            ik_lca_depth = T2.get_attribute(ik_lca, "depth")
-
-            if ij_lca_depth > jk_lca_depth and ij_lca_depth > ik_lca_depth:
-                score = int(k == out_group)
-            elif ik_lca_depth > ij_lca_depth and ik_lca_depth > jk_lca_depth:
-                score = int(j == out_group)
-            elif jk_lca_depth > ik_lca_depth and jk_lca_depth > ij_lca_depth:
-                score = int(i == out_group)
-            else:
-                score = int("None" == out_group)
+            
+            # increment score if the reconstructed outgroup is the same as the
+            # ground truth
+            score = int(reconstructed_outgroup == out_group)
 
             all_triplets_correct[depth] += score
             if is_resolvable:

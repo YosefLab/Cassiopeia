@@ -503,7 +503,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree is not initialized.
         """
         self.__check_network_initialized()
-
+        
         return [u for u in self.__network.predecessors(node)][0]
 
     def children(self, node: str) -> List[str]:
@@ -720,6 +720,28 @@ class CassiopeiaTree:
         """
         return self.__network.nodes[node]["character_states"][:]
 
+    def get_all_ancestors(self, node: str) -> List[str]:
+        """Gets all the ancestors of a particular node.
+
+        Args:
+            node: Node in the tree
+            
+        Returns:
+            The list of nodes along the path from the root to the node.
+        """
+
+        self.__check_network_initialized()
+
+        if "ancestors" not in self.__cache:
+            self.__cache["ancestors"] = {}
+        
+        if node not in self.__cache["ancestors"]:
+            self.__cache["ancestors"][node] = [n
+                for n in nx.ancestors(self.__network, node)
+            ]
+
+        return self.__cache["ancestors"][node]
+
     def depth_first_traverse_nodes(
         self, source: Optional[int] = None, postorder: bool = True
     ) -> Iterator[str]:
@@ -772,12 +794,22 @@ class CassiopeiaTree:
         Returns:
             A list of the leaves in the subtree rooted at the specified node.
         """
+        self.__check_network_initialized()
 
-        return [
-            n
-            for n in self.depth_first_traverse_nodes(source=node)
-            if self.__network.out_degree(n) == 0
-        ]
+        if "subtree" not in self.__cache:
+            self.__cache["subtree"] = {}
+
+            for node in self.depth_first_traverse_nodes(postorder=True):
+                if self.is_leaf(node):
+                    self.__cache["subtree"][node] = [node]
+                else:
+                    leaves = []
+                    for child in self.children(node):
+                        leaves += self.leaves_in_subtree(child)
+                    self.__cache["subtree"][node] = leaves
+    
+        return self.__cache["subtree"][node]
+            
 
     def get_newick(self, record_branch_lengths = False) -> str:
         """Returns newick format of tree.
@@ -948,6 +980,40 @@ class CassiopeiaTree:
 
         # reset cache because we've changed the tree topology
         self.__cache = {}
+
+    def collapse_mutationless_edges(
+        self,
+        infer_ancestral_characters: bool,
+    ):
+        """Collapses mutationless edges in the tree in-place.
+        Uses the internal node annotations of a tree to collapse edges with no
+        mutations. The introduction of a missing data event is considered a 
+        mutation in this context. Either takes the existing character states on
+        the tree or infers the annotations bottom-up from the samples obeying 
+        Camin-Sokal Parsimony.
+        Args:
+            tree: A networkx DiGraph object representing the tree
+            infer_ancestral_characters: Infer the ancestral characters states 
+                of the tree
+        """
+        if infer_ancestral_characters:
+            self.reconstruct_ancestral_characters()
+
+        for n in self.depth_first_traverse_nodes(postorder = True):
+            if self.is_leaf(n):
+                continue
+            for child in self.children(n):
+                if not self.is_leaf(child):
+                    t = self.get_branch_length(n, child)
+                    if self.get_character_states(n) == self.get_character_states(child):
+                        for grandchild in self.children(child):
+                            t_ = self.get_branch_length(child, grandchild)
+                            self.__network.add_edge(n, grandchild, length = t + t_)
+                        self.__network.remove_node(child)
+
+        # reset cache because we've changed the tree topology
+        self.__cache = {}
+
 
     def get_dissimilarity_map(self):
         """Gets the dissimilarity map."""
