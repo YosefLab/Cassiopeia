@@ -13,9 +13,6 @@ from typing import Dict, List, Optional
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
-from cassiopeia.solver.NeighborJoiningSolver import NeighborJoiningSolver
-from cassiopeia.solver.PercolationSolver import PercolationSolver
 from cassiopeia.solver import dissimilarity_functions
 
 
@@ -67,11 +64,11 @@ class PercolationSolverTest(unittest.TestCase):
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=neg_hamming_similarity_without_missing,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
@@ -113,11 +110,11 @@ class PercolationSolverTest(unittest.TestCase):
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
@@ -165,8 +162,8 @@ class PercolationSolverTest(unittest.TestCase):
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = VanillaGreedySolver()
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        joining_solver = cas.solver.VanillaGreedySolver()
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
@@ -222,11 +219,11 @@ class PercolationSolverTest(unittest.TestCase):
         p_tree = cas.data.CassiopeiaTree(
             cm, missing_state_indicator=-1, priors=priors
         )
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain

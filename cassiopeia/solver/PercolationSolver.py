@@ -8,7 +8,6 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import NeighborJoiningSolver
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import solver_utilities
