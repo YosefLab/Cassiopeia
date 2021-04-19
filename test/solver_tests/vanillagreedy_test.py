@@ -132,13 +132,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertEqual(right_set, ["c4", "c5"])
 
     def test_all_duplicates_base_case(self):
-        cm = pd.DataFrame(
-            [
-                [5, 0, 1, 2, 0],
-                [5, 0, 1, 2, 0],
-                [5, 0, 1, 2, 0],
-            ]
-        )
+        cm = pd.DataFrame([[5, 0, 1, 2, 0], [5, 0, 1, 2, 0], [5, 0, 1, 2, 0]])
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()

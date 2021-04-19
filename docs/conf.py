@@ -26,9 +26,9 @@ from pathlib import Path
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
-import cassiopeia # noqa
+import cassiopeia  # noqa
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 # -- General configuration ---------------------------------------------
 
@@ -99,7 +99,9 @@ intersphinx_mapping = dict(
 
 # General information about the project.
 project = u"cassiopeia"
-copyright = u"2020, Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
+copyright = (
+    u"2020, Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
+)
 author = u"Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
@@ -143,7 +145,7 @@ html_theme = "pydata_sphinx_theme"
 #
 # html_theme_options = {}
 
-#html_logo = "_static/logo3.png"
+# html_logo = "_static/logo3.png"
 html_logo = "_static/logo.png"
 
 html_theme_options = {
@@ -166,6 +168,7 @@ html_static_path = ["_static"]
 html_css_files = ["css/user_guide.css", "css/custom.css"]
 
 html_show_sphinx = False
+
 
 def setup(app):
     app.warningiserror = on_rtd
@@ -215,7 +218,9 @@ latex_elements = {
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)]
+man_pages = [
+    (master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)
+]
 
 
 # -- Options for Texinfo output ----------------------------------------

@@ -76,9 +76,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         self.cm = cm
         self.basic_dissimilarity_map = delta
         self.basic_tree = cas.data.CassiopeiaTree(
-            character_matrix=cm,
-            dissimilarity_map=delta,
-            root_sample_name="b",
+            character_matrix=cm, dissimilarity_map=delta, root_sample_name="b"
         )
 
         self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True)

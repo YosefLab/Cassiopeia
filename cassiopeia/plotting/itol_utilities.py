@@ -103,27 +103,28 @@ def upload_and_export_itol(
     # create temporary directory for storing files we'll upload to iTOL
     temporary_directory = tempfile.mkdtemp()
 
-    if (api_key is None or project_name is None) and os.path.exists(os.path.expanduser(itol_config)):
+    if (api_key is None or project_name is None):
+        if os.path.exists(os.path.expanduser(itol_config)):
         
-        config = configparser.ConfigParser()
-        with open(os.path.expanduser(itol_config), "r") as f:
-            config_string = f.read()
-        config.read_string(config_string)
+            config = configparser.ConfigParser()
+            with open(os.path.expanduser(itol_config), "r") as f:
+                config_string = f.read()
+            config.read_string(config_string)
 
-        try:
-            api_key = config["DEFAULT"]["api_key"]
-            project_name = config["DEFAULT"]["project_name"]
-        except KeyError:
-            raise iTOLError("Error reading the itol config file passed in.")
+            try:
+                api_key = config["DEFAULT"]["api_key"]
+                project_name = config["DEFAULT"]["project_name"]
+            except KeyError:
+                raise iTOLError("Error reading the itol config file passed in.")
 
-    else:
-        raise iTOLError(
-            "Specify an api_key and project_name, or a valid iTOL "
-            "config file."
-        )
+        else:
+            raise iTOLError(
+                "Specify an api_key and project_name, or a valid iTOL "
+                "config file."
+            )
 
     with open(os.path.join(temporary_directory, "tree_to_plot.tree"), "w") as f:
-        f.write(cassiopeia_tree.get_newick())
+        f.write(cassiopeia_tree.get_newick(record_branch_lengths = True))
 
     file_format = export_filepath.split("/")[-1].split(".")[-1]
 
@@ -133,7 +134,9 @@ def upload_and_export_itol(
         )
 
     itol_uploader = Itol()
-    itol_uploader.add_file(os.path.join(temporary_directory, "tree_to_plot.tree"))
+    itol_uploader.add_file(
+        os.path.join(temporary_directory, "tree_to_plot.tree")
+    )
 
     files = []
     if allele_table is not None:
@@ -154,23 +157,30 @@ def upload_and_export_itol(
         values = cassiopeia_tree.cell_meta[meta_item]
 
         if pd.api.types.is_numeric_dtype(values):
-            files.append(create_gradient_from_df(
-                values, cassiopeia_tree, f"{tree_name}.{meta_item}", temporary_directory,
-            ))
+            files.append(
+                create_gradient_from_df(
+                    values,
+                    cassiopeia_tree,
+                    f"{tree_name}.{meta_item}",
+                    temporary_directory,
+                )
+            )
 
         if pd.api.types.is_string_dtype(values):
             colors = palette[: len(values.unique())]
             colors = [hex_to_rgb(color) for color in colors]
             colormap = dict(zip(np.unique(values), colors))
 
-            files.append(create_colorbar(
-                values,
-                cassiopeia_tree,
-                colormap,
-                f"{tree_name}.{meta_item}",
-                temporary_directory,
-                create_legend=include_legend,
-            ))
+            files.append(
+                create_colorbar(
+                    values,
+                    cassiopeia_tree,
+                    colormap,
+                    f"{tree_name}.{meta_item}",
+                    temporary_directory,
+                    create_legend=include_legend,
+                )
+            )
 
     for _file in files:
         itol_uploader.add_file(_file)
@@ -182,7 +192,7 @@ def upload_and_export_itol(
     good_upload = itol_uploader.upload()
     if not good_upload:
         raise iTOLError(itol_uploader.comm.upload_output)
-    
+
     if verbose:
         print("iTOL output: " + str(itol_uploader.comm.upload_output))
         print("Tree Web Page URL: " + itol_uploader.get_webpage())
@@ -207,7 +217,9 @@ def upload_and_export_itol(
     itol_exporter.set_export_param_value("leaf_sorting", 1)
     itol_exporter.set_export_param_value("label_display", 0)
     itol_exporter.set_export_param_value("internal_marks", 0)
-    itol_exporter.set_export_param_value("ignore_branch_length", 1-int(use_branch_lengths))
+    itol_exporter.set_export_param_value(
+        "ignore_branch_length", 1 - int(use_branch_lengths)
+    )
 
     itol_exporter.set_export_param_value(
         "datasets_visible", ",".join([str(i) for i in range(len(files))])
@@ -272,9 +284,7 @@ def create_gradient_from_df(
     with open(outfp, "w") as fOut:
         for line in header:
             fOut.write(line + "\n")
-        df_writeout = outdf.to_csv(
-            None, sep="\t", header=False, index=False
-        )
+        df_writeout = outdf.to_csv(None, sep="\t", header=False, index=False)
         fOut.write(df_writeout)
     return outfp
 
@@ -408,7 +418,9 @@ def create_indel_heatmap(
 
     if indel_colors is None:
         if indel_priors is None:
-            indel_colors = get_random_indel_colors(lineage_profile, random_state)
+            indel_colors = get_random_indel_colors(
+                lineage_profile, random_state
+            )
         else:
             indel_colors = get_indel_colors(indel_priors, random_state)
 
@@ -512,7 +524,7 @@ def get_random_indel_colors(
         A mapping from indel to HSV color.
     """
 
-    lineage_profile.fillna('missing', inplace=True)
+    lineage_profile.fillna("missing", inplace=True)
     unique_indels = np.unique(
         np.hstack(lineage_profile.apply(lambda x: x.unique(), axis=0))
     )
@@ -530,7 +542,7 @@ def get_random_indel_colors(
             indel2color[indel] = rgb_to_hsv((0.75, 0.75, 0.75))
         elif indel == "NC":
             indel2color[indel] = rgb_to_hsv((0, 0, 0))
-        elif indel == 'missing':
+        elif indel == "missing":
             indel2color[indel] = rgb_to_hsv((1, 1, 1))
         else:
             # randomly pick a color family and then draw random colors
@@ -614,6 +626,7 @@ def hex_to_rgb(value) -> Tuple[int, int, int]:
     lv = len(value)
     return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
+
 def rgb_to_hex(rgb) -> str:
     """Converts (r, g, b) tuple to hex
 
@@ -623,9 +636,9 @@ def rgb_to_hex(rgb) -> str:
     Returns:
         A hex string.
     """
-    
+
     r, g, b = rgb[0], rgb[1], rgb[2]
-    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+    return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
 
 def generate_random_color(

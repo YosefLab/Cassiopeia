@@ -78,13 +78,12 @@ class CassiopeiaTree:
     of states. These are good statistics to have for feature selection.
 
     TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315): Add functionality that mutates the underlying tree
-        structure: pruning lineages, collapsing mutationless edges, and
-        collapsing unifurcations. When this happens, be sure to make sure the
-        cached properties update.
+    TODO(mattjones315, rzhang): Add functionality that mutates the underlying 
+        tree structure: collapsing mutationless edges. When this happens, be 
+        sure to make sure the cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
-    TODO(sprillo): Add bulk set_times and set_branch_lengths methods
+    TODO(sprillo): Add bulk set_branch_lengths method
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones315): Read branch lengths off of newick strings & write
         branch lengths to newick strings
@@ -239,8 +238,8 @@ class CassiopeiaTree:
         must have an entry for every node in the tree.
 
         Args:
-            character_state_mapping: A mapping containing character state assignments for every
-                node
+            character_state_mapping: A mapping containing character state
+                assignments for every node
 
         Raises:
             CassiopeiaTreeError if the tree is not initialized or if the
@@ -805,13 +804,24 @@ class CassiopeiaTree:
             if self.__network.out_degree(n) == 0
         ]
 
-    def get_newick(self) -> str:
-        """Returns newick format of tree."""
-        return utilities.to_newick(self.__network)
+    def get_newick(self, record_branch_lengths = False) -> str:
+        """Returns newick format of tree.
+        
+        Args:
+            record_branch_lengths: Whether to record branch lengths on the tree
+            in the newick string
+
+        Returns:
+            The tree in the form of a newick string
+        """
+        return utilities.to_newick(self.__network, record_branch_lengths)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format."""
-        return self.__network.copy()
+        if self.__network:
+            return self.__network.copy()
+        else:
+            return None
 
     def get_mean_depth_of_tree(self) -> float:
         """Computes mean depth of tree.
@@ -915,6 +925,75 @@ class CassiopeiaTree:
         self.__network = nx.relabel_nodes(self.__network, relabel_map)
 
         # reset cache because we've changed names
+        self.__cache = {}
+
+    def remove_and_prune_lineage(self, node: int) -> None:
+        """Removes a node from the tree and prunes the lineage.
+
+        Removes a node and all ancestors of that node that are no longer the
+        ancestor of any leaves. In the context of a phylogeny, this removes 
+        all ancestral nodes that are not the ancestors of any observed samples,
+        thus pruning all lineages that died.
+
+        Args:
+            node: The node to be removed
+        """
+        self.__check_network_initialized()
+
+        if len(self.__network.nodes) > 1:
+            curr_parent = list(self.__network.predecessors(node))[0]
+            self.__network.remove_node(node)
+            while (
+                self.__network.out_degree(curr_parent) < 1
+                and self.__network.in_degree(curr_parent) > 0
+            ):
+                next_parent = list(self.__network.predecessors(curr_parent))[0]
+                self.__network.remove_node(curr_parent)
+                curr_parent = next_parent
+
+            # reset cache because we've changed the tree topology
+            self.__cache = {}
+
+    def collapse_unifurcations(self, source: Optional[int] = None) -> None:
+        """Collapses unifurcations on the tree.
+
+        Args:
+            source: The node at which to begin the tree traversal
+        """
+
+        def _collapse_unifurcations(network, node, parent):
+            succs = list(network.successors(node))
+            if len(succs) == 1:
+                t = network.get_edge_data(parent, node)["length"]
+                t_ = network.get_edge_data(node, succs[0])["length"]
+                network.add_edge(parent, succs[0])
+                network[parent][succs[0]]["length"] = t + t_
+                _collapse_unifurcations(network, succs[0], parent)
+                network.remove_node(node)
+            else:
+                for i in succs:
+                    _collapse_unifurcations(network, i, node)
+
+        self.__check_network_initialized()
+
+        if not source:
+            source = [
+                n for n in self.__network if self.__network.in_degree(n) == 0
+            ][0]
+
+        for node in self.__network.successors(source):
+            _collapse_unifurcations(self.__network, node, source)
+
+        succs = list(self.__network.successors(source))
+        if len(succs) == 1:
+            t = self.__network.get_edge_data(source, succs[0])["length"]
+            for i in self.__network.successors(succs[0]):
+                t_ = self.__network.get_edge_data(succs[0], i)["length"]
+                self.__network.add_edge(source, i)
+                self.__network[source][i]["length"] = t + t_
+            self.__network.remove_node(succs[0])
+
+        # reset cache because we've changed the tree topology
         self.__cache = {}
 
     def get_dissimilarity_map(self):

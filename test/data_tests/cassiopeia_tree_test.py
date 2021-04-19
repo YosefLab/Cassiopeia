@@ -64,6 +64,18 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
 
+        # A simple balanced binary tree to test lineage pruning
+        complete_binary = nx.balanced_tree(2, 3, create_using=nx.DiGraph())
+        str_names = dict(
+            zip(
+                list(complete_binary.nodes),
+                ["node" + str(i) for i in complete_binary.nodes],
+            )
+        )
+        self.simple_complete_binary_tree = nx.relabel_nodes(
+            complete_binary, str_names
+        )
+
     def test_newick_to_networkx(self):
 
         network = data_utilities.newick_to_networkx(self.test_nwk)
@@ -647,7 +659,6 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
-        print(tree.get_dissimilarity_map)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
@@ -687,6 +698,170 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertWarns(
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
+
+    def test_remove_and_prune_lineage_all(self):
+        """Tests the case where all lineages are removed and pruned."""
+        cas_tree = cas.data.CassiopeiaTree(
+            tree=self.simple_complete_binary_tree
+        )
+        for i in cas_tree.leaves:
+            cas_tree.remove_and_prune_lineage(i)
+
+        self.assertEqual(cas_tree.nodes, ["node0"])
+        self.assertEqual(cas_tree.edges, [])
+
+    def test_remove_and_prune_lineage_some(self):
+        """Tests a case where some lineages are removed"""
+        cas_tree = cas.data.CassiopeiaTree(
+            tree=self.simple_complete_binary_tree
+        )
+        cas_tree.remove_and_prune_lineage("node11")
+        cas_tree.remove_and_prune_lineage("node13")
+        cas_tree.remove_and_prune_lineage("node14")
+
+        expected_edges = [
+            ("node0", "node1"),
+            ("node0", "node2"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+            ("node2", "node5"),
+            ("node3", "node7"),
+            ("node3", "node8"),
+            ("node4", "node9"),
+            ("node4", "node10"),
+            ("node5", "node12"),
+        ]
+        self.assertEqual(cas_tree.edges, expected_edges)
+
+    def test_remove_and_prune_lineage_one_side(self):
+        """Tests a case where the entire one side of a tree is removed."""
+        cas_tree = cas.data.CassiopeiaTree(
+            tree=self.simple_complete_binary_tree
+        )
+        for i in range(7, 11):
+            cas_tree.remove_and_prune_lineage("node" + str(i))
+
+        expected_edges = [
+            ("node0", "node2"),
+            ("node2", "node5"),
+            ("node2", "node6"),
+            ("node5", "node11"),
+            ("node5", "node12"),
+            ("node6", "node13"),
+            ("node6", "node14"),
+        ]
+        self.assertEqual(cas_tree.edges, expected_edges)
+
+    def test_collapse_unifurcations_source(self):
+        """Tests a case where a non-root source is provided."""
+        tree = nx.DiGraph()
+        tree.add_nodes_from(list(range(6)))
+        tree.add_edges_from([(0, 1), (1, 2), (2, 3), (2, 4), (3, 5)])
+        str_names = dict(
+            zip(list(tree.nodes), ["node" + str(i) for i in tree.nodes])
+        )
+        tree = nx.relabel_nodes(tree, str_names)
+        cas_tree = cas.data.CassiopeiaTree(tree=tree)
+        for u, v in cas_tree.edges:
+            cas_tree.set_branch_length(u, v, 1.5)
+
+        cas_tree.collapse_unifurcations(source="node1")
+
+        expected_edges = {
+            ("node0", "node1"): 1.5,
+            ("node1", "node4"): 3.0,
+            ("node1", "node5"): 4.5,
+        }
+        for u, v in cas_tree.edges:
+            self.assertEqual(
+                cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
+            )
+
+    def test_collapse_unifurcations(self):
+        """Tests a general case with unifurcations throughout the tree."""
+        tree = nx.DiGraph()
+        tree.add_nodes_from(list(range(10)))
+        tree.add_edges_from(
+            [
+                (0, 1),
+                (0, 2),
+                (2, 3),
+                (3, 4),
+                (2, 5),
+                (5, 6),
+                (6, 7),
+                (6, 8),
+                (2, 9),
+            ]
+        )
+        str_names = dict(
+            zip(list(tree.nodes), ["node" + str(i) for i in tree.nodes])
+        )
+        tree = nx.relabel_nodes(tree, str_names)
+        cas_tree = cas.data.CassiopeiaTree(tree=tree)
+        for u, v in cas_tree.edges:
+            cas_tree.set_branch_length(u, v, 1.5)
+
+        cas_tree.collapse_unifurcations()
+        expected_edges = {
+            ("node0", "node1"): 1.5,
+            ("node0", "node2"): 1.5,
+            ("node2", "node9"): 1.5,
+            ("node2", "node4"): 3.0,
+            ("node2", "node6"): 3.0,
+            ("node6", "node7"): 1.5,
+            ("node6", "node8"): 1.5,
+        }
+        for u, v in cas_tree.edges:
+            self.assertEqual(
+                cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
+            )
+
+    def test_collapse_unifurcations_long_root_unifurcation(self):
+        """Tests a case where there is a long chain at the root."""
+        tree = nx.DiGraph()
+        tree.add_nodes_from(list(range(15)))
+        tree.add_edges_from(
+            [
+                (0, 1),
+                (1, 2),
+                (2, 3),
+                (3, 4),
+                (3, 5),
+                (4, 6),
+                (6, 7),
+                (6, 8),
+                (5, 9),
+                (5, 10),
+                (5, 11),
+                (10, 12),
+                (12, 13),
+                (13, 14),
+            ]
+        )
+        str_names = dict(
+            zip(list(tree.nodes), ["node" + str(i) for i in tree.nodes])
+        )
+        tree = nx.relabel_nodes(tree, str_names)
+        cas_tree = cas.data.CassiopeiaTree(tree=tree)
+        for u, v in cas_tree.edges:
+            cas_tree.set_branch_length(u, v, 1.5)
+
+        cas_tree.collapse_unifurcations()
+
+        expected_edges = {
+            ("node0", "node5"): 6.0,
+            ("node0", "node6"): 7.5,
+            ("node5", "node9"): 1.5,
+            ("node5", "node11"): 1.5,
+            ("node5", "node14"): 6.0,
+            ("node6", "node7"): 1.5,
+            ("node6", "node8"): 1.5,
+        }
+        for u, v in cas_tree.edges:
+            self.assertEqual(
+                cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
+            )
 
 
 if __name__ == "__main__":
