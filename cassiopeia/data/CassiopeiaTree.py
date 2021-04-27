@@ -6,10 +6,9 @@ clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
 associated with this clonal  population.
 
-When a solver has been called on this object, a tree 
-will be added to the data structure at which point basic properties can be 
-queried like the average tree depth or agreement between character states and
-phylogeny.
+When a solver has been called on this object, a tree will be added to the data 
+structure at which point basic properties can be queried like the average tree 
+depth or agreement between character states and phylogeny.
 
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
@@ -86,7 +85,7 @@ class CassiopeiaTree:
         branch lengths to newick strings
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
-    TODO(rzhang): Figure out if `get_mutations_on_edge` should include missing
+    TODO(rzhang): Figure out if `get_mutations_along_edge` should include missing
         data mutations
 
     Args:

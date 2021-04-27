@@ -355,7 +355,6 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
 
         tree = self.large_tree.get_tree_topology()
-        print(tree.nodes)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
