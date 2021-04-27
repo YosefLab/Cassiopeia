@@ -45,6 +45,7 @@ def upload_and_export_itol(
     use_branch_lengths: bool = False,
     palette: List[str] = palettes.Category20[20],
     random_state: Optional[np.random.RandomState] = None,
+    files: Optional[List[str]] = None,
     verbose: bool = True,
     **kwargs
 ):
@@ -93,6 +94,7 @@ def upload_and_export_itol(
         include_legend: Plot legend along with meta data.
         palette: A palette of colors in hex format.
         random_state: A random state for reproducibility
+        files: Additional files to upload
         verbose: Include extra print statements.
 
     Raises:
@@ -139,7 +141,7 @@ def upload_and_export_itol(
         os.path.join(temporary_directory, "tree_to_plot.tree")
     )
 
-    files = []
+    files = files.copy() if files else []
     if allele_table is not None:
         files += create_indel_heatmap(
             allele_table,
