@@ -207,7 +207,7 @@ def run_camin_sokal(cm_uniq, stem, verbose = True):
             l = l.strip()
             newick_str += l
 
-    tree = dp.newick_to_network(newick_str, cm_uniq)
+    tree = newick_to_network(newick_str, cm_uniq)
 
     cs_net = nx.relabel_nodes(tree, samples_to_cells)
 
