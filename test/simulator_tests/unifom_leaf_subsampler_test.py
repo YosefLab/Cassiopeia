@@ -12,7 +12,7 @@ import cassiopeia.data.utilities as utilities
 class UniformLeafSubsamplerTest(unittest.TestCase):
     def test_bad_parameters(self):
         with self.assertRaises(LeafSubsamplerError):
-            uniform_sampler = UniformLeafSubsampler(ratio = 0.5, n_leaves = 400)
+            uniform_sampler = UniformLeafSubsampler(ratio = 0.5, number_of_leaves = 400)
         with self.assertRaises(LeafSubsamplerError):
             uniform_sampler = UniformLeafSubsampler()
 
@@ -20,7 +20,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         balanced_tree = nx.balanced_tree(2, 3, create_using=nx.DiGraph)
         tree = CassiopeiaTree(tree=balanced_tree)
         with self.assertRaises(LeafSubsamplerError):
-            uniform_sampler = UniformLeafSubsampler(n_leaves = 0)
+            uniform_sampler = UniformLeafSubsampler(number_of_leaves = 0)
             uniform_sampler.subsample_leaves(tree)
         with self.assertRaises(LeafSubsamplerError):
             uniform_sampler = UniformLeafSubsampler(ratio = 0.0001)
@@ -34,8 +34,8 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         tree = CassiopeiaTree(tree=balanced_tree)
 
         np.random.seed(10)
-        uni = UniformLeafSubsampler(n_leaves=3)
-        res = uni.subsample_leaves(tree=tree)
+        uni = UniformLeafSubsampler(number_of_leaves=3)
+        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
         expected_edges = [
             ("node15", "node0"),
             ("node0", "node8"),
@@ -47,7 +47,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio=0.65)
-        res = uni.subsample_leaves(tree=tree)
+        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
         expected_edges = [
             ("node15", "node0"),
             ("node0", "node2"),
@@ -86,7 +86,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio = 0.5)
-        res = uni.subsample_leaves(tree=tree)
+        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
 
         expected_edges = [
             ("node16", "node0"),
@@ -100,8 +100,8 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         self.assertEqual(set(res.edges), set(expected_edges))
 
         np.random.seed(11)
-        uni = UniformLeafSubsampler(n_leaves = 6)
-        res = uni.subsample_leaves(tree=tree)
+        uni = UniformLeafSubsampler(number_of_leaves = 6)
+        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
 
         expected_edges = [
             ("node16", "node0"),

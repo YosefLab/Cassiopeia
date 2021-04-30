@@ -76,17 +76,13 @@ class CassiopeiaTree:
     data are the proportion of missing data for each character or the entropy
     of states. These are good statistics to have for feature selection.
 
+    TODO(rzhang): Add check upon initialization that input tree is valid tree.
     TODO(mattjones315): Add experimental meta data as arguments.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
-    TODO(sprillo): Add bulk set_branch_lengths method
     TODO(mattjones315): Add bulk set_states method.
-    TODO(mattjones315): Read branch lengths off of newick strings & write
-        branch lengths to newick strings
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
-    TODO(rzhang): Figure out if `get_mutations_along_edge` should include missing
-        data mutations
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -363,7 +359,7 @@ class CassiopeiaTree:
 
         if "root" not in self.__cache:
             self.__cache["root"] = [
-                n for n in self.__network if self.__network.in_degree(n) == 0
+                n for n in self.__network if self.in_degree(n) == 0
             ][0]
         return self.__cache["root"]
 
@@ -381,7 +377,7 @@ class CassiopeiaTree:
 
         if "leaves" not in self.__cache:
             self.__cache["leaves"] = [
-                n for n in self.__network if self.__network.out_degree(n) == 0
+                n for n in self.__network if self.out_degree(n) == 0
             ]
         return self.__cache["leaves"][:]
 
@@ -399,7 +395,7 @@ class CassiopeiaTree:
 
         if "internal_nodes" not in self.__cache:
             self.__cache["internal_nodes"] = [
-                n for n in self.__network if self.__network.out_degree(n) > 1
+                n for n in self.__network if self.out_degree(n) > 1
             ]
         return self.__cache["internal_nodes"][:]
 
@@ -445,7 +441,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
-        return self.__network.out_degree(node) == 0
+        return self.out_degree(node) == 0
 
     def is_root(self, node: str) -> bool:
         """Returns whether or not the node is the root.
@@ -485,8 +481,9 @@ class CassiopeiaTree:
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
                 if len(self.get_character_states(n)) == 0:
-                    raise CassiopeiaTreeError("No character states annotated "
-                    "at node " + str(n) + ", try initializing character states"
+                    raise CassiopeiaTreeError("Character states not annotated "
+                    "at a leaf node, initialize character states at leaves "
+                    "before reconstructing ancestral characters."
                     )
                 continue
             children = self.children(n)
@@ -526,6 +523,88 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         return [v for v in self.__network.successors(node)]
+
+    def __remove_node(self, node) -> None:
+        """Private method to remove node from tree.
+        
+        Args:
+            node: A node in the tree to be removed
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+        self.__check_network_initialized()
+
+        self.__network.remove_node(node)
+    
+    def __add_node(self, node) -> None:
+        """Private method to add node to tree.
+        
+        Args:
+            node: A node to be added to the tree.
+            
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+        self.__check_network_initialized()
+        
+        self.__network.add_node(node)
+
+    def __remove_edge(self, u, v) -> None:
+        """Private method to remove edge from tree.
+        
+        Args:
+            u: The source node of the directed edge to be removed
+            v: The sink node of the directed edge to be removed
+            
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+        self.__check_network_initialized()
+
+        self.__network.remove_edge(u, v)
+
+    def __add_edge(self, u, v) -> None:
+        """Private method to add edge to tree.
+
+        Args:
+            u: The source node of the directed edge to be added
+            v: The sink node of the directed edge to be added
+            
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+        self.__check_network_initialized()
+
+        self.__network.add_edge(u, v)
+
+    def out_degree(self, node) -> None:
+        """Gets the out degree of a node in the tree.
+        
+        Args:
+            node: A node in the tree.
+            
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+
+        self.__check_network_initialized()
+
+        return self.__network.out_degree(node)
+
+    def in_degree(self, node) -> None:
+        """Gets the in degree of a node in the tree.
+
+        Args:
+            node: A node in the tree.
+            
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized.
+        """
+
+        self.__check_network_initialized()
+
+        return self.__network.in_degree(node)
 
     def set_time(self, node: str, new_time: float) -> None:
         """Sets the time of a node.
@@ -629,6 +708,20 @@ class CassiopeiaTree:
 
         return dict([(node, self.get_time(node)) for node in self.nodes])
 
+    def __set_branch_length(self, parent: str, child: str, length: float):
+        """A private method for setting branch lengths.
+
+        A private method for setting branch lengths with no checks. Useful
+        for the internal CassiopeiaTree API.
+
+        Args:
+            parent: Parent node of the edge
+            child: Child node of the edge
+            length: New edge length
+        """
+        self.__network[parent][child]["length"] = length
+
+
     def set_branch_length(self, parent: str, child: str, length: float):
         """Sets the length of a branch.
 
@@ -655,9 +748,34 @@ class CassiopeiaTree:
         if length < 0:
             raise CassiopeiaTreeError("Edge length must be positive.")
 
-        self.__network[parent][child]["length"] = length
+        self.__set_branch_length(parent, child, length)
 
-        for (u, v) in self.depth_first_traverse_edges(source=parent):
+        for u, v in self.depth_first_traverse_edges(source=parent):
+            self.__network.nodes[v]["time"] = (
+                self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
+            )
+
+    def set_branch_lengths(self, branch_length_dict: Dict[Tuple[str, str], float]) -> None:
+        """Sets the length of multiple branches on a tree.
+
+        Adjusts the branch length of specified parent-child relationships.
+        This procedure maintains the consistency with the rest of the times in
+        the tree. Namely, by changing branch lengths here, it will change
+        the times of all the nodes in the tree such that the times are 
+        representative of the new branch lengths.
+
+        Args:
+            branch_dict: A dictionary of edges to updated branch lengths
+        """
+        self.__check_network_initialized()
+
+        for edge, length in branch_length_dict.items():
+            u, v = edge[0], edge[1]
+            if length < 0:
+                raise CassiopeiaTreeError("Edge length must be positive.")
+            self.__network[u][v]["length"] = length
+
+        for u, v in self.depth_first_traverse_edges():
             self.__network.nodes[v]["time"] = (
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
@@ -782,7 +900,7 @@ class CassiopeiaTree:
         return [
             n
             for n in self.depth_first_traverse_nodes(source=node)
-            if self.__network.out_degree(n) == 0
+            if self.out_degree(n) == 0
         ]
 
     def get_newick(self, record_branch_lengths = False) -> str:
@@ -862,7 +980,7 @@ class CassiopeiaTree:
 
         mutations = []
         for i in range(self.n_character):
-            if parent_states[i] == 0 and child_states[i] != 0:
+            if parent_states[i] != child_states[i]:
                 mutations.append((i, child_states[i]))
 
         return mutations
@@ -886,71 +1004,92 @@ class CassiopeiaTree:
         # reset cache because we've changed names
         self.__cache = {}
 
-    def remove_and_prune_lineage(self, node: int) -> None:
-        """Removes a node from the tree and prunes the lineage.
+    def remove_leaf_and_prune_lineage(self, node: str) -> None:
+        """Removes a leaf from the tree and prunes the lineage.
 
-        Removes a node and all ancestors of that node that are no longer the
-        ancestor of any leaves. In the context of a phylogeny, this removes 
-        all ancestral nodes that are not the ancestors of any observed samples,
-        thus pruning all lineages that died.
+        Removes a leaf and all ancestors of that leaf that are no longer the
+        ancestor of any leaves. In the context of a phylogeny, this prunes the
+        lineage of all nodes no longer relevant to observed samples. 
+        Additionally, maintains consistency with information on the tree by
+        removing the node from the character matrix and cell metadata.
 
         Args:
-            node: The node to be removed
+            node: The leaf node to be removed
+
+        Raises:
+            CassiopeiaTreeError if the tree is not initialized or input node is
+            not a leaf
         """
         self.__check_network_initialized()
 
-        if len(self.__network.nodes) > 1:
-            curr_parent = list(self.__network.predecessors(node))[0]
-            self.__network.remove_node(node)
-            while (
-                self.__network.out_degree(curr_parent) < 1
-                and self.__network.in_degree(curr_parent) > 0
-            ):
-                next_parent = list(self.__network.predecessors(curr_parent))[0]
-                self.__network.remove_node(curr_parent)
-                curr_parent = next_parent
+        if not self.is_leaf(node):
+            raise CassiopeiaTreeError("Node is not a leaf.")
 
-            # reset cache because we've changed the tree topology
-            self.__cache = {}
+        if self.in_degree(node) > 0:
+            curr_parent = self.parent(node)
+            self.__remove_node(node)
+            while (
+                self.out_degree(curr_parent) < 1
+                and self.in_degree(curr_parent) > 0
+            ):
+                next_parent = self.parent(curr_parent)
+                self.__remove_node(curr_parent)
+                curr_parent = next_parent
+        else:
+            self.__remove_node(node)
+
+        if self.__current_character_matrix:
+            if node in self.__current_character_matrix.index:
+                self.__current_character_matrix.drop(index = [node], inplace = True)
+        if self.cell_meta:
+            if node in self.cell_meta.index:
+                self.cell_meta.drop(index = [node], inplace = True)
+        if self.__dissimilarity_map:
+            if node in self.__dissimilarity_map.index:
+                self.__dissimilarity_map.drop(index = [node], columns = node, inplace = True)
+
+        # reset cache because we've changed the tree topology
+        self.__cache = {}
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:
         """Collapses unifurcations on the tree.
 
+        Removes all internal nodes that have in degree and out degree of 1,
+        connecting their parent and children nodes by branchs with lengths
+        equal to the total time elapsed from parent to each child. Therefore
+        preserves the times of nodes that are not removed.
+
         Args:
             source: The node at which to begin the tree traversal
         """
-
-        def _collapse_unifurcations(network, node, parent):
-            successors = list(network.successors(node))
-            if len(successors) == 1:
-                t = network.get_edge_data(parent, node)["length"]
-                t_ = network.get_edge_data(node, successors[0])["length"]
-                network.add_edge(parent, successors[0])
-                network[parent][successors[0]]["length"] = t + t_
-                _collapse_unifurcations(network, successors[0], parent)
-                network.remove_node(node)
-            else:
-                for i in successors:
-                    _collapse_unifurcations(network, i, node)
-
         self.__check_network_initialized()
 
         if source is None:
-            source = [
-                n for n in self.__network if self.__network.in_degree(n) == 0
-            ][0]
+            source = self.root
 
-        for node in self.__network.successors(source):
-            _collapse_unifurcations(self.__network, node, source)
-
-        successors = list(self.__network.successors(source))
-        if len(successors) == 1:
-            t = self.__network.get_edge_data(source, successors[0])["length"]
-            for i in self.__network.successors(successors[0]):
-                t_ = self.__network.get_edge_data(successors[0], i)["length"]
-                self.__network.add_edge(source, i)
-                self.__network[source][i]["length"] = t + t_
-            self.__network.remove_node(successors[0])
+        for node in self.depth_first_traverse_nodes(postorder = True, source = source):
+            if self.is_leaf(node):
+                continue
+            elif node == source:
+                successors = self.children(node)
+                if len(successors) == 1:
+                    child = successors[0]
+                    t = self.get_branch_length(node, child)
+                    for grandchild in self.children(child):
+                        t_ = self.get_branch_length(child, grandchild)
+                        self.__add_edge(node, grandchild)
+                        self.__set_branch_length(node, grandchild, t + t_)
+                    self.__remove_node(child)
+            else:
+                successors = self.children(node)
+                if len(successors) == 1:
+                    child = successors[0]
+                    parent = self.parent(node)
+                    t = self.get_branch_length(parent, node)
+                    t_ = self.get_branch_length(node, child)
+                    self.__add_edge(parent, child)
+                    self.__set_branch_length(parent, child, t + t_)
+                    self.__remove_node(node)
 
         # reset cache because we've changed the tree topology
         self.__cache = {}
@@ -965,7 +1104,9 @@ class CassiopeiaTree:
         mutations. The introduction of a missing data event is considered a 
         mutation in this context. Either takes the existing character states on
         the tree or infers the annotations bottom-up from the samples obeying 
-        Camin-Sokal Parsimony.
+        Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
+        by connecting the parent and children of removed nodes by branchs with 
+        lengths equal to the total time elapsed from parent to each child.
 
         Args:
             tree: A networkx DiGraph object representing the tree
@@ -984,8 +1125,9 @@ class CassiopeiaTree:
                     if self.get_character_states(n) == self.get_character_states(child):
                         for grandchild in self.children(child):
                             t_ = self.get_branch_length(child, grandchild)
-                            self.__network.add_edge(n, grandchild, length = t + t_)
-                        self.__network.remove_node(child)
+                            self.__add_edge(n, grandchild)
+                            self.__set_branch_length(n, grandchild, t + t_)
+                        self.__remove_node(child)
 
         # reset cache because we've changed the tree topology
         self.__cache = {}

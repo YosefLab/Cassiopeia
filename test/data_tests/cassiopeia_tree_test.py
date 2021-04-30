@@ -699,25 +699,25 @@ class TestCassiopeiaTree(unittest.TestCase):
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
 
-    def test_remove_and_prune_lineage_all(self):
+    def test_remove_leaf_and_prune_lineage_all(self):
         """Tests the case where all lineages are removed and pruned."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
         for i in cas_tree.leaves:
-            cas_tree.remove_and_prune_lineage(i)
+            cas_tree.remove_leaf_and_prune_lineage(i)
 
         self.assertEqual(cas_tree.nodes, ["node0"])
         self.assertEqual(cas_tree.edges, [])
 
-    def test_remove_and_prune_lineage_some(self):
+    def test_remove_leaf_and_prune_lineage_some(self):
         """Tests a case where some lineages are removed"""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
-        cas_tree.remove_and_prune_lineage("node11")
-        cas_tree.remove_and_prune_lineage("node13")
-        cas_tree.remove_and_prune_lineage("node14")
+        cas_tree.remove_leaf_and_prune_lineage("node11")
+        cas_tree.remove_leaf_and_prune_lineage("node13")
+        cas_tree.remove_leaf_and_prune_lineage("node14")
 
         expected_edges = [
             ("node0", "node1"),
@@ -733,13 +733,13 @@ class TestCassiopeiaTree(unittest.TestCase):
         ]
         self.assertEqual(cas_tree.edges, expected_edges)
 
-    def test_remove_and_prune_lineage_one_side(self):
+    def test_remove_leaf_and_prune_lineage_one_side(self):
         """Tests a case where the entire one side of a tree is removed."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
         for i in range(7, 11):
-            cas_tree.remove_and_prune_lineage("node" + str(i))
+            cas_tree.remove_leaf_and_prune_lineage("node" + str(i))
 
         expected_edges = [
             ("node0", "node2"),
