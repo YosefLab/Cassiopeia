@@ -1,3 +1,11 @@
+"""
+Abstract class LeafSubsampler. Samples the leaves of CassiopeiaTrees and 
+generates a tree that keeps only the lineages pertaining to the sample.
+
+All leaf subsamplers are derived classes of this abstract class, and at a minimum
+implement a method called `subsample_leaves`.
+"""
+
 import abc
 import networkx as nx
 import numpy as np
@@ -25,10 +33,18 @@ class LeafSubsampler(abc.ABC):
     @abc.abstractmethod
     def subsample_leaves(self, tree: CassiopeiaTree) -> CassiopeiaTree:
         """
-        Returns a new CassiopeiaTree which is the result of subsampling
-        the leafs in the original CassiopeiaTree.
+        Subsamples the leaves of a CassiopeiaTree.
+
+        Returns a new CassiopeiaTree which is the result of subsampling the
+        leaves in the original CassiopeiaTree and removing ancestral nodes no
+        longer relevant to the sample. All fields on the original character 
+        matrix persist, but maintains character states, meta data, and the 
+        dissimilarity map for the sampled cells only.
 
         Args:
-            tree: The tree for which to subsample leaves and generate an
-                induced subtree from
+            tree: The CassiopeiaTree for which to subsample leaves
+        
+        Returns:
+            A new CassiopeiaTree that is the induced subtree on a sample of the
+            leaves in the given tree.
         """

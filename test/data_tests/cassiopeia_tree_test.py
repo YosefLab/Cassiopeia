@@ -699,25 +699,25 @@ class TestCassiopeiaTree(unittest.TestCase):
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
 
-    def test_remove_and_prune_lineage_all(self):
+    def test_remove_leaf_and_prune_lineage_all(self):
         """Tests the case where all lineages are removed and pruned."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
         for i in cas_tree.leaves:
-            cas_tree.remove_and_prune_lineage(i)
+            cas_tree.remove_leaf_and_prune_lineage(i)
 
         self.assertEqual(cas_tree.nodes, ["node0"])
         self.assertEqual(cas_tree.edges, [])
 
-    def test_remove_and_prune_lineage_some(self):
+    def test_remove_leaf_and_prune_lineage_some(self):
         """Tests a case where some lineages are removed"""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
-        cas_tree.remove_and_prune_lineage("node11")
-        cas_tree.remove_and_prune_lineage("node13")
-        cas_tree.remove_and_prune_lineage("node14")
+        cas_tree.remove_leaf_and_prune_lineage("node11")
+        cas_tree.remove_leaf_and_prune_lineage("node13")
+        cas_tree.remove_leaf_and_prune_lineage("node14")
 
         expected_edges = [
             ("node0", "node1"),
@@ -733,13 +733,13 @@ class TestCassiopeiaTree(unittest.TestCase):
         ]
         self.assertEqual(cas_tree.edges, expected_edges)
 
-    def test_remove_and_prune_lineage_one_side(self):
+    def test_remove_leaf_and_prune_lineage_one_side(self):
         """Tests a case where the entire one side of a tree is removed."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
         for i in range(7, 11):
-            cas_tree.remove_and_prune_lineage("node" + str(i))
+            cas_tree.remove_leaf_and_prune_lineage("node" + str(i))
 
         expected_edges = [
             ("node0", "node2"),
@@ -970,6 +970,36 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(set(cas_tree.nodes), expected_nodes)
         self.assertEqual(set(cas_tree.edges), expected_edges)
 
+    def test_set_and_add_attribute(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        tree.set_attribute("node3", "test_attribute", 5)
+        tree.set_attribute("node5", "test_attribute", 10)
+
+        self.assertEqual(5, tree.get_attribute("node3", "test_attribute"))
+        self.assertEqual(10, tree.get_attribute("node5", "test_attribute"))
+
+        self.assertRaises(CassiopeiaTreeError, tree.get_attribute, "node10", "test_attribute")
+
+    def test_filter_nodes(self):
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        for n in tree.depth_first_traverse_nodes(postorder=False):
+            if tree.is_root(n):
+                tree.set_attribute(n, "depth", 0)
+                continue
+            tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth")+1)
+        
+        nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == 2)
+        expected_nodes = ["node5", "node6", "node3", "node4"]
+
+        self.assertCountEqual(nodes, expected_nodes)
+
 
 if __name__ == "__main__":
     unittest.main()
+
