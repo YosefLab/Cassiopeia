@@ -96,6 +96,8 @@ def upload_and_export_itol(
         random_state: A random state for reproducibility
         files: Additional files to upload
         verbose: Include extra print statements.
+        **kwargs: additional keyword arguments are passed as iTOL export parameters.
+            See https://itol.embl.de/help.cgi#batch for a full list.
 
     Raises:
         iTOLError if iTOL credentials cannot be found, if the output format is
