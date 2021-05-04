@@ -35,11 +35,10 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(number_of_leaves=3)
-        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
+        res = uni.subsample_leaves(tree=tree)
         expected_edges = [
-            ("node15", "node0"),
-            ("node0", "node8"),
-            ("node0", "node5"),
+            ("node15", "node8"),
+            ("node15", "node5"),
             ("node5", "node11"),
             ("node5", "node12"),
         ]
@@ -47,11 +46,10 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio=0.65)
-        res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
+        res = uni.subsample_leaves(tree=tree)
         expected_edges = [
-            ("node15", "node0"),
-            ("node0", "node2"),
-            ("node0", "node3"),
+            ("node15", "node2"),
+            ("node15", "node3"),
             ("node2", "node14"),
             ("node2", "node5"),
             ("node5", "node11"),
@@ -83,21 +81,40 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
             ("node9", "node15"),
         ])
         tree = CassiopeiaTree(tree=custom_tree)
+        for u, v in tree.edges:
+            tree.set_branch_length(u, v, 1.5)
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio = 0.5)
         res = uni.subsample_leaves(tree=tree, collapse_source = "node0")
 
-        expected_edges = [
-            ("node16", "node0"),
-            ("node0", "node1"),
-            ("node0", "node5"),
-            ("node1", "node3"),
-            ("node1", "node11"),
-            ("node11", "node12"),
-            ("node11", "node13"),
-        ]
-        self.assertEqual(set(res.edges), set(expected_edges))
+        expected_edges = {
+            ("node16", "node0"): 1.5,
+            ("node0", "node1"): 1.5,
+            ("node0", "node5"): 3.0,
+            ("node1", "node3"): 1.5,
+            ("node1", "node11"): 4.5,
+            ("node11", "node12"): 1.5,
+            ("node11", "node13"): 1.5,
+        }
+        self.assertEqual(set(res.edges), set(expected_edges.keys()))
+        for u, v in res.edges:
+            self.assertEqual(res.get_branch_length(u,v), expected_edges[(u,v)])
+
+        expected_times = {
+            "node16": 0.0,
+            "node0": 1.5,
+            "node1": 3.0,
+            "node5": 4.5,
+            "node3": 4.5,
+            "node11": 7.5,
+            "node12": 9.0,
+            "node13": 9.0
+        }
+        for u in res.nodes:
+            self.assertEqual(
+                res.get_time(u), expected_times[u]
+            )
 
         np.random.seed(11)
         uni = UniformLeafSubsampler(number_of_leaves = 6)

@@ -715,6 +715,8 @@ class TestCassiopeiaTree(unittest.TestCase):
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
+        for u, v in cas_tree.edges:
+            cas_tree.set_branch_length(u, v, 1.5)
         cas_tree.remove_leaf_and_prune_lineage("node11")
         cas_tree.remove_leaf_and_prune_lineage("node13")
         cas_tree.remove_leaf_and_prune_lineage("node14")
@@ -732,6 +734,26 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node5", "node12"),
         ]
         self.assertEqual(cas_tree.edges, expected_edges)
+        for u, v in cas_tree.edges:
+            self.assertEqual(cas_tree.get_branch_length(u, v), 1.5)
+
+        expected_times = {
+            "node0": 0.0,
+            "node1": 1.5,
+            "node2": 1.5,
+            "node3": 3.0,
+            "node4": 3.0,
+            "node5": 3.0,
+            "node7": 4.5,
+            "node8": 4.5,
+            "node9": 4.5,
+            "node10": 4.5,
+            "node12": 4.5
+        }
+        for u in cas_tree.nodes:
+            self.assertEqual(
+                cas_tree.get_time(u), expected_times[u]
+            )
 
     def test_remove_leaf_and_prune_lineage_one_side(self):
         """Tests a case where the entire one side of a tree is removed."""
@@ -772,10 +794,23 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node1", "node4"): 3.0,
             ("node1", "node5"): 4.5,
         }
+        self.assertEqual(set(cas_tree.edges), set(expected_edges.keys()))
         for u, v in cas_tree.edges:
             self.assertEqual(
                 cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
             )
+
+        expected_times = {
+            "node0": 0.0,
+            "node1": 1.5,
+            "node4": 4.5,
+            "node5": 6.0
+        }
+        for u in cas_tree.nodes:
+            self.assertEqual(
+                cas_tree.get_time(u), expected_times[u]
+            )
+
 
     def test_collapse_unifurcations(self):
         """Tests a general case with unifurcations throughout the tree."""
@@ -812,9 +847,25 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node6", "node7"): 1.5,
             ("node6", "node8"): 1.5,
         }
+        self.assertEqual(set(cas_tree.edges), set(expected_edges.keys()))
         for u, v in cas_tree.edges:
             self.assertEqual(
                 cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
+            )
+
+        expected_times = {
+            "node0": 0.0,
+            "node1": 1.5,
+            "node2": 1.5,
+            "node9": 3.0,
+            "node4": 4.5,
+            "node6": 4.5,
+            "node7": 6.0,
+            "node8": 6.0
+        }
+        for u in cas_tree.nodes:
+            self.assertEqual(
+                cas_tree.get_time(u), expected_times[u]
             )
 
     def test_collapse_unifurcations_long_root_unifurcation(self):
@@ -858,9 +909,25 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node6", "node7"): 1.5,
             ("node6", "node8"): 1.5,
         }
+        self.assertEqual(set(cas_tree.edges), set(expected_edges.keys()))
         for u, v in cas_tree.edges:
             self.assertEqual(
                 cas_tree.get_branch_length(u, v), expected_edges[(u, v)]
+            )
+
+        expected_times = {
+            "node0": 0.0,
+            "node5": 6.0,
+            "node6": 7.5,
+            "node9": 7.5,
+            "node7": 9.0,
+            "node8": 9.0,
+            "node11": 7.5,
+            "node14": 12.0
+        }
+        for u in cas_tree.nodes:
+            self.assertEqual(
+                cas_tree.get_time(u), expected_times[u]
             )
 
     def test_mutationless_edge_collapse_1(self):
@@ -969,6 +1036,69 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertEqual(set(cas_tree.nodes), expected_nodes)
         self.assertEqual(set(cas_tree.edges), expected_edges)
+    
+    def test_mutationless_edge_collapse_ground_tree(self):
+        tree = nx.DiGraph()
+        for i in range(7):
+            tree.add_node(str(i))
+        tree.add_edge("5", "0")
+        tree.add_edge("5", "1")
+        tree.add_edge("6", "3")
+        tree.add_edge("6", "5")
+        tree.add_edge("7", "2")
+        tree.add_edge("7", "4")
+        tree.add_edge("8", "6")
+        tree.add_edge("8", "7")
+
+        cas_tree = cas.data.CassiopeiaTree(tree=tree)
+        for u, v in cas_tree.edges:
+            cas_tree.set_branch_length(u, v, 1.5)
+
+        character_states = {
+            "0": [-1, 1, 0],
+            "1": [-1, -1, 0],
+            "2": [1, 1, 0],
+            "3": [3, 1, 0],
+            "4": [0, 1, 1],
+            "5": [-1, 1, 0],
+            "6": [0, 1, 0],
+            "7": [0, 1, 0],
+            "8": [0, 1, 0]
+        }
+
+        cas_tree.initialize_all_character_states(character_states)
+        cas_tree.collapse_mutationless_edges(infer_ancestral_characters=False)
+
+        new_map = {}
+        for i in cas_tree.nodes:
+            new_map[i] = (
+                "|".join([str(c) for c in cas_tree.get_character_states(i)]) + f",{i}"
+            )
+        cas_tree.relabel_nodes(new_map)
+
+        expected_edges = {
+            ("0|1|0,8", "0|1|1,4"): 3.0,
+            ("0|1|0,8", "1|1|0,2"): 3.0,
+            ("0|1|0,8", "3|1|0,3"): 3.0,
+            ("0|1|0,8", "-1|1|0,5"): 3.0,
+            ("-1|1|0,5", "-1|1|0,0"): 1.5,
+            ("-1|1|0,5", "-1|-1|0,1"): 1.5,
+        }
+        self.assertEqual(set(cas_tree.edges), set(expected_edges.keys()))
+        for u, v in cas_tree.edges:
+            self.assertEqual(cas_tree.get_branch_length(u,v), expected_edges[(u,v)])
+
+        expected_times = {
+            "0|1|1,4": 3.0,
+            "1|1|0,2": 3.0,
+            "3|1|0,3": 3.0,
+            "-1|1|0,5": 3.0,
+            "-1|1|0,0": 4.5,
+            "-1|-1|0,1": 4.5,
+            "0|1|0,8": 0.0
+        }
+        for u in cas_tree.nodes:
+            self.assertEqual(cas_tree.get_time(u), expected_times[u])
 
     def test_set_and_add_attribute(self):
 
