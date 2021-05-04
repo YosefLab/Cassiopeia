@@ -578,7 +578,7 @@ class CassiopeiaTree:
 
         self.__network.add_edge(u, v)
 
-    def out_degree(self, node) -> None:
+    def out_degree(self, node) -> int:
         """Gets the out degree of a node in the tree.
         
         Args:
@@ -592,7 +592,7 @@ class CassiopeiaTree:
 
         return self.__network.out_degree(node)
 
-    def in_degree(self, node) -> None:
+    def in_degree(self, node) -> int:
         """Gets the in degree of a node in the tree.
 
         Args:
