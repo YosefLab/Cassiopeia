@@ -348,7 +348,7 @@ class CassiopeiaTree:
 
         if "root" not in self.__cache:
             self.__cache["root"] = [
-                n for n in self.__network if self.__network.in_degree(n) == 0
+                n for n in self.__network if self.is_root(n)
             ][0]
         return self.__cache["root"]
 
@@ -442,7 +442,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
-        return node == self.root
+        return self.__network.in_degree(node) == 0
 
     def is_internal_node(self, node: str) -> bool:
         """Returns whether or not the node is an internal node.
