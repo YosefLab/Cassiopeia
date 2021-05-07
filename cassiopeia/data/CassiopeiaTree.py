@@ -799,14 +799,14 @@ class CassiopeiaTree:
         if "subtree" not in self.__cache:
             self.__cache["subtree"] = {}
 
-            for node in self.depth_first_traverse_nodes(postorder=True):
-                if self.is_leaf(node):
-                    self.__cache["subtree"][node] = [node]
+            for n in self.depth_first_traverse_nodes(postorder=True):
+                if self.is_leaf(n):
+                    self.__cache["subtree"][n] = [n]
                 else:
                     leaves = []
-                    for child in self.children(node):
+                    for child in self.children(n):
                         leaves += self.leaves_in_subtree(child)
-                    self.__cache["subtree"][node] = leaves
+                    self.__cache["subtree"][n] = leaves
     
         return self.__cache["subtree"][node]
             
