@@ -45,7 +45,7 @@ def upload_and_export_itol(
     use_branch_lengths: bool = False,
     palette: List[str] = palettes.Category20[20],
     random_state: Optional[np.random.RandomState] = None,
-    files: Optional[List[str]] = None,
+    dataset_files: Optional[List[str]] = None,
     verbose: bool = True,
     **kwargs
 ):
@@ -94,7 +94,9 @@ def upload_and_export_itol(
         include_legend: Plot legend along with meta data.
         palette: A palette of colors in hex format.
         random_state: A random state for reproducibility
-        files: Additional files to upload
+        user_dataset_files: List of paths to additional dataset files to upload.
+            See https://itol.embl.de/help.cgi#dsType for available dataset types
+            and their definitions.
         verbose: Include extra print statements.
         **kwargs: additional keyword arguments are passed as iTOL export parameters.
             See https://itol.embl.de/help.cgi#batch for a full list.
@@ -143,7 +145,7 @@ def upload_and_export_itol(
         os.path.join(temporary_directory, "tree_to_plot.tree")
     )
 
-    files = files.copy() if files else []
+    files = user_dataset_files.copy() if user_dataset_files else []
     if allele_table is not None:
         files += create_indel_heatmap(
             allele_table,
