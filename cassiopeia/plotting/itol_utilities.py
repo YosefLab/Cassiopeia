@@ -45,7 +45,7 @@ def upload_and_export_itol(
     use_branch_lengths: bool = False,
     palette: List[str] = palettes.Category20[20],
     random_state: Optional[np.random.RandomState] = None,
-    dataset_files: Optional[List[str]] = None,
+    user_dataset_files: Optional[List[str]] = None,
     verbose: bool = True,
     **kwargs
 ):
