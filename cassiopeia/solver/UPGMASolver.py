@@ -13,7 +13,10 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import DistanceSolver
+from cassiopeia.solver import (
+    DistanceSolver,
+    dissimilarity_functions,
+)
 
 
 class UPGMASolver(DistanceSolver.DistanceSolver):
@@ -51,7 +54,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             Callable[
                 [np.array, np.array, int, Dict[int, Dict[int, float]]], float
             ]
-        ] = None,
+        ] = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
     ):
 

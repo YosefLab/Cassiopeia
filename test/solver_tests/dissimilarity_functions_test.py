@@ -41,13 +41,9 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
 
     def test_bad_prior_transformations(self):
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(solver_utilities.PriorTransformationError):
             solver_utilities.transform_priors(self.badpriors, "negative_log")
 
-        self.assertTrue(
-            "Please make sure all priors have a positive value less than 1 and greater than 0"
-            in str(context.exception)
-        )
 
     def test_negative_log_prior_transformations(self):
         expectedweights = {

@@ -243,7 +243,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         # Prune dead lineages and collapse resulting unifurcations
         for i in cassiopeia_tree.nodes:
             if cassiopeia_tree.is_leaf(i) and i not in observed_nodes:
-                cassiopeia_tree.remove_and_prune_lineage(i)
+                cassiopeia_tree.remove_leaf_and_prune_lineage(i)
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
             cassiopeia_tree.collapse_unifurcations(source="1")
 
@@ -433,3 +433,4 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     self.fitness_base ** self.fitness_distribution()
                 )
         return birth_scale * base_selection_coefficient
+

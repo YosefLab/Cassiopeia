@@ -13,7 +13,10 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import DistanceSolver
+from cassiopeia.solver import (
+    DistanceSolver,
+    dissimilarity_functions,
+)
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
@@ -54,7 +57,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             Callable[
                 [np.array, np.array, int, Dict[int, Dict[int, float]]], float
             ]
-        ] = None,
+        ] = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
