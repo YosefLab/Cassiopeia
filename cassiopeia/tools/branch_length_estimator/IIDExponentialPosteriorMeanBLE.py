@@ -44,6 +44,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         mutation_rate: float,
         birth_rate: float,
         discretization_level: int,
+        sampling_probability: float = 1.0,
         enforce_parsimony: bool = True,
         use_cpp_implementation: bool = False,
         debug_cpp_implementation: bool = False,
@@ -55,6 +56,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         # TODO: Is there some easy heuristic way to set this to a reasonable
         # value and thus avoid grid searching it / optimizing it?
         self.birth_rate = birth_rate
+        if sampling_probability <= 0 or sampling_probability > 1:
+            raise BranchLengthEstimatorError(
+                "sampling_probability should be in (0, 1]. "
+                "{sampling_probability} provided."
+            )
+        self.sampling_probability = sampling_probability
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
         self.use_cpp_implementation = use_cpp_implementation
@@ -132,6 +139,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r"""
         See base class.
         """
+        self._precompute_p_unsampled()
         self._down_cache = {}
         self._up_cache = {}
         self.tree = tree
@@ -176,6 +184,24 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             print(
                 f"time_populate_branch_lengths = {time_populate_branch_lengths_end - time_populate_branch_lengths_start}"
             )
+
+    def _precompute_p_unsampled(self):
+        discretization_level = self.discretization_level
+        sampling_probability = self.sampling_probability
+        lam = self.birth_rate
+        dt = 1.0 / discretization_level
+        if 1 - lam * dt <= 0:
+            raise ValueError(f"1 - lam * dt = 1 - {lam} * {dt} should be positive!")
+        p_unsampled = [-np.inf for i in range(discretization_level + 1)]
+        if sampling_probability < 1.0:
+            p_unsampled[discretization_level] = np.log(1.0 - sampling_probability)
+            for t in range(discretization_level - 1, -1, -1):
+                log_likelihoods_cases = [
+                    np.log(1 - lam * dt) + p_unsampled[t + 1],  # Nothing happens
+                    np.log(lam * dt) + 2 * p_unsampled[t + 1]  # Cell division event
+                ]
+                p_unsampled[t] = logsumexp(log_likelihoods_cases)
+        self._p_unsampled = p_unsampled
 
     def _write_out_dps(self):
         r"""
@@ -335,6 +361,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
 
         lam = [[self.birth_rate]]
         self._write_out_list_of_lists(lam, f"{tmp_dir}/lam.txt")
+
+        sampling_probability = [[self.sampling_probability]]
+        self._write_out_list_of_lists(sampling_probability, f"{tmp_dir}/sampling_probability.txt")
 
         is_leaf = [[node_to_id[v], 1 * tree.is_leaf(v)] for v in tree.nodes]
         self._write_out_list_of_lists(is_leaf, f"{tmp_dir}/is_leaf.txt")
@@ -503,6 +532,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                         )  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
                     )
                     log_likelihoods_cases.append(ll)
+            # Case 4: There is a cell division event, but one of the two
+            # lineages is not sampled
+            if v != tree.root:
+                ll = np.log(2 * lam * dt) + self._p_unsampled[t - 1] + self.up(v, t - 1, x)
+                log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
         self._up_cache[(v, t, x)] = log_likelihood
         return log_likelihood
@@ -566,6 +600,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                         self.down(child, t + 1, x) for child in tree.children(v)
                     ]  # If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ) + np.log(lam * dt)
+                log_likelihoods_cases.append(ll)
+            # Case 4: There is a cell division event, but one of the two
+            # lineages is not sampled
+            if not tree.is_leaf(v):
+                ll = np.log(2 * lam * dt) + self._p_unsampled[t + 1] + self.down(v, t + 1, x)
                 log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
         self._down_cache[(v, t, x)] = log_likelihood

@@ -16,6 +16,7 @@ const int maxT = 501;
 const float INF = 1e16;
 float _down_cache[maxN][maxT + 1][maxK + 1];
 float _up_cache[maxN][maxT + 1][maxK + 1];
+float p_unsampled[maxT + 1];
 float log_joints[maxN][maxT + 1];
 float posteriors[maxN][maxT + 1];
 float posterior_means[maxN];
@@ -36,6 +37,7 @@ int T = -1;
 int enforce_parsimony = -1;
 float r;
 float lam;
+float sampling_probability;
 
 float logsumexp(const vector<float> & lls){
     float mx = -INF;
@@ -251,6 +253,33 @@ void read_lam(){
     }
 }
 
+void read_sampling_probability(){
+    ifstream fin(input_dir + "/sampling_probability.txt");
+    fin >> sampling_probability;
+    if(sampling_probability == -1){
+        cerr << "sampling_probability input corrupted" << endl;
+        exit(1);
+    }
+}
+
+void precompute_p_unobserved(){
+    float dt = 1.0 / T;
+    if(1 - lam * dt <= 0){
+        cerr << "1 - lam * dt = " << 1 - lam * dt << " should be positive!" << endl;
+        exit(1);
+    }
+    forn(i, T + 1) p_unsampled[i] = -100000000.0;
+    if(sampling_probability < 1.0){
+        p_unsampled[T] = log(1.0 - sampling_probability);
+        for(int t = T - 1; t >= 0; t--){
+            vector<float> log_likelihoods_cases;
+            log_likelihoods_cases.push_back(log(1 - lam * dt) + p_unsampled[t + 1]);
+            log_likelihoods_cases.push_back(log(lam * dt) + 2 * p_unsampled[t + 1]);
+            p_unsampled[t] = logsumexp(log_likelihoods_cases);
+        }
+    }
+}
+
 float down(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!_state_is_valid(v, t, x)){
@@ -308,6 +337,12 @@ float down(int v, int t, int x){
                 ll += down(child, t + 1, x);// If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
             }
             ll += log(lam * dt);
+            log_likelihoods_cases.push_back(ll);
+        }
+        // Case 4: There is a cell division event, but one of the two
+        // lineages is not sampled
+        if(!is_leaf[v]){
+            float ll = log(2 * lam * dt) + p_unsampled[t + 1] + down(v, t + 1, x);
             log_likelihoods_cases.push_back(ll);
         }
         log_likelihood = logsumexp(log_likelihoods_cases);
@@ -373,6 +408,12 @@ float up(int v, int t, int x){
                 }
                 log_likelihoods_cases.push_back(ll);
             }
+        }
+        // Case 4: There is a cell division event, but one of the two
+        // lineages is not sampled
+        if(v != root){
+            float ll = log(2 * lam * dt) + p_unsampled[t - 1] + up(v, t - 1, x);
+            log_likelihoods_cases.push_back(ll);
         }
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
@@ -543,7 +584,9 @@ int main(int argc, char *argv[]){
     read_enforce_parsimony();
     read_r();
     read_lam();
+    read_sampling_probability();
 
+    precompute_p_unobserved();
     forn(v, N) forn(t, T + 1) forn(k, K + 1) _down_cache[v][t][k] = _up_cache[v][t][k] = 1.0;
     write_down();
     write_up();
