@@ -814,6 +814,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self,
         mutation_rates: Tuple[float] = (0,),
         birth_rates: Tuple[float] = (0,),
+        sampling_probability: float = 1.0,
         discretization_level: int = 1000,
         enforce_parsimony: bool = True,
         use_cpp_implementation: bool = False,
@@ -822,6 +823,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
     ):
         self.mutation_rates = mutation_rates
         self.birth_rates = birth_rates
+        self.sampling_probability = sampling_probability
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
         self.use_cpp_implementation = use_cpp_implementation
@@ -834,6 +836,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         """
         mutation_rates = self.mutation_rates
         birth_rates = self.birth_rates
+        sampling_probability = self.sampling_probability
         discretization_level = self.discretization_level
         enforce_parsimony = self.enforce_parsimony
         use_cpp_implementation = self.use_cpp_implementation
@@ -857,6 +860,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                     IIDExponentialPosteriorMeanBLE(
                         mutation_rate=mutation_rate,
                         birth_rate=birth_rate,
+                        sampling_probability=sampling_probability,
                         discretization_level=discretization_level,
                         enforce_parsimony=enforce_parsimony,
                         use_cpp_implementation=use_cpp_implementation,
@@ -888,6 +892,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         final_model = IIDExponentialPosteriorMeanBLE(
             mutation_rate=best_mutation_rate,
             birth_rate=best_birth_rate,
+            sampling_probability=sampling_probability,
             discretization_level=discretization_level,
             enforce_parsimony=enforce_parsimony,
             use_cpp_implementation=use_cpp_implementation,
@@ -910,6 +915,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             xticklabels=self.birth_rates,
             ylabel=r"Mutation Rate ($r$)",
             xlabel=r"Birth Rate ($\lambda$)",
+            title=f"Sampling Probability = {self.sampling_probability}\nLL = {self.log_likelihood}",
             figure_file=figure_file,
             show_plot=show_plot,
         )

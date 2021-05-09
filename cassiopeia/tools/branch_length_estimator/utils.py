@@ -12,6 +12,7 @@ def plot_grid(
     xlabel,
     figure_file: Optional[str],
     show_plot: str = True,
+    title: str = ""
 ) -> None:
     sns.heatmap(
         grid,
@@ -19,6 +20,7 @@ def plot_grid(
         xticklabels=xticklabels,
         mask=np.isneginf(grid),
     )
+    plt.title(title)
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
     if figure_file:
