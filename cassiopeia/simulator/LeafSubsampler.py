@@ -20,6 +20,15 @@ class LeafSubsamplerError(Exception):
     pass
 
 
+class EmptySubtreeError(Exception):
+    """
+    Some subsamplers might produce empty trees.
+    They will raise this exception.
+    """
+
+    pass
+
+
 class LeafSubsampler(abc.ABC):
     """
     Abstract base class for all leaf samplers.

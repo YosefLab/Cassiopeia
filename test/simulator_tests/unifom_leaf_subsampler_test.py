@@ -4,7 +4,8 @@ import networkx as nx
 import numpy as np
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import LeafSubsamplerError
+from cassiopeia.simulator.LeafSubsampler import LeafSubsamplerError,\
+    EmptySubtreeError
 from cassiopeia.simulator.UniformLeafSubsampler import UniformLeafSubsampler
 
 import cassiopeia.data.utilities as utilities
@@ -135,6 +136,17 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         ]
         self.assertEqual(set(res.edges), set(expected_edges))
+
+    def test_empty_subtree_raises_error(self):
+        balanced_tree = nx.balanced_tree(2, 3, create_using=nx.DiGraph)
+        tree = CassiopeiaTree(tree=balanced_tree)
+        with self.assertRaises(EmptySubtreeError):
+            uniform_sampler = UniformLeafSubsampler(sampling_probability=0.0)
+            uniform_sampler.subsample_leaves(tree)
+        # Using sampling_probability = 1.0 should return the same tree.
+        uniform_sampler = UniformLeafSubsampler(sampling_probability=1.0)
+        subsampled_tree = uniform_sampler.subsample_leaves(tree)
+        self.assertEqual(len(tree.leaves), len(subsampled_tree.leaves))
 
 
 if __name__ == "__main__":
