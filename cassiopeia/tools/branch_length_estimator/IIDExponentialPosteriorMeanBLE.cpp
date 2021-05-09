@@ -262,7 +262,7 @@ void read_sampling_probability(){
     }
 }
 
-void precompute_p_unobserved(){
+void precompute_p_unsampled(){
     float dt = 1.0 / T;
     if(1 - lam * dt <= 0){
         cerr << "1 - lam * dt = " << 1 - lam * dt << " should be positive!" << endl;
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]){
     read_lam();
     read_sampling_probability();
 
-    precompute_p_unobserved();
+    precompute_p_unsampled();
     forn(v, N) forn(t, T + 1) forn(k, K + 1) _down_cache[v][t][k] = _up_cache[v][t][k] = 1.0;
     write_down();
     write_up();
