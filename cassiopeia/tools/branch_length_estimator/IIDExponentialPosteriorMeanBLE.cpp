@@ -304,7 +304,7 @@ float down(int v, int t, int x){
             is_leaf[v]
             && (x == get_number_of_mutated_characters_in_node[v])
         ){
-            log_likelihood = 0.0;
+            log_likelihood = log(sampling_probability);
         } else {
             log_likelihood = -INF;
         }

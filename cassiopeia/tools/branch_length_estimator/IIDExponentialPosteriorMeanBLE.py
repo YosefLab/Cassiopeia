@@ -575,7 +575,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             if tree.is_leaf(
                 v
             ) and x == tree.get_number_of_mutated_characters_in_node(v):
-                log_likelihood = 0.0
+                log_likelihood = np.log(self.sampling_probability)
             else:
                 log_likelihood = -np.inf
         else:  # Recursion.
