@@ -59,7 +59,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         if sampling_probability <= 0 or sampling_probability > 1:
             raise BranchLengthEstimatorError(
                 "sampling_probability should be in (0, 1]. "
-                "{sampling_probability} provided."
+                f"{sampling_probability} provided."
             )
         self.sampling_probability = sampling_probability
         self.discretization_level = discretization_level
@@ -512,7 +512,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 log_likelihoods_cases.append(
                     np.log((K - (x - 1)) * r * dt) + self.up(v, t - 1, x - 1)
                 )
-            # Case 3: A cell division happened
+            # Case 3: A cell division happened AND both lineages persisted
             if v != tree.root:
                 p = tree.parent(v)
                 if self._compatible_with_observed_data(
@@ -532,11 +532,10 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                         )  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
                     )
                     log_likelihoods_cases.append(ll)
-            # Case 4: There is a cell division event, but one of the two
-            # lineages is not sampled
-            if v != tree.root:
-                ll = np.log(2 * lam * dt) + self._p_unsampled[t - 1] + self.up(v, t - 1, x)
-                log_likelihoods_cases.append(ll)
+            # Case 4: There was a cell division event, BUT one of the two
+            # lineages was not sampled
+            ll = np.log(2 * lam * dt) + self._p_unsampled[t - 1] + self.up(v, t - 1, x)
+            log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
         self._up_cache[(v, t, x)] = log_likelihood
         return log_likelihood
@@ -590,7 +589,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 log_likelihoods_cases.append(
                     np.log((K - x) * r * dt) + self.down(v, t + 1, x + 1)
                 )
-            # Case 3: Cell divides
+            # Case 3: Cell divides AND both lineages persist.
             # The number of cuts at this state must match the ground truth.
             if self._compatible_with_observed_data(
                 x, tree.get_number_of_mutated_characters_in_node(v)
@@ -601,11 +600,10 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     ]  # If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
                 ) + np.log(lam * dt)
                 log_likelihoods_cases.append(ll)
-            # Case 4: There is a cell division event, but one of the two
+            # Case 4: Cell divides, BUT one of the two
             # lineages is not sampled
-            if not tree.is_leaf(v):
-                ll = np.log(2 * lam * dt) + self._p_unsampled[t + 1] + self.down(v, t + 1, x)
-                log_likelihoods_cases.append(ll)
+            ll = np.log(2 * lam * dt) + self._p_unsampled[t + 1] + self.down(v, t + 1, x)
+            log_likelihoods_cases.append(ll)
             log_likelihood = logsumexp(log_likelihoods_cases)
         self._down_cache[(v, t, x)] = log_likelihood
         return log_likelihood

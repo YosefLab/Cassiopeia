@@ -12,6 +12,15 @@ class CellSubsamplerError(Exception):
     pass
 
 
+class EmptySubtreeError(Exception):
+    """
+    Some subsamplers might produce empty trees.
+    They will raise this exception.
+    """
+
+    pass
+
+
 class CellSubsampler(abc.ABC):
     r"""
     Abstract base class for all cell samplers.
@@ -35,37 +44,76 @@ class CellSubsampler(abc.ABC):
 
 class UniformCellSubsampler(CellSubsampler):
     def __init__(
-        self, ratio: Optional[float] = None, n_cells: Optional[int] = None
+        self,
+        ratio: Optional[float] = None,
+        n_cells: Optional[int] = None,
+        sampling_probability: Optional[float] = None
     ):
-        r"""
-        Samples 'ratio' of the leaves, rounded down, uniformly at random.
         """
-        if ratio is None and n_cells is None:
+        Uniformly subsample leaf samples of a CassiopeiaTree.
+
+        If 'ratio' is provided, samples 'ratio' of the leaves, rounded down,
+        uniformly at random. If instead 'n_cells' is provided, 
+        'n_cells' of the leaves are sampled uniformly at random.
+        If 'sampling_probability' is provided, each leaf is sampled IID with
+        probability p. Only one of the criteria can be provided.
+
+        Args:
+            ratio: Specifies the number of leaves to be sampled as a ratio of
+                the total number of leaves
+            number_of_leaves: Explicitly specifies the number of leaves to be sampled
+            sampling_probability: Probability with which to sample each cell.
+        """
+        if ratio is None and n_cells is None and sampling_probability is None:
             raise CellSubsamplerError(
-                "At least one of 'ratio' and 'n_cells' " "must be specified."
+                "At least one of 'ratio', 'number_of_leaves' and "
+                "'sampling_probability' must be specified."
             )
-        if ratio is not None and n_cells is not None:
+        if ((ratio is None) + (n_cells is None) + (sampling_probability is None)) <= 1:
             raise CellSubsamplerError(
-                "Exactly one of 'ratio' and 'n_cells'" "must be specified."
+                "Exactly one of 'ratio', 'number_of_leaves' and "
+                "'sampling_probability' must be specified."
             )
         self.__ratio = ratio
         self.__n_cells = n_cells
+        self.__sampling_probability = sampling_probability
 
     def subsample(self, tree: CassiopeiaTree) -> CassiopeiaTree:
         ratio = self.__ratio
         n_cells = self.__n_cells
-        n_subsample = (
-            n_cells if n_cells is not None else int(tree.n_cell * ratio)
-        )
-        if n_subsample == 0:
-            raise CellSubsamplerError(
-                "ratio too low: no cells would be " "sampled."
-            )
+        sampling_probability = self.__sampling_probability
 
-        # First determine which nodes are part of the induced subgraph.
-        leaf_keep_idx = np.random.choice(
-            range(tree.n_cell), n_subsample, replace=False
-        )
+        if sampling_probability is not None:
+            n_cells_original = len(tree.leaves)
+            leaf_keep_indices =\
+                np.random.binomial(
+                    n=1,
+                    p=sampling_probability,
+                    size=(n_cells_original)
+                )
+            if np.sum(leaf_keep_indices) == 0:
+                raise EmptySubtreeError(
+                    "No cells were subsampled! "
+                    "sampling_probability might be too low."
+                )
+            leaf_keep_idx = [
+                i
+                for i in range(n_cells_original)
+                if leaf_keep_indices[i] == 1
+            ]
+        else:
+            n_subsample = (
+                n_cells if n_cells is not None else int(tree.n_cell * ratio)
+            )
+            if n_subsample == 0:
+                raise CellSubsamplerError(
+                    "ratio too low: no cells would be " "sampled."
+                )
+
+            # First determine which nodes are part of the induced subgraph.
+            leaf_keep_idx = np.random.choice(
+                range(tree.n_cell), n_subsample, replace=False
+            )
         leaves_in_induced_subtree = [tree.leaves[i] for i in leaf_keep_idx]
         induced_subtree_degs = dict(
             [(leaf, 0) for leaf in leaves_in_induced_subtree]

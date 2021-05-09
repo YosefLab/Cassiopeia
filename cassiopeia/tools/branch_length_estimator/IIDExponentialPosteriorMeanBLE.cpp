@@ -341,10 +341,8 @@ float down(int v, int t, int x){
         }
         // Case 4: There is a cell division event, but one of the two
         // lineages is not sampled
-        if(!is_leaf[v]){
-            float ll = log(2 * lam * dt) + p_unsampled[t + 1] + down(v, t + 1, x);
-            log_likelihoods_cases.push_back(ll);
-        }
+        float ll = log(2 * lam * dt) + p_unsampled[t + 1] + down(v, t + 1, x);
+        log_likelihoods_cases.push_back(ll);
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
     _down_cache[v][t][x] = log_likelihood;
@@ -411,10 +409,8 @@ float up(int v, int t, int x){
         }
         // Case 4: There is a cell division event, but one of the two
         // lineages is not sampled
-        if(v != root){
-            float ll = log(2 * lam * dt) + p_unsampled[t - 1] + up(v, t - 1, x);
-            log_likelihoods_cases.push_back(ll);
-        }
+        float ll = log(2 * lam * dt) + p_unsampled[t - 1] + up(v, t - 1, x);
+        log_likelihoods_cases.push_back(ll);
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
     _up_cache[v][t][x] = log_likelihood;
