@@ -431,6 +431,7 @@ void write_down(){
         }
     }
     fout << res;
+    fout.flush();
 }
 
 void write_up(){
@@ -446,6 +447,7 @@ void write_up(){
         }
     }
     fout << res;
+    fout.flush();
 }
 
 void write_log_likelihood(){
@@ -455,6 +457,7 @@ void write_log_likelihood(){
         log_likelihood += down(child_of_root, 0, 0);
     }
     fout << log_likelihood;
+    fout.flush();
 }
 
 float _compute_log_joint(int v, int t){
@@ -492,6 +495,7 @@ void _write_out_log_joints(){
         res += "\n";
     }
     fout << res;
+    fout.flush();
 }
 
 void _write_out_posteriors(){
@@ -506,6 +510,7 @@ void _write_out_posteriors(){
         res += "\n";
     }
     fout << res;
+    fout.flush();
 }
 
 void _write_out_posterior_means(){
@@ -517,6 +522,7 @@ void _write_out_posterior_means(){
         res += "\n";
     }
     fout << res;
+    fout.flush();
 }
 
 void write_posteriors(){

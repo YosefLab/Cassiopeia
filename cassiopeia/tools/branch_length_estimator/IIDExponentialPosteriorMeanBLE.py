@@ -277,6 +277,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             res += "\n"
         with open(filename, "w") as file:
             file.write(res)
+            file.flush()
 
     def _populate_attributes_with_cpp_implementation(self, tmp_dir):
         r"""
