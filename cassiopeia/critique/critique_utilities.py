@@ -56,7 +56,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
             number_of_leaves += len(tree.leaves_in_subtree(child))
             correction += nCr(len(tree.leaves_in_subtree(child)), 3)
 
-        tree.set_attribute(n, "number_of_triplets", special.comb(number_of_leaves, 3) - correction)
+        tree.set_attribute(n, "number_of_triplets", nCr(number_of_leaves, 3) - correction)
 
     return depth_to_nodes
 
