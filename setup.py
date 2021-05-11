@@ -33,6 +33,7 @@ requirements = [
     "nbformat >= 4.4.0",
     "hits",
     "scikit-bio >= 0.5.6",
+    "ray",
 ]
 
 
