@@ -21,7 +21,6 @@ requirements = [
     "ete3 >= 3.1.1",
     "argparse >= 1.1",
     "Biopython >= 1.71",
-    "pathlib",
     "pandas-charm >= 0.1.3",
     "pysam >= 0.14.1",
     "bokeh >= 0.12.15",
@@ -63,6 +62,7 @@ to_cythonize = [
 
 setup(
     name="cassiopeia-lineage",
+    python_requires='>=3.6',
     ext_modules=cythonize(to_cythonize),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
@@ -90,5 +90,5 @@ setup(
     version="1.0.4",
     zip_safe=False,
     test_suite="nose.collector",
-    test_require=["nose"],
+    tests_require=["nose"],
 )
