@@ -943,7 +943,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         self.verbose = verbose
         if space is None:
             space = {
-                "mutation_rate": tune.loguniform(0.1, 10.0),
+                "mutation_rate": tune.loguniform(0.1, 5.0),
                 "birth_rate": tune.loguniform(0.1, 30.0),
                 "sampling_probability": tune.loguniform(0.0000001, 1.0),
             }
