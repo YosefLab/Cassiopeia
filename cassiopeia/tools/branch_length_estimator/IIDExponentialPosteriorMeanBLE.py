@@ -4,11 +4,13 @@ import subprocess
 import tempfile
 import time
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from scipy import integrate
 from scipy.special import binom, logsumexp
+
+import ray
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -916,4 +918,79 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             title=f"Sampling Probability = {self.sampling_probability}\nLL = {self.log_likelihood}",
             figure_file=figure_file,
             show_plot=show_plot,
+        )
+
+
+class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
+    def __init__(
+        self,
+        discretization_level: int,
+        enforce_parsimony: bool = True,
+        use_cpp_implementation: bool = False,
+        processes: int = 6,
+        num_samples: int = 100,
+        space: Optional[Dict] = None,
+        search_alg=None,
+        verbose: bool = False,
+    ) -> None:
+        self.discretization_level = discretization_level
+        self.enforce_parsimony = enforce_parsimony
+        self.use_cpp_implementation = use_cpp_implementation
+        self.processes = processes
+        self.num_samples = num_samples
+        self.verbose = verbose
+        if space is None:
+            space = {
+                "mutation_rate": ray.tune.loguniform(0.1, 10.0),
+                "birth_rate": ray.tune.loguniform(0.1, 30.0),
+                "sampling_probability": ray.tune.loguniform(0.0000001, 1.0),
+            }
+        self.space = space
+        if search_alg is None:
+            search_alg = ray.tune.suggest.hyperopt.HyperOptSearch(
+                metric="log_likelihood", mode="max"
+            )
+        self.search_alg = search_alg
+
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
+        r"""
+        See base class.
+        """
+        self.tree = tree
+        ray.init(num_cpus=self.processes)
+        analysis = ray.tune.run(
+            self._trainable,
+            config=self.space,
+            num_samples=self.num_samples,
+            search_alg=self.search_alg,
+            metric='log_likelihood',
+            mode='max'
+        )
+        ray.shutdown()
+        self.analysis = analysis
+        best_config = analysis.best_config
+        self.model = self._create_model_from_config(best_config)
+        self.model.estimate_branch_lengths(tree)
+        # Copy over attributes associated with the bayesian estimator.
+        self.mutation_rate = self.model.mutation_rate
+        self.birth_rate = self.model.birth_rate
+        self.log_likelihood = self.model.log_likelihood
+        self.log_joints = self.model.log_joints
+        self.posteriors = self.model.posteriors
+        self.posterior_means = self.model.posterior_means
+
+    def _trainable(self, config: Dict):
+        model = self._create_model_from_config(config)
+        model.estimate_branch_lengths(deepcopy(self.tree))
+        ray.tune.report(log_likelihood=model.log_likelihood)
+
+    def _create_model_from_config(self, config):
+        return IIDExponentialPosteriorMeanBLE(
+            mutation_rate=config['mutation_rate'],
+            birth_rate=config['birth_rate'],
+            discretization_level=self.discretization_level,
+            sampling_probability=config['sampling_probability'],
+            enforce_parsimony=self.enforce_parsimony,
+            use_cpp_implementation=self.use_cpp_implementation,
+            verbose=self.verbose,
         )

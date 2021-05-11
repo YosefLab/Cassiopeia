@@ -4,4 +4,5 @@ from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
 from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLE,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
+    IIDExponentialPosteriorMeanBLERay,
 )
