@@ -12,6 +12,7 @@ from scipy.special import binom, logsumexp
 
 import ray
 from ray import tune
+from ray.tune.suggest.hyperopt import HyperOptSearch
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -948,7 +949,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
             }
         self.space = space
         if search_alg is None:
-            search_alg = tune.suggest.hyperopt.HyperOptSearch(
+            search_alg = HyperOptSearch(
                 metric="log_likelihood", mode="max"
             )
         self.search_alg = search_alg
