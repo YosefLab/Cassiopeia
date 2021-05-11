@@ -136,6 +136,20 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         ]
         self.assertEqual(set(res.edges), set(expected_edges))
 
+    def test_no_subsampling(self):
+        """
+        If we don't remove any cells from the tree, the tree shouldn't change.
+        """
+        tree_nx = nx.DiGraph()
+        tree_nx.add_nodes_from(["0", "1", "2", "3"])
+        tree_nx.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = CassiopeiaTree(tree=tree_nx)
+        newick_before_subsampling = tree.get_newick()
+        uniform_sampler = UniformLeafSubsampler(ratio=1.0)
+        tree_subsampled = uniform_sampler.subsample_leaves(tree)
+        newick_after_subsampling = tree_subsampled.get_newick()
+        self.assertEqual(newick_before_subsampling, newick_after_subsampling)
+
 
 if __name__ == "__main__":
     unittest.main()
