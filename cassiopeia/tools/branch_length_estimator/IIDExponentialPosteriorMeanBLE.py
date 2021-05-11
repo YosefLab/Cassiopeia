@@ -11,6 +11,7 @@ from scipy import integrate
 from scipy.special import binom, logsumexp
 
 import ray
+from ray import tune
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -941,13 +942,13 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         self.verbose = verbose
         if space is None:
             space = {
-                "mutation_rate": ray.tune.loguniform(0.1, 10.0),
-                "birth_rate": ray.tune.loguniform(0.1, 30.0),
-                "sampling_probability": ray.tune.loguniform(0.0000001, 1.0),
+                "mutation_rate": tune.loguniform(0.1, 10.0),
+                "birth_rate": tune.loguniform(0.1, 30.0),
+                "sampling_probability": tune.loguniform(0.0000001, 1.0),
             }
         self.space = space
         if search_alg is None:
-            search_alg = ray.tune.suggest.hyperopt.HyperOptSearch(
+            search_alg = tune.suggest.hyperopt.HyperOptSearch(
                 metric="log_likelihood", mode="max"
             )
         self.search_alg = search_alg
@@ -958,7 +959,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         """
         self.tree = tree
         ray.init(num_cpus=self.processes)
-        analysis = ray.tune.run(
+        analysis = tune.run(
             self._trainable,
             config=self.space,
             num_samples=self.num_samples,
@@ -982,7 +983,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
     def _trainable(self, config: Dict):
         model = self._create_model_from_config(config)
         model.estimate_branch_lengths(deepcopy(self.tree))
-        ray.tune.report(log_likelihood=model.log_likelihood)
+        tune.report(log_likelihood=model.log_likelihood)
 
     def _create_model_from_config(self, config):
         return IIDExponentialPosteriorMeanBLE(
