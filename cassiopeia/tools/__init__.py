@@ -4,8 +4,8 @@ from .branch_length_estimator import (
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
     IIDExponentialPosteriorMeanBLE,
-    IIDExponentialPosteriorMeanBLEGridSearchCV,
     IIDExponentialPosteriorMeanBLEAutotune,
+    IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
 from .lineage_simulator import (
     BirthProcess,
