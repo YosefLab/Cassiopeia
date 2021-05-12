@@ -285,7 +285,7 @@ float down(int v, int t, int x){
     if(!_state_is_valid(v, t, x)){
         return -INF;
     }
-    if(_down_cache[v][t][x] < 1.0){
+    if(_down_cache[v][t][x] < INF){
         return _down_cache[v][t][x];
     }
     // Pull out params
@@ -353,7 +353,7 @@ float up(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!_state_is_valid(v, t, x))
         return -INF;
-    if(_up_cache[v][t][x] < 1.0){
+    if(_up_cache[v][t][x] < INF){
         return _up_cache[v][t][x];
     }
     // Pull out params
@@ -589,7 +589,7 @@ int main(int argc, char *argv[]){
     read_sampling_probability();
 
     precompute_p_unsampled();
-    forn(v, N) forn(t, T + 1) forn(k, K + 1) _down_cache[v][t][k] = _up_cache[v][t][k] = 1.0;
+    forn(v, N) forn(t, T + 1) forn(k, K + 1) _down_cache[v][t][k] = _up_cache[v][t][k] = INF;
     write_down();
     write_up();
     write_log_likelihood();
