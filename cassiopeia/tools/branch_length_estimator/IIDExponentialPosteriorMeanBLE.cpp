@@ -285,7 +285,7 @@ float down(int v, int t, int x){
     if(!_state_is_valid(v, t, x)){
         return -INF;
     }
-    if(_down_cache[v][t][x] < INF){
+    if(_down_cache[v][t][x] != INF){
         return _down_cache[v][t][x];
     }
     // Pull out params
@@ -353,7 +353,7 @@ float up(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!_state_is_valid(v, t, x))
         return -INF;
-    if(_up_cache[v][t][x] < INF){
+    if(_up_cache[v][t][x] != INF){
         return _up_cache[v][t][x];
     }
     // Pull out params
