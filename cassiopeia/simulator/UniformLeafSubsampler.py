@@ -91,3 +91,4 @@ class UniformLeafSubsampler(LeafSubsampler):
         # Copy and annotate branch lengths and times
         subsampled_tree.set_times(dict([(node, tree.get_time(node)) for node in subsampled_tree.nodes]))
         return subsampled_tree
+

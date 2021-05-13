@@ -1,9 +1,9 @@
 """Top level for simulator."""
 
-from .DataSimulator import DataSimulator
+from .DataSimulator import DataSimulator, DataSimulatorError
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
-from .TreeSimulator import TreeSimulator
+from .TreeSimulator import TreeSimulator, TreeSimulatorError
 from .BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
 from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
-
+from .LeafSubsampler import LeafSubsampler, LeafSubsamplerError
