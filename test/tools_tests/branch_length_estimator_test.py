@@ -950,10 +950,12 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
 
         mutation_rate = 0.6
         birth_rate = 0.8
+        sampling_probability = 0.1
         discretization_level = 500
         model = IIDExponentialPosteriorMeanBLE(
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
+            sampling_probability=sampling_probability,
             discretization_level=discretization_level,
             use_cpp_implementation=use_cpp_implementation
         )
@@ -964,7 +966,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         # Test the model log likelihood against its numerical computation
         numerical_log_likelihood = (
             IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
-                tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate
+                tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate,
+                sampling_probability=sampling_probability,
             )
         )
         np.testing.assert_approx_equal(
@@ -975,7 +978,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         for leaf in tree.leaves:
             model_log_likelihood_up = model.up(
                 leaf, discretization_level, tree.get_number_of_mutated_characters_in_node(leaf)
-            ) - np.log(birth_rate * 1.0 / discretization_level)
+            ) - np.log(birth_rate * 1.0 / discretization_level)\
+                + np.log(sampling_probability)
             print(model_log_likelihood_up)
             np.testing.assert_approx_equal(
                 model.log_likelihood, model_log_likelihood_up, significant=3
@@ -989,6 +993,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
                     node=node,
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
+                    sampling_probability=sampling_probability,
                     discretization_level=discretization_level,
                 )
             )
