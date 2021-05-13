@@ -254,7 +254,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
             self.alleletable_basic
         )
-
         (
             character_matrix,
             priors,
@@ -274,12 +273,31 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=[f"r{i}" for i in range(9)],
         )
         expected_character_matrix.index.name = "cellBC"
-
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
         )
+        expected_character_matrix2.index.name = "cellBC"
 
-    def test_lineage_profile_to_character_matrix_no_priors(self):
+        # Check that character_matrix is either of the two expected matrices.
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError as e:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
+
+    def test_lineage_profile_to_character_matrix_with_priors(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
             self.alleletable_basic
@@ -306,10 +324,29 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=[f"r{i}" for i in range(9)],
         )
         expected_character_matrix.index.name = "cellBC"
-
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
         )
+        expected_character_matrix2.index.name = "cellBC"
+
+        # Check that character_matrix is either of the two expected matrices.
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError as e:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
 
         # test prior dictionary formation
         for character in priors.keys():
