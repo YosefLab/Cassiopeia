@@ -13,9 +13,6 @@ from typing import Dict, List, Optional
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
-from cassiopeia.solver.NeighborJoiningSolver import NeighborJoiningSolver
-from cassiopeia.solver.PercolationSolver import PercolationSolver
 from cassiopeia.solver import dissimilarity_functions
 
 
@@ -63,35 +60,35 @@ class PercolationSolverTest(unittest.TestCase):
                 [5, 0, 4, 2, 0],
                 [5, 0, 0, 0, 0],
                 [5, 0, 0, 0, 0],
-            ]
+            ], index=['0', '1', '2', '3', '4', '5']
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=neg_hamming_similarity_without_missing,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        expected_tree.add_nodes_from(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
         expected_tree.add_edges_from(
             [
-                (6, 7),
-                (6, 8),
-                (7, 1),
-                (7, 3),
-                (8, 0),
-                (8, 2),
-                (8, 9),
-                (9, 4),
-                (9, 5),
+                ('6', '7'),
+                ('6', '8'),
+                ('7', '1'),
+                ('7', '3'),
+                ('8', '0'),
+                ('8', '2'),
+                ('8', '9'),
+                ('9', '4'),
+                ('9', '5'),
             ]
         )
 
-        triplets = itertools.combinations([0, 1, 2, 3, 4, 5], 3)
+        triplets = itertools.combinations(['0', '1', '2', '3', '4', '5'], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
@@ -113,11 +110,11 @@ class PercolationSolverTest(unittest.TestCase):
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
@@ -165,8 +162,8 @@ class PercolationSolverTest(unittest.TestCase):
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
-        joining_solver = VanillaGreedySolver()
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        joining_solver = cas.solver.VanillaGreedySolver()
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         T = p_tree.get_tree_topology()
 
@@ -222,11 +219,11 @@ class PercolationSolverTest(unittest.TestCase):
         p_tree = cas.data.CassiopeiaTree(
             cm, missing_state_indicator=-1, priors=priors
         )
-        joining_solver = NeighborJoiningSolver(
+        joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
         )
-        psolver = PercolationSolver(joining_solver=joining_solver)
+        psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
         psolver.solve(p_tree)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
@@ -260,3 +257,4 @@ class PercolationSolverTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    

@@ -156,7 +156,7 @@ class SpectralSolverTest(unittest.TestCase):
         self.assertEqual(new_cut, [0, 2])
 
     def test_simple_base_case(self):
-        cm = pd.DataFrame.from_dict(
+        cm = pd.DataFrame(
             [
                 [2, -1, 3, -1, 0],
                 [2, 3, 3, 0, 0],
@@ -165,7 +165,8 @@ class SpectralSolverTest(unittest.TestCase):
                 [4, 2, 3, 0, 0],
                 [5, 1, -1, 0, 1],
                 [1, -1, 3, 1, 2],
-            ]
+            ],
+            index=['0', '1', '2', '3', '4', '5', '6'],
         )
 
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -202,7 +203,8 @@ class SpectralSolverTest(unittest.TestCase):
 
     def test_simple_base_case2(self):
         cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]],
+            index=['0', '1', '2', '3']
         )
 
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -215,7 +217,8 @@ class SpectralSolverTest(unittest.TestCase):
 
     def test_simple_base_case2_priors(self):
         cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]],
+            index=['0', '1', '2', '3']
         )
 
         priors = {

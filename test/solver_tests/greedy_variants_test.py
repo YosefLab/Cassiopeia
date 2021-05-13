@@ -14,7 +14,8 @@ from cassiopeia.solver import solver_utilities
 class GreedyVariantsTest(unittest.TestCase):
     def test_spectral_sparse_case(self):
         cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]],
+            index=['0','1', '2', '3']
         )
 
         sg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -25,10 +26,10 @@ class GreedyVariantsTest(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
 
         left, right = sgsolver.perform_split(
-            unique_character_matrix, list(range(4))
+            unique_character_matrix, cm.index.values
         )
-        self.assertListEqual(left, [0, 2, 3])
-        self.assertListEqual(right, [1])
+        self.assertListEqual(left, ['0', '2', '3'])
+        self.assertListEqual(right, ['1'])
 
         sgsolver.solve(sg_tree)
         expected_newick_string = "((0,3,2),1);"

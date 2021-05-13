@@ -1129,6 +1129,38 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertCountEqual(nodes, expected_nodes)
 
+    def test_get_all_ancestors(self):
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        ancestors = tree.get_all_ancestors("node3")
+        expected_ancestors = ["node1", "node0"]
+
+        self.assertCountEqual(expected_ancestors, ancestors)
+        
+        ancestors = tree.get_all_ancestors("node0")
+        self.assertEqual(0, len(ancestors))
+
+    def test_find_lcas_of_pairs(self):
+
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        pair = [("node3", "node4")]
+        lcas = list(tree.find_lcas_of_pairs(pairs=pair))
+        
+        self.assertEqual("node1", lcas[0][1])
+
+        pairs = [("node3", "node4"), ("node5", "node1")]
+        lcas = tree.find_lcas_of_pairs(pairs=pairs)
+
+        expected_lcas = {
+            ("node3", "node4"): "node1",
+            ("node5", "node1"): "node0"
+        }
+        for lca in lcas:
+            self.assertEqual(expected_lcas[lca[0]], lca[1])
+        
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -132,7 +132,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertEqual(right_set, ["c4", "c5"])
 
     def test_all_duplicates_base_case(self):
-        cm = pd.DataFrame([[5, 0, 1, 2, 0], [5, 0, 1, 2, 0], [5, 0, 1, 2, 0]])
+        cm = pd.DataFrame([[5, 0, 1, 2, 0], [5, 0, 1, 2, 0], [5, 0, 1, 2, 0]], index = ['0', '1', '2'])
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
@@ -150,7 +150,8 @@ class VanillaGreedySolverTest(unittest.TestCase):
                 [-1, 4, 0, 2, 2],
                 [0, 4, 1, 2, 2],
                 [4, 0, 0, 2, 2],
-            ]
+            ],
+            index = ['0', '1', '2', '3', '4', '5']
         )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -162,11 +163,11 @@ class VanillaGreedySolverTest(unittest.TestCase):
         )
 
         left, right = vgsolver.perform_split(
-            unique_character_matrix, list(range(6))
+            unique_character_matrix, cm.index.values
         )
 
-        self.assertListEqual(left, [3, 4, 5, 2])
-        self.assertListEqual(right, [0, 1])
+        self.assertListEqual(left, ['3', '4', '5', '2'])
+        self.assertListEqual(right, ['0', '1'])
 
         vgsolver.solve(vg_tree)
         expected_newick_string = "(((2,5),(4,3)),(0,1));"

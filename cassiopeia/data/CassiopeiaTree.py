@@ -149,6 +149,13 @@ class CassiopeiaTree:
                 "Please pass an ete3 Tree, a newick string, or a Networkx object."
             )
 
+        # enforce all names to be strings
+        rename_dictionary = {}
+        for n in self.__network.nodes:
+            rename_dictionary[n] = str(n)
+
+        self.__network = nx.relabel_nodes(self.__network, rename_dictionary)
+
         # clear cache if we're changing the topology of the tree
         self.__cache = {}
 
@@ -473,6 +480,7 @@ class CassiopeiaTree:
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
                 if len(self.get_character_states(n)) == 0:
+                    print(n, type(n))
                     raise CassiopeiaTreeError("Character states not annotated "
                     "at a leaf node, initialize character states at leaves "
                     "before reconstructing ancestral characters."
@@ -498,7 +506,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree is not initialized.
         """
         self.__check_network_initialized()
-
+        
         return [u for u in self.__network.predecessors(node)][0]
 
     def children(self, node: str) -> List[str]:
@@ -823,6 +831,28 @@ class CassiopeiaTree:
 
         return self.__network.nodes[node]["character_states"][:]
 
+    def get_all_ancestors(self, node: str) -> List[str]:
+        """Gets all the ancestors of a particular node.
+
+        Args:
+            node: Node in the tree
+            
+        Returns:
+            The list of nodes along the path from the root to the node.
+        """
+
+        self.__check_network_initialized()
+
+        if "ancestors" not in self.__cache:
+            self.__cache["ancestors"] = {}
+        
+        if node not in self.__cache["ancestors"]:
+            self.__cache["ancestors"][node] = [n
+                for n in nx.ancestors(self.__network, node)
+            ]
+
+        return self.__cache["ancestors"][node]
+
     def depth_first_traverse_nodes(
         self, source: Optional[int] = None, postorder: bool = True
     ) -> Iterator[str]:
@@ -887,14 +917,22 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-
         self.__check_network_initialized()
 
-        return [
-            n
-            for n in self.depth_first_traverse_nodes(source=node)
-            if self.is_leaf(n)
-        ]
+        if "subtree" not in self.__cache:
+            self.__cache["subtree"] = {}
+
+            for n in self.depth_first_traverse_nodes(postorder=True):
+                if self.is_leaf(n):
+                    self.__cache["subtree"][n] = [n]
+                else:
+                    leaves = []
+                    for child in self.children(n):
+                        leaves += self.leaves_in_subtree(child)
+                    self.__cache["subtree"][n] = leaves
+    
+        return self.__cache["subtree"][node]
+            
 
     def get_newick(self, record_branch_lengths = False) -> str:
         """Returns newick format of tree.
@@ -1260,7 +1298,6 @@ class CassiopeiaTree:
         
         Returns:
             The value of the attribute for that node.
-
         Raises:
             CassiopeiaTreeError if the attribute has not been set for this node.
         """
