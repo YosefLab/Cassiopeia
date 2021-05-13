@@ -60,7 +60,7 @@ class PercolationSolverTest(unittest.TestCase):
                 [5, 0, 4, 2, 0],
                 [5, 0, 0, 0, 0],
                 [5, 0, 0, 0, 0],
-            ]
+            ], index=['0', '1', '2', '3', '4', '5']
         )
         p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 

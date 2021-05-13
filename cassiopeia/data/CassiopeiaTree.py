@@ -480,6 +480,7 @@ class CassiopeiaTree:
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
                 if len(self.get_character_states(n)) == 0:
+                    print(n, type(n))
                     raise CassiopeiaTreeError("Character states not annotated "
                     "at a leaf node, initialize character states at leaves "
                     "before reconstructing ancestral characters."

@@ -216,10 +216,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         for i in duplicate_groups:
             if len(tree.nodes) == 1:
-                new_internal_node = len(duplicate_groups[i]) + 1
+                new_internal_node = str(len(duplicate_groups[i]) + 1)
             else:
                 new_internal_node = (
-                    max([n for n in tree.nodes if type(n) == int]) + 1
+                    str(max([int(n) for n in tree.nodes if n.isnumeric()]) + 1)
                 )
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
