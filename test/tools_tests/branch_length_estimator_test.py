@@ -14,7 +14,9 @@ from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
                               IIDExponentialBLEGridSearchCV,
                               IIDExponentialLineageTracer,
                               IIDExponentialPosteriorMeanBLE,
-                              IIDExponentialPosteriorMeanBLEGridSearchCV)
+                              IIDExponentialPosteriorMeanBLEGridSearchCV,
+                              UniformCellSubsampler,
+                              EmptySubtreeError,)
 
 
 class TestIIDExponentialBLE(unittest.TestCase):
@@ -524,8 +526,10 @@ def get_z_scores(
     repetition,
     birth_rate_true,
     mutation_rate_true,
+    sampling_probability_true,
     birth_rate_model,
     mutation_rate_model,
+    sampling_probability_model,
     num_characters,
 ):
     r"""
@@ -536,6 +540,12 @@ def get_z_scores(
     tree = BirthProcess(
         birth_rate=birth_rate_true, tree_depth=1.0
     ).simulate_lineage()
+    while True:
+        try:
+            tree = UniformCellSubsampler(sampling_probability=sampling_probability_true).subsample(tree)
+            break
+        except EmptySubtreeError:
+            pass
     tree_true = deepcopy(tree)
     IIDExponentialLineageTracer(
         mutation_rate=mutation_rate_true, num_characters=num_characters
@@ -544,6 +554,7 @@ def get_z_scores(
     model = IIDExponentialPosteriorMeanBLE(
         birth_rate=birth_rate_model,
         mutation_rate=mutation_rate_model,
+        sampling_probability=sampling_probability_model,
         discretization_level=discretization_level,
         use_cpp_implementation=True
     )
@@ -568,8 +579,10 @@ def get_z_scores_under_true_model(repetition):
         repetition,
         birth_rate_true=0.8,
         mutation_rate_true=1.2,
+        sampling_probability_true=0.5,
         birth_rate_model=0.8,
         mutation_rate_model=1.2,
+        sampling_probability_model=0.5,
         num_characters=3,
     )
 
@@ -583,8 +596,27 @@ def get_z_scores_under_misspecified_model(repetition):
         repetition,
         birth_rate_true=0.4,
         mutation_rate_true=0.6,
+        sampling_probability_true=1.0,
         birth_rate_model=0.8,
         mutation_rate_model=1.2,
+        sampling_probability_model=1.0,
+        num_characters=3,
+    )
+
+
+def get_z_scores_under_misspecified_model_sampling_probability(repetition):
+    r"""
+    This function is at the global scope because it needs to be pickled
+    for parallelization.
+    """
+    return get_z_scores(
+        repetition,
+        birth_rate_true=0.8,
+        mutation_rate_true=1.2,
+        sampling_probability_true=0.5,
+        birth_rate_model=0.8,
+        mutation_rate_model=1.2,
+        sampling_probability_model=0.1,
         num_characters=3,
     )
 
@@ -1031,6 +1063,20 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         This test uses the c++ implementation to be faster.
         """
         repetitions = 1000
+
+        # Under the wrong model, the Z scores should not be ~Unif[0, 1]
+        with multiprocessing.Pool(processes=6) as pool:
+            z_scores = pool.map(
+                get_z_scores_under_misspecified_model_sampling_probability, range(repetitions)
+            )
+        z_scores = np.array(list(itertools.chain(*z_scores)))
+        mean_z_score = z_scores.mean()
+        p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
+        print(f"p_value under misspecified model = {p_value}")
+        assert p_value < 0.01
+        # import matplotlib.pyplot as plt
+        # plt.hist(z_scores, bins=10)
+        # plt.show()
 
         # Under the true model, the Z scores should be ~Unif[0, 1]
         with multiprocessing.Pool(processes=6) as pool:
