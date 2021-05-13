@@ -10,16 +10,16 @@
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)
 
 using namespace std;
-const int maxN = 8192;
+const int maxN = 4096;
 const int maxK = 63;
 const int maxT = 501;
-const float INF = 1e16;
-float _down_cache[maxN][maxT + 1][maxK + 1];
-float _up_cache[maxN][maxT + 1][maxK + 1];
-float p_unsampled[maxT + 1];
-float log_joints[maxN][maxT + 1];
-float posteriors[maxN][maxT + 1];
-float posterior_means[maxN];
+const double INF = 1e16;
+double _down_cache[maxN][maxT + 1][maxK + 1];
+double _up_cache[maxN][maxT + 1][maxK + 1];
+double p_unsampled[maxT + 1];
+double log_joints[maxN][maxT + 1];
+double posteriors[maxN][maxT + 1];
+double posterior_means[maxN];
 
 string input_dir = "";
 string output_dir = "";
@@ -35,16 +35,16 @@ int is_leaf[maxN];
 int K = -1;
 int T = -1;
 int enforce_parsimony = -1;
-float r;
-float lam;
-float sampling_probability;
+double r;
+double lam;
+double sampling_probability;
 
-float logsumexp(const vector<float> & lls){
-    float mx = -INF;
+double logsumexp(const vector<double> & lls){
+    double mx = -INF;
     for(auto ll: lls){
         mx = max(mx, ll);
     }
-    float res = 0.0;
+    double res = 0.0;
     for(auto ll: lls){
         res += exp(ll - mx);
     }
@@ -263,7 +263,7 @@ void read_sampling_probability(){
 }
 
 void precompute_p_unsampled(){
-    float dt = 1.0 / T;
+    double dt = 1.0 / T;
     if(1 - lam * dt <= 0){
         cerr << "1 - lam * dt = " << 1 - lam * dt << " should be positive!" << endl;
         exit(1);
@@ -272,7 +272,7 @@ void precompute_p_unsampled(){
     if(sampling_probability < 1.0){
         p_unsampled[T] = log(1.0 - sampling_probability);
         for(int t = T - 1; t >= 0; t--){
-            vector<float> log_likelihoods_cases;
+            vector<double> log_likelihoods_cases;
             log_likelihoods_cases.push_back(log(1 - lam * dt) + p_unsampled[t + 1]);
             log_likelihoods_cases.push_back(log(lam * dt) + 2 * p_unsampled[t + 1]);
             p_unsampled[t] = logsumexp(log_likelihoods_cases);
@@ -280,7 +280,7 @@ void precompute_p_unsampled(){
     }
 }
 
-float down(int v, int t, int x){
+double down(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!_state_is_valid(v, t, x)){
         return -INF;
@@ -289,7 +289,7 @@ float down(int v, int t, int x){
         return _down_cache[v][t][x];
     }
     // Pull out params
-    float dt = 1.0 / T;
+    double dt = 1.0 / T;
     assert(v != root);
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= K);
@@ -297,7 +297,7 @@ float down(int v, int t, int x){
         cerr << "Please choose a bigger discretization_level." << endl;
         exit(1);
     }
-    float log_likelihood = 0.0;
+    double log_likelihood = 0.0;
     if(t == T){
         // Base case
         if (
@@ -311,7 +311,7 @@ float down(int v, int t, int x){
     }
     else{
         // Recursion.
-        vector<float> log_likelihoods_cases;
+        vector<double> log_likelihoods_cases;
         // Case 1: Nothing happens
         log_likelihoods_cases.push_back(
             log(1.0 - lam * dt - (K - x) * r * dt)
@@ -331,7 +331,7 @@ float down(int v, int t, int x){
             )
             && (!is_leaf[v])
         ){
-            float ll = 0.0;
+            double ll = 0.0;
             forn(i, children[v].size()){
                 int child = children[v][i];
                 ll += down(child, t + 1, x);// If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
@@ -341,7 +341,7 @@ float down(int v, int t, int x){
         }
         // Case 4: There is a cell division event, but one of the two
         // lineages is not sampled
-        float ll = log(2 * lam * dt) + p_unsampled[t + 1] + down(v, t + 1, x);
+        double ll = log(2 * lam * dt) + p_unsampled[t + 1] + down(v, t + 1, x);
         log_likelihoods_cases.push_back(ll);
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
@@ -350,7 +350,7 @@ float down(int v, int t, int x){
     return log_likelihood;
 }
 
-float up(int v, int t, int x){
+double up(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!_state_is_valid(v, t, x))
         return -INF;
@@ -358,7 +358,7 @@ float up(int v, int t, int x){
         return _up_cache[v][t][x];
     }
     // Pull out params
-    float dt = 1.0 / T;
+    double dt = 1.0 / T;
     assert(0 <= v  && v < N);
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= K);
@@ -366,7 +366,7 @@ float up(int v, int t, int x){
         cerr << "Please choose a bigger discretization_level." << endl;
         exit(1);
     }
-    float log_likelihood = 0.0;
+    double log_likelihood = 0.0;
     if(v == root){
         // Base case: we reached the root of the tree.
         if((t == 0) && (x == get_number_of_mutated_characters_in_node[v]))
@@ -380,7 +380,7 @@ float up(int v, int t, int x){
         log_likelihood = -INF;
     } else {
         // Recursion.
-        vector<float> log_likelihoods_cases;
+        vector<double> log_likelihoods_cases;
         // Case 1: Nothing happened
         log_likelihoods_cases.push_back(
             log(1.0 - lam * dt - (K - x) * r * dt) + up(v, t - 1, x)
@@ -401,7 +401,7 @@ float up(int v, int t, int x){
                 for(auto u: children[p])
                     if(u != v)
                         siblings.push_back(u);
-                float ll = log(lam * dt) + up(p, t - 1, x);  // If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                double ll = log(lam * dt) + up(p, t - 1, x);  // If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
                 for(auto u: siblings){
                     ll += down(u, t, x); // If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
                 }
@@ -410,7 +410,7 @@ float up(int v, int t, int x){
         }
         // Case 4: There is a cell division event, but one of the two
         // lineages is not sampled
-        float ll = log(2 * lam * dt) + p_unsampled[t - 1] + up(v, t - 1, x);
+        double ll = log(2 * lam * dt) + p_unsampled[t - 1] + up(v, t - 1, x);
         log_likelihoods_cases.push_back(ll);
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
@@ -454,7 +454,7 @@ void write_up(){
 
 void write_log_likelihood(){
     ofstream fout(output_dir + "/log_likelihood.txt");
-    float log_likelihood = 0;
+    double log_likelihood = 0;
     for(auto child_of_root: children[root]){
         log_likelihood += down(child_of_root, 0, 0);
     }
@@ -462,7 +462,7 @@ void write_log_likelihood(){
     fout.flush();
 }
 
-float _compute_log_joint(int v, int t){
+double _compute_log_joint(int v, int t){
     if(!(is_internal_node[v] and v != root)){
         cerr << "_compute_log_joint received invalid inputs" << endl;
         exit(1);
@@ -475,9 +475,9 @@ float _compute_log_joint(int v, int t){
             valid_num_cuts.push_back(x);
         }
     }
-    vector<float> ll_for_xs;
+    vector<double> ll_for_xs;
     for(auto x: valid_num_cuts){
-        float ll_for_x = up(v, t, x);
+        double ll_for_x = up(v, t, x);
         for(auto u: children[v]){
             ll_for_x += down(u, t, x);
         }
@@ -536,7 +536,7 @@ void write_posteriors(){
         }
 
         // Compute the posteriors
-        float mx = -INF;
+        double mx = -INF;
         for(int t = 0; t <= T; t++){
             mx = max(mx, log_joints[v][t]);
         }
@@ -544,7 +544,7 @@ void write_posteriors(){
             posteriors[v][t] = exp(log_joints[v][t] - mx);
         }
         // Normalize posteriors
-        float tot_sum = 0.0;
+        double tot_sum = 0.0;
         for(int t = 0; t <= T; t++){
             tot_sum += posteriors[v][t];
         }
@@ -557,7 +557,7 @@ void write_posteriors(){
         for(int t = 0; t <= T; t++){
             posterior_means[v] += posteriors[v][t] * t;
         }
-        posterior_means[v] /= float(T);
+        posterior_means[v] /= double(T);
     }
 
     // Write out the log_joints, posteriors, and posterior_means
