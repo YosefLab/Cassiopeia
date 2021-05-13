@@ -10,6 +10,7 @@ from .MaxCutGreedySolver import MaxCutGreedySolver
 from .MaxCutSolver import MaxCutSolver
 from .NeighborJoiningSolver import NeighborJoiningSolver
 from .PercolationSolver import PercolationSolver
+from .STDRSolver import STDRSolver
 from .SharedMutationJoiningSolver import SharedMutationJoiningSolver
 from .SpectralGreedySolver import SpectralGreedySolver
 from .SpectralSolver import SpectralSolver
