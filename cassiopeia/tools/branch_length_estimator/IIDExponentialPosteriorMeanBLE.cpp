@@ -9,6 +9,8 @@
 #define forn(i, n) for(int i = 0; i < int(n); i++)
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)
 
+// Regarding large arrays, see:
+// See https://stackoverflow.com/questions/46749846/ld-32-bit-rip-relative-reference-out-of-range-in-simple-gcc-program
 using namespace std;
 const int maxN = 4096;
 const int maxK = 63;
