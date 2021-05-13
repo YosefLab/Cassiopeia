@@ -6,8 +6,8 @@ clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
 associated with this clonal  population.
 
-When a solver has been called on this object, a tree 
-will be added to the data structure at which point basic properties can be 
+When a solver has been called on this object, a tree
+will be added to the data structure at which point basic properties can be
 queried like the average tree depth or agreement between character states and
 phylogeny.
 
@@ -78,8 +78,8 @@ class CassiopeiaTree:
     of states. These are good statistics to have for feature selection.
 
     TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315, rzhang): Add functionality that mutates the underlying 
-        tree structure: collapsing mutationless edges. When this happens, be 
+    TODO(mattjones315, rzhang): Add functionality that mutates the underlying
+        tree structure: collapsing mutationless edges. When this happens, be
         sure to make sure the cached properties update.
     TODO(mattjones315): Add utility methods to compute the colless index
         and the cophenetic correlation wrt to some cell meta item
@@ -774,7 +774,7 @@ class CassiopeiaTree:
 
     def get_newick(self, record_branch_lengths = False) -> str:
         """Returns newick format of tree.
-        
+
         Args:
             record_branch_lengths: Whether to record branch lengths on the tree
             in the newick string
@@ -877,7 +877,7 @@ class CassiopeiaTree:
         """Removes a node from the tree and prunes the lineage.
 
         Removes a node and all ancestors of that node that are no longer the
-        ancestor of any leaves. In the context of a phylogeny, this removes 
+        ancestor of any leaves. In the context of a phylogeny, this removes
         all ancestral nodes that are not the ancestors of any observed samples,
         thus pruning all lineages that died.
 
@@ -927,7 +927,7 @@ class CassiopeiaTree:
                 n for n in self.__network if self.__network.in_degree(n) == 0
             ][0]
 
-        for node in self.__network.successors(source):
+        for node in list(self.__network.successors(source)):
             _collapse_unifurcations(self.__network, node, source)
 
         succs = list(self.__network.successors(source))
