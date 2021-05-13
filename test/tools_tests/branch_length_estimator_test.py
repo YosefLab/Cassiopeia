@@ -1094,10 +1094,10 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
             print(f"p_value under misspecified model = {p_value}")
             assert p_value < 0.01
-            import matplotlib.pyplot as plt
-            plt.title(f"p_value = {p_value}")
-            plt.hist(z_scores, bins=10)
-            plt.show()
+            # import matplotlib.pyplot as plt
+            # plt.title(f"p_value = {p_value}")
+            # plt.hist(z_scores, bins=10)
+            # plt.show()
 
         # Under the true model, the Z scores should be ~Unif[0, 1]
         with multiprocessing.Pool(processes=6) as pool:
@@ -1107,10 +1107,10 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
         print(f"p_value under true model = {p_value}")
         assert p_value > 0.01
-        import matplotlib.pyplot as plt
-        plt.title(f"p_value = {p_value}")
-        plt.hist(z_scores, bins=10)
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # plt.title(f"p_value = {p_value}")
+        # plt.hist(z_scores, bins=10)
+        # plt.show()
 
 
 class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
