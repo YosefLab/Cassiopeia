@@ -110,6 +110,55 @@ def hamming_similarity_without_missing(
 
     return similarity
 
+def hamming_similarity_normalized_over_missing(
+    s1: List[int],
+    s2: List[int],
+    missing_state_indicator: int,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+) -> float:
+    """
+    A function to return the number of (non-missing) character/state mutations
+    shared by two samples, normalized over the amount of missing data.
+
+    Args:
+        s1: Character states of the first sample
+        s2: Character states of the second sample
+        missing_state_indicator: The character representing missing values
+        weights: A set of optional weights to weight the similarity of a mutation
+
+    Returns:
+        The number of shared mutations between two samples normalized over the
+        number of missing data events, weighted or unweighted
+    """
+    # TODO Optimize this using masks
+    similarity = 0
+    num_present = 0
+    for i in range(len(s1)):
+        if (
+            s1[i] == missing_state_indicator
+            or s2[i] == missing_state_indicator
+        ):
+            continue
+
+        num_present += 1
+
+        if (
+            s1[i] == 0
+            or s2[i] == 0
+        ):
+            continue
+
+        if s1[i] == s2[i]:
+            if weights:
+                similarity += weights[i][s1[i]]
+            else:
+                similarity += 1
+
+    if num_present == 0:
+        return 0
+
+    return similarity/num_present
+
 
 @numba.jit(nopython=True)
 def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
