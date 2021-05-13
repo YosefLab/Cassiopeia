@@ -550,7 +550,7 @@ def get_z_scores(
     IIDExponentialLineageTracer(
         mutation_rate=mutation_rate_true, num_characters=num_characters
     ).overlay_lineage_tracing_data(tree)
-    discretization_level = 100
+    discretization_level = 500
     model = IIDExponentialPosteriorMeanBLE(
         birth_rate=birth_rate_model,
         mutation_rate=mutation_rate_model,
@@ -604,7 +604,7 @@ def get_z_scores_under_misspecified_model(repetition):
     )
 
 
-def get_z_scores_under_misspecified_model_sampling_probability(repetition):
+def get_z_scores_under_misspecified_model_sampling_probability_under(repetition):
     r"""
     This function is at the global scope because it needs to be pickled
     for parallelization.
@@ -616,7 +616,24 @@ def get_z_scores_under_misspecified_model_sampling_probability(repetition):
         sampling_probability_true=0.5,
         birth_rate_model=0.8,
         mutation_rate_model=1.2,
-        sampling_probability_model=0.1,
+        sampling_probability_model=0.25,
+        num_characters=3,
+    )
+
+
+def get_z_scores_under_misspecified_model_sampling_probability_over(repetition):
+    r"""
+    This function is at the global scope because it needs to be pickled
+    for parallelization.
+    """
+    return get_z_scores(
+        repetition,
+        birth_rate_true=0.8,
+        mutation_rate_true=1.2,
+        sampling_probability_true=0.5,
+        birth_rate_model=0.8,
+        mutation_rate_model=1.2,
+        sampling_probability_model=1.0,
         num_characters=3,
     )
 
@@ -1062,21 +1079,25 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         (This would mean we need less repetitions and can make the test faster.)
         This test uses the c++ implementation to be faster.
         """
-        repetitions = 1000
+        repetitions = 5000
 
         # Under the wrong model, the Z scores should not be ~Unif[0, 1]
-        with multiprocessing.Pool(processes=6) as pool:
-            z_scores = pool.map(
-                get_z_scores_under_misspecified_model_sampling_probability, range(repetitions)
-            )
-        z_scores = np.array(list(itertools.chain(*z_scores)))
-        mean_z_score = z_scores.mean()
-        p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
-        print(f"p_value under misspecified model = {p_value}")
-        assert p_value < 0.01
-        # import matplotlib.pyplot as plt
-        # plt.hist(z_scores, bins=10)
-        # plt.show()
+        for func in [
+            get_z_scores_under_misspecified_model_sampling_probability_over,
+            get_z_scores_under_misspecified_model_sampling_probability_under,
+            get_z_scores_under_misspecified_model
+        ]:
+            with multiprocessing.Pool(processes=6) as pool:
+                z_scores = pool.map(func, range(repetitions))
+            z_scores = np.array(list(itertools.chain(*z_scores)))
+            mean_z_score = z_scores.mean()
+            p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
+            print(f"p_value under misspecified model = {p_value}")
+            assert p_value < 0.01
+            import matplotlib.pyplot as plt
+            plt.title(f"p_value = {p_value}")
+            plt.hist(z_scores, bins=10)
+            plt.show()
 
         # Under the true model, the Z scores should be ~Unif[0, 1]
         with multiprocessing.Pool(processes=6) as pool:
@@ -1086,23 +1107,10 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
         print(f"p_value under true model = {p_value}")
         assert p_value > 0.01
-        # import matplotlib.pyplot as plt
-        # plt.hist(z_scores, bins=10)
-        # plt.show()
-
-        # Under the wrong model, the Z scores should not be ~Unif[0, 1]
-        with multiprocessing.Pool(processes=6) as pool:
-            z_scores = pool.map(
-                get_z_scores_under_misspecified_model, range(repetitions)
-            )
-        z_scores = np.array(list(itertools.chain(*z_scores)))
-        mean_z_score = z_scores.mean()
-        p_value = 2 * np.exp(-2 * repetitions * (mean_z_score - 0.5) ** 2)
-        print(f"p_value under misspecified model = {p_value}")
-        assert p_value < 0.01
-        # import matplotlib.pyplot as plt
-        # plt.hist(z_scores, bins=10)
-        # plt.show()
+        import matplotlib.pyplot as plt
+        plt.title(f"p_value = {p_value}")
+        plt.hist(z_scores, bins=10)
+        plt.show()
 
 
 class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
