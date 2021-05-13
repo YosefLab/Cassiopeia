@@ -702,6 +702,22 @@ class CassiopeiaTree:
 
         return dict([(node, self.get_time(node)) for node in self.nodes])
 
+    def get_depth(self) -> float:
+        """
+        Depth of the tree (in time).
+        TODO: Test
+
+        The depth of the tree (in time) is defined as the greatest time of any
+        leaf of the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        times_dict = self.get_times()
+        return max(times_dict.values())
+
     def __set_branch_length(self, parent: str, child: str, length: float) -> None:
         """A private method for setting branch lengths.
 

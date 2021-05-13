@@ -615,7 +615,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
 
     @classmethod
     def exact_log_full_joint(
-        self, tree: CassiopeiaTree, mutation_rate: float, birth_rate: float
+        self,
+        tree: CassiopeiaTree,
+        mutation_rate: float,
+        birth_rate: float,
+        sampling_probability: float = 1.0,
     ) -> float:
         r"""
         log P(T, X, branch_lengths), i.e. the full joint log likelihood given
@@ -625,18 +629,35 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         ll = 0.0
         lam = birth_rate
         r = mutation_rate
+        p = sampling_probability
+        q_inv = (1.0 - p) / p
         lg = np.log
         e = np.exp
         b = binom
+        T = tree.get_depth()
         for (p, c) in tree.edges:
             t = tree.get_branch_length(p, c)
-            # Birth process likelihood
-            ll += -t * lam
-            if c not in tree.leaves:
-                ll += lg(lam)
+            # # Birth process likelihood
+            # ll += -t * lam
+            # if c not in tree.leaves:
+            #     ll += lg(lam)
+            # Birth process with subsampling likelihood
+            h = T - tree.get_time(p)
+            h_tilde = T - tree.get_time(c)
+            if c in tree.leaves:
+                # "Easy" case
+                assert(h_tilde == 0)
+                ll += 2.0 * lg(q_inv + 1.0) + lam * h - 2.0 * lg(q_inv + e(lam * h))\
+                    + lg(sampling_probability)
+            else:
+                ll += lg(lam) + lam * h - 2.0 * lg(q_inv + e(lam * h)) +\
+                    2.0 * lg(q_inv + e(lam * h_tilde)) - lam * h_tilde
             # Mutation process likelihood
             cuts = tree.get_number_of_mutations_along_edge(p, c)
             uncuts = tree.get_number_of_unmutated_characters_in_node(c)
+            # Care must be taken here, we might get a nan
+            if np.isnan(lg(1 - e(-t * r)) * cuts):
+                return -np.inf
             ll += (
                 (-t * r) * uncuts
                 + lg(1 - e(-t * r)) * cuts
@@ -650,6 +671,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         tree: CassiopeiaTree,
         mutation_rate: float,
         birth_rate: float,
+        sampling_probability: float = 1.0,
         epsrel: float = 0.01,
     ):
         r"""
@@ -679,6 +701,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     tree=tree,
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
+                    sampling_probability=sampling_probability,
                 )
             )
 
@@ -700,6 +723,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         mutation_rate: float,
         birth_rate: float,
         discretization_level: int,
+        sampling_probability: float = 1.0,
         epsrel: float = 0.01,
     ):
         r"""
@@ -731,6 +755,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     tree=tree,
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
+                    sampling_probability=sampling_probability,
                 )
             )
 
@@ -748,6 +773,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     tree=tree,
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
+                    sampling_probability=sampling_probability,
                 )
                 res[i] -= np.log(discretization_level)
             else:
@@ -773,6 +799,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         mutation_rate: float,
         birth_rate: float,
         discretization_level: int,
+        sampling_probability: float = 1.0,
         epsrel: float = 0.01,
     ):
         numerical_log_joint = self.numerical_log_joint(
@@ -780,6 +807,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             node=node,
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
+            sampling_probability=sampling_probability,
             discretization_level=discretization_level,
             epsrel=epsrel,
         )
