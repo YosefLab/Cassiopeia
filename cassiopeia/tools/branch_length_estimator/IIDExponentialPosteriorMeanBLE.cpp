@@ -346,6 +346,7 @@ float down(int v, int t, int x){
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
     _down_cache[v][t][x] = log_likelihood;
+    assert(log_likelihood < INF);
     return log_likelihood;
 }
 
@@ -414,6 +415,7 @@ float up(int v, int t, int x){
         log_likelihood = logsumexp(log_likelihoods_cases);
     }
     _up_cache[v][t][x] = log_likelihood;
+    assert(log_likelihood < INF);
     return log_likelihood;
 }
 
