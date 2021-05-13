@@ -164,16 +164,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        # Collapse 0-mutation edges and append duplicate samples
-        tree = solver_utilities.collapse_tree(
-            tree,
-            True,
-            character_matrix,
-            cassiopeia_tree.missing_state_indicator,
-        )
-        tree = self.__add_duplicates_to_tree(tree, character_matrix)
-
         cassiopeia_tree.populate_tree(tree)
+
+        # Collapse 0-mutation edges and append duplicate samples
+        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix)
+        cassiopeia_tree.populate_tree(duplicates_tree)
 
     def percolate(
         self,
@@ -320,9 +316,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
         Returns:
-            A tree with duplicates added
+            The tree with duplicates added
         """
 
+        character_matrix.index.name = "index"
         duplicate_groups = (
             character_matrix[character_matrix.duplicated(keep=False) == True]
             .reset_index()

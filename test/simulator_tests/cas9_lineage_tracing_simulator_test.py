@@ -68,6 +68,16 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             random_seed=123412232,
         )
 
+        self.basic_lineage_tracing_no_resection = cas.sim.Cas9LineageTracingDataSimulator(
+            number_of_cassettes=9,
+            size_of_cassette=1,
+            mutation_rate=0.3,
+            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+            heritable_silencing_rate=0,
+            stochastic_silencing_rate=0,
+            random_seed=123412232,
+        )
+
         self.lineage_tracing_data_simulator_state_distribution = cas.sim.Cas9LineageTracingDataSimulator(
             number_of_cassettes=3,
             size_of_cassette=3,
@@ -288,6 +298,55 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 "12": [-1, -1, -1, -1, -1, -1, 3, 0, 0],
                 "13": [-1, -1, -1, 0, -1, -1, -1, -1, -1],
                 "14": [-1, -1, -1, 0, -1, -1, 0, 3, 0],
+            },
+            orient="index",
+            columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        )
+
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, character_matrix
+        )
+
+        # check inheritance patterns
+        for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):
+
+            if self.basic_tree.is_root(n):
+                self.assertCountEqual(
+                    [0] * 9, self.basic_tree.get_character_states(n)
+                )
+                continue
+
+            parent = self.basic_tree.parent(n)
+
+            child_array = self.basic_tree.get_character_states(n)
+            parent_array = self.basic_tree.get_character_states(parent)
+            for i in range(len(child_array)):
+
+                if parent_array[i] == -1:
+                    self.assertEqual(-1, child_array[i])
+
+                if parent_array[i] != 0:
+                    self.assertNotEqual(0, child_array[i])
+
+    def test_no_resection(self):
+
+        self.basic_lineage_tracing_no_resection.overlay_data(self.basic_tree)
+
+        character_matrix = self.basic_tree.get_original_character_matrix()
+
+        self.assertEqual(9, character_matrix.shape[1])
+        self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "7": [0, 3, 3, 0, 0, 3, 3, 0, 0],
+                "8": [0, 0, 3, 0, 0, 3, 0, 0, 0],
+                "9": [4, 0, 0, 0, 3, 0, 0, 0, 2],
+                "10": [0, 3, 3, 0, 3, 0, 0, 3, 0],
+                "11": [3, 0, 3, 0, 3, 3, 1, 3, 0],
+                "12": [3, 3, 3, 3, 3, 3, 0, 3, 3],
+                "13": [3, 0, 0, 0, 3, 3, 0, 3, 3],
+                "14": [0, 3, 0, 3, 3, 3, 3, 3, 3],
             },
             orient="index",
             columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],

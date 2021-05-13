@@ -37,8 +37,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
-    starting with a top-down greedy algorithm until a predetermined criteria is reached
-    at which point a more complex algorithm is used to reconstruct each
+    starting with a top-down greedy algorithm until a predetermined criteria is 
+    reached at which point a more complex algorithm is used to reconstruct each
     subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver
     as it must have functions `find_split` and `perform_split`. The solver
     employed at the bottom of the tree can be any CassiopeiaSolver subclass and
@@ -169,16 +169,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             self.__tree = nx.compose(self.__tree, subproblem_tree)
 
-        # Collapse 0-mutation edges and append duplicate samples
-        self.__tree = solver_utilities.collapse_tree(
-            self.__tree,
-            True,
-            unique_character_matrix,
-            cassiopeia_tree.missing_state_indicator,
-        )
-        self.__tree = self.__append_sample_names(self.__tree, character_matrix)
-
         cassiopeia_tree.populate_tree(self.__tree)
+
+        # Collapse 0-mutation edges and append duplicate samples
+        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        samples_tree = self.__append_sample_names(cassiopeia_tree.get_tree_topology(), character_matrix)
+        cassiopeia_tree.populate_tree(samples_tree)
 
     def apply_top_solver(
         self,
@@ -367,7 +363,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: Character matrix
 
         Returns:
-            A solution with extra leaves corresponding to sample names.
+            A solution with extra leaves corresponding to sample names
         """
 
         root = [n for n in tree if tree.in_degree(n) == 0][0]

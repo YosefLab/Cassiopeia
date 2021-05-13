@@ -295,6 +295,13 @@ class TestDataUtilities(unittest.TestCase):
         newick_string = data_utilities.to_newick(tree, record_branch_lengths = True)
         self.assertEqual(newick_string, "(A:0.1,B:0.2,(C:0.3,D:0.4):0.5);")
 
+    def test_lca_characters(self):
+        vecs = [[1, 0, 3, 4, 5], [1, -1, -1, 3, -1], [1, 2, 3, 2, -1]]
+        ret_vec = data_utilities.get_lca_characters(
+            vecs, missing_state_indicator=-1
+        )
+        self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -211,7 +211,8 @@ def construct_similarity_graph(
     graph, but can be treated as a hyperparameter.
 
     Args:
-        character_matrix: The character matrix of observed character states for all samples
+        character_matrix: The character matrix of observed character states for
+            all samples
         mutation_frequencies: A dictionary containing the frequencies of
             each character/state pair that appear in the character matrix
             restricted to the sample set

@@ -45,7 +45,9 @@ def upload_and_export_itol(
     use_branch_lengths: bool = False,
     palette: List[str] = palettes.Category20[20],
     random_state: Optional[np.random.RandomState] = None,
+    user_dataset_files: Optional[List[str]] = None,
     verbose: bool = True,
+    **kwargs
 ):
     """Uploads a tree to iTOL and exports it.
 
@@ -84,7 +86,7 @@ def upload_and_export_itol(
         indel_colors: Color mapping to use for plotting the alleles for each
             cell. Only necessary if `allele_table` is specified.
         indel_priors: Prior probabilities for each indel. Only useful if an
-            allele table is to be plotted and `indel_colors` is None.           
+            allele table is to be plotted and `indel_colors` is None.
         rect: Boolean indicating whether or not to save your tree as a circle
             or rectangle.
         use_branch_lengths: Whether or not to use branch lengths when exporting
@@ -92,7 +94,12 @@ def upload_and_export_itol(
         include_legend: Plot legend along with meta data.
         palette: A palette of colors in hex format.
         random_state: A random state for reproducibility
+        user_dataset_files: List of paths to additional dataset files to upload.
+            See https://itol.embl.de/help.cgi#dsType for available dataset types
+            and their definitions.
         verbose: Include extra print statements.
+        **kwargs: additional keyword arguments are passed as iTOL export parameters.
+            See https://itol.embl.de/help.cgi#batch for a full list.
 
     Raises:
         iTOLError if iTOL credentials cannot be found, if the output format is
@@ -105,7 +112,7 @@ def upload_and_export_itol(
 
     if (api_key is None or project_name is None):
         if os.path.exists(os.path.expanduser(itol_config)):
-        
+
             config = configparser.ConfigParser()
             with open(os.path.expanduser(itol_config), "r") as f:
                 config_string = f.read()
@@ -138,7 +145,7 @@ def upload_and_export_itol(
         os.path.join(temporary_directory, "tree_to_plot.tree")
     )
 
-    files = []
+    files = user_dataset_files.copy() if user_dataset_files else []
     if allele_table is not None:
         files += create_indel_heatmap(
             allele_table,
@@ -226,6 +233,9 @@ def upload_and_export_itol(
     )
 
     itol_exporter.set_export_param_value("horizontal_scale_factor", 1)
+
+    for key, value in kwargs.items():
+        itol_exporter.set_export_param_value(key, value)
 
     # export!
     itol_exporter.export(export_filepath)
@@ -618,9 +628,9 @@ def hex_to_rgb(value) -> Tuple[int, int, int]:
 
     Args:
         values: hex values (beginning with "#")
-    
+
     Returns:
-        A tuple denoting (r, g, b) 
+        A tuple denoting (r, g, b)
     """
     value = value.lstrip("#")
     lv = len(value)
@@ -648,7 +658,7 @@ def generate_random_color(
     random_state: Optional[np.random.RandomState] = None,
 ) -> Tuple[int, int, int]:
     """Generates a random color from ranges of RGB.
-    
+
     Args:
         r_range: Range of values for the R value
         g_range: Range of value for the G value
