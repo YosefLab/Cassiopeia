@@ -835,8 +835,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             )
             assert total_variation < 0.03
 
-    @pytest.mark.slow
     @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    @pytest.mark.slow
     def test_IIDExponentialPosteriorMeanBLE_3(self, name, use_cpp_implementation):
         r"""
         Same as test_IIDExponentialPosteriorMeanBLE_2 but with a weirder topology.
@@ -929,8 +929,8 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             )
             assert total_variation < 0.03
 
-    @pytest.mark.slow
     @parameterized.expand([("cpp", True), ("no_cpp", False)])
+    @pytest.mark.slow
     def test_IIDExponentialPosteriorMeanBLE_DREAM_subC1(self, name, use_cpp_implementation):
         r"""
         A tree from the DREAM subchallenge 1, verified analytically.
