@@ -6,8 +6,8 @@ clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
 associated with this clonal  population.
 
-When a solver has been called on this object, a tree will be added to the data 
-structure at which point basic properties can be queried like the average tree 
+When a solver has been called on this object, a tree will be added to the data
+structure at which point basic properties can be queried like the average tree
 depth or agreement between character states and phylogeny.
 
 This object can be passed to any CassiopeiaSolver subclass as well as any
@@ -471,7 +471,7 @@ class CassiopeiaTree:
         Reconstructs ancestral states (i.e., those character states in the
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -506,7 +506,7 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree is not initialized.
         """
         self.__check_network_initialized()
-        
+
         return [u for u in self.__network.predecessors(node)][0]
 
     def children(self, node: str) -> List[str]:
@@ -526,7 +526,7 @@ class CassiopeiaTree:
 
     def __remove_node(self, node) -> None:
         """Private method to remove node from tree.
-        
+
         Args:
             node: A node in the tree to be removed
 
@@ -536,27 +536,27 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.remove_node(node)
-    
+
     def __add_node(self, node) -> None:
         """Private method to add node to tree.
-        
+
         Args:
             node: A node to be added to the tree.
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
         self.__check_network_initialized()
-        
+
         self.__network.add_node(node)
 
     def __remove_edge(self, u, v) -> None:
         """Private method to remove edge from tree.
-        
+
         Args:
             u: The source node of the directed edge to be removed
             v: The sink node of the directed edge to be removed
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
@@ -570,7 +570,7 @@ class CassiopeiaTree:
         Args:
             u: The source node of the directed edge to be added
             v: The sink node of the directed edge to be added
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
@@ -735,12 +735,12 @@ class CassiopeiaTree:
         Adjusts the branch length of specified parent-child relationships.
         This procedure maintains the consistency with the rest of the times in
         the tree. Namely, by changing branch lengths here, it will change
-        the times of all the nodes in the tree such that the times are 
+        the times of all the nodes in the tree such that the times are
         representative of the new branch lengths.
 
         Args:
             branch_dict: A dictionary of edges to updated branch lengths
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -836,7 +836,7 @@ class CassiopeiaTree:
 
         Args:
             node: Node in the tree
-            
+
         Returns:
             The list of nodes along the path from the root to the node.
         """
@@ -845,7 +845,7 @@ class CassiopeiaTree:
 
         if "ancestors" not in self.__cache:
             self.__cache["ancestors"] = {}
-        
+
         if node not in self.__cache["ancestors"]:
             self.__cache["ancestors"][node] = [n
                 for n in nx.ancestors(self.__network, node)
@@ -897,7 +897,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-    
+
         self.__check_network_initialized()
 
         if source is None:
@@ -930,13 +930,13 @@ class CassiopeiaTree:
                     for child in self.children(n):
                         leaves += self.leaves_in_subtree(child)
                     self.__cache["subtree"][n] = leaves
-    
+
         return self.__cache["subtree"][node]
-            
+
 
     def get_newick(self, record_branch_lengths = False) -> str:
         """Returns newick format of tree.
-        
+
         Args:
             record_branch_lengths: Whether to record branch lengths on the tree
             in the newick string
@@ -953,7 +953,7 @@ class CassiopeiaTree:
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format.
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -1052,7 +1052,7 @@ class CassiopeiaTree:
 
         Removes a leaf and all ancestors of that leaf that are no longer the
         ancestor of any leaves. In the context of a phylogeny, this prunes the
-        lineage of all nodes no longer relevant to observed samples. 
+        lineage of all nodes no longer relevant to observed samples.
         Additionally, maintains consistency with information on the tree by
         removing the node from the character matrix and cell metadata.
 
@@ -1113,7 +1113,7 @@ class CassiopeiaTree:
         if source is None:
             source = self.root
 
-        for node in self.depth_first_traverse_nodes(postorder = True, source = source):
+        for node in list(self.depth_first_traverse_nodes(postorder = True, source = source)):
             if self.is_leaf(node):
                 continue
             elif node == source:
@@ -1147,16 +1147,16 @@ class CassiopeiaTree:
         """Collapses mutationless edges in the tree in-place.
 
         Uses the internal node annotations of a tree to collapse edges with no
-        mutations. The introduction of a missing data event is considered a 
+        mutations. The introduction of a missing data event is considered a
         mutation in this context. Either takes the existing character states on
-        the tree or infers the annotations bottom-up from the samples obeying 
+        the tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
-        by connecting the parent and children of removed nodes by branchs with 
+        by connecting the parent and children of removed nodes by branchs with
         lengths equal to the total time elapsed from parent to each child.
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Infer the ancestral characters states 
+            infer_ancestral_characters: Infer the ancestral characters states
                 of the tree
 
         Raises:
@@ -1165,7 +1165,7 @@ class CassiopeiaTree:
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
-        for n in self.depth_first_traverse_nodes(postorder = True):
+        for n in list(self.depth_first_traverse_nodes(postorder = True)):
             if self.is_leaf(n):
                 continue
             for child in self.children(n):
@@ -1276,7 +1276,7 @@ class CassiopeiaTree:
 
     def set_attribute(self, node: str, attribute_name: str, value: Any) -> None:
         """Sets an attribute in the tree.
-        
+
         Args:
             node: Node name
             attribute_name: Name for the new attribute
@@ -1291,11 +1291,11 @@ class CassiopeiaTree:
 
     def get_attribute(self, node: str, attribute_name: str) -> Any:
         """Retrieves the value of an attribute for a node.
-        
+
         Args:
             node: Node name
             attribute_name: Name of the attribute.
-        
+
         Returns:
             The value of the attribute for that node.
         Raises:
@@ -1306,7 +1306,7 @@ class CassiopeiaTree:
         try:
             return self.__network.nodes[node][attribute_name]
         except KeyError:
-            raise CassiopeiaTreeError(f"Attribute {attribute_name} not " 
+            raise CassiopeiaTreeError(f"Attribute {attribute_name} not "
                                     "detected for this node.")
 
     def filter_nodes(self, condition: Callable[[str], bool]) -> List[str]:
