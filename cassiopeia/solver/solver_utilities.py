@@ -19,7 +19,7 @@ class PriorTransformationError(Exception):
 
 
 def node_name_generator() -> Generator[str, None, None]:
-    """Generates unique node names for the tree."""
+    """Generates unique node names for building the reconstructed tree."""
     i = 0
     while True:
         yield "cassiopeia_internal_node_" + str(i)
