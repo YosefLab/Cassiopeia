@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
