@@ -67,8 +67,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 float,
             ]
         ] = dissimilarity_functions.hamming_similarity_without_missing,
-        threshold: Optional[int] = 0,
-        collapse_tree: bool = True
+        threshold: Optional[int] = 0
     ):
 
         super().__init__(prior_transformation)
@@ -76,7 +75,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.joining_solver = joining_solver
         self.threshold = threshold
         self.similarity_function = similarity_function
-        self.collapse_tree = collapse_tree
 
     def solve(self, cassiopeia_tree: CassiopeiaTree):
         """Implements a solving procedure for the Percolation Algorithm.
@@ -171,8 +169,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        if self.collapse_tree:
-            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
         duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, names)
         cassiopeia_tree.populate_tree(duplicates_tree)
 

@@ -38,10 +38,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             weights.
     """
 
-    def __init__(self, prior_transformation: str = "negative_log", collapse_tree: bool = True):
+    def __init__(self, prior_transformation: str = "negative_log"):
 
         super().__init__(prior_transformation)
-        self.collapse_tree = collapse_tree
 
     def perform_split(
         self,
@@ -151,8 +150,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        if self.collapse_tree:
-            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
         duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, names)
         cassiopeia_tree.populate_tree(duplicates_tree)
 
