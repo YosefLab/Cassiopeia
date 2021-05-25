@@ -2,7 +2,8 @@
 A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
-from typing import Dict, List, Optional
+import itertools
+from typing import Callable, Dict, Iterable, List, Optional, Set, Union
 
 import numba
 import numpy as np
@@ -225,3 +226,66 @@ def weighted_hamming_similarity(
         return 0
 
     return d / num_present
+
+
+def cluster_dissimilarity(
+    dissimilarity_function: Callable[[List[int], List[int], int, Dict[int, Dict[int, float]]], float],
+    s1: Union[List[int], List[List[int]]],
+    s2: Union[List[int], List[List[int]]],
+    missing_state_indicator: int,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    linkage_function: Optional[Callable[[Union[np.array, List[float]]], float]] = np.mean
+) -> float:
+    """This function computes the dissimilarity between two (possibly) ambiguous
+    character strings. An ambiguous character string is a character string in
+    which each character contains an list of possible states, and such a
+    character string is represented as a list of lists of integers.
+
+    This function first disambiguates each of the two ambiguous character strings
+    by generating all possible combinations of character strings, which gives us two
+    "clusters" or "clouds" of character strings. All pairwise dissimilarities between the
+    two clusters are computed using ``dissimilarity_function`` and aggregated using
+    ``linkage_function``. The idea of linkage is analogous to that in hierarchical
+    clustering, where ``np.min`` can be used for single linkage, ``np.max`` for complete
+    linkage, and ``np.mean`` for average linkage (the default).
+
+    The reason the ``dissimilarity_function`` argument is defined as the first
+    argument is so that this function may be used as input to
+    :func:`cassiopeia.data.CassiopeiaTree.compute_dissimilarity_map`. This can
+    be done by partial application of this function with the desired dissimilarity
+    function.
+
+    Note:
+        If neither character string is ambiguous, then calling this function is
+        equivalent to calling ``dissimilarity_function`` separately.
+
+    Args:
+        s1: The first (possibly) ambiguous sample
+        s2: The second (possibly) ambiguous sample
+        missing_state_indicator: The character representing missing values
+        weights: A set of optional weights to weight the similarity of a mutation
+        dissimilarity_function: The dissimilarity function to use to calculate pairwise
+            dissimilarities.
+        linkage_function: The linkage function to use to aggregate dissimilarities
+            into a single number. Defaults to ``np.mean`` for average linkage.
+
+    Returns:
+        The dissimilarity between the two ambiguous samples
+    """
+    # Make any unambiguous character strings into pseudo-ambiguous so that we
+    # can easily use itertools.product
+    s1 = [s if isinstance(s, list) else [s] for s in s1]
+    s2 = [s if isinstance(s, list) else [s] for s in s2]
+
+    s1_iter = itertools.product(*s1)
+    s2_iter = itertools.product(*s2)
+    dissimilarities = []
+    for _s1, _s2 in itertools.product(s1_iter, s2_iter):
+        print(_s1, _s2)
+        dissimilarities.append(dissimilarity_function(
+            list(_s1),
+            list(_s2),
+            missing_state_indicator=missing_state_indicator,
+            weights=weights,
+        ))
+    return linkage_function(dissimilarities)
