@@ -3,6 +3,7 @@ Tests for the dissimilarity functions that are supported by the DistanceSolver
 module.
 """
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -16,6 +17,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.s1 = [0, 1, 0, -1, 1, 2]
         self.s2 = [1, 1, 0, 0, 1, 3]
         self.all_missing = [-1, -1, -1, -1, -1, -1]
+        self.ambiguous = [[0], [-1, 0], [0], [-1, 0], [1], [1]]
 
         self.priors = {
             0: {1: 0.5, 2: 0.5},
@@ -217,6 +219,47 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
 
         self.assertEqual(similarity, 0)
+
+    def test_cluster_dissimilarity(self):
+        dissimilarity_function = mock.MagicMock()
+        linkage_function = mock.MagicMock()
+
+        result = dissimilarity_functions.cluster_dissimilarity(
+            dissimilarity_function,
+            self.s1,
+            self.ambiguous,
+            -1,
+            self.nlweights,
+            linkage_function
+        )
+        self.assertEqual(result, linkage_function.return_value)
+        self.assertEqual(dissimilarity_function.call_count, 4)
+        dissimilarity_function.assert_has_calls([
+            mock.call(
+                self.s1,
+                [0, -1, 0, -1, 1, 1],
+                missing_state_indicator=-1,
+                weights=self.nlweights
+            ),
+            mock.call(
+                self.s1,
+                [0, -1, 0, 0, 1, 1],
+                missing_state_indicator=-1,
+                weights=self.nlweights
+            ),
+            mock.call(
+                self.s1,
+                [0, 0, 0, -1, 1, 1],
+                missing_state_indicator=-1,
+                weights=self.nlweights
+            ),
+            mock.call(
+                self.s1,
+                [0, 0, 0, 0, 1, 1],
+                missing_state_indicator=-1,
+                weights=self.nlweights
+            ),
+        ])
 
 
 if __name__ == "__main__":

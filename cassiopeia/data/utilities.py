@@ -105,11 +105,11 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
     def _to_newick_str(g, node):
         is_leaf = g.out_degree(node) == 0
         weight_string = ""
-        
+
         if record_branch_lengths and g.in_degree(node) > 0:
             parent = list(g.predecessors(node))[0]
             weight_string = ":" + str(g[parent][node]["length"])
-            
+
         _name = str(node)
         return (
             "%s" % (_name,) + weight_string
@@ -133,6 +133,7 @@ def compute_dissimilarity_map(
     dissimilarity_function: Callable,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
     missing_state_indicator: int = -1,
+    numbaize: Optional[bool] = True,
 ) -> np.array:
     """Compute the dissimilarity between all samples
 
@@ -144,12 +145,24 @@ def compute_dissimilarity_map(
         C: Number of samples
         weights: Weights to use for comparing states.
         missing_state_indicator: State indicating missing data
+        numbaize: Whether or not to optimize functions using numba. Defaults to True.
+            The ``dissimilarity_function`` is always attempted to be numbaized. This
+            argument only affects whether the ``_compute_dissimilarity_map`` internal
+            function is also numbaized. It is undesirable to numbaize this function
+            when we are operating with non-standard character states (i.e. ambiguous
+            characters).
 
     Returns:
         A dissimilarity mapping as a flattened array.
     """
 
-    nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
+    # Try to numbaize the dissimilarity function, but fallback to python
+    try:
+        nopython = True
+        dissimilarity_func = numba.jit(dissimilarity_function, nopython=True)
+    except Exception:
+        nopython = False
+        dissimilarity_func = dissimilarity_function
 
     nb_weights = numba.typed.Dict.empty(
         numba.types.int64,
@@ -165,22 +178,23 @@ def compute_dissimilarity_map(
                 nb_char_weights[state] = prior
             nb_weights[k] = nb_char_weights
 
-    @numba.jit(nopython=True)
     def _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights):
 
-        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float64)
+        dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
         k = 0
         for i in range(C - 1):
             for j in range(i + 1, C):
 
                 s1 = cm[i, :]
                 s2 = cm[j, :]
-                dm[k] = nb_dissimilarity(
+                dm[k] = dissimilarity_func(
                     s1, s2, missing_state_indicator, nb_weights
                 )
                 k += 1
 
         return dm
+    if numbaize:
+        _compute_dissimilarity_map = numba.jit(_compute_dissimilarity_map, nopython=nopython)
 
     return _compute_dissimilarity_map(
         cm, C, missing_state_indicator, nb_weights

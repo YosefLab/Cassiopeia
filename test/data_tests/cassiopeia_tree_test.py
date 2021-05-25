@@ -63,6 +63,21 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
+        self.ambiguous_character_matrix = pd.DataFrame.from_dict(
+            {
+                "node3": [1, 0, 0, 0, 0, 0, 0, 0],
+                "node7": [1, 1, 0, 0, 0, 0, 0, 0],
+                "node9": [1, 1, 1, 0, 0, 0, 0, 0],
+                "node11": [1, 1, 1, 1, 0, 0, 0, 0],
+                "node13": [1, 1, 1, 1, 1, 0, 0, 0],
+                "node15": [1, 1, 1, 1, 1, 1, 0, 0],
+                "node17": [1, 1, 1, 1, 1, 1, 1, 0],
+                "node18": [[1, 1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1]],
+                "node5": [2, 0, 0, 0, 0, 0, 0, 0],
+                "node6": [2, 2, 0, 0, 0, 0, 0, 0],
+            },
+            orient="index",
+        )
 
         # A simple balanced binary tree to test lineage pruning
         complete_binary = nx.balanced_tree(2, 3, create_using=nx.DiGraph())
@@ -214,6 +229,13 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(len(obs_nodes), len(expected_nodes))
         for n in obs_nodes:
             self.assertIn(n, expected_nodes)
+
+    def test_n_cell_uses_current_character_matrix(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.remove_leaf_and_prune_lineage('node3')
+        self.assertEqual(tree.n_cell, 9)
 
     def test_get_children(self):
 
@@ -658,8 +680,13 @@ class TestCassiopeiaTree(unittest.TestCase):
             return d
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
+        tree_numba = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
+        tree_numba.compute_dissimilarity_map(delta_fn, numbaize=False)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, tree_numba.get_dissimilarity_map()
+        )
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
             {
@@ -959,7 +986,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "|".join([str(c) for c in cas_tree.get_character_states(i)]) + f",{i}"
             )
         cas_tree.relabel_nodes(new_map)
-        
+
         expected_nodes = set(
             [
                 "1|0|3|4|5,0",
@@ -980,7 +1007,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 ("1|0|3|0|5,6", "1|0|3|0|-1,5"),
             ]
         )
-        
+
         self.assertEqual(set(cas_tree.nodes), expected_nodes)
         self.assertEqual(set(cas_tree.edges), expected_edges)
 
@@ -1014,7 +1041,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "|".join([str(c) for c in cas_tree.get_character_states(i)]) + f",{i}"
             )
         cas_tree.relabel_nodes(new_map)
-        
+
         expected_nodes = set(
             [
                 "1|0|3|4|5,0",
@@ -1036,7 +1063,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertEqual(set(cas_tree.nodes), expected_nodes)
         self.assertEqual(set(cas_tree.edges), expected_edges)
-    
+
     def test_mutationless_edge_collapse_ground_tree(self):
         tree = nx.DiGraph()
         for i in range(7):
@@ -1123,7 +1150,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 tree.set_attribute(n, "depth", 0)
                 continue
             tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth")+1)
-        
+
         nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == 2)
         expected_nodes = ["node5", "node6", "node3", "node4"]
 
@@ -1137,7 +1164,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         expected_ancestors = ["node1", "node0"]
 
         self.assertCountEqual(expected_ancestors, ancestors)
-        
+
         ancestors = tree.get_all_ancestors("node0")
         self.assertEqual(0, len(ancestors))
 
@@ -1147,7 +1174,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         pair = [("node3", "node4")]
         lcas = list(tree.find_lcas_of_pairs(pairs=pair))
-        
+
         self.assertEqual("node1", lcas[0][1])
 
         pairs = [("node3", "node4"), ("node5", "node1")]
@@ -1159,9 +1186,112 @@ class TestCassiopeiaTree(unittest.TestCase):
         }
         for lca in lcas:
             self.assertEqual(expected_lcas[lca[0]], lca[1])
-        
 
+    def test_is_ambiguous(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.ambiguous_character_matrix,
+            tree=self.test_network
+        )
+        self.assertTrue(tree.is_ambiguous("node18"))
+        self.assertFalse(tree.is_ambiguous("node17"))
+
+    def test_collapse_ambiguous_characters(self):
+        # Trees with no ambiguous characters should not be changed
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.collapse_ambiguous_characters()
+        pd.testing.assert_frame_equal(
+            tree.get_current_character_matrix(), self.character_matrix
+        )
+
+        ambiguous_tree = cas.data.CassiopeiaTree(
+            character_matrix=self.ambiguous_character_matrix,
+            tree=self.test_network
+        )
+        ambiguous_tree.collapse_ambiguous_characters()
+        current_character_matrix = ambiguous_tree.get_current_character_matrix()
+        self.assertEqual(
+            list(ambiguous_tree.get_character_states("node18")),
+            [[1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1]]
+        )
+        for leaf in ambiguous_tree.leaves:
+            if leaf != "node18":
+                pd.testing.assert_series_equal(
+                    current_character_matrix.loc[leaf],
+                    self.ambiguous_character_matrix.loc[leaf]
+                )
+
+    def test_get_newick_raises_on_comma(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree.relabel_nodes({"node18": "name,with,comma"})
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.get_newick()
+
+    def test_add_leaf(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.add_leaf("node18", "new_leaf")
+
+        tree.add_leaf("node16", "new_leaf")
+        self.assertIn("new_leaf", tree.leaves)
+        self.assertIn(("node16", "new_leaf"), tree.edges)
+        self.assertEqual(tree.get_branch_length("node16", "new_leaf"), 0)
+        self.assertEqual(tree.get_time("new_leaf"), tree.get_time("node16"))
+        self.assertEqual(
+            tree.get_character_states("new_leaf"), [-1] * tree.n_character
+        )
+
+    def test_find_lca(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        self.assertEqual("node1", tree.find_lca("node3", "node4"))
+        self.assertEqual("node0", tree.find_lca("node5", "node1"))
+        self.assertEqual("node14", tree.find_lca("node17", "node18", "node15"))
+
+    def test_get_distance(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        self.assertEqual(tree.get_distance("node18", "node16"), 1)
+        self.assertEqual(tree.get_distance("node18", "node17"), 2)
+        self.assertEqual(tree.get_distance("node16", "node9"), 5)
+
+    def test_get_distances(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        expected_distances = {
+            "node12": 0,
+
+            # Nodes below
+            "node13": 1,
+            "node14": 1,
+            "node15": 2,
+            "node16": 2,
+            "node17": 3,
+            "node18": 3,
+
+            # Nodes above
+            "node11": 2,
+            "node10": 1,
+            "node9": 3,
+            "node8": 2,
+            "node7": 4,
+            "node6": 7,
+            "node5": 7,
+            "node4": 3,
+            "node3": 5,
+            "node2": 6,
+            "node1": 4,
+            "node0": 5,
+        }
+        self.assertEqual(tree.get_distances("node12"), expected_distances)
+        self.assertEqual(
+            tree.get_distances("node12", leaves_only=True),
+            {
+                node: distance
+                for node, distance in expected_distances.items()
+                if tree.is_leaf(node)
+            }
+        )
 
 if __name__ == "__main__":
     unittest.main()
-
