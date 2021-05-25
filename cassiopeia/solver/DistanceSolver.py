@@ -122,7 +122,12 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 _dissimilarity_map.index[j],
             )
 
-            new_node_name = str(len(tree.nodes))
+            # Use the number of nodes in the tree as the new node name.
+            # Note that initially the nodes in the tree are taken from the
+            # dissimilarity matrix, which only defines leaf nodes. Therefore,
+            # just using the number of nodes as the node name causes collisions.
+            # We prefix the name with an underscore to prevent this from happening.
+            new_node_name = f'_{len(tree.nodes)}'
             tree.add_node(new_node_name)
             tree.add_edges_from(
                 [(new_node_name, node_i), (new_node_name, node_j)]
