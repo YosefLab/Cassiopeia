@@ -1,6 +1,6 @@
 """
 This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
-a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that 
+a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
 iteratively joins together samples with the minimum dissimilarity.
 """
 from typing import Callable, Dict, List, Optional, Tuple, Union
@@ -150,8 +150,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         self.__cluster_to_cluster_size[new_node] = i_size + j_size
 
         i, j = (
-            np.where(dissimilarity_map.index == cherry[0])[0][0],
-            np.where(dissimilarity_map.index == cherry[1])[0][0],
+            dissimilarity_map.index.get_loc(cherry[0]),
+            dissimilarity_map.index.get_loc(cherry[1]),
         )
 
         dissimilarity_array = self.__update_dissimilarity_map_numba(
@@ -195,14 +195,11 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             An updated dissimilarity map
 
         """
-
         # add new row & column for incoming sample
         N = dissimilarity_map.shape[1]
 
-        new_row = np.array([0.0] * N)
-        updated_map = np.vstack((dissimilarity_map, np.atleast_2d(new_row)))
-        new_col = np.array([0.0] * (N + 1))
-        updated_map = np.hstack((updated_map, np.atleast_2d(new_col).T))
+        updated_map = np.zeros((N+1, N+1))
+        updated_map[:N,:N] = dissimilarity_map
 
         new_node_index = updated_map.shape[0] - 1
         for v in range(dissimilarity_map.shape[0]):
@@ -212,8 +209,6 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
                 size_i * dissimilarity_map[v, cherry_i]
                 + size_j * dissimilarity_map[v, cherry_j]
             ) / (size_i + size_j)
-
-        updated_map[new_node_index, new_node_index] = 0
 
         return updated_map
 
