@@ -1,19 +1,15 @@
 """
 Test DistanceSolver in Cassiopeia.solver.
 """
-import os
 import unittest
-from typing import Dict, Optional
 from unittest import mock
 
-import itertools
 import networkx as nx
-import numpy as np
 import pandas as pd
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.solver.DistanceSolver import DistanceSolver
-from cassiopeia.solver import dissimilarity_functions
+
 
 class DistanceSolverMock(DistanceSolver):
     def root_tree(self, *args, **kwargs): pass
@@ -74,6 +70,7 @@ class TestDistanceSolver(unittest.TestCase):
         self.assertNotIn(
             new_node_name, list(self.basic_tree.get_dissimilarity_map().index)
         )
+
 
 if __name__ == "__main__":
     unittest.main()
