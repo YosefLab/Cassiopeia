@@ -163,8 +163,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         """
 
         i, j = (
-            np.where(dissimilarity_map.index == cherry[0])[0][0],
-            np.where(dissimilarity_map.index == cherry[1])[0][0],
+            dissimilarity_map.index.get_loc(cherry[0]),
+            dissimilarity_map.index.get_loc(cherry[1]),
         )
 
         dissimilarity_array = self.__update_dissimilarity_map_numba(
@@ -208,10 +208,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         # add new row & column for incoming sample
         N = dissimilarity_map.shape[1]
 
-        new_row = np.array([0.0] * N)
-        updated_map = np.vstack((dissimilarity_map, np.atleast_2d(new_row)))
-        new_col = np.array([0.0] * (N + 1))
-        updated_map = np.hstack((updated_map, np.atleast_2d(new_col).T))
+        updated_map = np.zeros((N+1, N+1))
+        updated_map[:N,:N] = dissimilarity_map
 
         new_node_index = updated_map.shape[0] - 1
         for v in range(dissimilarity_map.shape[0]):

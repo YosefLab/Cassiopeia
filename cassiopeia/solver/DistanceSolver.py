@@ -100,10 +100,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         N = dissimilarity_map.shape[0]
 
-        identifier_to_sample = dict(
-            zip([str(i) for i in range(N)], dissimilarity_map.index)
-        )
-
         # instantiate a dissimilarity map that can be updated as we join
         # together nodes.
         _dissimilarity_map = dissimilarity_map.copy()
@@ -144,8 +140,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.root_sample_name,
             _dissimilarity_map.index.values,
         )
-
-        tree = nx.relabel_nodes(tree, identifier_to_sample)
 
         cassiopeia_tree.populate_tree(tree)
 
