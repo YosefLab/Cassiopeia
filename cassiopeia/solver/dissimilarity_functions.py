@@ -234,7 +234,7 @@ def cluster_dissimilarity(
     s2: Union[List[int], List[List[int]]],
     missing_state_indicator: int,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
-    linkage_function: Optional[Callable[[Union[np.array, List[float]]], float]] = np.mean
+    linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean
 ) -> float:
     """This function computes the dissimilarity between two (possibly) ambiguous
     character strings. An ambiguous character string is a character string in
@@ -281,7 +281,6 @@ def cluster_dissimilarity(
     s2_iter = itertools.product(*s2)
     dissimilarities = []
     for _s1, _s2 in itertools.product(s1_iter, s2_iter):
-        print(_s1, _s2)
         dissimilarities.append(dissimilarity_function(
             list(_s1),
             list(_s2),
