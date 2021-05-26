@@ -15,7 +15,7 @@ from cassiopeia.simulator.LeafSubsampler import LeafSubsampler, LeafSubsamplerEr
 
 
 class SupercellularSampler(LeafSubsampler):
-    def __init__(self, ratio=None, number_of_merges=None):
+    def __init__(self, ratio: Optional[float] = None, number_of_merges: Optional[float] = None):
         """
         Iteratively merge two leaves in a CassiopeiaTree to generate a new
         CassiopeiaTree with ambiguous character states. Note that according to this
@@ -42,7 +42,7 @@ class SupercellularSampler(LeafSubsampler):
         self,
         tree: CassiopeiaTree,
         collapse_source: Optional[str] = None,
-        collapse_duplicates: Optional[bool] = True,
+        collapse_duplicates: bool = True,
     ):
         """Construct a new CassiopeiaTree by merging leaves in the provided
         tree.
