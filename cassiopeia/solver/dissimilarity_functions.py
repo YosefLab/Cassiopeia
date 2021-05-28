@@ -192,13 +192,27 @@ def cluster_dissimilarity(
     which each character contains an list of possible states, and such a
     character string is represented as a list of lists of integers.
 
-    This function first disambiguates each of the two ambiguous character strings
-    by generating all possible combinations of character strings, which gives us two
-    "clusters" or "clouds" of character strings. All pairwise dissimilarities between the
-    two clusters are computed using ``dissimilarity_function`` and aggregated using
-    ``linkage_function``. The idea of linkage is analogous to that in hierarchical
-    clustering, where ``np.min`` can be used for single linkage, ``np.max`` for complete
-    linkage, and ``np.mean`` for average linkage (the default).
+    A naive implementation is to first disambiguate each of the two ambiguous
+    character strings by generating all possible strings, then computing the
+    dissimilarity between all pairwise combinations, and finally applying the
+    linkage function on the calculated dissimilarities. However, doing so has
+    complexity O(\prod_{i=1}^N |a_i| x |b_i|) where N is the number of target sites,
+    |a_i| is the number of ambiguous characters at target site i of string a,
+    and |b_i| is the number of amiguous characters at target site i of string b.
+    As an example, if we have N=10 and all a_i=b_i=2, then we have to construct
+    1,038,576 * 2 strings and compute over 4 trillion dissimilarities.
+
+    By assuming each target site is independent, simply calculating the sum of
+    the linkages of each target site separately is equivalent to the naive
+    implementation (can be proven by induction). This procedure is implemented
+    in this function. One caveat is that we usually normalize the distance by
+    the number of shared non-missing positions. We approximate this by dividing
+    the absolute distance by the sum of the probability of each site not being
+    a missing site for both strings.
+
+    The idea of linkage is analogous to that in hierarchical clustering, where
+    ``np.min`` can be used for single linkage, ``np.max`` for complete linkage,
+    and ``np.mean`` for average linkage (the default).
 
     The reason the ``dissimilarity_function`` argument is defined as the first
     argument is so that this function may be used as input to
@@ -228,14 +242,20 @@ def cluster_dissimilarity(
     s1 = [s if isinstance(s, list) else [s] for s in s1]
     s2 = [s if isinstance(s, list) else [s] for s in s2]
 
-    s1_iter = itertools.product(*s1)
-    s2_iter = itertools.product(*s2)
-    dissimilarities = []
-    for _s1, _s2 in itertools.product(s1_iter, s2_iter):
-        dissimilarities.append(dissimilarity_function(
-            list(_s1),
-            list(_s2),
-            missing_state_indicator=missing_state_indicator,
-            weights=weights,
-        ))
-    return linkage_function(dissimilarities)
+    result = 0
+    num_present = 0
+    for i, (c1, c2) in enumerate(zip(s1, s2)):
+        dissim = []
+        present = []
+        for _c1, _c2 in itertools.product(c1, c2):
+            present.append(_c1 != missing_state_indicator and _c2 != missing_state_indicator)
+            dissim.append(dissimilarity_function(
+                [_c1],
+                [_c2],
+                missing_state_indicator=missing_state_indicator,
+                weights={0: weights[i]} if weights else None,
+            ))
+        result += linkage_function(dissim)
+        num_present += np.mean(present)
+
+    return result / num_present

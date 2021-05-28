@@ -1222,6 +1222,33 @@ class TestCassiopeiaTree(unittest.TestCase):
                     self.ambiguous_character_matrix.loc[leaf]
                 )
 
+    def test_resolve_ambiguous_characters(self):
+        # Trees with no ambiguous characters should not be changed
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.resolve_ambiguous_characters(lambda state: state[0])
+        pd.testing.assert_frame_equal(
+            tree.get_current_character_matrix(), self.character_matrix
+        )
+
+        ambiguous_tree = cas.data.CassiopeiaTree(
+            character_matrix=self.ambiguous_character_matrix,
+            tree=self.test_network
+        )
+        ambiguous_tree.resolve_ambiguous_characters(lambda state: state[0])
+        current_character_matrix = ambiguous_tree.get_current_character_matrix()
+        self.assertEqual(
+            list(ambiguous_tree.get_character_states("node18")),
+            [1, 1, 1, 1, 1, 1, 1, 1]
+        )
+        for leaf in ambiguous_tree.leaves:
+            if leaf != "node18":
+                pd.testing.assert_series_equal(
+                    current_character_matrix.loc[leaf],
+                    self.ambiguous_character_matrix.loc[leaf].astype(int)
+                )
+
     def test_get_newick_raises_on_comma(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
         tree.relabel_nodes({"node18": "name,with,comma"})
