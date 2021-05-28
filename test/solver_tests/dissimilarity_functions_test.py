@@ -256,8 +256,8 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_cluster_dissimilarity(self):
-        dissimilarity_function = mock.MagicMock()
-        linkage_function = mock.MagicMock()
+        dissimilarity_function = dissimilarity_functions.weighted_hamming_distance
+        linkage_function = np.mean
 
         result = dissimilarity_functions.cluster_dissimilarity(
             dissimilarity_function,
@@ -267,34 +267,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
             self.nlweights,
             linkage_function
         )
-        self.assertEqual(result, linkage_function.return_value)
-        self.assertEqual(dissimilarity_function.call_count, 4)
-        dissimilarity_function.assert_has_calls([
-            mock.call(
-                self.s1,
-                [0, -1, 0, -1, 1, 1],
-                missing_state_indicator=-1,
-                weights=self.nlweights
-            ),
-            mock.call(
-                self.s1,
-                [0, -1, 0, 0, 1, 1],
-                missing_state_indicator=-1,
-                weights=self.nlweights
-            ),
-            mock.call(
-                self.s1,
-                [0, 0, 0, -1, 1, 1],
-                missing_state_indicator=-1,
-                weights=self.nlweights
-            ),
-            mock.call(
-                self.s1,
-                [0, 0, 0, 0, 1, 1],
-                missing_state_indicator=-1,
-                weights=self.nlweights
-            ),
-        ])
+        np.testing.assert_almost_equal(result, 1.2544, decimal=4)
 
 
 if __name__ == "__main__":

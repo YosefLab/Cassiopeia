@@ -512,6 +512,52 @@ class CassiopeiaTree:
             if modified:
                 self.set_character_states(node, states)
 
+    def resolve_ambiguous_characters(
+        self, resolve_function: Optional[Callable[[List[int]], int]] = None
+    ) -> None:
+        """Resolve all nodes with ambiguous characters. A custom ``resolve_function``
+        may be provided to perform the resolution. By default, the most abundant
+        state is selected. One is randomly selected on ties. Modifies the tree in-place.
+
+        Args:
+            resolve_function: Function that performs character resolution. This
+                function is called once per ambiguous character state, and thus
+                takes a single integer list as its argument and returns the
+                resolved character state.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        for node in self.nodes:
+            states = self.get_character_states(node)
+
+            # Modify states in place. This is okay because get_character_states
+            # returns a copy.
+            modified = False
+            for i in range(len(states)):
+                if isinstance(states[i], list):
+                    if resolve_function:
+                        new_state = resolve_function(states[i])
+                    else:
+                        most_common = collections.Counter(states[i]).most_common()
+                        new_state = np.random.choice([
+                            state
+                            for state, count in most_common
+                            if count == most_common[0][1]
+                        ])
+
+                    states[i] = new_state
+                    modified = True
+            if modified:
+                self.set_character_states(node, states)
+
+        # All nodes have a single character string, so we cast the character matrix
+        # back to an integer.
+        self.__current_character_matrix = self.__current_character_matrix.astype(int, copy=False)
+
+
     def reconstruct_ancestral_characters(self) -> None:
         """Reconstruct ancestral character states.
 
