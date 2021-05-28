@@ -7,3 +7,4 @@ from .BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
 from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
 from .LeafSubsampler import LeafSubsampler, LeafSubsamplerError
+from .SupercellularSampler import SupercellularSampler
