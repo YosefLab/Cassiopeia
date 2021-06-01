@@ -144,7 +144,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # the root from each sample
         max_lca_distance = 0
         lca_distances = [
-            dissimilarity_functions.hamming_distance(root, np.array(u))
+            dissimilarity_functions.hamming_distance(
+                root,
+                np.array(u),
+                ignore_missing_state=True,
+                missing_state_indicator=cassiopeia_tree.missing_state_indicator,
+            )
             for u in targets
         ]
 
@@ -230,90 +235,98 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        logging.info(
-            f"(Process: {pid}) Estimating a potential graph with "
-            "a maximum layer size of "
-            f"{self.maximum_potential_graph_layer_size} and n maximum "
-            f"LCA height of {lca_height}."
+        potential_graph = ilp_solver_utilities.infer_potential_graph_cython(
+            character_matrix,
+            pid,
+            lca_height,
+            self.maximum_potential_graph_layer_size,
+            weights,
+            missing_state_indicator,
         )
+        # logging.info(
+        #     f"(Process: {pid}) Estimating a potential graph with "
+        #     "a maximum layer size of "
+        #     f"{self.maximum_potential_graph_layer_size} and n maximum "
+        #     f"LCA height of {lca_height}."
+        # )
 
-        layer_sizes = {}
-        prev_graph = None
+        # layer_sizes = {}
+        # prev_graph = None
 
-        character_states = character_matrix.values
+        # character_states = character_matrix.values
 
-        n_characters = character_states.shape[1]
+        # n_characters = character_states.shape[1]
 
-        distance_threshold = 0
-        while distance_threshold < (lca_height + 1):
+        # distance_threshold = 0
+        # while distance_threshold < (lca_height + 1):
 
-            layer_graph = nx.DiGraph()
-            layer_graph.add_nodes_from([tuple(n) for n in character_states])
+        #     layer_graph = nx.DiGraph()
+        #     layer_graph.add_nodes_from([tuple(n) for n in character_states])
 
-            source_nodes = character_states
-            effective_threshold = distance_threshold
-            max_layer_width = 0
+        #     source_nodes = character_states
+        #     effective_threshold = distance_threshold
+        #     max_layer_width = 0
 
-            while len(source_nodes) > 1:
+        #     while len(source_nodes) > 1:
 
-                if len(source_nodes) > self.maximum_potential_graph_layer_size:
-                    logging.info(
-                        f"(Process: {pid}) Maximum layer size "
-                        "exceeded, returning network."
-                    )
+        #         if len(source_nodes) > self.maximum_potential_graph_layer_size:
+        #             logging.info(
+        #                 f"(Process: {pid}) Maximum layer size "
+        #                 "exceeded, returning network."
+        #             )
 
-                    return self.add_edge_weights(
-                        prev_graph, weights, missing_state_indicator
-                    )
+        #             return self.add_edge_weights(
+        #                 prev_graph, weights, missing_state_indicator
+        #             )
 
-                (
-                    next_layer,
-                    layer_edges,
-                ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-                    source_nodes, effective_threshold, missing_state_indicator
-                )
+        #         (
+        #             next_layer,
+        #             layer_edges,
+        #         ) = ilp_solver_utilities.infer_layer_of_potential_graph(
+        #             source_nodes, effective_threshold, missing_state_indicator
+        #         )
 
-                # subset to unique values
-                if len(next_layer) > 0:
-                    next_layer = np.unique(next_layer, axis=0)
+        #         # subset to unique values
+        #         if len(next_layer) > 0:
+        #             next_layer = np.unique(next_layer, axis=0)
 
-                if (
-                    len(next_layer) > self.maximum_potential_graph_layer_size
-                    and prev_graph != None
-                ):
-                    return self.add_edge_weights(
-                        prev_graph, weights, missing_state_indicator
-                    )
+        #         if (
+        #             len(next_layer) > self.maximum_potential_graph_layer_size
+        #             and prev_graph != None
+        #         ):
+        #             return self.add_edge_weights(
+        #                 prev_graph, weights, missing_state_indicator
+        #             )
 
-                # edges come out as rows in a numpy matrix, where the first
-                # n_characters positions correspond to the parent and the
-                # remaining positions correspond to the child
-                layer_edges = [
-                    (tuple(e[:n_characters]), tuple(e[n_characters:]))
-                    for e in layer_edges
-                    if tuple(e[:n_characters]) != tuple(e[n_characters:])
-                ]
-                layer_graph.add_edges_from(layer_edges)
+        #         # edges come out as rows in a numpy matrix, where the first
+        #         # n_characters positions correspond to the parent and the
+        #         # remaining positions correspond to the child
+        #         layer_edges = [
+        #             (tuple(e[:n_characters]), tuple(e[n_characters:]))
+        #             for e in layer_edges
+        #             if tuple(e[:n_characters]) != tuple(e[n_characters:])
+        #         ]
+        #         layer_graph.add_edges_from(layer_edges)
 
-                if len(source_nodes) > len(next_layer):
-                    if effective_threshold == distance_threshold:
-                        effective_threshold *= 3
+        #         if len(source_nodes) > len(next_layer):
+        #             if effective_threshold == distance_threshold:
+        #                 effective_threshold *= 3
 
-                source_nodes = next_layer
+        #         source_nodes = next_layer
 
-                max_layer_width = max(max_layer_width, len(source_nodes))
+        #         max_layer_width = max(max_layer_width, len(source_nodes))
 
-            logging.info(
-                f"(Process: {pid}) LCA distance {distance_threshold} "
-                f"completed with a neighborthood size of {max_layer_width}."
-            )
+        #     logging.info(
+        #         f"(Process: {pid}) LCA distance {distance_threshold} "
+        #         f"completed with a neighborthood size of {max_layer_width}."
+        #     )
 
-            distance_threshold += 1
+        #     distance_threshold += 1
 
-            prev_graph = layer_graph
+        #     prev_graph = layer_graph
 
         return self.add_edge_weights(
-            layer_graph, weights, missing_state_indicator
+            potential_graph, weights, missing_state_indicator
         )
 
     def add_edge_weights(

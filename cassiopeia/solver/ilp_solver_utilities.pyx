@@ -1,17 +1,106 @@
 """
 Cython utilities for ILPSolver.
 """
-cimport cython
+# cimport cython
 
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import dissimilarity_functions
 
+
+def infer_potential_graph_cython(
+    character_matrix: pd.DataFrame,
+    pid: int,
+    lca_height: int,
+    maximum_potential_graph_layer_size: int,
+    weights: Optional[Dict[int, Dict[int, str]]] = None,
+    missing_state_indicator: int = -1):
+
+    logging.info(
+        f"(Process: {pid}) Estimating a potential graph with "
+        "a maximum layer size of "
+        f"{maximum_potential_graph_layer_size} and n maximum "
+        f"LCA height of {lca_height}."
+    )
+
+    layer_sizes = {}
+    prev_graph = None
+
+    character_states = character_matrix.values
+
+    n_characters = character_states.shape[1]
+
+    distance_threshold = 0
+    while distance_threshold < (lca_height + 1):
+
+        layer_graph = nx.DiGraph()
+        layer_graph.add_nodes_from([tuple(n) for n in character_states])
+
+        source_nodes = character_states
+        effective_threshold = distance_threshold
+        max_layer_width = 0
+
+        while len(source_nodes) > 1:
+
+            if len(source_nodes) > maximum_potential_graph_layer_size:
+                logging.info(
+                    f"(Process: {pid}) Maximum layer size "
+                    "exceeded, returning network."
+                )
+
+                return prev_graph
+
+            (
+                next_layer,
+                layer_edges,
+            ) = infer_layer_of_potential_graph(
+                source_nodes, effective_threshold, missing_state_indicator
+            )
+
+            # subset to unique values
+            if len(next_layer) > 0:
+                next_layer = np.unique(next_layer, axis=0)
+
+            if (
+                len(next_layer) > maximum_potential_graph_layer_size
+                and prev_graph != None
+            ):
+                return prev_graph
+
+            # edges come out as rows in a numpy matrix, where the first
+            # n_characters positions correspond to the parent and the
+            # remaining positions correspond to the child
+            layer_edges = [
+                (tuple(e[:n_characters]), tuple(e[n_characters:]))
+                for e in layer_edges
+                if tuple(e[:n_characters]) != tuple(e[n_characters:])
+            ]
+            layer_graph.add_edges_from(layer_edges)
+
+            if len(source_nodes) > len(next_layer):
+                if effective_threshold == distance_threshold:
+                    effective_threshold *= 3
+
+            source_nodes = next_layer
+
+            max_layer_width = max(max_layer_width, len(source_nodes))
+
+        logging.info(
+            f"(Process: {pid}) LCA distance {distance_threshold} "
+            f"completed with a neighborthood size of {max_layer_width}."
+        )
+
+        distance_threshold += 1
+
+        prev_graph = layer_graph
+
+    return layer_graph
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -67,10 +156,17 @@ def infer_layer_of_potential_graph(
 
             sample2 = source_nodes[j]
             # ancestor = np.array([sample1[k] if sample1[k] == sample2[k] else 0 for k in range(dim)])
-            ancestor = np.array(data_utilities.get_lca_characters([sample1, sample2], missing_state_indicator=missing_state_indicator))
+            ancestor = np.array(data_utilities.get_lca_characters([sample1, sample2],
+                    missing_state_indicator=missing_state_indicator))
 
-            d1_a = dissimilarity_functions.hamming_distance(sample1, ancestor)
-            d2_a = dissimilarity_functions.hamming_distance(sample2, ancestor)
+            d1_a = dissimilarity_functions.hamming_distance(ancestor,
+                    sample1,
+                    ignore_missing_state=True,
+                    missing_state_indicator=missing_state_indicator)
+            d2_a = dissimilarity_functions.hamming_distance(ancestor,
+                    sample2,
+                    ignore_missing_state=True,
+                    missing_state_indicator=missing_state_indicator)
 
             edge = np.concatenate((ancestor, sample2))
             top_ancestors.append(edge)
