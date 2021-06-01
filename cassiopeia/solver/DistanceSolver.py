@@ -93,16 +93,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
         """
+        node_name_generator = solver_utilities.node_name_generator()
 
         self.setup_dissimilarity_map(cassiopeia_tree)
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
 
         N = dissimilarity_map.shape[0]
-
-        identifier_to_sample = dict(
-            zip([str(i) for i in range(N)], dissimilarity_map.index)
-        )
 
         # instantiate a dissimilarity map that can be updated as we join
         # together nodes.
@@ -122,7 +119,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 _dissimilarity_map.index[j],
             )
 
-            new_node_name = str(len(tree.nodes))
+            new_node_name = next(node_name_generator)
             tree.add_node(new_node_name)
             tree.add_edges_from(
                 [(new_node_name, node_i), (new_node_name, node_j)]
@@ -139,8 +136,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.root_sample_name,
             _dissimilarity_map.index.values,
         )
-
-        tree = nx.relabel_nodes(tree, identifier_to_sample)
 
         cassiopeia_tree.populate_tree(tree)
 

@@ -55,7 +55,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
     def __init__(
         self,
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
-        prior_transformation: str = "negative_log",
+        prior_transformation: str = "negative_log"
     ):
 
         super().__init__(prior_transformation)

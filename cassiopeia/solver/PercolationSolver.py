@@ -3,15 +3,15 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import solver_utilities
-
+from cassiopeia.solver import (
+    CassiopeiaSolver,
+    dissimilarity_functions,
+    solver_utilities,
+)
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
@@ -59,15 +59,15 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_function: Optional[
             Callable[
                 [
-                    List[int],
-                    List[int],
+                    np.array,
+                    np.array,
                     int,
                     Optional[Dict[int, Dict[int, float]]],
                 ],
                 float,
             ]
         ] = dissimilarity_functions.hamming_similarity_without_missing,
-        threshold: Optional[int] = 0,
+        threshold: Optional[int] = 0
     ):
 
         super().__init__(prior_transformation)
@@ -92,6 +92,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 priors.
         """
 
+        node_name_generator = solver_utilities.node_name_generator()
+
         # A helper function that builds the subtree given a set of samples
         def _solve(
             samples: List[Union[str, int]],
@@ -115,7 +117,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = len(tree.nodes) + 1
+            root = next(node_name_generator)
             tree.add_node(root)
 
             for clade in clades:
@@ -168,7 +170,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix)
+        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
         cassiopeia_tree.populate_tree(duplicates_tree)
 
     def percolate(
@@ -307,7 +309,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         return partition_named
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None]
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
         Places samples removed in removing duplicates in the tree as sisters
@@ -330,12 +332,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            if len(tree.nodes) == 1:
-                new_internal_node = str(len(duplicate_groups[i]) + 1)
-            else:
-                new_internal_node = (
-                    str(max([int(n) for n in tree.nodes if n.isnumeric()]) + 1)
-                )
+            new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)
