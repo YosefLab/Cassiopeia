@@ -2,14 +2,12 @@
 the solver module"""
 
 import logging
-from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Dict, Generator, List, Optional
 
 import ete3
-import networkx as nx
+from hashlib import blake2b
 import numpy as np
-import pandas as pd
-
-from cassiopeia.data import utilities as data_utilities
+import time
 
 
 class PriorTransformationError(Exception):
@@ -19,11 +17,19 @@ class PriorTransformationError(Exception):
 
 
 def node_name_generator() -> Generator[str, None, None]:
-    """Generates unique node names for building the reconstructed tree."""
-    i = 0
+    """Generates unique node names for building the reconstructed tree.
+    
+    Creates a generator object that produces unique node names by hashing
+    timestamps.
+
+    Returns:
+        A generator object
+    """
+
     while True:
-        yield "cassiopeia_internal_node_" + str(i)
-        i += 1
+        k = str(time.time()).encode('utf-8')
+        h = blake2b(key=k, digest_size=12)
+        yield "cassiopeia_internal_node" + h.hexdigest()
 
 
 def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:

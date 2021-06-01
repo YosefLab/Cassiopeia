@@ -111,7 +111,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 and priors for reconstruction.
             logfile: Location to log progress.
         """
-        names = solver_utilities.node_name_generator()
+        node_name_generator = solver_utilities.node_name_generator()
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
@@ -126,7 +126,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         _, subproblems = self.apply_top_solver(
             unique_character_matrix,
             list(unique_character_matrix.index),
-            names,
+            node_name_generator,
             weights=weights,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
@@ -163,7 +163,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             mapping = {}
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
-                    mapping[n] = next(names)
+                    mapping[n] = next(node_name_generator)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 

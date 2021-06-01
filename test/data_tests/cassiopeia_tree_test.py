@@ -7,6 +7,7 @@ from typing import Dict, Optional
 import ete3
 import networkx as nx
 import numpy as np
+from numpy.testing._private.utils import assert_equal
 import pandas as pd
 
 import cassiopeia as cas
@@ -698,6 +699,66 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertWarns(
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
+
+    def test_character_matrix_index_not_strings(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                1: [5, 0, 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+    def test_register_data_with_tree(self):
+        complete_binary = nx.balanced_tree(2, 2, create_using=nx.DiGraph())
+        str_names = dict(
+            zip(
+                list(complete_binary.nodes),
+                ["node" + str(i) for i in complete_binary.nodes],
+            )
+        )
+        small_complete_binary_tree = nx.relabel_nodes(
+            complete_binary, str_names
+        )
+        
+        cas_tree = cas.data.CassiopeiaTree(
+            tree=small_complete_binary_tree
+        )
+
+        cm = pd.DataFrame.from_dict(
+            {
+                "node3": [5, 0, 1, 2, -1],
+                "node4": [0, 0, 3, 2, -1],
+                "node5": [-1, 4, 0, 2, 2],
+                "node6": [4, 4, 1, 2, 0]
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        cas_tree.set_character_matrix(cm)
+        delta = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 15, 21, 17],
+                "node4": [15, 0, 10, 6],
+                "node5": [21, 10, 0, 10],
+                "node6": [17, 6, 10, 0],
+            },
+            orient="index",
+            columns=["node3", "node4", "node5", "node6"],
+        )
+        cas_tree.set_dissimilarity_map(delta)
+        cas_tree.remove_leaf_and_prune_lineage("node5")
+
+        self.assertEqual(set(cas_tree.get_current_character_matrix().index), set(["node3", "node4", "node6"]))
+        self.assertEqual(set(cas_tree.get_dissimilarity_map().index), set(["node3", "node4", "node6"]))
+        self.assertEqual(set(cas_tree.get_dissimilarity_map().columns), set(["node3", "node4", "node6"]))
 
     def test_remove_leaf_and_prune_lineage_all(self):
         """Tests the case where all lineages are removed and pruned."""

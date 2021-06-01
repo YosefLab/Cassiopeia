@@ -60,8 +60,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_function: Optional[
             Callable[
                 [
-                    List[int],
-                    List[int],
+                    np.array,
+                    np.array,
                     int,
                     Optional[Dict[int, Dict[int, float]]],
                 ],
@@ -94,7 +94,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree: CassiopeiaTree object to be populated
         """
 
-        names = solver_utilities.node_name_generator()
+        node_name_generator = solver_utilities.node_name_generator()
 
         character_matrix = cassiopeia_tree.get_current_character_matrix()
         weights = None
@@ -149,7 +149,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             # get indices in the similarity matrix to join
             node_i, node_j = (similarity_map.index[i], similarity_map.index[j])
 
-            new_node_name = next(names)
+            new_node_name = next(node_name_generator)
             tree.add_node(new_node_name)
             tree.add_edges_from(
                 [(new_node_name, node_i), (new_node_name, node_j)]

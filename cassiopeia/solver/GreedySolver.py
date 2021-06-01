@@ -79,8 +79,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 priors.
         """
 
-        names = solver_utilities.node_name_generator()
-
         # A helper function that builds the subtree given a set of samples
         def _solve(
             samples: List[Union[str, int]],
@@ -101,7 +99,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = next(names)
+            root = next(node_name_generator)
             tree.add_node(root)
 
             for clade in clades:
@@ -124,6 +122,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
                 tree.add_edge(root, child)
             return root
+
+        node_name_generator = solver_utilities.node_name_generator()
 
         weights = None
         if cassiopeia_tree.priors:
@@ -150,7 +150,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, names)
+        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
         cassiopeia_tree.populate_tree(duplicates_tree)
 
     def compute_mutation_frequencies(

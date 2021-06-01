@@ -225,7 +225,7 @@ class CassiopeiaTree:
 
         if set(self.leaves) != set(character_matrix.index.values):
             raise CassiopeiaTreeError(
-                "Character matrix does not account for all the leaves."
+                "Character matrix index does not match set of leaves."
             )
 
         for n in self.leaves:
@@ -1050,14 +1050,32 @@ class CassiopeiaTree:
         # reset cache because we've changed names
         self.__cache = {}
 
+    def __register_data_with_tree(self) -> None:
+        """Makes the leaf data consistent with the leaves in the tree.
+
+        Removes any leaves from the character matrix, cell metadata, and 
+        dissimilarity maps that do not appear in the tree.
+        """
+        if self.__current_character_matrix is not None:
+            remove_from_charater_matrix = set(self.__current_character_matrix.index) - set(self.leaves)
+            self.__current_character_matrix = self.__current_character_matrix.drop(index = remove_from_charater_matrix)
+                
+        if self.cell_meta is not None:
+            remove_from_cell_meta = set(self.cell_meta.index) - set(self.leaves)
+            self.__cell_meta = self.cell_meta.drop(index = remove_from_cell_meta)
+
+        if self.__dissimilarity_map is not None:
+            remove_from_dissimilarity_map = set(self.__dissimilarity_map.index) - set(self.leaves)
+            self.__dissimilarity_map = self.__dissimilarity_map.drop(index = remove_from_dissimilarity_map, columns = remove_from_dissimilarity_map)
+
     def remove_leaf_and_prune_lineage(self, node: str) -> None:
         """Removes a leaf from the tree and prunes the lineage.
 
         Removes a leaf and all ancestors of that leaf that are no longer the
         ancestor of any leaves. In the context of a phylogeny, this prunes the
         lineage of all nodes no longer relevant to observed samples. 
-        Additionally, maintains consistency with information on the tree by
-        removing the node from the character matrix and cell metadata.
+        Additionally, maintains consistency with the updated tree by removing 
+        the node from all leaf data.
 
         Args:
             node: The leaf node to be removed
@@ -1084,28 +1102,11 @@ class CassiopeiaTree:
                 self.__remove_node(curr_parent)
                 curr_parent = next_parent
 
-        if self.__current_character_matrix:
-            if node in self.__current_character_matrix.index:
-                self.__current_character_matrix.drop(index = [node], inplace = True)
-        if self.cell_meta:
-            if node in self.cell_meta.index:
-                self.cell_meta.drop(index = [node], inplace = True)
-        if self.__dissimilarity_map:
-            if node in self.__dissimilarity_map.index:
-                self.__dissimilarity_map.drop(index = [node], columns = node, inplace = True)
-
-        if self.__current_character_matrix:
-            if node in self.__current_character_matrix.index:
-                self.__current_character_matrix.drop(index = [node], inplace = True)
-        if self.cell_meta:
-            if node in self.cell_meta.index:
-                self.cell_meta.drop(index = [node], inplace = True)
-        if self.__dissimilarity_map:
-            if node in self.__dissimilarity_map.index:
-                self.__dissimilarity_map.drop(index = [node], columns = node, inplace = True)
-
         # reset cache because we've changed the tree topology
         self.__cache = {}
+
+        # Remove all removed nodes from data fields
+        self.__register_data_with_tree()
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:
         """Collapses unifurcations on the tree.
