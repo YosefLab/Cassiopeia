@@ -90,11 +90,11 @@ class SupercellularSampler(LeafSubsampler):
             new_state = []
             for char1, char2 in zip(leaf1_state, leaf2_state):
                 new_char = []
-                if not isinstance(char1, list):
-                    char1 = [char1]
-                if not isinstance(char2, list):
-                    char2 = [char2]
-                new_state.append(tuple(char1 + char2))
+                if not isinstance(char1, tuple):
+                    char1 = (char1,)
+                if not isinstance(char2, tuple):
+                    char2 = (char2,)
+                new_state.append(char1 + char2)
             merged_tree.add_leaf(merged_tree.find_lca(leaf1, leaf2), new_leaf)
             merged_tree.set_time(new_leaf, new_time)
             merged_tree.set_character_states(new_leaf, new_state)
