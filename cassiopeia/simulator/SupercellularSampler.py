@@ -27,7 +27,7 @@ class SupercellularSampler(LeafSubsampler):
         Args:
             ratio: The number of times to merge as a ratio of the total number
                 of leaves. A ratio of 0.5 indicates the number of merges will be
-                approximately half the number of trees.
+                approximately half the number of leaves.
             number_of_merges: Explicit number of merges to perform.
         """
         if (ratio is None) == (number_of_merges is None):
