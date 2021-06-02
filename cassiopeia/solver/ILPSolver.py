@@ -235,14 +235,17 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix,
+        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
+            character_matrix.values,
             pid,
             lca_height,
             self.maximum_potential_graph_layer_size,
-            weights,
             missing_state_indicator,
         )
+
+        potential_graph = nx.DiGraph()
+        potential_graph.add_edges_from(potential_graph_edges)
+
         # logging.info(
         #     f"(Process: {pid}) Estimating a potential graph with "
         #     "a maximum layer size of "

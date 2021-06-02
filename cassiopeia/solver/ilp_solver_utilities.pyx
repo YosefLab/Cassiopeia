@@ -1,12 +1,11 @@
 """
-Cython utilities for ILPSolver.
+Cython utilities for the ILPSolver.
 """
-# cimport cython
+import cython
 
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -14,13 +13,13 @@ from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import dissimilarity_functions
 
 
+@cython.boundscheck(False)
 def infer_potential_graph_cython(
-    character_matrix: pd.DataFrame,
-    pid: int,
+    character_states: long[:,:],
+    pid: Union[int, str],
     lca_height: int,
     maximum_potential_graph_layer_size: int,
-    weights: Optional[Dict[int, Dict[int, str]]] = None,
-    missing_state_indicator: int = -1):
+    missing_state_indicator: int):
 
     logging.info(
         f"(Process: {pid}) Estimating a potential graph with "
@@ -29,32 +28,38 @@ def infer_potential_graph_cython(
         f"LCA height of {lca_height}."
     )
 
-    layer_sizes = {}
-    prev_graph = None
+    cdef int effective_threshold
+    cdef int max_layer_width
+    cdef long[:,:] source_nodes
 
-    character_states = character_matrix.values
+    cdef list layer_sizes = []
+    cdef list distance_thresholds = []
+    cdef list previous_layer_edges = []
+    cdef list current_layer_edges = []
 
-    n_characters = character_states.shape[1]
+    cdef int n_characters = character_states.shape[1]
 
-    distance_threshold = 0
+    cdef int distance_threshold = 0
+    cdef int layer_iterator = 0
+
     while distance_threshold < (lca_height + 1):
-
-        layer_graph = nx.DiGraph()
-        layer_graph.add_nodes_from([tuple(n) for n in character_states])
+        
+        current_layer_edges = [-1]*1000000 # allocate sufficient memory
 
         source_nodes = character_states
         effective_threshold = distance_threshold
         max_layer_width = 0
+        layer_iterator = 0
 
-        while len(source_nodes) > 1:
+        while source_nodes.shape[0] > 1:
 
-            if len(source_nodes) > maximum_potential_graph_layer_size:
+            if source_nodes.shape[0] > maximum_potential_graph_layer_size:
                 logging.info(
                     f"(Process: {pid}) Maximum layer size "
                     "exceeded, returning network."
                 )
 
-                return prev_graph
+                return previous_layer_edges
 
             (
                 next_layer,
@@ -64,14 +69,14 @@ def infer_potential_graph_cython(
             )
 
             # subset to unique values
-            if len(next_layer) > 0:
+            if next_layer.shape[0] > 0:
                 next_layer = np.unique(next_layer, axis=0)
 
             if (
-                len(next_layer) > maximum_potential_graph_layer_size
-                and prev_graph != None
+                next_layer.shape[0] > maximum_potential_graph_layer_size
+                and len(previous_layer_edges) > 0
             ):
-                return prev_graph
+                return previous_layer_edges
 
             # edges come out as rows in a numpy matrix, where the first
             # n_characters positions correspond to the parent and the
@@ -81,31 +86,37 @@ def infer_potential_graph_cython(
                 for e in layer_edges
                 if tuple(e[:n_characters]) != tuple(e[n_characters:])
             ]
-            layer_graph.add_edges_from(layer_edges)
+            for layer_edge in layer_edges:
+                current_layer_edges[layer_iterator] = layer_edge
+                layer_iterator += 1
 
-            if len(source_nodes) > len(next_layer):
+            if source_nodes.shape[0] > next_layer.shape[0]:
                 if effective_threshold == distance_threshold:
                     effective_threshold *= 3
 
             source_nodes = next_layer
 
-            max_layer_width = max(max_layer_width, len(source_nodes))
+            max_layer_width = max(max_layer_width, source_nodes.shape[0])
 
         logging.info(
             f"(Process: {pid}) LCA distance {distance_threshold} "
             f"completed with a neighborthood size of {max_layer_width}."
         )
 
+        distance_thresholds.append(distance_threshold)
+
         distance_threshold += 1
+        
+        layer_sizes.append(max_layer_width)
+        
+        previous_layer_edges = current_layer_edges[:layer_iterator]
 
-        prev_graph = layer_graph
-
-    return layer_graph
+    return current_layer_edges[:layer_iterator]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def infer_layer_of_potential_graph(
-    long[:,:] source_nodes, int distance_threshold, int missing_state_indicator
+    source_nodes: long[:,:], distance_threshold: int, missing_state_indicator: int
 ) -> Tuple[np.array, List[Tuple[np.array, np.array]]]:
     """Infer a layer of the potential graph.
 
@@ -142,10 +153,16 @@ def infer_layer_of_potential_graph(
     cdef long[:] ancestor, distance_to_ancestor, parent, sample1, sample2
     cdef list top_ancestors
 
-    cdef list layer = []
-    cdef list new_edges = []
+    cdef list layer = [-1]*1000000
+    cdef list new_edges = [-1]*1000000
     cdef long[:] edge
     
+    cdef int edge_iterator = 0
+    cdef int layer_iterator = 0
+
+    # preallocate edges
+    cdef long[:] edge1 = np.array([0]*dim, long)
+    cdef long[:] edge2 = np.array([0]*dim, long)
     for i in range(0, n_samples-1):
 
         sample1 = source_nodes[i]
@@ -155,9 +172,7 @@ def infer_layer_of_potential_graph(
         for j in range(i + 1, n_samples):
 
             sample2 = source_nodes[j]
-            # ancestor = np.array([sample1[k] if sample1[k] == sample2[k] else 0 for k in range(dim)])
-            ancestor = np.array(data_utilities.get_lca_characters([sample1, sample2],
-                    missing_state_indicator=missing_state_indicator))
+            ancestor = get_lca_characters_cython(sample1, sample2, len(sample1), missing_state_indicator)
 
             d1_a = dissimilarity_functions.hamming_distance(ancestor,
                     sample1,
@@ -172,15 +187,17 @@ def infer_layer_of_potential_graph(
             top_ancestors.append(edge)
             distance_to_ancestors.append(d1_a + d2_a)
 
-            if d1_a + d2_a < distance_threshold:
-
+            if d1_a + d2_a <= distance_threshold:
+                
                 edge1 = np.concatenate((ancestor, sample1))
                 edge2 = np.concatenate((ancestor, sample2))
 
-                new_edges.append(edge1)
-                new_edges.append(edge2)
+                new_edges[edge_iterator] = edge1
+                new_edges[edge_iterator+1] = edge2
+                edge_iterator += 2
 
-                layer.append(ancestor)
+                layer[layer_iterator] = ancestor
+                layer_iterator += 1
 
         # enforce adding at least one edge between layers for each sample:
         # find the pair of nodes that have the lowest LCA and add this
@@ -192,10 +209,29 @@ def infer_layer_of_potential_graph(
                 parent = top_ancestors[k][:dim]
                 edge2 = top_ancestors[k]
                 edge1 = np.concatenate((parent, sample1))
+                
+                new_edges[edge_iterator] = edge1
+                new_edges[edge_iterator+1] = edge2
+                edge_iterator += 2
 
-                new_edges.append(edge1)
-                new_edges.append(edge2)
+                layer[layer_iterator] = parent
+                layer_iterator += 1
 
-                layer.append(parent)
+    return np.array(layer[:layer_iterator]), np.array(new_edges[:edge_iterator])
 
-    return np.array(layer), np.array(new_edges)
+def get_lca_characters_cython(arr1: np.array(), arr2: np.array(), n_char: int, missing_state_indicator: int) -> np.array:
+
+    cdef long[:] ancestor = np.zeros((n_char,), dtype=long)
+    cdef int i
+
+    for i in range(n_char):
+
+        if arr1[i] == arr2[i]:
+            ancestor[i] = arr1[i]
+
+        else:
+            if arr1[i] == missing_state_indicator:
+                ancestor[i] = arr2[i]
+            elif arr2[i] == missing_state_indicator:
+                ancestor[i] = arr1[i]
+    return ancestor
