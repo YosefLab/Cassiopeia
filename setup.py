@@ -5,6 +5,7 @@ from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
+import numpy
 
 
 with open("README.md") as readme_file:
@@ -56,6 +57,7 @@ to_cythonize = [
     Extension(
         "cassiopeia.solver.ilp_solver_utilities",
         ["cassiopeia/solver/ilp_solver_utilities.pyx"],
+        include_dirs=[numpy.get_include()],
     ),
 ]
 

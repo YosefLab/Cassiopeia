@@ -91,6 +91,26 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
+    def test_get_lca_cython(self):
+
+        # test single sample
+        cm = self.missing_tree.get_current_character_matrix()
+
+        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["a"].values, cm.loc["b"].values, 4, -1)
+        
+        self.assertCountEqual(lca, [1, 3, 1, 1])
+
+        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, -1)
+        self.assertCountEqual(lca, [0, 0, 0, 0])
+
+    def test_fast_array_unique_cython(self):
+
+        arr = self.duplicates_tree.get_current_character_matrix().values
+
+        unique_idx = ilp_solver_utilities.fast_unique(arr)
+
+        self.assertCountEqual(unique_idx, [True, True, True, True, True, False])
+
     def test_single_sample_ilp(self):
 
         # test single sample

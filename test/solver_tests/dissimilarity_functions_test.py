@@ -218,6 +218,21 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
         self.assertEqual(similarity, 0)
 
+    def test_hamming_distance(self):
 
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2)
+
+        self.assertEqual(distance, 3)
+
+    def test_hamming_distance_ignore_missing(self):
+
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2, ignore_missing_state=True)
+
+        self.assertEqual(distance, 2)
+
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.all_missing, ignore_missing_state=True)
+
+        self.assertEqual(distance, 0)
+        
 if __name__ == "__main__":
     unittest.main()
