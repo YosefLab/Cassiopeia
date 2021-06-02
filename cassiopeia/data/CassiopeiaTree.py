@@ -472,7 +472,7 @@ class CassiopeiaTree:
 
     def is_ambiguous(self, node: str) -> bool:
         """Returns whether the node is ambiguous. This is detected by checking if
-        any of the characters are lists.
+        any of the characters are tuples.
 
         Returns:
             True if the node is ambiguous, False otherwise.
@@ -482,11 +482,11 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         states = self.get_character_states(node)
-        return any(isinstance(state, list) for state in states)
+        return any(isinstance(state, tuple) for state in states)
 
     def collapse_ambiguous_characters(self) -> None:
         """Only retain unique characters for ambiguous nodes. Usually, ambiguous
-        nodes have character strings represented as a list of list of integers.
+        nodes have character strings represented as a list of tuples of integers.
         The inner list may contain multiple of the same states, encoding the
         relative abundance of a certain state in the ambiguous state distribution.
         Calling this function removes such duplicates and only retains unique
@@ -504,8 +504,8 @@ class CassiopeiaTree:
             # returns a copy.
             modified = False
             for i in range(len(states)):
-                if isinstance(states[i], list):
-                    new_states = list(set(states[i]))
+                if isinstance(states[i], tuple):
+                    new_states = tuple(set(states[i]))
                     if states != new_states:
                         states[i] = new_states
                         modified = True
@@ -537,7 +537,7 @@ class CassiopeiaTree:
             # returns a copy.
             modified = False
             for i in range(len(states)):
-                if isinstance(states[i], list):
+                if isinstance(states[i], tuple):
                     if resolve_function:
                         new_state = resolve_function(states[i])
                     else:
@@ -865,7 +865,7 @@ class CassiopeiaTree:
 
         return self.__network[parent][child]["length"]
 
-    def set_character_states(self, node: str, states: Union[List[int], List[List[int]]]) -> None:
+    def set_character_states(self, node: str, states: Union[List[int], List[Tuple[int, ...]]]) -> None:
         """Sets the character states for a particular node.
 
         Args:
@@ -894,11 +894,15 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             # Cast entire character matrix to object dtype if we get an ambiguous
             # character string.
-            if any(isinstance(state, list) for state in states):
+            if any(isinstance(state, tuple) for state in states):
                 self.__current_character_matrix = self.__current_character_matrix.astype(object, copy=False)
-            self.__current_character_matrix.loc[node] = states
+            # Pass in as numpy array of tuples to bypass the VisibleDeprecationWarning
+            # from creating an ndarray from ragged nested sequences
+            states_arr = np.empty(len(states), dtype=object)
+            states_arr[:] = states
+            self.__current_character_matrix.at[node] = states_arr
 
-    def __set_character_states(self, node: str, states: Union[List[int], List[List[int]]]) -> None:
+    def __set_character_states(self, node: str, states: Union[List[int], List[Tuple[int, ...]]]) -> None:
         """A private method for setting states.
 
         A private method for setting states of nodes with no checks. Useful
@@ -911,7 +915,7 @@ class CassiopeiaTree:
 
         self.__network.nodes[node]["character_states"] = states
 
-    def get_character_states(self, node: str) -> Union[List[int], List[List[int]]]:
+    def get_character_states(self, node: str) -> Union[List[int], List[Tuple[int, ...]]]:
         """Gets all the character states for a particular node.
 
         Args:
@@ -1451,7 +1455,7 @@ class CassiopeiaTree:
         character_matrix = self.get_current_character_matrix()
         # Check if any of the leaves have ambiguous characters.
         numbaize = True
-        if any(isinstance(c, list) for c in character_matrix.values.flatten()):
+        if any(isinstance(c, tuple) for c in character_matrix.values.flatten()):
             numbaize = False
             warnings.warn(
                 "Character matrix contains ambiguous characters.",

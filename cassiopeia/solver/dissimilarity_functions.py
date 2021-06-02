@@ -3,7 +3,7 @@ A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
 import itertools
-from typing import Callable, Dict, Iterable, List, Optional, Set, Union
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import numba
 import numpy as np
@@ -230,8 +230,8 @@ def weighted_hamming_similarity(
 
 def cluster_dissimilarity(
     dissimilarity_function: Callable[[List[int], List[int], int, Dict[int, Dict[int, float]]], float],
-    s1: Union[List[int], List[List[int]]],
-    s2: Union[List[int], List[List[int]]],
+    s1: Union[List[int], List[Tuple[int, ...]]],
+    s2: Union[List[int], List[Tuple[int, ...]]],
     missing_state_indicator: int,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
     linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean,
@@ -240,7 +240,7 @@ def cluster_dissimilarity(
     """This function computes the dissimilarity between two (possibly) ambiguous
     character strings. An ambiguous character string is a character string in
     which each character contains an list of possible states, and such a
-    character string is represented as a list of lists of integers.
+    character string is represented as a list of tuples of integers.
 
     A naive implementation is to first disambiguate each of the two ambiguous
     character strings by generating all possible strings, then computing the
@@ -291,8 +291,8 @@ def cluster_dissimilarity(
     """
     # Make any unambiguous character strings into pseudo-ambiguous so that we
     # can easily use itertools.product
-    s1 = [s if isinstance(s, list) else [s] for s in s1]
-    s2 = [s if isinstance(s, list) else [s] for s in s2]
+    s1 = [s if isinstance(s, tuple) else (s,) for s in s1]
+    s2 = [s if isinstance(s, tuple) else (s,) for s in s2]
 
     result = 0
     num_present = 0

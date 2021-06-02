@@ -17,7 +17,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.s1 = [0, 1, 0, -1, 1, 2]
         self.s2 = [1, 1, 0, 0, 1, 3]
         self.all_missing = [-1, -1, -1, -1, -1, -1]
-        self.ambiguous = [[0], [-1, 0], [0], [-1, 0], [1], [1]]
+        self.ambiguous = [(0,), (-1, 0), (0,), (-1, 0), (1,), (1,)]
 
         self.priors = {
             0: {1: 0.5, 2: 0.5},

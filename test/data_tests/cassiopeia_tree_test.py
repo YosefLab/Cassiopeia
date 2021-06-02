@@ -75,7 +75,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "node13": [1, 1, 1, 1, 1, 0, 0, 0],
                 "node15": [1, 1, 1, 1, 1, 1, 0, 0],
                 "node17": [1, 1, 1, 1, 1, 1, 1, 0],
-                "node18": [[1, 1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1]],
+                "node18": [(1, 1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1)],
                 "node5": [2, 0, 0, 0, 0, 0, 0, 0],
                 "node6": [2, 2, 0, 0, 0, 0, 0, 0],
             },
@@ -501,6 +501,17 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertRaises(
             CassiopeiaTreeError, tree.set_branch_length, "node12", "node14", -1
         )
+
+    def test_set_character_states_ambiguous(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.set_character_states("node3", [
+            (0, 0), (2,), (1, 0), (1,), (3,), (0, 1), (0,), (0,)
+        ])
+        self.assertEqual(tree.get_character_states("node3"), [
+            (0, 0), (2,), (1, 0), (1,), (3,), (0, 1), (0,), (0,)
+        ])
 
     def test_set_states_with_pandas_dataframe(self):
 
@@ -1386,7 +1397,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         current_character_matrix = ambiguous_tree.get_current_character_matrix()
         self.assertEqual(
             list(ambiguous_tree.get_character_states("node18")),
-            [[1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1]]
+            [(1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1), (1, -1)]
         )
         for leaf in ambiguous_tree.leaves:
             if leaf != "node18":

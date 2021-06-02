@@ -133,7 +133,7 @@ def compute_dissimilarity_map(
     dissimilarity_function: Callable,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
     missing_state_indicator: int = -1,
-    numbaize: Optional[bool] = True,
+    numbaize: bool = True,
 ) -> np.array:
     """Compute the dissimilarity between all samples
 
