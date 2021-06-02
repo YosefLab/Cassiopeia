@@ -234,7 +234,8 @@ def cluster_dissimilarity(
     s2: Union[List[int], List[List[int]]],
     missing_state_indicator: int,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
-    linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean
+    linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean,
+    normalize: bool = True,
 ) -> float:
     """This function computes the dissimilarity between two (possibly) ambiguous
     character strings. An ambiguous character string is a character string in
@@ -282,6 +283,8 @@ def cluster_dissimilarity(
             dissimilarities.
         linkage_function: The linkage function to use to aggregate dissimilarities
             into a single number. Defaults to ``np.mean`` for average linkage.
+        normalize: Whether to normalize to the proportion of sites present in
+            both strings.
 
     Returns:
         The dissimilarity between the two ambiguous samples
@@ -301,10 +304,10 @@ def cluster_dissimilarity(
             dissim.append(dissimilarity_function(
                 [_c1],
                 [_c2],
-                missing_state_indicator=missing_state_indicator,
-                weights={0: weights[i]} if weights else None,
+                missing_state_indicator,
+                {0: weights[i]} if weights else None,
             ))
         result += linkage_function(dissim)
         num_present += np.mean(present)
 
-    return result / num_present
+    return result / num_present if normalize else result

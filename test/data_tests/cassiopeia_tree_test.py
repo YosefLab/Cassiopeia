@@ -2,6 +2,7 @@
 Tests for the CassiopeiaTree object in the data module.
 """
 import unittest
+from functools import partial
 from typing import Dict, Optional
 
 import ete3
@@ -17,6 +18,7 @@ from cassiopeia.data.CassiopeiaTree import (
     CassiopeiaTreeError,
     CassiopeiaTreeWarning,
 )
+from cassiopeia.solver import dissimilarity_functions
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -681,13 +683,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             return d
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
-        tree_numba = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
-        tree_numba.compute_dissimilarity_map(delta_fn, numbaize=False)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
-        pd.testing.assert_frame_equal(
-            observed_dissimilarity_map, tree_numba.get_dissimilarity_map()
-        )
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
             {
@@ -726,6 +723,62 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertWarns(
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
+
+    def test_compute_dissimilarity_map_cluster_dissimilarity(self):
+        def delta_fn(
+            x: np.array,
+            y: np.array,
+            missing_state: int,
+            priors: Optional[Dict[int, Dict[int, float]]],
+        ):
+            d = 0
+            for i in range(len(x)):
+                if x[i] != y[i]:
+                    d += 1
+            return d
+
+        tree = cas.data.CassiopeiaTree(self.ambiguous_character_matrix)
+        with self.assertWarns(CassiopeiaTreeWarning):
+            tree.compute_dissimilarity_map(partial(
+                dissimilarity_functions.cluster_dissimilarity,
+                delta_fn,
+                normalize=False
+            ))
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+
+        expected_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 1, 2, 3, 4, 5, 6, 7.33333, 1, 2],
+                "node7": [1, 0, 1, 2, 3, 4, 5, 6.83333, 2, 2],
+                "node9": [2, 1, 0, 1, 2, 3, 4, 6.33333, 3, 3],
+                "node11": [3, 2, 1, 0, 1, 2, 3, 5.83333, 4, 4],
+                "node13": [4, 3, 2, 1, 0, 1, 2, 5.33333, 5, 5],
+                "node15": [5, 4, 3, 2, 1, 0, 1, 4.83333, 6, 6],
+                "node17": [6, 5, 4, 3, 2, 1, 0, 4.33333, 7, 7],
+                "node18": [7.33333, 6.83333, 6.33333, 5.83333, 5.33333, 4.83333, 4.33333, 0, 8, 8],
+                "node5": [1, 2, 3, 4, 5, 6, 7, 8, 0, 1],
+                "node6": [2, 2, 3, 4, 5, 6, 7, 8, 1, 0],
+            },
+            orient="index",
+            columns=[
+                "node3",
+                "node7",
+                "node9",
+                "node11",
+                "node13",
+                "node15",
+                "node17",
+                "node18",
+                "node5",
+                "node6",
+            ],
+            dtype=np.float64,
+        )
+
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, expected_dissimilarity_map
+        )
+
 
     def test_character_matrix_index_not_strings(self):
         cm = pd.DataFrame.from_dict(

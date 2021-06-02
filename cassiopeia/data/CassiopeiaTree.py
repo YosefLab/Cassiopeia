@@ -1417,13 +1417,18 @@ class CassiopeiaTree:
             ]
         ] = None,
         prior_transformation: str = "negative_log",
-        numbaize: Optional[bool] = True,
     ) -> None:
         """Computes a dissimilarity map.
 
         Given the dissimilarity function passed in, the pairwise dissimilarities
         will be computed over the samples in the character matrix. Populates
         the dissimilarity_map attribute in the object.
+
+        If any of the leaves have ambiguous character states (detected by checking
+        if any of the states are lists), then
+        :func:`cassiopeia.solver.dissimilarity_functions.cluster_dissimilarity`
+        is called instead, with the provided ``dissimilarity_function`` as
+        the first argument.
 
         Args:
             dissimilarity_function: A function that will take in two character
@@ -1436,10 +1441,6 @@ class CassiopeiaTree:
                     "inverse": Transforms each probability p by taking 1/p
                     "square_root_inverse": Transforms each probability by the
                         the square root of 1/p
-            numbaize: Whether or not to optimize the dissimilarity calculation
-                with numba. Defaults to True. This may have to be set to False in
-                cases when dealing with non-standard states and/or dissimilarity
-                functions.
         """
 
         if self.__current_character_matrix is None:
@@ -1448,6 +1449,14 @@ class CassiopeiaTree:
             )
 
         character_matrix = self.get_current_character_matrix()
+        # Check if any of the leaves have ambiguous characters.
+        numbaize = True
+        if any(isinstance(c, list) for c in character_matrix.values.flatten()):
+            numbaize = False
+            warnings.warn(
+                "Character matrix contains ambiguous characters.",
+                CassiopeiaTreeWarning
+            )
 
         weights = None
         if self.priors:
@@ -1462,7 +1471,7 @@ class CassiopeiaTree:
             dissimilarity_function,
             weights,
             self.missing_state_indicator,
-            numbaize,
+            numbaize=numbaize
         )
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
