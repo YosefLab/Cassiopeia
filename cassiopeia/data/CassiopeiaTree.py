@@ -1161,18 +1161,42 @@ class CassiopeiaTree:
 
         Removes any leaves from the character matrix, cell metadata, and
         dissimilarity maps that do not appear in the tree.
+        Additionally, adds any leaves that appear in the tree but not in the
+        character matrix, cell metadata, or dissimilarity map with default values.
+        The default values for each table is as follows:
+        * character matrix: all states are missing values (``missing_state_indicator``)
+        * cell metadata: None
+        * dissimilarity map: ``np.inf`` distance from the leaf to all other leaves
         """
+        leaves_set = set(self.leaves)
         if self.__current_character_matrix is not None:
-            remove_from_charater_matrix = set(self.__current_character_matrix.index) - set(self.leaves)
+            remove_from_charater_matrix = set(self.__current_character_matrix.index) - leaves_set
             self.__current_character_matrix = self.__current_character_matrix.drop(index = remove_from_charater_matrix)
 
+            add_to_character_matrix = leaves_set - set(self.__current_character_matrix.index)
+            for to_add in add_to_character_matrix:
+                # Note that we initialize state each iteration so that each state
+                # is a new object.
+                state = [self.missing_state_indicator] * self.n_character
+                self.__set_character_states(to_add, state)
+                self.__current_character_matrix.loc[to_add] = state
+
         if self.cell_meta is not None:
-            remove_from_cell_meta = set(self.cell_meta.index) - set(self.leaves)
-            self.__cell_meta = self.cell_meta.drop(index = remove_from_cell_meta)
+            remove_from_cell_meta = set(self.cell_meta.index) - leaves_set
+            self.cell_meta = self.cell_meta.drop(index = remove_from_cell_meta)
+
+            add_to_cell_meta = leaves_set - set(self.cell_meta.index)
+            for to_add in add_to_cell_meta:
+                self.cell_meta.loc[to_add] = None
 
         if self.__dissimilarity_map is not None:
-            remove_from_dissimilarity_map = set(self.__dissimilarity_map.index) - set(self.leaves)
+            remove_from_dissimilarity_map = set(self.__dissimilarity_map.index) - leaves_set
             self.__dissimilarity_map = self.__dissimilarity_map.drop(index = remove_from_dissimilarity_map, columns = remove_from_dissimilarity_map)
+
+            add_to_dissimilarity_map = leaves_set - set(self.__dissimilarity_map.index)
+            for to_add in add_to_dissimilarity_map:
+                self.__dissimilarity_map.loc[to_add] = np.inf
+                self.__dissimilarity_map[to_add] = np.inf
 
     def add_leaf(self, parent: str, node: str) -> None:
         """Add a leaf to the given parent node. The parent node may NOT also be
@@ -1215,19 +1239,11 @@ class CassiopeiaTree:
         self.__add_edge(parent, node)
         self.set_branch_length(parent, node, 0)
 
-        # Update character matrix, cell meta, disimilarity map if they exist.
-        if self.__current_character_matrix is not None:
-            state = [self.missing_state_indicator] * self.n_character
-            self.__set_character_states(node, state)
-            self.__current_character_matrix.loc[node] = state
-        if self.cell_meta is not None:
-            self.cell_meta.loc[node] = None
-        if self.__dissimilarity_map is not None:
-            self.__dissimilarity_map.loc[node] = np.inf
-            self.__dissimilarity_map[node] = np.inf
-
         # reset cache because we've changed the tree topology
         self.__cache = {}
+
+        # Update new leaf data with defaults
+        self.__register_data_with_tree()
 
     def remove_leaf_and_prune_lineage(self, node: str) -> None:
         """Removes a leaf from the tree and prunes the lineage.

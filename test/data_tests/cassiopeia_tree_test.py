@@ -787,6 +787,65 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(set(cas_tree.get_dissimilarity_map().index), set(["node3", "node4", "node6"]))
         self.assertEqual(set(cas_tree.get_dissimilarity_map().columns), set(["node3", "node4", "node6"]))
 
+    def test_register_data_with_tree_added(self):
+        complete_binary = nx.balanced_tree(2, 2, create_using=nx.DiGraph())
+        str_names = dict(
+            zip(
+                list(complete_binary.nodes),
+                ["node" + str(i) for i in complete_binary.nodes],
+            )
+        )
+        small_complete_binary_tree = nx.relabel_nodes(
+            complete_binary, str_names
+        )
+        cas_tree = cas.data.CassiopeiaTree(
+            tree=small_complete_binary_tree
+        )
+        cm = pd.DataFrame.from_dict(
+            {
+                "node3": [5, 0, 1, 2, -1],
+                "node4": [0, 0, 3, 2, -1],
+                "node5": [-1, 4, 0, 2, 2],
+                "node6": [4, 4, 1, 2, 0]
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        cas_tree.set_character_matrix(cm)
+        delta = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 15, 21, 17],
+                "node4": [15, 0, 10, 6],
+                "node5": [21, 10, 0, 10],
+                "node6": [17, 6, 10, 0],
+            },
+            orient="index",
+            columns=["node3", "node4", "node5", "node6"],
+        )
+        cas_tree.set_dissimilarity_map(delta)
+        cas_tree.add_leaf("node2", "node7")
+
+        self.assertEqual(
+            set(cas_tree.get_current_character_matrix().index),
+            set(["node3", "node4", "node5", "node6", "node7"])
+        )
+        self.assertEqual(cas_tree.get_character_states("node7"), [-1] * 5)
+        self.assertEqual(
+            set(cas_tree.get_dissimilarity_map().index),
+            set(["node3", "node4", "node5", "node6", "node7"])
+        )
+        self.assertEqual(
+            set(cas_tree.get_dissimilarity_map().columns),
+            set(["node3", "node4", "node5", "node6", "node7"])
+        )
+        self.assertEqual(
+            list(cas_tree.get_dissimilarity_map().loc["node7"]), [np.inf] * 5
+        )
+        self.assertEqual(
+            list(cas_tree.get_dissimilarity_map()["node7"]), [np.inf] * 5
+        )
+
     def test_remove_leaf_and_prune_lineage_all(self):
         """Tests the case where all lineages are removed and pruned."""
         cas_tree = cas.data.CassiopeiaTree(
