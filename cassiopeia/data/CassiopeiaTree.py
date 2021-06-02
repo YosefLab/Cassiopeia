@@ -1263,19 +1263,6 @@ class CassiopeiaTree:
                 self.__remove_node(curr_parent)
                 curr_parent = next_parent
 
-<<<<<<< HEAD
-=======
-        if self.__current_character_matrix is not None:
-            if node in self.__current_character_matrix.index:
-                self.__current_character_matrix.drop(index = [node], inplace = True)
-        if self.cell_meta is not None:
-            if node in self.cell_meta.index:
-                self.cell_meta.drop(index = [node], inplace = True)
-        if self.__dissimilarity_map is not None:
-            if node in self.__dissimilarity_map.index:
-                self.__dissimilarity_map.drop(index = [node], columns = node, inplace = True)
-
->>>>>>> SupercellularSampler initial commit
         # reset cache because we've changed the tree topology
         self.__cache = {}
 

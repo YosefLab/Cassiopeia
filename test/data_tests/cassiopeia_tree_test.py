@@ -64,6 +64,21 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
+        self.ambiguous_character_matrix = pd.DataFrame.from_dict(
+            {
+                "node3": [1, 0, 0, 0, 0, 0, 0, 0],
+                "node7": [1, 1, 0, 0, 0, 0, 0, 0],
+                "node9": [1, 1, 1, 0, 0, 0, 0, 0],
+                "node11": [1, 1, 1, 1, 0, 0, 0, 0],
+                "node13": [1, 1, 1, 1, 1, 0, 0, 0],
+                "node15": [1, 1, 1, 1, 1, 1, 0, 0],
+                "node17": [1, 1, 1, 1, 1, 1, 1, 0],
+                "node18": [[1, 1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1], [1, -1]],
+                "node5": [2, 0, 0, 0, 0, 0, 0, 0],
+                "node6": [2, 2, 0, 0, 0, 0, 0, 0],
+            },
+            orient="index",
+        )
 
         # A simple balanced binary tree to test lineage pruning
         complete_binary = nx.balanced_tree(2, 3, create_using=nx.DiGraph())
@@ -215,6 +230,13 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(len(obs_nodes), len(expected_nodes))
         for n in obs_nodes:
             self.assertIn(n, expected_nodes)
+
+    def test_n_cell_uses_current_character_matrix(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.remove_leaf_and_prune_lineage('node3')
+        self.assertEqual(tree.n_cell, 9)
 
     def test_get_children(self):
 
@@ -659,8 +681,13 @@ class TestCassiopeiaTree(unittest.TestCase):
             return d
 
         tree = cas.data.CassiopeiaTree(self.character_matrix)
+        tree_numba = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
+        tree_numba.compute_dissimilarity_map(delta_fn, numbaize=False)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, tree_numba.get_dissimilarity_map()
+        )
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
             {
@@ -1220,6 +1247,14 @@ class TestCassiopeiaTree(unittest.TestCase):
         }
         for lca in lcas:
             self.assertEqual(expected_lcas[lca[0]], lca[1])
+
+    def test_is_ambiguous(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.ambiguous_character_matrix,
+            tree=self.test_network
+        )
+        self.assertTrue(tree.is_ambiguous("node18"))
+        self.assertFalse(tree.is_ambiguous("node17"))
 
     def test_collapse_ambiguous_characters(self):
         # Trees with no ambiguous characters should not be changed
