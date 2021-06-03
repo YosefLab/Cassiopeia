@@ -16,7 +16,7 @@ from cassiopeia.data import CassiopeiaTree
 
 
 def triplets_correct(
-    tree1: CassiopeiaTree, tree2: CassiopeiaTree, number_of_trials: int = 1000
+    tree1: CassiopeiaTree, tree2: CassiopeiaTree, number_of_trials: int = 1000, min_triplets_at_depth: int = 1
 ) -> Tuple[
     Dict[int, float], Dict[int, float], Dict[int, float], Dict[int, float]
 ]:
@@ -31,6 +31,8 @@ def triplets_correct(
         tree1: Input CassiopeiaTree
         tree2: CassiopeiaTree to be compared to the first tree.
         number_of_trials: Number of triplets to sample at each depth
+        min_triplets_at_depth: The minimum number of triplets needed with LCA
+            at a depth for that depth to be included
 
     Returns:
         Four dictionaries storing triplet information at each depth:
@@ -66,12 +68,11 @@ def triplets_correct(
         score = 0
         number_unresolvable_triplets = 0
 
-        # check that there are triplets at this depth
+        # check that there are enough triplets at this depth
         candidate_nodes = depth_to_nodes[depth]
         total_triplets = sum([T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
-        if total_triplets == 0:
+        if total_triplets < min_triplets_at_depth:
             continue
-
 
         for _ in range(number_of_trials):
 
