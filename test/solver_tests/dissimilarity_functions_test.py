@@ -13,9 +13,9 @@ from cassiopeia.solver import solver_utilities
 class TestDissimilarityFunctions(unittest.TestCase):
     def setUp(self):
 
-        self.s1 = [0, 1, 0, -1, 1, 2]
-        self.s2 = [1, 1, 0, 0, 1, 3]
-        self.all_missing = [-1, -1, -1, -1, -1, -1]
+        self.s1 = np.array([0, 1, 0, -1, 1, 2])
+        self.s2 = np.array([1, 1, 0, 0, 1, 3])
+        self.all_missing = np.array([-1, -1, -1, -1, -1, -1])
 
         self.priors = {
             0: {1: 0.5, 2: 0.5},

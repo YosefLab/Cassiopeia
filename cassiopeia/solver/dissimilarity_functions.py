@@ -125,6 +125,9 @@ def hamming_distance(
     Args:
         s1: The first sample
         s2: The second sample
+        ignore_missing_state: Ignore comparisons where one is the missing state
+            indicator
+        missing_state_indicator: Indicator for missing data.
 
     Returns:
         The number of positions two nodes disagree at.

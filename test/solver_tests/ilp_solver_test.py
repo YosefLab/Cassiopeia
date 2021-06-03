@@ -104,13 +104,17 @@ class TestILPSolver(unittest.TestCase):
         lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, "-1")
         self.assertEqual(lca, "0|0|0|0")
 
-    # def test_fast_array_unique_cython(self):
+    def test_cython_hamming_dist(self):
 
-    #     arr = self.duplicates_tree.get_current_character_matrix().values
+        sample1 = np.array(['1', '2', '3', '0', '0'])
+        sample2 = np.array(['1', '4', '0', '0', '1'])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(sample1, sample2, '-')
+        self.assertEqual(dist, 3)
 
-    #     unique_idx = ilp_solver_utilities.fast_unique(arr)
-
-    #     self.assertCountEqual(unique_idx, [True, True, True, True, True, False])
+        sample1 = np.array(['1', '2', '3', '0', '-'])
+        sample2 = np.array(['1', '-', '0', '0', '1'])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(sample1, sample2, '-')
+        self.assertEqual(dist, 1)
 
     def test_single_sample_ilp(self):
 
