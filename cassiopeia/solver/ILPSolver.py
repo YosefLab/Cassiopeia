@@ -50,6 +50,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         maximum_potential_graph_layer_size: Maximum size allowed for an iteration
             of the potential graph inference procedure. If this is exceeded,
             we return the previous iteration's graph or abort altogether.
+        maximum_potential_graph_lca_height: Maximum height of LCA to add to the
+            potential graph. If this parameter is not provided or the specified
+            value is 0, the maximum distance between any pair of samples is used
+            as the maximum lca height.
         weighted: Weight edges on the potential graph by the negative log
             likelihood of the mutations.
         seed: Random seed to use during ILP optimization.
@@ -71,6 +75,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
+        maximum_potential_graph_lca_height: Optional[int] = None,
         weighted: bool = False,
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
@@ -82,6 +87,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.convergence_iteration_limit = convergence_iteration_limit
         self.maximum_potential_graph_layer_size = (
             maximum_potential_graph_layer_size
+        )
+        self.maximum_potential_graph_lca_height = (
+            maximum_potential_graph_lca_height
         )
         self.weighted = weighted
         self.seed = seed
@@ -142,21 +150,25 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
-        max_lca_distance = 0
-        lca_distances = [
-            dissimilarity_functions.hamming_distance(
-                root,
-                np.array(u),
-                ignore_missing_state=True,
-                missing_state_indicator=cassiopeia_tree.missing_state_indicator,
-            )
-            for u in targets
-        ]
+        if (self.maximum_potential_graph_lca_height is not None) and (self.maximum_potential_graph_lca_height > 0):
+            max_lca_distance = self.maximum_potential_graph_lca_height
+        
+        else:
+            max_lca_distance = 0
+            lca_distances = [
+                dissimilarity_functions.hamming_distance(
+                    root,
+                    np.array(u),
+                    ignore_missing_state=True,
+                    missing_state_indicator=cassiopeia_tree.missing_state_indicator,
+                )
+                for u in targets
+            ]
 
-        for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
-            max_lca_distance = max(
-                max_lca_distance, lca_distances[i] + lca_distances[j] + 1
-            )
+            for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
+                max_lca_distance = max(
+                    max_lca_distance, lca_distances[i] + lca_distances[j] + 1
+                )
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
@@ -236,97 +248,23 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
 
         potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix.values,
+            character_matrix.values.astype(str),
             pid,
             lca_height,
             self.maximum_potential_graph_layer_size,
             missing_state_indicator,
         )
 
+        # the potential graph edges returned are strings in the form
+        # "state1|state2|...", so we "decode" them here
+        decoded_edges = []
+        for e1, e2 in potential_graph_edges:
+            e1 = np.array(e1.replace("-", str(missing_state_indicator)).split("|")).astype(int)
+            e2 = np.array(e2.replace("-", str(missing_state_indicator)).split("|")).astype(int)
+            decoded_edges.append((tuple(e1), tuple(e2)))
+
         potential_graph = nx.DiGraph()
-        potential_graph.add_edges_from(potential_graph_edges)
-
-        # logging.info(
-        #     f"(Process: {pid}) Estimating a potential graph with "
-        #     "a maximum layer size of "
-        #     f"{self.maximum_potential_graph_layer_size} and n maximum "
-        #     f"LCA height of {lca_height}."
-        # )
-
-        # layer_sizes = {}
-        # prev_graph = None
-
-        # character_states = character_matrix.values
-
-        # n_characters = character_states.shape[1]
-
-        # distance_threshold = 0
-        # while distance_threshold < (lca_height + 1):
-
-        #     layer_graph = nx.DiGraph()
-        #     layer_graph.add_nodes_from([tuple(n) for n in character_states])
-
-        #     source_nodes = character_states
-        #     effective_threshold = distance_threshold
-        #     max_layer_width = 0
-
-        #     while len(source_nodes) > 1:
-
-        #         if len(source_nodes) > self.maximum_potential_graph_layer_size:
-        #             logging.info(
-        #                 f"(Process: {pid}) Maximum layer size "
-        #                 "exceeded, returning network."
-        #             )
-
-        #             return self.add_edge_weights(
-        #                 prev_graph, weights, missing_state_indicator
-        #             )
-
-        #         (
-        #             next_layer,
-        #             layer_edges,
-        #         ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-        #             source_nodes, effective_threshold, missing_state_indicator
-        #         )
-
-        #         # subset to unique values
-        #         if len(next_layer) > 0:
-        #             next_layer = np.unique(next_layer, axis=0)
-
-        #         if (
-        #             len(next_layer) > self.maximum_potential_graph_layer_size
-        #             and prev_graph != None
-        #         ):
-        #             return self.add_edge_weights(
-        #                 prev_graph, weights, missing_state_indicator
-        #             )
-
-        #         # edges come out as rows in a numpy matrix, where the first
-        #         # n_characters positions correspond to the parent and the
-        #         # remaining positions correspond to the child
-        #         layer_edges = [
-        #             (tuple(e[:n_characters]), tuple(e[n_characters:]))
-        #             for e in layer_edges
-        #             if tuple(e[:n_characters]) != tuple(e[n_characters:])
-        #         ]
-        #         layer_graph.add_edges_from(layer_edges)
-
-        #         if len(source_nodes) > len(next_layer):
-        #             if effective_threshold == distance_threshold:
-        #                 effective_threshold *= 3
-
-        #         source_nodes = next_layer
-
-        #         max_layer_width = max(max_layer_width, len(source_nodes))
-
-        #     logging.info(
-        #         f"(Process: {pid}) LCA distance {distance_threshold} "
-        #         f"completed with a neighborthood size of {max_layer_width}."
-        #     )
-
-        #     distance_threshold += 1
-
-        #     prev_graph = layer_graph
+        potential_graph.add_edges_from(decoded_edges)
 
         return self.add_edge_weights(
             potential_graph, weights, missing_state_indicator

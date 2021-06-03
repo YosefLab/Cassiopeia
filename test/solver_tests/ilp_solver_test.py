@@ -6,6 +6,7 @@ import unittest
 
 import itertools
 import networkx as nx
+from networkx.algorithms.operators.binary import intersection
 import numpy as np
 import pandas as pd
 
@@ -94,22 +95,22 @@ class TestILPSolver(unittest.TestCase):
     def test_get_lca_cython(self):
 
         # test single sample
-        cm = self.missing_tree.get_current_character_matrix()
+        cm = self.missing_tree.get_current_character_matrix().astype(str)
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["a"].values, cm.loc["b"].values, 4, -1)
+        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["a"].values, cm.loc["b"].values, 4, "-1")
         
-        self.assertCountEqual(lca, [1, 3, 1, 1])
+        self.assertEqual(lca, "1|3|1|1")
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, -1)
-        self.assertCountEqual(lca, [0, 0, 0, 0])
+        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, "-1")
+        self.assertEqual(lca, "0|0|0|0")
 
-    def test_fast_array_unique_cython(self):
+    # def test_fast_array_unique_cython(self):
 
-        arr = self.duplicates_tree.get_current_character_matrix().values
+    #     arr = self.duplicates_tree.get_current_character_matrix().values
 
-        unique_idx = ilp_solver_utilities.fast_unique(arr)
+    #     unique_idx = ilp_solver_utilities.fast_unique(arr)
 
-        self.assertCountEqual(unique_idx, [True, True, True, True, True, False])
+    #     self.assertCountEqual(unique_idx, [True, True, True, True, True, False])
 
     def test_single_sample_ilp(self):
 
@@ -162,15 +163,17 @@ class TestILPSolver(unittest.TestCase):
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
+        source_node_strings = np.array(["|".join(arr) for arr in source_nodes.astype(str)])
         (
             layer_nodes,
             layer_edges,
         ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-            source_nodes, 10, self.pp_tree.missing_state_indicator
+            source_node_strings, 10
         )
 
+        layer_nodes = np.array([node.split("|") for node in layer_nodes], dtype=int)
         layer_nodes = np.unique(layer_nodes, axis=0)
-
+    
         expected_next_layer = np.array(
             [[1, 0, 0], [1, 2, 0], [0, 0, 0], [2, 0, 0]]
         )
@@ -179,6 +182,7 @@ class TestILPSolver(unittest.TestCase):
             self.assertIn(sample, layer_nodes)
 
         # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
+        layer_edges = np.array([edge.split("|") for edge in layer_edges], dtype=int)
         layer_edges = [(list(e[:dim]), list(e[dim:])) for e in layer_edges]
         expected_edges = [
             ([1, 0, 0], [1, 1, 0]),
@@ -216,7 +220,7 @@ class TestILPSolver(unittest.TestCase):
         )
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix,
+            unique_character_matrix.astype(str),
             root,
             0,
             max_lca_height,
@@ -254,6 +258,7 @@ class TestILPSolver(unittest.TestCase):
             ((2, 0, 0), (2, 0, 2)),
             ((0, 0, 0), (1, 0, 0)),
         ]
+
 
         for edge in expected_edges:
             self.assertIn(edge, potential_graph.edges())
@@ -328,7 +333,7 @@ class TestILPSolver(unittest.TestCase):
         )
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix,
+            unique_character_matrix.astype(str),
             root,
             0,
             max_lca_height,
