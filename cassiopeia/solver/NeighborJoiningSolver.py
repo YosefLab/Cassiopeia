@@ -16,6 +16,7 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     DistanceSolver,
     dissimilarity_functions,
+    solver_utilities,
 )
 
 
@@ -236,7 +237,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         By default, the NeighborJoining algorithm returns an unrooted tree.
         To root this tree, an implicit root of all zeros is added to the
         character matrix. Then, the dissimilarity map is recalculated using
-        the updated character matrix.
+        the updated character matrix. If the tree already has a computed
+        dissimilarity map, only the new dissimilarities are calculated.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
@@ -255,8 +257,31 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 "root, or specify an explicit root"
             )
 
-        cassiopeia_tree.compute_dissimilarity_map(
-            self.dissimilarity_function, self.prior_transformation
-        )
+        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+        if dissimilarity_map is None:
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
+            )
+        else:
+            dissimilarity_map.loc["root"] = 0
+            dissimilarity_map["root"] = 0
+
+            # Selectively compute dissimilarities between root and all leaves
+            for leaf in character_matrix.index:
+                weights = None
+                if cassiopeia_tree.priors:
+                    weights = solver_utilities.transform_priors(
+                        cassiopeia_tree.priors, self.prior_transformation
+                    )
+                dissimilarity = self.dissimilarity_function(
+                    rooted_character_matrix.loc["root"].values,
+                    rooted_character_matrix.loc[leaf].values,
+                    cassiopeia_tree.missing_state_indicator,
+                    weights
+                )
+                dissimilarity_map.loc["root", leaf] = dissimilarity
+                dissimilarity_map.loc[leaf, "root"] = dissimilarity
+            cassiopeia_tree.set_dissimilarity_map(dissimilarity_map)
+
 
         cassiopeia_tree.set_character_matrix(character_matrix)

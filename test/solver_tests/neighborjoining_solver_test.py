@@ -4,6 +4,7 @@ Test NeighborJoiningSolver in Cassiopeia.solver.
 import os
 import unittest
 from typing import Dict, Optional
+from unittest import mock
 
 import itertools
 import networkx as nx
@@ -363,6 +364,27 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, T)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    def test_setup_root_finder_missing_dissimilarity_map(self):
+        tree = cas.data.CassiopeiaTree(character_matrix=self.cm)
+        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
+            self.nj_solver_delta.setup_root_finder(tree)
+            compute_dissimilarity_map.assert_called_once_with(delta_fn, "negative_log")
+        self.assertEqual(tree.root_sample_name, "root")
+
+    def test_setup_root_finder_existing_dissimilarity_map(self):
+        tree = cas.data.CassiopeiaTree(character_matrix=self.cm, dissimilarity_map=self.basic_dissimilarity_map)
+        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
+            self.nj_solver_delta.setup_root_finder(tree)
+            compute_dissimilarity_map.assert_not_called()
+        self.assertEqual(tree.root_sample_name, "root")
+        dissimilarity_map = tree.get_dissimilarity_map()
+        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.index))
+        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.columns))
+        for leaf in self.cm.index:
+            delta = delta_fn([0] * tree.n_character, self.cm.loc[leaf].values, tree.missing_state_indicator, None)
+            self.assertEqual(dissimilarity_map.loc[leaf, "root"], delta)
+            self.assertEqual(dissimilarity_map.loc["root", leaf], delta)
+        self.assertEqual(dissimilarity_map.loc["root", "root"], 0)
 
 if __name__ == "__main__":
     unittest.main()
