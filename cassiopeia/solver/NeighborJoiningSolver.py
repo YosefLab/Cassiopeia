@@ -218,13 +218,12 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                0.5
-                * (
-                    dissimilarity_map[v, cherry_i]
-                    + dissimilarity_map[v, cherry_j]
-                    - dissimilarity_map[cherry_i, cherry_j]
-                )
+            updated_map[v, new_node_index] = updated_map[
+                new_node_index, v
+            ] = 0.5 * (
+                dissimilarity_map[v, cherry_i]
+                + dissimilarity_map[v, cherry_j]
+                - dissimilarity_map[cherry_i, cherry_j]
             )
 
         updated_map[new_node_index, new_node_index] = 0
@@ -277,11 +276,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,
                     cassiopeia_tree.missing_state_indicator,
-                    weights
+                    weights,
                 )
                 dissimilarity_map.loc["root", leaf] = dissimilarity
                 dissimilarity_map.loc[leaf, "root"] = dissimilarity
             cassiopeia_tree.set_dissimilarity_map(dissimilarity_map)
-
 
         cassiopeia_tree.set_character_matrix(character_matrix)

@@ -11,11 +11,18 @@ from typing import Optional
 import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import LeafSubsampler, LeafSubsamplerError
+from cassiopeia.simulator.LeafSubsampler import (
+    LeafSubsampler,
+    LeafSubsamplerError,
+)
 
 
 class SupercellularSampler(LeafSubsampler):
-    def __init__(self, ratio: Optional[float] = None, number_of_merges: Optional[float] = None):
+    def __init__(
+        self,
+        ratio: Optional[float] = None,
+        number_of_merges: Optional[float] = None,
+    ):
         """
         Iteratively merge two leaves in a CassiopeiaTree to generate a new
         CassiopeiaTree with ambiguous character states. Note that according to this
@@ -55,7 +62,11 @@ class SupercellularSampler(LeafSubsampler):
                 ambiguous state. Defaults to True.
 
         """
-        n_merges = self.__number_of_merges if self.__number_of_merges is not None else int(tree.n_cell * self.__ratio)
+        n_merges = (
+            self.__number_of_merges
+            if self.__number_of_merges is not None
+            else int(tree.n_cell * self.__ratio)
+        )
         if n_merges >= len(tree.leaves):
             raise LeafSubsamplerError(
                 "Number of required merges exceeds number of leaves in the tree."
@@ -80,13 +91,17 @@ class SupercellularSampler(LeafSubsampler):
                     continue
                 leaves.append(leaf)
                 weights.append(1 / distance)
-            leaf2 = np.random.choice(leaves, p=np.array(weights) / np.sum(weights))
+            leaf2 = np.random.choice(
+                leaves, p=np.array(weights) / np.sum(weights)
+            )
             leaf2_state = merged_tree.get_character_states(leaf2)
 
             # Merge these two leaves at the mean time of the two leaves
             # If the tree is ultrametric, this preserves ultrametricity
-            new_leaf = f'{leaf1}-{leaf2}'
-            new_time = (merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)) / 2
+            new_leaf = f"{leaf1}-{leaf2}"
+            new_time = (
+                merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)
+            ) / 2
             new_state = []
             for char1, char2 in zip(leaf1_state, leaf2_state):
                 new_char = []

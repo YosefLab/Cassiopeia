@@ -191,8 +191,9 @@ class CassiopeiaTree:
         """Initializes a character matrix in the object."""
 
         if not all(type(i) == str for i in character_matrix.index):
-            raise CassiopeiaTreeError("Index of character matrix must consist"
-            " of strings.")
+            raise CassiopeiaTreeError(
+                "Index of character matrix must consist" " of strings."
+            )
 
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
@@ -541,12 +542,16 @@ class CassiopeiaTree:
                     if resolve_function:
                         new_state = resolve_function(states[i])
                     else:
-                        most_common = collections.Counter(states[i]).most_common()
-                        new_state = np.random.choice([
-                            state
-                            for state, count in most_common
-                            if count == most_common[0][1]
-                        ])
+                        most_common = collections.Counter(
+                            states[i]
+                        ).most_common()
+                        new_state = np.random.choice(
+                            [
+                                state
+                                for state, count in most_common
+                                if count == most_common[0][1]
+                            ]
+                        )
 
                     states[i] = new_state
                     modified = True
@@ -555,8 +560,9 @@ class CassiopeiaTree:
 
         # All nodes have a single character string, so we cast the character matrix
         # back to an integer.
-        self.__current_character_matrix = self.__current_character_matrix.astype(int, copy=False)
-
+        self.__current_character_matrix = (
+            self.__current_character_matrix.astype(int, copy=False)
+        )
 
     def reconstruct_ancestral_characters(self) -> None:
         """Reconstruct ancestral character states.
@@ -573,9 +579,10 @@ class CassiopeiaTree:
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
                 if len(self.get_character_states(n)) == 0:
-                    raise CassiopeiaTreeError("Character states not annotated "
-                    "at a leaf node, initialize character states at leaves "
-                    "before reconstructing ancestral characters."
+                    raise CassiopeiaTreeError(
+                        "Character states not annotated "
+                        "at a leaf node, initialize character states at leaves "
+                        "before reconstructing ancestral characters."
                     )
                 continue
             children = self.children(n)
@@ -773,7 +780,9 @@ class CassiopeiaTree:
 
         return dict([(node, self.get_time(node)) for node in self.nodes])
 
-    def __set_branch_length(self, parent: str, child: str, length: float) -> None:
+    def __set_branch_length(
+        self, parent: str, child: str, length: float
+    ) -> None:
         """A private method for setting branch lengths.
 
         A private method for setting branch lengths with no checks. Useful
@@ -786,7 +795,6 @@ class CassiopeiaTree:
         """
 
         self.__network[parent][child]["length"] = length
-
 
     def set_branch_length(self, parent: str, child: str, length: float) -> None:
         """Sets the length of a branch.
@@ -821,7 +829,9 @@ class CassiopeiaTree:
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
-    def set_branch_lengths(self, branch_length_dict: Dict[Tuple[str, str], float]) -> None:
+    def set_branch_lengths(
+        self, branch_length_dict: Dict[Tuple[str, str], float]
+    ) -> None:
         """Sets the length of multiple branches on a tree.
 
         Adjusts the branch length of specified parent-child relationships.
@@ -865,7 +875,9 @@ class CassiopeiaTree:
 
         return self.__network[parent][child]["length"]
 
-    def set_character_states(self, node: str, states: Union[List[int], List[Tuple[int, ...]]]) -> None:
+    def set_character_states(
+        self, node: str, states: Union[List[int], List[Tuple[int, ...]]]
+    ) -> None:
         """Sets the character states for a particular node.
 
         Args:
@@ -895,14 +907,18 @@ class CassiopeiaTree:
             # Cast entire character matrix to object dtype if we get an ambiguous
             # character string.
             if any(isinstance(state, tuple) for state in states):
-                self.__current_character_matrix = self.__current_character_matrix.astype(object, copy=False)
+                self.__current_character_matrix = (
+                    self.__current_character_matrix.astype(object, copy=False)
+                )
             # Pass in as numpy array of tuples to bypass the VisibleDeprecationWarning
             # from creating an ndarray from ragged nested sequences
             states_arr = np.empty(len(states), dtype=object)
             states_arr[:] = states
             self.__current_character_matrix.at[node] = states_arr
 
-    def __set_character_states(self, node: str, states: Union[List[int], List[Tuple[int, ...]]]) -> None:
+    def __set_character_states(
+        self, node: str, states: Union[List[int], List[Tuple[int, ...]]]
+    ) -> None:
         """A private method for setting states.
 
         A private method for setting states of nodes with no checks. Useful
@@ -915,7 +931,9 @@ class CassiopeiaTree:
 
         self.__network.nodes[node]["character_states"] = states
 
-    def get_character_states(self, node: str) -> Union[List[int], List[Tuple[int, ...]]]:
+    def get_character_states(
+        self, node: str
+    ) -> Union[List[int], List[Tuple[int, ...]]]:
         """Gets all the character states for a particular node.
 
         Args:
@@ -1038,8 +1056,7 @@ class CassiopeiaTree:
 
         return self.__cache["subtree"][node]
 
-
-    def get_newick(self, record_branch_lengths = False) -> str:
+    def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.
 
         Args:
@@ -1059,8 +1076,10 @@ class CassiopeiaTree:
         # name "1,2,3", then three separate nodes will be output. We decide to
         # raise an exception instead of a warning because the returned newick string
         # will be a WRONG tree.
-        if any(',' in node for node in self.nodes):
-            raise CassiopeiaTreeError("No nodes may have the comma (,) character in its name.")
+        if any("," in node for node in self.nodes):
+            raise CassiopeiaTreeError(
+                "No nodes may have the comma (,) character in its name."
+            )
 
         return utilities.to_newick(self.__network, record_branch_lengths)
 
@@ -1174,10 +1193,18 @@ class CassiopeiaTree:
         """
         leaves_set = set(self.leaves)
         if self.__current_character_matrix is not None:
-            remove_from_charater_matrix = set(self.__current_character_matrix.index) - leaves_set
-            self.__current_character_matrix = self.__current_character_matrix.drop(index = remove_from_charater_matrix)
+            remove_from_charater_matrix = (
+                set(self.__current_character_matrix.index) - leaves_set
+            )
+            self.__current_character_matrix = (
+                self.__current_character_matrix.drop(
+                    index=remove_from_charater_matrix
+                )
+            )
 
-            add_to_character_matrix = leaves_set - set(self.__current_character_matrix.index)
+            add_to_character_matrix = leaves_set - set(
+                self.__current_character_matrix.index
+            )
             for to_add in add_to_character_matrix:
                 # Note that we initialize state each iteration so that each state
                 # is a new object.
@@ -1187,17 +1214,24 @@ class CassiopeiaTree:
 
         if self.cell_meta is not None:
             remove_from_cell_meta = set(self.cell_meta.index) - leaves_set
-            self.cell_meta = self.cell_meta.drop(index = remove_from_cell_meta)
+            self.cell_meta = self.cell_meta.drop(index=remove_from_cell_meta)
 
             add_to_cell_meta = leaves_set - set(self.cell_meta.index)
             for to_add in add_to_cell_meta:
                 self.cell_meta.loc[to_add] = None
 
         if self.__dissimilarity_map is not None:
-            remove_from_dissimilarity_map = set(self.__dissimilarity_map.index) - leaves_set
-            self.__dissimilarity_map = self.__dissimilarity_map.drop(index = remove_from_dissimilarity_map, columns = remove_from_dissimilarity_map)
+            remove_from_dissimilarity_map = (
+                set(self.__dissimilarity_map.index) - leaves_set
+            )
+            self.__dissimilarity_map = self.__dissimilarity_map.drop(
+                index=remove_from_dissimilarity_map,
+                columns=remove_from_dissimilarity_map,
+            )
 
-            add_to_dissimilarity_map = leaves_set - set(self.__dissimilarity_map.index)
+            add_to_dissimilarity_map = leaves_set - set(
+                self.__dissimilarity_map.index
+            )
             for to_add in add_to_dissimilarity_map:
                 self.__dissimilarity_map.loc[to_add] = np.inf
                 self.__dissimilarity_map[to_add] = np.inf
@@ -1275,9 +1309,8 @@ class CassiopeiaTree:
         else:
             curr_parent = self.parent(node)
             self.__remove_node(node)
-            while (
-                len(self.children(curr_parent)) < 1
-                and not self.is_root(curr_parent)
+            while len(self.children(curr_parent)) < 1 and not self.is_root(
+                curr_parent
             ):
                 next_parent = self.parent(curr_parent)
                 self.__remove_node(curr_parent)
@@ -1308,7 +1341,9 @@ class CassiopeiaTree:
         if source is None:
             source = self.root
 
-        for node in list(self.depth_first_traverse_nodes(postorder = True, source = source)):
+        for node in list(
+            self.depth_first_traverse_nodes(postorder=True, source=source)
+        ):
             if self.is_leaf(node):
                 continue
             elif node == source:
@@ -1360,13 +1395,15 @@ class CassiopeiaTree:
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
-        for n in list(self.depth_first_traverse_nodes(postorder = True)):
+        for n in list(self.depth_first_traverse_nodes(postorder=True)):
             if self.is_leaf(n):
                 continue
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)
-                    if self.get_character_states(n) == self.get_character_states(child):
+                    if self.get_character_states(
+                        n
+                    ) == self.get_character_states(child):
                         for grandchild in self.children(child):
                             t_ = self.get_branch_length(child, grandchild)
                             self.__add_edge(n, grandchild)
@@ -1394,16 +1431,12 @@ class CassiopeiaTree:
         character_matrix = self.__current_character_matrix
         if character_matrix is not None:
 
-            if character_matrix.shape[0] != dissimilarity_map.shape[
-                0
-            ] or collections.Counter(
-                character_matrix.index
-            ) != collections.Counter(
-                dissimilarity_map.index
-            ) or collections.Counter(
-                character_matrix.index
-            ) != collections.Counter(
-                dissimilarity_map.columns
+            if (
+                character_matrix.shape[0] != dissimilarity_map.shape[0]
+                or collections.Counter(character_matrix.index)
+                != collections.Counter(dissimilarity_map.index)
+                or collections.Counter(character_matrix.index)
+                != collections.Counter(dissimilarity_map.columns)
             ):
                 warnings.warn(
                     "The samples in the existing character matrix and "
@@ -1459,7 +1492,7 @@ class CassiopeiaTree:
             numbaize = False
             warnings.warn(
                 "Character matrix contains ambiguous characters.",
-                CassiopeiaTreeWarning
+                CassiopeiaTreeWarning,
             )
 
         weights = None
@@ -1475,7 +1508,7 @@ class CassiopeiaTree:
             dissimilarity_function,
             weights,
             self.missing_state_indicator,
-            numbaize=numbaize
+            numbaize=numbaize,
         )
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
@@ -1520,8 +1553,9 @@ class CassiopeiaTree:
         try:
             return self.__network.nodes[node][attribute_name]
         except KeyError:
-            raise CassiopeiaTreeError(f"Attribute {attribute_name} not "
-                                    "detected for this node.")
+            raise CassiopeiaTreeError(
+                f"Attribute {attribute_name} not " "detected for this node."
+            )
 
     def filter_nodes(self, condition: Callable[[str], bool]) -> List[str]:
 
@@ -1534,7 +1568,12 @@ class CassiopeiaTree:
 
         return _filter
 
-    def find_lcas_of_pairs(self, pairs: Optional[Union[Iterator[Tuple[str, str]], List[Tuple[str, str]]]] = None) -> Iterator[Tuple[Tuple[str, str], str]]:
+    def find_lcas_of_pairs(
+        self,
+        pairs: Optional[
+            Union[Iterator[Tuple[str, str]], List[Tuple[str, str]]]
+        ] = None,
+    ) -> Iterator[Tuple[Tuple[str, str], str]]:
         """Finds LCAs of all (provided) pairs.
 
         Args:
@@ -1548,7 +1587,9 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
-        return nx.tree_all_pairs_lowest_common_ancestor(self.__network, root=self.root, pairs=pairs)
+        return nx.tree_all_pairs_lowest_common_ancestor(
+            self.__network, root=self.root, pairs=pairs
+        )
 
     def find_lca(self, *nodes: str) -> str:
         """Finds the LCA of all provided nodes. Internally, this function iteratively
@@ -1567,7 +1608,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
         nodes = set(nodes)
         if len(nodes) < 2:
-            raise CassiopeiaTreeError("At least two distinct nodes must be provided")
+            raise CassiopeiaTreeError(
+                "At least two distinct nodes must be provided"
+            )
 
         while len(nodes) > 1:
             lcas = self.find_lcas_of_pairs(itertools.combinations(nodes, 2))
@@ -1591,20 +1634,28 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        if "distances" not in self.__cache \
-            or node1 not in self.__cache["distances"] \
-            or node2 not in self.__cache["distances"][node1]:
-            distances = self.__cache.setdefault("distances", {}).setdefault(node1, {})
+        if (
+            "distances" not in self.__cache
+            or node1 not in self.__cache["distances"]
+            or node2 not in self.__cache["distances"][node1]
+        ):
+            distances = self.__cache.setdefault("distances", {}).setdefault(
+                node1, {}
+            )
             if node1 == node2:
                 distances[node2] = 0
             else:
                 lca = self.find_lca(node1, node2)
                 lca_time = self.get_time(lca)
-                distances[node2] = (self.get_time(node1) - lca_time) + (self.get_time(node2) - lca_time)
+                distances[node2] = (self.get_time(node1) - lca_time) + (
+                    self.get_time(node2) - lca_time
+                )
 
         return self.__cache["distances"][node1][node2]
 
-    def get_distances(self, node: str, leaves_only: bool = False) -> Dict[str, float]:
+    def get_distances(
+        self, node: str, leaves_only: bool = False
+    ) -> Dict[str, float]:
         """Compute the branch distance between the given node and every other
         node. This function does NOT use :func:`get_distance` internally. Instead,
         it uses properties of trees to compute these much quicker, and the results
@@ -1623,10 +1674,17 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        if "distances" not in self.__cache or node not in self.__cache["distances"] or any(
-            _node not in self.__cache["distances"][node] for _node in self.nodes
+        if (
+            "distances" not in self.__cache
+            or node not in self.__cache["distances"]
+            or any(
+                _node not in self.__cache["distances"][node]
+                for _node in self.nodes
+            )
         ):
-            distances = self.__cache.setdefault("distances", {}).setdefault(node, {})
+            distances = self.__cache.setdefault("distances", {}).setdefault(
+                node, {}
+            )
 
             # First, compute distances to descendents of this node
             node_time = self.get_time(node)
@@ -1640,13 +1698,19 @@ class CassiopeiaTree:
                     ancestor_distance = node_time - ancestor_time
                     distances[ancestor] = ancestor_distance
 
-                    for descendant in self.depth_first_traverse_nodes(ancestor, postorder=False):
+                    for descendant in self.depth_first_traverse_nodes(
+                        ancestor, postorder=False
+                    ):
                         if descendant not in distances:
                             distances[descendant] = ancestor_distance + (
                                 self.get_time(descendant) - ancestor_time
                             )
-        return {
-            _node: distance
-            for _node, distance in self.__cache["distances"][node].items()
-            if self.is_leaf(_node)
-        } if leaves_only else self.__cache["distances"][node]
+        return (
+            {
+                _node: distance
+                for _node, distance in self.__cache["distances"][node].items()
+                if self.is_leaf(_node)
+            }
+            if leaves_only
+            else self.__cache["distances"][node]
+        )

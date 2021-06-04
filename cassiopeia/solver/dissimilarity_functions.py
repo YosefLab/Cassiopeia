@@ -111,6 +111,7 @@ def hamming_similarity_without_missing(
 
     return similarity
 
+
 def hamming_similarity_normalized_over_missing(
     s1: List[int],
     s2: List[int],
@@ -135,18 +136,12 @@ def hamming_similarity_normalized_over_missing(
     similarity = 0
     num_present = 0
     for i in range(len(s1)):
-        if (
-            s1[i] == missing_state_indicator
-            or s2[i] == missing_state_indicator
-        ):
+        if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
             continue
 
         num_present += 1
 
-        if (
-            s1[i] == 0
-            or s2[i] == 0
-        ):
+        if s1[i] == 0 or s2[i] == 0:
             continue
 
         if s1[i] == s2[i]:
@@ -158,7 +153,7 @@ def hamming_similarity_normalized_over_missing(
     if num_present == 0:
         return 0
 
-    return similarity/num_present
+    return similarity / num_present
 
 
 @numba.jit(nopython=True)
@@ -229,7 +224,9 @@ def weighted_hamming_similarity(
 
 
 def cluster_dissimilarity(
-    dissimilarity_function: Callable[[List[int], List[int], int, Dict[int, Dict[int, float]]], float],
+    dissimilarity_function: Callable[
+        [List[int], List[int], int, Dict[int, Dict[int, float]]], float
+    ],
     s1: Union[List[int], List[Tuple[int, ...]]],
     s2: Union[List[int], List[Tuple[int, ...]]],
     missing_state_indicator: int,
@@ -300,13 +297,18 @@ def cluster_dissimilarity(
         dissim = []
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
-            present.append(_c1 != missing_state_indicator and _c2 != missing_state_indicator)
-            dissim.append(dissimilarity_function(
-                [_c1],
-                [_c2],
-                missing_state_indicator,
-                {0: weights[i]} if weights else None,
-            ))
+            present.append(
+                _c1 != missing_state_indicator
+                and _c2 != missing_state_indicator
+            )
+            dissim.append(
+                dissimilarity_function(
+                    [_c1],
+                    [_c2],
+                    missing_state_indicator,
+                    {0: weights[i]} if weights else None,
+                )
+            )
         result += linkage_function(dissim)
         num_present += np.mean(present)
 

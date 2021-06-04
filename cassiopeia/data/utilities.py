@@ -119,7 +119,8 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
                 + ",".join(
                     _to_newick_str(g, child) for child in g.successors(node)
                 )
-                + ")" + weight_string
+                + ")"
+                + weight_string
             )
         )
 
@@ -193,8 +194,11 @@ def compute_dissimilarity_map(
                 k += 1
 
         return dm
+
     if numbaize:
-        _compute_dissimilarity_map = numba.jit(_compute_dissimilarity_map, nopython=nopython)
+        _compute_dissimilarity_map = numba.jit(
+            _compute_dissimilarity_map, nopython=nopython
+        )
 
     return _compute_dissimilarity_map(
         cm, C, missing_state_indicator, nb_weights
@@ -295,8 +299,10 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
-        allele_table, cut_sites
+    lineage_profile = (
+        preprocessing_utilities.convert_alleletable_to_lineage_profile(
+            allele_table, cut_sites
+        )
     )
 
     intbcs = allele_table["intBC"].unique()

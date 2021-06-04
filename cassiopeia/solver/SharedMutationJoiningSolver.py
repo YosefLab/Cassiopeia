@@ -15,7 +15,11 @@ import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.solver import CassiopeiaSolver, dissimilarity_functions, solver_utilities
+from cassiopeia.solver import (
+    CassiopeiaSolver,
+    dissimilarity_functions,
+    solver_utilities,
+)
 
 
 class SharedMutationJoiningSolverError(Exception):
@@ -74,7 +78,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         super().__init__(prior_transformation)
 
         self.similarity_function = similarity_function
-
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.

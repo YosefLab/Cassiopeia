@@ -11,7 +11,9 @@ from cassiopeia.data import CassiopeiaTree
 
 class DataSimulatorError(Exception):
     """Generic error for the DataSimulator subclasses"""
+
     pass
+
 
 class DataSimulator(abc.ABC):
     """
