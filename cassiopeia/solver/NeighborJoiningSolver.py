@@ -262,24 +262,19 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 self.dissimilarity_function, self.prior_transformation
             )
         else:
-            dissimilarity_map.loc["root"] = 0
-            dissimilarity_map["root"] = 0
-
-            # Selectively compute dissimilarities between root and all leaves
+            dissimilarity = {"root": 0}
             for leaf in character_matrix.index:
                 weights = None
                 if cassiopeia_tree.priors:
                     weights = solver_utilities.transform_priors(
                         cassiopeia_tree.priors, self.prior_transformation
                     )
-                dissimilarity = self.dissimilarity_function(
+                dissimilarity[leaf] = self.dissimilarity_function(
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,
                     cassiopeia_tree.missing_state_indicator,
                     weights,
                 )
-                dissimilarity_map.loc["root", leaf] = dissimilarity
-                dissimilarity_map.loc[leaf, "root"] = dissimilarity
-            cassiopeia_tree.set_dissimilarity_map(dissimilarity_map)
+            cassiopeia_tree.set_dissimilarity("root", dissimilarity)
 
         cassiopeia_tree.set_character_matrix(character_matrix)

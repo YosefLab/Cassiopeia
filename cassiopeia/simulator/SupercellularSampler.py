@@ -51,8 +51,20 @@ class SupercellularSampler(LeafSubsampler):
         collapse_source: Optional[str] = None,
         collapse_duplicates: bool = True,
     ):
-        """Construct a new CassiopeiaTree by merging leaves in the provided
-        tree.
+        """Construct a new CassiopeiaTree by merging leaves.
+
+        Pairs of leaves in the given tree is iteratively merged until a stopping
+        condition is met (specified by ``ratio`` or ``number_of_merges`` when
+        initializing the sampler). Pairs of leaves are selected by the following
+        procedure:
+        1) A random leaf `A` is selected.
+        2) Its pair `B` is randomly selected with probability inversely
+           proportional to the branch distance from the leaf selected in the
+           previous step.
+        3) The pair is merged into a new leaf with name `A-B` and character
+           states merged in to ambiguous states. The new leaf is connected to
+           the LCA of the two leaves and at time max(time of LCA, mean time of
+           the two leaves).
 
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
@@ -61,6 +73,9 @@ class SupercellularSampler(LeafSubsampler):
                 states, so that only unique character states are present in each
                 ambiguous state. Defaults to True.
 
+        Raises:
+            LeafSubsamplerError if the number of merges exceeds the number of
+                leaves in the tree or no merges will be performed.
         """
         n_merges = (
             self.__number_of_merges
@@ -94,14 +109,19 @@ class SupercellularSampler(LeafSubsampler):
             leaf2 = np.random.choice(
                 leaves, p=np.array(weights) / np.sum(weights)
             )
+
             leaf2_state = merged_tree.get_character_states(leaf2)
 
-            # Merge these two leaves at the mean time of the two leaves
-            # If the tree is ultrametric, this preserves ultrametricity
+            # Merge these two leaves at the mean time of the two leaves or
+            # the time of the LCA, whichever is greater. This prevents leaves
+            # from being added that have time less than the LCA.
+            # If the tree is ultrametric, this preserves ultrametricity.
             new_leaf = f"{leaf1}-{leaf2}"
-            new_time = (
-                merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)
-            ) / 2
+            lca = merged_tree.find_lca(leaf1, leaf2)
+            new_time = max(
+                (merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)) / 2,
+                merged_tree.get_time(lca),
+            )
             new_state = []
             for char1, char2 in zip(leaf1_state, leaf2_state):
                 new_char = []
@@ -110,9 +130,7 @@ class SupercellularSampler(LeafSubsampler):
                 if not isinstance(char2, tuple):
                     char2 = (char2,)
                 new_state.append(char1 + char2)
-            merged_tree.add_leaf(merged_tree.find_lca(leaf1, leaf2), new_leaf)
-            merged_tree.set_time(new_leaf, new_time)
-            merged_tree.set_character_states(new_leaf, new_state)
+            merged_tree.add_leaf(lca, new_leaf, states=new_state, time=new_time)
             merged_tree.remove_leaf_and_prune_lineage(leaf1)
             merged_tree.remove_leaf_and_prune_lineage(leaf2)
 

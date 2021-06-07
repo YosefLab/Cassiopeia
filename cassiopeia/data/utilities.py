@@ -1,6 +1,7 @@
 """
 General utilities for the datasets encountered in Cassiopeia.
 """
+import collections
 from typing import Callable, Dict, List, Optional, Tuple
 
 import ete3
@@ -161,7 +162,9 @@ def compute_dissimilarity_map(
     try:
         nopython = True
         dissimilarity_func = numba.jit(dissimilarity_function, nopython=True)
-    except Exception:
+    # When cluster_dissimilarity is used, the dissimilarity_function is wrapped
+    # in a partial, which raises a TypeError when trying to numbaize.
+    except TypeError:
         nopython = False
         dissimilarity_func = dissimilarity_function
 
@@ -344,3 +347,23 @@ def sample_bootstrap_allele_tables(
         )
 
     return bootstrap_samples
+
+
+def resolve_most_abundant(state: Tuple[int, ...]) -> int:
+    """Resolve an ambiguous character by selecting the most abundant.
+
+    This function is designed to be used with
+    :func:`CassiopeiaTree.resolve_ambiguous_characters`. It resolves an ambiguous
+    character, represented as a tuple of integers, by selecting the most abundant,
+    where ties are resolved randomly.
+
+    Args:
+        state: Ambiguous state as a tuple of integers
+
+    Returns:
+        Selected state as a single integer
+    """
+    most_common = collections.Counter(state).most_common()
+    return np.random.choice(
+        [state for state, count in most_common if count == most_common[0][1]]
+    )

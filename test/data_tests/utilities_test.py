@@ -302,6 +302,10 @@ class TestDataUtilities(unittest.TestCase):
         )
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
+    def test_resolve_most_abundant(self):
+        state = (1, 2, 3, 3)
+        self.assertEqual(data_utilities.resolve_most_abundant(state), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

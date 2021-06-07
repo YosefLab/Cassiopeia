@@ -21,6 +21,19 @@ from cassiopeia.data.CassiopeiaTree import (
 from cassiopeia.solver import dissimilarity_functions
 
 
+def delta_fn(
+    x: np.array,
+    y: np.array,
+    missing_state: int,
+    priors: Optional[Dict[int, Dict[int, float]]],
+):
+    d = 0
+    for i in range(len(x)):
+        if x[i] != y[i]:
+            d += 1
+    return d
+
+
 class TestCassiopeiaTree(unittest.TestCase):
     def setUp(self):
 
@@ -681,18 +694,6 @@ class TestCassiopeiaTree(unittest.TestCase):
             observed_dissimilarity_map, dissimilarity_map
         )
 
-        def delta_fn(
-            x: np.array,
-            y: np.array,
-            missing_state: int,
-            priors: Optional[Dict[int, Dict[int, float]]],
-        ):
-            d = 0
-            for i in range(len(x)):
-                if x[i] != y[i]:
-                    d += 1
-            return d
-
         tree = cas.data.CassiopeiaTree(self.character_matrix)
         tree.compute_dissimilarity_map(delta_fn)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
@@ -736,18 +737,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
     def test_compute_dissimilarity_map_cluster_dissimilarity(self):
-        def delta_fn(
-            x: np.array,
-            y: np.array,
-            missing_state: int,
-            priors: Optional[Dict[int, Dict[int, float]]],
-        ):
-            d = 0
-            for i in range(len(x)):
-                if x[i] != y[i]:
-                    d += 1
-            return d
-
         tree = cas.data.CassiopeiaTree(self.ambiguous_character_matrix)
         with self.assertWarns(CassiopeiaTreeWarning):
             tree.compute_dissimilarity_map(partial(
@@ -1455,11 +1444,48 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree.get_character_states("new_leaf"), [-1] * tree.n_character
         )
 
+    def test_add_leaf_optional_arguments(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix,
+            tree=self.test_network,
+        )
+        tree.compute_dissimilarity_map(delta_fn)
+        tree.add_leaf(
+            "node16",
+            "new_leaf",
+            states=[1, 2, 3, 4, 5, 6, 7, 8],
+            branch_length=3,
+            dissimilarity={leaf: 3. for leaf in tree.leaves}
+        )
+        self.assertIn("new_leaf", tree.leaves)
+        self.assertIn(("node16", "new_leaf"), tree.edges)
+        self.assertEqual(tree.get_branch_length("node16", "new_leaf"), 3)
+        self.assertEqual(tree.get_time("new_leaf"), tree.get_time("node16") + 3)
+        self.assertEqual(
+            tree.get_character_states("new_leaf"), [1, 2, 3, 4, 5, 6, 7, 8]
+        )
+        expected_dissimilarity = {leaf: 3. for leaf in tree.leaves}
+        expected_dissimilarity["new_leaf"] = 0.
+        self.assertEqual(
+            tree.get_dissimilarity("new_leaf"), expected_dissimilarity
+        )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.add_leaf(
+                "node16",
+                "new_leaf2",
+                states=[1, 2, 3, 4, 5, 6, 7, 8],
+                branch_length=3,
+                time=10,
+                dissimilarity={leaf: 3. for leaf in tree.leaves}
+            )
+
     def test_find_lca(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
         self.assertEqual("node1", tree.find_lca("node3", "node4"))
         self.assertEqual("node0", tree.find_lca("node5", "node1"))
         self.assertEqual("node14", tree.find_lca("node17", "node18", "node15"))
+        self.assertEqual("node14", tree.find_lca("node16", "node18"))
 
     def test_get_distance(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
@@ -1503,6 +1529,63 @@ class TestCassiopeiaTree(unittest.TestCase):
                 if tree.is_leaf(node)
             }
         )
+
+    def test_get_dissimilarity(self):
+        dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2],
+                "b": [1, 0, 2],
+                "c": [2, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c"]
+        )
+        tree = cas.data.CassiopeiaTree(dissimilarity_map=dissimilarity_map)
+        tree_no_map = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix
+        )
+        self.assertEqual(tree.get_dissimilarity("a"), {
+            "a": 0, "b": 1, "c": 2
+        })
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.get_dissimilarity("d")
+        with self.assertRaises(CassiopeiaTreeError):
+            tree_no_map.get_dissimilarity("node3")
+
+    def test_set_dissimilarity(self):
+        dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2],
+                "b": [1, 0, 2],
+                "c": [2, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c"]
+        )
+        tree = cas.data.CassiopeiaTree(dissimilarity_map=dissimilarity_map)
+        tree_no_map = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix
+        )
+        new_dissimilarity = {"a": 3, "b": 4, "c": 2, "d": 0}
+        tree.set_dissimilarity("d", new_dissimilarity)
+        expected_dissimilarity_map = dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2, 3],
+                "b": [1, 0, 2, 4],
+                "c": [2, 2, 0, 2],
+                "d": [3, 4, 2, 0]
+            },
+            orient="index",
+            columns=["a", "b", "c", "d"]
+        )
+        pd.testing.assert_frame_equal(tree.get_dissimilarity_map(), expected_dissimilarity_map)
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.set_dissimilarity("c", {"a": 3})
+        with self.assertRaises(CassiopeiaTreeError):
+            tree_no_map.set_dissimilarity(
+                "node3", {leaf: 0 for leaf in tree_no_map.leaves
+            })
+
 
 if __name__ == "__main__":
     unittest.main()
