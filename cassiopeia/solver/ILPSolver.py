@@ -51,7 +51,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             iteration of the potential graph inference procedure. If this is
             exceeded, we return the previous iteration's graph or abort
             altogether.
-        maximum_potential_graph_lca_height: Maximum height of LCA to add to the
+        maximum_potential_graph_lca_distance: Maximum height of LCA to add to the
             potential graph. If this parameter is not provided or the specified
             value is 0, the maximum distance between any pair of samples is used
             as the maximum lca height.
@@ -76,7 +76,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
-        maximum_potential_graph_lca_height: Optional[int] = None,
+        maximum_potential_graph_lca_distance: Optional[int] = None,
         weighted: bool = False,
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
@@ -89,8 +89,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.maximum_potential_graph_layer_size = (
             maximum_potential_graph_layer_size
         )
-        self.maximum_potential_graph_lca_height = (
-            maximum_potential_graph_lca_height
+        self.maximum_potential_graph_lca_distance = (
+            maximum_potential_graph_lca_distance
         )
         self.weighted = weighted
         self.seed = seed
@@ -151,10 +151,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
-        if (self.maximum_potential_graph_lca_height is not None) and (
-            self.maximum_potential_graph_lca_height > 0
+        if (self.maximum_potential_graph_lca_distance is not None) and (
+            self.maximum_potential_graph_lca_distance > 0
         ):
-            max_lca_distance = self.maximum_potential_graph_lca_height
+            max_lca_distance = self.maximum_potential_graph_lca_distance
 
         else:
             max_lca_distance = 0

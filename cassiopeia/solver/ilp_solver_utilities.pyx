@@ -20,7 +20,7 @@ from cassiopeia.solver import dissimilarity_functions
 def infer_potential_graph_cython(
     character_array: str[:, :],
     pid: Union[int, str],
-    lca_height: int,
+    lca_distance: int,
     maximum_potential_graph_layer_size: int,
     missing_state_indicator: int,
 ) -> List[Tuple[str, str]]:
@@ -36,7 +36,7 @@ def infer_potential_graph_cython(
     Args:
         character_array: Character array where items are strings, not integers.
         pid: Unique process ID used for logging purposes.
-        lca_height: Maximum LCA height to use when inferring ancestors.
+        lca_distance: Maximum LCA height to use when inferring ancestors.
         maximum_potential_graph_layer_size: Maximum number of nodes in a layer
             of the potential graph. If this is exceeded, the process returns
             the potential graph from the previous iteration.
@@ -51,7 +51,7 @@ def infer_potential_graph_cython(
         f"(Process: {pid}) Estimating a potential graph with "
         "a maximum layer size of "
         f"{maximum_potential_graph_layer_size} and a maximum "
-        f"LCA height of {lca_height}."
+        f"LCA distance of {lca_distance}."
     )
 
     cdef int effective_threshold
@@ -77,7 +77,7 @@ def infer_potential_graph_cython(
         ]
     )
 
-    while distance_threshold < (lca_height + 1):
+    while distance_threshold < (lca_distance + 1):
 
         current_layer_edges = []
 
@@ -128,7 +128,7 @@ def infer_potential_graph_cython(
 
         logging.info(
             f"(Process: {pid}) LCA distance {distance_threshold} "
-            f"completed with a neighborthood size of {max_layer_width}."
+            f"completed with a neighborhood size of {max_layer_width}."
         )
 
         distance_thresholds.append(distance_threshold)

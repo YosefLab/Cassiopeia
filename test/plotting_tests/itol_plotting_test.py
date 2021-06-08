@@ -165,7 +165,7 @@ class TestITOLPlotting(unittest.TestCase):
         expected_content = (
             "DATASET_GRADIENT\nSEPARATOR TAB\nCOLOR\t#00000"
             "\nCOLOR_MIN\t#ffffff\nCOLOR_MAX\t#000000\nMARGIN\t100"
-            "\nDATASET_LABEL\tnUMI\nSTRIP_WIDTH\t50\nSHOW_INTERNAL\t0"
+            "\nDATASET_LABEL\tnUMI\nSTRIP_WIDTH\t100\nSHOW_INTERNAL\t0"
             "\nDATA\n\n2\t1\n3\t3\n5\t5\n6\t7\n"
         )
 
