@@ -50,7 +50,7 @@ class SupercellularSampler(LeafSubsampler):
         tree: CassiopeiaTree,
         collapse_source: Optional[str] = None,
         collapse_duplicates: bool = True,
-    ):
+    ) -> CassiopeiaTree:
         """Construct a new CassiopeiaTree by merging leaves.
 
         Pairs of leaves in the given tree is iteratively merged until a stopping
