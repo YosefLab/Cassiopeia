@@ -1565,14 +1565,6 @@ class CassiopeiaTree:
             )
 
         character_matrix = self.get_current_character_matrix()
-        # Check if any of the leaves have ambiguous characters.
-        numbaize = True
-        if any(isinstance(c, tuple) for c in character_matrix.values.flatten()):
-            numbaize = False
-            warnings.warn(
-                "Character matrix contains ambiguous characters.",
-                CassiopeiaTreeWarning,
-            )
 
         weights = None
         if self.priors:
@@ -1587,7 +1579,6 @@ class CassiopeiaTree:
             dissimilarity_function,
             weights,
             self.missing_state_indicator,
-            numbaize=numbaize,
         )
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)

@@ -142,7 +142,6 @@ def compute_dissimilarity_map(
     dissimilarity_function: Callable,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
     missing_state_indicator: int = -1,
-    numbaize: bool = True,
 ) -> np.array:
     """Compute the dissimilarity between all samples
 
@@ -154,20 +153,13 @@ def compute_dissimilarity_map(
         C: Number of samples
         weights: Weights to use for comparing states.
         missing_state_indicator: State indicating missing data
-        numbaize: Whether or not to optimize functions using numba. Defaults to True.
-            The ``dissimilarity_function`` is always attempted to be numbaized. This
-            argument only affects whether the ``_compute_dissimilarity_map`` internal
-            function is also numbaized. It is undesirable to numbaize this function
-            when we are operating with non-standard character states (i.e. ambiguous
-            characters).
 
     Returns:
         A dissimilarity mapping as a flattened array.
     """
-
     # Try to numbaize the dissimilarity function, but fallback to python
+    numbaize = True
     try:
-        nopython = True
         dissimilarity_func = numba.jit(dissimilarity_function, nopython=True)
     # When cluster_dissimilarity is used, the dissimilarity_function is wrapped
     # in a partial, which raises a TypeError when trying to numbaize.
@@ -177,7 +169,7 @@ def compute_dissimilarity_map(
             "Falling back to Python.",
             CassiopeiaTreeWarning,
         )
-        nopython = False
+        numbaize = False
         dissimilarity_func = dissimilarity_function
 
     nb_weights = numba.typed.Dict.empty(
@@ -210,9 +202,12 @@ def compute_dissimilarity_map(
 
         return dm
 
+    # Don't numbaize _compute_dissimilarity_map when we failed to numbaize
+    # the dissimilarity function. Otherwise, if we try to call a Python
+    # function from a numbaized (in object mode) a LOT of warnings are raised.
     if numbaize:
         _compute_dissimilarity_map = numba.jit(
-            _compute_dissimilarity_map, nopython=nopython
+            _compute_dissimilarity_map, nopython=True
         )
 
     return _compute_dissimilarity_map(

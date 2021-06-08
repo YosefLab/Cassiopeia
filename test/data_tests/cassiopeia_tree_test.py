@@ -748,7 +748,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_compute_dissimilarity_map_cluster_dissimilarity(self):
         tree = cas.data.CassiopeiaTree(self.ambiguous_character_matrix)
-        with self.assertWarns(CassiopeiaTreeWarning):
+        with self.assertWarns(data_utilities.CassiopeiaTreeWarning):
             tree.compute_dissimilarity_map(
                 partial(
                     dissimilarity_functions.cluster_dissimilarity,
