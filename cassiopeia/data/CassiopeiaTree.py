@@ -945,7 +945,9 @@ class CassiopeiaTree:
 
         return self.__network.nodes[node]["character_states"][:]
 
-    def get_all_ancestors(self, node: str) -> List[str]:
+    def get_all_ancestors(
+        self, node: str, include_node: bool = False
+    ) -> List[str]:
         """Gets all the ancestors of a particular node.
 
         Nodes that are closest to the given node appear first in the list.
@@ -953,6 +955,9 @@ class CassiopeiaTree:
 
         Args:
             node: Node in the tree
+            include_node: Whether or not to include the node itself in the list
+                of ancestors. If True, the first element of the list is the node
+                itself.
 
         Returns:
             The list of nodes along the path from the root to the node.
@@ -972,7 +977,11 @@ class CassiopeiaTree:
                 parent
             )
 
-        return self.__cache["ancestors"][node]
+        # Note that the cache never includes the node itself.
+        ancestors = self.__cache["ancestors"][node]
+        if include_node:
+            ancestors = [node] + ancestors
+        return ancestors
 
     def depth_first_traverse_nodes(
         self, source: Optional[int] = None, postorder: bool = True
@@ -1685,9 +1694,11 @@ class CassiopeiaTree:
             )
 
         # Reversing get_all_ancestors gives a list of nodes from the root to each
-        # node
+        # node. Since get_all_ancestors doesn't include the node itself, we add
+        # those manually.
         all_ancestors = [
-            reversed(self.get_all_ancestors(node)) for node in nodes
+            reversed(self.get_all_ancestors(node, include_node=True))
+            for node in nodes
         ]
         last_ancestor = self.root
         for ancestors in zip(*all_ancestors):

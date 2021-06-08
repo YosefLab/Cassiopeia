@@ -1366,8 +1366,11 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         ancestors = tree.get_all_ancestors("node3")
         expected_ancestors = ["node1", "node0"]
+        self.assertEqual(ancestors, expected_ancestors)
 
-        self.assertCountEqual(expected_ancestors, ancestors)
+        ancestors = tree.get_all_ancestors("node3", include_node=True)
+        expected_ancestors = ["node3", "node1", "node0"]
+        self.assertEqual(ancestors, expected_ancestors)
 
         ancestors = tree.get_all_ancestors("node0")
         self.assertEqual(0, len(ancestors))
@@ -1525,7 +1528,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual("node1", tree.find_lca("node3", "node4"))
         self.assertEqual("node0", tree.find_lca("node5", "node1"))
         self.assertEqual("node14", tree.find_lca("node17", "node18", "node15"))
-        self.assertEqual("node14", tree.find_lca("node16", "node18"))
+        self.assertEqual("node16", tree.find_lca("node16", "node18"))
 
     def test_get_distance(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
