@@ -101,27 +101,27 @@ class SupercellularSampler(LeafSubsampler):
             distances = merged_tree.get_distances(leaf1, leaves_only=True)
             leaves = []
             weights = []
-            for leaf, distance in distances.items():
+            for leaf in sorted(distances.keys()):
                 if leaf == leaf1:
                     continue
                 leaves.append(leaf)
-                weights.append(1 / distance)
+                weights.append(1 / distances[leaf])
             leaf2 = np.random.choice(
                 leaves, p=np.array(weights) / np.sum(weights)
             )
 
             leaf2_state = merged_tree.get_character_states(leaf2)
 
-            # Merge these two leaves at the mean time of the two leaves or
-            # the time of the LCA, whichever is greater. This prevents leaves
-            # from being added that have time less than the LCA.
+            # Merge these two leaves at the mean time of the two leaves.
+            # Note that the mean time of the two leaves may never be earlier than
+            # the LCA time, because each of the leaf times must be greater than or
+            # equal to the LCA time.
             # If the tree is ultrametric, this preserves ultrametricity.
             new_leaf = f"{leaf1}-{leaf2}"
             lca = merged_tree.find_lca(leaf1, leaf2)
-            new_time = max(
-                (merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)) / 2,
-                merged_tree.get_time(lca),
-            )
+            new_time = (
+                merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)
+            ) / 2
             new_state = []
             for char1, char2 in zip(leaf1_state, leaf2_state):
                 new_char = []
