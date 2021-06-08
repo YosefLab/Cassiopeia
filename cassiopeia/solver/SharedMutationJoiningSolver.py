@@ -85,9 +85,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # Attempt to numbaize
         self.similarity_function = similarity_function
+        self.nb_similarity_function = similarity_function
         numbaize = True
         try:
-            self.similarity_function = numba.jit(
+            self.nb_similarity_function = numba.jit(
                 similarity_function, nopython=True
             )
         except TypeError:
@@ -181,7 +182,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             similarity_map = self.update_similarity_map_and_character_matrix(
                 character_matrix,
-                self.similarity_function,
+                self.nb_similarity_function,
                 similarity_map,
                 (node_i, node_j),
                 new_node_name,
