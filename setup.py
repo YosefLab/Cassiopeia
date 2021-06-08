@@ -18,7 +18,6 @@ requirements = [
     "pandas >= 0.22.0",
     "networkx >= 2.5",
     "tqdm >= 4",
-    # "gurobipy",
     "ete3 >= 3.1.1",
     "argparse >= 1.1",
     "Biopython >= 1.71",
@@ -65,7 +64,10 @@ to_cythonize = [
 setup(
     name="cassiopeia-lineage",
     python_requires='>=3.6',
-    ext_modules=cythonize(to_cythonize),
+    ext_modules=cythonize(
+            to_cythonize,
+            compiler_directives={'language_level' : "3"}
+    ),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,

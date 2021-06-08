@@ -99,12 +99,6 @@ def infer_potential_graph_cython(
                 source_nodes, effective_threshold
             )
 
-            # subset to unique values
-            if next_layer.shape[0] > 0:
-                next_layer = np.unique(next_layer)
-                # unique_idx = fast_unique(np.array([node.split("|") for node in next_layer]).astype(int))
-                # next_layer = next_layer[unique_idx]
-
             if (
                 next_layer.shape[0] > maximum_potential_graph_layer_size
                 and len(previous_layer_edges) > 0
@@ -188,8 +182,8 @@ def infer_layer_of_potential_graph(
     cdef long[:] distance_to_ancestor,
     cdef list top_ancestors
 
-    cdef list layer = []
-    cdef list new_edges = []
+    cdef set layer = set()
+    cdef set new_edges = set()
 
     for i in range(0, n_samples - 1):
 
@@ -225,10 +219,10 @@ def infer_layer_of_potential_graph(
                 edge1 = ancestor + "|" + sample1
                 edge2 = ancestor + "|" + sample2
 
-                new_edges.append(edge1)
-                new_edges.append(edge2)
+                new_edges.add(edge1)
+                new_edges.add(edge2)
 
-                layer.append(ancestor)
+                layer.add(ancestor)
 
         # enforce adding at least one edge between layers for each sample:
         # find the pair of nodes that have the lowest LCA and add this
@@ -242,12 +236,12 @@ def infer_layer_of_potential_graph(
                 edge2 = top_ancestors[k]
                 edge1 = parent + "|" + sample1
 
-                new_edges.append(edge1)
-                new_edges.append(edge2)
+                new_edges.add(edge1)
+                new_edges.add(edge2)
 
-                layer.append(parent)
+                layer.add(parent)
 
-    return np.array(layer), np.array(new_edges)
+    return np.array(list(layer)), np.array(list(new_edges))
 
 
 @cython.boundscheck(False)
