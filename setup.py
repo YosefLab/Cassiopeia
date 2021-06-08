@@ -12,6 +12,7 @@ with open("README.md") as readme_file:
 
 
 requirements = [
+    "numba >= 0.51.0"
     "numpy > 1.17",
     "matplotlib >= 2.2.2",
     "pandas >= 0.22.0",
