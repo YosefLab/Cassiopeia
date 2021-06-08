@@ -96,23 +96,31 @@ class TestILPSolver(unittest.TestCase):
         # test single sample
         cm = self.missing_tree.get_current_character_matrix().astype(str)
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["a"].values, cm.loc["b"].values, 4, "-1")
-        
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
+        )
+
         self.assertEqual(lca, "1|3|1|1")
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, "-1")
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["h"].values, cm.loc["b"].values, 4, "-1"
+        )
         self.assertEqual(lca, "0|0|0|0")
 
     def test_cython_hamming_dist(self):
 
-        sample1 = np.array(['1', '2', '3', '0', '0'])
-        sample2 = np.array(['1', '4', '0', '0', '1'])
-        dist = ilp_solver_utilities.simple_hamming_distance_cython(sample1, sample2, '-')
+        sample1 = np.array(["1", "2", "3", "0", "0"])
+        sample2 = np.array(["1", "4", "0", "0", "1"])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(
+            sample1, sample2, "-"
+        )
         self.assertEqual(dist, 3)
 
-        sample1 = np.array(['1', '2', '3', '0', '-'])
-        sample2 = np.array(['1', '-', '0', '0', '1'])
-        dist = ilp_solver_utilities.simple_hamming_distance_cython(sample1, sample2, '-')
+        sample1 = np.array(["1", "2", "3", "0", "-"])
+        sample2 = np.array(["1", "-", "0", "0", "1"])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(
+            sample1, sample2, "-"
+        )
         self.assertEqual(dist, 1)
 
     def test_single_sample_ilp(self):
@@ -166,7 +174,9 @@ class TestILPSolver(unittest.TestCase):
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
-        source_node_strings = np.array(["|".join(arr) for arr in source_nodes.astype(str)])
+        source_node_strings = np.array(
+            ["|".join(arr) for arr in source_nodes.astype(str)]
+        )
         (
             layer_nodes,
             layer_edges,
@@ -174,9 +184,11 @@ class TestILPSolver(unittest.TestCase):
             source_node_strings, 10
         )
 
-        layer_nodes = np.array([node.split("|") for node in layer_nodes], dtype=int)
+        layer_nodes = np.array(
+            [node.split("|") for node in layer_nodes], dtype=int
+        )
         layer_nodes = np.unique(layer_nodes, axis=0)
-    
+
         expected_next_layer = np.array(
             [[1, 0, 0], [1, 2, 0], [0, 0, 0], [2, 0, 0]]
         )
@@ -185,7 +197,9 @@ class TestILPSolver(unittest.TestCase):
             self.assertIn(sample, layer_nodes)
 
         # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
-        layer_edges = np.array([edge.split("|") for edge in layer_edges], dtype=int)
+        layer_edges = np.array(
+            [edge.split("|") for edge in layer_edges], dtype=int
+        )
         layer_edges = [(list(e[:dim]), list(e[dim:])) for e in layer_edges]
         expected_edges = [
             ([1, 0, 0], [1, 1, 0]),
@@ -261,7 +275,6 @@ class TestILPSolver(unittest.TestCase):
             ((2, 0, 0), (2, 0, 2)),
             ((0, 0, 0), (1, 0, 0)),
         ]
-
 
         for edge in expected_edges:
             self.assertIn(edge, potential_graph.edges())
