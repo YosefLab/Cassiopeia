@@ -1,12 +1,12 @@
 """
-This file stores the SharedMutationJoiningSolver. The inference procedure is 
+This file stores the SharedMutationJoiningSolver. The inference procedure is
 an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
-
+import abc
+import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import abc
 import networkx as nx
 import numba
 import numpy as np
@@ -24,6 +24,12 @@ from cassiopeia.solver import (
 
 class SharedMutationJoiningSolverError(Exception):
     """An Exception class for SharedMutationJoiningSolver."""
+
+    pass
+
+
+class SharedMutationJoiningSolverWarning(UserWarning):
+    """A warning class for SharedMutationJoiningSolver."""
 
     pass
 
@@ -77,7 +83,25 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         super().__init__(prior_transformation)
 
+        # Attempt to numbaize
         self.similarity_function = similarity_function
+        numbaize = True
+        try:
+            self.similarity_function = numba.jit(
+                similarity_function, nopython=True
+            )
+        except TypeError:
+            numbaize = False
+            warnings.warn(
+                "Failed to numbaize dissimilarity function. "
+                "Falling back to Python.",
+                SharedMutationJoiningSolverWarning,
+            )
+
+        if numbaize:
+            self.__update_similarity_map = numba.jit(
+                self.__update_similarity_map, nopython=True
+            )
 
     def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
@@ -125,9 +149,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         N = similarity_map.shape[0]
 
         # Numba-ize the similarity function and weights
-        nb_similarity_function = numba.jit(
-            self.similarity_function, nopython=True
-        )
         nb_weights = numba.typed.Dict.empty(
             numba.types.int64,
             numba.types.DictType(numba.types.int64, numba.types.float64),
@@ -160,7 +181,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             similarity_map = self.update_similarity_map_and_character_matrix(
                 character_matrix,
-                nb_similarity_function,
+                self.similarity_function,
                 similarity_map,
                 (node_i, node_j),
                 new_node_name,
@@ -194,7 +215,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     def update_similarity_map_and_character_matrix(
         self,
         character_matrix: pd.DataFrame,
-        nb_similarity_function: Callable[
+        similarity_function: Callable[
             [np.array, np.array, int, Dict[int, Dict[int, float]]], float
         ],
         similarity_map: pd.DataFrame,
@@ -213,7 +234,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             character_matrix: Contains the character information for all nodes,
                 updated as nodes are joined and new internal LCA nodes are added
-            nb_similarity: A numba compiled similarity function
+            nb_similarity: A similarity function
             similarity_map: A similarity map to update
             cherry: A tuple of indices in the similarity map that are joining
             new_node: New node name, to be added to the updated similarity map
@@ -239,11 +260,11 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
         character_matrix.loc[new_node] = lca
 
-        similarity_array_updated = self.__update_similarity_map_numba(
+        similarity_array_updated = self.__update_similarity_map(
             character_array,
             similarity_array,
             np.array(lca),
-            nb_similarity_function,
+            similarity_function,
             missing_state_indicator,
             weights,
         )
@@ -266,12 +287,11 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         return similarity_map
 
     @staticmethod
-    @numba.jit(nopython=True)
-    def __update_similarity_map_numba(
+    def __update_similarity_map(
         character_matrix: np.array,
         similarity_map: np.array,
         lca: np.array,
-        nb_similarity_function: Callable[
+        similarity_function: Callable[
             [np.array, np.array, int, Dict[int, Dict[int, float]]], float
         ],
         missing_state_indicator: int = -1,
@@ -287,7 +307,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: The character information for all nodes
             similarity_map: A matrix of similarities to update
             lca: The character vector of the new LCA node
-            nb_similarity_function: A numba compiled similarity function
+            similarity_function: A similarity function
             missing_state_indicator: Character representing missing data
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
@@ -297,11 +317,11 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
 
         C = similarity_map.shape[0]
-        new_row = np.zeros(C, dtype=numba.float64)
+        new_row = np.zeros(C, dtype=np.float64)
         k = 0
         for i in range(C):
             s1 = character_matrix[i, :]
-            new_row[k] = nb_similarity_function(
+            new_row[k] = similarity_function(
                 s1, lca, missing_state_indicator, weights
             )
             k += 1

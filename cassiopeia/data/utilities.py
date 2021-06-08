@@ -3,7 +3,7 @@ General utilities for the datasets encountered in Cassiopeia.
 """
 import collections
 import warnings
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import ete3
 import networkx as nx
@@ -22,7 +22,8 @@ class CassiopeiaTreeWarning(UserWarning):
 
 
 def get_lca_characters(
-    vecs: List[List[int]], missing_state_indicator: int
+    vecs: List[Union[List[int], List[Tuple[int, ...]]]],
+    missing_state_indicator: int,
 ) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
@@ -44,7 +45,12 @@ def get_lca_characters(
         assert len(i) == k
     lca_vec = [0] * len(vecs[0])
     for i in range(k):
-        chars = set([vec[i] for vec in vecs])
+        chars = set()
+        for vec in vecs:
+            if isinstance(vec[i], tuple):
+                chars = chars.union(vec[i])
+            else:
+                chars.add(vec[i])
         if len(chars) == 1:
             lca_vec[i] = list(chars)[0]
         else:
