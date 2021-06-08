@@ -138,7 +138,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         )
         self.assertTrue(
             isinstance(
-                solver.similarity_function, numba.core.registry.CPUDispatcher
+                solver.nb_similarity_function, numba.core.registry.CPUDispatcher
             )
         )
         self.assertTrue(
@@ -158,7 +158,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             )
             self.assertFalse(
                 isinstance(
-                    solver.similarity_function,
+                    solver.nb_similarity_function,
                     numba.core.registry.CPUDispatcher,
                 )
             )
