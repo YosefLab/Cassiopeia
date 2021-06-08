@@ -366,16 +366,23 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
     def test_setup_root_finder_missing_dissimilarity_map(self):
         tree = cas.data.CassiopeiaTree(character_matrix=self.cm)
-        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
+        with mock.patch.object(
+            tree, "compute_dissimilarity_map"
+        ) as compute_dissimilarity_map:
             self.nj_solver_delta.setup_root_finder(tree)
-            compute_dissimilarity_map.assert_called_once_with(delta_fn, "negative_log")
+            compute_dissimilarity_map.assert_called_once_with(
+                delta_fn, "negative_log"
+            )
         self.assertEqual(tree.root_sample_name, "root")
 
     def test_setup_root_finder_existing_dissimilarity_map(self):
         tree = cas.data.CassiopeiaTree(
-            character_matrix=self.cm, dissimilarity_map=self.basic_dissimilarity_map
+            character_matrix=self.cm,
+            dissimilarity_map=self.basic_dissimilarity_map,
         )
-        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
+        with mock.patch.object(
+            tree, "compute_dissimilarity_map"
+        ) as compute_dissimilarity_map:
             self.nj_solver_delta.setup_root_finder(tree)
             compute_dissimilarity_map.assert_not_called()
         self.assertEqual(tree.root_sample_name, "root")
@@ -391,11 +398,12 @@ class TestNeighborJoiningSolver(unittest.TestCase):
                 [0] * tree.n_character,
                 self.cm.loc[leaf].values,
                 tree.missing_state_indicator,
-                None
+                None,
             )
             self.assertEqual(dissimilarity_map.loc[leaf, "root"], delta)
             self.assertEqual(dissimilarity_map.loc["root", leaf], delta)
         self.assertEqual(dissimilarity_map.loc["root", "root"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

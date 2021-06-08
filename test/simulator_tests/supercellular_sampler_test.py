@@ -10,6 +10,7 @@ from cassiopeia.simulator.SupercellularSampler import SupercellularSampler
 
 import cassiopeia.data.utilities as utilities
 
+
 class SupercellularSamplerTest(unittest.TestCase):
     def setUp(self):
         self.test_network = nx.DiGraph()
@@ -55,12 +56,16 @@ class SupercellularSamplerTest(unittest.TestCase):
 
     def test_bad_parameters(self):
         with self.assertRaises(LeafSubsamplerError):
-            uniform_sampler = SupercellularSampler(ratio=0.5, number_of_merges=400)
+            uniform_sampler = SupercellularSampler(
+                ratio=0.5, number_of_merges=400
+            )
         with self.assertRaises(LeafSubsamplerError):
             uniform_sampler = SupercellularSampler()
 
     def test_bad_number_of_samples(self):
-        tree = CassiopeiaTree(tree=self.test_network, character_matrix=self.character_matrix)
+        tree = CassiopeiaTree(
+            tree=self.test_network, character_matrix=self.character_matrix
+        )
         tree_no_character_matrix = CassiopeiaTree(tree=self.test_network)
         with self.assertRaises(LeafSubsamplerError):
             sampler = SupercellularSampler(number_of_merges=10)
@@ -73,7 +78,9 @@ class SupercellularSamplerTest(unittest.TestCase):
             sampler.subsample_leaves(tree_no_character_matrix)
 
     def test_subsample_balanced_tree(self):
-        tree = CassiopeiaTree(tree=self.test_network, character_matrix=self.character_matrix)
+        tree = CassiopeiaTree(
+            tree=self.test_network, character_matrix=self.character_matrix
+        )
 
         np.random.seed(10)
         sampler = SupercellularSampler(number_of_merges=2)
@@ -87,8 +94,26 @@ class SupercellularSamplerTest(unittest.TestCase):
                 "node13": [1, 1, 1, 1, 1, 0, 0, 0],
                 "node17": [1, 1, 1, 1, 1, 1, 1, 0],
                 "node6": [2, 2, 0, 0, 0, 0, 0, 0],
-                "node18-node15": [(1,), (1,), (1,), (1,), (1,), (1,), (0, 1), (0, 1)],
-                "node3-node5": [(1, 2), (0,), (0,), (0,), (0,), (0,), (0,), (0,)],
+                "node18-node15": [
+                    (1,),
+                    (1,),
+                    (1,),
+                    (1,),
+                    (1,),
+                    (1,),
+                    (0, 1),
+                    (0, 1),
+                ],
+                "node3-node5": [
+                    (1, 2),
+                    (0,),
+                    (0,),
+                    (0,),
+                    (0,),
+                    (0,),
+                    (0,),
+                    (0,),
+                ],
             },
             orient="index",
         )
@@ -121,8 +146,26 @@ class SupercellularSamplerTest(unittest.TestCase):
                 "node13": [1, 1, 1, 1, 1, 0, 0, 0],
                 "node17": [1, 1, 1, 1, 1, 1, 1, 0],
                 "node6": [2, 2, 0, 0, 0, 0, 0, 0],
-                "node18-node15": [(1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 1), (1, 0), (1, 0)],
-                "node3-node5": [(1, 2), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                "node18-node15": [
+                    (1, 1),
+                    (1, 1),
+                    (1, 1),
+                    (1, 1),
+                    (1, 1),
+                    (1, 1),
+                    (1, 0),
+                    (1, 0),
+                ],
+                "node3-node5": [
+                    (1, 2),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                ],
             },
             orient="index",
         )
@@ -135,12 +178,12 @@ class SupercellularSamplerTest(unittest.TestCase):
             ("node14", "node17"),
             ("node12", "node14"),
             ("node14", "node18-node15"),
-            ('node0', 'node6'),
-            ('node10', 'node12'),
-            ('node10', 'node11'),
-            ('node8', 'node10'),
-            ('node0', 'node4'),
-            ('node0', 'node3-node5'),
+            ("node0", "node6"),
+            ("node10", "node12"),
+            ("node10", "node11"),
+            ("node8", "node10"),
+            ("node0", "node4"),
+            ("node0", "node3-node5"),
         ]
         self.assertEqual(set(res.edges), set(expected_edges))
 

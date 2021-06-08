@@ -15,9 +15,9 @@ class GreedyVariantsTest(unittest.TestCase):
     def test_spectral_sparse_case(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 3, 0, 0, 0], 
-                "c2": [0, 3, 4, 2, 1], 
-                "c3": [5, 0, 0, 0, 1], 
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
                 "c4": [5, 0, 4, 2, 0],
             },
             orient="index",

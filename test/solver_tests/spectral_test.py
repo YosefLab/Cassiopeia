@@ -205,9 +205,9 @@ class SpectralSolverTest(unittest.TestCase):
     def test_simple_base_case2(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 3, 0, 0, 0], 
-                "c2": [0, 3, 4, 2, 1], 
-                "c3": [5, 0, 0, 0, 1], 
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
                 "c4": [5, 0, 4, 2, 0],
             },
             orient="index",
@@ -225,15 +225,14 @@ class SpectralSolverTest(unittest.TestCase):
     def test_simple_base_case2_priors(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 3, 0, 0, 0], 
-                "c2": [0, 3, 4, 2, 1], 
-                "c3": [5, 0, 0, 0, 1], 
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
                 "c4": [5, 0, 4, 2, 0],
             },
             orient="index",
             columns=["a", "b", "c", "d", "e"],
         )
-
 
         priors = {
             0: {5: 0.8},
