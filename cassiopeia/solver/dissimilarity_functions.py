@@ -234,8 +234,9 @@ def cluster_dissimilarity(
     linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean,
     normalize: bool = True,
 ) -> float:
-    """This function computes the dissimilarity between two (possibly) ambiguous
-    character strings. An ambiguous character string is a character string in
+    """Compute the dissimilarity between two (possibly) ambiguous states.
+
+    An ambiguous character string is a character string in
     which each character contains an list of possible states, and such a
     character string is represented as a list of tuples of integers.
 

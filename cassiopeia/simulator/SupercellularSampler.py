@@ -24,10 +24,10 @@ class SupercellularSampler(LeafSubsampler):
         number_of_merges: Optional[float] = None,
     ):
         """
-        Iteratively merge two leaves in a CassiopeiaTree to generate a new
-        CassiopeiaTree with ambiguous character states. Note that according to this
-        procedure, an already merged (and therefore ambiguous leaf) may be merged
-        again.
+        Merge leaves in a tree to generate a new tree with ambiguous states.
+
+        Note that according to this procedure, an already merged (and therefore
+        ambiguous leaf) may be merged again.
 
         Only one of ``ratio`` or ``number_of_merges`` must be provided.
 

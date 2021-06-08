@@ -524,9 +524,11 @@ class CassiopeiaTree:
             [Tuple[int, ...]], int
         ] = utilities.resolve_most_abundant,
     ) -> None:
-        """Resolve all nodes with ambiguous characters. A custom ``resolve_function``
-        may be provided to perform the resolution. By default, the most abundant
-        state is selected. One is randomly selected on ties. Modifies the tree in-place.
+        """Resolve all nodes with ambiguous characters.
+
+        A custom ``resolve_function`` may be provided to perform the resolution.
+        By default, the most abundant state is selected.
+        One is randomly selected on ties. Modifies the tree in-place.
 
         Args:
             resolve_function: Function that performs character resolution. This
