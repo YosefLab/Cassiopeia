@@ -262,8 +262,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # "state1|state2|...", so we "decode" them here
         decoded_edges = []
         for e1, e2 in potential_graph_edges:
-            e1 = np.array(e1.replace("-", str(missing_state_indicator)).split("|")).astype(int)
-            e2 = np.array(e2.replace("-", str(missing_state_indicator)).split("|")).astype(int)
+            e1 = np.array(
+                e1.replace("-", str(missing_state_indicator)).split("|")
+            ).astype(int)
+            e2 = np.array(
+                e2.replace("-", str(missing_state_indicator)).split("|")
+            ).astype(int)
             decoded_edges.append((tuple(e1), tuple(e2)))
 
         potential_graph = nx.DiGraph()

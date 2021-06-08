@@ -6,7 +6,6 @@ import unittest
 
 import itertools
 import networkx as nx
-from networkx.algorithms.operators.binary import intersection
 import numpy as np
 import pandas as pd
 
