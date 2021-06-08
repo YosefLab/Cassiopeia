@@ -2,6 +2,7 @@
 General utilities for the datasets encountered in Cassiopeia.
 """
 import collections
+import warnings
 from typing import Callable, Dict, List, Optional, Tuple
 
 import ete3
@@ -12,6 +13,12 @@ import pandas as pd
 import re
 
 from cassiopeia.preprocess import utilities as preprocessing_utilities
+
+# Can't import from CassiopeiaTree.py due to circular imports
+class CassiopeiaTreeWarning(UserWarning):
+    """A Warning for the CassiopeiaTree class."""
+
+    pass
 
 
 def get_lca_characters(
@@ -165,6 +172,11 @@ def compute_dissimilarity_map(
     # When cluster_dissimilarity is used, the dissimilarity_function is wrapped
     # in a partial, which raises a TypeError when trying to numbaize.
     except TypeError:
+        warnings.warn(
+            "Failed to numbaize dissimilarity function. "
+            "Falling back to Python.",
+            CassiopeiaTreeWarning,
+        )
         nopython = False
         dissimilarity_func = dissimilarity_function
 
