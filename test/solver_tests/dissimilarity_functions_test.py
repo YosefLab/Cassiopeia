@@ -44,7 +44,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         with self.assertRaises(solver_utilities.PriorTransformationError):
             solver_utilities.transform_priors(self.badpriors, "negative_log")
 
-
     def test_negative_log_prior_transformations(self):
         expectedweights = {
             0: {1: -np.log(0.5), 2: -np.log(0.5)},
@@ -208,7 +207,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
             [-np.log(self.priors[1][1]), -np.log(self.priors[4][1])]
         )
 
-        self.assertEqual(similarity, expected_similarity/5)
+        self.assertEqual(similarity, expected_similarity / 5)
 
     def test_hamming_similarity_normalized_all_missing(self):
 
@@ -261,13 +260,18 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
     def test_hamming_distance_ignore_missing(self):
 
-        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2, ignore_missing_state=True)
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.s2, ignore_missing_state=True
+        )
 
         self.assertEqual(distance, 2)
 
-        distance = dissimilarity_functions.hamming_distance(self.s1, self.all_missing, ignore_missing_state=True)
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.all_missing, ignore_missing_state=True
+        )
 
         self.assertEqual(distance, 0)
-        
+
+
 if __name__ == "__main__":
     unittest.main()

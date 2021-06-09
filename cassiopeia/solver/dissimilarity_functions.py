@@ -169,7 +169,8 @@ def hamming_distance(
 ) -> int:
     """Computes the vanilla hamming distance between two samples.
 
-    Counts the number of positions that two samples disagree at.
+    Counts the number of positions that two samples disagree at. A user can
+    optionally specify to ignore missing data.
 
     Args:
         s1: The first sample

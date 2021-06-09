@@ -295,7 +295,7 @@ def simple_hamming_distance_cython(
 ):
     """Cython-optimized hamming distance calculator.
 
-    Calculates the hamming distance between two samples, ignorning missing data.
+    Calculates the hamming distance between two samples, ignoring missing data.
 
     Args:
         arr1: Character array of sample 1
