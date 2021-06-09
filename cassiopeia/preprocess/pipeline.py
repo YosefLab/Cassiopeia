@@ -121,7 +121,7 @@ def collapse_umis(
     )
 
     if not sorted_file_name.exists() and not skip_existing:
-        max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
+        max_read_length, total_reads_out = UMI_utils.sort_bam(
             bam_fp, str(sorted_file_name)
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))

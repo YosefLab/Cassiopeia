@@ -30,9 +30,7 @@ class TestCollapseUMIs(unittest.TestCase):
             ".collapsed.bam"
         )
 
-        _, _ = UMI_utils.sort_cellranger_bam(
-            self.test_file, str(self.sorted_file_name)
-        )
+        _, _ = UMI_utils.sort_bam(self.test_file, str(self.sorted_file_name))
 
         UMI_utils.form_collapsed_clusters(
             str(self.sorted_file_name), max_hq_mismatches=3, max_indels=2
