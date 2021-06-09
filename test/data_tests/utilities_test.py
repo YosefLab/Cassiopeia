@@ -315,6 +315,10 @@ class TestDataUtilities(unittest.TestCase):
         )
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
+    def test_is_ambiguous_state(self):
+        self.assertTrue(data_utilities.is_ambiguous_state((1, 2)))
+        self.assertFalse(data_utilities.is_ambiguous_state(1))
+
     def test_resolve_most_abundant(self):
         state = (1, 2, 3, 3)
         self.assertEqual(data_utilities.resolve_most_abundant(state), 3)

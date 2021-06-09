@@ -362,6 +362,20 @@ def sample_bootstrap_allele_tables(
     return bootstrap_samples
 
 
+def is_ambiguous_state(state: Union[int, Tuple[int, ...]]) -> bool:
+    """Determine whether the provided state is ambiguous.
+
+    Note that this function operates on a single (indel) state.
+
+    Args:
+        state: Single, possibly ambiguous, character state
+
+    Returns:
+        True if the state is ambiguous, False otherwise.
+    """
+    return isinstance(state, tuple)
+
+
 def resolve_most_abundant(state: Tuple[int, ...]) -> int:
     """Resolve an ambiguous character by selecting the most abundant.
 

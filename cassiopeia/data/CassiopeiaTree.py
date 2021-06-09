@@ -84,6 +84,8 @@ class CassiopeiaTree:
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
+    TODO(Lioscro): Add support for a tree to hold multiple character matrices,
+        similar to "layers" of an AnnData object.
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -487,7 +489,7 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         states = self.get_character_states(node)
-        return any(isinstance(state, tuple) for state in states)
+        return any(utilities.is_ambiguous_state(state) for state in states)
 
     def collapse_ambiguous_characters(self) -> None:
         """Only retain unique characters for ambiguous nodes.
@@ -505,18 +507,19 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         for node in self.nodes:
-            states = self.get_character_states(node)
-            # Modify states in place. This is okay because get_character_states
-            # returns a copy.
-            modified = False
-            for i in range(len(states)):
-                if isinstance(states[i], tuple):
-                    new_states = tuple(set(states[i]))
-                    if states != new_states:
-                        states[i] = new_states
-                        modified = True
-            if modified:
-                self.set_character_states(node, states)
+            if self.is_ambiguous(node):
+                states = self.get_character_states(node)
+                # Modify states in place. This is okay because get_character_states
+                # returns a copy.
+                modified = False
+                for i in range(len(states)):
+                    if utilities.is_ambiguous_state(states[i]):
+                        new_states = tuple(set(states[i]))
+                        if states != new_states:
+                            states[i] = new_states
+                            modified = True
+                if modified:
+                    self.set_character_states(node, states)
 
     def resolve_ambiguous_characters(
         self,
@@ -542,17 +545,18 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         for node in self.nodes:
-            states = self.get_character_states(node)
+            if self.is_ambiguous(node):
+                states = self.get_character_states(node)
 
-            # Modify states in place. This is okay because get_character_states
-            # returns a copy.
-            modified = False
-            for i in range(len(states)):
-                if isinstance(states[i], tuple):
-                    states[i] = resolve_function(states[i])
-                    modified = True
-            if modified:
-                self.set_character_states(node, states)
+                # Modify states in place. This is okay because get_character_states
+                # returns a copy.
+                modified = False
+                for i in range(len(states)):
+                    if utilities.is_ambiguous_state(states[i]):
+                        states[i] = resolve_function(states[i])
+                        modified = True
+                if modified:
+                    self.set_character_states(node, states)
 
         # All nodes have a single character string, so we cast the character matrix
         # back to an integer.
@@ -902,7 +906,7 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             # Cast entire character matrix to object dtype if we get an ambiguous
             # character string.
-            if any(isinstance(state, tuple) for state in states):
+            if self.is_ambiguous(node):
                 self.__current_character_matrix = (
                     self.__current_character_matrix.astype(object, copy=False)
                 )
@@ -951,7 +955,7 @@ class CassiopeiaTree:
         """Gets all the ancestors of a particular node.
 
         Nodes that are closest to the given node appear first in the list.
-        The acnestors, including those of all intermediate nodes, are cached.
+        The ancestors, including those of all intermediate nodes, are cached.
 
         Args:
             node: Node in the tree
