@@ -71,7 +71,7 @@ filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 ####################Utils for Collapsing UMIs#####################
 
 
-def sort_cellranger_bam(
+def sort_bam(
     bam_fp: str,
     sorted_fn: str,
     sort_key: Callable[[pysam.AlignedSegment], str] = sort_key,
