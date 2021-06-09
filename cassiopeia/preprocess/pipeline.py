@@ -4,21 +4,21 @@ data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
 
+from functools import partial
+import logging
 import os
+from pathlib import Path
 import time
-
 from typing import List, Optional, Tuple
 
 from Bio import SeqIO
-from functools import partial
-import logging
 import matplotlib.pyplot as plt
+import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 from skbio import alignment
-
-from pathlib import Path
 from tqdm.auto import tqdm
+from typing_extensions import Literal
 
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
@@ -32,6 +32,45 @@ from cassiopeia.preprocess import utilities
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
+
+
+class PreprocessError(Exception):
+    pass
+
+
+def fastqs_to_unmapped_bam(
+    fastq_fps: List[str],
+    chemistry: Literal["10xv3", "slideseq2"],
+    bam_fp: str,
+    name: Optional[str] = None,
+) -> None:
+    """Converts FASTQs into an unmapped BAM based on a chemistry.
+
+    This function converts a set of FASTQs into an unmapped BAM with appropriate
+    BAM tags.
+
+    Args:
+        fastq_fps: List of paths to FASTQ files. Usually, this argument contains
+            two FASTQs, where the first contains the barcode and UMI sequences
+            and the second contains cDNA. The FASTQs may be gzipped.
+        chemistry: Sample-prep/sequencing chemistry used. The following
+            chemistries are supported:
+            * 10xv3: 10x Genomics 3' version 3
+            * slideseq2: Slide-seq version 2
+        name: Name of the reads in the FASTQs. This name is set as the read group
+            name for the reads in the output BAM. If not provided, a random
+            UUID is used as the name.
+
+    Raises:
+        PreprocessError if the provided chemistry does not exist.
+    """
+    if chemistry not in constants.CHEMISTRY_BAM_TAGS:
+        raise PreprocessError(f"Unknown chemistry {chemistry}")
+
+    tag_map = constants.CHEMISTRY_BAM_TAGS[chemistry]
+    ngs.fastq.fastqs_to_bam_with_chemistry(
+        fastq_fps, ngs.chemistry.get_chemistry(chemistry), tag_map, bam_fp, name=name
+    )
 
 
 def collapse_umis(

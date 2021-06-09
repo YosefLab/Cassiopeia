@@ -3,14 +3,35 @@ Stores constants for the ProcessingPipeline module
 """
 
 BAM_CONSTANTS = {
+    "RAW_CELL_BC_TAG": "CR",
+    "RAW_CELL_BC_QUALITY_TAG": "CY",
     "CELL_BC_TAG": "CB",
     "UMI_TAG": "UR",
+    "UMI_QUALITY_TAG": "UY",
     "NUM_READS_TAG": "ZR",
     "CLUSTER_ID_TAG": "ZC",
     "N_Q": 2,
     "HIGH_Q": 31,
     "LOW_Q": 10,
 }
+
+CHEMISTRY_BAM_TAGS = {
+    "10xv3": {
+        "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+        "cell_barcode": (
+            BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+            BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+        ),
+    },
+    "slideseq2": {
+        "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+        "spot_barcode": (
+            BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+            BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+        ),
+    },
+}
+
 
 DNA_SUBSTITUTION_MATRIX = {
     "A": {"A": 5, "T": -4, "C": -4, "G": -4, "Z": 0, "N": 0},
