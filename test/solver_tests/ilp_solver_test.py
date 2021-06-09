@@ -196,7 +196,6 @@ class TestILPSolver(unittest.TestCase):
         for sample in expected_next_layer:
             self.assertIn(sample, layer_nodes)
 
-        # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
         layer_edges = np.array(
             [edge.split("|") for edge in layer_edges], dtype=int
         )
@@ -237,7 +236,7 @@ class TestILPSolver(unittest.TestCase):
         )
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix.astype(str),
+            unique_character_matrix,
             root,
             0,
             max_lca_height,
@@ -349,7 +348,7 @@ class TestILPSolver(unittest.TestCase):
         )
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix.astype(str),
+            unique_character_matrix,
             root,
             0,
             max_lca_height,
