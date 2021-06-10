@@ -74,7 +74,9 @@ setup(
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
-    entry_points={"console_scripts": ["scLT = cassiopeia.__main__:main"]},
+    entry_points={"console_scripts": [
+        "cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main",
+    ]},
     author_email="mattjones315@berkeley.edu",
     classifiers=[
         "Development Status :: 4 - Beta",
