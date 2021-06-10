@@ -1,7 +1,7 @@
 """
 Main logic behind Cassiopeia-preprocess.
 
-This file stores the main entry point for Cassiopeia-preprocess, and makes 
+This file stores the main entry point for Cassiopeia-preprocess, and makes
 heavy use of the high level functionality in
 cassiopeia.preprocess.pipeline. Here, we assume that the user
 has already run CellRanger Count, or some equivalent, to obtain a BAM file that
@@ -20,11 +20,13 @@ from typing import Any, Dict
 from cassiopeia.preprocess import pipeline, setup_utilities
 
 STAGES = {
+    "convert": pipeline.convert_fastqs_to_unmapped_bam,
+    "error_correct_barcodes": pipeline.error_correct_barcodes,
     "collapse": pipeline.collapse_umis,
     "resolve": pipeline.resolve_umi_sequence,
     "align": pipeline.align_sequences,
     "call_alleles": pipeline.call_alleles,
-    "error_correct": pipeline.error_correct_umis,
+    "error_correct_umis": pipeline.error_correct_umis,
     "filter_molecule_table": pipeline.filter_molecule_table,
     "call_lineages": pipeline.call_lineage_groups,
 }
@@ -47,7 +49,7 @@ def main():
 
     # pull out general parameters
     output_directory = pipeline_parameters["general"]["output_directory"]
-    data_filepath = pipeline_parameters["general"]["input_file"]
+    data_filepaths = pipeline_parameters["general"]["input_files"]
     entry_point = pipeline_parameters["general"]["entry"]
     exit_point = pipeline_parameters["general"]["exit"]
 
@@ -58,22 +60,46 @@ def main():
     pipeline_stages = setup_utilities.create_pipeline(
         entry_point, exit_point, STAGES
     )
-    if entry_point == "collapse":
-        data = data_filepath
+    if entry_point == "convert":
+        data = data_filepaths
     else:
-        data = pd.read_csv(data_filepath, sep="\t")
+        if len(data_filepaths) != 1:
+            raise pipeline.PreprocessError(
+                "`input_files` must contain exactly one input file for pipeline "
+                f"stage `{entry_point}`"
+            )
 
-    data_file_stem = ".".join(data_filepath.split("/")[-1].split(".")[:-1])
+        if entry_point in ("error_correct_barcodes", "collapse"):
+            data = data_filepaths[0]
+        else:
+            data = pd.read_csv(data_filepaths[0], sep="\t")
+
+    data_file_stem = os.path.splitext(os.path.basename(data_filepaths[0]))[0]
 
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
+        # Skip barcode correction if whitelist_fp was not provided
+        if (
+            stage == "error_correct_barcodes"
+            and not pipeline_parameters[stage]["whitelist_fp"]
+        ):
+            logging.warning(
+                "Skipping barcode error correction because no whitelist was "
+                "provided in the configuration."
+            )
+            continue
 
         procedure = STAGES[stage]
         data = procedure(data, **pipeline_parameters[stage])
-        data.to_csv(
-            os.path.join(output_directory, data_file_stem + f".{stage}.txt"),
-            sep="\t",
-        )
+
+        # Write to CSV only if it is a pandas dataframe
+        if isinstance(data, pd.DataFrame):
+            data.to_csv(
+                os.path.join(
+                    output_directory, data_file_stem + f".{stage}.txt"
+                ),
+                sep="\t",
+            )
 
 
 if __name__ == "__main__":

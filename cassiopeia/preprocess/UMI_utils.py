@@ -532,7 +532,6 @@ def merge_annotated_clusters(
 
 def correct_umis_in_group(
     cell_group: pd.DataFrame,
-    sampleID: str,
     max_umi_distance: int = 2,
     verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
@@ -552,7 +551,6 @@ def correct_umis_in_group(
 
     Args:
         input_df: Input DataFrame of alignments.
-        _id: Identification of sample.
         max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 

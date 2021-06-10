@@ -44,6 +44,7 @@ def convert_fastqs_to_unmapped_bam(
     chemistry: Literal["10xv3", "slideseq2"],
     output_directory: str,
     name: Optional[str] = None,
+    n_threads: int = 1,
 ) -> str:
     """Converts FASTQs into an unmapped BAM based on a chemistry.
 
@@ -64,6 +65,7 @@ def convert_fastqs_to_unmapped_bam(
             name for the reads in the output BAM, as well as the filename prefix
             of the output BAM. If not provided, a short random UUID is used as
             the read group name, but not as the filename prefix of the BAM.
+        n_threads: Number of threads to use. Defaults to 1.
 
     Returns:
         Path to written BAM
@@ -87,13 +89,15 @@ def convert_fastqs_to_unmapped_bam(
         tag_map,
         bam_fp,
         name=name,
+        show_progress=True,
+        n_threads=n_threads,
     )
     logging.info(f"Finished writing unmapped BAM in {time.time() - t0} s.")
     return bam_fp
 
 
 def error_correct_barcodes(
-    bam_fp: str, output_directory: str, whitelist: List[str]
+    bam_fp: str, output_directory: str, whitelist_fp: str, n_threads: int = 1
 ) -> str:
     """Error-correct barcodes in the input BAM.
 
@@ -104,7 +108,9 @@ def error_correct_barcodes(
         bam_fp: Input BAM filepath containing raw barcodes
         output_directory: The output directory where the corrected BAM will be
             written to. This directory must exist prior to calling this function.
-        whitelist: Barcode whitelist to correct to
+        whitelist_fp: Path to plaintext file containing barcode whitelist, one
+            barcode per line.
+        n_threads: Number of threads to use. Defaults to 1.
 
     Returns:
         Path to corrected BAM
@@ -112,10 +118,16 @@ def error_correct_barcodes(
     logging.info("Correcting barcodes to whitelist...")
     t0 = time.time()
 
-    # First, extract all raw barcodes and their qualities
+    # Read whitelist
+    with open(whitelist_fp, "r") as f:
+        whitelist = [line.strip() for line in f if not line.isspace()]
+
+    # Extract all raw barcodes and their qualities
     barcodes = []
     qualities = []
-    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+    with pysam.AlignmentFile(
+        bam_fp, "rb", check_sq=False, threads=n_threads
+    ) as f:
         for read in f:
             barcodes.append(read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_TAG"]))
             qualities.append(
@@ -124,14 +136,18 @@ def error_correct_barcodes(
 
     # Correct
     corrections = ngs.sequence.correct_sequences_to_whitelist(
-        barcodes, qualities, whitelist
+        barcodes, qualities, whitelist, show_progress=True, n_threads=n_threads
     )
 
     # Write corrected BAM
     prefix, ext = os.path.splitext(os.path.basename(bam_fp))
     corrected_fp = os.path.join(output_directory, f"{prefix}_corrected{ext}")
-    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f_in:
-        with pysam.AlignmentFile(corrected_fp, "wb", template=f_in) as f_out:
+    with pysam.AlignmentFile(
+        bam_fp, "rb", check_sq=False, threads=n_threads
+    ) as f_in:
+        with pysam.AlignmentFile(
+            corrected_fp, "wb", template=f_in, threads=n_threads
+        ) as f_out:
             for i, read in enumerate(f_in):
                 if corrections[i]:
                     read.set_tag(BAM_CONSTANTS["CELL_BC_TAG"], corrections[i])
@@ -544,7 +560,6 @@ def call_alleles(
 
 def error_correct_umis(
     input_df: pd.DataFrame,
-    _id: str,
     max_umi_distance: int = 2,
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -556,7 +571,6 @@ def error_correct_umis(
 
     Args:
         input_df: Input DataFrame of alignments.
-        _id: Identification of sample.
         max_umi_distance: The threshold specifying the Maximum Hamming distance
             between UMIs for one to be corrected to another.
         verbose: Indicates whether to log every UMI correction.
@@ -607,7 +621,7 @@ def error_correct_umis(
         if verbose:
             logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
         allele_group, num_corr, tot = UMI_utils.correct_umis_in_group(
-            allele_group, _id, max_umi_distance
+            allele_group, max_umi_distance
         )
         num_corrected += num_corr
         total += tot
