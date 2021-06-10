@@ -5,6 +5,7 @@ from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
+import numpy
 
 
 with open("README.md") as readme_file:
@@ -17,7 +18,6 @@ requirements = [
     "pandas >= 0.22.0",
     "networkx >= 2.5",
     "tqdm >= 4",
-    # "gurobipy",
     "ete3 >= 3.1.1",
     "argparse >= 1.1",
     "Biopython >= 1.71",
@@ -56,6 +56,7 @@ to_cythonize = [
     Extension(
         "cassiopeia.solver.ilp_solver_utilities",
         ["cassiopeia/solver/ilp_solver_utilities.pyx"],
+        include_dirs=[numpy.get_include()],
     ),
 ]
 
@@ -63,7 +64,10 @@ to_cythonize = [
 setup(
     name="cassiopeia-lineage",
     python_requires='>=3.6',
-    ext_modules=cythonize(to_cythonize),
+    ext_modules=cythonize(
+            to_cythonize,
+            compiler_directives={'language_level' : "3"}
+    ),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
