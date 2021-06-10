@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
+import pysam
 from skbio import alignment
 from tqdm.auto import tqdm
 from typing_extensions import Literal
@@ -38,12 +39,12 @@ class PreprocessError(Exception):
     pass
 
 
-def fastqs_to_unmapped_bam(
+def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
     chemistry: Literal["10xv3", "slideseq2"],
-    bam_fp: str,
+    output_directory: str,
     name: Optional[str] = None,
-) -> None:
+) -> str:
     """Converts FASTQs into an unmapped BAM based on a chemistry.
 
     This function converts a set of FASTQs into an unmapped BAM with appropriate
@@ -55,11 +56,17 @@ def fastqs_to_unmapped_bam(
             and the second contains cDNA. The FASTQs may be gzipped.
         chemistry: Sample-prep/sequencing chemistry used. The following
             chemistries are supported:
-            * 10xv3: 10x Genomics 3' version 3
-            * slideseq2: Slide-seq version 2
+            * 10xv3: 10x Genomics 3' version 3; correction performed
+            * slideseq2: Slide-seq version 2; no correction performed
+        output_directory: The output directory where the unmapped BAM will be
+            written to. This directory must exist prior to calling this function.
         name: Name of the reads in the FASTQs. This name is set as the read group
-            name for the reads in the output BAM. If not provided, a random
-            UUID is used as the name.
+            name for the reads in the output BAM, as well as the filename prefix
+            of the output BAM. If not provided, a short random UUID is used as
+            the read group name, but not as the filename prefix of the BAM.
+
+    Returns:
+        Path to written BAM
 
     Raises:
         PreprocessError if the provided chemistry does not exist.
@@ -67,10 +74,70 @@ def fastqs_to_unmapped_bam(
     if chemistry not in constants.CHEMISTRY_BAM_TAGS:
         raise PreprocessError(f"Unknown chemistry {chemistry}")
 
+    logging.info("Converting FASTQs to unmapped BAM...")
+    t0 = time.time()
+
     tag_map = constants.CHEMISTRY_BAM_TAGS[chemistry]
-    ngs.fastq.fastqs_to_bam_with_chemistry(
-        fastq_fps, ngs.chemistry.get_chemistry(chemistry), tag_map, bam_fp, name=name
+    bam_fp = os.path.join(
+        output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam"
     )
+    ngs.fastq.fastqs_to_bam_with_chemistry(
+        fastq_fps,
+        ngs.chemistry.get_chemistry(chemistry),
+        tag_map,
+        bam_fp,
+        name=name,
+    )
+    logging.info(f"Finished writing unmapped BAM in {time.time() - t0} s.")
+    return bam_fp
+
+
+def error_correct_barcodes(
+    bam_fp: str, output_directory: str, whitelist: List[str]
+) -> str:
+    """Error-correct barcodes in the input BAM.
+
+    The barcode correction procedure used in Cell Ranger by 10X Genomics is used.
+    https://kb.10xgenomics.com/hc/en-us/articles/115003822406-How-does-Cell-Ranger-correct-barcode-sequencing-errors
+
+    Args:
+        bam_fp: Input BAM filepath containing raw barcodes
+        output_directory: The output directory where the corrected BAM will be
+            written to. This directory must exist prior to calling this function.
+        whitelist: Barcode whitelist to correct to
+
+    Returns:
+        Path to corrected BAM
+    """
+    logging.info("Correcting barcodes to whitelist...")
+    t0 = time.time()
+
+    # First, extract all raw barcodes and their qualities
+    barcodes = []
+    qualities = []
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+        for read in f:
+            barcodes.append(read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_TAG"]))
+            qualities.append(
+                read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
+            )
+
+    # Correct
+    corrections = ngs.sequence.correct_sequences_to_whitelist(
+        barcodes, qualities, whitelist
+    )
+
+    # Write corrected BAM
+    prefix, ext = os.path.splitext(os.path.basename(bam_fp))
+    corrected_fp = os.path.join(output_directory, f"{prefix}_corrected{ext}")
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f_in:
+        with pysam.AlignmentFile(corrected_fp, "wb", template=f_in) as f_out:
+            for i, read in enumerate(f_in):
+                if corrections[i]:
+                    read.set_tag(BAM_CONSTANTS["CELL_BC_TAG"], corrections[i])
+                f_out.write(read)
+    logging.info(f"Finished correcting barcodes in {time.time() - t0} s.")
+    return corrected_fp
 
 
 def collapse_umis(
@@ -120,9 +187,18 @@ def collapse_umis(
         + "_sorted.bam"
     )
 
+    cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
+    logging.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
+
     if not sorted_file_name.exists() and not skip_existing:
         max_read_length, total_reads_out = UMI_utils.sort_bam(
-            bam_fp, str(sorted_file_name)
+            bam_fp,
+            str(sorted_file_name),
+            sort_key=lambda al: (
+                al.get_tag(cell_bc_tag),
+                al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
+            ),
+            filter_func=lambda al: al.has_tag(cell_bc_tag),
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))
         logging.info("Max read length of " + str(max_read_length))
@@ -131,7 +207,10 @@ def collapse_umis(
     collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
     if not collapsed_file_name.exists() and not skip_existing:
         UMI_utils.form_collapsed_clusters(
-            str(sorted_file_name), max_hq_mismatches, max_indels
+            str(sorted_file_name),
+            max_hq_mismatches,
+            max_indels,
+            cell_key=lambda al: al.get_tag(cell_bc_tag),
         )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")

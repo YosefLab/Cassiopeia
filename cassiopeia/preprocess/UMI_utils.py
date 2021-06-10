@@ -71,6 +71,33 @@ filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 ####################Utils for Collapsing UMIs#####################
 
 
+def detect_cell_bc_tag(bam_fp: str) -> str:
+    """Detect what BAM tag corresponds to the cell barcode.
+
+    Use this function to detect either ``BAM_CONSTANTS["RAW_CELL_BC_TAG"]`` or
+    ``BAM_CONSTANTS["CELL_BC_TAG"]`` to use as the cell barcodes for downstream
+    processing. This is because for some chemistries it may not be possible to
+    perform barcode correction (i.e. chemistries without a whitelist) and
+    therefore the pipeline needs to use the raw barcode sequences.
+
+    Args:
+        bam_fp: Path to the BAM file
+
+    Returns:
+        The BAM tag to use as the barcode
+    """
+    raw_tag = BAM_CONSTANTS["RAW_CELL_BC_TAG"]
+    corrected_tag = BAM_CONSTANTS["CELL_BC_TAG"]
+
+    # Iterating through reads in a BAM file is fast, so it's okay to check all
+    # reads
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+        for read in f:
+            if read.has_tag(corrected_tag):
+                return corrected_tag
+    return raw_tag
+
+
 def sort_bam(
     bam_fp: str,
     sorted_fn: str,
@@ -144,6 +171,8 @@ def form_collapsed_clusters(
     sorted_fn: Callable[[pysam.AlignedSegment], str],
     max_hq_mismatches: int,
     max_indels: int,
+    cell_key: Callable[[pysam.AlignedSegment], str] = cell_key,
+    UMI_key: Callable[[pysam.AlignedSegment], str] = UMI_key,
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
     sequences are close.
@@ -168,6 +197,8 @@ def form_collapsed_clusters(
             collapsed.
         max_indels: A threshold specifying the maximum number of differing indels
             allowed between the sequences of 2 aligned segments to be collapsed.
+        cell_key: A function that takes an alignment and returns the cell barcode
+        UMI_key: A function that takes an alignment and returns the UMI sequence
 
     None:
         Saves the sorted bam to file
