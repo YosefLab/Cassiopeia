@@ -2,8 +2,8 @@
 General utilities for the datasets encountered in Cassiopeia.
 """
 import collections
-import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
+import warnings
 
 import ete3
 import networkx as nx
