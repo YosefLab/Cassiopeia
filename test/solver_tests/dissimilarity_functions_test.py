@@ -14,9 +14,9 @@ from cassiopeia.solver import solver_utilities
 class TestDissimilarityFunctions(unittest.TestCase):
     def setUp(self):
 
-        self.s1 = [0, 1, 0, -1, 1, 2]
-        self.s2 = [1, 1, 0, 0, 1, 3]
-        self.all_missing = [-1, -1, -1, -1, -1, -1]
+        self.s1 = np.array([0, 1, 0, -1, 1, 2])
+        self.s2 = np.array([1, 1, 0, 0, 1, 3])
+        self.all_missing = np.array([-1, -1, -1, -1, -1, -1])
         self.ambiguous = [(0,), (-1, 0), (0,), (-1, 0), (1,), (1,)]
 
         self.priors = {
@@ -277,6 +277,26 @@ class TestDissimilarityFunctions(unittest.TestCase):
             linkage_function,
         )
         np.testing.assert_almost_equal(result, 1.2544, decimal=4)
+
+    def test_hamming_distance(self):
+
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2)
+
+        self.assertEqual(distance, 3)
+
+    def test_hamming_distance_ignore_missing(self):
+
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.s2, ignore_missing_state=True
+        )
+
+        self.assertEqual(distance, 2)
+
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.all_missing, ignore_missing_state=True
+        )
+
+        self.assertEqual(distance, 0)
 
 
 if __name__ == "__main__":
