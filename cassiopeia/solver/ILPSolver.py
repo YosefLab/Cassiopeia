@@ -176,7 +176,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
             unique_character_matrix,
-            root,
             pid,
             max_lca_distance,
             weights,
@@ -217,7 +216,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     def infer_potential_graph(
         self,
         character_matrix: pd.DataFrame,
-        root: List[str],
         pid: int,
         lca_height: int,
         weights: Optional[Dict[int, Dict[int, str]]] = None,
@@ -228,13 +226,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Using the set of samples in the character matrix for this solver,
         this procedure creates a network which contains potential ancestors, or
         evolutionary intermediates.
-
-        First, a directed graph is constructed by considering all pairs of
-        samples, and checking if a sample can be a possible parent of another
-        sample. Then, for all pairs of nodes with in-degree of 0 and are
-        similar enough to one another, we add their common ancestor as a parent
-        to the two nodes. This procedure is done until there exists only one
-        possible ancestor left - this will be the root of the tree.
+        
+        This procedure invokes
+        `ilp_solver_utilities.infer_potential_graph_cython` which returns the
+        edges of the potential graph in character string format
+        (e.g., "1|2|3|..."). The procedure here decodes these strings, creates
+        a Networkx directed graph, and adds edges to the graph. These weights
+        are added to the edges of the graph using priors, if they are specified
+        in the CassiopeiaTree, or the number of mutations along an edge.
 
         Args:
             character_matrix: Character matrix

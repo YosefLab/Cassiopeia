@@ -230,14 +230,10 @@ class TestILPSolver(unittest.TestCase):
         unique_character_matrix = (
             self.pp_tree.get_original_character_matrix().drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.pp_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
             unique_character_matrix,
-            root,
             0,
             max_lca_height,
             self.pp_tree.priors,
@@ -342,14 +338,10 @@ class TestILPSolver(unittest.TestCase):
         unique_character_matrix = (
             self.duplicates_tree.get_original_character_matrix().drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.duplicates_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
             unique_character_matrix,
-            root,
             0,
             max_lca_height,
             self.duplicates_tree.priors,
