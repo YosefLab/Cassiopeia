@@ -47,7 +47,7 @@ def get_lca_characters(
     for i in range(k):
         chars = set()
         for vec in vecs:
-            if isinstance(vec[i], tuple):
+            if is_ambiguous_state(vec[i]):
                 chars = chars.union(vec[i])
             else:
                 chars.add(vec[i])
