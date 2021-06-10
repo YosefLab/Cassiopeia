@@ -161,14 +161,23 @@ def hamming_similarity_normalized_over_missing(
 
 
 @numba.jit(nopython=True)
-def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
+def hamming_distance(
+    s1: np.array(int),
+    s2: np.array(int),
+    ignore_missing_state: bool = False,
+    missing_state_indicator: int = -1,
+) -> int:
     """Computes the vanilla hamming distance between two samples.
 
-    Counts the number of positions that two samples disagree at.
+    Counts the number of positions that two samples disagree at. A user can
+    optionally specify to ignore missing data.
 
     Args:
         s1: The first sample
         s2: The second sample
+        ignore_missing_state: Ignore comparisons where one is the missing state
+            indicator
+        missing_state_indicator: Indicator for missing data.
 
     Returns:
         The number of positions two nodes disagree at.
@@ -178,7 +187,14 @@ def hamming_distance(s1: np.array(int), s2: np.array(int)) -> int:
     for i in range(len(s1)):
 
         if s1[i] != s2[i]:
-            dist += 1
+
+            if (
+                s1[i] == missing_state_indicator
+                or s2[i] == missing_state_indicator
+            ) and ignore_missing_state:
+                dist += 0
+            else:
+                dist += 1
 
     return dist
 

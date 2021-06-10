@@ -284,7 +284,7 @@ def create_gradient_from_df(
         f"COLOR_MAX\t{color_max}",
         "MARGIN\t100",
         f"DATASET_LABEL\t{df.name}",
-        "STRIP_WIDTH\t50",
+        "STRIP_WIDTH\t100",
         "SHOW_INTERNAL\t0",
         "DATA",
         "",
