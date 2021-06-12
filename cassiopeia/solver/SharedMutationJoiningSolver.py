@@ -235,7 +235,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             character_matrix: Contains the character information for all nodes,
                 updated as nodes are joined and new internal LCA nodes are added
-            nb_similarity: A similarity function
+            similarity_function: A similarity function
             similarity_map: A similarity map to update
             cherry: A tuple of indices in the similarity map that are joining
             new_node: New node name, to be added to the updated similarity map

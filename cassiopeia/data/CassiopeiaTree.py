@@ -476,7 +476,7 @@ class CassiopeiaTree:
     def is_ambiguous(self, node: str) -> bool:
         """Returns whether the node is ambiguous.
 
-        This is detected by checking if ny of the characters are tuples.
+        This is detected by checking if any of the characters are tuples.
 
         Args:
             node: Name of the node to check if it has ambiguous character(s)
@@ -536,7 +536,7 @@ class CassiopeiaTree:
         Args:
             resolve_function: Function that performs character resolution. This
                 function is called once per ambiguous character state, and thus
-                takes a single integer list as its argument and returns the
+                takes a single integer tuple as its argument and returns the
                 resolved character state.
 
         Raises:
@@ -720,6 +720,9 @@ class CassiopeiaTree:
                 self.get_time(child) - new_time
             )
 
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
+
     def set_times(self, time_dict: Dict[str, float]) -> None:
         """Sets the time of all nodes in the tree.
 
@@ -753,6 +756,9 @@ class CassiopeiaTree:
             self.__network[parent][child]["length"] = time_child - time_parent
         for node, time in time_dict.items():
             self.__network.nodes[node]["time"] = time
+
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
 
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
@@ -829,6 +835,9 @@ class CassiopeiaTree:
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
+
     def set_branch_lengths(
         self, branch_length_dict: Dict[Tuple[str, str], float]
     ) -> None:
@@ -860,6 +869,9 @@ class CassiopeiaTree:
             self.__network.nodes[v]["time"] = (
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
+
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
 
     def get_branch_length(self, parent: str, child: str) -> float:
         """Gets the length of a branch.
@@ -1219,9 +1231,9 @@ class CassiopeiaTree:
             for to_add in add_to_character_matrix:
                 # Note that we initialize state each iteration so that each state
                 # is a new object.
-                state = [self.missing_state_indicator] * self.n_character
-                self.__set_character_states(to_add, state)
-                self.__current_character_matrix.loc[to_add] = state
+                char_vector = [self.missing_state_indicator] * self.n_character
+                self.__set_character_states(to_add, char_vector)
+                self.__current_character_matrix.loc[to_add] = char_vector
 
         if self.cell_meta is not None:
             remove_from_cell_meta = set(self.cell_meta.index) - leaves_set
@@ -1737,7 +1749,7 @@ class CassiopeiaTree:
             distances = self.__cache.setdefault("distances", {})
             undirected_network = self.__network.to_undirected()
             distances[key] = nx.shortest_path_length(
-                undirected_network, source=node1, target=node2, weight="time"
+                undirected_network, source=node1, target=node2, weight="length"
             )
 
         return self.__cache["distances"][key]
@@ -1770,7 +1782,7 @@ class CassiopeiaTree:
             distances = self.__cache.setdefault("distances", {})
             undirected_network = self.__network.to_undirected()
             for other_node, distance in nx.shortest_path_length(
-                undirected_network, source=node, weight="time"
+                undirected_network, source=node, weight="length"
             ).items():
                 distances[frozenset({node, other_node})] = distance
 

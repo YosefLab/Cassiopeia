@@ -1536,6 +1536,11 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(tree.get_distance("node18", "node17"), 2)
         self.assertEqual(tree.get_distance("node16", "node9"), 5)
 
+        # Update a branch length and get distance again
+        tree.set_branch_length("node16", "node18", 1.5)
+        self.assertEqual(tree.get_distance("node18", "node16"), 1.5)
+        self.assertEqual(tree.get_distance("node17", "node18"), 2.5)
+
     def test_get_distances(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
         expected_distances = {
@@ -1561,6 +1566,19 @@ class TestCassiopeiaTree(unittest.TestCase):
             "node1": 4,
             "node0": 5,
         }
+        self.assertEqual(tree.get_distances("node12"), expected_distances)
+        self.assertEqual(
+            tree.get_distances("node12", leaves_only=True),
+            {
+                node: distance
+                for node, distance in expected_distances.items()
+                if tree.is_leaf(node)
+            },
+        )
+
+        # Update a branch length and get distance again
+        tree.set_branch_length("node16", "node18", 1.5)
+        expected_distances["node18"] = 3.5
         self.assertEqual(tree.get_distances("node12"), expected_distances)
         self.assertEqual(
             tree.get_distances("node12", leaves_only=True),
