@@ -1,5 +1,5 @@
 """
-Tests for converting FASTQs to an unmapped BAM in pipeline.py
+Tests for correcting raw barcodes to a whitelist pipeline.py
 """
 import os
 import unittest
