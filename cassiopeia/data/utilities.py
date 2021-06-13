@@ -85,7 +85,7 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
             n.name = f"node{internal_node_iter}"
             internal_node_iter += 1
 
-        g.add_edge(n.up.name, n.name)
+        g.add_edge(n.up.name.replace("'", ""), n.name.replace("'", ""))
 
     return g
 

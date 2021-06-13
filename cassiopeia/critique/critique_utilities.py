@@ -35,7 +35,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     in place.
 
     Args:
-        tree: An ete3 Tree
+        tree: A CassiopeiaTree
         
     Returns:
         A dictionary mapping depth to the list of nodes at that depth.
@@ -70,7 +70,7 @@ def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
     of the LCA from the number of shared ancestors.
 
     Args:
-        tree: CassiopeiaTree
+        tree: A CassiopeiaTree
         triplet: A tuple of three leaves constituting a triplet.
 
     Returns:
@@ -97,21 +97,20 @@ def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
 
 def sample_triplet_at_depth(
     tree: CassiopeiaTree, depth: int, depth_to_nodes: Optional[Dict[int, List[str]]] = None,
-) -> Tuple[List[int], str]:
+) -> Tuple[Tuple[str], str]:
     """Samples a triplet at a given depth.
 
     Samples a triplet of leaves such that the depth of the LCA of the triplet
     is at the specified depth. 
 
     Args:
-        tree: CassiopeiaTree
+        tree: A CassiopeiaTree
         depth: Depth at which to sample the triplet
         depth_to_nodes: An optional dictionary that maps a depth to the nodes
             that appear at that depth. This speeds up the function considerably.
 
     Returns:
-        A list of three leaves corresponding to the triplet name of the outgroup
-            of the triplet.
+        The sampled triplet as well as the outgroup of the triplet
     """
 
     if depth_to_nodes is None:
@@ -121,12 +120,12 @@ def sample_triplet_at_depth(
 
     total_triplets = sum([tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
 
-    # sample a  node from this depth with probability proportional to the number
+    # sample a node from this depth with probability proportional to the number
     # of triplets underneath it
     probs = [tree.get_attribute(v, "number_of_triplets") / total_triplets for v in candidate_nodes]
     node = np.random.choice(candidate_nodes, size=1, replace=False, p=probs)[0]
 
-    # Generate the probilities to sample each combination of 3 daughter clades
+    # Generate the probabilities to sample each combination of 3 daughter clades
     # to sample from, proportional to the number of triplets in each daughter
     # clade. Choices include all ways to choose 3 different daughter clades
     # or 2 from one daughter clade and one from another
