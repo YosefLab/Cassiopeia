@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import scipy
 
-from cassiopeia.data import utilities
+from cassiopeia.data import Layers, utilities
 from cassiopeia.solver import solver_utilities
 
 
@@ -121,8 +121,9 @@ class CassiopeiaTree:
         self.__network = None
         self.__cache = {}
 
-        self.__original_character_matrix = None
-        self.__current_character_matrix = None
+        self._layers = Layers(self, None)
+
+        self._character_matrix = None
         if character_matrix is not None:
             self.set_character_matrix(character_matrix)
 
@@ -136,8 +137,23 @@ class CassiopeiaTree:
             self.set_dissimilarity_map(dissimilarity_map)
         self.root_sample_name = root_sample_name
 
-    def populate_tree(self, tree: Union[str, ete3.Tree, nx.DiGraph]) -> None:
+    def populate_tree(self,
+        tree: Union[str, ete3.Tree, nx.DiGraph],
+        layer=Optional[str] = None) -> None:
+        """Populates a tree object in CassiopeiaTree.
 
+        Accepts a tree topology and introduces the topology into the object. In
+        doing so, this function will also append character states to the leaves
+        of the tree topology, if possible, and instantiate edge lengths by
+        default to be length 1. Node times will be instantiated as well,
+        corresponding to their tree depth.
+
+        Args:
+            tree: A tree topology specified as a networkx DiGraph, a newick
+                string, or an ete3 Tree.
+            use_layer: Layer to use for character matrix. If this is None,
+                then the current `character_matrix` variable will be used.
+        """
         if isinstance(tree, nx.DiGraph):
             self.__network = tree
         elif isinstance(tree, str):
@@ -160,14 +176,18 @@ class CassiopeiaTree:
         self.__cache = {}
 
         # add character states
+        if layer is not None:
+            character_matrix = self.layers[layer]
+        else:
+            character_matrix = self.character_matrix
         for n in self.nodes:
             if (
-                self.__original_character_matrix is not None
-                and n in self.__original_character_matrix.index.tolist()
+                character_matrix is not None
+                and n in character_matrix.index.tolist()
             ):
                 self.__network.nodes[n][
                     "character_states"
-                ] = self.__original_character_matrix.loc[n].to_list()
+                ] = character_matrix.loc[n].to_list()
             else:
                 self.__network.nodes[n]["character_states"] = []
 
@@ -183,25 +203,33 @@ class CassiopeiaTree:
             )
 
     def __check_network_initialized(self) -> None:
+        """Checks that topology has been initialized."""
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
 
-    def set_character_matrix(self, character_matrix: pd.DataFrame):
-        """Initializes a character matrix in the object."""
+    def set_character_matrix(self,
+        character_matrix: pd.DataFrame,
+        set_character_states: bool = False):
+        """Initializes a character matrix in the object.
+        
+            Args:
+                character_matrix: Character matrix of mutation observations.
+                set_character_states: Set character states at the leaves of
+                    the tree topology, if it exists.
+        """
 
         if not all(type(i) == str for i in character_matrix.index):
             raise CassiopeiaTreeError("Index of character matrix must consist" 
             " of strings.")
 
-        self.__original_character_matrix = character_matrix.copy()
-        self.__current_character_matrix = character_matrix.copy()
+        self._character_matrix = character_matrix.copy()
 
         # overwrite character information at the leaves if needed
-        if self.__network:
+        if self.__network and set_character_states:
             self.initialize_character_states_at_leaves(character_matrix)
 
     def initialize_character_states_at_leaves(
-        self, character_matrix: Union[pd.DataFrame, Dict]
+        self, character_matrix: Union[pd.DataFrame, Dict], add_layer: Optional[str] = None
     ) -> None:
         """Populates character states at leaves.
 
@@ -211,6 +239,9 @@ class CassiopeiaTree:
         Args:
             character_matrix: A pandas dataframe or dictionary for mapping
                 character states to the leaves of the tree.
+            add_layer: Layer to which to add the new character matrix. If this
+                is None, then the specified character matrix will be set to
+                the default matrix in this object.
 
         Raises:
             CassiopeiaTreeError if not all leaves are accounted for or if the
@@ -227,15 +258,17 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError(
                 "Character matrix index does not match set of leaves."
             )
-
+        
         for n in self.leaves:
             self.__set_character_states(n, character_matrix.loc[n].tolist())
 
-        self.__original_character_matrix = character_matrix.copy()
-        self.__current_character_matrix = character_matrix.copy()
+        if add_layer:
+            self._layers[add_layer] = character_matrix.copy()
+        else:
+            self._character_matrix = character_matrix.copy()
 
     def initialize_all_character_states(
-        self, character_state_mapping: Dict
+        self, character_state_mapping: Dict[str, List[int]], add_layer: Optional[str] = None
     ) -> None:
         """Populates character states across the tree.
 
@@ -245,6 +278,9 @@ class CassiopeiaTree:
         Args:
             character_state_mapping: A mapping containing character state
                 assignments for every node
+            add_layer: Layer to which to add the new character matrix. If this
+                is None, then the specified character matrix will be set to
+                the default matrix in this object.
 
         Raises:
             CassiopeiaTreeError if the tree is not initialized or if the
@@ -267,46 +303,71 @@ class CassiopeiaTree:
         character_matrix = pd.DataFrame.from_dict(
             character_matrix, orient="index"
         )
-        self.__original_character_matrix = character_matrix.copy()
-        self.__current_character_matrix = character_matrix.copy()
 
-    def get_original_character_matrix(self) -> pd.DataFrame:
-        """Gets the original character matrix.
+        if add_layer:
+            self._layers[add_layer] = character_matrix.copy()
+        else:
+            self._character_matrix = character_matrix.copy()
+    @property
+    def layers(self) -> Layers:
+        """Dictionary object storing versions of character matrices.
 
-        The returned character matrix is the original character matrix of
-        observations. Downstream operations might change the character state
-        observations for the cells and if this happens, the changes will
-        not be reflected here. Instead, the changes will be reflected in the
-        character matrix obtained with `get_current_character_matrix`.
+        Layers in this CassiopeiaTree object are inspired by AnnData's
+        layers functionality. All layers have the same number of samples
+        as the tree and :attr:`character_matrix`.
 
-        Returns:
-            A copy of the original, unmodified character matrix.
-
-        Raises:
-            CassiopeiaTreeError if the character matrix does not exist.
+        Return the layer named `"missing"`::
+            cas_tree.layers["missing"]
+        
+        Create or replace the `"merged"` layer::
+            cas_tree.layers["merged"] = ...
+        
+        Delete the `"missing"` layer::
+            del cas_tree.layers["missing"]
         """
-        if self.__original_character_matrix is None:
-            raise CassiopeiaTreeError("Character matrix does not exist.")
-        return self.__original_character_matrix.copy()
+        return self._layers
 
-    def get_current_character_matrix(self) -> pd.DataFrame:
-        """Gets the current character matrix.
+    @property
+    def character_matrix(self) -> pd.DataFrame:
+        return self._character_matrix.copy()
 
-        The returned character matrix is the modified character matrix of
-        observations. When downstream operations are used to change the
-        character state observations in the leaves of the tree, these changes
-        will be reflected here. A "raw" version of the character matrix can
-        be found in the `get_original_character_matrix` method.
+    # def get_original_character_matrix(self) -> pd.DataFrame:
+    #     """Gets the original character matrix.
 
-        Returns:
-            A copy of the modified character matrix.
+    #     The returned character matrix is the original character matrix of
+    #     observations. Downstream operations might change the character state
+    #     observations for the cells and if this happens, the changes will
+    #     not be reflected here. Instead, the changes will be reflected in the
+    #     character matrix obtained with `get_current_character_matrix`.
 
-        Raises:
-            CassiopeiaTreeError if the character matrix does not exist.
-        """
-        if self.__current_character_matrix is None:
-            raise CassiopeiaTreeError("Character matrix does not exist.")
-        return self.__current_character_matrix.copy()
+    #     Returns:
+    #         A copy of the original, unmodified character matrix.
+
+    #     Raises:
+    #         CassiopeiaTreeError if the character matrix does not exist.
+    #     """
+    #     if self.__original_character_matrix is None:
+    #         raise CassiopeiaTreeError("Character matrix does not exist.")
+    #     return self.__original_character_matrix.copy()
+
+    # def get_current_character_matrix(self) -> pd.DataFrame:
+    #     """Gets the current character matrix.
+
+    #     The returned character matrix is the modified character matrix of
+    #     observations. When downstream operations are used to change the
+    #     character state observations in the leaves of the tree, these changes
+    #     will be reflected here. A "raw" version of the character matrix can
+    #     be found in the `get_original_character_matrix` method.
+
+    #     Returns:
+    #         A copy of the modified character matrix.
+
+    #     Raises:
+    #         CassiopeiaTreeError if the character matrix does not exist.
+    #     """
+    #     if self.__current_character_matrix is None:
+    #         raise CassiopeiaTreeError("Character matrix does not exist.")
+    #     return self.__current_character_matrix.copy()
 
     @property
     def n_cell(self) -> int:
@@ -316,13 +377,13 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the object is empty (i.e. no tree or
             character matrix).
         """
-        if self.__original_character_matrix is None:
+        if self.character_matrix is None:
             if self.__network is None:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
             return len(self.leaves)
-        return self.__original_character_matrix.shape[0]
+        return self.character_matrix.shape[0]
 
     @property
     def n_character(self) -> int:
@@ -333,7 +394,7 @@ class CassiopeiaTree:
             character matrix) or if the character states have not been
             initialized.
         """
-        if self.__original_character_matrix is None:
+        if self.character_matrix is None:
             if self.__network is None:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
@@ -343,7 +404,7 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError(
                 "Character states have not been initialized."
             )
-        return self.__original_character_matrix.shape[1]
+        return self.character_matrix.shape[1]
 
     @property
     def root(self) -> str:
@@ -475,7 +536,7 @@ class CassiopeiaTree:
         Reconstructs ancestral states (i.e., those character states in the
         internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
         irreversibility). Operates on the tree in place.
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -776,12 +837,14 @@ class CassiopeiaTree:
 
         return self.__network[parent][child]["length"]
 
-    def set_character_states(self, node: str, states: List[int]) -> None:
+    def set_character_states(self, node: str, states: List[int], use_layer: Optional[str] = None) -> None:
         """Sets the character states for a particular node.
 
         Args:
             node: Node in the tree
             states: A list of states to add to the node.
+            use_layer: Name of layer to modify. If the layer is not specified,
+                :attr:`character_matrix` is modifed directly.
 
         Raises:
             CassiopeiaTreeError if the character vector is the incorrect length,
@@ -803,7 +866,15 @@ class CassiopeiaTree:
         self.__set_character_states(node, states)
 
         if self.is_leaf(node):
-            self.__current_character_matrix.loc[node] = states
+            if use_layer is not None:
+                if self.layers.contains(use_layer):
+                    self.layers[use_layer].loc[node] = states
+                else:
+                    raise ValueError(
+                        f"Layer {use_layer} does not exist."
+                    )
+            else:
+                self.character_matrix.loc[node] = states
 
     def __set_character_states(self, node: str, states: List[int]) -> None:
         """A private method for setting states.
@@ -1057,9 +1128,13 @@ class CassiopeiaTree:
         dissimilarity maps that do not appear in the tree.
         """
         if self.__current_character_matrix is not None:
-            remove_from_charater_matrix = set(self.__current_character_matrix.index) - set(self.leaves)
-            self.__current_character_matrix = self.__current_character_matrix.drop(index = remove_from_charater_matrix)
-                
+            remove_from_charater_matrix = set(self.character_matrix.index) - set(self.leaves)
+            self.character_matrix = self.character_matrix.drop(index = remove_from_character_matrix)
+            
+            layer_copies = self.layers.copy()
+            for name, layer_copy in layer_copies:
+                self.layers[name] = layer_copy 
+                            
         if self.cell_meta is not None:
             remove_from_cell_meta = set(self.cell_meta.index) - set(self.leaves)
             self.__cell_meta = self.cell_meta.drop(index = remove_from_cell_meta)
@@ -1209,8 +1284,9 @@ class CassiopeiaTree:
         Args:
             dissimilarity_map: Dissimilarity map relating all N x N distances
                 between leaves.
+            
         """
-        character_matrix = self.__original_character_matrix
+        character_matrix = self.character_matrix
         if character_matrix is not None:
 
             if character_matrix.shape[0] != dissimilarity_map.shape[
@@ -1236,6 +1312,7 @@ class CassiopeiaTree:
             ]
         ] = None,
         prior_transformation: str = "negative_log",
+        layer: Optiona[str] = None,
     ) -> None:
         """Computes a dissimilarity map.
 
@@ -1254,14 +1331,19 @@ class CassiopeiaTree:
                     "inverse": Transforms each probability p by taking 1/p
                     "square_root_inverse": Transforms each probability by the
                         the square root of 1/p
+            layer: Character matrix layer to use. If not specified, use the
+                default :attr:`character_matrix`.
         """
 
-        if self.__current_character_matrix is None:
+        if layer is not None:
+            character_matrix = self.layers[layer]
+        else:
+            character_matrix = self.character_matrix
+
+        if character_matrix is None:
             raise CassiopeiaTreeError(
                 "No character matrix is detected in this tree."
             )
-
-        character_matrix = self.get_current_character_matrix()
 
         weights = None
         if self.priors:
