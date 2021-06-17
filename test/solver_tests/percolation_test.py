@@ -75,7 +75,9 @@ class PercolationSolverTest(unittest.TestCase):
         T = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8", "9"])
+        expected_tree.add_nodes_from(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8", "9"]
+        )
         expected_tree.add_edges_from(
             [
                 ("6", "7"),
@@ -90,7 +92,9 @@ class PercolationSolverTest(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
@@ -259,4 +263,3 @@ class PercolationSolverTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-    

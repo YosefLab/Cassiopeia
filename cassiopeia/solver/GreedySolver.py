@@ -1,6 +1,6 @@
 """
 This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
-represents the structure of top-down algorithms that build the reconstructed 
+represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
 import logging
@@ -149,8 +149,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
+        duplicates_tree = self.__add_duplicates_to_tree(
+            cassiopeia_tree.get_tree_topology(),
+            character_matrix,
+            node_name_generator,
+        )
         cassiopeia_tree.populate_tree(duplicates_tree)
 
     def compute_mutation_frequencies(
@@ -189,7 +195,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 

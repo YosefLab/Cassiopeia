@@ -13,6 +13,7 @@ from cassiopeia.solver import (
     solver_utilities,
 )
 
+
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     The PercolationSolver implements a top-down algorithm that recursively
@@ -67,7 +68,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 float,
             ]
         ] = dissimilarity_functions.hamming_similarity_without_missing,
-        threshold: Optional[int] = 0
+        threshold: Optional[int] = 0,
     ):
 
         super().__init__(prior_transformation)
@@ -169,8 +170,14 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
+        duplicates_tree = self.__add_duplicates_to_tree(
+            cassiopeia_tree.get_tree_topology(),
+            character_matrix,
+            node_name_generator,
+        )
         cassiopeia_tree.populate_tree(duplicates_tree)
 
     def percolate(
@@ -309,7 +316,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         return partition_named
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None]
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
         Places samples removed in removing duplicates in the tree as sisters

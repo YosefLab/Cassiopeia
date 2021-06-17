@@ -24,9 +24,9 @@ class LeafSubsampler(abc.ABC):
     """
     Abstract base class for all leaf samplers.
 
-    A LeafSubsampler implements a method 'subsample_leaves' which, given a 
-    tree, generates a sample of the observed leaves in that tree and returns a 
-    new tree which is the induced subtree (tree containing only lineages that 
+    A LeafSubsampler implements a method 'subsample_leaves' which, given a
+    tree, generates a sample of the observed leaves in that tree and returns a
+    new tree which is the induced subtree (tree containing only lineages that
     contain a sampled leaf) of the original tree on that sample.
     """
 
@@ -37,13 +37,13 @@ class LeafSubsampler(abc.ABC):
 
         Returns a new CassiopeiaTree which is the result of subsampling the
         leaves in the original CassiopeiaTree and removing ancestral nodes no
-        longer relevant to the sample. All fields on the original character 
-        matrix persist, but maintains character states, meta data, and the 
+        longer relevant to the sample. All fields on the original character
+        matrix persist, but maintains character states, meta data, and the
         dissimilarity map for the sampled cells only.
 
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
-        
+
         Returns:
             A new CassiopeiaTree that is the induced subtree on a sample of the
             leaves in the given tree.
