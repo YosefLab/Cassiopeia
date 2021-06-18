@@ -44,7 +44,7 @@ def convert_fastqs_to_unmapped_bam(
     chemistry: Literal["10xv3", "slideseq2"],
     output_directory: str,
     name: Optional[str] = None,
-    n_threads: int: 1,
+    n_threads: int = 1,
 ) -> str:
     """Converts FASTQs into an unmapped BAM based on a chemistry.
 
