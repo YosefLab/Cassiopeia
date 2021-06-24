@@ -153,7 +153,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        cassiopeia_tree.populate_tree(tree)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
