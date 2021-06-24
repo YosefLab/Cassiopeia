@@ -241,7 +241,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
         """
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         rooted_character_matrix = character_matrix.copy()
 
         root = [0] * rooted_character_matrix.shape[1]

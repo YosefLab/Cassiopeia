@@ -12,7 +12,7 @@ and delete entries using canonical commands.
 This data structure is inspired by AnnData's layer functionality for scRNA-seq
 count matrices. Much of the code and logic is derived from the AnnData project.
 """
-from typing import List, Mapping, Optional
+from typing import Iterator, List, Mapping, Optional
 
 import pandas as pd
 
@@ -37,7 +37,7 @@ class Layers(dict):
         return list(self.keys())
 
     def copy(self):
-        d = Layers(self.parent)
+        d = Layers(self._parent)
         for k, v in self.items():
             d[k] = v.copy()
         return d
@@ -64,10 +64,10 @@ class Layers(dict):
     def _validate_value(self, val: pd.DataFrame, key: str) -> pd.DataFrame:
         """Checks passed value for correct structure."""
     
-        if val.shape[0] != self.parent.n_cell:
+        if val.shape[0] != self._parent.n_cell:
             raise ValueError(
                 f"Value passed ofr key {key!r} is of incorrect shape. " 
                 f"Values of {self.attrname} must have the same number of samples "
                 f"as the tree. Value had {val.shape[0]} while it should have had " 
-                f"{self.parent.n_cell} samples.")
+                f"{self._parent.n_cell} samples.")
         return val

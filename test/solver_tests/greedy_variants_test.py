@@ -28,7 +28,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         sgsolver = SpectralGreedySolver()
 
-        character_matrix = sg_tree.get_original_character_matrix()
+        character_matrix = sg_tree.character_matrix.copy()
         unique_cm = character_matrix.drop_duplicates()
 
         left, right = sgsolver.perform_split(unique_cm, unique_cm.index)

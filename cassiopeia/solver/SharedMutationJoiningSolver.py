@@ -96,7 +96,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         node_name_generator = solver_utilities.node_name_generator()
 
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(

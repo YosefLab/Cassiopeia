@@ -113,7 +113,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         node_name_generator = solver_utilities.node_name_generator()
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -280,7 +280,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             subproblem_tree.add_edge(root, samples[0])
             return subproblem_tree, root
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(

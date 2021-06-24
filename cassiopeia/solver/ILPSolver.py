@@ -118,7 +118,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # setup logfile config
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None

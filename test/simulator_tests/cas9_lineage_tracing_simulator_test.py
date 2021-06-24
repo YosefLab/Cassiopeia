@@ -283,7 +283,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         self.basic_lineage_tracing_data_simulator.overlay_data(self.basic_tree)
 
-        character_matrix = self.basic_tree.get_original_character_matrix()
+        character_matrix = self.basic_tree.character_matrix
 
         self.assertEqual(9, character_matrix.shape[1])
         self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
@@ -332,7 +332,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         self.basic_lineage_tracing_no_resection.overlay_data(self.basic_tree)
 
-        character_matrix = self.basic_tree.get_original_character_matrix()
+        character_matrix = self.basic_tree.character_matrix
 
         self.assertEqual(9, character_matrix.shape[1])
         self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])
@@ -385,7 +385,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             10, len(self.lineage_tracing_data_simulator_state_distribution.mutation_priors)
         )
 
-        character_matrix = self.basic_tree.get_original_character_matrix()
+        character_matrix = self.basic_tree.character_matrix
 
         self.assertEqual(9, character_matrix.shape[1])
         self.assertEqual(len(self.basic_tree.leaves), character_matrix.shape[0])

@@ -71,7 +71,7 @@ class MaxCutSolverTest(unittest.TestCase):
         self.mcsolver = MaxCutSolver()
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
         self.mutation_frequencies = self.mcsolver.compute_mutation_frequencies(
             unique_character_matrix.index, unique_character_matrix, -1
@@ -86,7 +86,7 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_evaluate_cut(self):
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(
@@ -101,7 +101,7 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_graph_construction(self):
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(
@@ -122,7 +122,7 @@ class MaxCutSolverTest(unittest.TestCase):
         weights = {0: {4: 1, 5: 2}, 1: {4: 2}, 2: {1: 1, 3: 1}}
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(

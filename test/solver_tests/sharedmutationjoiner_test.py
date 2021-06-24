@@ -129,7 +129,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         self.assertIn((node_i, node_j), [("a", "b"), ("b", "a")])
 
     def test_create_similarity_map(self):
-        character_matrix = self.pp_tree_priors.get_current_character_matrix()
+        character_matrix = self.pp_tree_priors.character_matrix.copy()
         weights = solver_utilities.transform_priors(
             self.pp_tree_priors.priors, "negative_log"
         )
@@ -166,7 +166,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             numba.types.DictType(numba.types.int64, numba.types.float64),
         )
 
-        cm = self.basic_tree.get_current_character_matrix()
+        cm = self.basic_tree.character_matrix.copy()
         delta = self.basic_similarity_map
 
         cherry = self.smj_solver.find_cherry(delta.values)
@@ -253,11 +253,11 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
                     self.basic_similarity_map.loc[i, j],
                     self.basic_tree.get_dissimilarity_map().loc[i, j],
                 )
-        for i in self.basic_tree.get_current_character_matrix().index:
-            for j in self.basic_tree.get_current_character_matrix().columns:
+        for i in self.basic_tree.character_matrix.index:
+            for j in self.basic_tree.character_matrix.columns:
                 self.assertEqual(
                     cm.loc[i, j],
-                    self.basic_tree.get_current_character_matrix().loc[i, j],
+                    self.basic_tree.character_matrix.loc[i, j],
                 )
 
         # test leaves exist in tree
@@ -354,11 +354,11 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
         self.assertIsNone(self.pp_tree.get_dissimilarity_map())
-        for i in self.pp_tree.get_current_character_matrix().index:
-            for j in self.pp_tree.get_current_character_matrix().columns:
+        for i in self.pp_tree.character_matrix.index:
+            for j in self.pp_tree.character_matrix.columns:
                 self.assertEqual(
                     pp_cm.loc[i, j],
-                    self.pp_tree.get_current_character_matrix().loc[i, j],
+                    self.pp_tree.character_matrix.loc[i, j],
                 )
 
         expected_tree = nx.DiGraph()

@@ -132,7 +132,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()

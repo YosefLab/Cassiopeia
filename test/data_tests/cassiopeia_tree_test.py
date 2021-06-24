@@ -497,32 +497,35 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree.initialize_character_states_at_leaves(self.character_matrix)
 
+        modified_character_matrix = tree.character_matrix.copy()
+        tree.layers['current'] = modified_character_matrix
+
         self.assertCountEqual(
             tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
         )
         self.assertCountEqual(tree.get_character_states("node0"), [])
-        tree.set_character_states("node0", [0, 0, 0, 0, 0, 0, 0, 0])
+        tree.set_character_states("node0", [0, 0, 0, 0, 0, 0, 0, 0], layer='current')
 
         self.assertCountEqual(
             tree.get_character_states("node0"), [0, 0, 0, 0, 0, 0, 0, 0]
         )
 
-        observed_character_matrix = tree.get_original_character_matrix()
+        observed_character_matrix = tree.character_matrix
         pd.testing.assert_frame_equal(
             observed_character_matrix, self.character_matrix
         )
 
-        tree.set_character_states("node5", [2, 0, 3, 0, 0, 0, 0, 0])
+        tree.set_character_states("node5", [2, 0, 3, 0, 0, 0, 0, 0], layer='current')
         self.assertCountEqual(
             tree.get_character_states("node5"), [2, 0, 3, 0, 0, 0, 0, 0]
         )
 
-        observed_character_matrix = tree.get_original_character_matrix()
+        observed_character_matrix = tree.character_matrix
         pd.testing.assert_frame_equal(
             observed_character_matrix, self.character_matrix
         )
 
-        observed_character_matrix = tree.get_current_character_matrix()
+        observed_character_matrix = tree.layers['current']
         expected_character_matrix = self.character_matrix.copy()
         expected_character_matrix.loc["node5"] = [2, 0, 3, 0, 0, 0, 0, 0]
         pd.testing.assert_frame_equal(
@@ -756,7 +759,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         cas_tree.set_dissimilarity_map(delta)
         cas_tree.remove_leaf_and_prune_lineage("node5")
 
-        self.assertEqual(set(cas_tree.get_current_character_matrix().index), set(["node3", "node4", "node6"]))
+        self.assertEqual(set(cas_tree.character_matrix.index), set(["node3", "node4", "node6"]))
         self.assertEqual(set(cas_tree.get_dissimilarity_map().index), set(["node3", "node4", "node6"]))
         self.assertEqual(set(cas_tree.get_dissimilarity_map().columns), set(["node3", "node4", "node6"]))
 

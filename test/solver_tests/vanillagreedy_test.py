@@ -28,7 +28,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver()
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c2", "c3", "c4"],
@@ -65,7 +65,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
 
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c3", "c4", "c5"],
@@ -167,7 +167,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
 
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
 
         left, right = vgsolver.perform_split(
