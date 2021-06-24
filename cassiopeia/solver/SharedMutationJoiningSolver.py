@@ -4,6 +4,7 @@ an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
 
+import cassiopeia
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import abc
@@ -76,7 +77,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.similarity_function = similarity_function
 
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
 
         The solver routine calculates an n x n similarity matrix of all
@@ -92,11 +93,17 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
-
-        character_matrix = cassiopeia_tree.character_matrix.copy()
+        
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+                character_matrix = cassiopeia_tree.character_matrix.copy()
+        
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(

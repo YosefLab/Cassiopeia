@@ -76,7 +76,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.threshold = threshold
         self.similarity_function = similarity_function
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree):
+    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None):
         """Implements a solving procedure for the Percolation Algorithm.
         The procedure recursively splits a set of samples to build a tree. At
         each partition of the samples produced by the percolation procedure,
@@ -87,9 +87,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         placed as sister nodes and the procedure terminates, generating a
         polytomy in the tree. This function will populate a tree inside the
         input CassiopeiaTree.
+
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
@@ -151,7 +154,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             priors = cassiopeia_tree.priors
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.character_matrix.copy()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -166,12 +172,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        cassiopeia_tree.populate_tree(tree)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
         duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
-        cassiopeia_tree.populate_tree(duplicates_tree)
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
     def percolate(
         self,
