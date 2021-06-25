@@ -3,7 +3,10 @@ Test SharedMutationJoiningSolver in Cassiopeia.solver.
 """
 import os
 import unittest
+import sys
+from functools import partial
 from typing import Dict, Optional
+from unittest import mock
 
 import itertools
 import networkx as nx
@@ -16,6 +19,7 @@ from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver.SharedMutationJoiningSolver import (
     SharedMutationJoiningSolver,
+    SharedMutationJoiningSolverWarning,
 )
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import solver_utilities
@@ -75,6 +79,12 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         self.smj_solver = SharedMutationJoiningSolver(
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing
         )
+        self.smj_solver_no_numba = SharedMutationJoiningSolver(
+            similarity_function=partial(
+                dissimilarity_functions.cluster_dissimilarity,
+                dissimilarity_functions.hamming_similarity_without_missing,
+            )
+        )
 
         # ---------------- Lineage Tracing NJ ----------------
 
@@ -120,6 +130,44 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         self.smj_solver_modified_pp = SharedMutationJoiningSolver(
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing
         )
+
+    def test_init(self):
+        # This should numbaize
+        solver = SharedMutationJoiningSolver(
+            similarity_function=dissimilarity_functions.hamming_similarity_without_missing
+        )
+        self.assertTrue(
+            isinstance(
+                solver.nb_similarity_function, numba.core.registry.CPUDispatcher
+            )
+        )
+        self.assertTrue(
+            isinstance(
+                solver._SharedMutationJoiningSolver__update_similarity_map,
+                numba.core.registry.CPUDispatcher,
+            )
+        )
+
+        # This shouldn't numbaize
+        with self.assertWarns(SharedMutationJoiningSolverWarning):
+            solver = SharedMutationJoiningSolver(
+                similarity_function=partial(
+                    dissimilarity_functions.cluster_dissimilarity,
+                    dissimilarity_functions.hamming_similarity_without_missing,
+                )
+            )
+            self.assertFalse(
+                isinstance(
+                    solver.nb_similarity_function,
+                    numba.core.registry.CPUDispatcher,
+                )
+            )
+            self.assertFalse(
+                isinstance(
+                    solver._SharedMutationJoiningSolver__update_similarity_map,
+                    numba.core.registry.CPUDispatcher,
+                )
+            )
 
     def test_find_cherry(self):
         cherry = self.smj_solver.find_cherry(self.basic_similarity_map.values)
@@ -234,6 +282,84 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
     def test_basic_solver(self):
 
         self.smj_solver.solve(self.basic_tree)
+
+        # test that the dissimilarity map and character matrix were not altered
+        cm = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2],
+                "b": [1, 1, 2],
+                "c": [2, 2, 2],
+                "d": [1, 1, 1],
+                "e": [0, 0, 0],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
+        for i in self.basic_similarity_map.index:
+            for j in self.basic_similarity_map.columns:
+                self.assertEqual(
+                    self.basic_similarity_map.loc[i, j],
+                    self.basic_tree.get_dissimilarity_map().loc[i, j],
+                )
+        for i in self.basic_tree.character_matrix.index:
+            for j in self.basic_tree.character_matrix.columns:
+                self.assertEqual(
+                    cm.loc[i, j],
+                    self.basic_tree.character_matrix.loc[i, j],
+                )
+
+        # test leaves exist in tree
+        _leaves = self.basic_tree.leaves
+
+        self.assertEqual(len(_leaves), self.basic_similarity_map.shape[0])
+        for _leaf in _leaves:
+            self.assertIn(_leaf, self.basic_similarity_map.index.values)
+
+        # test for expected number of edges
+        edges = list(self.basic_tree.edges)
+        self.assertEqual(len(edges), 8)
+
+        # test relationships between samples
+        expected_tree = nx.DiGraph()
+        expected_tree.add_nodes_from(
+            ["a", "b", "c", "d", "e", "5", "6", "7", "8"]
+        )
+        expected_tree.add_edges_from(
+            [
+                ("5", "a"),
+                ("5", "b"),
+                ("6", "5"),
+                ("6", "c"),
+                ("7", "d"),
+                ("7", "e"),
+                ("8", "6"),
+                ("8", "7"),
+            ]
+        )
+
+        T = self.basic_tree.get_tree_topology()
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, T)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # compare tree distances
+        T = T.to_undirected()
+        expected_tree = expected_tree.to_undirected()
+        for i in range(len(_leaves)):
+            sample1 = _leaves[i]
+            for j in range(i + 1, len(_leaves)):
+                sample2 = _leaves[j]
+                self.assertEqual(
+                    nx.shortest_path_length(T, sample1, sample2),
+                    nx.shortest_path_length(expected_tree, sample1, sample2),
+                )
+
+    def test_solver_no_numba(self):
+
+        self.smj_solver_no_numba.solve(self.basic_tree)
 
         # test that the dissimilarity map and character matrix were not altered
         cm = pd.DataFrame.from_dict(

@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple
 from cassiopeia.data import CassiopeiaTree
 
 
-def nCr(n:int , r:int) -> float:
+def nCr(n: int, r: int) -> float:
     """Computes nCr
 
     Args:
@@ -25,7 +25,8 @@ def nCr(n:int , r:int) -> float:
     if r > n or n < 0 or r < 0:
         return 0
     f = math.factorial
-    return f(n) // f(r) // f(n-r)
+    return f(n) // f(r) // f(n - r)
+
 
 def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     """Annotates tree depth at every node.
@@ -36,17 +37,19 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
 
     Args:
         tree: An ete3 Tree
-        
+
     Returns:
         A dictionary mapping depth to the list of nodes at that depth.
     """
 
     depth_to_nodes = defaultdict(list)
-    for n in tree.depth_first_traverse_nodes(source = tree.root, postorder=False):
+    for n in tree.depth_first_traverse_nodes(source=tree.root, postorder=False):
         if tree.is_root(n):
             tree.set_attribute(n, "depth", 0)
         else:
-            tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth") + 1)
+            tree.set_attribute(
+                n, "depth", tree.get_attribute(tree.parent(n), "depth") + 1
+            )
 
         depth_to_nodes[tree.get_attribute(n, "depth")].append(n)
 
@@ -56,9 +59,12 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
             number_of_leaves += len(tree.leaves_in_subtree(child))
             correction += nCr(len(tree.leaves_in_subtree(child)), 3)
 
-        tree.set_attribute(n, "number_of_triplets", nCr(number_of_leaves, 3) - correction)
+        tree.set_attribute(
+            n, "number_of_triplets", nCr(number_of_leaves, 3) - correction
+        )
 
     return depth_to_nodes
+
 
 def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
     """Infers the outgroup of a triplet from a CassioepiaTree.
@@ -95,13 +101,16 @@ def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
         out_group = i
     return out_group
 
+
 def sample_triplet_at_depth(
-    tree: CassiopeiaTree, depth: int, depth_to_nodes: Optional[Dict[int, List[str]]] = None,
+    tree: CassiopeiaTree,
+    depth: int,
+    depth_to_nodes: Optional[Dict[int, List[str]]] = None,
 ) -> Tuple[List[int], str]:
     """Samples a triplet at a given depth.
 
     Samples a triplet of leaves such that the depth of the LCA of the triplet
-    is at the specified depth. 
+    is at the specified depth.
 
     Args:
         tree: CassiopeiaTree
@@ -115,15 +124,22 @@ def sample_triplet_at_depth(
     """
 
     if depth_to_nodes is None:
-        candidate_nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == depth)
+        candidate_nodes = tree.filter_nodes(
+            lambda x: tree.get_attribute(x, "depth") == depth
+        )
     else:
         candidate_nodes = depth_to_nodes[depth]
 
-    total_triplets = sum([tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
+    total_triplets = sum(
+        [tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes]
+    )
 
     # sample a  node from this depth with probability proportional to the number
     # of triplets underneath it
-    probs = [tree.get_attribute(v, "number_of_triplets") / total_triplets for v in candidate_nodes]
+    probs = [
+        tree.get_attribute(v, "number_of_triplets") / total_triplets
+        for v in candidate_nodes
+    ]
     node = np.random.choice(candidate_nodes, size=1, replace=False, p=probs)[0]
 
     # Generate the probilities to sample each combination of 3 daughter clades

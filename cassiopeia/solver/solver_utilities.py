@@ -18,7 +18,7 @@ class PriorTransformationError(Exception):
 
 def node_name_generator() -> Generator[str, None, None]:
     """Generates unique node names for building the reconstructed tree.
-    
+
     Creates a generator object that produces unique node names by hashing
     timestamps.
 
@@ -27,7 +27,7 @@ def node_name_generator() -> Generator[str, None, None]:
     """
 
     while True:
-        k = str(time.time()).encode('utf-8')
+        k = str(time.time()).encode("utf-8")
         h = blake2b(key=k, digest_size=12)
         yield "cassiopeia_internal_node" + h.hexdigest()
 

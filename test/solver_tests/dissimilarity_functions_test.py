@@ -3,6 +3,7 @@ Tests for the dissimilarity functions that are supported by the DistanceSolver
 module.
 """
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -16,6 +17,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.s1 = np.array([0, 1, 0, -1, 1, 2])
         self.s2 = np.array([1, 1, 0, 0, 1, 3])
         self.all_missing = np.array([-1, -1, -1, -1, -1, -1])
+        self.ambiguous = [(0,), (-1, 0), (0,), (-1, 0), (1,), (1,)]
 
         self.priors = {
             0: {1: 0.5, 2: 0.5},
@@ -184,23 +186,29 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
     def test_hamming_similarity_normalized_identical(self):
 
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
-            self.s1, self.s1, -1
+        similarity = (
+            dissimilarity_functions.hamming_similarity_normalized_over_missing(
+                self.s1, self.s1, -1
+            )
         )
 
         self.assertEqual(similarity, 3 / 5)
 
     def test_hamming_similarity_normalized_no_priors(self):
 
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
-            self.s1, self.s2, -1
+        similarity = (
+            dissimilarity_functions.hamming_similarity_normalized_over_missing(
+                self.s1, self.s2, -1
+            )
         )
 
         self.assertEqual(similarity, 2 / 5)
 
     def test_hamming_similarity_normalized_priors(self):
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
-            self.s1, self.s2, -1, weights=self.nlweights
+        similarity = (
+            dissimilarity_functions.hamming_similarity_normalized_over_missing(
+                self.s1, self.s2, -1, weights=self.nlweights
+            )
         )
 
         expected_similarity = np.sum(
@@ -211,8 +219,10 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
     def test_hamming_similarity_normalized_all_missing(self):
 
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
-            self.s1, self.all_missing, -1, weights=self.nlweights
+        similarity = (
+            dissimilarity_functions.hamming_similarity_normalized_over_missing(
+                self.s1, self.all_missing, -1, weights=self.nlweights
+            )
         )
 
         self.assertEqual(similarity, 0)
@@ -251,6 +261,22 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
 
         self.assertEqual(similarity, 0)
+
+    def test_cluster_dissimilarity(self):
+        dissimilarity_function = (
+            dissimilarity_functions.weighted_hamming_distance
+        )
+        linkage_function = np.mean
+
+        result = dissimilarity_functions.cluster_dissimilarity(
+            dissimilarity_function,
+            self.s1,
+            self.ambiguous,
+            -1,
+            self.nlweights,
+            linkage_function,
+        )
+        np.testing.assert_almost_equal(result, 1.2544, decimal=4)
 
     def test_hamming_distance(self):
 

@@ -181,10 +181,12 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-            ["a", "b", "c", "d", "e"],
-            character_matrix,
-            self.pp_tree.missing_state_indicator,
+        mutation_frequencies = (
+            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+                ["a", "b", "c", "d", "e"],
+                character_matrix,
+                self.pp_tree.missing_state_indicator,
+            )
         )
 
         expected_dictionary = {

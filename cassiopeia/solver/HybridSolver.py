@@ -38,7 +38,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
-    starting with a top-down greedy algorithm until a predetermined criteria is 
+    starting with a top-down greedy algorithm until a predetermined criteria is
     reached at which point a more complex algorithm is used to reconstruct each
     subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver
     as it must have functions `find_split` and `perform_split`. The solver
@@ -178,8 +178,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(self.__tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        samples_tree = self.__append_sample_names(cassiopeia_tree.get_tree_topology(), character_matrix)
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
+        samples_tree = self.__append_sample_names(
+            cassiopeia_tree.get_tree_topology(), character_matrix
+        )
         cassiopeia_tree.populate_tree(samples_tree)
 
     def apply_top_solver(
@@ -241,7 +245,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         for clade in new_clades:
             child, new_subproblems = self.apply_top_solver(
-                character_matrix, clade, node_name_generator, weights, missing_state_indicator, root
+                character_matrix,
+                clade,
+                node_name_generator,
+                weights,
+                missing_state_indicator,
+                root,
             )
             self.__tree.add_edge(root, child)
 

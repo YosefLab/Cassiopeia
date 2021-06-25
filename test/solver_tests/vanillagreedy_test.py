@@ -134,12 +134,13 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_all_duplicates_base_case(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 0, 1, 2, 0], 
-                "c2": [5, 0, 1, 2, 0], 
+                "c1": [5, 0, 1, 2, 0],
+                "c2": [5, 0, 1, 2, 0],
                 "c3": [5, 0, 1, 2, 0],
-            },             
+            },
             orient="index",
-            columns=["a", "b", "c", "d", "e"])
+            columns=["a", "b", "c", "d", "e"],
+        )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()

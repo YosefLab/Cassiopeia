@@ -14,7 +14,9 @@ import cassiopeia as cas
 class TestTreeComparisons(unittest.TestCase):
     def setUp(self):
 
-        self.ground_truth_tree = cas.data.CassiopeiaTree(tree=nx.balanced_tree(2, 3, create_using=nx.DiGraph))
+        self.ground_truth_tree = cas.data.CassiopeiaTree(
+            tree=nx.balanced_tree(2, 3, create_using=nx.DiGraph)
+        )
 
         tree1 = nx.DiGraph()
         tree1.add_nodes_from([i for i in range(15)])
@@ -63,7 +65,9 @@ class TestTreeComparisons(unittest.TestCase):
                 (7, 17),
             ]
         )
-        self.multifurcating_ground_truth = cas.data.CassiopeiaTree(tree=multifurcating_ground_truth)
+        self.multifurcating_ground_truth = cas.data.CassiopeiaTree(
+            tree=multifurcating_ground_truth
+        )
 
         tree2 = nx.DiGraph()
         tree2.add_edges_from(
@@ -98,11 +102,15 @@ class TestTreeComparisons(unittest.TestCase):
 
     def test_out_group(self):
 
-        out_group = cas.critique.critique_utilities.get_outgroup(self.tree1, ("11", "14", "9"))
+        out_group = cas.critique.critique_utilities.get_outgroup(
+            self.tree1, ("11", "14", "9")
+        )
 
         self.assertEqual("9", out_group)
 
-        out_group = cas.critique.critique_utilities.get_outgroup(self.ground_truth_rake, ("4", "5", "6"))
+        out_group = cas.critique.critique_utilities.get_outgroup(
+            self.ground_truth_rake, ("4", "5", "6")
+        )
         self.assertEqual("None", out_group)
 
     def test_same_tree_gives_perfect_triplets_correct(self):
