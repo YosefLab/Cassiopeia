@@ -19,7 +19,7 @@ class TestPerfectBinaryTree(unittest.TestCase):
         newick = tree.get_newick()
         assert newick == "((3,4),(5,6));"
         self.assertDictEqual(
-            tree.get_times(), {0: 0, 1: 2, 2: 2, 3: 5, 4: 5, 5: 5, 6: 5}
+            tree.get_times(), {'0': 0, '1': 2, '2': 2, '3': 5, '4': 5, '5': 5, '6': 5}
         )
 
 
@@ -31,7 +31,7 @@ class TestPerfectBinaryTreeWithRootBranch(unittest.TestCase):
         newick = tree.get_newick()
         assert newick == "(((4,5),(6,7)));"
         self.assertDictEqual(
-            tree.get_times(), {0: 0, 1: 2, 2: 5, 3: 5, 4: 9, 5: 9, 6: 9, 7: 9}
+            tree.get_times(), {'0': 0, '1': 2, '2': 5, '3': 5, '4': 9, '5': 9, '6': 9, '7': 9}
         )
 
 

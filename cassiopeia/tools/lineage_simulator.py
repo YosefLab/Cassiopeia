@@ -66,7 +66,7 @@ class PerfectBinaryTree(LineageSimulator):
             )
         times = {}
         for node in tree.nodes:
-            times[node] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
+            times[str(node)] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
         res = CassiopeiaTree(tree=tree)
         res.set_times(times)
         return res
@@ -114,7 +114,7 @@ class PerfectBinaryTreeWithRootBranch(LineageSimulator):
             )
         times = {}
         for node in tree.nodes:
-            times[node] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
+            times[str(node)] = tree.nodes[0]["age"] - tree.nodes[node]["age"]
         res = CassiopeiaTree(tree=tree)
         res.set_times(times)
         return res
