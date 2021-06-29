@@ -49,7 +49,7 @@ class Layers(dict):
         value = self._validate_value(value, key)
         self._data[key] = value
 
-    def __delitem__(self, key:str):
+    def __delitem__(self, key: str):
         del self._data[key]
 
     def __contains__(self, key: str) -> bool:
@@ -66,8 +66,9 @@ class Layers(dict):
     
         if val.shape[0] != self._parent.n_cell:
             raise ValueError(
-                f"Value passed ofr key {key!r} is of incorrect shape. " 
-                f"Values of {self.attrname} must have the same number of samples "
-                f"as the tree. Value had {val.shape[0]} while it should have had " 
-                f"{self._parent.n_cell} samples.")
+                f"Value passed for key {key!r} is of incorrect shape. " 
+                f"Values of {self.attrname} must have the same number of "
+                f"samples as the tree. Value had {val.shape[0]} while it "
+                f"should have had {self._parent.n_cell} samples."
+            ) 
         return val

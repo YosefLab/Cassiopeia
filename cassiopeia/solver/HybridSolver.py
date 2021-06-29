@@ -8,8 +8,6 @@ infer relationships at the bottom of the phylogeny under construction.
 In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
-import cassiopeia
-import copy
 from typing import Dict, List, Generator, Optional, Tuple
 
 import multiprocessing

@@ -157,7 +157,7 @@ class CassiopeiaTree:
         Args:
             tree: A tree topology specified as a networkx DiGraph, a newick
                 string, or an ete3 Tree.
-            use_layer: Layer to use for character matrix. If this is None,
+            layer: Layer to use for character matrix. If this is None,
                 then the current `character_matrix` variable will be used.
         """
         if isinstance(tree, nx.DiGraph):
