@@ -180,7 +180,7 @@ class BirthProcess(LineageSimulator):
         tree_nx.add_edges_from(edges)
         times = {}
         for node in tree_nx.nodes:
-            times[node] = node_age[0] - node_age[node]
+            times[str(node)] = node_age[0] - node_age[node]
         tree = CassiopeiaTree(tree=tree_nx)
         tree.set_times(times)
         return tree
