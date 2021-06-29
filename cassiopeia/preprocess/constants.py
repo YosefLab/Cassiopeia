@@ -15,21 +15,25 @@ BAM_CONSTANTS = {
     "LOW_Q": 10,
 }
 
+SINGLE_CELL_BAM_TAGS = {
+    "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+    "cell_barcode": (
+        BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+        BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+    ),
+}
+SPATIAL_BAM_TAGS = {
+    "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+    "spot_barcode": (
+        BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+        BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+    ),
+}
 CHEMISTRY_BAM_TAGS = {
-    "10xv3": {
-        "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
-        "cell_barcode": (
-            BAM_CONSTANTS["RAW_CELL_BC_TAG"],
-            BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
-        ),
-    },
-    "slideseq2": {
-        "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
-        "spot_barcode": (
-            BAM_CONSTANTS["RAW_CELL_BC_TAG"],
-            BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
-        ),
-    },
+    "dropseq": SINGLE_CELL_BAM_TAGS,
+    "10xv2": SINGLE_CELL_BAM_TAGS,
+    "10xv3": SINGLE_CELL_BAM_TAGS,
+    "slideseq2": SPATIAL_BAM_TAGS,
 }
 
 

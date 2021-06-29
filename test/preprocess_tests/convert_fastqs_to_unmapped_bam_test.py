@@ -25,6 +25,113 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             os.path.join(test_files_path, "slideseq2_2.fastq.gz"),
         ]
 
+    def test_dropseq(self):
+        # NOTE: using 10xv3 fastqs just for testing
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
+            self.fastq_10xv3_fps, "dropseq", tempfile.mkdtemp(), name="test"
+        )
+        with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+            alignments = list(f.fetch(until_eof=True))
+        self.assertEqual(2, len(alignments))
+        self.assertEqual(
+            [
+                "M03718:773:000000000-JKHP3:1:1101:18272:1693",
+                "M03718:773:000000000-JKHP3:1:1101:17963:1710",
+            ],
+            [al.query_name for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.sequence
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [al.query_sequence for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.qualities.string
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [
+                pysam.array_to_qualitystring(al.query_qualities)
+                for al in alignments
+            ],
+        )
+        self.assertEqual(
+            {
+                ("UR", "TACGCCAA"),
+                ("UY", "GGFECEE0"),
+                ("CR", "TACGTCATCTCC"),
+                ("CY", "1111AFAFFFBF"),
+                ("RG", "test"),
+            },
+            set(alignments[0].get_tags()),
+        )
+        self.assertEqual(
+            {
+                ("UR", "AAACATTC"),
+                ("UY", "FFGGBFGF"),
+                ("CR", "TTAGATCGTTAG"),
+                ("CY", "1>>11DFAFAAA"),
+                ("RG", "test"),
+            },
+            set(alignments[1].get_tags()),
+        )
+
+    def test_10xv2(self):
+        # NOTE: using 10xv3 fastqs just for testing
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
+            self.fastq_10xv3_fps, "10xv2", tempfile.mkdtemp(), name="test"
+        )
+        with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+            alignments = list(f.fetch(until_eof=True))
+        self.assertEqual(2, len(alignments))
+        self.assertEqual(
+            [
+                "M03718:773:000000000-JKHP3:1:1101:18272:1693",
+                "M03718:773:000000000-JKHP3:1:1101:17963:1710",
+            ],
+            [al.query_name for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.sequence
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [al.query_sequence for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.qualities.string
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [
+                pysam.array_to_qualitystring(al.query_qualities)
+                for al in alignments
+            ],
+        )
+        self.assertEqual(
+            {
+                ("UR", "CCAAAACAGT"),
+                ("UY", "CEE0C0BA0D"),
+                ("CR", "TACGTCATCTCCTACG"),
+                ("CY", "1111AFAFFFBFGGFE"),
+                ("RG", "test"),
+            },
+            set(alignments[0].get_tags()),
+        )
+        self.assertEqual(
+            {
+                ("UR", "ATTCCTGAGT"),
+                ("UY", "BFGFGFF10F"),
+                ("CR", "TTAGATCGTTAGAAAC"),
+                ("CY", "1>>11DFAFAAAFFGG"),
+                ("RG", "test"),
+            },
+            set(alignments[1].get_tags()),
+        )
+
+
     def test_10xv3(self):
         bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
             self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test"

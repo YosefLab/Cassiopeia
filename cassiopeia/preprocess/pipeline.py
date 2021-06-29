@@ -41,7 +41,7 @@ class PreprocessError(Exception):
 
 def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
-    chemistry: Literal["10xv3", "slideseq2"],
+    chemistry: Literal["dropseq", "10xv2", "10xv3", "slideseq2"],
     output_directory: str,
     name: Optional[str] = None,
     n_threads: int = 1,
@@ -57,8 +57,11 @@ def convert_fastqs_to_unmapped_bam(
             and the second contains cDNA. The FASTQs may be gzipped.
         chemistry: Sample-prep/sequencing chemistry used. The following
             chemistries are supported:
-            * 10xv3: 10x Genomics 3' version 3; correction performed
-            * slideseq2: Slide-seq version 2; no correction performed
+            * dropseq: Droplet-based scRNA-seq chemistry described in
+                Macosco et al. 2015.
+            * 10xv2: 10x Genomics 3' version 2
+            * 10xv3: 10x Genomics 3' version 3
+            * slideseq2: Slide-seq version 2
         output_directory: The output directory where the unmapped BAM will be
             written to. This directory must exist prior to calling this function.
         name: Name of the reads in the FASTQs. This name is set as the read group
