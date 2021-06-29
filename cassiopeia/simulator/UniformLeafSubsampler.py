@@ -12,7 +12,11 @@ import numpy as np
 from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import LeafSubsampler, LeafSubsamplerError, EmptySubtreeError
+from cassiopeia.simulator.LeafSubsampler import (
+    LeafSubsampler,
+    LeafSubsamplerError,
+    EmptySubtreeError,
+)
 
 
 class UniformLeafSubsampler(LeafSubsampler):
@@ -51,21 +55,23 @@ class UniformLeafSubsampler(LeafSubsampler):
         self.__number_of_leaves = number_of_leaves
         self.__sampling_probability = sampling_probability
 
-    def subsample_leaves(self, tree: CassiopeiaTree, collapse_source: str = None) -> CassiopeiaTree:
+    def subsample_leaves(
+        self, tree: CassiopeiaTree, collapse_source: str = None
+    ) -> CassiopeiaTree:
         """Uniformly subsample leaf samples of a given tree.
 
         Generates a uniform random sample on the leaves of the given
         CassiopeiaTree and returns a tree pruned to contain lineages relevant
-        to only leaves in the sample (the "induced subtree" on the sample). 
-        All fields on the original character matrix persist, but maintains 
+        to only leaves in the sample (the "induced subtree" on the sample).
+        All fields on the original character matrix persist, but maintains
         character states, meta data, and the dissimilarity map for the sampled
         cells only.
-        
+
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
-            collapse_source: The source node from which to collapse 
+            collapse_source: The source node from which to collapse
                 unifurcations
-            
+
         Returns:
             A new CassiopeiaTree that is the induced subtree on a sample of the
             leaves in the given tree.
@@ -118,9 +124,12 @@ class UniformLeafSubsampler(LeafSubsampler):
 
         if collapse_source is None:
             collapse_source = subsampled_tree.root
-        subsampled_tree.collapse_unifurcations(source = collapse_source)
+        subsampled_tree.collapse_unifurcations(source=collapse_source)
 
         # Copy and annotate branch lengths and times
-        subsampled_tree.set_times(dict([(node, tree.get_time(node)) for node in subsampled_tree.nodes]))
+        subsampled_tree.set_times(
+            dict(
+                [(node, tree.get_time(node)) for node in subsampled_tree.nodes]
+            )
+        )
         return subsampled_tree
-

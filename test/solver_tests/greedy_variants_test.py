@@ -13,8 +13,15 @@ from cassiopeia.solver import solver_utilities
 
 class GreedyVariantsTest(unittest.TestCase):
     def test_spectral_sparse_case(self):
-        cm = pd.DataFrame(
-            [[5, 3, 0, 0, 0], [0, 3, 4, 2, 1], [5, 0, 0, 0, 1], [5, 0, 4, 2, 0]]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
+                "c4": [5, 0, 4, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
 
         sg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
@@ -22,16 +29,14 @@ class GreedyVariantsTest(unittest.TestCase):
         sgsolver = SpectralGreedySolver()
 
         character_matrix = sg_tree.get_original_character_matrix()
-        unique_character_matrix = character_matrix.drop_duplicates()
+        unique_cm = character_matrix.drop_duplicates()
 
-        left, right = sgsolver.perform_split(
-            unique_character_matrix, list(range(4))
-        )
-        self.assertListEqual(left, [0, 2, 3])
-        self.assertListEqual(right, [1])
+        left, right = sgsolver.perform_split(unique_cm, unique_cm.index)
+        self.assertListEqual(left, ["c1", "c3", "c4"])
+        self.assertListEqual(right, ["c2"])
 
         sgsolver.solve(sg_tree)
-        expected_newick_string = "((0,3,2),1);"
+        expected_newick_string = "((c1,c4,c3),c2);"
         observed_newick_string = sg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 

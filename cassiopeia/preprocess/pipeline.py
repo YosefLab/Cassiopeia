@@ -4,21 +4,22 @@ data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
 
+from functools import partial
+import logging
 import os
+from pathlib import Path
 import time
-
 from typing import List, Optional, Tuple
 
 from Bio import SeqIO
-from functools import partial
-import logging
 import matplotlib.pyplot as plt
+import ngs_tools as ngs
 import numpy as np
 import pandas as pd
+import pysam
 from skbio import alignment
-
-from pathlib import Path
 from tqdm.auto import tqdm
+from typing_extensions import Literal
 
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
@@ -32,6 +33,137 @@ from cassiopeia.preprocess import utilities
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
+
+
+class PreprocessError(Exception):
+    pass
+
+
+def convert_fastqs_to_unmapped_bam(
+    fastq_fps: List[str],
+    chemistry: Literal["dropseq", "10xv2", "10xv3", "indropsv3", "slideseq2"],
+    output_directory: str,
+    name: Optional[str] = None,
+    n_threads: int = 1,
+) -> str:
+    """Converts FASTQs into an unmapped BAM based on a chemistry.
+
+    This function converts a set of FASTQs into an unmapped BAM with appropriate
+    BAM tags.
+
+    Args:
+        fastq_fps: List of paths to FASTQ files. Usually, this argument contains
+            two FASTQs, where the first contains the barcode and UMI sequences
+            and the second contains cDNA. The FASTQs may be gzipped.
+        chemistry: Sample-prep/sequencing chemistry used. The following
+            chemistries are supported:
+            * dropseq: Droplet-based scRNA-seq chemistry described in
+                Macosco et al. 2015
+            * 10xv2: 10x Genomics 3' version 2
+            * 10xv3: 10x Genomics 3' version 3
+            * indropsv3: inDrops version 3 by Zilionis et al. 2017
+            * slideseq2: Slide-seq version 2
+        output_directory: The output directory where the unmapped BAM will be
+            written to. This directory must exist prior to calling this function.
+        name: Name of the reads in the FASTQs. This name is set as the read group
+            name for the reads in the output BAM, as well as the filename prefix
+            of the output BAM. If not provided, a short random UUID is used as
+            the read group name, but not as the filename prefix of the BAM.
+        n_threads: Number of threads to use. Defaults to 1.
+
+    Returns:
+        Path to written BAM
+
+    Raises:
+        PreprocessError if the provided chemistry does not exist.
+    """
+    if chemistry not in constants.CHEMISTRY_BAM_TAGS:
+        raise PreprocessError(f"Unknown chemistry {chemistry}")
+
+    logging.info("Converting FASTQs to unmapped BAM...")
+    t0 = time.time()
+
+    tag_map = constants.CHEMISTRY_BAM_TAGS[chemistry]
+    bam_fp = os.path.join(
+        output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam"
+    )
+    ngs.fastq.fastqs_to_bam_with_chemistry(
+        fastq_fps,
+        ngs.chemistry.get_chemistry(chemistry),
+        tag_map,
+        bam_fp,
+        name=name,
+        show_progress=True,
+        n_threads=n_threads,
+    )
+    logging.info(f"Finished writing unmapped BAM in {time.time() - t0} s.")
+    return bam_fp
+
+
+def error_correct_barcodes(
+    bam_fp: str, output_directory: str, whitelist_fp: str, n_threads: int = 1
+) -> str:
+    """Error-correct barcodes in the input BAM.
+
+    The barcode correction procedure used in Cell Ranger by 10X Genomics is used.
+    https://kb.10xgenomics.com/hc/en-us/articles/115003822406-How-does-Cell-Ranger-correct-barcode-sequencing-errors
+
+    Args:
+        bam_fp: Input BAM filepath containing raw barcodes
+        output_directory: The output directory where the corrected BAM will be
+            written to. This directory must exist prior to calling this function.
+        whitelist_fp: Path to plaintext file containing barcode whitelist, one
+            barcode per line.
+        n_threads: Number of threads to use. Defaults to 1.
+
+    Todo:
+        Currently, the user must provide their own whitelist, and Cassiopeia
+        does not use any of the whitelists provided by the ngs-tools library.
+        At some point, we should update the pipeline so that if ngs-tools
+        provides a pre-packaged whitelists, it uses that for those chemistries.
+
+    Returns:
+        Path to corrected BAM
+    """
+    logging.info("Correcting barcodes to whitelist...")
+    t0 = time.time()
+
+    # Read whitelist
+    with open(whitelist_fp, "r") as f:
+        whitelist = [line.strip() for line in f if not line.isspace()]
+
+    # Extract all raw barcodes and their qualities
+    barcodes = []
+    qualities = []
+    with pysam.AlignmentFile(
+        bam_fp, "rb", check_sq=False, threads=n_threads
+    ) as f:
+        for read in f:
+            barcodes.append(read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_TAG"]))
+            qualities.append(
+                read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
+            )
+
+    # Correct
+    corrections = ngs.sequence.correct_sequences_to_whitelist(
+        barcodes, qualities, whitelist, show_progress=True, n_threads=n_threads
+    )
+
+    # Write corrected BAM
+    prefix, ext = os.path.splitext(os.path.basename(bam_fp))
+    corrected_fp = os.path.join(output_directory, f"{prefix}_corrected{ext}")
+    with pysam.AlignmentFile(
+        bam_fp, "rb", check_sq=False, threads=n_threads
+    ) as f_in:
+        with pysam.AlignmentFile(
+            corrected_fp, "wb", template=f_in, threads=n_threads
+        ) as f_out:
+            for i, read in enumerate(f_in):
+                if corrections[i]:
+                    read.set_tag(BAM_CONSTANTS["CELL_BC_TAG"], corrections[i])
+                f_out.write(read)
+    logging.info(f"Finished correcting barcodes in {time.time() - t0} s.")
+    return corrected_fp
 
 
 def collapse_umis(
@@ -81,9 +213,18 @@ def collapse_umis(
         + "_sorted.bam"
     )
 
+    cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
+    logging.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
+
     if not sorted_file_name.exists() and not skip_existing:
-        max_read_length, total_reads_out = UMI_utils.sort_cellranger_bam(
-            bam_fp, str(sorted_file_name)
+        max_read_length, total_reads_out = UMI_utils.sort_bam(
+            bam_fp,
+            str(sorted_file_name),
+            sort_key=lambda al: (
+                al.get_tag(cell_bc_tag),
+                al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
+            ),
+            filter_func=lambda al: al.has_tag(cell_bc_tag),
         )
         logging.info("Sorted bam directory saved to " + str(sorted_file_name))
         logging.info("Max read length of " + str(max_read_length))
@@ -92,7 +233,10 @@ def collapse_umis(
     collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
     if not collapsed_file_name.exists() and not skip_existing:
         UMI_utils.form_collapsed_clusters(
-            str(sorted_file_name), max_hq_mismatches, max_indels
+            str(sorted_file_name),
+            max_hq_mismatches,
+            max_indels,
+            cell_key=lambda al: al.get_tag(cell_bc_tag),
         )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
@@ -426,7 +570,6 @@ def call_alleles(
 
 def error_correct_umis(
     input_df: pd.DataFrame,
-    _id: str,
     max_umi_distance: int = 2,
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -438,7 +581,6 @@ def error_correct_umis(
 
     Args:
         input_df: Input DataFrame of alignments.
-        _id: Identification of sample.
         max_umi_distance: The threshold specifying the Maximum Hamming distance
             between UMIs for one to be corrected to another.
         verbose: Indicates whether to log every UMI correction.
@@ -489,7 +631,7 @@ def error_correct_umis(
         if verbose:
             logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
         allele_group, num_corr, tot = UMI_utils.correct_umis_in_group(
-            allele_group, _id, max_umi_distance
+            allele_group, max_umi_distance
         )
         num_corrected += num_corr
         total += tot

@@ -9,7 +9,7 @@ In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
 import copy
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Generator, Optional, Tuple
 
 import multiprocessing
 import networkx as nx
@@ -37,7 +37,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
-    starting with a top-down greedy algorithm until a predetermined criteria is 
+    starting with a top-down greedy algorithm until a predetermined criteria is
     reached at which point a more complex algorithm is used to reconstruct each
     subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver
     as it must have functions `find_split` and `perform_split`. The solver
@@ -111,6 +111,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 and priors for reconstruction.
             logfile: Location to log progress.
         """
+        node_name_generator = solver_utilities.node_name_generator()
 
         character_matrix = cassiopeia_tree.get_original_character_matrix()
         unique_character_matrix = character_matrix.drop_duplicates()
@@ -125,6 +126,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         _, subproblems = self.apply_top_solver(
             unique_character_matrix,
             list(unique_character_matrix.index),
+            node_name_generator,
             weights=weights,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
@@ -157,13 +159,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
             existing_nodes = [n for n in self.__tree]
-            unique_iter = root = len(self.__tree.nodes) + 1
 
             mapping = {}
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
-                    mapping[n] = unique_iter
-                    unique_iter += 1
+                    mapping[n] = next(node_name_generator)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
@@ -172,14 +172,19 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(self.__tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
-        samples_tree = self.__append_sample_names(cassiopeia_tree.get_tree_topology(), character_matrix)
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
+        samples_tree = self.__append_sample_names(
+            cassiopeia_tree.get_tree_topology(), character_matrix
+        )
         cassiopeia_tree.populate_tree(samples_tree)
 
     def apply_top_solver(
         self,
         character_matrix: pd.DataFrame,
         samples: List[str],
+        node_name_generator: Generator[str, None, None],
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
         root: Optional[int] = None,
@@ -209,7 +214,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
         )
 
-        root = len(self.__tree.nodes) + 1
+        root = next(node_name_generator)
 
         self.__tree.add_node(root)
         if len(clades) == 1:
@@ -234,7 +239,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         for clade in new_clades:
             child, new_subproblems = self.apply_top_solver(
-                character_matrix, clade, weights, missing_state_indicator, root
+                character_matrix,
+                clade,
+                node_name_generator,
+                weights,
+                missing_state_indicator,
+                root,
             )
             self.__tree.add_edge(root, child)
 

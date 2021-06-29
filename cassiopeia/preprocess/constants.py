@@ -3,14 +3,40 @@ Stores constants for the ProcessingPipeline module
 """
 
 BAM_CONSTANTS = {
+    "RAW_CELL_BC_TAG": "CR",
+    "RAW_CELL_BC_QUALITY_TAG": "CY",
     "CELL_BC_TAG": "CB",
     "UMI_TAG": "UR",
+    "UMI_QUALITY_TAG": "UY",
     "NUM_READS_TAG": "ZR",
     "CLUSTER_ID_TAG": "ZC",
     "N_Q": 2,
     "HIGH_Q": 31,
     "LOW_Q": 10,
 }
+
+SINGLE_CELL_BAM_TAGS = {
+    "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+    "cell_barcode": (
+        BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+        BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+    ),
+}
+SPATIAL_BAM_TAGS = {
+    "umi": (BAM_CONSTANTS["UMI_TAG"], BAM_CONSTANTS["UMI_QUALITY_TAG"]),
+    "spot_barcode": (
+        BAM_CONSTANTS["RAW_CELL_BC_TAG"],
+        BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"],
+    ),
+}
+CHEMISTRY_BAM_TAGS = {
+    "dropseq": SINGLE_CELL_BAM_TAGS,
+    "10xv2": SINGLE_CELL_BAM_TAGS,
+    "10xv3": SINGLE_CELL_BAM_TAGS,
+    "indropsv3": SINGLE_CELL_BAM_TAGS,
+    "slideseq2": SPATIAL_BAM_TAGS,
+}
+
 
 DNA_SUBSTITUTION_MATRIX = {
     "A": {"A": 5, "T": -4, "C": -4, "G": -4, "Z": 0, "N": 0},
@@ -22,8 +48,10 @@ DNA_SUBSTITUTION_MATRIX = {
 }
 
 DEFAULT_PIPELINE_PARAMETERS = {
-    "general": {"entry": "'collapse'", "exit": "'call_lineages'"},
-    "collapse": {"max_hq_mismatches": 3, "max_indels": 2, "force_sort": True},
+    "general": {"entry": "'convert'", "exit": "'call_lineages'"},
+    "convert": {},
+    "error_correct_barcodes": {},
+    "collapse": {"max_hq_mismatches": 3, "max_indels": 2},
     "resolve": {
         "min_avg_reads_per_umi": 2.0,
         "min_umi_per_cell": 10,
@@ -37,8 +65,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "context": True,
         "context_size": 5,
     },
-    "error_correct": {
-        "_id": "'batch1'",
+    "error_correct_umis": {
         "max_umi_distance": 2,
         "verbose": False,
     },

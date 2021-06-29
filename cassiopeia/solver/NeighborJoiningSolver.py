@@ -16,6 +16,7 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     DistanceSolver,
     dissimilarity_functions,
+    solver_utilities,
 )
 
 
@@ -217,13 +218,12 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                0.5
-                * (
-                    dissimilarity_map[v, cherry_i]
-                    + dissimilarity_map[v, cherry_j]
-                    - dissimilarity_map[cherry_i, cherry_j]
-                )
+            updated_map[v, new_node_index] = updated_map[
+                new_node_index, v
+            ] = 0.5 * (
+                dissimilarity_map[v, cherry_i]
+                + dissimilarity_map[v, cherry_j]
+                - dissimilarity_map[cherry_i, cherry_j]
             )
 
         updated_map[new_node_index, new_node_index] = 0
@@ -236,17 +236,19 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         By default, the NeighborJoining algorithm returns an unrooted tree.
         To root this tree, an implicit root of all zeros is added to the
         character matrix. Then, the dissimilarity map is recalculated using
-        the updated character matrix.
+        the updated character matrix. If the tree already has a computed
+        dissimilarity map, only the new dissimilarities are calculated.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
         """
         character_matrix = cassiopeia_tree.get_current_character_matrix()
+        rooted_character_matrix = character_matrix.copy()
 
-        root = [0] * character_matrix.shape[1]
-        character_matrix.loc["root"] = root
+        root = [0] * rooted_character_matrix.shape[1]
+        rooted_character_matrix.loc["root"] = root
         cassiopeia_tree.root_sample_name = "root"
-        cassiopeia_tree.set_character_matrix(character_matrix)
+        cassiopeia_tree.set_character_matrix(rooted_character_matrix)
 
         if self.dissimilarity_function is None:
             raise DistanceSolver.DistanceSolverError(
@@ -254,6 +256,25 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 "root, or specify an explicit root"
             )
 
-        cassiopeia_tree.compute_dissimilarity_map(
-            self.dissimilarity_function, self.prior_transformation
-        )
+        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+        if dissimilarity_map is None:
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
+            )
+        else:
+            dissimilarity = {"root": 0}
+            for leaf in character_matrix.index:
+                weights = None
+                if cassiopeia_tree.priors:
+                    weights = solver_utilities.transform_priors(
+                        cassiopeia_tree.priors, self.prior_transformation
+                    )
+                dissimilarity[leaf] = self.dissimilarity_function(
+                    rooted_character_matrix.loc["root"].values,
+                    rooted_character_matrix.loc[leaf].values,
+                    cassiopeia_tree.missing_state_indicator,
+                    weights,
+                )
+            cassiopeia_tree.set_dissimilarity("root", dissimilarity)
+
+        cassiopeia_tree.set_character_matrix(character_matrix)

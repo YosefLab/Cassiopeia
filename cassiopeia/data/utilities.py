@@ -2,21 +2,30 @@
 General utilities for the datasets encountered in Cassiopeia.
 """
 import copy
+import collections
 from queue import PriorityQueue
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
+import warnings
 
 import ete3
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-import re
 
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
+# Can't import from CassiopeiaTree.py due to circular imports
+class CassiopeiaTreeWarning(UserWarning):
+    """A Warning for the CassiopeiaTree class."""
+
+    pass
+
+
 def get_lca_characters(
-    vecs: List[List[int]], missing_state_indicator: int
+    vecs: List[Union[List[int], List[Tuple[int, ...]]]],
+    missing_state_indicator: int,
 ) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
@@ -38,7 +47,12 @@ def get_lca_characters(
         assert len(i) == k
     lca_vec = [0] * len(vecs[0])
     for i in range(k):
-        chars = set([vec[i] for vec in vecs])
+        chars = set()
+        for vec in vecs:
+            if is_ambiguous_state(vec[i]):
+                chars = chars.union(vec[i])
+            else:
+                chars.add(vec[i])
         if len(chars) == 1:
             lca_vec[i] = list(chars)[0]
         else:
@@ -107,11 +121,11 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
     def _to_newick_str(g, node):
         is_leaf = g.out_degree(node) == 0
         weight_string = ""
-        
+
         if record_branch_lengths and g.in_degree(node) > 0:
             parent = list(g.predecessors(node))[0]
             weight_string = ":" + str(g[parent][node]["length"])
-            
+
         _name = str(node)
         return (
             "%s" % (_name,) + weight_string
@@ -121,7 +135,8 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
                 + ",".join(
                     _to_newick_str(g, child) for child in g.successors(node)
                 )
-                + ")" + weight_string
+                + ")"
+                + weight_string
             )
         )
 
@@ -150,8 +165,20 @@ def compute_dissimilarity_map(
     Returns:
         A dissimilarity mapping as a flattened array.
     """
-
-    nb_dissimilarity = numba.jit(dissimilarity_function, nopython=True)
+    # Try to numbaize the dissimilarity function, but fallback to python
+    numbaize = True
+    try:
+        dissimilarity_func = numba.jit(dissimilarity_function, nopython=True)
+    # When cluster_dissimilarity is used, the dissimilarity_function is wrapped
+    # in a partial, which raises a TypeError when trying to numbaize.
+    except TypeError:
+        warnings.warn(
+            "Failed to numbaize dissimilarity function. "
+            "Falling back to Python.",
+            CassiopeiaTreeWarning,
+        )
+        numbaize = False
+        dissimilarity_func = dissimilarity_function
 
     nb_weights = numba.typed.Dict.empty(
         numba.types.int64,
@@ -167,22 +194,29 @@ def compute_dissimilarity_map(
                 nb_char_weights[state] = prior
             nb_weights[k] = nb_char_weights
 
-    @numba.jit(nopython=True)
     def _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights):
 
-        dm = np.zeros(C * (C - 1) // 2, dtype=numba.float64)
+        dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
         k = 0
         for i in range(C - 1):
             for j in range(i + 1, C):
 
                 s1 = cm[i, :]
                 s2 = cm[j, :]
-                dm[k] = nb_dissimilarity(
+                dm[k] = dissimilarity_func(
                     s1, s2, missing_state_indicator, nb_weights
                 )
                 k += 1
 
         return dm
+
+    # Don't numbaize _compute_dissimilarity_map when we failed to numbaize
+    # the dissimilarity function. Otherwise, if we try to call a Python
+    # function from a numbaized (in object mode) a LOT of warnings are raised.
+    if numbaize:
+        _compute_dissimilarity_map = numba.jit(
+            _compute_dissimilarity_map, nopython=True
+        )
 
     return _compute_dissimilarity_map(
         cm, C, missing_state_indicator, nb_weights
@@ -283,8 +317,10 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
-        allele_table, cut_sites
+    lineage_profile = (
+        preprocessing_utilities.convert_alleletable_to_lineage_profile(
+            allele_table, cut_sites
+        )
     )
 
     intbcs = allele_table["intBC"].unique()
@@ -419,3 +455,37 @@ def _dfs_subtree_sizes(tree, subtree_sizes, v) -> int:
         res += _dfs_subtree_sizes(tree, subtree_sizes, child)
     subtree_sizes[v] = res
     return res
+
+
+def is_ambiguous_state(state: Union[int, Tuple[int, ...]]) -> bool:
+    """Determine whether the provided state is ambiguous.
+
+    Note that this function operates on a single (indel) state.
+
+    Args:
+        state: Single, possibly ambiguous, character state
+
+    Returns:
+        True if the state is ambiguous, False otherwise.
+    """
+    return isinstance(state, tuple)
+
+
+def resolve_most_abundant(state: Tuple[int, ...]) -> int:
+    """Resolve an ambiguous character by selecting the most abundant.
+
+    This function is designed to be used with
+    :func:`CassiopeiaTree.resolve_ambiguous_characters`. It resolves an ambiguous
+    character, represented as a tuple of integers, by selecting the most abundant,
+    where ties are resolved randomly.
+
+    Args:
+        state: Ambiguous state as a tuple of integers
+
+    Returns:
+        Selected state as a single integer
+    """
+    most_common = collections.Counter(state).most_common()
+    return np.random.choice(
+        [state for state, count in most_common if count == most_common[0][1]]
+    )

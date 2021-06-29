@@ -23,8 +23,7 @@ from cassiopeia.preprocess import utilities
 
 
 class iTOLError(Exception):
-    """Raises errors related to iTOL plotting
-    """
+    """Raises errors related to iTOL plotting"""
 
     pass
 
@@ -47,7 +46,7 @@ def upload_and_export_itol(
     random_state: Optional[np.random.RandomState] = None,
     user_dataset_files: Optional[List[str]] = None,
     verbose: bool = True,
-    **kwargs
+    **kwargs,
 ):
     """Uploads a tree to iTOL and exports it.
 
@@ -110,7 +109,7 @@ def upload_and_export_itol(
     # create temporary directory for storing files we'll upload to iTOL
     temporary_directory = tempfile.mkdtemp()
 
-    if (api_key is None or project_name is None):
+    if api_key is None or project_name is None:
         if os.path.exists(os.path.expanduser(itol_config)):
 
             config = configparser.ConfigParser()
@@ -131,7 +130,7 @@ def upload_and_export_itol(
             )
 
     with open(os.path.join(temporary_directory, "tree_to_plot.tree"), "w") as f:
-        f.write(cassiopeia_tree.get_newick(record_branch_lengths = True))
+        f.write(cassiopeia_tree.get_newick(record_branch_lengths=True))
 
     file_format = export_filepath.split("/")[-1].split(".")[-1]
 
@@ -284,7 +283,7 @@ def create_gradient_from_df(
         f"COLOR_MAX\t{color_max}",
         "MARGIN\t100",
         f"DATASET_LABEL\t{df.name}",
-        "STRIP_WIDTH\t50",
+        "STRIP_WIDTH\t100",
         "SHOW_INTERNAL\t0",
         "DATA",
         "",

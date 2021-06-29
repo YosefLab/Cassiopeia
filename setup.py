@@ -5,6 +5,7 @@ from setuptools import setup, Extension, find_packages
 from setuptools import find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
+import numpy
 
 
 with open("README.md") as readme_file:
@@ -12,27 +13,26 @@ with open("README.md") as readme_file:
 
 
 requirements = [
-    "numpy > 1.17",
-    "matplotlib >= 2.2.2",
-    "pandas >= 0.22.0",
-    "networkx >= 2.5",
-    "tqdm >= 4",
-    # "gurobipy",
-    "ete3 >= 3.1.1",
-    "argparse >= 1.1",
-    "Biopython >= 1.71",
-    "pathlib",
-    "pandas-charm >= 0.1.3",
-    "pysam >= 0.14.1",
-    "bokeh >= 0.12.15",
-    "PyYAML >= 3.12",
-    "cython >= 0.29.2",
-    "scipy >= 1.2.0",
-    "python-Levenshtein",
-    "nbconvert >= 5.4.0",
-    "nbformat >= 4.4.0",
+    "Biopython>=1.71",
+    "bokeh>=0.12.15",
+    "cython>=0.29.2",
+    "ete3>=3.1.1",
     "hits",
-    "scikit-bio >= 0.5.6",
+    "matplotlib>=2.2.2",
+    "nbconvert>=5.4.0",
+    "nbformat>=4.4.0",
+    "networkx>=2.5",
+    "ngs-tools>=1.4.0",
+    "numba>=0.51.0",
+    "numpy>=1.19.5",
+    "pandas>=1.1.4",
+    "pysam>=0.14.1",
+    "python-Levenshtein",
+    "PyYAML>=3.12",
+    "scikit-bio>=0.5.6",
+    "scipy>=1.2.0",
+    "typing-extensions>=3.7.4",
+    "tqdm>=4",
     "ray",
 ]
 
@@ -58,17 +58,24 @@ to_cythonize = [
     Extension(
         "cassiopeia.solver.ilp_solver_utilities",
         ["cassiopeia/solver/ilp_solver_utilities.pyx"],
+        include_dirs=[numpy.get_include()],
     ),
 ]
 
 
 setup(
     name="cassiopeia-lineage",
-    ext_modules=cythonize(to_cythonize),
+    python_requires='>=3.6',
+    ext_modules=cythonize(
+            to_cythonize,
+            compiler_directives={'language_level' : "3"}
+    ),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
-    entry_points={"console_scripts": ["scLT = cassiopeia.__main__:main"]},
+    entry_points={"console_scripts": [
+        "cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main",
+    ]},
     author_email="mattjones315@berkeley.edu",
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -91,5 +98,5 @@ setup(
     version="1.0.4",
     zip_safe=False,
     test_suite="nose.collector",
-    test_require=["nose"],
+    tests_require=["nose"],
 )

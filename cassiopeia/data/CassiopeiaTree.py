@@ -6,14 +6,15 @@ clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
 associated with this clonal  population.
 
-When a solver has been called on this object, a tree will be added to the data 
-structure at which point basic properties can be queried like the average tree 
+When a solver has been called on this object, a tree will be added to the data
+structure at which point basic properties can be queried like the average tree
 depth or agreement between character states and phylogeny.
 
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
+import itertools
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 import warnings
 
@@ -58,7 +59,7 @@ class CassiopeiaTree:
     track both an unmodified version of the character matrix (obtainable via
     the `get_original_character_matrix` method) that does not maintain
     consistency with the character states of the leaves, and a working character
-    matrix (obtainable via the `get_modified_character_matrix` method) that
+    matrix (obtainable via the `get_current_character_matrix` method) that
     is updated when the character states of leaves are changed.
 
     Some reconstruction algorithms will make use of dissimilarities between
@@ -83,6 +84,8 @@ class CassiopeiaTree:
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
+    TODO(Lioscro): Add support for a tree to hold multiple character matrices,
+        similar to "layers" of an AnnData object.
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -149,18 +152,25 @@ class CassiopeiaTree:
                 "Please pass an ete3 Tree, a newick string, or a Networkx object."
             )
 
+        # enforce all names to be strings
+        rename_dictionary = {}
+        for n in self.__network.nodes:
+            rename_dictionary[n] = str(n)
+
+        self.__network = nx.relabel_nodes(self.__network, rename_dictionary)
+
         # clear cache if we're changing the topology of the tree
         self.__cache = {}
 
         # add character states
         for n in self.nodes:
             if (
-                self.__original_character_matrix is not None
-                and n in self.__original_character_matrix.index.tolist()
+                self.__current_character_matrix is not None
+                and n in self.__current_character_matrix.index.tolist()
             ):
                 self.__network.nodes[n][
                     "character_states"
-                ] = self.__original_character_matrix.loc[n].to_list()
+                ] = self.__current_character_matrix.loc[n].to_list()
             else:
                 self.__network.nodes[n]["character_states"] = []
 
@@ -181,6 +191,11 @@ class CassiopeiaTree:
 
     def set_character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object."""
+
+        if not all(type(i) == str for i in character_matrix.index):
+            raise CassiopeiaTreeError(
+                "Index of character matrix must consist" " of strings."
+            )
 
         self.__original_character_matrix = character_matrix.copy()
         self.__current_character_matrix = character_matrix.copy()
@@ -214,7 +229,7 @@ class CassiopeiaTree:
 
         if set(self.leaves) != set(character_matrix.index.values):
             raise CassiopeiaTreeError(
-                "Character matrix does not account for all the leaves."
+                "Character matrix index does not match set of leaves."
             )
 
         for n in self.leaves:
@@ -305,13 +320,13 @@ class CassiopeiaTree:
             CassiopeiaTreeError if the object is empty (i.e. no tree or
             character matrix).
         """
-        if self.__original_character_matrix is None:
+        if self.__current_character_matrix is None:
             if self.__network is None:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
             return len(self.leaves)
-        return self.__original_character_matrix.shape[0]
+        return self.__current_character_matrix.shape[0]
 
     @property
     def n_character(self) -> int:
@@ -322,7 +337,7 @@ class CassiopeiaTree:
             character matrix) or if the character states have not been
             initialized.
         """
-        if self.__original_character_matrix is None:
+        if self.__current_character_matrix is None:
             if self.__network is None:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
@@ -332,7 +347,7 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError(
                 "Character states have not been initialized."
             )
-        return self.__original_character_matrix.shape[1]
+        return self.__current_character_matrix.shape[1]
 
     @property
     def root(self) -> str:
@@ -479,6 +494,97 @@ class CassiopeiaTree:
         self.__check_network_initialized()
         return self.__network.out_degree(node) > 0
 
+    def is_ambiguous(self, node: str) -> bool:
+        """Returns whether the node is ambiguous.
+
+        This is detected by checking if any of the characters are tuples.
+
+        Args:
+            node: Name of the node to check if it has ambiguous character(s)
+
+        Returns:
+            True if the node is ambiguous, False otherwise.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+        states = self.get_character_states(node)
+        return any(utilities.is_ambiguous_state(state) for state in states)
+
+    def collapse_ambiguous_characters(self) -> None:
+        """Only retain unique characters for ambiguous nodes.
+
+        Ambiguous nodes have character strings represented as a list of tuples
+        of integers. The inner list may contain multiple of the same states, encoding
+        the relative abundance of a certain state in the ambiguous state distribution.
+        Calling this function removes such duplicates and only retains unique
+        characters. This function is idempotent and does nothing for trees that
+        have no ambiguous characters.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        for node in self.nodes:
+            if self.is_ambiguous(node):
+                states = self.get_character_states(node)
+                # Modify states in place. This is okay because get_character_states
+                # returns a copy.
+                modified = False
+                for i in range(len(states)):
+                    if utilities.is_ambiguous_state(states[i]):
+                        new_states = tuple(set(states[i]))
+                        if states != new_states:
+                            states[i] = new_states
+                            modified = True
+                if modified:
+                    self.set_character_states(node, states)
+
+    def resolve_ambiguous_characters(
+        self,
+        resolve_function: Callable[
+            [Tuple[int, ...]], int
+        ] = utilities.resolve_most_abundant,
+    ) -> None:
+        """Resolve all nodes with ambiguous characters.
+
+        A custom ``resolve_function`` may be provided to perform the resolution.
+        By default, the most abundant state is selected.
+        One is randomly selected on ties. Modifies the tree in-place.
+
+        Args:
+            resolve_function: Function that performs character resolution. This
+                function is called once per ambiguous character state, and thus
+                takes a single integer tuple as its argument and returns the
+                resolved character state.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        for node in self.nodes:
+            if self.is_ambiguous(node):
+                states = self.get_character_states(node)
+
+                # Modify states in place. This is okay because get_character_states
+                # returns a copy.
+                modified = False
+                for i in range(len(states)):
+                    if utilities.is_ambiguous_state(states[i]):
+                        states[i] = resolve_function(states[i])
+                        modified = True
+                if modified:
+                    self.set_character_states(node, states)
+
+        # All nodes have a single character string, so we cast the character matrix
+        # back to an integer.
+        self.__current_character_matrix = (
+            self.__current_character_matrix.astype(int, copy=False)
+        )
+
     def reconstruct_ancestral_characters(self, zero_the_root: bool = False):
         """Reconstruct ancestral character states.
 
@@ -489,7 +595,7 @@ class CassiopeiaTree:
         Args:
             zero_the_root: If True, the root will be forced to have unmutated
                 chracters.
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -498,9 +604,10 @@ class CassiopeiaTree:
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
                 if len(self.get_character_states(n)) == 0:
-                    raise CassiopeiaTreeError("Character states not annotated "
-                    "at a leaf node, initialize character states at leaves "
-                    "before reconstructing ancestral characters."
+                    raise CassiopeiaTreeError(
+                        "Character states not annotated "
+                        "at a leaf node, initialize character states at leaves "
+                        "before reconstructing ancestral characters."
                     )
                 continue
             children = self.children(n)
@@ -546,7 +653,7 @@ class CassiopeiaTree:
 
     def __remove_node(self, node) -> None:
         """Private method to remove node from tree.
-        
+
         Args:
             node: A node in the tree to be removed
 
@@ -556,27 +663,27 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.remove_node(node)
-    
+
     def __add_node(self, node) -> None:
         """Private method to add node to tree.
-        
+
         Args:
             node: A node to be added to the tree.
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
         self.__check_network_initialized()
-        
+
         self.__network.add_node(node)
 
     def __remove_edge(self, u, v) -> None:
         """Private method to remove edge from tree.
-        
+
         Args:
             u: The source node of the directed edge to be removed
             v: The sink node of the directed edge to be removed
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
@@ -590,7 +697,7 @@ class CassiopeiaTree:
         Args:
             u: The source node of the directed edge to be added
             v: The sink node of the directed edge to be added
-            
+
         Raises:
             CassiopeiaTreeError if the tree is not initialized.
         """
@@ -642,6 +749,9 @@ class CassiopeiaTree:
                 self.get_time(child) - new_time
             )
 
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
+
     def set_times(self, time_dict: Dict[str, float]) -> None:
         """Sets the time of all nodes in the tree.
 
@@ -675,6 +785,9 @@ class CassiopeiaTree:
             self.__network[parent][child]["length"] = time_child - time_parent
         for node, time in time_dict.items():
             self.__network.nodes[node]["time"] = time
+
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
 
     def get_time(self, node: str) -> float:
         """Gets the time of a node.
@@ -718,7 +831,9 @@ class CassiopeiaTree:
         times_dict = self.get_times()
         return max(times_dict.values())
 
-    def __set_branch_length(self, parent: str, child: str, length: float) -> None:
+    def __set_branch_length(
+        self, parent: str, child: str, length: float
+    ) -> None:
         """A private method for setting branch lengths.
 
         A private method for setting branch lengths with no checks. Useful
@@ -731,7 +846,6 @@ class CassiopeiaTree:
         """
 
         self.__network[parent][child]["length"] = length
-
 
     def set_branch_length(self, parent: str, child: str, length: float) -> None:
         """Sets the length of a branch.
@@ -766,18 +880,23 @@ class CassiopeiaTree:
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
-    def set_branch_lengths(self, branch_length_dict: Dict[Tuple[str, str], float]) -> None:
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
+
+    def set_branch_lengths(
+        self, branch_length_dict: Dict[Tuple[str, str], float]
+    ) -> None:
         """Sets the length of multiple branches on a tree.
 
         Adjusts the branch length of specified parent-child relationships.
         This procedure maintains the consistency with the rest of the times in
         the tree. Namely, by changing branch lengths here, it will change
-        the times of all the nodes in the tree such that the times are 
+        the times of all the nodes in the tree such that the times are
         representative of the new branch lengths.
 
         Args:
             branch_dict: A dictionary of edges to updated branch lengths
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -796,6 +915,9 @@ class CassiopeiaTree:
                 self.__network.nodes[u]["time"] + self.__network[u][v]["length"]
             )
 
+        if "distances" in self.__cache:
+            del self.__cache["distances"]
+
     def get_branch_length(self, parent: str, child: str) -> float:
         """Gets the length of a branch.
 
@@ -810,7 +932,9 @@ class CassiopeiaTree:
 
         return self.__network[parent][child]["length"]
 
-    def set_character_states(self, node: str, states: List[int]) -> None:
+    def set_character_states(
+        self, node: str, states: Union[List[int], List[Tuple[int, ...]]]
+    ) -> None:
         """Sets the character states for a particular node.
 
         Args:
@@ -837,9 +961,21 @@ class CassiopeiaTree:
         self.__set_character_states(node, states)
 
         if self.is_leaf(node):
-            self.__current_character_matrix.loc[node] = states
+            # Cast entire character matrix to object dtype if we get an ambiguous
+            # character string.
+            if self.is_ambiguous(node):
+                self.__current_character_matrix = (
+                    self.__current_character_matrix.astype(object, copy=False)
+                )
+            # Pass in as numpy array of tuples to bypass the VisibleDeprecationWarning
+            # from creating an ndarray from ragged nested sequences
+            states_arr = np.empty(len(states), dtype=object)
+            states_arr[:] = states
+            self.__current_character_matrix.at[node] = states_arr
 
-    def __set_character_states(self, node: str, states: List[int]) -> None:
+    def __set_character_states(
+        self, node: str, states: Union[List[int], List[Tuple[int, ...]]]
+    ) -> None:
         """A private method for setting states.
 
         A private method for setting states of nodes with no checks. Useful
@@ -852,7 +988,9 @@ class CassiopeiaTree:
 
         self.__network.nodes[node]["character_states"] = states
 
-    def get_character_states(self, node: str) -> List[int]:
+    def get_character_states(
+        self, node: str
+    ) -> Union[List[int], List[Tuple[int, ...]]]:
         """Gets all the character states for a particular node.
 
         Args:
@@ -867,6 +1005,44 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         return self.__network.nodes[node]["character_states"][:]
+
+    def get_all_ancestors(
+        self, node: str, include_node: bool = False
+    ) -> List[str]:
+        """Gets all the ancestors of a particular node.
+
+        Nodes that are closest to the given node appear first in the list.
+        The ancestors, including those of all intermediate nodes, are cached.
+
+        Args:
+            node: Node in the tree
+            include_node: Whether or not to include the node itself in the list
+                of ancestors. If True, the first element of the list is the node
+                itself.
+
+        Returns:
+            The list of nodes along the path from the root to the node.
+        """
+
+        self.__check_network_initialized()
+
+        if "ancestors" not in self.__cache:
+            self.__cache["ancestors"] = {}
+
+        if self.is_root(node):
+            return []
+
+        if node not in self.__cache["ancestors"]:
+            parent = self.parent(node)
+            self.__cache["ancestors"][node] = [parent] + self.get_all_ancestors(
+                parent
+            )
+
+        # Note that the cache never includes the node itself.
+        ancestors = self.__cache["ancestors"][node]
+        if include_node:
+            ancestors = [node] + ancestors
+        return ancestors
 
     def depth_first_traverse_nodes(
         self, source: Optional[int] = None, postorder: bool = True
@@ -912,7 +1088,7 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-    
+
         self.__check_network_initialized()
 
         if source is None:
@@ -932,18 +1108,25 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
-
         self.__check_network_initialized()
 
-        return [
-            n
-            for n in self.depth_first_traverse_nodes(source=node)
-            if self.is_leaf(n)
-        ]
+        if "subtree" not in self.__cache:
+            self.__cache["subtree"] = {}
 
-    def get_newick(self, record_branch_lengths = False) -> str:
+            for n in self.depth_first_traverse_nodes(postorder=True):
+                if self.is_leaf(n):
+                    self.__cache["subtree"][n] = [n]
+                else:
+                    leaves = []
+                    for child in self.children(n):
+                        leaves += self.leaves_in_subtree(child)
+                    self.__cache["subtree"][n] = leaves
+
+        return self.__cache["subtree"][node]
+
+    def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.
-        
+
         Args:
             record_branch_lengths: Whether to record branch lengths on the tree
             in the newick string
@@ -956,11 +1139,21 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
+        # No nodes should have a comma in the name. Otherwise, they will be
+        # displayed as disconnected nodes. For instance, if there is a node with
+        # name "1,2,3", then three separate nodes will be output. We decide to
+        # raise an exception instead of a warning because the returned newick string
+        # will be a WRONG tree.
+        if any("," in node for node in self.nodes):
+            raise CassiopeiaTreeError(
+                "No nodes may have the comma (,) character in its name."
+            )
+
         return utilities.to_newick(self.__network, record_branch_lengths)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format.
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
@@ -1076,14 +1269,145 @@ class CassiopeiaTree:
         # reset cache because we've changed names
         self.__cache = {}
 
+    def __register_data_with_tree(self) -> None:
+        """Makes the leaf data consistent with the leaves in the tree.
+
+        Removes any leaves from the character matrix, cell metadata, and
+        dissimilarity maps that do not appear in the tree.
+        Additionally, adds any leaves that appear in the tree but not in the
+        character matrix, cell metadata, or dissimilarity map with default values.
+        The default values for each table is as follows:
+        * character matrix: all states are missing values (``missing_state_indicator``)
+        * cell metadata: None
+        * dissimilarity map: ``np.inf`` distance from the leaf to all other leaves
+        """
+        leaves_set = set(self.leaves)
+        if self.__current_character_matrix is not None:
+            remove_from_charater_matrix = (
+                set(self.__current_character_matrix.index) - leaves_set
+            )
+            self.__current_character_matrix = (
+                self.__current_character_matrix.drop(
+                    index=remove_from_charater_matrix
+                )
+            )
+
+            add_to_character_matrix = leaves_set - set(
+                self.__current_character_matrix.index
+            )
+            for to_add in add_to_character_matrix:
+                # Note that we initialize state each iteration so that each state
+                # is a new object.
+                char_vector = [self.missing_state_indicator] * self.n_character
+                self.__set_character_states(to_add, char_vector)
+                self.__current_character_matrix.loc[to_add] = char_vector
+
+        if self.cell_meta is not None:
+            remove_from_cell_meta = set(self.cell_meta.index) - leaves_set
+            self.cell_meta = self.cell_meta.drop(index=remove_from_cell_meta)
+
+            add_to_cell_meta = leaves_set - set(self.cell_meta.index)
+            for to_add in add_to_cell_meta:
+                self.cell_meta.loc[to_add] = None
+
+        if self.__dissimilarity_map is not None:
+            remove_from_dissimilarity_map = (
+                set(self.__dissimilarity_map.index) - leaves_set
+            )
+            self.__dissimilarity_map = self.__dissimilarity_map.drop(
+                index=remove_from_dissimilarity_map,
+                columns=remove_from_dissimilarity_map,
+            )
+
+            add_to_dissimilarity_map = leaves_set - set(
+                self.__dissimilarity_map.index
+            )
+            for to_add in add_to_dissimilarity_map:
+                self.__dissimilarity_map.loc[to_add] = np.inf
+                self.__dissimilarity_map[to_add] = np.inf
+
+    def add_leaf(
+        self,
+        parent: str,
+        node: str,
+        states: Optional[Union[List[int], List[Tuple[int, ...]]]] = None,
+        time: Optional[float] = None,
+        branch_length: Optional[float] = None,
+        dissimilarity: Optional[Dict[str, float]] = None,
+    ) -> None:
+        """Add a leaf to the given parent node.
+
+        The parent node may NOT also be a leaf, as this makes bookkeeping the
+        character, dissimilarity and cell meta quite complicated. Also, adding a
+        leaf to an existing leaf is probably not a common use case.
+
+        Optional arguments ``states``, ``time``, ``branch_length``,
+        ``dissimilarity`` may be provided to initialize the character
+        string, time, branch length, dissimilarity, and cell meta for this leaf
+        respectively. See :func:`__register_data_with_tree`
+        for default values that are used when any of these are not provided.
+
+        Note that only one of ``time`` and ``branch_length`` may be provided, and
+        when neither are provided, the new leaf is added at the same time as the
+        ``parent``.
+
+        Args:
+            parent: Parent node, to which to connect the leaf
+            node: Name of the leaf to add
+            states: Character states to initialize the new leaf with
+            time: Time to place the new leaf
+            dissimilarity: Indel dissimilarity between the new leaf and all
+                other leaves
+            meta: Cell metadata
+
+        Raises:
+            CassiopeiaTreeError if ``parent`` does not exist or ``node``
+                already exists, if ``parent`` is a leaf, if the tree has not
+                been initialized, or if both ``time`` and ``branch_length``
+                are provided.
+        """
+        self.__check_network_initialized()
+
+        # Make sure the node is not already in the tree and the parent exists
+        if node in self.nodes:
+            raise CassiopeiaTreeError(f"Node {node} already exists.")
+        if parent not in self.nodes:
+            raise CassiopeiaTreeError(f"Node {parent} does not exist.")
+        if parent in self.leaves:
+            raise CassiopeiaTreeError("Can not add a leaf to a leaf.")
+        if time and branch_length:
+            raise CassiopeiaTreeError(
+                "Only one of `time` and `branch_length` may be provided."
+            )
+
+        self.__add_edge(parent, node)
+        if states:
+            self.__set_character_states(node, states)
+            self.__current_character_matrix.loc[node] = states
+        if time:
+            self.set_time(node, time)
+        elif branch_length:
+            self.set_branch_length(parent, node, branch_length)
+        else:
+            # By default, add leaf at the same time as parent.
+            self.set_branch_length(parent, node, 0)
+        if dissimilarity:
+            self.set_dissimilarity(node, dissimilarity)
+
+        # reset cache because we've changed the tree topology
+        self.__cache = {}
+
+        # Update new leaf data with defaults
+        self.__register_data_with_tree()
+
     def remove_leaf_and_prune_lineage(self, node: str) -> None:
         """Removes a leaf from the tree and prunes the lineage.
 
         Removes a leaf and all ancestors of that leaf that are no longer the
         ancestor of any leaves. In the context of a phylogeny, this prunes the
-        lineage of all nodes no longer relevant to observed samples. 
-        Additionally, maintains consistency with information on the tree by
-        removing the node from the character matrix and cell metadata.
+        lineage of all nodes no longer relevant to observed samples.
+        Additionally, maintains consistency with the updated tree by removing
+        the node from all leaf data.
 
         Args:
             node: The leaf node to be removed
@@ -1102,26 +1426,18 @@ class CassiopeiaTree:
         else:
             curr_parent = self.parent(node)
             self.__remove_node(node)
-            while (
-                len(self.children(curr_parent)) < 1
-                and not self.is_root(curr_parent)
+            while len(self.children(curr_parent)) < 1 and not self.is_root(
+                curr_parent
             ):
                 next_parent = self.parent(curr_parent)
                 self.__remove_node(curr_parent)
                 curr_parent = next_parent
 
-        if self.__current_character_matrix:
-            if node in self.__current_character_matrix.index:
-                self.__current_character_matrix.drop(index = [node], inplace = True)
-        if self.cell_meta:
-            if node in self.cell_meta.index:
-                self.cell_meta.drop(index = [node], inplace = True)
-        if self.__dissimilarity_map:
-            if node in self.__dissimilarity_map.index:
-                self.__dissimilarity_map.drop(index = [node], columns = node, inplace = True)
-
         # reset cache because we've changed the tree topology
         self.__cache = {}
+
+        # Remove all removed nodes from data fields
+        self.__register_data_with_tree()
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:
         """Collapses unifurcations on the tree.
@@ -1142,7 +1458,9 @@ class CassiopeiaTree:
         if source is None:
             source = self.root
 
-        for node in self.depth_first_traverse_nodes(postorder = True, source = source):
+        for node in list(
+            self.depth_first_traverse_nodes(postorder=True, source=source)
+        ):
             if self.is_leaf(node):
                 continue
             elif node == source:
@@ -1176,16 +1494,16 @@ class CassiopeiaTree:
         """Collapses mutationless edges in the tree in-place.
 
         Uses the internal node annotations of a tree to collapse edges with no
-        mutations. The introduction of a missing data event is considered a 
+        mutations. The introduction of a missing data event is considered a
         mutation in this context. Either takes the existing character states on
-        the tree or infers the annotations bottom-up from the samples obeying 
+        the tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
-        by connecting the parent and children of removed nodes by branchs with 
+        by connecting the parent and children of removed nodes by branchs with
         lengths equal to the total time elapsed from parent to each child.
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Infer the ancestral characters states 
+            infer_ancestral_characters: Infer the ancestral characters states
                 of the tree
 
         Raises:
@@ -1194,13 +1512,15 @@ class CassiopeiaTree:
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
-        for n in self.depth_first_traverse_nodes(postorder = True):
+        for n in list(self.depth_first_traverse_nodes(postorder=True)):
             if self.is_leaf(n):
                 continue
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)
-                    if self.get_character_states(n) == self.get_character_states(child):
+                    if self.get_character_states(
+                        n
+                    ) == self.get_character_states(child):
                         for grandchild in self.children(child):
                             t_ = self.get_branch_length(child, grandchild)
                             self.__add_edge(n, grandchild)
@@ -1225,15 +1545,15 @@ class CassiopeiaTree:
             dissimilarity_map: Dissimilarity map relating all N x N distances
                 between leaves.
         """
-        character_matrix = self.__original_character_matrix
+        character_matrix = self.__current_character_matrix
         if character_matrix is not None:
 
-            if character_matrix.shape[0] != dissimilarity_map.shape[
-                0
-            ] or collections.Counter(
-                character_matrix.index
-            ) != collections.Counter(
-                dissimilarity_map.index
+            if (
+                character_matrix.shape[0] != dissimilarity_map.shape[0]
+                or collections.Counter(character_matrix.index)
+                != collections.Counter(dissimilarity_map.index)
+                or collections.Counter(character_matrix.index)
+                != collections.Counter(dissimilarity_map.columns)
             ):
                 warnings.warn(
                     "The samples in the existing character matrix and "
@@ -1242,6 +1562,60 @@ class CassiopeiaTree:
                 )
 
         self.__dissimilarity_map = dissimilarity_map.copy()
+
+    def get_dissimilarity(self, node: str) -> Dict[str, float]:
+        """Get the dissimilarity of a single leaf to all other leaves.
+
+        Args:
+            node: Name of the leaf node to get the dissimilarity to/from
+
+        Raises:
+            CassiopeiaTreeError if the dissimilarity map is not defined or the
+                provided node is not in the dissimilarity map
+        """
+        if self.__dissimilarity_map is None:
+            raise CassiopeiaTreeError("No dissimilarity map is defined.")
+        if node not in self.__dissimilarity_map.index:
+            raise CassiopeiaTreeError(
+                f"`{node}` is not in the dissimilarity map."
+            )
+        return self.__dissimilarity_map.loc[node].to_dict()
+
+    def set_dissimilarity(
+        self, node: str, dissimilarity: Dict[str, float]
+    ) -> None:
+        """Set the dissimilarity of a single leaf.
+
+        This function may be used only when a dissimilarity map already exists.
+
+        Args:
+            node: Name of the leaf node to set the dissimilarity to/from
+            dissimilarity: Dictionary containing other leaf names as keys and
+                dissimilarities as values
+
+        Raises:
+            CassiopeiaTreeError if the dissimilarity map does not exist, if
+                the ``dissimilarity`` dictionary does not contain all other leaves,
+        """
+        if self.__dissimilarity_map is None:
+            raise CassiopeiaTreeError(
+                "This function may only be used with an existing dissimilarity map. "
+                "Use `compute_dissimilarity_map` or `set_dissimilarity_map` to set "
+                "the dissimilarity map first."
+            )
+        if set(dissimilarity.keys()) - {node} != set(
+            self.__dissimilarity_map.index
+        ) - {node}:
+            raise CassiopeiaTreeError(
+                "Provided dissimilarity dictionary does not provide dissimilarities "
+                "to all other leaves."
+            )
+
+        self.__dissimilarity_map.loc[node] = 0
+        self.__dissimilarity_map[node] = 0
+        for other, dissim in dissimilarity.items():
+            self.__dissimilarity_map.loc[node, other] = dissim
+            self.__dissimilarity_map.loc[other, node] = dissim
 
     def compute_dissimilarity_map(
         self,
@@ -1257,6 +1631,12 @@ class CassiopeiaTree:
         Given the dissimilarity function passed in, the pairwise dissimilarities
         will be computed over the samples in the character matrix. Populates
         the dissimilarity_map attribute in the object.
+
+        If any of the leaves have ambiguous character states (detected by checking
+        if any of the states are lists), then
+        :func:`cassiopeia.solver.dissimilarity_functions.cluster_dissimilarity`
+        is called instead, with the provided ``dissimilarity_function`` as
+        the first argument.
 
         Args:
             dissimilarity_function: A function that will take in two character
@@ -1316,7 +1696,7 @@ class CassiopeiaTree:
 
     def set_attribute(self, node: str, attribute_name: str, value: Any) -> None:
         """Sets an attribute in the tree.
-        
+
         Args:
             node: Node name
             attribute_name: Name for the new attribute
@@ -1331,14 +1711,13 @@ class CassiopeiaTree:
 
     def get_attribute(self, node: str, attribute_name: str) -> Any:
         """Retrieves the value of an attribute for a node.
-        
+
         Args:
             node: Node name
             attribute_name: Name of the attribute.
-        
+
         Returns:
             The value of the attribute for that node.
-
         Raises:
             CassiopeiaTreeError if the attribute has not been set for this node.
         """
@@ -1347,8 +1726,9 @@ class CassiopeiaTree:
         try:
             return self.__network.nodes[node][attribute_name]
         except KeyError:
-            raise CassiopeiaTreeError(f"Attribute {attribute_name} not " 
-                                    "detected for this node.")
+            raise CassiopeiaTreeError(
+                f"Attribute {attribute_name} not " "detected for this node."
+            )
 
     def filter_nodes(self, condition: Callable[[str], bool]) -> List[str]:
 
@@ -1361,17 +1741,133 @@ class CassiopeiaTree:
 
         return _filter
 
-    def find_lcas_of_pairs(self, pairs: Union[Iterator[str], List[str]]) -> Iterator[Tuple[Tuple[str, str], str]]:
-        """Finds LCAs of all pairs.
+    def find_lcas_of_pairs(
+        self,
+        pairs: Optional[
+            Union[Iterator[Tuple[str, str]], List[Tuple[str, str]]]
+        ] = None,
+    ) -> Iterator[Tuple[Tuple[str, str], str]]:
+        """Finds LCAs of all (provided) pairs.
 
         Args:
-            pairs: Pairs of nodes for which to find LCAs
+            pairs: Pairs of nodes for which to find LCAs. If not provided, LCAs of
+                all pairs are computed. Defaults to None.
 
         Returns:
             A generator of ((u, v), LCA) tuples.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
-        return nx.tree_all_pairs_lowest_common_ancestor(self.__network, root=self.root, pairs=pairs)
+        return nx.tree_all_pairs_lowest_common_ancestor(
+            self.__network, root=self.root, pairs=pairs
+        )
+
+    def find_lca(self, *nodes: str) -> str:
+        """Finds the LCA of all provided nodes.
+
+        Internally, this function calls :func:`get_all_ancestors` for each provided
+        node and finds the deepest node that is shared.
+
+        Args:
+            *nodes: Nodes for which to find the LCA. At least two must be provided.
+
+        Returns:
+            The LCA node
+
+        Raises:
+            CassiopeiaTreeError if less than two nodes were provided or if the
+            tree has not been initialized.
+        """
+        self.__check_network_initialized()
+        nodes = set(nodes)
+        if len(nodes) < 2:
+            raise CassiopeiaTreeError(
+                "At least two distinct nodes must be provided"
+            )
+
+        # Reversing get_all_ancestors gives a list of nodes from the root to each
+        # node. Since get_all_ancestors doesn't include the node itself, we add
+        # those manually.
+        all_ancestors = [
+            reversed(self.get_all_ancestors(node, include_node=True))
+            for node in nodes
+        ]
+        last_ancestor = self.root
+        for ancestors in zip(*all_ancestors):
+            if len(set(ancestors)) > 1:
+                break
+            last_ancestor = ancestors[0]
+        return last_ancestor
+
+    def get_distance(self, node1: str, node2: str) -> float:
+        """Compute the branch distance between two nodes.
+
+        Internally, this function converts the tree to an undirected graph and
+        finds the shortest path by calling :func:`nx.shortest_path_length`.
+
+        Args:
+            node1: First node
+            node2: Second node
+
+        Returns:
+            The branch distance between the two nodes
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        key = frozenset({node1, node2})
+        if (
+            "distances" not in self.__cache
+            or key not in self.__cache["distances"]
+        ):
+            distances = self.__cache.setdefault("distances", {})
+            undirected_network = self.__network.to_undirected()
+            distances[key] = nx.shortest_path_length(
+                undirected_network, source=node1, target=node2, weight="length"
+            )
+
+        return self.__cache["distances"][key]
+
+    def get_distances(
+        self, node: str, leaves_only: bool = False
+    ) -> Dict[str, float]:
+        """Compute the distances between the given node and every other node.
+
+        Internally, this function converts the tree to an undirected graph and
+        finds the shortest path by calling :func:`nx.shortest_path_length`.
+
+        Args:
+            node: Node from which to compute distance to all other nodes
+            leaves_only: Calculate distances to leaves only and not internal nodes.
+                Defaults to False.
+
+        Returns:
+            Dictionary of distances
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        if "distances" not in self.__cache or any(
+            frozenset({node, _node}) not in self.__cache["distances"]
+            for _node in self.nodes
+        ):
+            distances = self.__cache.setdefault("distances", {})
+            undirected_network = self.__network.to_undirected()
+            for other_node, distance in nx.shortest_path_length(
+                undirected_network, source=node, weight="length"
+            ).items():
+                distances[frozenset({node, other_node})] = distance
+
+        return {
+            _node: self.__cache["distances"][frozenset({node, _node})]
+            for _node in (self.leaves if leaves_only else self.nodes)
+        }
 
 
 def resolve_multifurcations(tree: CassiopeiaTree) -> None:
