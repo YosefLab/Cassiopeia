@@ -16,7 +16,7 @@ requirements = [
     "Biopython>=1.71",
     "bokeh>=0.12.15",
     "cython>=0.29.2",
-    "ete3 >= 3.1.1",
+    "ete3>=3.1.1",
     "hits",
     "matplotlib>=2.2.2",
     "nbconvert>=5.4.0",
