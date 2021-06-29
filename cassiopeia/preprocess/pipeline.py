@@ -41,7 +41,7 @@ class PreprocessError(Exception):
 
 def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
-    chemistry: Literal["dropseq", "10xv2", "10xv3", "slideseq2"],
+    chemistry: Literal["dropseq", "10xv2", "10xv3", "indropsv3", "slideseq2"],
     output_directory: str,
     name: Optional[str] = None,
     n_threads: int = 1,
@@ -58,9 +58,10 @@ def convert_fastqs_to_unmapped_bam(
         chemistry: Sample-prep/sequencing chemistry used. The following
             chemistries are supported:
             * dropseq: Droplet-based scRNA-seq chemistry described in
-                Macosco et al. 2015.
+                Macosco et al. 2015
             * 10xv2: 10x Genomics 3' version 2
             * 10xv3: 10x Genomics 3' version 3
+            * indropsv3: inDrops version 3 by Zilionis et al. 2017
             * slideseq2: Slide-seq version 2
         output_directory: The output directory where the unmapped BAM will be
             written to. This directory must exist prior to calling this function.
@@ -114,6 +115,12 @@ def error_correct_barcodes(
         whitelist_fp: Path to plaintext file containing barcode whitelist, one
             barcode per line.
         n_threads: Number of threads to use. Defaults to 1.
+
+    Todo:
+        Currently, the user must provide their own whitelist, and Cassiopeia
+        does not use any of the whitelists provided by the ngs-tools library.
+        At some point, we should update the pipeline so that if ngs-tools
+        provides a pre-packaged whitelists, it uses that for those chemistries.
 
     Returns:
         Path to corrected BAM

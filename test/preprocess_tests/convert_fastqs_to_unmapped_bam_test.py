@@ -20,6 +20,11 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             os.path.join(test_files_path, "10xv3_1.fastq.gz"),
             os.path.join(test_files_path, "10xv3_2.fastq.gz"),
         ]
+        self.fastq_indropsv3_fps = [
+            os.path.join(test_files_path, "indropsv3_1.fastq.gz"),
+            os.path.join(test_files_path, "indropsv3_2.fastq.gz"),
+            os.path.join(test_files_path, "indropsv3_3.fastq.gz"),
+        ]
         self.fastq_slideseq2_fps = [
             os.path.join(test_files_path, "slideseq2_1.fastq.gz"),
             os.path.join(test_files_path, "slideseq2_2.fastq.gz"),
@@ -131,7 +136,6 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             set(alignments[1].get_tags()),
         )
 
-
     def test_10xv3(self):
         bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
             self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test"
@@ -179,6 +183,61 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
                 ("UY", "BFGFGFF10FG1"),
                 ("CR", "TTAGATCGTTAGAAAC"),
                 ("CY", "1>>11DFAFAAAFFGG"),
+                ("RG", "test"),
+            },
+            set(alignments[1].get_tags()),
+        )
+
+    def test_indropsv3(self):
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
+            self.fastq_indropsv3_fps,
+            "indropsv3",
+            tempfile.mkdtemp(),
+            name="test",
+        )
+        with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+            alignments = list(f.fetch(until_eof=True))
+        self.assertEqual(2, len(alignments))
+        self.assertEqual(
+            [
+                "M03718:773:000000000-JKHP3:1:1101:18272:1693",
+                "M03718:773:000000000-JKHP3:1:1101:17963:1710",
+            ],
+            [al.query_name for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.sequence
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [al.query_sequence for al in alignments],
+        )
+        self.assertEqual(
+            [
+                read.qualities.string
+                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
+            ],
+            [
+                pysam.array_to_qualitystring(al.query_qualities)
+                for al in alignments
+            ],
+        )
+        self.assertEqual(
+            {
+                ("UR", "CCAAAA"),
+                ("UY", "FFBFGG"),
+                ("CR", "TACGTCATCTCCTACG"),
+                ("CY", "1111AFAF1111AFAF"),
+                ("RG", "test"),
+            },
+            set(alignments[0].get_tags()),
+        )
+        self.assertEqual(
+            {
+                ("UR", "TTAGAA"),
+                ("UY", "FAAAFF"),
+                ("CR", "TTAGATCGTTAGATCG"),
+                ("CY", "1>>11DFA1>>11DFA"),
                 ("RG", "test"),
             },
             set(alignments[1].get_tags()),

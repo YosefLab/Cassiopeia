@@ -33,6 +33,7 @@ CHEMISTRY_BAM_TAGS = {
     "dropseq": SINGLE_CELL_BAM_TAGS,
     "10xv2": SINGLE_CELL_BAM_TAGS,
     "10xv3": SINGLE_CELL_BAM_TAGS,
+    "indropsv3": SINGLE_CELL_BAM_TAGS,
     "slideseq2": SPATIAL_BAM_TAGS,
 }
 
