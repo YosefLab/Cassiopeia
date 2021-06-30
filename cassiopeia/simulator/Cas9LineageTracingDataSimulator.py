@@ -253,7 +253,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 self.stochastic_missing_data_state,
             )
 
-        tree.initialize_all_character_states(character_matrix)
+        tree.set_all_character_states(character_matrix)
 
     def collapse_sites(
         self, character_array: List[int], cuts: List[int]

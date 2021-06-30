@@ -572,7 +572,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
         tree.character_matrix = self.character_matrix
-        tree.initialize_character_states_at_leaves()
+        tree.set_character_states_at_leaves()
 
         modified_character_matrix = tree.character_matrix.copy()
         tree.layers["current"] = modified_character_matrix
@@ -613,19 +613,19 @@ class TestCassiopeiaTree(unittest.TestCase):
             observed_character_matrix, expected_character_matrix
         )
 
-    # def test_set_states_with_dictionary(self):
+    def test_set_states_with_dictionary(self):
 
-    #     tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
 
-    #     character_dictionary = {}
-    #     for ind in self.character_matrix.index:
-    #         character_dictionary[ind] = self.character_matrix.loc[ind].tolist()
+        character_dictionary = {}
+        for ind in self.character_matrix.index:
+            character_dictionary[ind] = self.character_matrix.loc[ind].tolist()
 
-    #     tree.initialize_character_states_at_leaves(character_dictionary)
-    #     self.assertCountEqual(
-    #         tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
-    #     )
-    #     self.assertCountEqual(tree.get_character_states("node0"), [])
+        tree.set_character_states_at_leaves(character_dictionary)
+        self.assertCountEqual(
+            tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertCountEqual(tree.get_character_states("node0"), [])
 
     def test_set_all_states(self):
 
@@ -633,7 +633,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertRaises(
             CassiopeiaTreeError,
-            tree.initialize_all_character_states,
+            tree.set_all_character_states,
             {"node0": [0, 0, 0, 0, 0, 0, 0, 0]},
         )
 
@@ -644,7 +644,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             else:
                 character_mapping[node] = [0]
 
-        tree.initialize_all_character_states(character_mapping)
+        tree.set_all_character_states(character_mapping)
 
         self.assertCountEqual(tree.get_character_states("node0"), [0])
         self.assertCountEqual(tree.get_character_states("node5"), [1])
@@ -869,7 +869,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
         cas_tree.character_matrix = cm
-        cas_tree.initialize_character_states_at_leaves()
+        cas_tree.set_character_states_at_leaves()
         delta = pd.DataFrame.from_dict(
             {
                 "node3": [0, 15, 21, 17],
@@ -920,7 +920,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
         cas_tree.character_matrix = cm
-        cas_tree.initialize_character_states_at_leaves()
+        cas_tree.set_character_states_at_leaves()
         delta = pd.DataFrame.from_dict(
             {
                 "node3": [0, 15, 21, 17],
@@ -1318,7 +1318,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             "8": [0, 1, 0],
         }
 
-        cas_tree.initialize_all_character_states(character_states)
+        cas_tree.set_all_character_states(character_states)
         cas_tree.collapse_mutationless_edges(infer_ancestral_characters=False)
 
         new_map = {}

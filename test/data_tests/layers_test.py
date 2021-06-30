@@ -32,7 +32,7 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
-class TestCassiopeiaTree(unittest.TestCase):
+class TestLayers(unittest.TestCase):
     def setUp(self):
 
         character_matrix = pd.DataFrame.from_dict(
@@ -235,7 +235,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         # make sure states change
         self.assertListEqual([1, 2, 0], self.tree.get_character_states("b"))
-        self.tree.initialize_character_states_at_leaves(layer="modified")
+        self.tree.set_character_states_at_leaves(layer="modified")
         self.assertListEqual([1, 2, 0, 5], self.tree.get_character_states("b"))
 
 

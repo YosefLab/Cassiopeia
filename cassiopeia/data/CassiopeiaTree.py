@@ -186,7 +186,7 @@ class CassiopeiaTree:
             character_matrix = self.character_matrix
 
         if character_matrix is not None:
-            self.initialize_character_states_at_leaves(layer=layer)
+            self.set_character_states_at_leaves(layer=layer)
 
         for n in self.internal_nodes:
             self.__network.nodes[n]["character_states"] = []
@@ -245,15 +245,21 @@ class CassiopeiaTree:
 
         self._character_matrix = character_matrix.copy()
 
-    def initialize_character_states_at_leaves(
-        self, layer: Optional[str] = None
+    def set_character_states_at_leaves(
+        self, character_matrix: Optional[Union[pd.DataFrame, Dict]] = None, layer: Optional[str] = None
     ) -> None:
         """Populates character states at leaves.
 
         Assigns character states to the leaves of the tree. This function
-        must have a character state assignment to all leaves of the tree.
+        must have a character state assignment to all leaves of the tree. If no
+        argument is passed, the default :attr:`character_matrix` is used to
+        set character states at the leaves.
 
         Args:
+            character_matrix: A separate character matrix to use for setting
+                character states at the leaves. This character matrix is not
+                stored in the object afterwards. If this is None, uses the 
+                default character matrix sotred in :attr:`character_matrix`
             layer: Layer to use for resetting character information at leaves.
                 If this is None, uses the default character matrix stored in
                 :attr:`character_matrix`.
@@ -264,10 +270,22 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        if layer:
-            character_matrix = self.layers[layer]
+        if character_matrix is not None and layer is not None:
+            raise CassiopeiaTreeError(
+                "You may only specify one of the following: character_matrix or"
+                " layer."
+            )
+
+        if character_matrix is not None:
+            if isinstance(character_matrix, dict):
+                character_matrix = pd.DataFrame.from_dict(
+                    character_matrix, orient="index"
+                )
         else:
-            character_matrix = self.character_matrix
+            if layer:
+                character_matrix = self.layers[layer]
+            else:
+                character_matrix = self.character_matrix
 
         if set(self.leaves) != set(character_matrix.index.values):
             raise CassiopeiaTreeError(
@@ -277,7 +295,7 @@ class CassiopeiaTree:
         for n in self.leaves:
             self.__set_character_states(n, character_matrix.loc[n].tolist())
 
-    def initialize_all_character_states(
+    def set_all_character_states(
         self,
         character_state_mapping: Dict[str, List[int]],
         add_layer: Optional[str] = None,
