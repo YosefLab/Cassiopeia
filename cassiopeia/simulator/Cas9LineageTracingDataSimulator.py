@@ -93,6 +93,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             Note that the numpy random seed gets set during every call to
             `overlay_data`, thereby producing deterministic simulations every
             time this function is called.
+        collapse_sites_on_cassette: Whether or not to collapse cuts that occur
+            in the same cassette in a single iteration. This option only takes
+            effect when `size_of_cassette` is greater than 1. Defaults to True.
 
     Raises:
         DataSimulatorError if assumptions about the system are broken.
@@ -113,6 +116,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         heritable_missing_data_state: int = -1,
         stochastic_missing_data_state: int = -1,
         random_seed: Optional[int] = None,
+        collapse_sites_on_cassette: bool = True,
     ):
 
         if number_of_cassettes <= 0 or not isinstance(number_of_cassettes, int):
@@ -124,6 +128,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         self.size_of_cassette = size_of_cassette
         self.number_of_cassettes = number_of_cassettes
+        self.collapse_sites_on_cassette = collapse_sites_on_cassette
 
         if isinstance(mutation_rate, float):
             if mutation_rate < 0:
@@ -225,7 +230,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
             # collapse cuts that are on the same cassette
             cuts_remaining = new_cuts
-            if self.size_of_cassette > 1:
+            if self.collapse_sites_on_cassette and self.size_of_cassette > 1:
                 character_array, cuts_remaining = self.collapse_sites(
                     character_array, new_cuts
                 )
