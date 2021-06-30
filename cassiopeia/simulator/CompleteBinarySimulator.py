@@ -17,7 +17,8 @@ class CompleteBinarySimulator(TreeSimulator):
 
     Internally, this class uses :func:`nx.balanced_tree` to generate a
     perfectly balanced binary tree of specified size. Only one of ``num_cells``
-    or ``depth`` should be provided.
+    or ``depth`` should be provided. All branches have equal length that is
+    normalized by the height of the tree (i.e. the tree has height 1).
 
     Args:
         num_cells: Number of cells to simulate. Needs to be a power of 2. The
@@ -73,4 +74,12 @@ class CompleteBinarySimulator(TreeSimulator):
         # Add root, which indicates the initiating cell
         tree.add_edge("root", 0)
         nx.relabel_nodes(tree, mapping, copy=False)
-        return CassiopeiaTree(tree=tree)
+        cassiopeia_tree = CassiopeiaTree(tree=tree)
+
+        # Initialize branch lengths
+        time_dict = {
+            node: cassiopeia_tree.get_time(node) / (self.depth + 1)
+            for node in cassiopeia_tree.nodes
+        }
+        cassiopeia_tree.set_times(time_dict)
+        return cassiopeia_tree

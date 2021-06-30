@@ -37,3 +37,18 @@ class TestCompleteBinarySimulator(unittest.TestCase):
                 ("3", "7"),
             },
         )
+
+        # Test branch lengths
+        self.assertEqual(
+            tree.get_times(),
+            {
+                "0": 0.0,
+                "1": 1 / 3,
+                "2": 2 / 3,
+                "3": 2 / 3,
+                "4": 1.0,
+                "5": 1.0,
+                "6": 1.0,
+                "7": 1.0,
+            },
+        )
