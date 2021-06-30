@@ -179,7 +179,7 @@ class CassiopeiaTree:
 
         # clear cache if we're changing the topology of the tree
         self.__cache = {}
-        
+
         if layer:
             character_matrix = self.layers[layer]
         else:
@@ -246,8 +246,7 @@ class CassiopeiaTree:
         self._character_matrix = character_matrix.copy()
 
     def initialize_character_states_at_leaves(
-        self,
-        layer: Optional[str] = None,
+        self, layer: Optional[str] = None
     ) -> None:
         """Populates character states at leaves.
 
@@ -321,6 +320,34 @@ class CassiopeiaTree:
             self._layers[add_layer] = character_matrix.copy()
         else:
             self._character_matrix = character_matrix.copy()
+
+    def freeze_character_matrix(self, add_layer: str):
+        """Freezes character matrix in specified layer.
+        
+        Adds a new layer the CassiopeiaTree object corresponding to the current
+        version of the character matrix.
+
+        Args:
+            add_layer: Layer to create.
+
+        Raises:
+            CassiopeiaTreeError if no character matrix exists to freeze.
+            CassiopeiaTreeWarning if layer already exists.
+        """
+        character_matrix = self.character_matrix
+
+        if character_matrix is None:
+            raise CassiopeiaTreeError(
+                "No character matrix found in this CassiopeiaTree object."
+            )
+
+        if add_layer in self.layers:
+            raise CassiopeiaTreeWarning(
+                f"Layer {add_layer} already exists, overwriting character "
+                "matrix in layer."
+            )
+
+        self.layers[add_layer] = character_matrix.copy()
 
     @property
     def n_cell(self) -> int:
@@ -570,9 +597,7 @@ class CassiopeiaTree:
 
         # All nodes have a single character string, so we cast the character matrix
         # back to an integer.
-        self._character_matrix = (
-            self._character_matrix.astype(int, copy=False)
-        )
+        self._character_matrix = self._character_matrix.astype(int, copy=False)
 
     def reconstruct_ancestral_characters(self) -> None:
         """Reconstruct ancestral character states.
@@ -898,7 +923,10 @@ class CassiopeiaTree:
         return self.__network[parent][child]["length"]
 
     def set_character_states(
-        self, node: str, states: Union[List[int], List[Tuple[int, ...]]], layer: Optional[str] = None
+        self,
+        node: str,
+        states: Union[List[int], List[Tuple[int, ...]]],
+        layer: Optional[str] = None,
     ) -> None:
         """Sets the character states for a particular node.
 
@@ -929,14 +957,18 @@ class CassiopeiaTree:
         self.__set_character_states(node, states)
 
         if self.is_leaf(node):
-            
+
             # Cast entire character matrix to object dtype if we get an ambiguous
             # character string.
             if self.is_ambiguous(node):
                 if layer is not None:
-                    self.layers[layer] = (self.layers[layer].astype(object, copy=False))
+                    self.layers[layer] = self.layers[layer].astype(
+                        object, copy=False
+                    )
                 else:
-                    self._character_matrix = (self._character_matrix.astype(object, copy=False))
+                    self._character_matrix = self._character_matrix.astype(
+                        object, copy=False
+                    )
 
             # Pass in as numpy array of tuples to bypass the VisibleDeprecationWarning
             # from creating an ndarray from ragged nested sequences
@@ -1242,7 +1274,9 @@ class CassiopeiaTree:
                 set(self.character_matrix.index) - leaves_set
             )
 
-            self.character_matrix = (self.character_matrix.drop(index=remove_from_character_matrix))
+            self.character_matrix = self.character_matrix.drop(
+                index=remove_from_character_matrix
+            )
 
             layer_copies = self.layers.copy()
             for name, layer_copy in layer_copies:

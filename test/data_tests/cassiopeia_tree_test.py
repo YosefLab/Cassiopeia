@@ -213,6 +213,29 @@ class TestCassiopeiaTree(unittest.TestCase):
         for n in obs_nodes:
             self.assertIn(n, expected_nodes)
 
+    def test_freeze_character_matrix(self):
+
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        tree.freeze_character_matrix(add_layer="frozen")
+
+        pd.testing.assert_frame_equal(
+            tree.layers["frozen"], self.character_matrix
+        )
+
+        self.assertRaises(
+            CassiopeiaTreeWarning, tree.freeze_character_matrix, "frozen"
+        )
+
+        # test when no character matrix exists an error is raised
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+
+        self.assertRaises(
+            CassiopeiaTreeError, tree.freeze_character_matrix, "frozen"
+        )
+
     def test_construction_without_character_matrix(self):
 
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
@@ -552,13 +575,15 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree.initialize_character_states_at_leaves()
 
         modified_character_matrix = tree.character_matrix.copy()
-        tree.layers['current'] = modified_character_matrix
+        tree.layers["current"] = modified_character_matrix
 
         self.assertCountEqual(
             tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
         )
         self.assertCountEqual(tree.get_character_states("node0"), [])
-        tree.set_character_states("node0", [0, 0, 0, 0, 0, 0, 0, 0], layer='current')
+        tree.set_character_states(
+            "node0", [0, 0, 0, 0, 0, 0, 0, 0], layer="current"
+        )
 
         self.assertCountEqual(
             tree.get_character_states("node0"), [0, 0, 0, 0, 0, 0, 0, 0]
@@ -569,7 +594,9 @@ class TestCassiopeiaTree(unittest.TestCase):
             observed_character_matrix, self.character_matrix
         )
 
-        tree.set_character_states("node5", [2, 0, 3, 0, 0, 0, 0, 0], layer='current')
+        tree.set_character_states(
+            "node5", [2, 0, 3, 0, 0, 0, 0, 0], layer="current"
+        )
         self.assertCountEqual(
             tree.get_character_states("node5"), [2, 0, 3, 0, 0, 0, 0, 0]
         )
@@ -579,7 +606,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             observed_character_matrix, self.character_matrix
         )
 
-        observed_character_matrix = tree.layers['current']
+        observed_character_matrix = tree.layers["current"]
         expected_character_matrix = self.character_matrix.copy()
         expected_character_matrix.loc["node5"] = [2, 0, 3, 0, 0, 0, 0, 0]
         pd.testing.assert_frame_equal(
@@ -1490,8 +1517,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_add_leaf_optional_arguments(self):
         tree = cas.data.CassiopeiaTree(
-            character_matrix=self.character_matrix,
-            tree=self.test_network,
+            character_matrix=self.character_matrix, tree=self.test_network
         )
         tree.compute_dissimilarity_map(delta_fn)
         tree.add_leaf(
@@ -1592,11 +1618,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_get_dissimilarity(self):
         dissimilarity_map = pd.DataFrame.from_dict(
-            {
-                "a": [0, 1, 2],
-                "b": [1, 0, 2],
-                "c": [2, 2, 0],
-            },
+            {"a": [0, 1, 2], "b": [1, 0, 2], "c": [2, 2, 0]},
             orient="index",
             columns=["a", "b", "c"],
         )
@@ -1612,11 +1634,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_set_dissimilarity(self):
         dissimilarity_map = pd.DataFrame.from_dict(
-            {
-                "a": [0, 1, 2],
-                "b": [1, 0, 2],
-                "c": [2, 2, 0],
-            },
+            {"a": [0, 1, 2], "b": [1, 0, 2], "c": [2, 2, 0]},
             orient="index",
             columns=["a", "b", "c"],
         )
