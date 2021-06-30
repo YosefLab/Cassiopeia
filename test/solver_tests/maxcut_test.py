@@ -166,16 +166,15 @@ class MaxCutSolverTest(unittest.TestCase):
 
         self.mcsolver.solve(self.mc_tree2)
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_nodes_from([5, 6, 7, "c1", "c2", "c3", "c4", "c5"])
         expected_tree.add_edges_from(
             [
                 (5, 6),
                 (5, 7),
                 (6, "c1"),
                 (6, "c2"),
-                (7, 8),
-                (8, "c3"),
-                (8, "c4"),
+                (7, "c3"),
+                (7, "c4"),
                 (7, "c5"),
             ]
         )
@@ -193,7 +192,7 @@ class MaxCutSolverTest(unittest.TestCase):
         # random.seed(10)
         self.mcsolver.solve(self.mc_tree3)
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_nodes_from([5, 6, 7, "c1", "c2", "c3", "c4", "c5"])
         expected_tree.add_edges_from(
             [
                 (5, "c1"),
@@ -201,9 +200,8 @@ class MaxCutSolverTest(unittest.TestCase):
                 (6, "c2"),
                 (6, 7),
                 (7, "c5"),
-                (7, 8),
-                (8, "c3"),
-                (8, "c4"),
+                (7, "c3"),
+                (7, "c4"),
             ]
         )
         observed_tree = self.mc_tree3.get_tree_topology()

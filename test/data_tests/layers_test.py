@@ -235,7 +235,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         # make sure states change
         self.assertListEqual([1, 2, 0], self.tree.get_character_states("b"))
-        self.tree.reinitialize_character_states_at_leaves(layer="modified")
+        self.tree.initialize_character_states_at_leaves(layer="modified")
         self.assertListEqual([1, 2, 0, 5], self.tree.get_character_states("b"))
 
 

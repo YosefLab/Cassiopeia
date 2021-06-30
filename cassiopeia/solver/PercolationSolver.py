@@ -172,19 +172,18 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights,
             cassiopeia_tree.missing_state_indicator,
         )
-
-        cassiopeia_tree.populate_tree(tree, layer=layer)
+        
+        duplicates_tree = self.__add_duplicates_to_tree(
+            tree,
+            character_matrix,
+            node_name_generator,
+        )
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(
             infer_ancestral_characters=True
         )
-        duplicates_tree = self.__add_duplicates_to_tree(
-            cassiopeia_tree.get_tree_topology(),
-            character_matrix,
-            node_name_generator,
-        )
-        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
     def percolate(
         self,

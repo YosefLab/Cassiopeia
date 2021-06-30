@@ -223,7 +223,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             self.assertIn(e, expected_edges)
 
         self.assertEqual(tree.n_cell, 10)
-        self.assertEqual(tree.n_character, 0)
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.n_character
 
         test_nodes = tree.nodes
         expected_nodes = [u for u in self.test_network.nodes()]
@@ -547,13 +548,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             [2, 0, 3, 0, 0, 0, 0, 0],
         )
 
-        self.assertRaises(
-            CassiopeiaTreeError,
-            tree.initialize_character_states_at_leaves,
-            {"node5": [2, 0, 3, 0, 0, 0, 0, 0]},
-        )
-
-        tree.initialize_character_states_at_leaves(self.character_matrix)
+        tree.character_matrix = self.character_matrix
+        tree.initialize_character_states_at_leaves()
 
         modified_character_matrix = tree.character_matrix.copy()
         tree.layers['current'] = modified_character_matrix
@@ -590,19 +586,19 @@ class TestCassiopeiaTree(unittest.TestCase):
             observed_character_matrix, expected_character_matrix
         )
 
-    def test_set_states_with_dictionary(self):
+    # def test_set_states_with_dictionary(self):
 
-        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+    #     tree = cas.data.CassiopeiaTree(tree=self.test_network)
 
-        character_dictionary = {}
-        for ind in self.character_matrix.index:
-            character_dictionary[ind] = self.character_matrix.loc[ind].tolist()
+    #     character_dictionary = {}
+    #     for ind in self.character_matrix.index:
+    #         character_dictionary[ind] = self.character_matrix.loc[ind].tolist()
 
-        tree.initialize_character_states_at_leaves(character_dictionary)
-        self.assertCountEqual(
-            tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
-        )
-        self.assertCountEqual(tree.get_character_states("node0"), [])
+    #     tree.initialize_character_states_at_leaves(character_dictionary)
+    #     self.assertCountEqual(
+    #         tree.get_character_states("node5"), [2, 0, 0, 0, 0, 0, 0, 0]
+    #     )
+    #     self.assertCountEqual(tree.get_character_states("node0"), [])
 
     def test_set_all_states(self):
 
@@ -845,7 +841,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        cas_tree.set_character_matrix(cm)
+        cas_tree.character_matrix = cm
+        cas_tree.initialize_character_states_at_leaves()
         delta = pd.DataFrame.from_dict(
             {
                 "node3": [0, 15, 21, 17],
@@ -895,7 +892,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        cas_tree.set_character_matrix(cm)
+        cas_tree.character_matrix = cm
+        cas_tree.initialize_character_states_at_leaves()
         delta = pd.DataFrame.from_dict(
             {
                 "node3": [0, 15, 21, 17],

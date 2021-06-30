@@ -248,7 +248,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         root = [0] * rooted_character_matrix.shape[1]
         rooted_character_matrix.loc["root"] = root
         cassiopeia_tree.root_sample_name = "root"
-        cassiopeia_tree.set_character_matrix(rooted_character_matrix)
+        cassiopeia_tree.character_matrix = rooted_character_matrix
 
         if self.dissimilarity_function is None:
             raise DistanceSolver.DistanceSolverError(
@@ -277,4 +277,4 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 )
             cassiopeia_tree.set_dissimilarity("root", dissimilarity)
 
-        cassiopeia_tree.set_character_matrix(character_matrix)
+        cassiopeia_tree.character_matrix = character_matrix

@@ -6,6 +6,7 @@ that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this.
 """
 import abc
+import cassiopeia
 import networkx as nx
 import numba
 import numpy as np
@@ -80,7 +81,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None) -> None:
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> None:
         """Solves a tree for a general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
@@ -139,9 +142,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             _dissimilarity_map.index.values,
         )
 
+        # remove root from character matrix before populating tree
+        if cassiopeia_tree.root_sample_name in cassiopeia_tree.character_matrix.index:
+            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
+                index=cassiopeia_tree.root_sample_name
+            )
+
         cassiopeia_tree.populate_tree(tree, layer=layer)
 
-    def setup_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None) -> None:
+    def setup_dissimilarity_map(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> None:
         """Sets up the solver.
 
         Sets up the solver with respect to the input CassiopeiaTree by
@@ -173,6 +184,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                     "Please specify an explicit root sample in the Cassiopeia Tree"
                     " or specify the solver to add an implicit root"
                 )
+
 
         if cassiopeia_tree.get_dissimilarity_map() is None:
             if self.dissimilarity_function is None:

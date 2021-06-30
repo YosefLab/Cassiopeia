@@ -14,7 +14,6 @@ This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
 import copy
-import itertools
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 import warnings
 
@@ -129,7 +128,7 @@ class CassiopeiaTree:
 
         self._character_matrix = None
         if character_matrix is not None:
-            self.set_character_matrix(character_matrix)
+            self.character_matrix = character_matrix
 
         if tree is not None:
             tree = copy.deepcopy(tree)
@@ -180,22 +179,17 @@ class CassiopeiaTree:
 
         # clear cache if we're changing the topology of the tree
         self.__cache = {}
-
-        # add character states
-        if layer is not None:
+        
+        if layer:
             character_matrix = self.layers[layer]
         else:
             character_matrix = self.character_matrix
-        for n in self.nodes:
-            if (
-                character_matrix is not None
-                and n in character_matrix.index.tolist()
-            ):
-                self.__network.nodes[n][
-                    "character_states"
-                ] = character_matrix.loc[n].to_list()
-            else:
-                self.__network.nodes[n]["character_states"] = []
+
+        if character_matrix is not None:
+            self.initialize_character_states_at_leaves(layer=layer)
+
+        for n in self.internal_nodes:
+            self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
         for u, v in self.edges:
@@ -213,15 +207,35 @@ class CassiopeiaTree:
         if self.__network is None:
             raise CassiopeiaTreeError("Tree has not been initialized.")
 
-    def set_character_matrix(
-        self, character_matrix: pd.DataFrame, set_character_states: bool = False
-    ):
+    @property
+    def layers(self) -> Layers:
+        """Dictionary object storing versions of character matrices.
+
+        Layers in this CassiopeiaTree object are inspired by AnnData's
+        layers functionality. All layers have the same number of samples
+        as the tree and :attr:`character_matrix`.
+
+        Return the layer named `"missing"`::
+            cas_tree.layers["missing"]
+        
+        Create or replace the `"merged"` layer::
+            cas_tree.layers["merged"] = ...
+        
+        Delete the `"missing"` layer::
+            del cas_tree.layers["missing"]
+        """
+        return self._layers
+
+    @property
+    def character_matrix(self) -> pd.DataFrame:
+        return self._character_matrix
+
+    @character_matrix.setter
+    def character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object.
         
         Args:
             character_matrix: Character matrix of mutation observations.
-            set_character_states: Set character states at the leaves of
-                the tree topology, if it exists.
         """
 
         if not all(type(i) == str for i in character_matrix.index):
@@ -231,14 +245,9 @@ class CassiopeiaTree:
 
         self._character_matrix = character_matrix.copy()
 
-        # overwrite character information at the leaves if needed
-        if self.__network and set_character_states:
-            self.initialize_character_states_at_leaves(character_matrix)
-
     def initialize_character_states_at_leaves(
         self,
-        character_matrix: Optional[Union[pd.DataFrame, Dict]] = None,
-        add_layer: Optional[str] = None,
+        layer: Optional[str] = None,
     ) -> None:
         """Populates character states at leaves.
 
@@ -246,11 +255,9 @@ class CassiopeiaTree:
         must have a character state assignment to all leaves of the tree.
 
         Args:
-            character_matrix: A pandas dataframe or dictionary for mapping
-                character states to the leaves of the tree.
-            add_layer: Layer to which to add the new character matrix. If this
-                is None, then the specified character matrix will be set to
-                the default matrix in this object.
+            layer: Layer to use for resetting character information at leaves.
+                If this is None, uses the default character matrix stored in
+                :attr:`character_matrix`.
 
         Raises:
             CassiopeiaTreeError if not all leaves are accounted for or if the
@@ -258,10 +265,10 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        if isinstance(character_matrix, dict):
-            character_matrix = pd.DataFrame.from_dict(
-                character_matrix, orient="index"
-            )
+        if layer:
+            character_matrix = self.layers[layer]
+        else:
+            character_matrix = self.character_matrix
 
         if set(self.leaves) != set(character_matrix.index.values):
             raise CassiopeiaTreeError(
@@ -270,11 +277,6 @@ class CassiopeiaTree:
 
         for n in self.leaves:
             self.__set_character_states(n, character_matrix.loc[n].tolist())
-
-        if add_layer:
-            self._layers[add_layer] = character_matrix.copy()
-        else:
-            self._character_matrix = character_matrix.copy()
 
     def initialize_all_character_states(
         self,
@@ -319,49 +321,6 @@ class CassiopeiaTree:
             self._layers[add_layer] = character_matrix.copy()
         else:
             self._character_matrix = character_matrix.copy()
-
-    def reinitialize_character_states_at_leaves(self, layer: Optional[str] = None) -> None:
-        """Resets character states at leaves from a character matrix.
-
-        Clears character information over the tree and reinitializes character
-        states at the leaves using the specified character matrix.
-
-        Args:
-            layer: Layer to use for resetting character information at leaves.
-                If this is None, uses the default character matrix stored in
-                :attr:`character_matrix`.
-        """
-        
-        if layer:
-            character_matrix = self.layers[layer]
-        else:
-            character_matrix = self.character_matrix
-
-        for n in self.leaves:
-            self.__set_character_states(n, character_matrix.loc[n].tolist())
-
-    @property
-    def layers(self) -> Layers:
-        """Dictionary object storing versions of character matrices.
-
-        Layers in this CassiopeiaTree object are inspired by AnnData's
-        layers functionality. All layers have the same number of samples
-        as the tree and :attr:`character_matrix`.
-
-        Return the layer named `"missing"`::
-            cas_tree.layers["missing"]
-        
-        Create or replace the `"merged"` layer::
-            cas_tree.layers["merged"] = ...
-        
-        Delete the `"missing"` layer::
-            del cas_tree.layers["missing"]
-        """
-        return self._layers
-
-    @property
-    def character_matrix(self) -> pd.DataFrame:
-        return self._character_matrix
 
     @property
     def n_cell(self) -> int:
@@ -1283,9 +1242,7 @@ class CassiopeiaTree:
                 set(self.character_matrix.index) - leaves_set
             )
 
-            self.set_character_matrix(
-                self.character_matrix.drop(index=remove_from_character_matrix)
-            )
+            self.character_matrix = (self.character_matrix.drop(index=remove_from_character_matrix))
 
             layer_copies = self.layers.copy()
             for name, layer_copy in layer_copies:
