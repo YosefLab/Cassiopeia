@@ -18,6 +18,7 @@ requirements = [
     "cython>=0.29.2",
     "ete3>=3.1.1",
     "hits",
+    "hyperopt",
     "matplotlib>=2.2.2",
     "nbconvert>=5.4.0",
     "nbformat>=4.4.0",
@@ -29,11 +30,13 @@ requirements = [
     "pysam>=0.14.1",
     "python-Levenshtein",
     "PyYAML>=3.12",
+    "ray[default]",
+    "ray[tune]",
     "scikit-bio>=0.5.6",
     "scipy>=1.2.0",
+    "torch",
     "typing-extensions>=3.7.4",
     "tqdm>=4",
-    "ray",
 ]
 
 

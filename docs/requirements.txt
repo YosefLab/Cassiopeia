@@ -25,4 +25,7 @@ typing_extensions; python_version < '3.8'
 cvxpy
 parameterized
 seaborn
-ray
+ray[default]
+ray[tune]
+hyperopt
+torch
