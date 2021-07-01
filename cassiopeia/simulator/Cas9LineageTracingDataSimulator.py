@@ -49,7 +49,10 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     if Cas9 molecules perform cuts on the same cassette at any point in a cell's
     lifetime. Importantly, setting the cassette length to 1 will remove any
     resection events due to Cas9 cutting, and will reduce the amount of
-    transcriptionally silencing observed.
+    transcriptionally silencing observed. This behavior can be manually turned
+    off by setting `collapse_sites_on_cassette=False`, which will keep
+    cuts that occur simultaneously on the same cassette as separate events,
+    instead of causing a resection event.
 
     Third, the class accepts a state distribution describing the relative
     likelihoods of various indels. This is very useful, as it is typical that a
