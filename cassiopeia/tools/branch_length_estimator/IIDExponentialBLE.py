@@ -30,6 +30,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
         l2_regularization: Consecutive branches will be regularized to have
             similar length via an L2 penalty whose weight is given by
             l2_regularization.
+        treat_missing_states_as_mutations: If True, missing states will be treated as
+            their own CRISPR/Cas9 mutations.
         verbose: Verbosity level.
 
     Attributes:
@@ -43,10 +45,12 @@ class IIDExponentialBLE(BranchLengthEstimator):
         self,
         minimum_branch_length: float = 0,
         l2_regularization: float = 0,
+        treat_missing_states_as_mutations: bool = True,
         verbose: bool = False,
     ):
         self.minimum_branch_length = minimum_branch_length
         self.l2_regularization = l2_regularization
+        self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
         self.verbose = verbose
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
@@ -60,10 +64,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # Extract parameters
         minimum_branch_length = self.minimum_branch_length
         l2_regularization = self.l2_regularization
+        treat_missing_states_as_mutations = self.treat_missing_states_as_mutations
         verbose = self.verbose
-
-        # # Wrap the networkx DiGraph for goodies.
-        # tree = Tree(tree)
 
         # # # # # Create variables of the optimization problem # # # # #
         r_X_t_variables = dict(
@@ -103,17 +105,27 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # sufficient statistic. This makes the solver WAY faster!
         for (parent, child) in tree.edges:
             edge_length = r_X_t_variables[child] - r_X_t_variables[parent]
-            # TODO: hardcoded '0' here...
-            zeros_parent = tree.get_number_of_unmutated_characters_in_node(
-                parent
-            )
-            zeros_child = tree.get_number_of_unmutated_characters_in_node(child)
-            new_cuts_child = zeros_parent - zeros_child
-            assert new_cuts_child >= 0
-            # Add log-lik for characters that didn't get cut
-            log_likelihood += zeros_child * (-edge_length)
+            parent_states = tree.get_character_states(parent)
+            child_states = tree.get_character_states(child)
+            num_uncuts = 0
+            num_cuts = 0
+            num_missing = 0
+            for parent_state, child_state in zip(parent_states, child_states):
+                # We only care about uncut states.
+                if parent_state == 0:
+                    if child_state == 0:
+                        num_uncuts += 1
+                    elif child_state == tree.missing_state_indicator:
+                        num_missing += 1
+                    else:
+                        num_cuts += 1
+            if treat_missing_states_as_mutations:
+                # TODO: Test this functionality!
+                num_cuts += num_missing
+                num_missing = 0
+            log_likelihood += num_uncuts * (-edge_length)
             # Add log-lik for characters that got cut
-            log_likelihood += new_cuts_child * cp.log(
+            log_likelihood += num_cuts * cp.log(
                 1 - cp.exp(-edge_length - 1e-8)
             )
 
