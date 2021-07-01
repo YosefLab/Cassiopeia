@@ -13,6 +13,7 @@ from scipy.special import binom, logsumexp
 import ray
 from ray import tune
 from ray.tune.suggest.hyperopt import HyperOptSearch
+from ray.tune import ProgressReporter
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -952,6 +953,15 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         )
 
 
+class EmptyReporter(ProgressReporter):
+    """Never report"""
+    def should_report(self, trials, done=False):
+        return False
+
+    def report(self, trials, *sys_info):
+        print(f"Empty report")
+
+
 class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
     def __init__(
         self,
@@ -995,7 +1005,8 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
             num_samples=self.num_samples,
             search_alg=self.search_alg,
             metric='log_likelihood',
-            mode='max'
+            mode='max',
+            progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
         )
         ray.shutdown()
         self.analysis = analysis
