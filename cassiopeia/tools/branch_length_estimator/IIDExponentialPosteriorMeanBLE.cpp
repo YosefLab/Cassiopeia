@@ -35,6 +35,7 @@ vector<int> leaves;
 int parent[maxN];
 int is_leaf[maxN];
 int K = -1;
+int Ks[maxN];
 int T = -1;
 int enforce_parsimony = -1;
 double r;
@@ -214,6 +215,20 @@ void read_K(){
     }
 }
 
+void read_Ks(){
+    ifstream fin(input_dir + "/Ks.txt");
+    int lines_read = 0;
+    int v;
+    while(fin >> v){
+        lines_read++;
+        fin >> Ks[v];
+    }
+    if(lines_read != N){
+        cerr << "Ks input corrupted" << endl;
+        exit(1);
+    }
+}
+
 void read_T(){
     // T is the discretization level.
     ifstream fin(input_dir + "/T.txt");
@@ -292,10 +307,11 @@ double down(int v, int t, int x){
     }
     // Pull out params
     double dt = 1.0 / T;
+    int Kv = Ks[v];
     assert(v != root);
     assert(0 <= t && t <= T);
-    assert(0 <= x && x <= K);
-    if(!(1.0 - lam * dt - K * r * dt > 0)){
+    assert(0 <= x && x <= Kv);
+    if(!(1.0 - lam * dt - Kv * r * dt > 0)){
         cerr << "Please choose a bigger discretization_level." << endl;
         exit(1);
     }
@@ -316,13 +332,13 @@ double down(int v, int t, int x){
         vector<double> log_likelihoods_cases;
         // Case 1: Nothing happens
         log_likelihoods_cases.push_back(
-            log(1.0 - lam * dt - (K - x) * r * dt)
+            log(1.0 - lam * dt - (Kv - x) * r * dt)
             + down(v, t + 1, x)
         );
         // Case 2: One character mutates.
-        if(x + 1 <= K){
+        if(x + 1 <= Kv){
             log_likelihoods_cases.push_back(
-                log((K - x) * r * dt) + down(v, t + 1, x + 1)
+                log((Kv - x) * r * dt) + down(v, t + 1, x + 1)
             );
         }
         // Case 3: Cell divides
@@ -336,7 +352,7 @@ double down(int v, int t, int x){
             double ll = 0.0;
             forn(i, children[v].size()){
                 int child = children[v][i];
-                ll += down(child, t + 1, x);// If we want to ignore missing data, we just have to replace x by x+gone_missing(p->v). I.e. dropped out characters become free mutations.
+                ll += down(child, t + 1, x);
             }
             ll += log(lam * dt);
             log_likelihoods_cases.push_back(ll);
@@ -361,10 +377,11 @@ double up(int v, int t, int x){
     }
     // Pull out params
     double dt = 1.0 / T;
+    int Kv = Ks[v];
     assert(0 <= v  && v < N);
     assert(0 <= t && t <= T);
-    assert(0 <= x && x <= K);
-    if(!(1.0 - lam * dt - K * r * dt > 0)){
+    assert(0 <= x && x <= Kv);
+    if(!(1.0 - lam * dt - Kv * r * dt > 0)){
         cerr << "Please choose a bigger discretization_level." << endl;
         exit(1);
     }
@@ -385,27 +402,27 @@ double up(int v, int t, int x){
         vector<double> log_likelihoods_cases;
         // Case 1: Nothing happened
         log_likelihoods_cases.push_back(
-            log(1.0 - lam * dt - (K - x) * r * dt) + up(v, t - 1, x)
+            log(1.0 - lam * dt - (Kv - x) * r * dt) + up(v, t - 1, x)
         );
         // Case 2: Mutation happened
         if(x - 1 >= 0){
             log_likelihoods_cases.push_back(
-                log((K - (x - 1)) * r * dt) + up(v, t - 1, x - 1)
+                log((Kv - (x - 1)) * r * dt) + up(v, t - 1, x - 1)
             );
         }
         // Case 3: A cell division happened
         if(v != root){
             int p = parent[v];
             if(_compatible_with_observed_data(
-                x, get_number_of_mutated_characters_in_node[p] // If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                x, get_number_of_mutated_characters_in_node[p]
             )){
                 vector<int> siblings;
                 for(auto u: children[p])
                     if(u != v)
                         siblings.push_back(u);
-                double ll = log(lam * dt) + up(p, t - 1, x);  // If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                double ll = log(lam * dt) + up(p, t - 1, x);
                 for(auto u: siblings){
-                    ll += down(u, t, x); // If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
+                    ll += down(u, t, x);
                 }
                 log_likelihoods_cases.push_back(ll);
             }
@@ -586,6 +603,7 @@ int main(int argc, char *argv[]){
     read_parent();
     read_is_leaf();
     read_K();
+    read_Ks();
     read_T();
     read_enforce_parsimony();
     read_r();

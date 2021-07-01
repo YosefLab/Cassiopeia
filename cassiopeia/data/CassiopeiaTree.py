@@ -1194,14 +1194,14 @@ class CassiopeiaTree:
         return np.max(depths)
 
     def get_mutations_along_edge(
-        self, parent: str, child: str
+        self, parent: str, child: str, include_missing: bool = True
     ) -> List[Tuple[int, int]]:
         """Gets the mutations along an edge of interest.
 
         Returns a list of tuples (character, state) of mutations that occur
         along an edge. Characters are 0-indexed.
 
-        WARNING: A character dropout event will also be considered a mutation!
+        WARNING: By default, a character dropout event will also be considered a mutation!
 
         Args:
             parent: parent in tree
@@ -1226,14 +1226,19 @@ class CassiopeiaTree:
         mutations = []
         for i in range(self.n_character):
             if parent_states[i] != child_states[i]:
-                mutations.append((i, child_states[i]))
+                if include_missing:
+                    mutations.append((i, child_states[i]))
+                else:
+                    # Only include if child state is non-missing.
+                    if child_states[i] != self.missing_state_indicator:
+                        mutations.append((i, child_states[i]))
 
         return mutations
 
     def get_number_of_mutations_along_edge(
-        self, parent: str, child: str
+        self, parent: str, child: str, include_missing: bool = True
     ) -> int:
-        return len(self.get_mutations_along_edge(parent, child))
+        return len(self.get_mutations_along_edge(parent, child, include_missing=include_missing))
 
     def get_number_of_unmutated_characters_in_node(
         self, node: str
@@ -1241,14 +1246,23 @@ class CassiopeiaTree:
         states = self.get_character_states(node)
         return states.count(0)
 
-    def get_number_of_mutated_characters_in_node(
+    def get_number_of_missing_characters_in_node(
         self, node: str
     ) -> int:
+        states = self.get_character_states(node)
+        return states.count(self.missing_state_indicator)
+
+    def get_number_of_mutated_characters_in_node(
+        self, node: str, include_missing: bool = True
+    ) -> int:
         r"""
-        WARNING: dropped out characters will be considered as mutated too!
+        WARNING: by default, missing characters will be considered as mutated too!
         """
-        return self.n_character -\
+        res = self.n_character -\
             self.get_number_of_unmutated_characters_in_node(node)
+        if not include_missing:
+            res -= self.get_number_of_missing_characters_in_node(node)
+        return res
 
     def relabel_nodes(self, relabel_map: Dict[str, str]) -> None:
         """Relabels the nodes in the tree.

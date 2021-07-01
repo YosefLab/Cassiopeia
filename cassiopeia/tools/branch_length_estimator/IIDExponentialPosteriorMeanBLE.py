@@ -53,6 +53,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         enforce_parsimony: bool = True,
         use_cpp_implementation: bool = False,
         debug_cpp_implementation: bool = False,
+        treat_missing_states_as_mutations: bool = True,
         verbose: bool = False,
     ) -> None:
         # TODO: If we use autograd, we can tune the hyperparams with gradient
@@ -71,6 +72,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.enforce_parsimony = enforce_parsimony
         self.use_cpp_implementation = use_cpp_implementation
         self.debug_cpp_implementation = debug_cpp_implementation
+        self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
         self.verbose = verbose
 
     def _compute_log_likelihood(self):
@@ -95,10 +97,10 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         enforce_parsimony = self.enforce_parsimony
         children = tree.children(v)
         if enforce_parsimony:
-            valid_num_cuts = [tree.get_number_of_mutated_characters_in_node(v)]
+            valid_num_cuts = [tree.get_number_of_mutated_characters_in_node(v, include_missing=self.treat_missing_states_as_mutations)]
         else:
             valid_num_cuts = range(
-                tree.get_number_of_mutated_characters_in_node(v) + 1
+                tree.get_number_of_mutated_characters_in_node(v, include_missing=self.treat_missing_states_as_mutations) + 1
             )
         ll_for_xs = []
         for x in valid_num_cuts:
@@ -140,11 +142,43 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             times[leaf] = 1.0
         tree.set_times(times)
 
+    def _precompute_Ks(self, tree: CassiopeiaTree):
+        r"""
+        For each vertex in the tree, we determine how many characters k are
+        not considered missing starting here. This depends on whether
+        missing characters are being treated as mutations or not. If
+        they are treated as mutations, then k = number of characters,
+        for all vertices. If not, this quantity will vary between vertices.
+        """
+        if self.treat_missing_states_as_mutations:
+            # Trivial case
+            self.Ks = dict([(v, tree.n_character) for v in tree.nodes])
+            return
+        # Now the more complicated case
+        self.Ks = {}
+        self.Ks[tree.root] = tree.n_character
+        for (parent, child) in tree.edges:
+            parent_states = tree.get_character_states(parent)
+            child_states = tree.get_character_states(child)
+            k = 0
+            for (parent_state, child_state) in zip(parent_states, child_states):
+                if parent_state != 0 and parent_state != tree.missing_state_indicator:
+                    # Is an already-existing mutation
+                    k += 1
+                elif parent_state == 0 and child_state != tree.missing_state_indicator:
+                    # Is an unmutated character that did not go missing so we should track.
+                    k += 1
+            self.Ks[child] = k
+        # Check monotonicity of Ks
+        for (parent, child) in tree.edges:
+            assert(self.Ks[parent] >= self.Ks[child])
+
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
         See base class.
         """
         self._precompute_p_unsampled()
+        self._precompute_Ks(tree)
         self._down_cache = {}
         self._up_cache = {}
         self.tree = tree
@@ -326,7 +360,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         )
 
         get_number_of_mutated_characters_in_node = [
-            [node_to_id[v], tree.get_number_of_mutated_characters_in_node(v)]
+            [node_to_id[v], tree.get_number_of_mutated_characters_in_node(v, include_missing=self.treat_missing_states_as_mutations)]
             for v in tree.nodes
         ]
         self._write_out_list_of_lists(
@@ -353,6 +387,9 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
 
         K = [[tree.n_character]]
         self._write_out_list_of_lists(K, f"{tmp_dir}/K.txt")
+
+        Ks = [[node_to_id[v], self.Ks[v]] for v in tree.nodes]
+        self._write_out_list_of_lists(Ks, f"{tmp_dir}/Ks.txt")
 
         T = [[self.discretization_level]]
         self._write_out_list_of_lists(T, f"{tmp_dir}/T.txt")
@@ -462,8 +499,8 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         if v == tree.root:
             return x == 0
         p = tree.parent(v)
-        cuts_v = tree.get_number_of_mutated_characters_in_node(v)
-        cuts_p = tree.get_number_of_mutated_characters_in_node(p)
+        cuts_v = tree.get_number_of_mutated_characters_in_node(v, include_missing=self.treat_missing_states_as_mutations)
+        cuts_p = tree.get_number_of_mutated_characters_in_node(p, include_missing=self.treat_missing_states_as_mutations)
         if self.enforce_parsimony:
             return cuts_p <= x <= cuts_v
         else:
@@ -490,15 +527,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r = self.mutation_rate
         lam = self.birth_rate
         dt = 1.0 / self.discretization_level
-        K = self.tree.n_character
+        Kv = self.Ks[v]
         tree = self.tree
         assert 0 <= t <= self.discretization_level
-        assert 0 <= x <= K
-        if not (1.0 - lam * dt - K * r * dt > 0):
+        assert 0 <= x <= Kv
+        if not (1.0 - lam * dt - Kv * r * dt > 0):
             raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
         if v == tree.root:  # Base case: we reached the root of the tree.
-            if t == 0 and x == tree.get_number_of_mutated_characters_in_node(v):
+            if t == 0 and x == tree.get_number_of_mutated_characters_in_node(v, include_missing=self.treat_missing_states_as_mutations):
                 log_likelihood = 0.0
             else:
                 log_likelihood = -np.inf
@@ -511,12 +548,12 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             log_likelihoods_cases = []
             # Case 1: Nothing happened
             log_likelihoods_cases.append(
-                np.log(1.0 - lam * dt - (K - x) * r * dt) + self.up(v, t - 1, x)
+                np.log(1.0 - lam * dt - (Kv - x) * r * dt) + self.up(v, t - 1, x)
             )
             # Case 2: Mutation happened
             if x - 1 >= 0:
                 log_likelihoods_cases.append(
-                    np.log((K - (x - 1)) * r * dt) + self.up(v, t - 1, x - 1)
+                    np.log((Kv - (x - 1)) * r * dt) + self.up(v, t - 1, x - 1)
                 )
             # Case 3: A cell division happened AND both lineages persisted
             if v != tree.root:
@@ -524,18 +561,18 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 if self._compatible_with_observed_data(
                     x,
                     tree.get_number_of_mutated_characters_in_node(
-                        p
-                    ),  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                        p, include_missing=self.treat_missing_states_as_mutations
+                    ),
                 ):
                     siblings = [u for u in tree.children(p) if u != v]
                     ll = (
                         np.log(lam * dt)
                         + self.up(
                             p, t - 1, x
-                        )  # If we want to ignore missing data, we just have to replace x by x-gone_missing(p->v). I.e. dropped out characters become free mutations.
+                        )
                         + sum(
                             [self.down(u, t, x) for u in siblings]
-                        )  # If we want to ignore missing data, we just have to replace x by cuts(p)+gone_missing(p->u). I.e. dropped out characters become free mutations.
+                        )
                     )
                     log_likelihoods_cases.append(ll)
             # Case 4: There was a cell division event, BUT one of the two
@@ -568,18 +605,20 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r = self.mutation_rate
         lam = self.birth_rate
         dt = 1.0 / self.discretization_level
-        K = self.tree.n_character
+        Kv = self.Ks[v]
         tree = self.tree
         assert v != tree.root
         assert 0 <= t <= self.discretization_level
-        assert 0 <= x <= K
-        if not (1.0 - lam * dt - K * r * dt > 0):
+        assert 0 <= x <= Kv
+        if not (1.0 - lam * dt - Kv * r * dt > 0):
             raise ValueError("Please choose a bigger discretization_level.")
         log_likelihood = 0.0
         if t == discretization_level:  # Base case
             if tree.is_leaf(
                 v
-            ) and x == tree.get_number_of_mutated_characters_in_node(v):
+            ) and x == tree.get_number_of_mutated_characters_in_node(
+                v, include_missing=self.treat_missing_states_as_mutations
+            ):
                 log_likelihood = np.log(self.sampling_probability)
             else:
                 log_likelihood = -np.inf
@@ -587,18 +626,20 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             log_likelihoods_cases = []
             # Case 1: Nothing happens
             log_likelihoods_cases.append(
-                np.log(1.0 - lam * dt - (K - x) * r * dt)
+                np.log(1.0 - lam * dt - (Kv - x) * r * dt)
                 + self.down(v, t + 1, x)
             )
             # Case 2: One character mutates.
-            if x + 1 <= K:
+            if x + 1 <= Kv:
                 log_likelihoods_cases.append(
-                    np.log((K - x) * r * dt) + self.down(v, t + 1, x + 1)
+                    np.log((Kv - x) * r * dt) + self.down(v, t + 1, x + 1)
                 )
             # Case 3: Cell divides AND both lineages persist.
             # The number of cuts at this state must match the ground truth.
             if self._compatible_with_observed_data(
-                x, tree.get_number_of_mutated_characters_in_node(v)
+                x, tree.get_number_of_mutated_characters_in_node(
+                    v, include_missing=self.treat_missing_states_as_mutations
+                )
             ) and not tree.is_leaf(v):
                 ll = sum(
                     [
@@ -621,6 +662,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         mutation_rate: float,
         birth_rate: float,
         sampling_probability: float = 1.0,
+        treat_missing_states_as_mutations: bool = True,
     ) -> float:
         r"""
         log P(T, X, branch_lengths), i.e. the full joint log likelihood given
@@ -654,7 +696,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 ll += lg(lam) + lam * h - 2.0 * lg(q_inv + e(lam * h)) +\
                     2.0 * lg(q_inv + e(lam * h_tilde)) - lam * h_tilde
             # Mutation process likelihood
-            cuts = tree.get_number_of_mutations_along_edge(p, c)
+            cuts = tree.get_number_of_mutations_along_edge(p, c, include_missing=treat_missing_states_as_mutations)
             uncuts = tree.get_number_of_unmutated_characters_in_node(c)
             # Care must be taken here, we might get a nan
             if np.isnan(lg(1 - e(-t * r)) * cuts):
@@ -674,6 +716,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         birth_rate: float,
         sampling_probability: float = 1.0,
         epsrel: float = 0.01,
+        treat_missing_states_as_mutations: bool = True,
     ):
         r"""
         log P(T, X), i.e. the marginal log likelihood given _only_ tree
@@ -703,6 +746,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
                     sampling_probability=sampling_probability,
+                    treat_missing_states_as_mutations=treat_missing_states_as_mutations,
                 )
             )
 
@@ -725,6 +769,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         birth_rate: float,
         discretization_level: int,
         sampling_probability: float = 1.0,
+        treat_missing_states_as_mutations: bool = True,
         epsrel: float = 0.01,
     ):
         r"""
@@ -757,6 +802,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
                     sampling_probability=sampling_probability,
+                    treat_missing_states_as_mutations=treat_missing_states_as_mutations,
                 )
             )
 
@@ -775,6 +821,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                     mutation_rate=mutation_rate,
                     birth_rate=birth_rate,
                     sampling_probability=sampling_probability,
+                    treat_missing_states_as_mutations=treat_missing_states_as_mutations,
                 )
                 res[i] -= np.log(discretization_level)
             else:
@@ -801,6 +848,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         birth_rate: float,
         discretization_level: int,
         sampling_probability: float = 1.0,
+        treat_missing_states_as_mutations: bool = True,
         epsrel: float = 0.01,
     ):
         numerical_log_joint = self.numerical_log_joint(
@@ -810,6 +858,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
             birth_rate=birth_rate,
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
+            treat_missing_states_as_mutations=treat_missing_states_as_mutations,
             epsrel=epsrel,
         )
         numerical_posterior = np.exp(
@@ -849,6 +898,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         sampling_probability: float = 1.0,
         discretization_level: int = 1000,
         enforce_parsimony: bool = True,
+        treat_missing_states_as_mutations: bool = True,
         use_cpp_implementation: bool = False,
         processes: int = 6,
         verbose: bool = False,
@@ -858,6 +908,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         self.sampling_probability = sampling_probability
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
+        self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
         self.use_cpp_implementation = use_cpp_implementation
         self.processes = processes
         self.verbose = verbose
@@ -871,6 +922,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
         sampling_probability = self.sampling_probability
         discretization_level = self.discretization_level
         enforce_parsimony = self.enforce_parsimony
+        treat_missing_states_as_mutations = self.treat_missing_states_as_mutations
         use_cpp_implementation = self.use_cpp_implementation
         processes = self.processes
         verbose = self.verbose
@@ -895,6 +947,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
                         sampling_probability=sampling_probability,
                         discretization_level=discretization_level,
                         enforce_parsimony=enforce_parsimony,
+                        treat_missing_states_as_mutations=treat_missing_states_as_mutations,
                         use_cpp_implementation=use_cpp_implementation,
                     )
                 )
@@ -927,6 +980,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
             enforce_parsimony=enforce_parsimony,
+            treat_missing_states_as_mutations=treat_missing_states_as_mutations,
             use_cpp_implementation=use_cpp_implementation,
         )
         final_model.estimate_branch_lengths(tree)
@@ -967,6 +1021,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         self,
         discretization_level: int,
         enforce_parsimony: bool = True,
+        treat_missing_states_as_mutations: bool = True,
         use_cpp_implementation: bool = False,
         processes: int = 6,
         num_samples: int = 100,
@@ -976,6 +1031,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
     ) -> None:
         self.discretization_level = discretization_level
         self.enforce_parsimony = enforce_parsimony
+        self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
         self.use_cpp_implementation = use_cpp_implementation
         self.processes = processes
         self.num_samples = num_samples
@@ -1033,6 +1089,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
             discretization_level=self.discretization_level,
             sampling_probability=config['sampling_probability'],
             enforce_parsimony=self.enforce_parsimony,
+            treat_missing_states_as_mutations=self.treat_missing_states_as_mutations,
             use_cpp_implementation=self.use_cpp_implementation,
             verbose=self.verbose,
         )
