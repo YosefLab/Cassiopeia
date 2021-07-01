@@ -620,6 +620,25 @@ class CassiopeiaTree:
         if zero_the_root:
             self.__set_character_states(self.root, [0] * self.n_character)
 
+    def impute_unambiguous_missing_states(self):
+        """
+        If a mutated state goes missing down the lineage,
+        we can impute it with certainty with the known mutated state.
+        """
+        self.__check_network_initialized()
+        for (parent, child) in self.depth_first_traverse_edges():
+            parent_states = self.get_character_states(parent)
+            child_states = self.get_character_states(child)
+            if not len(parent_states) == len(child_states):
+                raise CassiopeiaTreeError("Parent and child node have different length character states.")
+            new_child_states = []
+            for i, (parent_state, child_state) in enumerate(zip(parent_states, child_states)):
+                if parent_state != 0 and parent_state != self.missing_state_indicator and child_state == self.missing_state_indicator:
+                    new_child_states.append(parent_state)
+                else:
+                    new_child_states.append(child_state)
+            self.set_character_states(child, new_child_states)
+
     def parent(self, node: str) -> str:
         """Gets the parent of a node.
 

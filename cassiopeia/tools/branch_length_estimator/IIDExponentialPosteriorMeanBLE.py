@@ -168,6 +168,11 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
                 elif parent_state == 0 and child_state != tree.missing_state_indicator:
                     # Is an unmutated character that did not go missing so we should track.
                     k += 1
+                # Check that imputable missing states have been imputed.
+                if parent_state != 0 and parent_state != tree.missing_state_indicator and child_state == tree.missing_state_indicator:
+                    raise BranchLengthEstimatorError(
+                        "Imputable missing states should have been imputed first. "
+                        "Use the CassiopeiaTree.impute_unambiguous_missing_states method to do this.")
             self.Ks[child] = k
         # Check monotonicity of Ks
         for (parent, child) in tree.edges:

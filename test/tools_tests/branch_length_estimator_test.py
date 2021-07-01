@@ -2,6 +2,7 @@ import itertools
 import multiprocessing
 import unittest
 from copy import deepcopy
+from typing import List
 
 import networkx as nx
 import numpy as np
@@ -638,22 +639,29 @@ def get_z_scores_under_misspecified_model_sampling_probability_over(repetition):
     )
 
 
+def flatten(list_of_lists: List[List]) -> List:
+    res = []
+    for list in list_of_lists:
+        res += list
+    return res
+
+
 class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
     @parameterized.expand(
-        [
-            ("cpp0", True, 1.0, 0.8, False, 500, 3),
-            ("cpp1", True, 1.0, 0.8, True, 500, 3),
-            ("cpp2", True, 0.1, 5.0, False, 500, 2),
-            ("cpp3", True, 0.1, 5.0, True, 500, 3),
-            ("cpp4", True, 0.3, 4.0, False, 500, 3),
-            ("cpp5", True, 0.3, 4.0, True, 500, 3),
-            ("no_cpp0", False, 1.0, 0.8, False, 500, 3),
-            ("no_cpp1", False, 1.0, 0.8, True, 500, 3),
-            ("no_cpp2", False, 0.1, 5.0, False, 500, 2),
-            ("no_cpp3", False, 0.1, 5.0, True, 500, 3),
-            ("no_cpp4", False, 0.3, 4.0, False, 500, 3),
-            ("no_cpp5", False, 0.3, 4.0, True, 500, 3),
-        ]
+        flatten([[
+            (f"cpp0_{treat_missing_states_as_mutations}", True, 1.0, 0.8, False, 500, 3, treat_missing_states_as_mutations),
+            (f"cpp1_{treat_missing_states_as_mutations}", True, 1.0, 0.8, True, 500, 3, treat_missing_states_as_mutations),
+            (f"cpp2_{treat_missing_states_as_mutations}", True, 0.1, 5.0, False, 500, 2, treat_missing_states_as_mutations),
+            (f"cpp3_{treat_missing_states_as_mutations}", True, 0.1, 5.0, True, 500, 2, treat_missing_states_as_mutations),
+            (f"cpp4_{treat_missing_states_as_mutations}", True, 0.3, 4.0, False, 500, 3, treat_missing_states_as_mutations),
+            (f"cpp5_{treat_missing_states_as_mutations}", True, 0.3, 4.0, True, 500, 3, treat_missing_states_as_mutations),
+            (f"no_cpp0_{treat_missing_states_as_mutations}", False, 1.0, 0.8, False, 500, 3, treat_missing_states_as_mutations),
+            (f"no_cpp1_{treat_missing_states_as_mutations}", False, 1.0, 0.8, True, 500, 3, treat_missing_states_as_mutations),
+            (f"no_cpp2_{treat_missing_states_as_mutations}", False, 0.1, 5.0, False, 500, 2, treat_missing_states_as_mutations),
+            (f"no_cpp3_{treat_missing_states_as_mutations}", False, 0.1, 5.0, True, 500, 2, treat_missing_states_as_mutations),
+            (f"no_cpp4_{treat_missing_states_as_mutations}", False, 0.3, 4.0, False, 500, 3, treat_missing_states_as_mutations),
+            (f"no_cpp5_{treat_missing_states_as_mutations}", False, 0.3, 4.0, True, 500, 3, treat_missing_states_as_mutations),
+        ] for treat_missing_states_as_mutations in [True, False]])
     )
     def test_IIDExponentialPosteriorMeanBLE(
             self,
@@ -664,6 +672,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             many_characters,
             discretization_level,
             significance,
+            treat_missing_states_as_mutations,
         ):
         r"""
         For a small tree with only one internal node, the likelihood of the data,
@@ -680,17 +689,18 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         if many_characters:
             tree.initialize_all_character_states(
                 {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 "1": [0, 1, 0, 0, 0, 0, 1, 1, 0],
-                 "2": [0, 1, 0, 1, 1, 0, 1, 1, 1],
-                 "3": [0, 1, 1, 1, 0, 0, 1, 1, 1]},
+                "1": [0, 1, 0, 0, 0, 0, 1, -1, 0],
+                "2": [0, -1, 0, 1, 1, 0, 1, -1, -1],
+                "3": [0, -1, -1, 1, 0, 0, -1, -1, -1]},
             )
         else:
             tree.initialize_all_character_states(
                 {"0": [0],
-                 "1": [1],
-                 "2": [1],
-                 "3": [1]},
+                "1": [1],
+                "2": [-1],
+                "3": [1]},
             )
+        tree.impute_unambiguous_missing_states()
 
         mutation_rate = 0.3
         model = IIDExponentialPosteriorMeanBLE(
@@ -698,6 +708,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             birth_rate=birth_rate,
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
+            treat_missing_states_as_mutations=treat_missing_states_as_mutations,
             use_cpp_implementation=use_cpp_implementation
         )
 
@@ -718,7 +729,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         # Test the model log likelihood vs its computation from the leaf nodes.
         for leaf in ["2", "3"]:
             model_log_likelihood_up = model.up(
-                leaf, discretization_level, tree.get_number_of_mutated_characters_in_node(leaf)
+                leaf, discretization_level, tree.get_number_of_mutated_characters_in_node(leaf, include_missing=treat_missing_states_as_mutations)
             ) - np.log(birth_rate * 1.0 / discretization_level)\
                 + np.log(sampling_probability)
             print(f"{model_log_likelihood_up} = model_log_likelihood_up")
@@ -730,12 +741,13 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         numerical_log_likelihood = (
             IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
                 tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate,
-                sampling_probability=sampling_probability
+                sampling_probability=sampling_probability,
+                treat_missing_states_as_mutations=treat_missing_states_as_mutations,
             )
         )
         print(f"{numerical_log_likelihood} = numerical_log_likelihood")
         np.testing.assert_approx_equal(
-            model.log_likelihood, numerical_log_likelihood, significant=3
+            model.log_likelihood, numerical_log_likelihood, significant=significance
         )
 
         # Test the _whole_ array of log joints P(t_v = t, X, T) against its
@@ -747,6 +759,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             birth_rate=birth_rate,
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
+            treat_missing_states_as_mutations=treat_missing_states_as_mutations,
         )
         np.testing.assert_array_almost_equal(
             model.log_joints["1"][50:-50], numerical_log_joint[50:-50], decimal=1
@@ -760,6 +773,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             birth_rate=birth_rate,
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
+            treat_missing_states_as_mutations=treat_missing_states_as_mutations,
         )
         # import matplotlib.pyplot as plt
         # plt.plot(model.posteriors["1"])
