@@ -259,7 +259,7 @@ class CassiopeiaTree:
             character_matrix: A separate character matrix to use for setting
                 character states at the leaves. This character matrix is not
                 stored in the object afterwards. If this is None, uses the 
-                default character matrix sotred in :attr:`character_matrix`
+                default character matrix stored in :attr:`character_matrix`
             layer: Layer to use for resetting character information at leaves.
                 If this is None, uses the default character matrix stored in
                 :attr:`character_matrix`.
