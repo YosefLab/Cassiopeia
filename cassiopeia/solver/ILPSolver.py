@@ -7,13 +7,12 @@ evolutionary states.
 import datetime
 import logging
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import gurobipy
 import hashlib
 import itertools
 import networkx as nx
-import numba
 import numpy as np
 import pandas as pd
 
@@ -97,7 +96,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.mip_gap = mip_gap
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log", layer: Optional[str] = None
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -107,6 +106,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: Input CassiopeiaTree
             logfile: Location to write standard out.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -118,7 +119,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # setup logfile config
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -146,7 +150,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution = self.__append_sample_names(
                 optimal_solution, character_matrix
             )
-            cassiopeia_tree.populate_tree(optimal_solution)
+            cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
 
         # determine diameter of the dataset by evaluating maximum distance to
@@ -211,7 +215,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, character_matrix
         )
 
-        cassiopeia_tree.populate_tree(optimal_solution)
+        cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
 
     def infer_potential_graph(
         self,

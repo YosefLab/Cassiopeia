@@ -76,7 +76,7 @@ class PercolationSolverTest(unittest.TestCase):
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8", "9"]
+            ["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8"]
         )
         expected_tree.add_edges_from(
             [
@@ -86,9 +86,8 @@ class PercolationSolverTest(unittest.TestCase):
                 ("7", "c4"),
                 ("8", "c1"),
                 ("8", "c3"),
-                ("8", "9"),
-                ("9", "c5"),
-                ("9", "c6"),
+                ("8", "c5"),
+                ("8", "c6"),
             ]
         )
 
@@ -98,6 +97,7 @@ class PercolationSolverTest(unittest.TestCase):
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, T)
+
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_NJ_weighted_hamming_distance(self):

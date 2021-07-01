@@ -10,7 +10,7 @@ from typing import Optional
 
 import numpy as np
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError
 from cassiopeia.simulator.LeafSubsampler import (
     LeafSubsampler,
     LeafSubsamplerError,
@@ -89,7 +89,8 @@ class SupercellularSampler(LeafSubsampler):
         if n_merges == 0:
             raise LeafSubsamplerError("No merges to be performed.")
         # Tree needs to have character matrix defined
-        tree.get_current_character_matrix()
+        if tree.character_matrix is None:
+            raise CassiopeiaTreeError("Character matrix not defined.")
 
         merged_tree = copy.deepcopy(tree)
         for _ in range(n_merges):

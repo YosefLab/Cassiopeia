@@ -8,7 +8,6 @@ infer relationships at the bottom of the phylogeny under construction.
 In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
-import copy
 from typing import Dict, List, Generator, Optional, Tuple
 
 import multiprocessing
@@ -97,7 +96,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.__tree = nx.DiGraph()
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log", layer: Optional[str] = None
     ):
         """The general hybrid solver routine.
 
@@ -113,7 +112,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         node_name_generator = solver_utilities.node_name_generator()
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -144,6 +147,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                 subproblem[0],
                                 subproblem[1],
                                 logfile,
+                                layer
                             )
                             for subproblem in subproblems
                         ],
@@ -169,7 +173,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             self.__tree = nx.compose(self.__tree, subproblem_tree)
 
-        cassiopeia_tree.populate_tree(self.__tree)
+        cassiopeia_tree.populate_tree(self.__tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
         cassiopeia_tree.collapse_mutationless_edges(
@@ -258,6 +262,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         root: int,
         samples=List[str],
         logfile: str = "stdout.log",
+        layer: Optional[str] = None
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
@@ -277,6 +282,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             samples: A list of samples for which to infer a tree.
             logfile: Base location for logging output. A specific logfile
                 will be created from this base logfile name.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
 
         Returns:
             A tree in the form of a Networkx graph and the original root
@@ -289,7 +296,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             subproblem_tree.add_edge(root, samples[0])
             return subproblem_tree, root
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
