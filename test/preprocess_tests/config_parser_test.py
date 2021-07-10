@@ -114,6 +114,7 @@ class TestCollapseUMIs(unittest.TestCase):
             "resolve",
             "align",
             "call_alleles",
+            "error_correct_intbcs",
             "error_correct_umis",
             "filter_molecule_table",
             "call_lineages",
@@ -137,6 +138,7 @@ class TestCollapseUMIs(unittest.TestCase):
         expected_procedures = [
             "align",
             "call_alleles",
+            "error_correct_intbcs",
             "error_correct_umis",
             "filter_molecule_table",
         ]
