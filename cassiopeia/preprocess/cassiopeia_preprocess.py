@@ -27,6 +27,7 @@ STAGES = {
     "resolve": pipeline.resolve_umi_sequence,
     "align": pipeline.align_sequences,
     "call_alleles": pipeline.call_alleles,
+    "error_correct_intbcs": pipeline.error_correct_intbcs,
     "error_correct_umis": pipeline.error_correct_umis,
     "filter_molecule_table": pipeline.filter_molecule_table,
     "call_lineages": pipeline.call_lineage_groups,
@@ -86,6 +87,16 @@ def main():
         ):
             logging.warning(
                 "Skipping barcode error correction because no whitelist was "
+                "provided in the configuration."
+            )
+            continue
+        # Skip intBC correction to whitelist if whitelist_fp was not provided
+        if (
+            stage == "error_correct_intbcs"
+            and not pipeline_parameters[stage]["whitelist_fp"]
+        ):
+            logging.warning(
+                "Skipping intBC error correction because no whitelist was "
                 "provided in the configuration."
             )
             continue
