@@ -5,7 +5,7 @@ errorCorrectUMIs functions.
 """
 import os
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import array
 from collections import Counter, defaultdict, namedtuple
@@ -13,12 +13,13 @@ import heapq
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
 import logging
+import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pysam
-
 from tqdm.auto import tqdm
+from typing_extensions import Literal
 
 from cassiopeia.preprocess import constants
 
@@ -66,6 +67,10 @@ UMI_key = lambda al: al.get_tag(UMI_TAG)
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
+
+
+class UMIUtilsError(Exception):
+    pass
 
 
 ####################Utils for Collapsing UMIs#####################
@@ -168,11 +173,13 @@ def sort_bam(
 
 
 def form_collapsed_clusters(
-    sorted_fn: Callable[[pysam.AlignedSegment], str],
+    sorted_fn: str,
+    collapsed_fn: str,
     max_hq_mismatches: int,
     max_indels: int,
     cell_key: Callable[[pysam.AlignedSegment], str] = cell_key,
     UMI_key: Callable[[pysam.AlignedSegment], str] = UMI_key,
+    method: Literal["cutoff", "bayesian"] = "cutoff",
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
     sequences are close.
@@ -192,6 +199,7 @@ def form_collapsed_clusters(
 
     Args:
         sorted_fn: The file name of the sorted BAM.
+        collapsed_fn: The file name of the collapsed BAM.
         max_hq_mismatches: A threshold specifying the maximum number of high
             quality mismatches between the seqeunces of 2 aligned segments to be
             collapsed.
@@ -199,13 +207,21 @@ def form_collapsed_clusters(
             allowed between the sequences of 2 aligned segments to be collapsed.
         cell_key: A function that takes an alignment and returns the cell barcode
         UMI_key: A function that takes an alignment and returns the UMI sequence
+        method: Which method to use to form initial sequence clusters. Must be
+            one of the following:
+            * cutoff: Uses a quality score hard cutoff of 30, and any mismatches
+                below this quality are ignored. Initial sequence clusters are
+                formed by selecting the most common base at each position (with
+                quality at least 30).
+            * bayesian: Utilizes the error probability encoded in the quality
+                score. Initial sequence clusters are formed by selecting the
+                most probable at each position.
 
     None:
         Saves the sorted bam to file
     """
 
-    collapsed_fn = ".".join(sorted_fn.split(".")[:-1]) + ".collapsed.bam"
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
+    sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
 
     total_reads = 0
     max_read_length = 0
@@ -215,20 +231,28 @@ def form_collapsed_clusters(
 
     # Read in the AlignmentFile again as iterating over it in the previous for
     # loop has destructively removed all alignments from the file object
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
+    sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
 
     sorted_als = progress(sorted_als, total=total_reads, desc="Collapsing UMIs")
 
     cell_groups = utilities.group_by(sorted_als, cell_key)
 
     with pysam.AlignmentFile(
-        str(collapsed_fn), "wb", header=empty_header
+        collapsed_fn, "wb", header=empty_header
     ) as collapsed_fh:
         for cell_BC, cell_group in cell_groups:
             for UMI, UMI_group in utilities.group_by(cell_group, UMI_key):
-                clusters = form_clusters(
-                    UMI_group, max_read_length, max_hq_mismatches
-                )
+                if method == "cutoff":
+                    clusters = form_clusters(
+                        UMI_group, max_read_length, max_hq_mismatches
+                    )
+                elif method == "bayesian":
+                    clusters = form_clusters_bayesian(
+                        UMI_group,
+                        proportion=max_hq_mismatches / max_read_length,
+                    )
+                else:
+                    raise UMIUtilsError(f"Unknown method `{method}`")
                 clusters = sorted(
                     clusters,
                     key=lambda c: c.get_tag(NUM_READS_TAG),
@@ -319,6 +343,64 @@ def form_clusters(
                 call_consensus(near_seed, max_read_length)
             ] + form_clusters(remaining, max_read_length, max_hq_mismatches)
 
+    return clusters
+
+
+def form_clusters_bayesian(
+    als: List[pysam.AlignedSegment],
+    q_threshold: Optional[int] = None,
+    proportion: float = 0.05,
+) -> List[pysam.AlignedSegment]:
+    """Forms clusters from a list of aligned segments (reads) probabilistically.
+
+    This function has the same purpose as :func:`form_clusters`, but instead
+    of using hardcoded quality thresholds, takes a probabilisitc approach to
+    forming read clusters by treating the quality scores as probabilities (in
+    fact, they are actually encoded probabilities of error). The two optional
+    arguments specify a dynamic threshold to assign a specific sequence to
+    a cluster. Specifically, for a given cluster sequence, a sequence is
+    assigned to this cluster (consensus) if its "match probability" to this
+    consensus is <= max(min(match probability), `q_threshold` * (`proportion` * length of longest sequence))
+    The "match probability" of a sequence to a possible consensus is is the sum
+    of the quality values where they do not match (equivalent to negative log
+    probability that all mismatches were sequencing errors).
+
+    Args:
+        als: A list of aligned segments.
+        q_threshold: Quality threshold. Defaults to the median quality score among
+            all bases in all sequences.
+        proportion: Proportion of each sequence to allow mismatched bases to be
+            above ``q_threshold``. Defaults to 0.05.
+
+    Returns:
+        A list of annotated aligned segments representing the consensus of each
+        cluster.
+    """
+    sequences = []
+    qualities = []
+    for al in als:
+        sequences.append(al.query_sequence)
+        qualities.append(al.query_qualities)
+
+    (
+        consensuses,
+        assignments,
+        qualities,
+    ) = ngs.sequence.call_consensus_with_qualities(
+        sequences,
+        qualities,
+        q_threshold=q_threshold,
+        proportion=proportion,
+        return_qualities=True,
+    )
+
+    clusters = []
+    for i, (consensus, quality) in enumerate(zip(consensuses, qualities)):
+        cluster = pysam.AlignedSegment()
+        cluster.query_sequence = consensus
+        cluster.query_qualities = pysam.qualitystring_to_array(quality)
+        cluster.set_tag(NUM_READS_TAG, (assignments == i).sum(), "i")
+        clusters.append(cluster)
     return clusters
 
 

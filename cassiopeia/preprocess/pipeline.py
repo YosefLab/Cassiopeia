@@ -171,6 +171,7 @@ def collapse_umis(
     output_directory: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
+    method: Literal["cutoff", "bayesian"] = "cutoff",
     skip_existing: bool = False,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
@@ -190,6 +191,15 @@ def collapse_umis(
             mismatches between the seqeunces of 2 aligned segments to be collapsed
         max_indels: A threshold specifying the maximum number of differing indels
             allowed between the sequences of 2 aligned segments to be collapsed
+        method: Which method to use to form initial sequence clusters. Must be
+            one of the following:
+            * cutoff: Uses a quality score hard cutoff of 30, and any mismatches
+                below this quality are ignored. Initial sequence clusters are
+                formed by selecting the most common base at each position (with
+                quality at least 30).
+            * bayesian: Utilizes the error probability encoded in the quality
+                score. Initial sequence clusters are formed by selecting the
+                most probable at each position.
         skip_existing: Indicates whether to check if the output files already
             exist in the output directory for the sorting and collapsing steps.
             Skips each step if the respective file already exists
@@ -234,9 +244,11 @@ def collapse_umis(
     if not collapsed_file_name.exists() and not skip_existing:
         UMI_utils.form_collapsed_clusters(
             str(sorted_file_name),
+            str(collapsed_file_name),
             max_hq_mismatches,
             max_indels,
             cell_key=lambda al: al.get_tag(cell_bc_tag),
+            method=method,
         )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
