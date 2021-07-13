@@ -583,18 +583,26 @@ def call_alleles(
 def error_correct_umis(
     input_df: pd.DataFrame,
     max_umi_distance: int = 2,
+    allow_allele_conflicts: bool = False,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """Within cellBC-intBC pairs, collapses UMIs that have close sequences.
 
     Error correct UMIs together within cellBC-intBC pairs. UMIs that have a
     Hamming Distance between their sequences less than a threshold are
-    corrected towards whichever UMI is more abundant.
+    corrected towards whichever UMI is more abundant. The `allow_allele_conflicts`
+    option may be used to also group on the actual allele.
 
     Args:
         input_df: Input DataFrame of alignments.
         max_umi_distance: The threshold specifying the Maximum Hamming distance
             between UMIs for one to be corrected to another.
+        allow_allele_conflicts: Whether or not to include the allele when
+            splitting UMIs into allele groups. When True, UMIs are grouped by
+            cellBC-intBC-allele triplets. When False, UMIs are grouped by
+            cellBC-intBC pairs. This option is used when it is possible for
+            each cellBC-intBC pair to have >1 allele state, such as for
+            spatial data.
         verbose: Indicates whether to log every UMI correction.
 
     Returns:
@@ -632,16 +640,18 @@ def error_correct_umis(
 
     alignment_df = pd.DataFrame()
 
-    allele_groups = sorted_df.groupby(["cellBC", "intBC"])
+    groupby = ["cellBC", "intBC"]
+    if allow_allele_conflicts:
+        groupby.append("allele")
+    allele_groups = sorted_df.groupby(groupby)
 
     allele_groups = progress(
         allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
     )
 
     for fields, allele_group in allele_groups:
-        cellBC, intBC = fields
         if verbose:
-            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
+            logging.info(f"fields: {', '.join(fields)}")
         allele_group, num_corr, tot = UMI_utils.correct_umis_in_group(
             allele_group, max_umi_distance
         )
@@ -678,6 +688,7 @@ def filter_molecule_table(
     intbc_umi_thresh: int = 10,
     intbc_dist_thresh: int = 1,
     doublet_threshold: float = 0.35,
+    allow_allele_conflicts: bool = False,
     plot: bool = False,
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -711,6 +722,12 @@ def filter_molecule_table(
         doublet_threshold: The threshold specifying the maximum proportion of
             conflicting alleles information allowed to for an intBC to be
             retained in doublet filtering. Set to None to skip doublet filtering
+        allow_allele_conflicts: Whether or not to allow multiple alleles to be
+            assigned to each cellBC-intBC pair. For fully single-cell data,
+            this option should be set to False, since each cell is expected to
+            have a single allele state for each intBC. However, this option
+            should be set to True for chemistries that may result in multiple
+            physical cells being captured for each barcode.
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
         verbose: Indicates whether to log detailed information on each filter
@@ -795,7 +812,7 @@ def filter_molecule_table(
         verbose=verbose,
     )
 
-    if doublet_threshold:
+    if doublet_threshold and not allow_allele_conflicts:
         logging.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
@@ -803,8 +820,9 @@ def filter_molecule_table(
             filtered_df, prop=doublet_threshold, verbose=verbose
         )
 
-    logging.info("Mapping remaining intBC conflicts...")
-    filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
+    if not allow_allele_conflicts:
+        logging.info("Mapping remaining intBC conflicts...")
+        filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
     if plot:
         (
             rc_profile["Final"],

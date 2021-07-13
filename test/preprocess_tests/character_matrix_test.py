@@ -63,6 +63,17 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
         )
 
+        # allele table with conflicts
+        at_dict = {
+            "cellBC": ["cellA", "cellA", "cellA", "cellB", "cellC", "cellA"],
+            "intBC": ["A", "B", "C", "A", "C", "A"],
+            "r1": ["None", "ATC", "GGG", "None", "GAA", "None"],
+            "r2": ["None", "AAA", "GAA", "None", "GAA", "ACT"],
+            "r3": ["ATC", "TTT", "ATA", "ATA", "ATA", "None"],
+            "UMI": [5, 10, 1, 30, 30, 5],
+        }
+        self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
+
     def test_basic_character_matrix_formation(self):
 
         (
@@ -79,6 +90,29 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_df = pd.DataFrame.from_dict(
             {
                 "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(1, 10)],
+        )
+
+        pd.testing.assert_frame_equal(character_matrix, expected_df)
+
+    def test_character_matrix_formation_with_conflicting_alleles(self):
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_conflict
+        )
+        self.assertEqual(character_matrix.shape[0], 3)
+        self.assertEqual(character_matrix.shape[1], 9)
+
+        expected_df = pd.DataFrame.from_dict(
+            {
+                "cellA": [(0, 0), (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
                 "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
                 "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
             },
@@ -296,7 +330,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             pd.testing.assert_frame_equal(
                 expected_character_matrix2, character_matrix
             )
-            
+
     def test_lineage_profile_to_character_matrix_with_priors(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
