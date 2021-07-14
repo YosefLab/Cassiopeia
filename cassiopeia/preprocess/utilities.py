@@ -18,6 +18,8 @@ import pysam
 import re
 from tqdm.auto import tqdm
 
+import cassiopeia.data.utilities as data_utilities
+
 
 def generate_log_output(df: pd.DataFrame, begin: bool = False):
     """A function for the logging of the number of filtered elements.
@@ -401,9 +403,9 @@ def convert_alleletable_to_character_matrix(
 
         for i, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
-                filtered_samples[cell].setdefault(
-                    f'{intBC}{c}', []
-                ).append(alleletable.loc[sample, c])
+                filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(
+                    alleletable.loc[sample, c]
+                )
 
     character_strings = defaultdict(list)
     allele_counter = defaultdict(OrderedDict)
@@ -464,15 +466,23 @@ def convert_alleletable_to_character_matrix(
                         else:
                             # if this is the first time we're seeing the state for this character,
                             # add a new entry to the allele_counter
-                            allele_counter[c][state] = len(allele_counter[c]) + 1
+                            allele_counter[c][state] = (
+                                len(allele_counter[c]) + 1
+                            )
                             transformed_states.append(allele_counter[c][state])
 
-                            indel_to_charstate[i][len(allele_counter[c])] = state
+                            indel_to_charstate[i][
+                                len(allele_counter[c])
+                            ] = state
 
                             # add a new entry to the character's probability map
                             if mutation_priors is not None:
-                                prob = np.mean(mutation_priors.loc[state, "freq"])
-                                prior_probs[i][len(allele_counter[c])] = float(prob)
+                                prob = np.mean(
+                                    mutation_priors.loc[state, "freq"]
+                                )
+                                prior_probs[i][len(allele_counter[c])] = float(
+                                    prob
+                                )
 
                 transformed_states = tuple(transformed_states)
                 if len(transformed_states) == 1:
@@ -531,7 +541,7 @@ def convert_alleletable_to_lineage_profile(
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
-        vals = map(lambda x: x[0], g.loc[j])
+        vals = map(lambda x: tuple(x) if len(x) > 1 else x[0], g.loc[j])
         for val, cutsite in zip(vals, cut_sites):
             allele_piv.loc[j[0]][j[1], cutsite] = val
 
@@ -614,26 +624,40 @@ def convert_lineage_profile_to_character_matrix(
         c = column_to_number[col]
         indel_to_charstate[c] = {}
 
-        for indel in column_to_unique_values[col]:
-            if indel == "Missing" or indel == "NC":
-                mutation_to_state[col][indel] = -1
+        for indels in column_to_unique_values[col]:
+            if not data_utilities.is_ambiguous_state(indels):
+                indels = (indels,)
 
-            elif "none" in indel.lower():
-                mutation_to_state[col][indel] = 0
+            for indel in indels:
+                if indel == "Missing" or indel == "NC":
+                    mutation_to_state[col][indel] = -1
 
+                elif "none" in indel.lower():
+                    mutation_to_state[col][indel] = 0
+
+                elif indel not in mutation_to_state[col]:
+                    mutation_to_state[col][indel] = mutation_counter[col] + 1
+                    mutation_counter[col] += 1
+
+                    indel_to_charstate[c][mutation_to_state[col][indel]] = indel
+
+                    if indel_priors is not None:
+                        prob = np.mean(indel_priors.loc[indel]["freq"])
+                        prior_probs[c][mutation_to_state[col][indel]] = float(
+                            prob
+                        )
+
+    # Helper function to apply to lineage profile
+    def apply_mutation_to_state(x):
+        column = []
+        for v in x.values:
+            if data_utilities.is_ambiguous_state(v):
+                column.append(tuple(mutation_to_state[x.name][_v] for _v in v))
             else:
-                mutation_to_state[col][indel] = mutation_counter[col] + 1
-                mutation_counter[col] += 1
+                column.append(mutation_to_state[x.name][v])
+        return column
 
-                indel_to_charstate[c][mutation_to_state[col][indel]] = indel
-
-                if indel_priors is not None:
-                    prob = np.mean(indel_priors.loc[indel]["freq"])
-                    prior_probs[c][mutation_to_state[col][indel]] = float(prob)
-
-    character_matrix = lineage_profile.apply(
-        lambda x: [mutation_to_state[x.name][v] for v in x.values], axis=0
-    )
+    character_matrix = lineage_profile.apply(apply_mutation_to_state, axis=0)
 
     character_matrix.index = lineage_profile.index
     character_matrix.columns = [
