@@ -50,6 +50,7 @@ DNA_SUBSTITUTION_MATRIX = {
 DEFAULT_PIPELINE_PARAMETERS = {
     "general": {"entry": "'convert'", "exit": "'call_lineages'"},
     "convert": {},
+    "filter": {"quality_threshold": 10},
     "error_correct_barcodes": {},
     "collapse": {"max_hq_mismatches": 3, "max_indels": 2},
     "resolve": {
