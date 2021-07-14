@@ -21,6 +21,7 @@ from cassiopeia.preprocess import pipeline, setup_utilities
 
 STAGES = {
     "convert": pipeline.convert_fastqs_to_unmapped_bam,
+    "filter": pipeline.filter_bam,
     "error_correct_barcodes": pipeline.error_correct_barcodes,
     "collapse": pipeline.collapse_umis,
     "resolve": pipeline.resolve_umi_sequence,

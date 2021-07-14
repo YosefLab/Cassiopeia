@@ -100,6 +100,52 @@ def convert_fastqs_to_unmapped_bam(
     return bam_fp
 
 
+def filter_bam(
+    bam_fp: str,
+    output_directory: str,
+    quality_threshold: int = 10,
+    n_threads: int = 1,
+) -> str:
+    """Filter reads in a BAM that have low quality barcode or UMIs.
+
+    Args:
+        bam_fp: Input BAM filepath containing reads to filter.
+        output_directory: The output directory where the filtered BAM will be
+            written to. This directory must exist prior to calling this function.
+        quality_threshold: Every base of the barcode and UMI sequence for a
+            given read must have at least this PHRED quality score for it to
+            pass the filtering.
+        n_threads: Number of threads to use. Defaults to 1.
+
+    Returns:
+        Path to filtered BAM
+    """
+
+    def filter_func(aln):
+        return all(
+            q >= quality_threshold
+            for q in pysam.qualitystring_to_array(
+                aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
+            )
+        ) and all(
+            q >= quality_threshold
+            for q in pysam.qualitystring_to_array(
+                aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"])
+            )
+        )
+
+    prefix, ext = os.path.splitext(os.path.basename(bam_fp))
+    filtered_fp = os.path.join(output_directory, f"{prefix}_filtered{ext}")
+    ngs.bam.filter_bam(
+        bam_fp,
+        filter_func,
+        filtered_fp,
+        show_progress=True,
+        n_threads=n_threads,
+    )
+    return filtered_fp
+
+
 def error_correct_barcodes(
     bam_fp: str, output_directory: str, whitelist_fp: str, n_threads: int = 1
 ) -> str:

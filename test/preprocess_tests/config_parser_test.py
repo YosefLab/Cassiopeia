@@ -121,6 +121,7 @@ class TestCollapseUMIs(unittest.TestCase):
 
         expected_procedures = [
             "convert",
+            "filter",
             "error_correct_barcodes",
             "collapse",
             "resolve",

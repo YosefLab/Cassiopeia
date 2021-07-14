@@ -80,6 +80,9 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     parameters["convert"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    parameters["filter"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
     parameters["error_correct_barcodes"]["output_directory"] = parameters[
         "general"
     ]["output_directory"]
@@ -100,12 +103,16 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     ]
     parameters["call_alleles"]["ref"] = None
 
-    parameters["error_correct_umis"]["allow_allele_conflicts"] = parameters["general"].get("allow_allele_conflicts", False)
+    parameters["error_correct_umis"]["allow_allele_conflicts"] = parameters[
+        "general"
+    ].get("allow_allele_conflicts", False)
 
     parameters["filter_molecule_table"]["output_directory"] = parameters[
         "general"
     ]["output_directory"]
-    parameters["filter_molecule_table"]["allow_allele_conflicts"] = parameters["general"].get("allow_allele_conflicts", False)
+    parameters["filter_molecule_table"]["allow_allele_conflicts"] = parameters[
+        "general"
+    ].get("allow_allele_conflicts", False)
 
     parameters["call_lineages"]["output_directory"] = parameters["general"][
         "output_directory"
