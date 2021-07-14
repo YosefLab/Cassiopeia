@@ -83,7 +83,7 @@ def main():
         # Skip barcode correction if whitelist_fp was not provided
         if (
             stage == "error_correct_barcodes"
-            and not pipeline_parameters[stage]["whitelist_fp"]
+            and not pipeline_parameters[stage].get("whitelist_fp")
         ):
             logging.warning(
                 "Skipping barcode error correction because no whitelist was "
@@ -93,7 +93,7 @@ def main():
         # Skip intBC correction to whitelist if whitelist_fp was not provided
         if (
             stage == "error_correct_intbcs"
-            and not pipeline_parameters[stage]["whitelist_fp"]
+            and not pipeline_parameters[stage].get("whitelist_fp")
         ):
             logging.warning(
                 "Skipping intBC error correction because no whitelist was "
