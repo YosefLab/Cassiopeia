@@ -65,27 +65,34 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
         "output_directory",
         "reference_filepath",
         "input_files",
+        "n_threads",
     ]
     for param in minimum_parameters:
         if param not in parameters["general"]:
             raise UnspecifiedConfigParameterError(
                 "Please specify the following items for analysis: "
-                "output_directory, reference_filepath, and input_files"
+                "output_directory, reference_filepath, input_files, and n_threads"
             )
 
     # we need to add some extra parameters from the "general" settings
     parameters["convert"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    parameters["convert"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["filter"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    parameters["filter"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["error_correct_barcodes"]["output_directory"] = parameters[
         "general"
     ]["output_directory"]
+    parameters["error_correct_barcodes"]["n_threads"] = parameters["general"][
+        "n_threads"
+    ]
     parameters["collapse"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    parameters["collapse"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["resolve"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
