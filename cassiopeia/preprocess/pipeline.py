@@ -218,6 +218,7 @@ def collapse_umis(
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     method: Literal["cutoff", "bayesian"] = "cutoff",
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
 
@@ -245,6 +246,7 @@ def collapse_umis(
             * bayesian: Utilizes the error probability encoded in the quality
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame of collapsed reads.
@@ -289,6 +291,7 @@ def collapse_umis(
         max_indels,
         cell_key=lambda al: al.get_tag(cell_bc_tag),
         method=method,
+        n_threads=n_threads,
     )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
