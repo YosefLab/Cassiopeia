@@ -580,6 +580,57 @@ def call_alleles(
     return alignments
 
 
+def error_correct_intbcs(
+    input_df: pd.DataFrame,
+    whitelist_fp: str,
+    intbc_dist_thresh: int = 1,
+) -> pd.DataFrame:
+    """Corrects all intBCs to the provided whitelist.
+
+    Args:
+        input_df: Input DataFrame of alignments.
+        whitelist_fp: Path to plaintext file containing intBC whitelist.
+        intbc_dist_thresh: The threshold specifying the maximum Levenshtein
+            distance between the read sequence and whitelist to be corrected.
+
+    Returns:
+        A DataFrame of error corrected intBCs.
+    """
+    t0 = time.time()
+
+    logging.info("Beginning correcting intBCs to whitelist...")
+
+    with open(whitelist_fp, "r") as f:
+        whitelist_set = set(line.strip() for line in f if not line.isspace())
+    whitelist = list(whitelist_set)
+    unique_intbcs = list(input_df["intBC"].unique())
+    corrections = {intbc: intbc for intbc in whitelist_set}
+
+    for intbc in progress(unique_intbcs, desc="Correcting intBCs to whitelist"):
+        min_distance = np.inf
+        min_wls = []
+        if intbc not in whitelist_set:
+            for wl_intbc in whitelist:
+                distance = ngs.sequence.levenshtein_distance(intbc, wl_intbc)
+                if distance < min_distance:
+                    min_distance = distance
+                    min_wls = [wl_intbc]
+                elif distance == min_distance:
+                    min_wls.append(wl_intbc)
+
+        # Correct only if there is one matching whitelist. Discard if there
+        # are multiple possible corrections.
+        if len(min_wls) == 1 and min_distance <= intbc_dist_thresh:
+            corrections[intbc] = min_wls[0]
+
+    input_df["intBC"] = input_df["intBC"].map(corrections)
+
+    final_time = time.time()
+    logging.info(f"Finished correcting intBCs in {final_time - t0}s")
+
+    return input_df[~input_df["intBC"].isna()]
+
+
 def error_correct_umis(
     input_df: pd.DataFrame,
     max_umi_distance: int = 2,
