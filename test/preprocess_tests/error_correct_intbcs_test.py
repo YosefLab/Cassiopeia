@@ -111,7 +111,7 @@ class TestErrorCorrectIntBCs(unittest.TestCase):
             "TAAG": "TAAG",
             "ACTA": "ACTT",
             "TNNG": "TAAG",
-            "ANNN": "ACTT"
+            "ANNN": "ACTT",
         }
 
     def test_correct(self):
@@ -124,6 +124,7 @@ class TestErrorCorrectIntBCs(unittest.TestCase):
         expected_df.dropna(subset=["intBC"], inplace=True)
 
         pd.testing.assert_frame_equal(df, expected_df)
+
 
 if __name__ == "__main__":
     unittest.main()
