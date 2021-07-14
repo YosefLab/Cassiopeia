@@ -218,7 +218,6 @@ def collapse_umis(
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     method: Literal["cutoff", "bayesian"] = "cutoff",
-    skip_existing: bool = False,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
 
@@ -246,9 +245,6 @@ def collapse_umis(
             * bayesian: Utilizes the error probability encoded in the quality
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
-        skip_existing: Indicates whether to check if the output files already
-            exist in the output directory for the sorting and collapsing steps.
-            Skips each step if the respective file already exists
 
     Returns:
         A DataFrame of collapsed reads.
@@ -272,30 +268,28 @@ def collapse_umis(
     cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
     logging.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
-    if not sorted_file_name.exists() and not skip_existing:
-        max_read_length, total_reads_out = UMI_utils.sort_bam(
-            bam_fp,
-            str(sorted_file_name),
-            sort_key=lambda al: (
-                al.get_tag(cell_bc_tag),
-                al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
-            ),
-            filter_func=lambda al: al.has_tag(cell_bc_tag),
-        )
-        logging.info("Sorted bam directory saved to " + str(sorted_file_name))
-        logging.info("Max read length of " + str(max_read_length))
-        logging.info("Total reads: " + str(total_reads_out))
+    max_read_length, total_reads_out = UMI_utils.sort_bam(
+        bam_fp,
+        str(sorted_file_name),
+        sort_key=lambda al: (
+            al.get_tag(cell_bc_tag),
+            al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
+        ),
+        filter_func=lambda al: al.has_tag(cell_bc_tag),
+    )
+    logging.info("Sorted bam directory saved to " + str(sorted_file_name))
+    logging.info("Max read length of " + str(max_read_length))
+    logging.info("Total reads: " + str(total_reads_out))
 
     collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
-    if not collapsed_file_name.exists() and not skip_existing:
-        UMI_utils.form_collapsed_clusters(
-            str(sorted_file_name),
-            str(collapsed_file_name),
-            max_hq_mismatches,
-            max_indels,
-            cell_key=lambda al: al.get_tag(cell_bc_tag),
-            method=method,
-        )
+    UMI_utils.form_collapsed_clusters(
+        str(sorted_file_name),
+        str(collapsed_file_name),
+        max_hq_mismatches,
+        max_indels,
+        cell_key=lambda al: al.get_tag(cell_bc_tag),
+        method=method,
+    )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
