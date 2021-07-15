@@ -111,6 +111,9 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     parameters["error_correct_umis"]["allow_allele_conflicts"] = parameters[
         "general"
     ].get("allow_allele_conflicts", False)
+    parameters["error_correct_umis"]["n_threads"] = parameters["general"][
+        "n_threads"
+    ]
 
     parameters["filter_molecule_table"]["output_directory"] = parameters[
         "general"
