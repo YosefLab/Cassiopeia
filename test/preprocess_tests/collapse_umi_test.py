@@ -79,6 +79,7 @@ class TestCollapseUMIs(unittest.TestCase):
             max_hq_mismatches=3,
             max_indels=2,
             cell_key=lambda al: al.get_tag("CR"),
+            n_threads=2,
         )
 
     def test_sort_bam(self):
