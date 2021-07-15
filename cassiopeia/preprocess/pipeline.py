@@ -171,7 +171,7 @@ def collapse_umis(
     output_directory: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
-    method: Literal["cutoff", "bayesian"] = "cutoff",
+    method: Literal["cutoff", "likelihood"] = "cutoff",
     skip_existing: bool = False,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.

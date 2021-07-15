@@ -179,7 +179,7 @@ def form_collapsed_clusters(
     max_indels: int,
     cell_key: Callable[[pysam.AlignedSegment], str] = cell_key,
     UMI_key: Callable[[pysam.AlignedSegment], str] = UMI_key,
-    method: Literal["cutoff", "bayesian"] = "cutoff",
+    method: Literal["cutoff", "likelihood"] = "cutoff",
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
     sequences are close.
@@ -246,8 +246,8 @@ def form_collapsed_clusters(
                     clusters = form_clusters(
                         UMI_group, max_read_length, max_hq_mismatches
                     )
-                elif method == "bayesian":
-                    clusters = form_clusters_bayesian(
+                elif method == "likelihood":
+                    clusters = form_clusters_likelihood(
                         UMI_group,
                         proportion=max_hq_mismatches / max_read_length,
                     )
@@ -348,7 +348,7 @@ def form_clusters(
     return clusters
 
 
-def form_clusters_bayesian(
+def form_clusters_likelihood(
     als: List[pysam.AlignedSegment],
     q_threshold: Optional[int] = None,
     proportion: float = 0.05,

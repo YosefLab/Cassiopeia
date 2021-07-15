@@ -47,7 +47,7 @@ class TestCollapseUMIs(unittest.TestCase):
             str(self.collapsed_bayesian_file_name),
             max_hq_mismatches=3,
             max_indels=2,
-            method="bayesian",
+            method="likelihood",
         )
 
         self.uncorrected_test_file = (
