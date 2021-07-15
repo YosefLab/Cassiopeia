@@ -239,6 +239,10 @@ def form_collapsed_clusters(
 
     # Helper function so that we can use joblib to parallelize the computation
     def cluster_group(cell_BC, UMI, UMI_group):
+        header = pysam.AlignmentHeader()
+        UMI_group = [
+            pysam.AlignedSegment.from_dict(d, header) for d in UMI_group
+        ]
         if method == "cutoff":
             clusters = form_clusters(
                 UMI_group, max_read_length, max_hq_mismatches
@@ -287,13 +291,17 @@ def form_collapsed_clusters(
             )
 
             cluster.query_name = str(annotation)
-            clusters.append(cluster)
+            clusters.append(cluster.to_dict())
         return clusters
 
+    # Because pysam alignments can not be pickled, we need to pass them as
+    # dictionaries.
     all_clusters = ngs.utils.ParallelWithProgress(
         n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
     )(
-        delayed(cluster_group)(cell_BC, UMI, UMI_group)
+        delayed(cluster_group)(
+            cell_BC, UMI, [aln.to_dict() for aln in UMI_group]
+        )
         for cell_BC, cell_group in cell_groups
         for UMI, UMI_group in utilities.group_by(cell_group, UMI_key)
     )
@@ -303,7 +311,9 @@ def form_collapsed_clusters(
     ) as collapsed_fh:
         for clusters in progress(all_clusters, desc="Writing collapsed UMIs"):
             for cluster in clusters:
-                collapsed_fh.write(cluster)
+                collapsed_fh.write(
+                    pysam.AlignedSegment.from_dict(cluster, empty_header)
+                )
 
 
 def form_clusters(
@@ -405,7 +415,7 @@ def form_clusters_bayesian(
 
     clusters = []
     for i, (consensus, quality) in enumerate(zip(consensuses, qualities)):
-        cluster = pysam.AlignedSegment()
+        cluster = pysam.AlignedSegment(empty_header)
         cluster.query_sequence = consensus
         cluster.query_qualities = pysam.qualitystring_to_array(quality)
         cluster.set_tag(NUM_READS_TAG, (assignments == i).sum(), "i")
@@ -521,7 +531,7 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
     Returns:
         A single annotated aligned segment representing the singleton cluster.
     """
-    singleton = pysam.AlignedSegment()
+    singleton = pysam.AlignedSegment(empty_header)
     singleton.query_sequence = al.query_sequence
     singleton.query_qualities = al.query_qualities
     singleton.set_tag(NUM_READS_TAG, 1, "i")
@@ -581,7 +591,7 @@ def call_consensus(
     best_idxs[ties] = utilities.base_to_index["N"]
     qs[ties] = N_Q
 
-    consensus = pysam.AlignedSegment()
+    consensus = pysam.AlignedSegment(empty_header)
     consensus.query_sequence = "".join(
         utilities.base_order[i] for i in best_idxs
     )
