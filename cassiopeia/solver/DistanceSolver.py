@@ -15,13 +15,8 @@ import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
-
-
-class DistanceSolverError(Exception):
-    """An Exception class for all DistanceSolver subclasses."""
-
-    pass
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -143,9 +138,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # remove root from character matrix before populating tree
-        if cassiopeia_tree.root_sample_name in cassiopeia_tree.character_matrix.index:
-            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
-                index=cassiopeia_tree.root_sample_name
+        if (
+            cassiopeia_tree.root_sample_name
+            in cassiopeia_tree.character_matrix.index
+        ):
+            cassiopeia_tree.character_matrix = (
+                cassiopeia_tree.character_matrix.drop(
+                    index=cassiopeia_tree.root_sample_name
+                )
             )
 
         cassiopeia_tree.populate_tree(tree, layer=layer)
@@ -184,7 +184,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                     "Please specify an explicit root sample in the Cassiopeia Tree"
                     " or specify the solver to add an implicit root"
                 )
-
 
         if cassiopeia_tree.get_dissimilarity_map() is None:
             if self.dissimilarity_function is None:

@@ -15,23 +15,15 @@ import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import (
+    SharedMutationJoiningSolverError,
+    SharedMutationJoiningSolverWarning,
+)
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
     solver_utilities,
 )
-
-
-class SharedMutationJoiningSolverError(Exception):
-    """An Exception class for SharedMutationJoiningSolver."""
-
-    pass
-
-
-class SharedMutationJoiningSolverWarning(UserWarning):
-    """A warning class for SharedMutationJoiningSolver."""
-
-    pass
 
 
 class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -104,7 +96,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 self.__update_similarity_map, nopython=True
             )
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None) -> None:
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
 
         The solver routine calculates an n x n similarity matrix of all
@@ -125,12 +119,12 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
 
         node_name_generator = solver_utilities.node_name_generator()
-        
+
         if layer:
             character_matrix = cassiopeia_tree.layers[layer].copy()
         else:
-                character_matrix = cassiopeia_tree.character_matrix.copy()
-        
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(

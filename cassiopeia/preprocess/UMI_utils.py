@@ -21,6 +21,7 @@ from pathlib import Path
 import pysam
 from tqdm.auto import tqdm
 
+from cassiopeia.mixins import PreprocessError
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
@@ -67,10 +68,6 @@ UMI_key = lambda al: al.get_tag(UMI_TAG)
 
 sort_key = lambda al: (al.get_tag(CELL_BC_TAG), al.get_tag(UMI_TAG))
 filter_func = lambda al: al.has_tag(CELL_BC_TAG)
-
-
-class UMIUtilsError(Exception):
-    pass
 
 
 ####################Utils for Collapsing UMIs#####################
@@ -252,7 +249,7 @@ def form_collapsed_clusters(
                         proportion=max_hq_mismatches / max_read_length,
                     )
                 else:
-                    raise UMIUtilsError(
+                    raise PreprocessError(
                         f"Unknown method to form UMI clusters: {method}"
                     )
                 clusters = sorted(

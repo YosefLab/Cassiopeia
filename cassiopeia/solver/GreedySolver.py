@@ -60,7 +60,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At

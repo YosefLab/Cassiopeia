@@ -18,13 +18,16 @@ import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 
+
 class Layers(dict):
 
     attrname = "layers"
 
     parent_mapping: Mapping[str, pd.DataFrame]
 
-    def __init__(self, parent: CassiopeiaTree, layers: Optional[Mapping] = None):
+    def __init__(
+        self, parent: CassiopeiaTree, layers: Optional[Mapping] = None
+    ):
         self._parent = parent
         self._data = dict()
         if layers is not None:
@@ -60,15 +63,15 @@ class Layers(dict):
 
     def __len__(self) -> int:
         return len(self._data)
-        
+
     def _validate_value(self, val: pd.DataFrame, key: str) -> pd.DataFrame:
         """Checks passed value for correct structure."""
-    
+
         if val.shape[0] != self._parent.n_cell:
             raise ValueError(
-                f"Value passed for key {key!r} is of incorrect shape. " 
+                f"Value passed for key {key!r} is of incorrect shape. "
                 f"Values of {self.attrname} must have the same number of "
                 f"samples as the tree. Value had {val.shape[0]} while it "
                 f"should have had {self._parent.n_cell} samples."
-            ) 
+            )
         return val

@@ -21,6 +21,7 @@ from skbio import alignment
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
+from cassiopeia.mixins import PreprocessError
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
 from cassiopeia.preprocess import map_utils as m_utils
@@ -33,10 +34,6 @@ from cassiopeia.preprocess import utilities
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
-
-
-class PreprocessError(Exception):
-    pass
 
 
 def convert_fastqs_to_unmapped_bam(

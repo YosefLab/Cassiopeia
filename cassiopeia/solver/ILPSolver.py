@@ -18,18 +18,13 @@ import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
     ilp_solver_utilities,
     solver_utilities,
 )
-
-
-class ILPSolverError(Exception):
-    """An Exception class for all ILPError subclasses."""
-
-    pass
 
 
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -96,7 +91,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.mip_gap = mip_gap
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log", layer: Optional[str] = None
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -230,7 +228,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Using the set of samples in the character matrix for this solver,
         this procedure creates a network which contains potential ancestors, or
         evolutionary intermediates.
-        
+
         This procedure invokes
         `ilp_solver_utilities.infer_potential_graph_cython` which returns the
         edges of the potential graph in character string format
@@ -253,12 +251,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix.values.astype(str),
-            pid,
-            lca_height,
-            self.maximum_potential_graph_layer_size,
-            missing_state_indicator,
+        potential_graph_edges = (
+            ilp_solver_utilities.infer_potential_graph_cython(
+                character_matrix.values.astype(str),
+                pid,
+                lca_height,
+                self.maximum_potential_graph_layer_size,
+                missing_state_indicator,
+            )
         )
 
         # the potential graph edges returned are strings in the form

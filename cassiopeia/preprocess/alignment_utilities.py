@@ -1,13 +1,12 @@
 """
 This file stores useful functions for dealing with alignments.
-Invoked through pipeline.py and supports the align_sequences function. 
+Invoked through pipeline.py and supports the align_sequences function.
 """
 import re
 from typing import List, Tuple
 
 
-class UnknownCigarStringError(Exception):
-    pass
+from cassiopeia.mixins import UnknownCigarStringError
 
 
 def parse_cigar(

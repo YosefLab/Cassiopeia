@@ -1,7 +1,7 @@
 """
 This file stores a subclass of CassiopeiaSolver, the HybridSolver. This solver
 consists of two sub-solvers -- a top (greedy) and a bottom solver. The greedy
-solver will be applied until a certain criteria is reached (be it a maximum LCA 
+solver will be applied until a certain criteria is reached (be it a maximum LCA
 distance or a number of cells) and then another solver is employed to
 infer relationships at the bottom of the phylogeny under construction.
 
@@ -18,18 +18,13 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import HybridSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
     GreedySolver,
     solver_utilities,
 )
-
-
-class HybridSolverError(Exception):
-    """An Exception class for all HybridSolver subclasses."""
-
-    pass
 
 
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -96,7 +91,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.__tree = nx.DiGraph()
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log", layer: Optional[str] = None
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ):
         """The general hybrid solver routine.
 
@@ -147,7 +145,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                 subproblem[0],
                                 subproblem[1],
                                 logfile,
-                                layer
+                                layer,
                             )
                             for subproblem in subproblems
                         ],
@@ -262,7 +260,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         root: int,
         samples=List[str],
         logfile: str = "stdout.log",
-        layer: Optional[str] = None
+        layer: Optional[str] = None,
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 

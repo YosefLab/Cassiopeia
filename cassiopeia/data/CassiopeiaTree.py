@@ -26,19 +26,8 @@ import scipy
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
+from cassiopeia.mixins import CassiopeiaTreeError, CassiopeiaTreeWarning
 from cassiopeia.solver import solver_utilities
-
-
-class CassiopeiaTreeError(Exception):
-    """An Exception class for the CassiopeiaTree class."""
-
-    pass
-
-
-class CassiopeiaTreeWarning(UserWarning):
-    """A Warning for the CassiopeiaTree class."""
-
-    pass
 
 
 class CassiopeiaTree:
@@ -217,10 +206,10 @@ class CassiopeiaTree:
 
         Return the layer named `"missing"`::
             cas_tree.layers["missing"]
-        
+
         Create or replace the `"merged"` layer::
             cas_tree.layers["merged"] = ...
-        
+
         Delete the `"missing"` layer::
             del cas_tree.layers["missing"]
         """
@@ -233,7 +222,7 @@ class CassiopeiaTree:
     @character_matrix.setter
     def character_matrix(self, character_matrix: pd.DataFrame):
         """Initializes a character matrix in the object.
-        
+
         Args:
             character_matrix: Character matrix of mutation observations.
         """
@@ -246,7 +235,9 @@ class CassiopeiaTree:
         self._character_matrix = character_matrix.copy()
 
     def set_character_states_at_leaves(
-        self, character_matrix: Optional[Union[pd.DataFrame, Dict]] = None, layer: Optional[str] = None
+        self,
+        character_matrix: Optional[Union[pd.DataFrame, Dict]] = None,
+        layer: Optional[str] = None,
     ) -> None:
         """Populates character states at leaves.
 
@@ -258,7 +249,7 @@ class CassiopeiaTree:
         Args:
             character_matrix: A separate character matrix to use for setting
                 character states at the leaves. This character matrix is not
-                stored in the object afterwards. If this is None, uses the 
+                stored in the object afterwards. If this is None, uses the
                 default character matrix stored in :attr:`character_matrix`
             layer: Layer to use for resetting character information at leaves.
                 If this is None, uses the default character matrix stored in
@@ -341,7 +332,7 @@ class CassiopeiaTree:
 
     def freeze_character_matrix(self, add_layer: str):
         """Freezes character matrix in specified layer.
-        
+
         Adds a new layer the CassiopeiaTree object corresponding to the current
         version of the character matrix.
 
@@ -1558,7 +1549,7 @@ class CassiopeiaTree:
         Args:
             dissimilarity_map: Dissimilarity map relating all N x N distances
                 between leaves.
-            
+
         """
         character_matrix = self.character_matrix
         if character_matrix is not None:
