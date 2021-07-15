@@ -42,6 +42,7 @@ class TestResolveUMISequence(unittest.TestCase):
             ref=self.reference,
             gap_open_penalty=20,
             gap_extend_penalty=1,
+            n_threads=2,
         )
 
         self.assertEqual(aln_df.shape[0], self.queries.shape[0])

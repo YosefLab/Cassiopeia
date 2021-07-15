@@ -12,6 +12,7 @@ import time
 from typing import List, Optional, Tuple
 
 from Bio import SeqIO
+from joblib import delayed
 import matplotlib.pyplot as plt
 import ngs_tools as ngs
 import numpy as np
@@ -327,8 +328,6 @@ def resolve_umi_sequence(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed for that cell to be
             retained during filtering
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Return:
         A molecule table with unique mappings between cellBC-UMI pairs.
@@ -367,7 +366,7 @@ def resolve_umi_sequence(
     second_reads = {}
     first_reads = {}
 
-    unique_pairs = molecule_table.groupby(["cellBC", "UMI"])
+    unique_pairs = molecule_table.groupby(["cellBC", "UMI"], sort=False)
 
     for _, group in tqdm(
         unique_pairs,
@@ -385,8 +384,8 @@ def resolve_umi_sequence(
         # more commonly - many sequences for a given UMI
         else:
             group_sort = group.sort_values(
-                "readCount", ascending=False
-            ).reset_index()
+                "readCount", ascending=False, ignore_index=True
+            )
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -404,14 +403,12 @@ def resolve_umi_sequence(
 
     # apply the filter using the hash table created above
     molecule_table["filter"] = molecule_table["readName"].map(mt_filter)
-    n_filtered = molecule_table[molecule_table["filter"] == True].shape[0]
+    n_filtered = molecule_table[molecule_table["filter"]].shape[0]
 
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[
-        molecule_table["filter"] == False
-    ].copy()
+    filt_molecule_table = molecule_table[~molecule_table["filter"]].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -452,6 +449,7 @@ def align_sequences(
     ref: Optional[str] = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Align reads to the TargetSite reference.
 
@@ -461,14 +459,13 @@ def align_sequences(
     output consists of the best alignment score and the CIGAR string storing the
     indel locations in the query sequence.
 
-    TODO(mattjones315): Parallelize?
-
     Args:
         queries: DataFrame storing a list of sequences to align.
         ref_filepath: Filepath to the reference FASTA.
         ref: Reference sequence.
         gapopen: Gap open penalty
         gapextend: Gap extension penalty
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame mapping each sequence name to the CIGAR string, quality,
@@ -484,30 +481,37 @@ def align_sequences(
     logging.info("Beginning alignment to reference...")
     t0 = time.time()
 
-    for umi in tqdm(
-        queries.index,
-        total=queries.shape[0],
-        desc="Aligning sequences to reference",
-    ):
-
-        query = queries.loc[umi]
-
+    # Helper function for paralleleization
+    def align(seq):
         aligner = alignment.StripedSmithWaterman(
-            query.seq,
+            seq,
             substitution_matrix=DNA_SUBSTITUTION_MATRIX,
             gap_open_penalty=gap_open_penalty,
             gap_extend_penalty=gap_extend_penalty,
         )
         aln = aligner(ref)
-        alignment_dictionary[query.readName] = (
-            query.cellBC,
-            query.UMI,
-            query.readCount,
+        return (
             aln.cigar,
             aln.query_begin,
             aln.target_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
+        )
+
+    for umi, aln in zip(
+        queries.index,
+        ngs.utils.ParallelWithProgress(
+            n_jobs=n_threads,
+            total=queries.shape[0],
+            desc="Aligning sequences to reference",
+        )(delayed(align)(queries.loc[umi].seq) for umi in queries.index),
+    ):
+        query = queries.loc[umi]
+        alignment_dictionary[query.readName] = (
+            query.cellBC,
+            query.UMI,
+            query.readCount,
+            *aln,
         )
 
     final_time = time.time()
@@ -678,7 +682,7 @@ def error_correct_umis(
     input_df: pd.DataFrame,
     max_umi_distance: int = 2,
     allow_allele_conflicts: bool = False,
-    verbose: bool = False,
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Within cellBC-intBC pairs, collapses UMIs that have close sequences.
 
@@ -697,7 +701,7 @@ def error_correct_umis(
             cellBC-intBC pairs. This option is used when it is possible for
             each cellBC-intBC pair to have >1 allele state, such as for
             spatial data.
-        verbose: Indicates whether to log every UMI correction.
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame of error corrected UMIs.
@@ -743,16 +747,18 @@ def error_correct_umis(
         allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
     )
 
-    for fields, allele_group in allele_groups:
-        if verbose:
-            logging.info(f"fields: {', '.join(fields)}")
-        allele_group, num_corr, tot = UMI_utils.correct_umis_in_group(
-            allele_group, max_umi_distance
-        )
+    alignment_dfs = []
+    for allele_group, num_corr, tot in ngs.utils.ParallelWithProgress(
+        n_jobs=n_threads, total=len(allele_groups), desc="Error-correcting UMIs"
+    )(
+        delayed(UMI_utils.correct_umis_in_group)(allele_group, max_umi_distance)
+        for _, allele_group in allele_groups
+    ):
         num_corrected += num_corr
         total += tot
 
-        alignment_df = alignment_df.append(allele_group, sort=True)
+        alignment_dfs.append(allele_group)
+    alignment_df = pd.concat(alignment_dfs, sort=True)
 
     final_time = time.time()
 
