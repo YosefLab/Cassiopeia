@@ -63,6 +63,17 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
         )
 
+        # allele table with conflicts
+        at_dict = {
+            "cellBC": ["cellA", "cellA", "cellA", "cellB", "cellC", "cellA"],
+            "intBC": ["A", "B", "C", "A", "C", "A"],
+            "r1": ["None", "ATC", "GGG", "None", "GAA", "None"],
+            "r2": ["None", "AAA", "GAA", "None", "GAA", "ACT"],
+            "r3": ["ATC", "TTT", "ATA", "ATA", "ATA", "None"],
+            "UMI": [5, 10, 1, 30, 30, 5],
+        }
+        self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
+
     def test_basic_character_matrix_formation(self):
 
         (

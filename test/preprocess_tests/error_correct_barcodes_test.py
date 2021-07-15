@@ -17,11 +17,15 @@ class TestErrorCorrectBarcodes(unittest.TestCase):
         test_files_path = os.path.join(dir_path, "test_files")
 
         self.bam_10xv3_fp = os.path.join(test_files_path, "10xv3_unmapped.bam")
-        self.whitelist_10xv3_fp = os.path.join(test_files_path, "10xv3_whitelist.txt")
+        self.whitelist_10xv3_fp = os.path.join(
+            test_files_path, "10xv3_whitelist.txt"
+        )
         self.bam_slideseq2_fp = os.path.join(
             test_files_path, "slideseq2_unmapped.bam"
         )
-        self.whitelist_slideseq2_fp = os.path.join(test_files_path, "slideseq2_whitelist.txt")
+        self.whitelist_slideseq2_fp = os.path.join(
+            test_files_path, "slideseq2_whitelist.txt"
+        )
 
     def test_10xv3(self):
         bam_fp = pipeline.error_correct_barcodes(
@@ -37,7 +41,9 @@ class TestErrorCorrectBarcodes(unittest.TestCase):
 
     def test_slideseq2(self):
         bam_fp = pipeline.error_correct_barcodes(
-            self.bam_slideseq2_fp, tempfile.mkdtemp(), self.whitelist_slideseq2_fp
+            self.bam_slideseq2_fp,
+            tempfile.mkdtemp(),
+            self.whitelist_slideseq2_fp,
         )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))

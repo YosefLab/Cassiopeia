@@ -370,7 +370,7 @@ def convert_alleletable_to_character_matrix(
     Given an AlleleTable storing the observed mutations for each intBC / cellBC
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
-    as '-'. The function also have the ability to ignore certain intBC sets as
+    as '-1'. The function also have the ability to ignore certain intBC sets as
     well as cut sites with too little diversity.
 
     Args:
@@ -390,18 +390,18 @@ def convert_alleletable_to_character_matrix(
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
     """
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(alleletable)
 
     filtered_samples = defaultdict(OrderedDict)
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
 
-        if cut_sites is None:
-            cut_sites = get_default_cut_site_columns(alleletable)
+        if intBC in ignore_intbcs:
+            continue
 
-        to_add = []
-        i = 1
-        for c in cut_sites:
+        for i, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
                 filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(
                     alleletable.loc[sample, c]
@@ -410,19 +410,17 @@ def convert_alleletable_to_character_matrix(
     character_strings = defaultdict(list)
     allele_counter = defaultdict(OrderedDict)
 
-    _intbc_uniq = []
+    _intbc_uniq = set()
     allele_dist = defaultdict(list)
     for s in filtered_samples:
         for key in filtered_samples[s]:
-            if key not in _intbc_uniq:
-                _intbc_uniq.append(key)
-            allele_dist[key].append(filtered_samples[s][key])
+            _intbc_uniq.add(key)
+            allele_dist[key].extend(list(set(filtered_samples[s][key])))
 
     # remove intBCs that are not diverse enough
     intbc_uniq = []
     dropped = []
     for key in allele_dist.keys():
-
         props = np.unique(allele_dist[key], return_counts=True)[1]
         props = props / len(allele_dist[key])
         if np.any(props > allele_rep_thresh):
@@ -450,19 +448,18 @@ def convert_alleletable_to_character_matrix(
 
             if c in filtered_samples[sample]:
 
-                state = filtered_samples[sample][c]
+                # This is a list of states
+                states = filtered_samples[sample][c]
+                transformed_states = []
 
-                if type(state) != str and np.isnan(state):
-                    character_strings[sample].append(missing_data_state)
-                    continue
+                for state in states:
 
-                if state == "NONE" or "None" in state:
-                    character_strings[sample].append(0)
-                else:
-                    if state in allele_counter[c]:
-                        character_strings[sample].append(
-                            allele_counter[c][state]
-                        )
+                    if type(state) != str and np.isnan(state):
+                        transformed_states.append(missing_data_state)
+                        continue
+
+                    if state == "NONE" or "None" in state:
+                        transformed_states.append(0)
                     else:
                         if state in allele_counter[c]:
                             transformed_states.append(allele_counter[c][state])
