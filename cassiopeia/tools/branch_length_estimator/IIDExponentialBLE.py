@@ -167,6 +167,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
             log_loss = -np.inf
         self.log_likelihood = log_likelihood
         self.log_loss = log_loss
+        self.mutation_rate = tree.get_depth()
 
     @classmethod
     def log_likelihood(self, tree: CassiopeiaTree) -> float:
