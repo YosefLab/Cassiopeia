@@ -372,7 +372,9 @@ def form_clusters_likelihood(
     consensus is <= `q_threshold` * (`proportion` * length of longest sequence)
     The "match probability" of a sequence to a possible consensus is the sum
     of the quality values where they do not match (equivalent to negative log
-    probability that all mismatches were sequencing errors).
+    probability that all mismatches were sequencing errors). Conceptually,
+    this is like allowing at most (`proportion` * length) mismatches, each of
+    base quality `q_threshold` for all reads assigned to a consensus.
 
     Args:
         als: A list of aligned segments.
