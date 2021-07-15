@@ -6,7 +6,6 @@ tree by recursively splitting the set of samples based on some split criterion.
 import logging
 from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
-import abc
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -37,9 +36,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             weights.
     """
 
-    def __init__(self, prior_transformation: str = "negative_log"):
+    def __init__(self, prior_transformation: str = "negative_log", collapse_tree = True):
 
         super().__init__(prior_transformation)
+        self.collapse_tree = collapse_tree
 
     def perform_split(
         self,
@@ -149,7 +149,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree)
 
         # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
+        if self.collapse_tree:
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters = True)
         duplicates_tree = self.__add_duplicates_to_tree(cassiopeia_tree.get_tree_topology(), character_matrix, node_name_generator)
         cassiopeia_tree.populate_tree(duplicates_tree)
 

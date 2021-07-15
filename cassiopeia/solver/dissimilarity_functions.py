@@ -240,3 +240,32 @@ def weighted_hamming_similarity(
         return 0
 
     return d / num_present
+
+def inverse_exponential_weighted_hamming_distance(
+    s1: List[int],
+    s2: List[int],
+    missing_state_indicator: int,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+) -> float:
+    """Computes a similarity from the weighted hamming distance between samples.
+
+    Computes the weighted hamming distance as described in 
+    `weighted_hamming_distance`, and takes the inverse exponential of it. This
+    effectively reverses the ordering of the weighted hamming distance, turning
+    it into a similarity.
+
+    Args:
+        s1: Character states of the first sample
+        s2: Character states of the second sample
+        missing_state_indicator: The character representing missing values
+        weights: A dictionary storing the state weights for each character, derived
+            from the state priors. This should be a nested dictionary where each
+            key corresponds to character that then indexes another dictionary
+            storing the weight of each observed state.
+            (Character -> State -> Weight)
+
+    Returns:
+        A dissimilarity score.
+
+    """
+    return np.exp(-1 * weighted_hamming_distance(s1, s2, missing_state_indicator, weights))

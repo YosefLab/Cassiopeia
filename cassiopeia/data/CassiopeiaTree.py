@@ -146,7 +146,7 @@ class CassiopeiaTree:
             self.__network = utilities.ete3_to_networkx(tree)
         else:
             raise CassiopeiaTreeError(
-                "Please pass an ete3 Tree, a newick string, or a Networkx object."
+                "Please pass an ete3 Tree, a newick string, or a Networkx DiGraph object."
             )
 
         # enforce all names to be strings

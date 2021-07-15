@@ -141,13 +141,17 @@ def robinson_foulds(
         The Robinson-Foulds distance between the two trees and the maximum
             Robinson-Foulds distance for downstream normalization
     """
+    # create copies of the trees and collapse process
+    T1 = copy.copy(tree1)
+    T2 = copy.copy(tree2)
+
 
     # convert to Ete3 trees and collapse unifurcations
-    tree1.collapse_unifurcations()
-    tree2.collapse_unifurcations()
+    T1.collapse_unifurcations()
+    T2.collapse_unifurcations()
 
-    T1 = ete3.Tree(tree1.get_newick(), format=1)
-    T2 = ete3.Tree(tree2.get_newick(), format=1)
+    T1 = ete3.Tree(T1.get_newick(), format=1)
+    T2 = ete3.Tree(T2.get_newick(), format=1)
 
     (
         rf,

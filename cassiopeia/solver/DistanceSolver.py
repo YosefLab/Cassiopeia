@@ -7,10 +7,8 @@ There may be other subclasses of this.
 """
 import abc
 import networkx as nx
-import numba
 import numpy as np
 import pandas as pd
-import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
