@@ -72,7 +72,7 @@ def main():
                 f"stage `{entry_point}`"
             )
 
-        if entry_point in ("error_correct_barcodes", "collapse"):
+        if entry_point in ("filter", "error_correct_barcodes", "collapse"):
             data = data_filepaths[0]
         else:
             data = pd.read_csv(data_filepaths[0], sep="\t")
