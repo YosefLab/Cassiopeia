@@ -252,13 +252,15 @@ def form_collapsed_clusters(
             clusters = form_clusters(
                 UMI_group, max_read_length, max_hq_mismatches
             )
-        elif method == "bayesian":
-            clusters = form_clusters_bayesian(
+        elif method == "likelihood":
+            clusters = form_clusters_likelihood(
                 UMI_group,
                 proportion=max_hq_mismatches / max_read_length,
             )
         else:
-            raise UMIUtilsError(f"Unknown method `{method}`")
+            raise PreprocessError(
+                f"Unknown method to form UMI clusters: {method}"
+            )
         clusters = sorted(
             clusters,
             key=lambda c: c.get_tag(NUM_READS_TAG),
