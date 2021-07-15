@@ -20,8 +20,9 @@ import pandas as pd
 from pathlib import Path
 import pysam
 from tqdm.auto import tqdm
+import warnings
 
-from cassiopeia.mixins import PreprocessError
+from cassiopeia.mixins import PreprocessError, PreprocessWarning
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
@@ -225,6 +226,13 @@ def form_collapsed_clusters(
     for al in sorted_als:
         total_reads += 1
         max_read_length = max(max_read_length, al.query_length)
+
+    # Raise warning when max_hq_mismatches / max_read_length > 0.5
+    warnings.warn(
+        "Provided `max_hq_mismatches` exceeds half of the maximum read length. "
+        "Most reads will be collapsed into a single consensus sequence.",
+        PreprocessWarning,
+    )
 
     # Read in the AlignmentFile again as iterating over it in the previous for
     # loop has destructively removed all alignments from the file object

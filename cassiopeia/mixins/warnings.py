@@ -4,6 +4,10 @@ class CassiopeiaTreeWarning(UserWarning):
     pass
 
 
+class PreprocessWarning(UserWarning):
+    pass
+
+
 class SharedMutationJoiningSolverWarning(UserWarning):
     """A warning class for SharedMutationJoiningSolver."""
 
