@@ -6,6 +6,7 @@ errorCorrectUMIs functions.
 import os
 
 from typing import Callable, List, Optional, Tuple
+from typing_extensions import Literal
 
 import array
 from collections import Counter, defaultdict, namedtuple
@@ -19,7 +20,6 @@ import pandas as pd
 from pathlib import Path
 import pysam
 from tqdm.auto import tqdm
-from typing_extensions import Literal
 
 from cassiopeia.preprocess import constants
 
@@ -252,7 +252,9 @@ def form_collapsed_clusters(
                         proportion=max_hq_mismatches / max_read_length,
                     )
                 else:
-                    raise UMIUtilsError(f"Unknown method `{method}`")
+                    raise UMIUtilsError(
+                        f"Unknown method to form UMI clusters: {method}"
+                    )
                 clusters = sorted(
                     clusters,
                     key=lambda c: c.get_tag(NUM_READS_TAG),
@@ -358,17 +360,20 @@ def form_clusters_bayesian(
     forming read clusters by treating the quality scores as probabilities (in
     fact, they are actually encoded probabilities of error). The two optional
     arguments specify a dynamic threshold to assign a specific sequence to
-    a cluster. Specifically, for a given cluster sequence, a sequence is
+    a cluster.
+
+    Specifically, for a given cluster sequence, a sequence is
     assigned to this cluster (consensus) if its "match probability" to this
-    consensus is <= max(min(match probability), `q_threshold` * (`proportion` * length of longest sequence))
-    The "match probability" of a sequence to a possible consensus is is the sum
+    consensus is <= `q_threshold` * (`proportion` * length of longest sequence)
+    The "match probability" of a sequence to a possible consensus is the sum
     of the quality values where they do not match (equivalent to negative log
     probability that all mismatches were sequencing errors).
 
     Args:
         als: A list of aligned segments.
-        q_threshold: Quality threshold. Defaults to the median quality score among
-            all bases in all sequences.
+        q_threshold: PHRED quality threshold.
+            Defaults to the median quality score among all bases in all
+            sequences. See https://drive5.com/usearch/manual/quality_score.html
         proportion: Proportion of each sequence to allow mismatched bases to be
             above ``q_threshold``. Defaults to 0.05.
 
