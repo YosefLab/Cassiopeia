@@ -246,7 +246,7 @@ def form_collapsed_clusters(
     def cluster_group(cell_BC, UMI, UMI_group):
         header = pysam.AlignmentHeader()
         UMI_group = [
-            pysam.AlignedSegment.from_dict(d, header) for d in UMI_group
+            pysam.AlignedSegment.fromstring(s, header) for s in UMI_group
         ]
         if method == "cutoff":
             clusters = form_clusters(
@@ -296,7 +296,7 @@ def form_collapsed_clusters(
             )
 
             cluster.query_name = str(annotation)
-            clusters.append(cluster.to_dict())
+            clusters.append(cluster.to_string())
         return clusters
 
     # Because pysam alignments can not be pickled, we need to pass them as
@@ -305,7 +305,7 @@ def form_collapsed_clusters(
         n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
     )(
         delayed(cluster_group)(
-            cell_BC, UMI, [aln.to_dict() for aln in UMI_group]
+            cell_BC, UMI, [aln.to_string() for aln in UMI_group]
         )
         for cell_BC, cell_group in cell_groups
         for UMI, UMI_group in utilities.group_by(cell_group, UMI_key)
@@ -317,7 +317,7 @@ def form_collapsed_clusters(
         for clusters in progress(all_clusters, desc="Writing collapsed UMIs"):
             for cluster in clusters:
                 collapsed_fh.write(
-                    pysam.AlignedSegment.from_dict(cluster, empty_header)
+                    pysam.AlignedSegment.fromstring(cluster, empty_header)
                 )
 
 
