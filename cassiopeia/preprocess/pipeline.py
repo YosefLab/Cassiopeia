@@ -743,10 +743,6 @@ def error_correct_umis(
         groupby.append("allele")
     allele_groups = sorted_df.groupby(groupby)
 
-    allele_groups = progress(
-        allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
-    )
-
     alignment_dfs = []
     for allele_group, num_corr, tot in ngs.utils.ParallelWithProgress(
         n_jobs=n_threads, total=len(allele_groups), desc="Error-correcting UMIs"
