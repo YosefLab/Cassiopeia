@@ -18,6 +18,7 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.basic_config = {
             "general": {
+                "name": "'test'",
                 "output_directory": "'here'",
                 "reference_filepath": "'ref.fa'",
                 "input_files": ["input1.txt", "input2.txt"],
@@ -35,6 +36,7 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.subset_config = {
             "general": {
+                "name": "'test'",
                 "output_directory": "'here'",
                 "reference_filepath": "'ref.fa'",
                 "input_files": ["input.txt"],
