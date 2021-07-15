@@ -69,7 +69,6 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "error_correct_intbcs": {"intbc_dist_thresh": 1},
     "error_correct_umis": {
         "max_umi_distance": 2,
-        "verbose": False,
     },
     "filter_molecule_table": {
         "min_umi_per_cell": 10,

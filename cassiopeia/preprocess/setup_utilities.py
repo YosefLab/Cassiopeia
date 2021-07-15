@@ -101,6 +101,7 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
         "reference_filepath"
     ]
     parameters["align"]["ref"] = None
+    parameters["align"]["n_threads"] = parameters["general"]["n_threads"]
 
     parameters["call_alleles"]["ref_filepath"] = parameters["general"][
         "reference_filepath"

@@ -202,7 +202,10 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
 
     def test_error_correct_allow_conflicts(self):
         aln_df = cassiopeia.pp.error_correct_umis(
-            self.ambiguous, max_umi_distance=2, allow_allele_conflicts=True
+            self.ambiguous,
+            max_umi_distance=2,
+            allow_allele_conflicts=True,
+            n_threads=2,
         )
 
         expected_alignments = {
