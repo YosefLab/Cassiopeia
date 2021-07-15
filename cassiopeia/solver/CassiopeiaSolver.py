@@ -32,9 +32,11 @@ class CassiopeiaSolver(abc.ABC):
         self.prior_transformation = prior_transformation
 
     @abc.abstractmethod
-    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
         """Solves the inference problem.
-        
+
         Args:
             cassiopeia_tree: CassiopeiaTree storing character information for
                 phylogenetic inference.

@@ -10,11 +10,8 @@ import configparser
 import logging
 from typing import Any, Dict
 
+from cassiopeia.mixins import UnspecifiedConfigParameterError
 from cassiopeia.preprocess import constants
-
-
-class UnspecifiedConfigParameterError(Exception):
-    pass
 
 
 def setup(output_directory_location: str) -> None:

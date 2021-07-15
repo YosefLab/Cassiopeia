@@ -12,13 +12,8 @@ import numpy as np
 import pandas as pd
 import re
 
+from cassiopeia.mixins import CassiopeiaTreeWarning
 from cassiopeia.preprocess import utilities as preprocessing_utilities
-
-# Can't import from CassiopeiaTree.py due to circular imports
-class CassiopeiaTreeWarning(UserWarning):
-    """A Warning for the CassiopeiaTree class."""
-
-    pass
 
 
 def get_lca_characters(

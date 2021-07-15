@@ -17,6 +17,7 @@ import logging
 import pandas as pd
 from typing import Any, Dict
 
+from cassiopeia.mixins import PreprocessError
 from cassiopeia.preprocess import pipeline, setup_utilities
 
 STAGES = {
@@ -64,7 +65,7 @@ def main():
         data = data_filepaths
     else:
         if len(data_filepaths) != 1:
-            raise pipeline.PreprocessError(
+            raise PreprocessError(
                 "`input_files` must contain exactly one input file for pipeline "
                 f"stage `{entry_point}`"
             )

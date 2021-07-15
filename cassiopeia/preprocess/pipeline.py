@@ -21,6 +21,7 @@ from skbio import alignment
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
+from cassiopeia.mixins import PreprocessError
 from cassiopeia.preprocess import alignment_utilities
 from cassiopeia.preprocess import constants
 from cassiopeia.preprocess import map_utils as m_utils
@@ -33,10 +34,6 @@ from cassiopeia.preprocess import utilities
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
-
-
-class PreprocessError(Exception):
-    pass
 
 
 def convert_fastqs_to_unmapped_bam(
@@ -171,6 +168,7 @@ def collapse_umis(
     output_directory: str,
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
+    method: Literal["cutoff", "likelihood"] = "cutoff",
     skip_existing: bool = False,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
@@ -190,6 +188,15 @@ def collapse_umis(
             mismatches between the seqeunces of 2 aligned segments to be collapsed
         max_indels: A threshold specifying the maximum number of differing indels
             allowed between the sequences of 2 aligned segments to be collapsed
+        method: Which method to use to form initial sequence clusters. Must be
+            one of the following:
+            * cutoff: Uses a quality score hard cutoff of 30, and any mismatches
+                below this quality are ignored. Initial sequence clusters are
+                formed by selecting the most common base at each position (with
+                quality at least 30).
+            * likelihood: Utilizes the error probability encoded in the quality
+                score. Initial sequence clusters are formed by selecting the
+                most probable at each position.
         skip_existing: Indicates whether to check if the output files already
             exist in the output directory for the sorting and collapsing steps.
             Skips each step if the respective file already exists
@@ -234,9 +241,11 @@ def collapse_umis(
     if not collapsed_file_name.exists() and not skip_existing:
         UMI_utils.form_collapsed_clusters(
             str(sorted_file_name),
+            str(collapsed_file_name),
             max_hq_mismatches,
             max_indels,
             cell_key=lambda al: al.get_tag(cell_bc_tag),
+            method=method,
         )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")

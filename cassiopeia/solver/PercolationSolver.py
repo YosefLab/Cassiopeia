@@ -77,7 +77,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.threshold = threshold
         self.similarity_function = similarity_function
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
         """Implements a solving procedure for the Percolation Algorithm.
         The procedure recursively splits a set of samples to build a tree. At
         each partition of the samples produced by the percolation procedure,
@@ -172,7 +174,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights,
             cassiopeia_tree.missing_state_indicator,
         )
-        
+
         duplicates_tree = self.__add_duplicates_to_tree(
             tree,
             character_matrix,
