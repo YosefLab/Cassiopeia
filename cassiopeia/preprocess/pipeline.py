@@ -194,7 +194,7 @@ def collapse_umis(
                 below this quality are ignored. Initial sequence clusters are
                 formed by selecting the most common base at each position (with
                 quality at least 30).
-            * bayesian: Utilizes the error probability encoded in the quality
+            * likelihood: Utilizes the error probability encoded in the quality
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
         skip_existing: Indicates whether to check if the output files already
