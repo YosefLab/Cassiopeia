@@ -51,6 +51,7 @@ def main():
         pipeline_parameters = setup_utilities.parse_config(f.read())
 
     # pull out general parameters
+    name = pipeline_parameters["general"]["name"]
     output_directory = pipeline_parameters["general"]["output_directory"]
     data_filepaths = pipeline_parameters["general"]["input_files"]
     entry_point = pipeline_parameters["general"]["entry"]
@@ -76,8 +77,6 @@ def main():
             data = data_filepaths[0]
         else:
             data = pd.read_csv(data_filepaths[0], sep="\t")
-
-    data_file_stem = os.path.splitext(os.path.basename(data_filepaths[0]))[0]
 
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
@@ -106,9 +105,7 @@ def main():
         # Write to CSV only if it is a pandas dataframe
         if isinstance(data, pd.DataFrame):
             data.to_csv(
-                os.path.join(
-                    output_directory, data_file_stem + f".{stage}.txt"
-                ),
+                os.path.join(output_directory, name + f".{stage}.txt"),
                 sep="\t",
             )
 

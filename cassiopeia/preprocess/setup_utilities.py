@@ -62,6 +62,7 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
 
     # ensure that minimum items are present in config
     minimum_parameters = [
+        "name",
         "output_directory",
         "reference_filepath",
         "input_files",
@@ -70,7 +71,7 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     for param in minimum_parameters:
         if param not in parameters["general"]:
             raise UnspecifiedConfigParameterError(
-                "Please specify the following items for analysis: "
+                "Please specify the following items for analysis: name, "
                 "output_directory, reference_filepath, input_files, and n_threads"
             )
 
@@ -78,6 +79,7 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     parameters["convert"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
+    parameters["convert"]["name"] = parameters["general"]["name"]
     parameters["convert"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["filter"]["output_directory"] = parameters["general"][
         "output_directory"
