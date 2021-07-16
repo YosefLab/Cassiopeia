@@ -203,11 +203,12 @@ def compute_dissimilarity_map(
 
         return dm
 
-    # Don't numbaize _compute_dissimilarity_map when we failed to numbaize
-    # the dissimilarity function. Otherwise, if we try to call a Python
-    # function from a numbaized (in object mode) a LOT of warnings are raised.
+    # Numbaize _compute_dissimilarity_map in nopython mode only if the
+    # dissimilarity function has been successfully numbaized. Otherwise,
+    # numbaize in object mode.
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("ignore", category=numba.NumbaDeprecationWarning)
+        warnings.simplefilter("ignore", category=numba.NumbaWarning)
         _compute_dissimilarity_map = numba.jit(
             _compute_dissimilarity_map, nopython=numbaize
         )
