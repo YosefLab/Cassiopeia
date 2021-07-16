@@ -362,6 +362,7 @@ def convert_alleletable_to_character_matrix(
     missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
     cut_sites: Optional[List[str]] = None,
+    collapse_duplicates: bool = True,
 ) -> Tuple[
     pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
@@ -385,6 +386,9 @@ def convert_alleletable_to_character_matrix(
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
+        collapse_duplicates: Whether or not to collapse duplicate character
+            states present for a single cellBC-intBC pair. This option has no
+            effect if there are no allele conflicts. Defaults to True.
 
         Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
@@ -484,6 +488,9 @@ def convert_alleletable_to_character_matrix(
                                     prob
                                 )
 
+                if collapse_duplicates:
+                    # Sort for testing
+                    transformed_states = sorted(set(transformed_states))
                 transformed_states = tuple(transformed_states)
                 if len(transformed_states) == 1:
                     transformed_states = transformed_states[0]
@@ -502,7 +509,9 @@ def convert_alleletable_to_character_matrix(
 
 
 def convert_alleletable_to_lineage_profile(
-    allele_table, cut_sites: Optional[List[str]] = None
+    allele_table,
+    cut_sites: Optional[List[str]] = None,
+    collapse_duplicates: bool = True,
 ) -> pd.DataFrame:
     """Converts an AlleleTable to a lineage profile.
 
@@ -517,6 +526,9 @@ def convert_alleletable_to_lineage_profile(
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
+        collapse_duplicates: Whether or not to collapse duplicate character
+            states present for a single cellBC-intBC pair. This option has no
+            effect if there are no allele conflicts. Defaults to True.
 
     Returns:
         An NxM lineage profile.
@@ -526,7 +538,7 @@ def convert_alleletable_to_lineage_profile(
         cut_sites = get_default_cut_site_columns(allele_table)
 
     agg_recipe = dict(
-        zip([cutsite for cutsite in cut_sites], ["unique"] * len(cut_sites))
+        zip([cutsite for cutsite in cut_sites], [list] * len(cut_sites))
     )
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
@@ -541,8 +553,13 @@ def convert_alleletable_to_lineage_profile(
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
-        vals = map(lambda x: tuple(x) if len(x) > 1 else x[0], g.loc[j])
-        for val, cutsite in zip(vals, cut_sites):
+        for val, cutsite in zip(g.loc[j], cut_sites):
+            if collapse_duplicates:
+                # Sort for testing
+                val = sorted(set(val))
+            val = tuple(val)
+            if len(val) == 1:
+                val = val[0]
             allele_piv.loc[j[0]][j[1], cutsite] = val
 
     allele_piv2 = pd.pivot_table(
@@ -581,6 +598,12 @@ def convert_lineage_profile_to_character_matrix(
     Takes in a lineage profile summarizing the explicit indel identities
     observed at each cut site in a cell and converts this into a character
     matrix where the indels are abstracted into integers.
+
+    Note:
+        The lineage profile is converted directly into a character matrix,
+        without performing any collapsing of duplicate states. Instead, this
+        should have been done in the previous step, when calling
+        :func:`convert_alleletable_to_lineage_profile`.
 
     Args:
         lineage_profile: Lineage profile

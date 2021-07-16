@@ -112,6 +112,29 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         expected_df = pd.DataFrame.from_dict(
             {
+                "cellA": [0, (0, 1), (0, 1), 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(1, 10)],
+        )
+
+        pd.testing.assert_frame_equal(character_matrix, expected_df)
+
+    def test_character_matrix_formation_with_conflicts_no_collapse(self):
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
+        self.assertEqual(character_matrix.shape[0], 3)
+        self.assertEqual(character_matrix.shape[1], 9)
+
+        expected_df = pd.DataFrame.from_dict(
+            {
                 "cellA": [(0, 0), (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
                 "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
                 "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
@@ -292,6 +315,67 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             {
                 "cellA": [
                     "None",
+                    ("ACT", "None"),
+                    ("ATC", "None"),
+                    "ATC",
+                    "AAA",
+                    "TTT",
+                    "GGG",
+                    "GAA",
+                    "ATA",
+                ],
+                "cellB": [
+                    "None",
+                    "None",
+                    "ATA",
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                ],
+                "cellC": [
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    "GAA",
+                    "GAA",
+                    "ATA",
+                ],
+            },
+            orient="index",
+            columns=[
+                "A_r1",
+                "A_r2",
+                "A_r3",
+                "B_r1",
+                "B_r2",
+                "B_r3",
+                "C_r1",
+                "C_r2",
+                "C_r3",
+            ],
+        )
+        expected_lineage_profile.index.name = "cellBC"
+
+        pd.testing.assert_frame_equal(
+            expected_lineage_profile,
+            lineage_profile[expected_lineage_profile.columns],
+        )
+
+    def test_alleletable_to_lineage_profile_with_conflicts_no_collapse(self):
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
+
+        expected_lineage_profile = pd.DataFrame.from_dict(
+            {
+                "cellA": [
+                    ("None", "None"),
                     ("None", "ACT"),
                     ("ATC", "None"),
                     "ATC",
@@ -347,7 +431,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
     def test_lineage_profile_to_character_matrix_with_conflicts(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_conflict
+            self.alleletable_conflict, collapse_duplicates=False
         )
 
         (
@@ -361,7 +445,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         expected_character_matrix = pd.DataFrame.from_dict(
             {
-                "cellA": [1, 1, 1, 0, (0, 1), (1, 0), 1, 1, 1],
+                "cellA": [1, 1, 1, (0, 0), (0, 1), (1, 0), 1, 1, 1],
                 "cellB": [-1, -1, -1, 0, 0, 2, -1, -1, -1],
                 "cellC": [2, 1, 1, -1, -1, -1, -1, -1, -1],
             },
@@ -374,7 +458,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         # Specifically, intBC A and C are tied.
         expected_character_matrix2 = pd.DataFrame.from_dict(
             {
-                "cellA": [0, (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
+                "cellA": [(0, 0), (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
                 "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
                 "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
             },
