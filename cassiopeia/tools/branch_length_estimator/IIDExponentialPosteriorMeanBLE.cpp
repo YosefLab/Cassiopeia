@@ -238,7 +238,7 @@ void read_T(){
         exit(1); 
     }
     if(T > maxT){
-        cerr << "T larger than maxT" << endl;
+        cerr << "T larger than maxT: " << T << " > " << maxT << endl;
         exit(1);
     }
 }
