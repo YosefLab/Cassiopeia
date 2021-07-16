@@ -107,6 +107,7 @@ def main():
             data.to_csv(
                 os.path.join(output_directory, name + f".{stage}.txt"),
                 sep="\t",
+                index=False,
             )
 
 
