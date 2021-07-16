@@ -18,7 +18,7 @@ import pysam
 import re
 from tqdm.auto import tqdm
 
-import cassiopeia.data.utilities as data_utilities
+from cassiopeia.mixins import is_ambiguous_state
 
 
 def generate_log_output(df: pd.DataFrame, begin: bool = False):
@@ -625,7 +625,7 @@ def convert_lineage_profile_to_character_matrix(
         indel_to_charstate[c] = {}
 
         for indels in column_to_unique_values[col]:
-            if not data_utilities.is_ambiguous_state(indels):
+            if not is_ambiguous_state(indels):
                 indels = (indels,)
 
             for indel in indels:
@@ -651,7 +651,7 @@ def convert_lineage_profile_to_character_matrix(
     def apply_mutation_to_state(x):
         column = []
         for v in x.values:
-            if data_utilities.is_ambiguous_state(v):
+            if is_ambiguous_state(v):
                 column.append(tuple(mutation_to_state[x.name][_v] for _v in v))
             else:
                 column.append(mutation_to_state[x.name][v])
