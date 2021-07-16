@@ -11,6 +11,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
 
@@ -90,6 +91,23 @@ class TestILPSolver(unittest.TestCase):
         self.logfile = os.path.join(dir_path, "test.log")
 
         self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
+
+    def test_raises_error_on_ambiguous(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        with self.assertRaises(ILPSolverError):
+            solver = cas.solver.ILPSolver()
+            solver.solve(tree)
 
     def test_get_lca_cython(self):
 
