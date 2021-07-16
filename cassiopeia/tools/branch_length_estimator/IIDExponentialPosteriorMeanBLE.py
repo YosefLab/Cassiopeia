@@ -1060,15 +1060,19 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         """
         self.tree = tree
         ray.init(num_cpus=self.processes)
-        analysis = tune.run(
-            self._trainable,
-            config=self.space,
-            num_samples=self.num_samples,
-            search_alg=self.search_alg,
-            metric='log_likelihood',
-            mode='max',
-            progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
-        )
+        try:
+            analysis = tune.run(
+                self._trainable,
+                config=self.space,
+                num_samples=self.num_samples,
+                search_alg=self.search_alg,
+                metric='log_likelihood',
+                mode='max',
+                progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
+            )
+        except:
+            ray.shutdown()
+            raise BranchLengthEstimatorError(f"Ray tune failed")
         ray.shutdown()
         self.analysis = analysis
         best_config = analysis.best_config

@@ -14,7 +14,7 @@
 using namespace std;
 const int maxN = 4096;
 const int maxK = 151;
-const int maxT = 501;
+const int maxT = 601;
 const double INF = 1e16;
 double _down_cache[maxN][maxT + 1][maxK + 1];
 double _up_cache[maxN][maxT + 1][maxK + 1];
@@ -210,7 +210,7 @@ void read_K(){
         exit(1); 
     }
     if(K > maxK){
-        cerr << "K larger than maxK" << endl;
+        cerr << "K larger than maxK: " << K << " > " << maxK << endl;
         exit(1);
     }
 }
