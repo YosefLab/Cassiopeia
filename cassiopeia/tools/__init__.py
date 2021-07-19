@@ -6,6 +6,7 @@ from .branch_length_estimator import (
     IIDExponentialPosteriorMeanBLE,
     IIDExponentialPosteriorMeanBLEAutotune,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
+    NumberOfMutationsBLE,
 )
 from .lineage_simulator import (
     BirthProcess,

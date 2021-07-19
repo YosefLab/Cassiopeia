@@ -16,8 +16,143 @@ from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
                               IIDExponentialLineageTracer,
                               IIDExponentialPosteriorMeanBLE,
                               IIDExponentialPosteriorMeanBLEGridSearchCV,
+                              NumberOfMutationsBLE,
                               UniformCellSubsampler,
                               EmptySubtreeError,)
+
+
+class TestNumberOfMutationsBLE(unittest.TestCase):
+    def test_basic_missing_ignored(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0],
+            "1": [0, 0, -1],
+            "2": [1, 0, 0],
+            "3": [0, 1, -1],
+            "4": [1, 1, -1],
+            "5": [1, -1, -1],
+            "6": [1, -1, 0]}
+        )
+        model = NumberOfMutationsBLE(length_of_mutationless_edges=0.5, treat_missing_states_as_mutations=False)
+        model.estimate_branch_lengths(tree)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "1"), 0.5, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "2"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "3"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "4"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "5"), 1.5, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "6"), 1.5, decimal=3)
+
+    def test_basic_missing_as_cut(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0],
+            "1": [0, 0, -1],
+            "2": [1, 0, 0],
+            "3": [0, 1, -1],
+            "4": [1, 1, -1],
+            "5": [1, -1, -1],
+            "6": [1, -1, 0]}
+        )
+        model = NumberOfMutationsBLE(length_of_mutationless_edges=0.5, treat_missing_states_as_mutations=True)
+        model.estimate_branch_lengths(tree)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "1"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "2"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "3"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "4"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "5"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "6"), 2.0, decimal=3)
+
+    def test_basic_depth_3_missing_ignored(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6"), ("3", "7"), ("3", "8"),
+                            ("4", "9"), ("4", "10"), ("5", "11"), ("5", "12"),
+                            ("6", "13"), ("6", "14")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "1": [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "2": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "3": [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            "4": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "5": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "6": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "7": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "8": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "9": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "10": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "11": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "12": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "13": [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            "14": [1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 0, 0],},
+        )
+        model = NumberOfMutationsBLE(length_of_mutationless_edges=0.5, treat_missing_states_as_mutations=False)
+        model.estimate_branch_lengths(tree)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "1"), 3.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "2"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "3"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "4"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "5"), 3.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "6"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("3", "7"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("3", "8"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("4", "9"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("4", "10"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("5", "11"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("5", "12"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("6", "13"), 3.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("6", "14"), 3.0, decimal=3)
+
+    def test_basic_depth_3_missing_as_cuts(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6"), ("3", "7"), ("3", "8"),
+                            ("4", "9"), ("4", "10"), ("5", "11"), ("5", "12"),
+                            ("6", "13"), ("6", "14")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "1": [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "2": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "3": [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            "4": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "5": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "6": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "7": [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+            "8": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "9": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "10": [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            "11": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "12": [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+            "13": [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+            "14": [1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 0, 0],},
+        )
+        model = NumberOfMutationsBLE(length_of_mutationless_edges=0.5, treat_missing_states_as_mutations=True)
+        model.estimate_branch_lengths(tree)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "1"), 3.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "2"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "3"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "4"), 2.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "5"), 3.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "6"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("3", "7"), 6.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("3", "8"), 6.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("4", "9"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("4", "10"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("5", "11"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("5", "12"), 5.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("6", "13"), 4.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("6", "14"), 4.0, decimal=3)
 
 
 class TestIIDExponentialBLE(unittest.TestCase):

@@ -6,3 +6,4 @@ from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLEAutotune,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
+from .NumberOfMutationsBLE import NumberOfMutationsBLE
