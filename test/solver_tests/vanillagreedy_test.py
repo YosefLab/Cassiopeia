@@ -28,7 +28,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver()
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c2", "c3", "c4"],
@@ -65,7 +65,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
 
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c3", "c4", "c5"],
@@ -134,12 +134,13 @@ class VanillaGreedySolverTest(unittest.TestCase):
     def test_all_duplicates_base_case(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 0, 1, 2, 0], 
-                "c2": [5, 0, 1, 2, 0], 
+                "c1": [5, 0, 1, 2, 0],
+                "c2": [5, 0, 1, 2, 0],
                 "c3": [5, 0, 1, 2, 0],
-            },             
+            },
             orient="index",
-            columns=["a", "b", "c", "d", "e"])
+            columns=["a", "b", "c", "d", "e"],
+        )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
@@ -167,7 +168,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
 
         unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
+            vg_tree.character_matrix.drop_duplicates()
         )
 
         left, right = vgsolver.perform_split(

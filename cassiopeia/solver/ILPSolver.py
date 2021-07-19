@@ -7,30 +7,24 @@ evolutionary states.
 import datetime
 import logging
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import gurobipy
 import hashlib
 import itertools
 import networkx as nx
-import numba
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
     ilp_solver_utilities,
     solver_utilities,
 )
-
-
-class ILPSolverError(Exception):
-    """An Exception class for all ILPError subclasses."""
-
-    pass
 
 
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -97,7 +91,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.mip_gap = mip_gap
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -107,6 +104,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: Input CassiopeiaTree
             logfile: Location to write standard out.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -118,7 +117,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # setup logfile config
         logging.basicConfig(filename=logfile, level=logging.INFO)
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -146,7 +148,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution = self.__append_sample_names(
                 optimal_solution, character_matrix
             )
-            cassiopeia_tree.populate_tree(optimal_solution)
+            cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
 
         # determine diameter of the dataset by evaluating maximum distance to
@@ -176,7 +178,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
             unique_character_matrix,
-            root,
             pid,
             max_lca_distance,
             weights,
@@ -212,12 +213,11 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, character_matrix
         )
 
-        cassiopeia_tree.populate_tree(optimal_solution)
+        cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
 
     def infer_potential_graph(
         self,
         character_matrix: pd.DataFrame,
-        root: List[str],
         pid: int,
         lca_height: int,
         weights: Optional[Dict[int, Dict[int, str]]] = None,
@@ -229,12 +229,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         this procedure creates a network which contains potential ancestors, or
         evolutionary intermediates.
 
-        First, a directed graph is constructed by considering all pairs of
-        samples, and checking if a sample can be a possible parent of another
-        sample. Then, for all pairs of nodes with in-degree of 0 and are
-        similar enough to one another, we add their common ancestor as a parent
-        to the two nodes. This procedure is done until there exists only one
-        possible ancestor left - this will be the root of the tree.
+        This procedure invokes
+        `ilp_solver_utilities.infer_potential_graph_cython` which returns the
+        edges of the potential graph in character string format
+        (e.g., "1|2|3|..."). The procedure here decodes these strings, creates
+        a Networkx directed graph, and adds edges to the graph. These weights
+        are added to the edges of the graph using priors, if they are specified
+        in the CassiopeiaTree, or the number of mutations along an edge.
 
         Args:
             character_matrix: Character matrix
@@ -250,12 +251,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix.values.astype(str),
-            pid,
-            lca_height,
-            self.maximum_potential_graph_layer_size,
-            missing_state_indicator,
+        potential_graph_edges = (
+            ilp_solver_utilities.infer_potential_graph_cython(
+                character_matrix.values.astype(str),
+                pid,
+                lca_height,
+                self.maximum_potential_graph_layer_size,
+                missing_state_indicator,
+            )
         )
 
         # the potential graph edges returned are strings in the form

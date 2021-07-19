@@ -1,4 +1,4 @@
-"""This file contains general utilities to be called by functions throughout 
+"""This file contains general utilities to be called by functions throughout
 the solver module"""
 
 import logging
@@ -9,16 +9,12 @@ from hashlib import blake2b
 import numpy as np
 import time
 
-
-class PriorTransformationError(Exception):
-    """An Exception class for generating weights from priors."""
-
-    pass
+from cassiopeia.mixins import PriorTransformationError
 
 
 def node_name_generator() -> Generator[str, None, None]:
     """Generates unique node names for building the reconstructed tree.
-    
+
     Creates a generator object that produces unique node names by hashing
     timestamps.
 
@@ -27,7 +23,7 @@ def node_name_generator() -> Generator[str, None, None]:
     """
 
     while True:
-        k = str(time.time()).encode('utf-8')
+        k = str(time.time()).encode("utf-8")
         h = blake2b(key=k, digest_size=12)
         yield "cassiopeia_internal_node" + h.hexdigest()
 

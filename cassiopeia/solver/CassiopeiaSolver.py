@@ -7,8 +7,9 @@ derived class stores more information around the parameters necessary for
 inferring a phylogenetic tree.
 """
 import abc
-import pandas as pd
-from typing import Dict, Optional
+from typing import Optional
+
+from cassiopeia.data import CassiopeiaTree
 
 
 class CassiopeiaSolver(abc.ABC):
@@ -31,6 +32,15 @@ class CassiopeiaSolver(abc.ABC):
         self.prior_transformation = prior_transformation
 
     @abc.abstractmethod
-    def solve(self):
-        """Solves the inference problem."""
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
+        """Solves the inference problem.
+
+        Args:
+            cassiopeia_tree: CassiopeiaTree storing character information for
+                phylogenetic inference.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+        """
         pass

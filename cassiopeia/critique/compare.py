@@ -16,13 +16,16 @@ from cassiopeia.data import CassiopeiaTree
 
 
 def triplets_correct(
-    tree1: CassiopeiaTree, tree2: CassiopeiaTree, number_of_trials: int = 1000, min_triplets_at_depth: int = 1
+    tree1: CassiopeiaTree,
+    tree2: CassiopeiaTree,
+    number_of_trials: int = 1000,
+    min_triplets_at_depth: int = 1,
 ) -> Tuple[
     Dict[int, float], Dict[int, float], Dict[int, float], Dict[int, float]
 ]:
     """Calculate the triplets correct accuracy between two trees.
 
-    Takes in two newick strings and computes the proportion of triplets in the 
+    Takes in two newick strings and computes the proportion of triplets in the
     tree (defined as a set of three leaves) that are the same across the two
     trees. This procedure samples the same number of triplets at every depth
     such as to reduce the amount of bias of sampling triplets randomly.
@@ -50,7 +53,7 @@ def triplets_correct(
     unresolved_triplets_correct = defaultdict(int)
     resolvable_triplets_correct = defaultdict(int)
     proportion_unresolvable = defaultdict(int)
-    
+
     # create copies of the trees and collapse process
     T1 = copy.copy(tree1)
     T2 = copy.copy(tree2)
@@ -70,7 +73,9 @@ def triplets_correct(
 
         # check that there are enough triplets at this depth
         candidate_nodes = depth_to_nodes[depth]
-        total_triplets = sum([T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
+        total_triplets = sum(
+            [T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes]
+        )
         if total_triplets < min_triplets_at_depth:
             continue
 
@@ -80,13 +85,15 @@ def triplets_correct(
                 T1, depth, depth_to_nodes
             )
 
-            reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
+            reconstructed_outgroup = critique_utilities.get_outgroup(
+                T2, (i, j, k)
+            )
 
             is_resolvable = True
             if out_group == "None":
                 number_unresolvable_triplets += 1
                 is_resolvable = False
-            
+
             # increment score if the reconstructed outgroup is the same as the
             # ground truth
             score = int(reconstructed_outgroup == out_group)

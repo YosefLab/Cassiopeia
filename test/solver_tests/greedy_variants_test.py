@@ -15,9 +15,9 @@ class GreedyVariantsTest(unittest.TestCase):
     def test_spectral_sparse_case(self):
         cm = pd.DataFrame.from_dict(
             {
-                "c1": [5, 3, 0, 0, 0], 
-                "c2": [0, 3, 4, 2, 1], 
-                "c3": [5, 0, 0, 0, 1], 
+                "c1": [5, 3, 0, 0, 0],
+                "c2": [0, 3, 4, 2, 1],
+                "c3": [5, 0, 0, 0, 1],
                 "c4": [5, 0, 4, 2, 0],
             },
             orient="index",
@@ -28,7 +28,7 @@ class GreedyVariantsTest(unittest.TestCase):
 
         sgsolver = SpectralGreedySolver()
 
-        character_matrix = sg_tree.get_original_character_matrix()
+        character_matrix = sg_tree.character_matrix.copy()
         unique_cm = character_matrix.drop_duplicates()
 
         left, right = sgsolver.perform_split(unique_cm, unique_cm.index)

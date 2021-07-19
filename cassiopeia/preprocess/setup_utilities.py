@@ -10,11 +10,8 @@ import configparser
 import logging
 from typing import Any, Dict
 
+from cassiopeia.mixins import UnspecifiedConfigParameterError
 from cassiopeia.preprocess import constants
-
-
-class UnspecifiedConfigParameterError(Exception):
-    pass
 
 
 def setup(output_directory_location: str) -> None:
@@ -67,16 +64,22 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     minimum_parameters = [
         "output_directory",
         "reference_filepath",
-        "input_file",
+        "input_files",
     ]
     for param in minimum_parameters:
         if param not in parameters["general"]:
             raise UnspecifiedConfigParameterError(
                 "Please specify the following items for analysis: "
-                "output_directory, reference_filepath, and input_file"
+                "output_directory, reference_filepath, and input_files"
             )
 
     # we need to add some extra parameters from the "general" settings
+    parameters["convert"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
+    parameters["error_correct_barcodes"]["output_directory"] = parameters[
+        "general"
+    ]["output_directory"]
     parameters["collapse"]["output_directory"] = parameters["general"][
         "output_directory"
     ]

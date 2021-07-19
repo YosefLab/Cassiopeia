@@ -1,9 +1,8 @@
 """
 This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
-represents the structure of top-down algorithms that build the reconstructed 
+represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
-import logging
 from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import networkx as nx
@@ -62,7 +61,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
@@ -77,6 +78,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         # A helper function that builds the subtree given a set of samples
@@ -132,7 +135,11 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -146,7 +153,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        cassiopeia_tree.populate_tree(tree)
+        duplicates_tree = self.__add_duplicates_to_tree(
+            tree,
+            character_matrix,
+            node_name_generator,
+        )
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
         # Collapse 0-mutation edges and append duplicate samples
         if self.collapse_tree:
@@ -190,7 +202,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 

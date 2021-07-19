@@ -142,12 +142,12 @@ class TestHybridSolver(unittest.TestCase):
 
         pd.testing.assert_frame_equal(
             expected_unique_character_matrix,
-            self.pp_tree.get_original_character_matrix(),
+            self.pp_tree.character_matrix.copy(),
         )
 
     def test_cutoff(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         missing_state = self.pp_tree.missing_state_indicator
         self.assertTrue(
             self.hybrid_pp_solver.assess_cutoff(
@@ -179,12 +179,14 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_top_down_split_manual(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-            ["a", "b", "c", "d", "e"],
-            character_matrix,
-            self.pp_tree.missing_state_indicator,
+        mutation_frequencies = (
+            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+                ["a", "b", "c", "d", "e"],
+                character_matrix,
+                self.pp_tree.missing_state_indicator,
+            )
         )
 
         expected_dictionary = {
@@ -204,7 +206,7 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_small(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
@@ -221,7 +223,7 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_large(self):
 
-        character_matrix = self.large_tree.get_original_character_matrix()
+        character_matrix = self.large_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
@@ -246,7 +248,7 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_missing(self):
 
-        character_matrix = self.missing_tree.get_original_character_matrix()
+        character_matrix = self.missing_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 

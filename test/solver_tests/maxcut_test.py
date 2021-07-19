@@ -71,7 +71,7 @@ class MaxCutSolverTest(unittest.TestCase):
         self.mcsolver = MaxCutSolver()
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
         self.mutation_frequencies = self.mcsolver.compute_mutation_frequencies(
             unique_character_matrix.index, unique_character_matrix, -1
@@ -86,7 +86,7 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_evaluate_cut(self):
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(
@@ -101,7 +101,7 @@ class MaxCutSolverTest(unittest.TestCase):
     def test_graph_construction(self):
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(
@@ -122,7 +122,7 @@ class MaxCutSolverTest(unittest.TestCase):
         weights = {0: {4: 1, 5: 2}, 1: {4: 2}, 2: {1: 1, 3: 1}}
 
         unique_character_matrix = (
-            self.mc_tree.get_original_character_matrix().drop_duplicates()
+            self.mc_tree.character_matrix.drop_duplicates()
         )
 
         G = graph_utilities.construct_connectivity_graph(
@@ -166,16 +166,15 @@ class MaxCutSolverTest(unittest.TestCase):
 
         self.mcsolver.solve(self.mc_tree2)
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_nodes_from([5, 6, 7, "c1", "c2", "c3", "c4", "c5"])
         expected_tree.add_edges_from(
             [
                 (5, 6),
                 (5, 7),
                 (6, "c1"),
                 (6, "c2"),
-                (7, 8),
-                (8, "c3"),
-                (8, "c4"),
+                (7, "c3"),
+                (7, "c4"),
                 (7, "c5"),
             ]
         )
@@ -193,7 +192,7 @@ class MaxCutSolverTest(unittest.TestCase):
         # random.seed(10)
         self.mcsolver.solve(self.mc_tree3)
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([5, 6, 7, 8, "c1", "c2", "c3", "c4", "c5"])
+        expected_tree.add_nodes_from([5, 6, 7, "c1", "c2", "c3", "c4", "c5"])
         expected_tree.add_edges_from(
             [
                 (5, "c1"),
@@ -201,9 +200,8 @@ class MaxCutSolverTest(unittest.TestCase):
                 (6, "c2"),
                 (6, 7),
                 (7, "c5"),
-                (7, 8),
-                (8, "c3"),
-                (8, "c4"),
+                (7, "c3"),
+                (7, "c4"),
             ]
         )
         observed_tree = self.mc_tree3.get_tree_topology()

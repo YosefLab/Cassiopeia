@@ -94,7 +94,7 @@ class TestILPSolver(unittest.TestCase):
     def test_get_lca_cython(self):
 
         # test single sample
-        cm = self.missing_tree.get_current_character_matrix().astype(str)
+        cm = self.missing_tree.character_matrix.copy().astype(str)
 
         lca = ilp_solver_utilities.get_lca_characters_cython(
             cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
@@ -163,13 +163,13 @@ class TestILPSolver(unittest.TestCase):
 
         pd.testing.assert_frame_equal(
             expected_character_matrix,
-            self.pp_tree.get_original_character_matrix(),
+            self.pp_tree.character_matrix.copy(),
         )
 
     def test_get_layer_for_potential_graph(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
@@ -196,7 +196,6 @@ class TestILPSolver(unittest.TestCase):
         for sample in expected_next_layer:
             self.assertIn(sample, layer_nodes)
 
-        # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
         layer_edges = np.array(
             [edge.split("|") for edge in layer_edges], dtype=int
         )
@@ -229,16 +228,12 @@ class TestILPSolver(unittest.TestCase):
     def test_simple_potential_graph_inference(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.pp_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix.astype(str),
-            root,
+            unique_character_matrix,
             0,
             max_lca_height,
             self.pp_tree.priors,
@@ -341,16 +336,12 @@ class TestILPSolver(unittest.TestCase):
     def test_potential_graph_inference_with_duplicates(self):
 
         unique_character_matrix = (
-            self.duplicates_tree.get_original_character_matrix().drop_duplicates()
+            self.duplicates_tree.character_matrix.drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.duplicates_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
-            unique_character_matrix.astype(str),
-            root,
+            unique_character_matrix,
             0,
             max_lca_height,
             self.duplicates_tree.priors,

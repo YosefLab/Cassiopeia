@@ -20,7 +20,7 @@ from cassiopeia.solver import dissimilarity_functions
 def infer_potential_graph_cython(
     character_array: str[:, :],
     pid: Union[int, str],
-    lca_distance: int,
+    maximum_lca_distance: int,
     maximum_potential_graph_layer_size: int,
     missing_state_indicator: int,
 ) -> List[Tuple[str, str]]:
@@ -33,10 +33,36 @@ def infer_potential_graph_cython(
     graph structure that the main function relies on is created from the edges
     and nodes specified in this function.
 
+    Edges of the potential graph are inferred by first considering all pairs of
+    samples, and checking if a sample can be a possible parent of another
+    sample. Then, for all pairs of nodes with in-degree of 0 and are
+    similar enough to one another, we add their common ancestor as a parent
+    to the two nodes with edges connecting the parent to the both nodes. This
+    procedure is done until there exists only one possible ancestor left - this
+    will be the root of the tree.
+
+    This procedure is iterative, searching for a potential graph in which
+    the user-defined threshold of `maximum_potential_graph_layer_size` is
+    not exceeded. To do this, a distance cutoff for considering common
+    ancestors are used. Each iteration, the procedure adds common ancestors
+    to the potential graph until the root is found; this process is repeated
+    for increasing distance cutoffs until either the maximum layer size
+    is reached (i.e., the number of nodes in the potential graph) or the
+    maximum LCA distance is reached (which is either specified by the user
+    or computed in this function). When either of these criteria are met,
+    the potential graph is returned.
+
+    Importantly, this function represents samples as "character strings", where
+    a sample's characters are concatenated together, delimitted by the symbol
+    "|". This string representation is much more memory efficient than numpy 
+    arrays of strings or integers, for example, and so we use these here. In
+    the `ILPSolver` method `infer_potential_graph`, these strings are decoded
+    into character state tuples. 
+
     Args:
         character_array: Character array where items are strings, not integers.
         pid: Unique process ID used for logging purposes.
-        lca_distance: Maximum LCA height to use when inferring ancestors.
+        maximum_lca_distance: Maximum LCA height to use when inferring ancestors.
         maximum_potential_graph_layer_size: Maximum number of nodes in a layer
             of the potential graph. If this is exceeded, the process returns
             the potential graph from the previous iteration.
@@ -51,7 +77,7 @@ def infer_potential_graph_cython(
         f"(Process: {pid}) Estimating a potential graph with "
         "a maximum layer size of "
         f"{maximum_potential_graph_layer_size} and a maximum "
-        f"LCA distance of {lca_distance}."
+        f"LCA distance of {maximum_lca_distance}."
     )
 
     cdef int effective_threshold
@@ -77,7 +103,7 @@ def infer_potential_graph_cython(
         ]
     )
 
-    while distance_threshold < (lca_distance + 1):
+    while distance_threshold < (maximum_lca_distance + 1):
 
         current_layer_edges = []
 
@@ -295,7 +321,7 @@ def simple_hamming_distance_cython(
 ):
     """Cython-optimized hamming distance calculator.
 
-    Calculates the hamming distance between two samples, ignorning missing data.
+    Calculates the hamming distance between two samples, ignoring missing data.
 
     Args:
         arr1: Character array of sample 1
