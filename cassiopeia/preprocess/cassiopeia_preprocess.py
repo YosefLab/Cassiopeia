@@ -13,11 +13,10 @@ import os
 
 import argparse
 import configparser
-import logging
 import pandas as pd
 from typing import Any, Dict
 
-from cassiopeia.mixins import PreprocessError
+from cassiopeia.mixins import logger, PreprocessError
 from cassiopeia.preprocess import pipeline, setup_utilities
 
 STAGES = {
@@ -84,7 +83,7 @@ def main():
         if stage == "error_correct_barcodes" and not pipeline_parameters[
             stage
         ].get("whitelist_fp"):
-            logging.warning(
+            logger.warning(
                 "Skipping barcode error correction because no whitelist was "
                 "provided in the configuration."
             )
@@ -93,7 +92,7 @@ def main():
         if stage == "error_correct_intbcs" and not pipeline_parameters[
             stage
         ].get("whitelist_fp"):
-            logging.warning(
+            logger.warning(
                 "Skipping intBC error correction because no whitelist was "
                 "provided in the configuration."
             )

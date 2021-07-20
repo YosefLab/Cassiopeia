@@ -1,9 +1,8 @@
 """
-This file contains functions pertaining to mapping intBCs. 
+This file contains functions pertaining to mapping intBCs.
 Invoked through pipeline.py and supports the filter_alignments function.
 """
 
-import logging
 import sys
 
 from typing import Dict, List, Tuple
@@ -14,6 +13,7 @@ import pylab
 
 from tqdm.auto import tqdm
 
+from cassiopeia.mixins import logger
 from cassiopeia.preprocess import utilities
 
 sys.setrecursionlimit(10000)
@@ -92,7 +92,7 @@ def map_intbcs(
 
             if verbose:
                 for i in range(1, x1.shape[0]):
-                    logging.info(
+                    logger.info(
                         f"In group {n}, re-assigned allele "
                         + str(x1.loc[i, "allele"])
                         + f" to {a},"
@@ -111,9 +111,9 @@ def map_intbcs(
 
     # log results
     if verbose:
-        logging.info("Picking alleles:")
-        logging.info(f"# Alleles removed: {corrected}")
-        logging.info(
+        logger.info("Picking alleles:")
+        logger.info(f"# Alleles removed: {corrected}")
+        logger.info(
             f"# UMIs affected through removing alleles: {numUMI_corrected}"
         )
         utilities.generate_log_output(moleculetable)

@@ -1,9 +1,8 @@
 """
 This file contains functions pertaining to calling lineage groups.
-Invoked through pipeline.py and supports the call_lineage_group function. 
+Invoked through pipeline.py and supports the call_lineage_group function.
 """
 import os
-import logging
 import sys
 import time
 
@@ -15,6 +14,8 @@ import numpy as np
 import pandas as pd
 import pylab
 import re
+
+from cassiopeia.mixins import logger
 
 sys.setrecursionlimit(10000)
 
@@ -152,7 +153,7 @@ def find_top_lg(
 
     # Print statements
     if verbose:
-        logging.info(
+        logger.info(
             f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
         )
 

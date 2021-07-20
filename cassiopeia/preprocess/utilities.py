@@ -18,7 +18,7 @@ import pysam
 import re
 from tqdm.auto import tqdm
 
-from cassiopeia.mixins import is_ambiguous_state
+from cassiopeia.mixins import is_ambiguous_state, logger
 
 
 def generate_log_output(df: pd.DataFrame, begin: bool = False):
@@ -35,12 +35,12 @@ def generate_log_output(df: pd.DataFrame, begin: bool = False):
     """
 
     if begin:
-        logging.info("Before filtering:")
+        logger.info("Before filtering:")
     else:
-        logging.info("After this filtering step:")
-        logging.info("# Reads: " + str(sum(df["readCount"])))
-        logging.info(f"# UMIs: {df.shape[0]}")
-        logging.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
+        logger.info("After this filtering step:")
+        logger.info("# Reads: " + str(sum(df["readCount"])))
+        logger.info(f"# UMIs: {df.shape[0]}")
+        logger.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
 
 
 def filter_cells(
@@ -95,8 +95,8 @@ def filter_cells(
         molecule_table.loc[molecule_table["filter"] == True, "cellBC"].unique()
     )
 
-    logging.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
-    logging.info(f"Filtered out {n_umi_filt} UMIs as a result.")
+    logger.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
+    logger.info(f"Filtered out {n_umi_filt} UMIs as a result.")
 
     filt_molecule_table = molecule_table[
         molecule_table["filter"] == False
@@ -220,7 +220,7 @@ def error_correct_intbc(
                             ] = iBC1
 
                             if verbose:
-                                logging.info(
+                                logger.info(
                                     f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
                                     + "correcting UMI "
                                     + str({x1.loc[r2, "UMI"]})
