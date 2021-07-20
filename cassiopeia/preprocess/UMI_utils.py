@@ -14,7 +14,6 @@ import heapq
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
 from joblib import delayed
-import logging
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
@@ -23,7 +22,7 @@ import pysam
 from tqdm.auto import tqdm
 import warnings
 
-from cassiopeia.mixins import PreprocessError, PreprocessWarning
+from cassiopeia.mixins import logger, PreprocessError, PreprocessWarning
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
@@ -696,7 +695,7 @@ def correct_umis_in_group(
                 al["readCount"] = bad_nr + prev_nr
 
                 if verbose:
-                    logging.info(
+                    logger.info(
                         f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
                         + f"for a total of {bad_nr + prev_nr} reads."
                     )

@@ -10,7 +10,7 @@ import configparser
 import logging
 from typing import Any, Dict
 
-from cassiopeia.mixins import UnspecifiedConfigParameterError
+from cassiopeia.mixins import logger, UnspecifiedConfigParameterError
 from cassiopeia.preprocess import constants
 
 
@@ -25,14 +25,18 @@ def setup(output_directory_location: str) -> None:
     if not os.path.isdir(output_directory_location):
         os.mkdir(output_directory_location)
 
-    logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.log"),
-        level=logging.INFO,
+    # In addition to logging to the console, output logs to files.
+    output_handler = logging.FileHandler(
+        os.path.join(output_directory_location, "preprocess.log")
     )
-    logging.basicConfig(
-        filename=os.path.join(output_directory_location, "preprocess.err"),
-        level=logging.ERROR,
+    output_handler.setLevel(logging.INFO)
+    logger.addHandler(output_handler)
+
+    error_handler = logging.FileHandler(
+        os.path.join(output_directory_location, "preprocess.err")
     )
+    error_handler.setLevel(logging.ERROR)
+    logger.addHandler(error_handler)
 
 
 def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:

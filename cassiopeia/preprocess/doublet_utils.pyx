@@ -1,9 +1,8 @@
 """
 This file contains functions pertaining to filtering cell doublets.
-Invoked through pipeline.py and supports the filter_alignments and 
-call_lineage_group functions. 
+Invoked through pipeline.py and supports the filter_alignments and
+call_lineage_group functions.
 """
-import logging
 import sys
 
 from typing import Dict, List, Tuple
@@ -12,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pylab
 
+from cassiopeia.mixins import logger
 from cassiopeia.preprocess import utilities
 
 sys.setrecursionlimit(10000)
@@ -66,7 +66,7 @@ def filter_intra_doublets(
     ].unique()
 
     if verbose:
-        logging.info(
+        logger.info(
             f"Filtered {len(doublet_list)} Intra-Lineage Group Doublets of "
             + str(len(molecule_table["cellBC"].unique()))
         )
@@ -230,6 +230,6 @@ def filter_inter_doublets(
     tot = len(at["cellBC"].unique())
 
     if verbose:
-        logging.info(f"Filtered {dl} inter-doublets of {tot} cells")
+        logger.info(f"Filtered {dl} inter-doublets of {tot} cells")
 
     return at_n.drop(columns=["status"])
