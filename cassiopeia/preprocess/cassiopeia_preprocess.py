@@ -17,7 +17,7 @@ import pandas as pd
 from typing import Any, Dict
 
 from cassiopeia.mixins import logger, PreprocessError
-from cassiopeia.preprocess import pipeline, setup_utilities
+from cassiopeia.preprocess import pipeline, setup_utilities, utilities
 
 STAGES = {
     "convert": pipeline.convert_fastqs_to_unmapped_bam,
@@ -34,6 +34,8 @@ STAGES = {
 }
 
 
+@logger.namespaced("main")
+@utilities.log_runtime
 def main():
 
     # --------------- Create Argument Parser & Read in Arguments -------------- #
