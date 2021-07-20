@@ -2,10 +2,10 @@
 This file stores generally important functionality for the Cassiopeia-Preprocess
 pipeline.
 """
+import functools
 import os
-import logging
-from typing import Dict, List, Optional, Tuple
-
+import time
+from typing import Callable, Dict, List, Optional, Tuple
 
 from collections import defaultdict, OrderedDict
 import Levenshtein
@@ -41,6 +41,26 @@ def generate_log_output(df: pd.DataFrame, begin: bool = False):
         logger.info("# Reads: " + str(sum(df["readCount"])))
         logger.info(f"# UMIs: {df.shape[0]}")
         logger.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
+
+
+def log_runtime(wrapped: Callable):
+    """Function decorator that logs the start, end and runtime of a function.
+
+    Args:
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
+    """
+
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        t0 = time.time()
+        logger.info("Starting...")
+        try:
+            return wrapped(*args, **kwargs)
+        finally:
+            logger.info(f"Finished in {time.time() - t0} s.")
+
+    return wrapper
 
 
 def filter_cells(
