@@ -11,6 +11,7 @@ from parameterized import parameterized
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
+                              IgnoreCharactersWrapper,
                               IIDExponentialBLE,
                               IIDExponentialBLEGridSearchCV,
                               IIDExponentialLineageTracer,
@@ -19,6 +20,40 @@ from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
                               NumberOfMutationsBLE,
                               UniformCellSubsampler,
                               EmptySubtreeError,)
+
+
+class TestIgnoreCharactersWrapper(unittest.TestCase):
+    def test_basic(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6", "7"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6"), ("3", "7")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0],
+            "1": [0, 0, -1],
+            "2": [1, 0, 0],
+            "3": [0, 1, -1],
+            "4": [1, 1, -1],
+            "5": [1, -1, -1],
+            "6": [1, -1, 0],
+            "7": [1, 1, -1],}
+        )
+        model = IgnoreCharactersWrapper(
+            NumberOfMutationsBLE(
+                length_of_mutationless_edges=0.5,
+                treat_missing_states_as_mutations=False,
+            )
+        )
+        model.estimate_branch_lengths(tree)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "1"), 0.5, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("0", "2"), 0.5, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "3"), 0.5, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("1", "4"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "5"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("2", "6"), 1.0, decimal=3)
+        np.testing.assert_almost_equal(tree.get_branch_length("3", "7"), 0.5, decimal=3)
+
 
 
 class TestNumberOfMutationsBLE(unittest.TestCase):

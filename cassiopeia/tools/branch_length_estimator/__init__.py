@@ -7,3 +7,4 @@ from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
 from .NumberOfMutationsBLE import NumberOfMutationsBLE
+from .IgnoreCharactersWrapper import IgnoreCharactersWrapper

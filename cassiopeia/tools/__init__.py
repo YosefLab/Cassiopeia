@@ -1,6 +1,7 @@
 from .branch_length_estimator import (
     BranchLengthEstimator,
     BLEMultifurcationWrapper,
+    IgnoreCharactersWrapper,
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
     IIDExponentialPosteriorMeanBLE,
