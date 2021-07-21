@@ -11,7 +11,7 @@ import ngs_tools as ngs
 from cassiopeia.preprocess import pipeline
 
 
-class TestErrorCorrectBarcodes(unittest.TestCase):
+class TestErrorCorrectBarcodesToWhitelist(unittest.TestCase):
     def setUp(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         test_files_path = os.path.join(dir_path, "test_files")
@@ -28,7 +28,7 @@ class TestErrorCorrectBarcodes(unittest.TestCase):
         )
 
     def test_10xv3(self):
-        bam_fp = pipeline.error_correct_barcodes(
+        bam_fp = pipeline.error_correct_barcodes_to_whitelist(
             self.bam_10xv3_fp, tempfile.mkdtemp(), self.whitelist_10xv3_fp
         )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
@@ -40,7 +40,7 @@ class TestErrorCorrectBarcodes(unittest.TestCase):
         )
 
     def test_slideseq2(self):
-        bam_fp = pipeline.error_correct_barcodes(
+        bam_fp = pipeline.error_correct_barcodes_to_whitelist(
             self.bam_slideseq2_fp,
             tempfile.mkdtemp(),
             self.whitelist_slideseq2_fp,

@@ -22,13 +22,13 @@ from cassiopeia.preprocess import pipeline, setup_utilities
 
 STAGES = {
     "convert": pipeline.convert_fastqs_to_unmapped_bam,
-    "filter": pipeline.filter_bam,
-    "error_correct_barcodes": pipeline.error_correct_barcodes,
+    "filter_bam": pipeline.filter_bam,
+    "error_correct_barcodes_to_whitelist": pipeline.error_correct_barcodes_to_whitelist,
     "collapse": pipeline.collapse_umis,
     "resolve": pipeline.resolve_umi_sequence,
     "align": pipeline.align_sequences,
     "call_alleles": pipeline.call_alleles,
-    "error_correct_intbcs": pipeline.error_correct_intbcs,
+    "error_correct_intbcs_to_whitelist": pipeline.error_correct_intbcs_to_whitelist,
     "error_correct_umis": pipeline.error_correct_umis,
     "filter_molecule_table": pipeline.filter_molecule_table,
     "call_lineages": pipeline.call_lineage_groups,
@@ -81,18 +81,20 @@ def main():
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
         # Skip barcode correction if whitelist_fp was not provided
-        if stage == "error_correct_barcodes" and not pipeline_parameters[
-            stage
-        ].get("whitelist_fp"):
+        if (
+            stage == "error_correct_barcodes_to_whitelist"
+            and not pipeline_parameters[stage].get("whitelist_fp")
+        ):
             logging.warning(
                 "Skipping barcode error correction because no whitelist was "
                 "provided in the configuration."
             )
             continue
         # Skip intBC correction to whitelist if whitelist_fp was not provided
-        if stage == "error_correct_intbcs" and not pipeline_parameters[
-            stage
-        ].get("whitelist_fp"):
+        if (
+            stage == "error_correct_intbcs_to_whitelist"
+            and not pipeline_parameters[stage].get("whitelist_fp")
+        ):
             logging.warning(
                 "Skipping intBC error correction because no whitelist was "
                 "provided in the configuration."

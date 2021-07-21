@@ -95,7 +95,8 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.assertIn("output_directory", parameters["convert"].keys())
         self.assertIn(
-            "output_directory", parameters["error_correct_barcodes"].keys()
+            "output_directory",
+            parameters["error_correct_barcodes_to_whitelist"].keys(),
         )
         self.assertIn("output_directory", parameters["collapse"].keys())
         self.assertIn("output_directory", parameters["resolve"].keys())
@@ -125,13 +126,13 @@ class TestCollapseUMIs(unittest.TestCase):
 
         expected_procedures = [
             "convert",
-            "filter",
-            "error_correct_barcodes",
+            "filter_bam",
+            "error_correct_barcodes_to_whitelist",
             "collapse",
             "resolve",
             "align",
             "call_alleles",
-            "error_correct_intbcs",
+            "error_correct_intbcs_to_whitelist",
             "error_correct_umis",
             "filter_molecule_table",
             "call_lineages",
@@ -155,7 +156,7 @@ class TestCollapseUMIs(unittest.TestCase):
         expected_procedures = [
             "align",
             "call_alleles",
-            "error_correct_intbcs",
+            "error_correct_intbcs_to_whitelist",
             "error_correct_umis",
             "filter_molecule_table",
         ]

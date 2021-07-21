@@ -81,16 +81,16 @@ def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
     ]
     parameters["convert"]["name"] = parameters["general"]["name"]
     parameters["convert"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["filter"]["output_directory"] = parameters["general"][
+    parameters["filter_bam"]["output_directory"] = parameters["general"][
         "output_directory"
     ]
-    parameters["filter"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["error_correct_barcodes"]["output_directory"] = parameters[
+    parameters["filter_bam"]["n_threads"] = parameters["general"]["n_threads"]
+    parameters["error_correct_barcodes_to_whitelist"][
+        "output_directory"
+    ] = parameters["general"]["output_directory"]
+    parameters["error_correct_barcodes_to_whitelist"]["n_threads"] = parameters[
         "general"
-    ]["output_directory"]
-    parameters["error_correct_barcodes"]["n_threads"] = parameters["general"][
-        "n_threads"
-    ]
+    ]["n_threads"]
     parameters["collapse"]["output_directory"] = parameters["general"][
         "output_directory"
     ]

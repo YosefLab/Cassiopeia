@@ -50,8 +50,8 @@ DNA_SUBSTITUTION_MATRIX = {
 DEFAULT_PIPELINE_PARAMETERS = {
     "general": {"entry": "'convert'", "exit": "'call_lineages'"},
     "convert": {},
-    "filter": {"quality_threshold": 10},
-    "error_correct_barcodes": {},
+    "filter_bam": {"quality_threshold": 10},
+    "error_correct_barcodes_to_whitelist": {},
     "collapse": {"max_hq_mismatches": 3, "max_indels": 2},
     "resolve": {
         "min_avg_reads_per_umi": 2.0,
@@ -66,7 +66,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "context": True,
         "context_size": 5,
     },
-    "error_correct_intbcs": {"intbc_dist_thresh": 1},
+    "error_correct_intbcs_to_whitelist": {"intbc_dist_thresh": 1},
     "error_correct_umis": {
         "max_umi_distance": 2,
     },
