@@ -80,14 +80,16 @@ def convert_fastqs_to_unmapped_bam(
     """
     if chemistry not in constants.CHEMISTRY_BAM_TAGS:
         raise PreprocessError(f"Unknown chemistry {chemistry}")
-
     tag_map = constants.CHEMISTRY_BAM_TAGS[chemistry]
+    chemistry = ngs.chemistry.get_chemistry(chemistry)
+
+    logger.info(f"Using {chemistry} chemistry.")
     bam_fp = os.path.join(
         output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam"
     )
     ngs.fastq.fastqs_to_bam_with_chemistry(
         fastq_fps,
-        ngs.chemistry.get_chemistry(chemistry),
+        chemistry,
         tag_map,
         bam_fp,
         name=name,
@@ -119,9 +121,11 @@ def filter_bam(
     Returns:
         Path to filtered BAM
     """
+    n_filtered = 0
 
     def filter_func(aln):
-        return all(
+        # False means this read will be filtered out
+        filter_bool = all(
             q >= quality_threshold
             for q in pysam.qualitystring_to_array(
                 aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
@@ -132,6 +136,9 @@ def filter_bam(
                 aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"])
             )
         )
+        nonlocal n_filtered
+        n_filtered += not filter_bool
+        return filter_bool
 
     prefix, ext = os.path.splitext(os.path.basename(bam_fp))
     filtered_fp = os.path.join(output_directory, f"{prefix}_filtered{ext}")
@@ -142,6 +149,7 @@ def filter_bam(
         show_progress=True,
         n_threads=n_threads,
     )
+    logger.info(f"Filtered {n_filtered} reads that didn't pass the filter.")
     return filtered_fp
 
 
@@ -208,6 +216,7 @@ def error_correct_barcodes_to_whitelist(
             qualities.append(
                 read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
             )
+    logger.info(f"Detected {len(set(barcodes))} raw barcodes.")
 
     # Correct
     corrections = ngs.sequence.correct_sequences_to_whitelist(
@@ -668,6 +677,7 @@ def error_correct_intbcs_to_whitelist(
     whitelist = list(whitelist_set)
     unique_intbcs = list(input_df["intBC"].unique())
     corrections = {intbc: intbc for intbc in whitelist_set}
+    logger.info(f"{len(unique_intbcs)} intBCs detected.")
 
     for intbc in progress(unique_intbcs, desc="Correcting intBCs to whitelist"):
         min_distance = np.inf
