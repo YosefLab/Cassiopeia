@@ -16,9 +16,9 @@ from cassiopeia.preprocess import utilities
 
 sys.setrecursionlimit(10000)
 
-
+@utilities.log_moleculetable
 def filter_intra_doublets(
-    molecule_table: pd.DataFrame, prop: float = 0.1, verbose: bool = False
+    molecule_table: pd.DataFrame, prop: float = 0.1
 ) -> pd.DataFrame:
     """Filters a DataFrame for doublet cells that present too much conflicting
     allele information within a clonal population.
@@ -32,8 +32,6 @@ def filter_intra_doublets(
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
         prop: The threshold representing the minimum proportion of conflicting
         UMIs needed to filter out a cellBC from the DataFrame
-        verbose: Indicates whether to log the number of doublets filtered out
-        of the total number of cells
 
     Returns
         A filtered molecule table
@@ -65,17 +63,13 @@ def filter_intra_doublets(
         "cellBC"
     ].unique()
 
-    if verbose:
-        logger.info(
-            f"Filtered {len(doublet_list)} Intra-Lineage Group Doublets of "
-            + str(len(molecule_table["cellBC"].unique()))
-        )
+    logger.debug(
+        f"Filtered {len(doublet_list)} Intra-Lineage Group Doublets of "
+        + str(len(molecule_table["cellBC"].unique()))
+    )
 
     molecule_table = molecule_table[(molecule_table["status"] == "good")]
     molecule_table = molecule_table.drop(columns=["status"])
-
-    if verbose:
-        utilities.generate_log_output(molecule_table)
 
     return molecule_table
 
@@ -173,7 +167,7 @@ def compute_lg_membership(
 
 
 def filter_inter_doublets(
-    at: pd.DataFrame, rule: float = 0.35, verbose: bool = False
+    at: pd.DataFrame, rule: float = 0.35
 ) -> pd.DataFrame:
     """Filters out cells whose kinship with their assigned lineage is low.
     Essentially, filters out cells that have ambigious kinship across multiple
@@ -188,7 +182,6 @@ def filter_inter_doublets(
         at: An allele table of cellBC-intBC-allele groups to be filtered
         rule: The minimum kinship threshold which a cell needs to pass in order
             to be included in the final DataFrame
-        verbose: Indicates whether to log the number of filtered cells
     Returns:
         A filtered allele table
     """
@@ -229,7 +222,6 @@ def filter_inter_doublets(
     dl = len(at[at["status"] == "bad"]["cellBC"].unique())
     tot = len(at["cellBC"].unique())
 
-    if verbose:
-        logger.info(f"Filtered {dl} inter-doublets of {tot} cells")
+    logger.debug(f"Filtered {dl} inter-doublets of {tot} cells")
 
     return at_n.drop(columns=["status"])

@@ -23,6 +23,7 @@ class TestCollapseUMIs(unittest.TestCase):
                 "reference_filepath": "'ref.fa'",
                 "input_files": ["input1.txt", "input2.txt"],
                 "n_threads": 1,
+                "verbose": True,
             },
             "collapse": {"max_hq_mismatches": 5},
             "call_alleles": {"barcode_interval": (10, 25)},

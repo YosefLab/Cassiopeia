@@ -21,26 +21,27 @@ from tqdm.auto import tqdm
 from cassiopeia.mixins import is_ambiguous_state, logger
 
 
-def generate_log_output(df: pd.DataFrame, begin: bool = False):
-    """A function for the logging of the number of filtered elements.
+def log_moleculetable(wrapped: Callable):
+    """Function decorator that logs moleculetable stats.
 
-    Simple function that logs the number of total reads, the number of unique
-    UMIs, and the number of unique cellBCs in a DataFrame.
+    Simple decorator that logs the number of total reads, the number of unique
+    UMIs, and the number of unique cellBCs in a DataFrame that is returned
+    from a function.
 
     Args:
-        df: A DataFrame
-
-    Returns:
-        None, logs elements to log file
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
     """
 
-    if begin:
-        logger.info("Before filtering:")
-    else:
-        logger.info("After this filtering step:")
-        logger.info("# Reads: " + str(sum(df["readCount"])))
-        logger.info(f"# UMIs: {df.shape[0]}")
-        logger.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        df = wrapped(*args, **kwargs)
+        logger.debug(f"# Reads: {sum(df['readCount'])}")
+        logger.debug(f"# UMIs: {df.shape[0]}")
+        logger.debug(f"# Cell BCs: {len(np.unique(df['cellBC']))}")
+        return df
+
+    return wrapper
 
 
 def log_runtime(wrapped: Callable):
@@ -63,11 +64,27 @@ def log_runtime(wrapped: Callable):
     return wrapper
 
 
+def log_arguments(wrapped: Callable):
+    """Function decorator that logs the arguments of a function.
+
+    Args:
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
+    """
+
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        logger.debug(f"Arguments: {args}; Keywords: {kwargs}")
+        return wrapped(*args, **kwargs)
+
+    return wrapper
+
+
+@log_moleculetable
 def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """Filter out cell barcodes that have too few UMIs or too few reads/UMI
 
@@ -77,8 +94,6 @@ def filter_cells(
             filtered
         min_avg_reads_per_umi: Minimum coverage (i.e. average) reads per
             UMI in a cell needed in order for that cell not to be filtered
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Returns:
         A filtered molecule table
@@ -123,16 +138,13 @@ def filter_cells(
     ].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
-    if verbose:
-        generate_log_output(filt_molecule_table)
-
     return filt_molecule_table
 
 
+@log_moleculetable
 def filter_umis(
     moleculetable: pd.DataFrame,
     readCountThresh: int = 100,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
@@ -143,8 +155,6 @@ def filter_umis(
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
         readCountThresh: The minimum read count needed for a UMI to not be
             filtered
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Returns:
         A filtered molecule table
@@ -156,18 +166,15 @@ def filter_umis(
     ]
     n_moleculetable.index = [i for i in range(n_moleculetable.shape[0])]
 
-    if verbose:
-        generate_log_output(n_moleculetable)
-
     return n_moleculetable
 
 
+@log_moleculetable
 def error_correct_intbc(
     moleculetable: pd.DataFrame,
     prop: float = 0.5,
     umiCountThresh: int = 10,
     bcDistThresh: int = 1,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """
     Error corrects close intBCs with small enough unique UMI counts.
@@ -190,8 +197,6 @@ def error_correct_intbc(
         umiCountThresh: maximum umi count for which to correct barcodes
         bcDistThresh: barcode distance threshold, to decide what's similar
             enough to error correct
-        verbose: Indicates whether to log every cellBC correction and the
-            number of cellBCs and UMIs remaining after filtering
 
     Returns:
         Filtered molecule table with error corrected intBCs
@@ -239,19 +244,15 @@ def error_correct_intbc(
                                 bad_locs.index.values, "intBC"
                             ] = iBC1
 
-                            if verbose:
-                                logger.info(
-                                    f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
-                                    + "correcting UMI "
-                                    + str({x1.loc[r2, "UMI"]})
-                                    + "to "
-                                    + str({x1.loc[r1, "UMI"]})
-                                )
+                            logger.debug(
+                                f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
+                                + "correcting UMI "
+                                + str({x1.loc[r2, "UMI"]})
+                                + "to "
+                                + str({x1.loc[r1, "UMI"]})
+                            )
 
     moleculetable.index = [i for i in range(moleculetable.shape[0])]
-
-    if verbose:
-        generate_log_output(moleculetable)
 
     return moleculetable
 
