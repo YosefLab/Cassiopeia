@@ -26,7 +26,11 @@ import scipy
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
-from cassiopeia.mixins import CassiopeiaTreeError, CassiopeiaTreeWarning
+from cassiopeia.mixins import (
+    CassiopeiaTreeError,
+    CassiopeiaTreeWarning,
+    is_ambiguous_state,
+)
 from cassiopeia.solver import solver_utilities
 
 
@@ -535,7 +539,7 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         states = self.get_character_states(node)
-        return any(utilities.is_ambiguous_state(state) for state in states)
+        return any(is_ambiguous_state(state) for state in states)
 
     def collapse_ambiguous_characters(self) -> None:
         """Only retain unique characters for ambiguous nodes.
@@ -559,7 +563,7 @@ class CassiopeiaTree:
                 # returns a copy.
                 modified = False
                 for i in range(len(states)):
-                    if utilities.is_ambiguous_state(states[i]):
+                    if is_ambiguous_state(states[i]):
                         new_states = tuple(set(states[i]))
                         if states != new_states:
                             states[i] = new_states
@@ -598,7 +602,7 @@ class CassiopeiaTree:
                 # returns a copy.
                 modified = False
                 for i in range(len(states)):
-                    if utilities.is_ambiguous_state(states[i]):
+                    if is_ambiguous_state(states[i]):
                         states[i] = resolve_function(states[i])
                         modified = True
                 if modified:

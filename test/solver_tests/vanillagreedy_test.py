@@ -5,6 +5,7 @@ import networkx as nx
 import pandas as pd
 
 import cassiopeia as cas
+from cassiopeia.mixins import GreedySolverError
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 from cassiopeia.solver import missing_data_methods
 from cassiopeia.solver import solver_utilities
@@ -29,6 +30,23 @@ def find_triplet_structure(triplet, T):
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
+    def test_raises_error_on_ambiguous(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        with self.assertRaises(GreedySolverError):
+            solver = VanillaGreedySolver()
+            solver.solve(tree)
+
     def test_basic_freq_dict(self):
         cm = pd.DataFrame.from_dict(
             {

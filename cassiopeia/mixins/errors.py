@@ -16,6 +16,10 @@ class DistanceSolverError(Exception):
     pass
 
 
+class GreedySolverError(Exception):
+    pass
+
+
 class HybridSolverError(Exception):
     """An Exception class for all HybridSolver subclasses."""
 

@@ -214,6 +214,36 @@ class TestFilterMoleculeTable(unittest.TestCase):
                 expected_intbc,
             )
 
+    def test_filter_allow_conflicts(self):
+        aln_df = pipeline.filter_molecule_table(
+            self.doublets_case,
+            ".",
+            min_umi_per_cell=1,
+            umi_read_thresh=0,
+            doublet_threshold=0.4,
+            allow_allele_conflicts=True,
+        )
+
+        expected_alignments = {
+            "C_AACCT_110": "Z",
+            "A_AACGT_40": "X",
+            "A_AACCG_30": "X",
+            "A_AACCC_30": "X",
+            "C_AACTA_20": "Z",
+            "C_AAGGA_15": "Z",
+            "A_AACCT_10": "X",
+            "C_AACCG_10": "Z",
+            "C_ACGTA_10": "Z",
+        }
+        for read_name in aln_df["readName"]:
+
+            expected_intbc = expected_alignments[read_name]
+
+            self.assertEqual(
+                aln_df.loc[aln_df["readName"] == read_name, "intBC"].iloc[0],
+                expected_intbc,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

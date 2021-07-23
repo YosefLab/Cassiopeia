@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import GreedySolverError, is_ambiguous_state
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
@@ -145,6 +146,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix = cassiopeia_tree.layers[layer].copy()
         else:
             character_matrix = cassiopeia_tree.character_matrix.copy()
+
+        # Raise exception if the character matrix has ambiguous states.
+        if any(
+            is_ambiguous_state(state)
+            for state in character_matrix.values.flatten()
+        ):
+            raise GreedySolverError("Solver does not support ambiguous states.")
 
         unique_character_matrix = character_matrix.drop_duplicates()
 
