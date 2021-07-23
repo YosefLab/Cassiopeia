@@ -6,7 +6,7 @@ from .pipeline import (
     align_sequences,
     call_alleles,
     collapse_umis,
-    error_correct_barcodes_to_whitelist,
+    error_correct_cellbcs_to_whitelist,
     error_correct_intbcs_to_whitelist,
     error_correct_umis,
     resolve_umi_sequence,

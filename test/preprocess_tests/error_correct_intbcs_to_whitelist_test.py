@@ -12,6 +12,7 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         test_files_path = os.path.join(dir_path, "test_files")
         self.whitelist_fp = os.path.join(test_files_path, "intbc_whitelist.txt")
+        self.whitelist = ["ACTT", "TAAG"]
 
         self.multi_case = pd.DataFrame.from_dict(
             {
@@ -125,6 +126,16 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
 
         pd.testing.assert_frame_equal(df, expected_df)
 
+    def test_correct_whitelist_list(self):
+
+        df = cassiopeia.pp.error_correct_intbcs_to_whitelist(
+            self.multi_case, self.whitelist, intbc_dist_thresh=1
+        )
+        expected_df = self.multi_case.copy()
+        expected_df["intBC"] = expected_df["intBC"].map(self.corrections)
+        expected_df.dropna(subset=["intBC"], inplace=True)
+
+        pd.testing.assert_frame_equal(df, expected_df)
 
 if __name__ == "__main__":
     unittest.main()

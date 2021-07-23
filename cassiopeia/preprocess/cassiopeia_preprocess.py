@@ -23,7 +23,7 @@ from cassiopeia.preprocess import pipeline, setup_utilities
 STAGES = {
     "convert": pipeline.convert_fastqs_to_unmapped_bam,
     "filter_bam": pipeline.filter_bam,
-    "error_correct_barcodes_to_whitelist": pipeline.error_correct_barcodes_to_whitelist,
+    "error_correct_cellbcs_to_whitelist": pipeline.error_correct_cellbcs_to_whitelist,
     "collapse": pipeline.collapse_umis,
     "resolve": pipeline.resolve_umi_sequence,
     "align": pipeline.align_sequences,
@@ -75,7 +75,7 @@ def main():
 
         if entry_point in (
             "filter_bam",
-            "error_correct_barcodes_to_whitelist",
+            "error_correct_cellbcs_to_whitelist",
             "collapse",
         ):
             data = data_filepaths[0]
@@ -84,20 +84,20 @@ def main():
 
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
-        # Skip barcode correction if whitelist_fp was not provided
+        # Skip barcode correction if whitelist was not provided
         if (
-            stage == "error_correct_barcodes_to_whitelist"
-            and not pipeline_parameters[stage].get("whitelist_fp")
+            stage == "error_correct_cellbcs_to_whitelist"
+            and not pipeline_parameters[stage].get("whitelist")
         ):
             logging.warning(
                 "Skipping barcode error correction because no whitelist was "
                 "provided in the configuration."
             )
             continue
-        # Skip intBC correction to whitelist if whitelist_fp was not provided
+        # Skip intBC correction to whitelist if whitelist was not provided
         if (
             stage == "error_correct_intbcs_to_whitelist"
-            and not pipeline_parameters[stage].get("whitelist_fp")
+            and not pipeline_parameters[stage].get("whitelist")
         ):
             logging.warning(
                 "Skipping intBC error correction because no whitelist was "

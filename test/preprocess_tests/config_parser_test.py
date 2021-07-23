@@ -96,7 +96,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertIn("output_directory", parameters["convert"].keys())
         self.assertIn(
             "output_directory",
-            parameters["error_correct_barcodes_to_whitelist"].keys(),
+            parameters["error_correct_cellbcs_to_whitelist"].keys(),
         )
         self.assertIn("output_directory", parameters["collapse"].keys())
         self.assertIn("output_directory", parameters["resolve"].keys())
@@ -127,7 +127,7 @@ class TestCollapseUMIs(unittest.TestCase):
         expected_procedures = [
             "convert",
             "filter_bam",
-            "error_correct_barcodes_to_whitelist",
+            "error_correct_cellbcs_to_whitelist",
             "collapse",
             "resolve",
             "align",

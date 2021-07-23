@@ -9,7 +9,7 @@ import logging
 import os
 from pathlib import Path
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from Bio import SeqIO
 from joblib import delayed
@@ -144,14 +144,13 @@ def filter_bam(
     return filtered_fp
 
 
-def error_correct_barcodes_to_whitelist(
+def error_correct_cellbcs_to_whitelist(
     bam_fp: str,
+    whitelist: Union[str, List[str]],
     output_directory: str,
-    whitelist_fp: Optional[str] = None,
-    whitelist: Optional[List[str]] = None,
     n_threads: int = 1,
 ) -> str:
-    """Error-correct barcodes in the input BAM.
+    """Error-correct cell barcodes in the input BAM.
 
     The barcode correction procedure used in Cell Ranger by 10X Genomics is used.
     https://kb.10xgenomics.com/hc/en-us/articles/115003822406-How-does-Cell-Ranger-correct-barcode-sequencing-errors
@@ -160,11 +159,11 @@ def error_correct_barcodes_to_whitelist(
 
     Args:
         bam_fp: Input BAM filepath containing raw barcodes
+        whitelist: May be either a single path to a plaintext file containing
+            the barcode whitelist, one barcode per line, or a list of
+            barcodes.
         output_directory: The output directory where the corrected BAM will be
             written to. This directory must exist prior to calling this function.
-        whitelist_fp: Path to plaintext file containing barcode whitelist, one
-            barcode per line.
-        whitelist: List of whitelisted barcodes.
         n_threads: Number of threads to use. Defaults to 1.
 
     Todo:
@@ -175,26 +174,17 @@ def error_correct_barcodes_to_whitelist(
 
     Returns:
         Path to corrected BAM
-
-    Raises:
-        PreprocessError if both `whitelist_fp` and `whitelist` are provided.
     """
     logging.info("Correcting barcodes to whitelist...")
     t0 = time.time()
 
-    if not (whitelist_fp is not None) ^ (whitelist is not None):
-        raise PreprocessError(
-            "Either `whitelist_fp` or `whitelist` must be provided."
-        )
-
-    # Read whitelist
-    if whitelist_fp:
-        with open(whitelist_fp, "r") as f:
+    if isinstance(whitelist, list):
+        whitelist_set = set(whitelist)
+    else:
+        with open(whitelist, "r") as f:
             whitelist_set = set(
                 line.strip() for line in f if not line.isspace()
             )
-    else:
-        whitelist_set = set(whitelist)
     whitelist = list(whitelist_set)
 
     # Extract all raw barcodes and their qualities
@@ -647,8 +637,7 @@ def call_alleles(
 
 def error_correct_intbcs_to_whitelist(
     input_df: pd.DataFrame,
-    whitelist_fp: Optional[str] = None,
-    whitelist: Optional[List[str]] = None,
+    whitelist: Union[str, List[str]],
     intbc_dist_thresh: int = 1,
 ) -> pd.DataFrame:
     """Corrects all intBCs to the provided whitelist.
@@ -658,8 +647,9 @@ def error_correct_intbcs_to_whitelist(
 
     Args:
         input_df: Input DataFrame of alignments.
-        whitelist_fp: Path to plaintext file containing intBC whitelist.
-        whitelist: List of whitelisted intBCs.
+        whitelist: May be either a single path to a plaintext file containing
+            the barcode whitelist, one barcode per line, or a list of
+            barcodes.
         intbc_dist_thresh: The threshold specifying the maximum Levenshtein
             distance between the read sequence and whitelist to be corrected.
 
@@ -667,24 +657,19 @@ def error_correct_intbcs_to_whitelist(
         A DataFrame of error corrected intBCs.
 
     Raises:
-        PreprocessError if both `whitelist_fp` and `whitelist` are provided.
+        PreprocessError if both `whitelist` and `whitelist` are provided.
     """
     t0 = time.time()
 
     logging.info("Beginning correcting intBCs to whitelist...")
 
-    if not (whitelist_fp is not None) ^ (whitelist is not None):
-        raise PreprocessError(
-            "Either `whitelist_fp` or `whitelist` must be provided."
-        )
-
-    if whitelist_fp:
-        with open(whitelist_fp, "r") as f:
+    if isinstance(whitelist, list):
+        whitelist_set = set(whitelist)
+    else:
+        with open(whitelist, "r") as f:
             whitelist_set = set(
                 line.strip() for line in f if not line.isspace()
             )
-    else:
-        whitelist_set = set(whitelist)
     whitelist = list(whitelist_set)
     unique_intbcs = list(input_df["intBC"].unique())
     corrections = {intbc: intbc for intbc in whitelist_set}

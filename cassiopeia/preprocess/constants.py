@@ -51,7 +51,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "general": {"entry": "'convert'", "exit": "'call_lineages'"},
     "convert": {},
     "filter_bam": {"quality_threshold": 10},
-    "error_correct_barcodes_to_whitelist": {},
+    "error_correct_cellbcs_to_whitelist": {},
     "collapse": {"max_hq_mismatches": 3, "max_indels": 2},
     "resolve": {
         "min_avg_reads_per_umi": 2.0,
