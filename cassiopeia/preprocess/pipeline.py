@@ -39,7 +39,7 @@ progress = tqdm
 
 
 @logger.namespaced("convert")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
@@ -101,7 +101,7 @@ def convert_fastqs_to_unmapped_bam(
 
 
 @logger.namespaced("filter_bam")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def filter_bam(
     bam_fp: str,
@@ -156,7 +156,7 @@ def filter_bam(
 
 
 @logger.namespaced("error_correct_barcodes_to_whitelist")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def error_correct_barcodes_to_whitelist(
     bam_fp: str,
@@ -243,7 +243,7 @@ def error_correct_barcodes_to_whitelist(
 
 
 @logger.namespaced("collapse")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def collapse_umis(
     bam_fp: str,
@@ -333,7 +333,7 @@ def collapse_umis(
 
 
 @logger.namespaced("resolve")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def resolve_umi_sequence(
     molecule_table: pd.DataFrame,
@@ -465,7 +465,7 @@ def resolve_umi_sequence(
 
 
 @logger.namespaced("align")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def align_sequences(
     queries: pd.DataFrame,
@@ -557,7 +557,7 @@ def align_sequences(
 
 
 @logger.namespaced("call_alleles")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def call_alleles(
     alignments: pd.DataFrame,
@@ -644,7 +644,7 @@ def call_alleles(
 
 
 @logger.namespaced("error_correct_intbcs_to_whitelist")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def error_correct_intbcs_to_whitelist(
     input_df: pd.DataFrame,
@@ -710,7 +710,7 @@ def error_correct_intbcs_to_whitelist(
 
 
 @logger.namespaced("error_correct_umis")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def error_correct_umis(
     input_df: pd.DataFrame,
@@ -803,7 +803,7 @@ def error_correct_umis(
 
 
 @logger.namespaced("filter_molecule_table")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def filter_molecule_table(
     input_df: pd.DataFrame,
@@ -1009,7 +1009,7 @@ def filter_molecule_table(
 
 
 @logger.namespaced("call_lineages")
-@utilities.log_arguments
+@utilities.log_kwargs
 @utilities.log_runtime
 def call_lineage_groups(
     input_df: pd.DataFrame,
