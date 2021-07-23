@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import re
 
-from cassiopeia.mixins import CassiopeiaTreeWarning
+from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
@@ -203,17 +203,19 @@ def compute_dissimilarity_map(
 
         return dm
 
-    # Don't numbaize _compute_dissimilarity_map when we failed to numbaize
-    # the dissimilarity function. Otherwise, if we try to call a Python
-    # function from a numbaized (in object mode) a LOT of warnings are raised.
-    if numbaize:
+    # Numbaize _compute_dissimilarity_map in nopython mode only if the
+    # dissimilarity function has been successfully numbaized. Otherwise,
+    # numbaize in object mode.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=numba.NumbaDeprecationWarning)
+        warnings.simplefilter("ignore", category=numba.NumbaWarning)
         _compute_dissimilarity_map = numba.jit(
-            _compute_dissimilarity_map, nopython=True
+            _compute_dissimilarity_map, nopython=numbaize
         )
 
-    return _compute_dissimilarity_map(
-        cm, C, missing_state_indicator, nb_weights
-    )
+        return _compute_dissimilarity_map(
+            cm, C, missing_state_indicator, nb_weights
+        )
 
 
 def sample_bootstrap_character_matrices(
@@ -355,20 +357,6 @@ def sample_bootstrap_allele_tables(
         )
 
     return bootstrap_samples
-
-
-def is_ambiguous_state(state: Union[int, Tuple[int, ...]]) -> bool:
-    """Determine whether the provided state is ambiguous.
-
-    Note that this function operates on a single (indel) state.
-
-    Args:
-        state: Single, possibly ambiguous, character state
-
-    Returns:
-        True if the state is ambiguous, False otherwise.
-    """
-    return isinstance(state, tuple)
 
 
 def resolve_most_abundant(state: Tuple[int, ...]) -> int:

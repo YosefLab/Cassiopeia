@@ -9,9 +9,10 @@ import logging
 import os
 from pathlib import Path
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from Bio import SeqIO
+from joblib import delayed
 import matplotlib.pyplot as plt
 import ngs_tools as ngs
 import numpy as np
@@ -97,20 +98,72 @@ def convert_fastqs_to_unmapped_bam(
     return bam_fp
 
 
-def error_correct_barcodes(
-    bam_fp: str, output_directory: str, whitelist_fp: str, n_threads: int = 1
+def filter_bam(
+    bam_fp: str,
+    output_directory: str,
+    quality_threshold: int = 10,
+    n_threads: int = 1,
 ) -> str:
-    """Error-correct barcodes in the input BAM.
+    """Filter reads in a BAM that have low quality barcode or UMIs.
+
+    Args:
+        bam_fp: Input BAM filepath containing reads to filter.
+        output_directory: The output directory where the filtered BAM will be
+            written to. This directory must exist prior to calling this function.
+        quality_threshold: Every base of the barcode and UMI sequence for a
+            given read must have at least this PHRED quality score for it to
+            pass the filtering.
+        n_threads: Number of threads to use. Defaults to 1.
+
+    Returns:
+        Path to filtered BAM
+    """
+
+    def filter_func(aln):
+        return all(
+            q >= quality_threshold
+            for q in pysam.qualitystring_to_array(
+                aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
+            )
+        ) and all(
+            q >= quality_threshold
+            for q in pysam.qualitystring_to_array(
+                aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"])
+            )
+        )
+
+    prefix, ext = os.path.splitext(os.path.basename(bam_fp))
+    filtered_fp = os.path.join(output_directory, f"{prefix}_filtered{ext}")
+    ngs.bam.filter_bam(
+        bam_fp,
+        filter_func,
+        filtered_fp,
+        show_progress=True,
+        n_threads=n_threads,
+    )
+    return filtered_fp
+
+
+def error_correct_cellbcs_to_whitelist(
+    bam_fp: str,
+    whitelist: Union[str, List[str]],
+    output_directory: str,
+    n_threads: int = 1,
+) -> str:
+    """Error-correct cell barcodes in the input BAM.
 
     The barcode correction procedure used in Cell Ranger by 10X Genomics is used.
     https://kb.10xgenomics.com/hc/en-us/articles/115003822406-How-does-Cell-Ranger-correct-barcode-sequencing-errors
+    This function can either take a list of whitelisted barcodes or a plaintext
+    file containing these barcodes.
 
     Args:
         bam_fp: Input BAM filepath containing raw barcodes
+        whitelist: May be either a single path to a plaintext file containing
+            the barcode whitelist, one barcode per line, or a list of
+            barcodes.
         output_directory: The output directory where the corrected BAM will be
             written to. This directory must exist prior to calling this function.
-        whitelist_fp: Path to plaintext file containing barcode whitelist, one
-            barcode per line.
         n_threads: Number of threads to use. Defaults to 1.
 
     Todo:
@@ -125,9 +178,14 @@ def error_correct_barcodes(
     logging.info("Correcting barcodes to whitelist...")
     t0 = time.time()
 
-    # Read whitelist
-    with open(whitelist_fp, "r") as f:
-        whitelist = [line.strip() for line in f if not line.isspace()]
+    if isinstance(whitelist, list):
+        whitelist_set = set(whitelist)
+    else:
+        with open(whitelist, "r") as f:
+            whitelist_set = set(
+                line.strip() for line in f if not line.isspace()
+            )
+    whitelist = list(whitelist_set)
 
     # Extract all raw barcodes and their qualities
     barcodes = []
@@ -169,7 +227,7 @@ def collapse_umis(
     max_hq_mismatches: int = 3,
     max_indels: int = 2,
     method: Literal["cutoff", "likelihood"] = "cutoff",
-    skip_existing: bool = False,
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Collapses close UMIs together from a bam file.
 
@@ -197,9 +255,7 @@ def collapse_umis(
             * likelihood: Utilizes the error probability encoded in the quality
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
-        skip_existing: Indicates whether to check if the output files already
-            exist in the output directory for the sorting and collapsing steps.
-            Skips each step if the respective file already exists
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame of collapsed reads.
@@ -223,30 +279,29 @@ def collapse_umis(
     cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
     logging.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
-    if not sorted_file_name.exists() and not skip_existing:
-        max_read_length, total_reads_out = UMI_utils.sort_bam(
-            bam_fp,
-            str(sorted_file_name),
-            sort_key=lambda al: (
-                al.get_tag(cell_bc_tag),
-                al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
-            ),
-            filter_func=lambda al: al.has_tag(cell_bc_tag),
-        )
-        logging.info("Sorted bam directory saved to " + str(sorted_file_name))
-        logging.info("Max read length of " + str(max_read_length))
-        logging.info("Total reads: " + str(total_reads_out))
+    max_read_length, total_reads_out = UMI_utils.sort_bam(
+        bam_fp,
+        str(sorted_file_name),
+        sort_key=lambda al: (
+            al.get_tag(cell_bc_tag),
+            al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
+        ),
+        filter_func=lambda al: al.has_tag(cell_bc_tag),
+    )
+    logging.info("Sorted bam directory saved to " + str(sorted_file_name))
+    logging.info("Max read length of " + str(max_read_length))
+    logging.info("Total reads: " + str(total_reads_out))
 
     collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
-    if not collapsed_file_name.exists() and not skip_existing:
-        UMI_utils.form_collapsed_clusters(
-            str(sorted_file_name),
-            str(collapsed_file_name),
-            max_hq_mismatches,
-            max_indels,
-            cell_key=lambda al: al.get_tag(cell_bc_tag),
-            method=method,
-        )
+    UMI_utils.form_collapsed_clusters(
+        str(sorted_file_name),
+        str(collapsed_file_name),
+        max_hq_mismatches,
+        max_indels,
+        cell_key=lambda al: al.get_tag(cell_bc_tag),
+        method=method,
+        n_threads=n_threads,
+    )
 
     logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
@@ -281,8 +336,6 @@ def resolve_umi_sequence(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed for that cell to be
             retained during filtering
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Return:
         A molecule table with unique mappings between cellBC-UMI pairs.
@@ -321,7 +374,7 @@ def resolve_umi_sequence(
     second_reads = {}
     first_reads = {}
 
-    unique_pairs = molecule_table.groupby(["cellBC", "UMI"])
+    unique_pairs = molecule_table.groupby(["cellBC", "UMI"], sort=False)
 
     for _, group in tqdm(
         unique_pairs,
@@ -339,8 +392,8 @@ def resolve_umi_sequence(
         # more commonly - many sequences for a given UMI
         else:
             group_sort = group.sort_values(
-                "readCount", ascending=False
-            ).reset_index()
+                "readCount", ascending=False, ignore_index=True
+            )
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -358,14 +411,12 @@ def resolve_umi_sequence(
 
     # apply the filter using the hash table created above
     molecule_table["filter"] = molecule_table["readName"].map(mt_filter)
-    n_filtered = molecule_table[molecule_table["filter"] == True].shape[0]
+    n_filtered = molecule_table[molecule_table["filter"]].shape[0]
 
     logging.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
-    filt_molecule_table = molecule_table[
-        molecule_table["filter"] == False
-    ].copy()
+    filt_molecule_table = molecule_table[~molecule_table["filter"]].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
     logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
@@ -406,6 +457,7 @@ def align_sequences(
     ref: Optional[str] = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Align reads to the TargetSite reference.
 
@@ -415,14 +467,13 @@ def align_sequences(
     output consists of the best alignment score and the CIGAR string storing the
     indel locations in the query sequence.
 
-    TODO(mattjones315): Parallelize?
-
     Args:
         queries: DataFrame storing a list of sequences to align.
         ref_filepath: Filepath to the reference FASTA.
         ref: Reference sequence.
         gapopen: Gap open penalty
         gapextend: Gap extension penalty
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame mapping each sequence name to the CIGAR string, quality,
@@ -438,30 +489,37 @@ def align_sequences(
     logging.info("Beginning alignment to reference...")
     t0 = time.time()
 
-    for umi in tqdm(
-        queries.index,
-        total=queries.shape[0],
-        desc="Aligning sequences to reference",
-    ):
-
-        query = queries.loc[umi]
-
+    # Helper function for paralleleization
+    def align(seq):
         aligner = alignment.StripedSmithWaterman(
-            query.seq,
+            seq,
             substitution_matrix=DNA_SUBSTITUTION_MATRIX,
             gap_open_penalty=gap_open_penalty,
             gap_extend_penalty=gap_extend_penalty,
         )
         aln = aligner(ref)
-        alignment_dictionary[query.readName] = (
-            query.cellBC,
-            query.UMI,
-            query.readCount,
+        return (
             aln.cigar,
             aln.query_begin,
             aln.target_begin,
             aln.optimal_alignment_score,
             aln.query_sequence,
+        )
+
+    for umi, aln in zip(
+        queries.index,
+        ngs.utils.ParallelWithProgress(
+            n_jobs=n_threads,
+            total=queries.shape[0],
+            desc="Aligning sequences to reference",
+        )(delayed(align)(queries.loc[umi].seq) for umi in queries.index),
+    ):
+        query = queries.loc[umi]
+        alignment_dictionary[query.readName] = (
+            query.cellBC,
+            query.UMI,
+            query.readCount,
+            *aln,
         )
 
     final_time = time.time()
@@ -577,22 +635,91 @@ def call_alleles(
     return alignments
 
 
+def error_correct_intbcs_to_whitelist(
+    input_df: pd.DataFrame,
+    whitelist: Union[str, List[str]],
+    intbc_dist_thresh: int = 1,
+) -> pd.DataFrame:
+    """Corrects all intBCs to the provided whitelist.
+
+    This function can either take a list of whitelisted intBCs or a plaintext
+    file containing these intBCs.
+
+    Args:
+        input_df: Input DataFrame of alignments.
+        whitelist: May be either a single path to a plaintext file containing
+            the barcode whitelist, one barcode per line, or a list of
+            barcodes.
+        intbc_dist_thresh: The threshold specifying the maximum Levenshtein
+            distance between the read sequence and whitelist to be corrected.
+
+    Returns:
+        A DataFrame of error corrected intBCs.
+    """
+    t0 = time.time()
+
+    logging.info("Beginning correcting intBCs to whitelist...")
+
+    if isinstance(whitelist, list):
+        whitelist_set = set(whitelist)
+    else:
+        with open(whitelist, "r") as f:
+            whitelist_set = set(
+                line.strip() for line in f if not line.isspace()
+            )
+    whitelist = list(whitelist_set)
+    unique_intbcs = list(input_df["intBC"].unique())
+    corrections = {intbc: intbc for intbc in whitelist_set}
+
+    for intbc in progress(unique_intbcs, desc="Correcting intBCs to whitelist"):
+        min_distance = np.inf
+        min_wls = []
+        if intbc not in whitelist_set:
+            for wl_intbc in whitelist:
+                distance = ngs.sequence.levenshtein_distance(intbc, wl_intbc)
+                if distance < min_distance:
+                    min_distance = distance
+                    min_wls = [wl_intbc]
+                elif distance == min_distance:
+                    min_wls.append(wl_intbc)
+
+        # Correct only if there is one matching whitelist. Discard if there
+        # are multiple possible corrections.
+        if len(min_wls) == 1 and min_distance <= intbc_dist_thresh:
+            corrections[intbc] = min_wls[0]
+
+    input_df["intBC"] = input_df["intBC"].map(corrections)
+
+    final_time = time.time()
+    logging.info(f"Finished correcting intBCs in {final_time - t0}s")
+
+    return input_df[~input_df["intBC"].isna()]
+
+
 def error_correct_umis(
     input_df: pd.DataFrame,
     max_umi_distance: int = 2,
-    verbose: bool = False,
+    allow_allele_conflicts: bool = False,
+    n_threads: int = 1,
 ) -> pd.DataFrame:
     """Within cellBC-intBC pairs, collapses UMIs that have close sequences.
 
     Error correct UMIs together within cellBC-intBC pairs. UMIs that have a
     Hamming Distance between their sequences less than a threshold are
-    corrected towards whichever UMI is more abundant.
+    corrected towards whichever UMI is more abundant. The `allow_allele_conflicts`
+    option may be used to also group on the actual allele.
 
     Args:
         input_df: Input DataFrame of alignments.
         max_umi_distance: The threshold specifying the Maximum Hamming distance
             between UMIs for one to be corrected to another.
-        verbose: Indicates whether to log every UMI correction.
+        allow_allele_conflicts: Whether or not to include the allele when
+            splitting UMIs into allele groups. When True, UMIs are grouped by
+            cellBC-intBC-allele triplets. When False, UMIs are grouped by
+            cellBC-intBC pairs. This option is used when it is possible for
+            each cellBC-intBC pair to have >1 allele state, such as for
+            spatial data.
+        n_threads: Number of threads to use.
 
     Returns:
         A DataFrame of error corrected UMIs.
@@ -629,23 +756,23 @@ def error_correct_umis(
 
     alignment_df = pd.DataFrame()
 
-    allele_groups = sorted_df.groupby(["cellBC", "intBC"])
+    groupby = ["cellBC", "intBC"]
+    if allow_allele_conflicts:
+        groupby.append("allele")
+    allele_groups = sorted_df.groupby(groupby)
 
-    allele_groups = progress(
-        allele_groups, total=len(allele_groups), desc="Error-correcting UMIs"
-    )
-
-    for fields, allele_group in allele_groups:
-        cellBC, intBC = fields
-        if verbose:
-            logging.info(f"cellBC: {cellBC}, intBC: {intBC}")
-        allele_group, num_corr, tot = UMI_utils.correct_umis_in_group(
-            allele_group, max_umi_distance
-        )
+    alignment_dfs = []
+    for allele_group, num_corr, tot in ngs.utils.ParallelWithProgress(
+        n_jobs=n_threads, total=len(allele_groups), desc="Error-correcting UMIs"
+    )(
+        delayed(UMI_utils.correct_umis_in_group)(allele_group, max_umi_distance)
+        for _, allele_group in allele_groups
+    ):
         num_corrected += num_corr
         total += tot
 
-        alignment_df = alignment_df.append(allele_group, sort=True)
+        alignment_dfs.append(allele_group)
+    alignment_df = pd.concat(alignment_dfs, sort=True)
 
     final_time = time.time()
 
@@ -675,6 +802,7 @@ def filter_molecule_table(
     intbc_umi_thresh: int = 10,
     intbc_dist_thresh: int = 1,
     doublet_threshold: float = 0.35,
+    allow_allele_conflicts: bool = False,
     plot: bool = False,
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -708,6 +836,12 @@ def filter_molecule_table(
         doublet_threshold: The threshold specifying the maximum proportion of
             conflicting alleles information allowed to for an intBC to be
             retained in doublet filtering. Set to None to skip doublet filtering
+        allow_allele_conflicts: Whether or not to allow multiple alleles to be
+            assigned to each cellBC-intBC pair. For fully single-cell data,
+            this option should be set to False, since each cell is expected to
+            have a single allele state for each intBC. However, this option
+            should be set to True for chemistries that may result in multiple
+            physical cells being captured for each barcode.
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
         verbose: Indicates whether to log detailed information on each filter
@@ -792,7 +926,7 @@ def filter_molecule_table(
         verbose=verbose,
     )
 
-    if doublet_threshold:
+    if doublet_threshold and not allow_allele_conflicts:
         logging.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
@@ -800,8 +934,9 @@ def filter_molecule_table(
             filtered_df, prop=doublet_threshold, verbose=verbose
         )
 
-    logging.info("Mapping remaining intBC conflicts...")
-    filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
+    if not allow_allele_conflicts:
+        logging.info("Mapping remaining intBC conflicts...")
+        filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
     if plot:
         (
             rc_profile["Final"],

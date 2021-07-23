@@ -18,9 +18,11 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.basic_config = {
             "general": {
+                "name": "'test'",
                 "output_directory": "'here'",
                 "reference_filepath": "'ref.fa'",
                 "input_files": ["input1.txt", "input2.txt"],
+                "n_threads": 1,
             },
             "collapse": {"max_hq_mismatches": 5},
             "call_alleles": {"barcode_interval": (10, 25)},
@@ -34,11 +36,13 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.subset_config = {
             "general": {
+                "name": "'test'",
                 "output_directory": "'here'",
                 "reference_filepath": "'ref.fa'",
                 "input_files": ["input.txt"],
                 "entry": "'align'",
                 "exit": "'filter_molecule_table'",
+                "n_threads": 1,
             },
             "collapse": {"max_hq_mismatches": 5},
             "call_alleles": {"barcode_interval": (10, 25)},
@@ -66,21 +70,34 @@ class TestCollapseUMIs(unittest.TestCase):
         parameters = setup_utilities.parse_config(self.basic_config_string)
 
         # check some default parameters
-        self.assertEqual(parameters["error_correct_umis"]["max_umi_distance"], 2)
+        self.assertEqual(
+            parameters["error_correct_umis"]["max_umi_distance"], 2
+        )
+        self.assertFalse(
+            parameters["error_correct_umis"]["allow_allele_conflicts"]
+        )
         self.assertEqual(parameters["align"]["gap_open_penalty"], 20)
         self.assertEqual(parameters["call_alleles"]["cutsite_width"], 12)
+        self.assertFalse(
+            parameters["filter_molecule_table"]["allow_allele_conflicts"]
+        )
 
         # check parameters updated correctly
         self.assertEqual(parameters["general"]["output_directory"], "here")
         self.assertEqual(parameters["general"]["reference_filepath"], "ref.fa")
-        self.assertEqual(parameters["general"]["input_files"], ["input1.txt", "input2.txt"])
+        self.assertEqual(
+            parameters["general"]["input_files"], ["input1.txt", "input2.txt"]
+        )
         self.assertEqual(parameters["collapse"]["max_hq_mismatches"], 5)
         self.assertEqual(
             parameters["call_alleles"]["barcode_interval"], (10, 25)
         )
 
         self.assertIn("output_directory", parameters["convert"].keys())
-        self.assertIn("output_directory", parameters["error_correct_barcodes"].keys())
+        self.assertIn(
+            "output_directory",
+            parameters["error_correct_cellbcs_to_whitelist"].keys(),
+        )
         self.assertIn("output_directory", parameters["collapse"].keys())
         self.assertIn("output_directory", parameters["resolve"].keys())
         self.assertIn(
@@ -109,11 +126,13 @@ class TestCollapseUMIs(unittest.TestCase):
 
         expected_procedures = [
             "convert",
-            "error_correct_barcodes",
+            "filter_bam",
+            "error_correct_cellbcs_to_whitelist",
             "collapse",
             "resolve",
             "align",
             "call_alleles",
+            "error_correct_intbcs_to_whitelist",
             "error_correct_umis",
             "filter_molecule_table",
             "call_lineages",
@@ -137,6 +156,7 @@ class TestCollapseUMIs(unittest.TestCase):
         expected_procedures = [
             "align",
             "call_alleles",
+            "error_correct_intbcs_to_whitelist",
             "error_correct_umis",
             "filter_molecule_table",
         ]

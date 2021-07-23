@@ -329,4 +329,7 @@ def cluster_dissimilarity(
         result += linkage_function(dissim)
         num_present += np.mean(present)
 
+    if num_present == 0:
+        return 0
+
     return result / num_present if normalize else result
