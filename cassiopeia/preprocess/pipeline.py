@@ -99,7 +99,7 @@ def convert_fastqs_to_unmapped_bam(
     return bam_fp
 
 
-@logger.namespaced("filter")
+@logger.namespaced("filter_bam")
 @utilities.log_runtime
 def filter_bam(
     bam_fp: str,
