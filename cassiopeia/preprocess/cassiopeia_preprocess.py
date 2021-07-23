@@ -64,7 +64,7 @@ def main():
 
     # Check that all stages are valid
     for stage in pipeline_parameters.keys():
-        if stage == "general":
+        if stage in ("general", "DEFAULT"):
             continue
 
         if stage not in STAGES:
