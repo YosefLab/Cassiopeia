@@ -90,6 +90,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.seed = seed
         self.mip_gap = mip_gap
 
+    @logger.namespaced("ILPSolver")
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
