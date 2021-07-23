@@ -64,8 +64,12 @@ def log_runtime(wrapped: Callable):
     return wrapper
 
 
-def log_arguments(wrapped: Callable):
-    """Function decorator that logs the arguments of a function.
+def log_kwargs(wrapped: Callable):
+    """Function decorator that logs the keyword arguments of a function.
+
+    This function only logs keyword arguments because usually the unnamed
+    arguments contain Pandas DataFrames, which are difficult to log cleanly as
+    text.
 
     Args:
         wrapped: The wrapped original function. Since this is a function
@@ -74,7 +78,7 @@ def log_arguments(wrapped: Callable):
 
     @functools.wraps(wrapped)
     def wrapper(*args, **kwargs):
-        logger.debug(f"Arguments: {args}; Keywords: {kwargs}")
+        logger.debug(f"Keyword arguments: {kwargs}")
         return wrapped(*args, **kwargs)
 
     return wrapper
