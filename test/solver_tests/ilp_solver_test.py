@@ -295,16 +295,34 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
         root = roots[0]
 
         observed_parsimony = 0
         for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+            if tree.out_degree(e[0]) > 0:
+                if e[1] in expected_leaves:
+                    observed_parsimony += (
+                        cas.solver.dissimilarity.hamming_distance(
+                            e[0],
+                            str(
+                                tuple(
+                                    self.duplicates_tree.character_matrix.loc[
+                                        e[1]
+                                    ]
+                                )
+                            ),
+                        )
+                    )
+                else:
+                    observed_parsimony += (
+                        cas.solver.dissimilarity.hamming_distance(e[0], e[1])
+                    )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -403,16 +421,34 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
         root = roots[0]
 
         observed_parsimony = 0
         for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+            if tree.out_degree(e[0]) > 0:
+                if e[1] in expected_leaves:
+                    observed_parsimony += (
+                        cas.solver.dissimilarity.hamming_distance(
+                            e[0],
+                            str(
+                                tuple(
+                                    self.duplicates_tree.character_matrix.loc[
+                                        e[1]
+                                    ]
+                                )
+                            ),
+                        )
+                    )
+                else:
+                    observed_parsimony += (
+                        cas.solver.dissimilarity.hamming_distance(e[0], e[1])
+                    )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -427,8 +463,10 @@ class TestILPSolver(unittest.TestCase):
                 ("9", "8"),
                 ("9", "7"),
                 ("7", "6"),
-                ("7", "a"),
-                ("7", "f"),
+                ("7", "5"),
+                ("7", "5"),
+                ("5", "a"),
+                ("5", "f"),
                 ("6", "b"),
                 ("6", "c"),
                 ("8", "e"),
@@ -437,6 +475,15 @@ class TestILPSolver(unittest.TestCase):
         )
 
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.ilp_solver.solve(
+            self.duplicates_tree, self.logfile, collapse_mutationless_edges=True
+        )
+        tree = self.duplicates_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
@@ -480,6 +527,15 @@ class TestILPSolver(unittest.TestCase):
         triplets = itertools.combinations(
             ["a", "b", "c", "d", "e", "f", "g", "h"], 3
         )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.ilp_solver.solve(
+            self.missing_tree, self.logfile, collapse_mutationless_edges=True
+        )
+        tree = self.missing_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)

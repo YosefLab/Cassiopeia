@@ -53,10 +53,9 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         self,
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         prior_transformation: str = "negative_log",
-        collapse_tree = True
     ):
 
-        super().__init__(prior_transformation, collapse_tree)
+        super().__init__(prior_transformation)
 
         self.missing_data_classifier = missing_data_classifier
 

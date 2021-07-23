@@ -95,6 +95,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         logfile: str = "stdout.log",
         layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
     ):
         """The general hybrid solver routine.
 
@@ -107,6 +108,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree: CassiopeiaTree that stores the character matrix
                 and priors for reconstruction.
             logfile: Location to log progress.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
         """
         node_name_generator = solver_utilities.node_name_generator()
 
@@ -171,16 +178,18 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             self.__tree = nx.compose(self.__tree, subproblem_tree)
 
-        cassiopeia_tree.populate_tree(self.__tree, layer=layer)
+        # append sample names to the solution and populate the tree
+        samples_tree = self.__append_sample_names(self.__tree, character_matrix)
+        cassiopeia_tree.populate_tree(samples_tree, layer=layer)
+        cassiopeia_tree.collapse_unifurcations()
 
-        # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(
-            infer_ancestral_characters=True
-        )
-        samples_tree = self.__append_sample_names(
-            cassiopeia_tree.get_tree_topology(), character_matrix
-        )
-        cassiopeia_tree.populate_tree(samples_tree)
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
+
+        self.__tree = nx.DiGraph()
 
     def apply_top_solver(
         self,

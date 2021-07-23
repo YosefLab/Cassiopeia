@@ -152,7 +152,6 @@ def robinson_foulds(
     T1 = copy.copy(tree1)
     T2 = copy.copy(tree2)
 
-
     # convert to Ete3 trees and collapse unifurcations
     T1.collapse_unifurcations()
     T2.collapse_unifurcations()

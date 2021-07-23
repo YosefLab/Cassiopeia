@@ -296,7 +296,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             pd.testing.assert_frame_equal(
                 expected_character_matrix2, character_matrix
             )
-            
+
     def test_lineage_profile_to_character_matrix_with_priors(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
