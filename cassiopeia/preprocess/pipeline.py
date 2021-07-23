@@ -655,9 +655,6 @@ def error_correct_intbcs_to_whitelist(
 
     Returns:
         A DataFrame of error corrected intBCs.
-
-    Raises:
-        PreprocessError if both `whitelist` and `whitelist` are provided.
     """
     t0 = time.time()
 
