@@ -39,6 +39,7 @@ progress = tqdm
 
 
 @logger.namespaced("convert")
+@utilities.log_arguments
 @utilities.log_runtime
 def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
@@ -100,6 +101,7 @@ def convert_fastqs_to_unmapped_bam(
 
 
 @logger.namespaced("filter_bam")
+@utilities.log_arguments
 @utilities.log_runtime
 def filter_bam(
     bam_fp: str,
@@ -230,6 +232,7 @@ def error_correct_cellbcs_to_whitelist(
 
 
 @logger.namespaced("collapse")
+@utilities.log_arguments
 @utilities.log_runtime
 def collapse_umis(
     bam_fp: str,
@@ -319,6 +322,7 @@ def collapse_umis(
 
 
 @logger.namespaced("resolve")
+@utilities.log_arguments
 @utilities.log_runtime
 def resolve_umi_sequence(
     molecule_table: pd.DataFrame,
@@ -450,6 +454,7 @@ def resolve_umi_sequence(
 
 
 @logger.namespaced("align")
+@utilities.log_arguments
 @utilities.log_runtime
 def align_sequences(
     queries: pd.DataFrame,
@@ -541,6 +546,7 @@ def align_sequences(
 
 
 @logger.namespaced("call_alleles")
+@utilities.log_arguments
 @utilities.log_runtime
 def call_alleles(
     alignments: pd.DataFrame,
@@ -627,6 +633,7 @@ def call_alleles(
 
 
 @logger.namespaced("error_correct_intbcs_to_whitelist")
+@utilities.log_arguments
 @utilities.log_runtime
 def error_correct_intbcs_to_whitelist(
     input_df: pd.DataFrame,
@@ -687,6 +694,7 @@ def error_correct_intbcs_to_whitelist(
 
 
 @logger.namespaced("error_correct_umis")
+@utilities.log_arguments
 @utilities.log_runtime
 def error_correct_umis(
     input_df: pd.DataFrame,
@@ -779,6 +787,7 @@ def error_correct_umis(
 
 
 @logger.namespaced("filter_molecule_table")
+@utilities.log_arguments
 @utilities.log_runtime
 def filter_molecule_table(
     input_df: pd.DataFrame,
@@ -792,7 +801,6 @@ def filter_molecule_table(
     doublet_threshold: float = 0.35,
     allow_allele_conflicts: bool = False,
     plot: bool = False,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """Filters and corrects a molecule table of cellBC-UMI pairs.
 
@@ -832,8 +840,6 @@ def filter_molecule_table(
             physical cells being captured for each barcode.
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
-        verbose: Indicates whether to log detailed information on each filter
-            and correction step
 
     Returns:
         A filtered and corrected allele table of cellBC-UMI-allele groups
@@ -842,7 +848,6 @@ def filter_molecule_table(
     input_df["status"] = "good"
     input_df.sort_values("readCount", ascending=False, inplace=True)
     rc_profile, upi_profile, upc_profile = {}, {}, {}
-    utilities.generate_log_output(input_df, begin=True)
 
     logger.info("Logging initial stats...")
     if plot:
@@ -859,7 +864,6 @@ def filter_molecule_table(
         input_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
     if plot:
         (
@@ -876,7 +880,7 @@ def filter_molecule_table(
             umi_read_thresh = 0
     logger.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
     filtered_df = utilities.filter_umis(
-        filtered_df, readCountThresh=umi_read_thresh, verbose=verbose
+        filtered_df, readCountThresh=umi_read_thresh
     )
 
     if plot:
@@ -893,7 +897,6 @@ def filter_molecule_table(
             prop=intbc_prop_thresh,
             umiCountThresh=intbc_umi_thresh,
             bcDistThresh=intbc_dist_thresh,
-            verbose=verbose,
         )
 
     if plot:
@@ -908,7 +911,6 @@ def filter_molecule_table(
         filtered_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
 
     if doublet_threshold and not allow_allele_conflicts:
@@ -916,12 +918,12 @@ def filter_molecule_table(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
         filtered_df = d_utils.filter_intra_doublets(
-            filtered_df, prop=doublet_threshold, verbose=verbose
+            filtered_df, prop=doublet_threshold
         )
 
     if not allow_allele_conflicts:
         logger.info("Mapping remaining intBC conflicts...")
-        filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
+        filtered_df = m_utils.map_intbcs(filtered_df)
     if plot:
         (
             rc_profile["Final"],
@@ -991,6 +993,7 @@ def filter_molecule_table(
 
 
 @logger.namespaced("call_lineages")
+@utilities.log_arguments
 @utilities.log_runtime
 def call_lineage_groups(
     input_df: pd.DataFrame,
@@ -1001,7 +1004,6 @@ def call_lineage_groups(
     min_intbc_thresh: float = 0.05,
     inter_doublet_threshold: float = 0.35,
     kinship_thresh: float = 0.25,
-    verbose: bool = False,
     plot: bool = False,
 ) -> pd.DataFrame:
     """Assigns cells to their clonal populations.
@@ -1046,8 +1048,6 @@ def call_lineage_groups(
             intBCs shared between a cell and the intBC set of a lineage group
             needed to assign that cell to that lineage group in putative
             assignment
-        verbose: Indicates whether to log detailed information on filtering
-            steps
         plot: Indicates whether to generate plots
 
     Returns:
@@ -1103,7 +1103,7 @@ def call_lineage_groups(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
         allele_table = d_utils.filter_inter_doublets(
-            allele_table, rule=inter_doublet_threshold, verbose=verbose
+            allele_table, rule=inter_doublet_threshold
         )
 
     logger.info(
@@ -1115,17 +1115,15 @@ def call_lineage_groups(
 
     allele_table = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
 
-    if verbose:
-        logger.info("Final lineage group assignments:")
-        for n, g in allele_table.groupby(["lineageGrp"]):
-            logger.info(f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells")
+    logger.debug("Final lineage group assignments:")
+    for n, g in allele_table.groupby(["lineageGrp"]):
+        logger.debug(f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells")
 
     logger.info("Filtering out low UMI cell barcodes...")
     allele_table = utilities.filter_cells(
         allele_table,
         min_umi_per_cell=int(min_umi_per_cell),
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
     allele_table["lineageGrp"] = allele_table["lineageGrp"].astype(int)
 

@@ -13,6 +13,7 @@ import os
 
 import argparse
 import configparser
+import logging
 import pandas as pd
 from typing import Any, Dict
 
@@ -57,9 +58,24 @@ def main():
     data_filepaths = pipeline_parameters["general"]["input_files"]
     entry_point = pipeline_parameters["general"]["entry"]
     exit_point = pipeline_parameters["general"]["exit"]
+    verbose = pipeline_parameters["general"].get("verbose", False)
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
+    # Check that all stages are valid
+    for stage in pipeline_parameters.keys():
+        if stage == "general":
+            continue
+
+        if stage not in STAGES:
+            raise PreprocessError(
+                f"Unrecognized stage configuration `{stage}` in "
+                f"{config_filepath}. Only the following stages are allowed: "
+                f"{', '.join(list(STAGES.keys()))}"
+            )
 
     # set up output directory
-    setup_utilities.setup(output_directory)
+    setup_utilities.setup(output_directory, verbose=verbose)
 
     # create pipeline plan
     pipeline_stages = setup_utilities.create_pipeline(
