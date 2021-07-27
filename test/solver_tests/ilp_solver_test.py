@@ -11,6 +11,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
 
@@ -91,6 +92,55 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
+    def test_raises_error_on_ambiguous(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        with self.assertRaises(ILPSolverError):
+            solver = cas.solver.ILPSolver()
+            solver.solve(tree)
+
+    def test_get_lca_cython(self):
+
+        # test single sample
+        cm = self.missing_tree.character_matrix.copy().astype(str)
+
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
+        )
+
+        self.assertEqual(lca, "1|3|1|1")
+
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["h"].values, cm.loc["b"].values, 4, "-1"
+        )
+        self.assertEqual(lca, "0|0|0|0")
+
+    def test_cython_hamming_dist(self):
+
+        sample1 = np.array(["1", "2", "3", "0", "0"])
+        sample2 = np.array(["1", "4", "0", "0", "1"])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(
+            sample1, sample2, "-"
+        )
+        self.assertEqual(dist, 3)
+
+        sample1 = np.array(["1", "2", "3", "0", "-"])
+        sample2 = np.array(["1", "-", "0", "0", "1"])
+        dist = ilp_solver_utilities.simple_hamming_distance_cython(
+            sample1, sample2, "-"
+        )
+        self.assertEqual(dist, 1)
+
     def test_single_sample_ilp(self):
 
         # test single sample
@@ -131,24 +181,30 @@ class TestILPSolver(unittest.TestCase):
 
         pd.testing.assert_frame_equal(
             expected_character_matrix,
-            self.pp_tree.get_original_character_matrix(),
+            self.pp_tree.character_matrix.copy(),
         )
 
     def test_get_layer_for_potential_graph(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
 
+        source_node_strings = np.array(
+            ["|".join(arr) for arr in source_nodes.astype(str)]
+        )
         (
             layer_nodes,
             layer_edges,
         ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-            source_nodes, 10, self.pp_tree.missing_state_indicator
+            source_node_strings, 10
         )
 
+        layer_nodes = np.array(
+            [node.split("|") for node in layer_nodes], dtype=int
+        )
         layer_nodes = np.unique(layer_nodes, axis=0)
 
         expected_next_layer = np.array(
@@ -158,7 +214,9 @@ class TestILPSolver(unittest.TestCase):
         for sample in expected_next_layer:
             self.assertIn(sample, layer_nodes)
 
-        # layer_edges = [(list(e[0]), list(e[1])) for e in layer_edges]
+        layer_edges = np.array(
+            [edge.split("|") for edge in layer_edges], dtype=int
+        )
         layer_edges = [(list(e[:dim]), list(e[dim:])) for e in layer_edges]
         expected_edges = [
             ([1, 0, 0], [1, 1, 0]),
@@ -188,16 +246,12 @@ class TestILPSolver(unittest.TestCase):
     def test_simple_potential_graph_inference(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.pp_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
             unique_character_matrix,
-            root,
             0,
             max_lca_height,
             self.pp_tree.priors,
@@ -300,16 +354,12 @@ class TestILPSolver(unittest.TestCase):
     def test_potential_graph_inference_with_duplicates(self):
 
         unique_character_matrix = (
-            self.duplicates_tree.get_original_character_matrix().drop_duplicates()
+            self.duplicates_tree.character_matrix.drop_duplicates()
         )
-        root = data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(),
-            self.duplicates_tree.missing_state_indicator,
-        )
+
         max_lca_height = 10
         potential_graph = self.ilp_solver.infer_potential_graph(
             unique_character_matrix,
-            root,
             0,
             max_lca_height,
             self.duplicates_tree.priors,

@@ -1,15 +1,14 @@
 """
 This file stores a subclass of CassiopeiaSolver, the HybridSolver. This solver
 consists of two sub-solvers -- a top (greedy) and a bottom solver. The greedy
-solver will be applied until a certain criteria is reached (be it a maximum LCA 
+solver will be applied until a certain criteria is reached (be it a maximum LCA
 distance or a number of cells) and then another solver is employed to
 infer relationships at the bottom of the phylogeny under construction.
 
 In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
-import copy
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Generator, Optional, Tuple
 
 import multiprocessing
 import networkx as nx
@@ -19,6 +18,7 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import HybridSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -27,20 +27,14 @@ from cassiopeia.solver import (
 )
 
 
-class HybridSolverError(Exception):
-    """An Exception class for all HybridSolver subclasses."""
-
-    pass
-
-
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     The Hybrid Cassiopeia solver.
     
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
-    starting with a top-down greedy algorithm until a predetermined criteria is reached
-    at which point a more complex algorithm is used to reconstruct each
+    starting with a top-down greedy algorithm until a predetermined criteria is
+    reached at which point a more complex algorithm is used to reconstruct each
     subproblem. The top-down algorithm _must_ be a subclass of a GreedySolver
     as it must have functions `find_split` and `perform_split`. The solver
     employed at the bottom of the tree can be any CassiopeiaSolver subclass and
@@ -99,7 +93,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.__tree = nx.DiGraph()
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ):
         """The general hybrid solver routine.
 
@@ -113,8 +110,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 and priors for reconstruction.
             logfile: Location to log progress.
         """
+        node_name_generator = solver_utilities.node_name_generator()
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -127,6 +129,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         _, subproblems = self.apply_top_solver(
             unique_character_matrix,
             list(unique_character_matrix.index),
+            node_name_generator,
             weights=weights,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
@@ -144,6 +147,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                 subproblem[0],
                                 subproblem[1],
                                 logfile,
+                                layer,
                             )
                             for subproblem in subproblems
                         ],
@@ -159,33 +163,32 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
             existing_nodes = [n for n in self.__tree]
-            unique_iter = root = len(self.__tree.nodes) + 1
 
             mapping = {}
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
-                    mapping[n] = unique_iter
-                    unique_iter += 1
+                    mapping[n] = next(node_name_generator)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
             self.__tree = nx.compose(self.__tree, subproblem_tree)
 
-        # Collapse 0-mutation edges and append duplicate samples
-        self.__tree = solver_utilities.collapse_tree(
-            self.__tree,
-            True,
-            unique_character_matrix,
-            cassiopeia_tree.missing_state_indicator,
-        )
-        self.__tree = self.__append_sample_names(self.__tree, character_matrix)
+        cassiopeia_tree.populate_tree(self.__tree, layer=layer)
 
-        cassiopeia_tree.populate_tree(self.__tree)
+        # Collapse 0-mutation edges and append duplicate samples
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
+        samples_tree = self.__append_sample_names(
+            cassiopeia_tree.get_tree_topology(), character_matrix
+        )
+        cassiopeia_tree.populate_tree(samples_tree)
 
     def apply_top_solver(
         self,
         character_matrix: pd.DataFrame,
         samples: List[str],
+        node_name_generator: Generator[str, None, None],
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
         root: Optional[int] = None,
@@ -215,7 +218,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
         )
 
-        root = len(self.__tree.nodes) + 1
+        root = next(node_name_generator)
 
         self.__tree.add_node(root)
         if len(clades) == 1:
@@ -240,7 +243,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         for clade in new_clades:
             child, new_subproblems = self.apply_top_solver(
-                character_matrix, clade, weights, missing_state_indicator, root
+                character_matrix,
+                clade,
+                node_name_generator,
+                weights,
+                missing_state_indicator,
+                root,
             )
             self.__tree.add_edge(root, child)
 
@@ -254,6 +262,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         root: int,
         samples=List[str],
         logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ) -> Tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
@@ -273,6 +282,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             samples: A list of samples for which to infer a tree.
             logfile: Base location for logging output. A specific logfile
                 will be created from this base logfile name.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
 
         Returns:
             A tree in the form of a Networkx graph and the original root
@@ -285,7 +296,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             subproblem_tree.add_edge(root, samples[0])
             return subproblem_tree, root
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
@@ -369,7 +384,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: Character matrix
 
         Returns:
-            A solution with extra leaves corresponding to sample names.
+            A solution with extra leaves corresponding to sample names
         """
 
         root = [n for n in tree if tree.in_degree(n) == 0][0]

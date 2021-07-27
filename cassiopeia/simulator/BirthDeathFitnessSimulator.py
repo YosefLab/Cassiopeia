@@ -146,7 +146,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
 
-    def simulate_tree(self,) -> CassiopeiaTree:
+    def simulate_tree(
+        self,
+    ) -> CassiopeiaTree:
         """Simulates trees from a general birth/death process with fitness.
 
         A forward-time birth/death process is simulated by tracking a series of
@@ -243,7 +245,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         # Prune dead lineages and collapse resulting unifurcations
         for i in cassiopeia_tree.nodes:
             if cassiopeia_tree.is_leaf(i) and i not in observed_nodes:
-                cassiopeia_tree.remove_and_prune_lineage(i)
+                cassiopeia_tree.remove_leaf_and_prune_lineage(i)
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
             cassiopeia_tree.collapse_unifurcations(source="1")
 

@@ -1,25 +1,28 @@
 """
 This file contains all functions pertaining to UMI collapsing and preprocessing.
-Invoked through pipeline.py and supports the collapseUMIs and 
-errorCorrectUMIs functions. 
+Invoked through pipeline.py and supports the collapseUMIs and
+errorCorrectUMIs functions.
 """
 import os
 
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
+from typing_extensions import Literal
 
 import array
 from collections import Counter, defaultdict, namedtuple
 import heapq
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
-import logging
+from joblib import delayed
+import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pysam
-
 from tqdm.auto import tqdm
+import warnings
 
+from cassiopeia.mixins import logger, PreprocessError, PreprocessWarning
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
@@ -71,7 +74,34 @@ filter_func = lambda al: al.has_tag(CELL_BC_TAG)
 ####################Utils for Collapsing UMIs#####################
 
 
-def sort_cellranger_bam(
+def detect_cell_bc_tag(bam_fp: str) -> str:
+    """Detect what BAM tag corresponds to the cell barcode.
+
+    Use this function to detect either ``BAM_CONSTANTS["RAW_CELL_BC_TAG"]`` or
+    ``BAM_CONSTANTS["CELL_BC_TAG"]`` to use as the cell barcodes for downstream
+    processing. This is because for some chemistries it may not be possible to
+    perform barcode correction (i.e. chemistries without a whitelist) and
+    therefore the pipeline needs to use the raw barcode sequences.
+
+    Args:
+        bam_fp: Path to the BAM file
+
+    Returns:
+        The BAM tag to use as the barcode
+    """
+    raw_tag = BAM_CONSTANTS["RAW_CELL_BC_TAG"]
+    corrected_tag = BAM_CONSTANTS["CELL_BC_TAG"]
+
+    # Iterating through reads in a BAM file is fast, so it's okay to check all
+    # reads
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
+        for read in f:
+            if read.has_tag(corrected_tag):
+                return corrected_tag
+    return raw_tag
+
+
+def sort_bam(
     bam_fp: str,
     sorted_fn: str,
     sort_key: Callable[[pysam.AlignedSegment], str] = sort_key,
@@ -95,7 +125,7 @@ def sort_cellranger_bam(
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
-    bam_fh = pysam.AlignmentFile(str(bam_fp))
+    bam_fh = pysam.AlignmentFile(str(bam_fp), check_sq=False)
 
     relevant = filter(filter_func, bam_fh)
 
@@ -109,13 +139,12 @@ def sort_cellranger_bam(
         chunk_fn = Path(sorted_fn).with_suffix(suffix)
         sorted_chunk = sorted(chunk, key=sort_key)
 
-    with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
-        for al in sorted_chunk:
-            max_read_length = max(max_read_length, al.query_length)
-            total_reads_out += 1
-            fh.write(al)
-
-    chunk_fns.append(chunk_fn)
+        with pysam.AlignmentFile(str(chunk_fn), "wb", template=bam_fh) as fh:
+            for al in sorted_chunk:
+                max_read_length = max(max_read_length, al.query_length)
+                total_reads_out += 1
+                fh.write(al)
+        chunk_fns.append(chunk_fn)
 
     chunk_fhs = [
         pysam.AlignmentFile(str(fn), check_header=False, check_sq=False)
@@ -142,9 +171,14 @@ def sort_cellranger_bam(
 
 
 def form_collapsed_clusters(
-    sorted_fn: Callable[[pysam.AlignedSegment], str],
+    sorted_fn: str,
+    collapsed_fn: str,
     max_hq_mismatches: int,
     max_indels: int,
+    cell_key: Callable[[pysam.AlignedSegment], str] = cell_key,
+    UMI_key: Callable[[pysam.AlignedSegment], str] = UMI_key,
+    method: Literal["cutoff", "bayesian"] = "cutoff",
+    n_threads: int = 1,
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
     sequences are close.
@@ -164,83 +198,128 @@ def form_collapsed_clusters(
 
     Args:
         sorted_fn: The file name of the sorted BAM.
+        collapsed_fn: The file name of the collapsed BAM.
         max_hq_mismatches: A threshold specifying the maximum number of high
             quality mismatches between the seqeunces of 2 aligned segments to be
             collapsed.
         max_indels: A threshold specifying the maximum number of differing indels
             allowed between the sequences of 2 aligned segments to be collapsed.
+        cell_key: A function that takes an alignment and returns the cell barcode
+        UMI_key: A function that takes an alignment and returns the UMI sequence
+        method: Which method to use to form initial sequence clusters. Must be
+            one of the following:
+            * cutoff: Uses a quality score hard cutoff of 30, and any mismatches
+                below this quality are ignored. Initial sequence clusters are
+                formed by selecting the most common base at each position (with
+                quality at least 30).
+            * likelihood: Utilizes the error probability encoded in the quality
+                score. Initial sequence clusters are formed by selecting the
+                most probable at each position.
+        n_threads: Number of threads to use.
 
     None:
         Saves the sorted bam to file
     """
 
-    collapsed_fn = ".".join(sorted_fn.split(".")[:-1]) + ".collapsed.bam"
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
+    sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
 
-    total_reads = 0
+    cellBC_UMIs = set()
     max_read_length = 0
     for al in sorted_als:
-        total_reads += 1
+        cellBC_UMIs.add((cell_key(al), UMI_key(al)))
         max_read_length = max(max_read_length, al.query_length)
+
+    # Raise warning when max_hq_mismatches / max_read_length > 0.5
+    warnings.warn(
+        "Provided `max_hq_mismatches` exceeds half of the maximum read length. "
+        "Most reads will be collapsed into a single consensus sequence.",
+        PreprocessWarning,
+    )
 
     # Read in the AlignmentFile again as iterating over it in the previous for
     # loop has destructively removed all alignments from the file object
-    sorted_als = pysam.AlignmentFile(str(sorted_fn), check_sq=False)
-
-    sorted_als = progress(sorted_als, total=total_reads, desc="Collapsing UMIs")
-
+    sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
     cell_groups = utilities.group_by(sorted_als, cell_key)
 
+    # Helper function so that we can use joblib to parallelize the computation
+    def cluster_group(cell_BC, UMI, UMI_group):
+        header = pysam.AlignmentHeader()
+        UMI_group = [
+            pysam.AlignedSegment.fromstring(s, header) for s in UMI_group
+        ]
+        if method == "cutoff":
+            clusters = form_clusters(
+                UMI_group, max_read_length, max_hq_mismatches
+            )
+        elif method == "likelihood":
+            clusters = form_clusters_likelihood(
+                UMI_group,
+                proportion=max_hq_mismatches / max_read_length,
+            )
+        else:
+            raise PreprocessError(
+                f"Unknown method to form UMI clusters: {method}"
+            )
+        clusters = sorted(
+            clusters,
+            key=lambda c: c.get_tag(NUM_READS_TAG),
+            reverse=True,
+        )
+
+        for i, cluster in enumerate(clusters):
+            cluster.set_tag(CELL_BC_TAG, cell_BC, "Z")
+            cluster.set_tag(UMI_TAG, UMI, "Z")
+            cluster.set_tag(CLUSTER_ID_TAG, str(i), "Z")
+
+        biggest = clusters[0]
+        rest = clusters[1:]
+
+        not_collapsed = []
+
+        for other in rest:
+            if other.get_tag(NUM_READS_TAG) == biggest.get_tag(NUM_READS_TAG):
+                not_collapsed.append(other)
+            else:
+                indels, hq_mismatches = align_clusters(biggest, other)
+
+                if indels <= max_indels and hq_mismatches <= max_hq_mismatches:
+                    biggest = merge_annotated_clusters(biggest, other)
+                else:
+                    not_collapsed.append(other)
+
+        clusters = []
+        for cluster in [biggest] + not_collapsed:
+            annotation = cluster_Annotation(
+                cell_BC=cluster.get_tag(CELL_BC_TAG),
+                UMI=cluster.get_tag(UMI_TAG),
+                num_reads=cluster.get_tag(NUM_READS_TAG),
+                cluster_id=cluster.get_tag(CLUSTER_ID_TAG),
+            )
+
+            cluster.query_name = str(annotation)
+            clusters.append(cluster.to_string())
+        return clusters
+
+    # Because pysam alignments can not be pickled, we need to pass them as
+    # dictionaries.
+    all_clusters = ngs.utils.ParallelWithProgress(
+        n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
+    )(
+        delayed(cluster_group)(
+            cell_BC, UMI, [aln.to_string() for aln in UMI_group]
+        )
+        for cell_BC, cell_group in cell_groups
+        for UMI, UMI_group in utilities.group_by(cell_group, UMI_key)
+    )
+
     with pysam.AlignmentFile(
-        str(collapsed_fn), "wb", header=empty_header
+        collapsed_fn, "wb", header=empty_header, threads=n_threads
     ) as collapsed_fh:
-        for cell_BC, cell_group in cell_groups:
-            for UMI, UMI_group in utilities.group_by(cell_group, UMI_key):
-                clusters = form_clusters(
-                    UMI_group, max_read_length, max_hq_mismatches
+        for clusters in progress(all_clusters, desc="Writing collapsed UMIs"):
+            for cluster in clusters:
+                collapsed_fh.write(
+                    pysam.AlignedSegment.fromstring(cluster, empty_header)
                 )
-                clusters = sorted(
-                    clusters,
-                    key=lambda c: c.get_tag(NUM_READS_TAG),
-                    reverse=True,
-                )
-
-                for i, cluster in enumerate(clusters):
-                    cluster.set_tag(CELL_BC_TAG, cell_BC, "Z")
-                    cluster.set_tag(UMI_TAG, UMI, "Z")
-                    cluster.set_tag(CLUSTER_ID_TAG, str(i), "Z")
-
-                biggest = clusters[0]
-                rest = clusters[1:]
-
-                not_collapsed = []
-
-                for other in rest:
-                    if other.get_tag(NUM_READS_TAG) == biggest.get_tag(
-                        NUM_READS_TAG
-                    ):
-                        not_collapsed.append(other)
-                    else:
-                        indels, hq_mismatches = align_clusters(biggest, other)
-
-                        if (
-                            indels <= max_indels
-                            and hq_mismatches <= max_hq_mismatches
-                        ):
-                            biggest = merge_annotated_clusters(biggest, other)
-                        else:
-                            not_collapsed.append(other)
-
-                for cluster in [biggest] + not_collapsed:
-                    annotation = cluster_Annotation(
-                        cell_BC=cluster.get_tag(CELL_BC_TAG),
-                        UMI=cluster.get_tag(UMI_TAG),
-                        num_reads=cluster.get_tag(NUM_READS_TAG),
-                        cluster_id=cluster.get_tag(CLUSTER_ID_TAG),
-                    )
-
-                    cluster.query_name = str(annotation)
-                    collapsed_fh.write(cluster)
 
 
 def form_clusters(
@@ -289,6 +368,69 @@ def form_clusters(
                 call_consensus(near_seed, max_read_length)
             ] + form_clusters(remaining, max_read_length, max_hq_mismatches)
 
+    return clusters
+
+
+def form_clusters_likelihood(
+    als: List[pysam.AlignedSegment],
+    q_threshold: Optional[int] = None,
+    proportion: float = 0.05,
+) -> List[pysam.AlignedSegment]:
+    """Forms clusters from a list of aligned segments (reads) probabilistically.
+
+    This function has the same purpose as :func:`form_clusters`, but instead
+    of using hardcoded quality thresholds, takes a probabilisitc approach to
+    forming read clusters by treating the quality scores as probabilities (in
+    fact, they are actually encoded probabilities of error). The two optional
+    arguments specify a dynamic threshold to assign a specific sequence to
+    a cluster.
+
+    Specifically, for a given cluster sequence, a sequence is
+    assigned to this cluster (consensus) if its "match probability" to this
+    consensus is <= `q_threshold` * (`proportion` * length of longest sequence)
+    The "match probability" of a sequence to a possible consensus is the sum
+    of the quality values where they do not match (equivalent to negative log
+    probability that all mismatches were sequencing errors). Conceptually,
+    this is like allowing at most (`proportion` * length) mismatches, each of
+    base quality `q_threshold` for all reads assigned to a consensus.
+
+    Args:
+        als: A list of aligned segments.
+        q_threshold: PHRED quality threshold.
+            Defaults to the median quality score among all bases in all
+            sequences. See https://drive5.com/usearch/manual/quality_score.html
+        proportion: Proportion of each sequence to allow mismatched bases to be
+            above ``q_threshold``. Defaults to 0.05.
+
+    Returns:
+        A list of annotated aligned segments representing the consensus of each
+        cluster.
+    """
+    sequences = []
+    qualities = []
+    for al in als:
+        sequences.append(al.query_sequence)
+        qualities.append(al.query_qualities)
+
+    (
+        consensuses,
+        assignments,
+        qualities,
+    ) = ngs.sequence.call_consensus_with_qualities(
+        sequences,
+        qualities,
+        q_threshold=q_threshold,
+        proportion=proportion,
+        return_qualities=True,
+    )
+
+    clusters = []
+    for i, (consensus, quality) in enumerate(zip(consensuses, qualities)):
+        cluster = pysam.AlignedSegment(empty_header)
+        cluster.query_sequence = consensus
+        cluster.query_qualities = pysam.qualitystring_to_array(quality)
+        cluster.set_tag(NUM_READS_TAG, (assignments == i).sum(), "i")
+        clusters.append(cluster)
     return clusters
 
 
@@ -400,7 +542,7 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
     Returns:
         A single annotated aligned segment representing the singleton cluster.
     """
-    singleton = pysam.AlignedSegment()
+    singleton = pysam.AlignedSegment(empty_header)
     singleton.query_sequence = al.query_sequence
     singleton.query_qualities = al.query_qualities
     singleton.set_tag(NUM_READS_TAG, 1, "i")
@@ -460,7 +602,7 @@ def call_consensus(
     best_idxs[ties] = utilities.base_to_index["N"]
     qs[ties] = N_Q
 
-    consensus = pysam.AlignedSegment()
+    consensus = pysam.AlignedSegment(empty_header)
     consensus.query_sequence = "".join(
         utilities.base_order[i] for i in best_idxs
     )
@@ -502,9 +644,7 @@ def merge_annotated_clusters(
 
 def correct_umis_in_group(
     cell_group: pd.DataFrame,
-    sampleID: str,
     max_umi_distance: int = 2,
-    verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
@@ -522,7 +662,6 @@ def correct_umis_in_group(
 
     Args:
         input_df: Input DataFrame of alignments.
-        _id: Identification of sample.
         max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 
@@ -554,11 +693,10 @@ def correct_umis_in_group(
                 prev_nr = al["readCount"]
                 al["readCount"] = bad_nr + prev_nr
 
-                if verbose:
-                    logging.info(
-                        f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
-                        + f"for a total of {bad_nr + prev_nr} reads."
-                    )
+                logger.debug(
+                    f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
+                    + f"for a total of {bad_nr + prev_nr} reads."
+                )
 
                 # update alignment if already seen
                 if al["UMI"] in corrected_names:

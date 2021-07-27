@@ -1,9 +1,8 @@
 """
 This file contains functions pertaining to calling lineage groups.
-Invoked through pipeline.py and supports the call_lineage_group function. 
+Invoked through pipeline.py and supports the call_lineage_group function.
 """
 import os
-import logging
 import sys
 import time
 
@@ -16,6 +15,8 @@ import pandas as pd
 import pylab
 import re
 
+from cassiopeia.mixins import logger
+
 sys.setrecursionlimit(10000)
 
 
@@ -24,7 +25,6 @@ def assign_lineage_groups(
     min_clust_size: int,
     min_intbc_thresh: float = 0.2,
     kinship_thresh: float = 0.2,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """A wrapper function to find lineage groups and assign cells to them.
 
@@ -41,7 +41,6 @@ def assign_lineage_groups(
         kinship_thresh: A parameter for the grouping algorithm that determines
             the proportion of intBCs that a cell needs to share with the group
             in order to included in that group
-        verbose: Indicates whether to log the size of each group
 
     Returns:
         piv_assigned: A pivot table of cells labled with lineage group
@@ -60,7 +59,6 @@ def assign_lineage_groups(
             i,
             min_intbc_prop=min_intbc_thresh,
             kinship_thresh=kinship_thresh,
-            verbose=verbose,
         )
 
         # append returned objects to output variable
@@ -81,7 +79,6 @@ def find_top_lg(
     iteration: int,
     min_intbc_prop: float = 0.2,
     kinship_thresh: float = 0.2,
-    verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     """Algorithm to creates lineage groups from a pivot table of UMI counts
@@ -102,7 +99,6 @@ def find_top_lg(
             the most frequent intBC
         kinship_thresh: Determines the proportion of intBCs that a cell needs
             to share with the cluster in order to included in that cluster
-        verbose: Indicates whether to log the size of each cluster
 
     Returns:
         PIV_LG: A pivot table of cells labled with lineage group assignments
@@ -151,10 +147,9 @@ def find_top_lg(
     PIV_LG["lineageGrp"] = iteration + 1
 
     # Print statements
-    if verbose:
-        logging.info(
-            f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
-        )
+    logger.debug(
+        f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
+    )
 
     return PIV_LG, PIV_noLG
 

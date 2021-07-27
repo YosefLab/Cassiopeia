@@ -6,6 +6,7 @@ that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this.
 """
 import abc
+import cassiopeia
 import networkx as nx
 import numba
 import numpy as np
@@ -14,13 +15,8 @@ import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
-
-
-class DistanceSolverError(Exception):
-    """An Exception class for all DistanceSolver subclasses."""
-
-    pass
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -81,7 +77,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> None:
         """Solves a tree for a general bottom-up distance-based solver routine.
 
         The general solver routine proceeds by iteratively finding pairs of
@@ -93,17 +91,16 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
+        node_name_generator = solver_utilities.node_name_generator()
 
-        self.setup_dissimilarity_map(cassiopeia_tree)
+        self.setup_dissimilarity_map(cassiopeia_tree, layer)
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
 
         N = dissimilarity_map.shape[0]
-
-        identifier_to_sample = dict(
-            zip([str(i) for i in range(N)], dissimilarity_map.index)
-        )
 
         # instantiate a dissimilarity map that can be updated as we join
         # together nodes.
@@ -123,7 +120,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 _dissimilarity_map.index[j],
             )
 
-            new_node_name = str(len(tree.nodes))
+            new_node_name = next(node_name_generator)
             tree.add_node(new_node_name)
             tree.add_edges_from(
                 [(new_node_name, node_i), (new_node_name, node_j)]
@@ -141,11 +138,22 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             _dissimilarity_map.index.values,
         )
 
-        tree = nx.relabel_nodes(tree, identifier_to_sample)
+        # remove root from character matrix before populating tree
+        if (
+            cassiopeia_tree.root_sample_name
+            in cassiopeia_tree.character_matrix.index
+        ):
+            cassiopeia_tree.character_matrix = (
+                cassiopeia_tree.character_matrix.drop(
+                    index=cassiopeia_tree.root_sample_name
+                )
+            )
 
-        cassiopeia_tree.populate_tree(tree)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
 
-    def setup_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def setup_dissimilarity_map(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> None:
         """Sets up the solver.
 
         Sets up the solver with respect to the input CassiopeiaTree by
@@ -155,6 +163,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
 
         Raises:
             A `DistanceSolverError` if rooting parameters are not passed in
@@ -184,7 +194,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
 
             cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation
+                self.dissimilarity_function, self.prior_transformation, layer
             )
 
     @abc.abstractmethod

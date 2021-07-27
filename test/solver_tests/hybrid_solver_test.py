@@ -11,6 +11,7 @@ import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.solver import solver_utilities
 
 
 def find_triplet_structure(triplet, T):
@@ -141,12 +142,12 @@ class TestHybridSolver(unittest.TestCase):
 
         pd.testing.assert_frame_equal(
             expected_unique_character_matrix,
-            self.pp_tree.get_original_character_matrix(),
+            self.pp_tree.character_matrix.copy(),
         )
 
     def test_cutoff(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         missing_state = self.pp_tree.missing_state_indicator
         self.assertTrue(
             self.hybrid_pp_solver.assess_cutoff(
@@ -178,12 +179,14 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_top_down_split_manual(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-            ["a", "b", "c", "d", "e"],
-            character_matrix,
-            self.pp_tree.missing_state_indicator,
+        mutation_frequencies = (
+            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+                ["a", "b", "c", "d", "e"],
+                character_matrix,
+                self.pp_tree.missing_state_indicator,
+            )
         )
 
         expected_dictionary = {
@@ -203,11 +206,12 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_small(self):
 
-        character_matrix = self.pp_tree.get_original_character_matrix()
+        character_matrix = self.pp_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"])
@@ -219,11 +223,12 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_large(self):
 
-        character_matrix = self.large_tree.get_original_character_matrix()
+        character_matrix = self.large_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver_large.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (
@@ -243,11 +248,12 @@ class TestHybridSolver(unittest.TestCase):
 
     def test_apply_top_solver_missing(self):
 
-        character_matrix = self.missing_tree.get_original_character_matrix()
+        character_matrix = self.missing_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
+        names = solver_utilities.node_name_generator()
 
         _, subproblems = self.hybrid_pp_solver_missing.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index)
+            unique_character_matrix, list(unique_character_matrix.index), names
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"], ["f", "g", "h"])

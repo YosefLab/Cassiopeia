@@ -1,17 +1,16 @@
 """
 This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
-represents the structure of top-down algorithms that build the reconstructed 
+represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
-import logging
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
-import abc
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import GreedySolverError, is_ambiguous_state
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
@@ -25,8 +24,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     will implement "perform_split", which is the procedure for successively
     partioning the sample set.
 
-
-
     Args:
         prior_transformation: Function to use when transforming priors into
             weights. Supports the following transformations:
@@ -37,7 +34,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                     the square root of 1/p
 
     Attributes:
-       prior_transformation: Function to use when transforming priors into
+        prior_transformation: Function to use when transforming priors into
             weights.
     """
 
@@ -66,7 +63,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree):
+    def solve(
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
@@ -81,6 +80,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         # A helper function that builds the subtree given a set of samples
@@ -103,7 +104,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
             )
             # Generates a root for this subtree with a unique int identifier
-            root = len(tree.nodes) + 1
+            root = next(node_name_generator)
             tree.add_node(root)
 
             for clade in clades:
@@ -127,6 +128,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree.add_edge(root, child)
             return root
 
+        node_name_generator = solver_utilities.node_name_generator()
+
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
@@ -134,7 +137,18 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
+        # Raise exception if the character matrix has ambiguous states.
+        if any(
+            is_ambiguous_state(state)
+            for state in character_matrix.values.flatten()
+        ):
+            raise GreedySolverError("Solver does not support ambiguous states.")
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -148,16 +162,17 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        # Collapse 0-mutation edges and append duplicate samples
-        tree = solver_utilities.collapse_tree(
+        duplicates_tree = self.__add_duplicates_to_tree(
             tree,
-            True,
             character_matrix,
-            cassiopeia_tree.missing_state_indicator,
+            node_name_generator,
         )
-        tree = self.__add_duplicates_to_tree(tree, character_matrix)
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
-        cassiopeia_tree.populate_tree(tree)
+        # Collapse 0-mutation edges and append duplicate samples
+        cassiopeia_tree.collapse_mutationless_edges(
+            infer_ancestral_characters=True
+        )
 
     def compute_mutation_frequencies(
         self,
@@ -195,7 +210,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         return freq_dict
 
     def __add_duplicates_to_tree(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
 
@@ -207,7 +225,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: Character matrix
 
         Returns:
-            A tree with duplicates added
+            The tree with duplicates added
         """
 
         character_matrix.index.name = "index"
@@ -221,12 +239,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         for i in duplicate_groups:
-            if len(tree.nodes) == 1:
-                new_internal_node = len(duplicate_groups[i]) + 1
-            else:
-                new_internal_node = (
-                    max([n for n in tree.nodes if type(n) == int]) + 1
-                )
+            new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
             for duplicate in duplicate_groups[i]:
                 tree.add_edge(new_internal_node, duplicate)

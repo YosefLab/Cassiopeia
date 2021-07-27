@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
+from cassiopeia.mixins import GreedySolverError
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 from cassiopeia.solver import missing_data_methods
 from cassiopeia.data import utilities as tree_utilities
@@ -12,6 +13,23 @@ from cassiopeia.solver import solver_utilities
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
+    def test_raises_error_on_ambiguous(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        with self.assertRaises(GreedySolverError):
+            solver = VanillaGreedySolver()
+            solver.solve(tree)
+
     def test_basic_freq_dict(self):
         cm = pd.DataFrame.from_dict(
             {
@@ -27,9 +45,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
-        unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
-        )
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c2", "c3", "c4"],
             unique_character_matrix,
@@ -64,9 +80,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver = VanillaGreedySolver()
 
-        unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
-        )
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
         freq_dict = vgsolver.compute_mutation_frequencies(
             ["c1", "c3", "c4", "c5"],
             unique_character_matrix,
@@ -132,44 +146,52 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertEqual(right_set, ["c4", "c5"])
 
     def test_all_duplicates_base_case(self):
-        cm = pd.DataFrame([[5, 0, 1, 2, 0], [5, 0, 1, 2, 0], [5, 0, 1, 2, 0]])
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 0, 1, 2, 0],
+                "c2": [5, 0, 1, 2, 0],
+                "c3": [5, 0, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
         vgsolver.solve(vg_tree)
-        expected_newick_string = "(0,1,2);"
+        expected_newick_string = "(c1,c2,c3);"
         observed_newick_string = vg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 
     def test_case_1(self):
-        cm = pd.DataFrame(
-            [
-                [5, 0, 1, 2, 0],
-                [5, 0, 0, 2, -1],
-                [4, 0, 3, 2, -1],
-                [-1, 4, 0, 2, 2],
-                [0, 4, 1, 2, 2],
-                [4, 0, 0, 2, 2],
-            ]
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, 0, 1, 2, 0],
+                "c2": [5, 0, 0, 2, -1],
+                "c3": [4, 0, 3, 2, -1],
+                "c4": [-1, 4, 0, 2, 2],
+                "c5": [0, 4, 1, 2, 2],
+                "c6": [4, 0, 0, 2, 2],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
         )
 
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
 
-        unique_character_matrix = (
-            vg_tree.get_original_character_matrix().drop_duplicates()
-        )
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
 
         left, right = vgsolver.perform_split(
-            unique_character_matrix, list(range(6))
+            unique_character_matrix, unique_character_matrix.index
         )
 
-        self.assertListEqual(left, [3, 4, 5, 2])
-        self.assertListEqual(right, [0, 1])
+        self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
+        self.assertListEqual(right, ["c1", "c2"])
 
         vgsolver.solve(vg_tree)
-        expected_newick_string = "(((2,5),(4,3)),(0,1));"
+        expected_newick_string = "(((c3,c6),(c5,c4)),(c1,c2));"
         observed_newick_string = vg_tree.get_newick()
         self.assertEqual(expected_newick_string, observed_newick_string)
 

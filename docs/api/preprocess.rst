@@ -16,7 +16,11 @@ We have several functions that are part of our pipeline for processing sequencin
    pp.call_alleles
    pp.call_lineage_groups
    pp.collapse_umis
+   pp.convert_fastqs_to_unmapped_bam
+   pp.error_correct_cellbcs_to_whitelist
+   pp.error_correct_intbcs_to_whitelist
    pp.error_correct_umis
+   pp.filter_bam
    pp.filter_molecule_table
    pp.filter_cells
    pp.filter_umis

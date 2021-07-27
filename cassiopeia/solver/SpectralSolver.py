@@ -14,9 +14,9 @@ import pandas as pd
 import scipy as sp
 
 from cassiopeia.solver import (
+    GreedySolver,
     dissimilarity_functions,
     graph_utilities,
-    GreedySolver,
 )
 
 

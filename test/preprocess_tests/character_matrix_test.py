@@ -63,6 +63,17 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
         )
 
+        # allele table with conflicts
+        at_dict = {
+            "cellBC": ["cellA", "cellA", "cellA", "cellB", "cellC", "cellA"],
+            "intBC": ["A", "B", "C", "A", "C", "A"],
+            "r1": ["None", "ATC", "GGG", "None", "GAA", "None"],
+            "r2": ["None", "AAA", "GAA", "None", "GAA", "ACT"],
+            "r3": ["ATC", "TTT", "ATA", "ATA", "ATA", "None"],
+            "UMI": [5, 10, 1, 30, 30, 5],
+        }
+        self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
+
     def test_basic_character_matrix_formation(self):
 
         (
@@ -79,6 +90,52 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_df = pd.DataFrame.from_dict(
             {
                 "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(1, 10)],
+        )
+
+        pd.testing.assert_frame_equal(character_matrix, expected_df)
+
+    def test_character_matrix_formation_with_conflicts(self):
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_conflict
+        )
+        self.assertEqual(character_matrix.shape[0], 3)
+        self.assertEqual(character_matrix.shape[1], 9)
+
+        expected_df = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, (0, 1), (0, 1), 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(1, 10)],
+        )
+
+        pd.testing.assert_frame_equal(character_matrix, expected_df)
+
+    def test_character_matrix_formation_with_conflicts_no_collapse(self):
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
+        self.assertEqual(character_matrix.shape[0], 3)
+        self.assertEqual(character_matrix.shape[1], 9)
+
+        expected_df = pd.DataFrame.from_dict(
+            {
+                "cellA": [(0, 0), (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
                 "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
                 "cellC": [-1, -1, -1, -1, -1, -1, 2, 1, 1],
             },
@@ -249,6 +306,176 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             lineage_profile[expected_lineage_profile.columns],
         )
 
+    def test_alleletable_to_lineage_profile_with_conflicts(self):
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_conflict
+        )
+
+        expected_lineage_profile = pd.DataFrame.from_dict(
+            {
+                "cellA": [
+                    "None",
+                    ("ACT", "None"),
+                    ("ATC", "None"),
+                    "ATC",
+                    "AAA",
+                    "TTT",
+                    "GGG",
+                    "GAA",
+                    "ATA",
+                ],
+                "cellB": [
+                    "None",
+                    "None",
+                    "ATA",
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                ],
+                "cellC": [
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    "GAA",
+                    "GAA",
+                    "ATA",
+                ],
+            },
+            orient="index",
+            columns=[
+                "A_r1",
+                "A_r2",
+                "A_r3",
+                "B_r1",
+                "B_r2",
+                "B_r3",
+                "C_r1",
+                "C_r2",
+                "C_r3",
+            ],
+        )
+        expected_lineage_profile.index.name = "cellBC"
+
+        pd.testing.assert_frame_equal(
+            expected_lineage_profile,
+            lineage_profile[expected_lineage_profile.columns],
+        )
+
+    def test_alleletable_to_lineage_profile_with_conflicts_no_collapse(self):
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
+
+        expected_lineage_profile = pd.DataFrame.from_dict(
+            {
+                "cellA": [
+                    ("None", "None"),
+                    ("None", "ACT"),
+                    ("ATC", "None"),
+                    "ATC",
+                    "AAA",
+                    "TTT",
+                    "GGG",
+                    "GAA",
+                    "ATA",
+                ],
+                "cellB": [
+                    "None",
+                    "None",
+                    "ATA",
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                ],
+                "cellC": [
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    "GAA",
+                    "GAA",
+                    "ATA",
+                ],
+            },
+            orient="index",
+            columns=[
+                "A_r1",
+                "A_r2",
+                "A_r3",
+                "B_r1",
+                "B_r2",
+                "B_r3",
+                "C_r1",
+                "C_r2",
+                "C_r3",
+            ],
+        )
+        expected_lineage_profile.index.name = "cellBC"
+
+        pd.testing.assert_frame_equal(
+            expected_lineage_profile,
+            lineage_profile[expected_lineage_profile.columns],
+        )
+
+    def test_lineage_profile_to_character_matrix_with_conflicts(self):
+
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
+
+        (
+            character_matrix,
+            priors,
+            state_to_indel,
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(lineage_profile)
+
+        self.assertEqual(len(priors), 0)
+        self.assertEqual(len(state_to_indel), 9)
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "cellA": [1, 1, 1, (0, 0), (0, 1), (1, 0), 1, 1, 1],
+                "cellB": [-1, -1, -1, 0, 0, 2, -1, -1, -1],
+                "cellC": [2, 1, 1, -1, -1, -1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix.index.name = "cellBC"
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [(0, 0), (0, 1), (1, 0), 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix2.index.name = "cellBC"
+
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
+
     def test_lineage_profile_to_character_matrix_no_priors(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
@@ -274,12 +501,30 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=[f"r{i}" for i in range(9)],
         )
         expected_character_matrix.index.name = "cellBC"
-
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
         )
+        expected_character_matrix2.index.name = "cellBC"
 
-    def test_lineage_profile_to_character_matrix_no_priors(self):
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
+
+    def test_lineage_profile_to_character_matrix_with_priors(self):
 
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
             self.alleletable_basic
@@ -306,10 +551,28 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=[f"r{i}" for i in range(9)],
         )
         expected_character_matrix.index.name = "cellBC"
-
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
         )
+        expected_character_matrix2.index.name = "cellBC"
+
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
 
         # test prior dictionary formation
         for character in priors.keys():
@@ -332,6 +595,35 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 "ATC": [2, 2 / 3],
                 "AAA": [1, 1 / 3],
                 "TTT": [1, 1 / 3],
+            },
+            orient="index",
+            columns=["count", "freq"],
+        )
+
+        for indel in expected_priors.index:
+
+            self.assertIn(indel, indel_probabilities.index.values)
+            self.assertAlmostEqual(
+                expected_priors.loc[indel, "freq"],
+                indel_probabilities.loc[indel, "freq"],
+                delta=0.01,
+            )
+
+    def test_compute_empirical_indel_probabilities_with_conflicts(self):
+
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+            self.alleletable_conflict
+        )
+
+        expected_priors = pd.DataFrame.from_dict(
+            {
+                "ATC": [2, 2 / 3],
+                "GGG": [1, 1 / 3],
+                "GAA": [1, 1 / 3],
+                "AAA": [1, 1 / 3],
+                "ACT": [1, 1 / 3],
+                "TTT": [1, 1 / 3],
+                "ATA": [2, 2 / 3],
             },
             orient="index",
             columns=["count", "freq"],

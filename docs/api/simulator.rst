@@ -16,6 +16,7 @@ We have several frameworks available for simulating topologies:
    :toctree: reference/
    
    sim.BirthDeathFitnessSimulator
+   sim.CompleteBinarySimulator
    sim.SimpleFitSubcloneSimulator
 
 
@@ -26,3 +27,15 @@ These simulators are subclasses of the `DataSimulator` class and implement the `
 
 .. autosummary::
    :toctree: reference/
+
+   sim.Cas9LineageTracingDataSimulator
+
+Leaf SubSamplers
+~~~~~~~~~~~~~~~~~~~
+These are utilities for subsampling lineages for benchmarking purposes. For example, sampling a random proportion of leaves or grouping together cells into clades to model spatial data.
+
+.. autosummary::
+   :toctree: reference/
+
+   sim.SupercellularSampler
+   sim.UniformLeafSubsampler

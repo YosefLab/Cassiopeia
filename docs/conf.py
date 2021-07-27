@@ -39,7 +39,7 @@ autodoc_mock_imports = ["gurobipy",
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '2.0'  # Nicer param docs
+needs_sphinx = '3.4'  # Nicer param docs
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -99,8 +99,8 @@ intersphinx_mapping = dict(
 
 # General information about the project.
 project = u"cassiopeia"
-copyright = u"2020, Matthew G Jones, Richard Zhang, Sebastian Prillo, Jeffrey J Quinn, Alex Khodaverdian"
-author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Jeffrey J Quinn, Alex Khodaverdian"
+copyright = u"2021, Yosef Lab, UC Berkeley"
+author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout

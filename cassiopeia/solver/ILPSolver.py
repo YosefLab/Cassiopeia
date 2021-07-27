@@ -7,8 +7,7 @@ evolutionary states.
 import datetime
 import logging
 import time
-from typing import Callable, Dict, List, Optional, Tuple
-import warnings
+from typing import Dict, List, Optional
 
 try:
     import gurobipy
@@ -17,12 +16,12 @@ except ModuleNotFoundError:
 import hashlib
 import itertools
 import networkx as nx
-import numba
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -31,31 +30,30 @@ from cassiopeia.solver import (
 )
 
 
-class ILPSolverError(Exception):
-    """An Exception class for all ILPError subclasses."""
-
-    pass
-
-
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     The Cassiopeia ILP-based maximum parsimony solver.
     
     ILPSolver is a subclass of CassiopeiaSolver and implements the
-    Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The solver
-    proceeds by constructing a tree over a network of possible evolutionary states
-    known as the potential graph. The procedure for constructing this tree is done
-    by solving for a Steiner Tree with an integer linear programming (ILP)
-    optimization approach.
+    Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The
+    solver proceeds by constructing a tree over a network of possible
+    evolutionary states known as the potential graph. The procedure for
+    constructing this tree is done by solving for a Steiner Tree with an
+    integer linear programming (ILP) optimization approach.
 
     Args:
-        convergence_time_limit: Amount of time allotted to the ILP for convergence.
-            Ignored if set to 0.
+        convergence_time_limit: Amount of time allotted to the ILP for
+        convergence. Ignored if set to 0.
         convergence_iteration_limit: Number of iterations allowed for ILP
             convergence. Ignored if set to 0.
-        maximum_potential_graph_layer_size: Maximum size allowed for an iteration
-            of the potential graph inference procedure. If this is exceeded,
-            we return the previous iteration's graph or abort altogether.
+        maximum_potential_graph_layer_size: Maximum size allowed for an
+            iteration of the potential graph inference procedure. If this is
+            exceeded, we return the previous iteration's graph or abort
+            altogether.
+        maximum_potential_graph_lca_distance: Maximum height of LCA to add to the
+            potential graph. If this parameter is not provided or the specified
+            value is 0, the maximum distance between any pair of samples is used
+            as the maximum lca height.
         weighted: Weight edges on the potential graph by the negative log
             likelihood of the mutations.
         seed: Random seed to use during ILP optimization.
@@ -77,6 +75,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
+        maximum_potential_graph_lca_distance: Optional[int] = None,
         weighted: bool = False,
         seed: Optional[int] = None,
         mip_gap: float = 0.01,
@@ -89,12 +88,19 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.maximum_potential_graph_layer_size = (
             maximum_potential_graph_layer_size
         )
+        self.maximum_potential_graph_lca_distance = (
+            maximum_potential_graph_lca_distance
+        )
         self.weighted = weighted
         self.seed = seed
         self.mip_gap = mip_gap
 
+    @logger.namespaced("ILPSolver")
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, logfile: str = "stdout.log"
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        logfile: str = "stdout.log",
+        layer: Optional[str] = None,
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -104,6 +110,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: Input CassiopeiaTree
             logfile: Location to write standard out.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -113,9 +121,32 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # setup logfile config
-        logging.basicConfig(filename=logfile, level=logging.INFO)
+        handler = logging.FileHandler(logfile)
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+        logger.info("Solving tree with the following parameters.")
+        logger.info(f"Convergence time limit: {self.convergence_time_limit}")
+        logger.info(
+            f"Convergence iteration limit: {self.convergence_iteration_limit}"
+        )
+        logger.info(
+            f"Max potential graph layer size: {self.maximum_potential_graph_layer_size}"
+        )
+        logger.info(
+            f"Max potential graph lca distance: {self.maximum_potential_graph_lca_distance}"
+        )
+        logger.info(f"MIP gap: {self.mip_gap}")
 
-        character_matrix = cassiopeia_tree.get_original_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+        if any(
+            is_ambiguous_state(state)
+            for state in character_matrix.values.flatten()
+        ):
+            raise ILPSolverError("Solver does not support ambiguous states.")
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
@@ -143,26 +174,36 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution = self.__append_sample_names(
                 optimal_solution, character_matrix
             )
-            cassiopeia_tree.populate_tree(optimal_solution)
+            cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
 
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
-        max_lca_distance = 0
-        lca_distances = [
-            dissimilarity_functions.hamming_distance(root, np.array(u))
-            for u in targets
-        ]
+        if (self.maximum_potential_graph_lca_distance is not None) and (
+            self.maximum_potential_graph_lca_distance > 0
+        ):
+            max_lca_distance = self.maximum_potential_graph_lca_distance
 
-        for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
-            max_lca_distance = max(
-                max_lca_distance, lca_distances[i] + lca_distances[j] + 1
-            )
+        else:
+            max_lca_distance = 0
+            lca_distances = [
+                dissimilarity_functions.hamming_distance(
+                    root,
+                    np.array(u),
+                    ignore_missing_state=True,
+                    missing_state_indicator=cassiopeia_tree.missing_state_indicator,
+                )
+                for u in targets
+            ]
+
+            for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
+                max_lca_distance = max(
+                    max_lca_distance, lca_distances[i] + lca_distances[j] + 1
+                )
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
             unique_character_matrix,
-            root,
             pid,
             max_lca_distance,
             weights,
@@ -198,12 +239,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, character_matrix
         )
 
-        cassiopeia_tree.populate_tree(optimal_solution)
+        cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+        logger.removeHandler(handler)
 
     def infer_potential_graph(
         self,
         character_matrix: pd.DataFrame,
-        root: List[str],
         pid: int,
         lca_height: int,
         weights: Optional[Dict[int, Dict[int, str]]] = None,
@@ -215,12 +256,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         this procedure creates a network which contains potential ancestors, or
         evolutionary intermediates.
 
-        First, a directed graph is constructed by considering all pairs of
-        samples, and checking if a sample can be a possible parent of another
-        sample. Then, for all pairs of nodes with in-degree of 0 and are
-        similar enough to one another, we add their common ancestor as a parent
-        to the two nodes. This procedure is done until there exists only one
-        possible ancestor left - this will be the root of the tree.
+        This procedure invokes
+        `ilp_solver_utilities.infer_potential_graph_cython` which returns the
+        edges of the potential graph in character string format
+        (e.g., "1|2|3|..."). The procedure here decodes these strings, creates
+        a Networkx directed graph, and adds edges to the graph. These weights
+        are added to the edges of the graph using priors, if they are specified
+        in the CassiopeiaTree, or the number of mutations along an edge.
 
         Args:
             character_matrix: Character matrix
@@ -236,90 +278,33 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        logging.info(
-            f"(Process: {pid}) Estimating a potential graph with "
-            "a maximum layer size of "
-            f"{self.maximum_potential_graph_layer_size} and n maximum "
-            f"LCA height of {lca_height}."
+        potential_graph_edges = (
+            ilp_solver_utilities.infer_potential_graph_cython(
+                character_matrix.values.astype(str),
+                pid,
+                lca_height,
+                self.maximum_potential_graph_layer_size,
+                missing_state_indicator,
+            )
         )
 
-        layer_sizes = {}
-        prev_graph = None
+        # the potential graph edges returned are strings in the form
+        # "state1|state2|...", so we "decode" them here
+        decoded_edges = []
+        for e1, e2 in potential_graph_edges:
+            e1 = np.array(
+                e1.replace("-", str(missing_state_indicator)).split("|")
+            ).astype(int)
+            e2 = np.array(
+                e2.replace("-", str(missing_state_indicator)).split("|")
+            ).astype(int)
+            decoded_edges.append((tuple(e1), tuple(e2)))
 
-        character_states = character_matrix.values
-
-        n_characters = character_states.shape[1]
-
-        distance_threshold = 0
-        while distance_threshold < (lca_height + 1):
-
-            layer_graph = nx.DiGraph()
-            layer_graph.add_nodes_from([tuple(n) for n in character_states])
-
-            source_nodes = character_states
-            effective_threshold = distance_threshold
-            max_layer_width = 0
-
-            while len(source_nodes) > 1:
-
-                if len(source_nodes) > self.maximum_potential_graph_layer_size:
-                    logging.info(
-                        f"(Process: {pid}) Maximum layer size "
-                        "exceeded, returning network."
-                    )
-
-                    return self.add_edge_weights(
-                        prev_graph, weights, missing_state_indicator
-                    )
-
-                (
-                    next_layer,
-                    layer_edges,
-                ) = ilp_solver_utilities.infer_layer_of_potential_graph(
-                    source_nodes, effective_threshold, missing_state_indicator
-                )
-
-                # subset to unique values
-                if len(next_layer) > 0:
-                    next_layer = np.unique(next_layer, axis=0)
-
-                if (
-                    len(next_layer) > self.maximum_potential_graph_layer_size
-                    and prev_graph != None
-                ):
-                    return self.add_edge_weights(
-                        prev_graph, weights, missing_state_indicator
-                    )
-
-                # edges come out as rows in a numpy matrix, where the first
-                # n_characters positions correspond to the parent and the
-                # remaining positions correspond to the child
-                layer_edges = [
-                    (tuple(e[:n_characters]), tuple(e[n_characters:]))
-                    for e in layer_edges
-                    if tuple(e[:n_characters]) != tuple(e[n_characters:])
-                ]
-                layer_graph.add_edges_from(layer_edges)
-
-                if len(source_nodes) > len(next_layer):
-                    if effective_threshold == distance_threshold:
-                        effective_threshold *= 3
-
-                source_nodes = next_layer
-
-                max_layer_width = max(max_layer_width, len(source_nodes))
-
-            logging.info(
-                f"(Process: {pid}) LCA distance {distance_threshold} "
-                f"completed with a neighborthood size of {max_layer_width}."
-            )
-
-            distance_threshold += 1
-
-            prev_graph = layer_graph
+        potential_graph = nx.DiGraph()
+        potential_graph.add_edges_from(decoded_edges)
 
         return self.add_edge_weights(
-            layer_graph, weights, missing_state_indicator
+            potential_graph, weights, missing_state_indicator
         )
 
     def add_edge_weights(
@@ -532,12 +517,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         minutes = execution_delta.seconds // 60
         seconds = execution_delta.seconds % 60
 
-        logging.info(
+        logger.info(
             f"(Process {pid}) Steiner tree solving tool {days} days, "
             f"{hours} hours, {minutes} minutes, and {seconds} seconds."
         )
         if model.status != gurobipy.GRB.status.OPTIMAL:
-            logging.info(
+            logger.info(
                 f"(Process {pid}) Warning: Steiner tree solving did "
                 "not result in an optimal model."
             )

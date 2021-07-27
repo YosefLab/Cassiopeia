@@ -7,11 +7,8 @@ implement a method called `overlay_data`.
 import abc
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DataSimulatorError
 
-
-class DataSimulatorError(Exception):
-    """Generic error for the DataSimulator subclasses"""
-    pass
 
 class DataSimulator(abc.ABC):
     """
