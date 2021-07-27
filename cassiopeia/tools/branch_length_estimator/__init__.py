@@ -1,3 +1,4 @@
+from .BLEEnsemble import BLEEnsemble
 from .BLEMultifurcationWrapper import BLEMultifurcationWrapper
 from .BranchLengthEstimator import BranchLengthEstimator
 from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
