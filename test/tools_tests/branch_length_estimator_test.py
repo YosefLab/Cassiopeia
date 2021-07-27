@@ -19,7 +19,44 @@ from cassiopeia.tools import (BirthProcess, BLEMultifurcationWrapper,
                               IIDExponentialPosteriorMeanBLEGridSearchCV,
                               NumberOfMutationsBLE,
                               UniformCellSubsampler,
-                              EmptySubtreeError,)
+                              EmptySubtreeError,
+                              BLEEnsemble)
+
+
+class TestBLEEnsemble(unittest.TestCase):
+    def test_basic(self):
+        r"""
+        Just tests that BLEEnsemble runs.
+        """
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6", "7"]),
+        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
+                            ("2", "5"), ("2", "6"), ("3", "7")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.initialize_all_character_states(
+            {"0": [0, 0, 0],
+            "1": [0, 0, -1],
+            "2": [1, 0, 0],
+            "3": [0, 1, -1],
+            "4": [1, 1, -1],
+            "5": [1, -1, -1],
+            "6": [1, -1, 0],
+            "7": [1, 1, -1],}
+        )
+        model = BLEEnsemble(
+            branch_length_estimators=
+                [
+                    NumberOfMutationsBLE(
+                        length_of_mutationless_edges=0.5,
+                        treat_missing_states_as_mutations=False,
+                    ),
+                    NumberOfMutationsBLE(
+                        length_of_mutationless_edges=0.5,
+                        treat_missing_states_as_mutations=True,
+                    ),
+                ]
+        )
+        model.estimate_branch_lengths(tree)
 
 
 class TestIgnoreCharactersWrapper(unittest.TestCase):

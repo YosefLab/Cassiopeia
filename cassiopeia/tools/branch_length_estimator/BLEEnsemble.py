@@ -2,6 +2,7 @@ from cassiopeia.data import CassiopeiaTree
 from .BranchLengthEstimator import BranchLengthEstimator
 from copy import deepcopy
 import numpy as np
+from typing import List
 
 
 class BLEEnsemble(BranchLengthEstimator):
@@ -14,7 +15,7 @@ class BLEEnsemble(BranchLengthEstimator):
 
     def __init__(
         self,
-        branch_length_estimators: List[BLEEnsemble],
+        branch_length_estimators: List[BranchLengthEstimator],
     ):
         self.branch_length_estimators = branch_length_estimators
 
