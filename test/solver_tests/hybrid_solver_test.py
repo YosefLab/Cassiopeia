@@ -181,12 +181,10 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = (
-            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-                ["a", "b", "c", "d", "e"],
-                character_matrix,
-                self.pp_tree.missing_state_indicator,
-            )
+        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+            ["a", "b", "c", "d", "e"],
+            character_matrix,
+            self.pp_tree.missing_state_indicator,
         )
 
         expected_dictionary = {
@@ -210,8 +208,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"])
@@ -227,8 +228,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver_large.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver_large.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (
@@ -252,8 +256,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver_missing.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver_missing.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"], ["f", "g", "h"])
