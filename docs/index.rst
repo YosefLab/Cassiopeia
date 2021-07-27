@@ -49,7 +49,7 @@ If you find this useful for your research, please consider citing Cassiopeia [Jo
 
 .. container:: custom-button
 
-    :doc:`To the user guide<user_guide/user>`
+    :doc:`To the user guide<user_guide>`
 
 .. raw:: html
 
@@ -75,14 +75,14 @@ If you find this useful for your research, please consider citing Cassiopeia [Jo
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <div class="card text-center intro-card shadow">
-                <img src="_static/code-24px.svg" class="card-img-top" alt="questions about cassiopeia" height="52">
+                <img src="_static/question-mark-svgrepo-com.svg" class="card-img-top" alt="questions about cassiopeia" height="52">
                 <div class="card-body flex-fill">
                     <h5 class="card-title">Questions & Issues</h5>
                     <p class="card-text">Have a question or found a bug? File an issue.</p>
 
 .. container:: custom-button
 
-    :doc:`File an Issue<https://github.com/YosefLab/Cassiopeia/issues>`_
+    `File an issue <https://github.com/YosefLab/Cassiopeia/issues>`_
 
 .. raw:: html
 

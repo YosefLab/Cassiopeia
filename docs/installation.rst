@@ -18,7 +18,7 @@ To run some of the models in Cassiopeia, you will also need to install `Gurobi <
 Installing
 ~~~~~~~~~~~
 
-Once Cassiopeia is cloned into a directory onto your machine, enter into the directory with `cd Cassioepia`. To make installation simple, we have wrapped the installation steps into a MAKEFILE - this allows you to install Cassiopeia with the command:
+Once Cassiopeia is cloned into a directory onto your machine, enter into the directory with `cd Cassiopeia`. To make installation simple, we have wrapped the installation steps into a MAKEFILE - this allows you to install Cassiopeia with the command:
 
 ::
 
