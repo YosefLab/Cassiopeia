@@ -119,6 +119,18 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         handler = logging.FileHandler(logfile)
         handler.setLevel(logging.INFO)
         logger.addHandler(handler)
+        logger.info("Solving tree with the following parameters.")
+        logger.info(f"Convergence time limit: {self.convergence_time_limit}")
+        logger.info(
+            f"Convergence iteration limit: {self.convergence_iteration_limit}"
+        )
+        logger.info(
+            f"Max potential graph layer size: {self.maximum_potential_graph_layer_size}"
+        )
+        logger.info(
+            f"Max potential graph lca distance: {self.maximum_potential_graph_lca_distance}"
+        )
+        logger.info(f"MIP gap: {self.mip_gap}")
 
         if layer:
             character_matrix = cassiopeia_tree.layers[layer].copy()

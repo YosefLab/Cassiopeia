@@ -22,7 +22,7 @@ requirements = [
     "nbconvert>=5.4.0",
     "nbformat>=4.4.0",
     "networkx>=2.5",
-    "ngs-tools==1.5.3",
+    "ngs-tools>=1.5.3",
     "numba>=0.51.0",
     "numpy>=1.19.5",
     "pandas>=1.1.4",

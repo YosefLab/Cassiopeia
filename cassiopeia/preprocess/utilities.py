@@ -36,6 +36,7 @@ def log_moleculetable(wrapped: Callable):
     @functools.wraps(wrapped)
     def wrapper(*args, **kwargs):
         df = wrapped(*args, **kwargs)
+        logger.debug("Resulting moleculetable statistics:")
         logger.debug(f"# Reads: {sum(df['readCount'])}")
         logger.debug(f"# UMIs: {df.shape[0]}")
         logger.debug(f"# Cell BCs: {len(np.unique(df['cellBC']))}")
