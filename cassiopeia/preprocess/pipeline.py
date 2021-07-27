@@ -156,6 +156,7 @@ def filter_bam(
 
 
 @logger.namespaced("error_correct_cellbcs_to_whitelist")
+@utilities.log_kwargs
 @utilities.log_runtime
 def error_correct_cellbcs_to_whitelist(
     bam_fp: str,
