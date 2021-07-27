@@ -17,8 +17,8 @@ import logging
 import pandas as pd
 from typing import Any, Dict
 
-from cassiopeia.mixins import PreprocessError
-from cassiopeia.preprocess import pipeline, setup_utilities
+from cassiopeia.mixins import logger, PreprocessError
+from cassiopeia.preprocess import pipeline, setup_utilities, utilities
 
 STAGES = {
     "convert": pipeline.convert_fastqs_to_unmapped_bam,
@@ -35,6 +35,8 @@ STAGES = {
 }
 
 
+@logger.namespaced("main")
+@utilities.log_runtime
 def main():
 
     # --------------- Create Argument Parser & Read in Arguments -------------- #
@@ -56,9 +58,24 @@ def main():
     data_filepaths = pipeline_parameters["general"]["input_files"]
     entry_point = pipeline_parameters["general"]["entry"]
     exit_point = pipeline_parameters["general"]["exit"]
+    verbose = pipeline_parameters["general"].get("verbose", False)
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
+    # Check that all stages are valid
+    for stage in pipeline_parameters.keys():
+        if stage in ("general", "DEFAULT"):
+            continue
+
+        if stage not in STAGES:
+            raise PreprocessError(
+                f"Unrecognized stage configuration `{stage}` in "
+                f"{config_filepath}. Only the following stages are allowed: "
+                f"{', '.join(list(STAGES.keys()))}"
+            )
 
     # set up output directory
-    setup_utilities.setup(output_directory)
+    setup_utilities.setup(output_directory, verbose=verbose)
 
     # create pipeline plan
     pipeline_stages = setup_utilities.create_pipeline(
@@ -89,7 +106,7 @@ def main():
             stage == "error_correct_cellbcs_to_whitelist"
             and not pipeline_parameters[stage].get("whitelist")
         ):
-            logging.warning(
+            logger.warning(
                 "Skipping barcode error correction because no whitelist was "
                 "provided in the configuration."
             )
@@ -99,7 +116,7 @@ def main():
             stage == "error_correct_intbcs_to_whitelist"
             and not pipeline_parameters[stage].get("whitelist")
         ):
-            logging.warning(
+            logger.warning(
                 "Skipping intBC error correction because no whitelist was "
                 "provided in the configuration."
             )

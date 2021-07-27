@@ -5,7 +5,6 @@ is mainly invoked by cassiopeia_preprocess.py.
 """
 
 from functools import partial
-import logging
 import os
 from pathlib import Path
 import time
@@ -22,14 +21,16 @@ from skbio import alignment
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
-from cassiopeia.mixins import PreprocessError
-from cassiopeia.preprocess import alignment_utilities
-from cassiopeia.preprocess import constants
-from cassiopeia.preprocess import map_utils as m_utils
-from cassiopeia.preprocess import doublet_utils as d_utils
-from cassiopeia.preprocess import lineage_utils as l_utils
-from cassiopeia.preprocess import UMI_utils
-from cassiopeia.preprocess import utilities
+from cassiopeia.mixins import logger, PreprocessError
+from cassiopeia.preprocess import (
+    alignment_utilities,
+    constants,
+    map_utils as m_utils,
+    doublet_utils as d_utils,
+    lineage_utils as l_utils,
+    UMI_utils,
+    utilities,
+)
 
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
@@ -37,6 +38,9 @@ BAM_CONSTANTS = constants.BAM_CONSTANTS
 progress = tqdm
 
 
+@logger.namespaced("convert")
+@utilities.log_kwargs
+@utilities.log_runtime
 def convert_fastqs_to_unmapped_bam(
     fastq_fps: List[str],
     chemistry: Literal["dropseq", "10xv2", "10xv3", "indropsv3", "slideseq2"],
@@ -77,27 +81,28 @@ def convert_fastqs_to_unmapped_bam(
     """
     if chemistry not in constants.CHEMISTRY_BAM_TAGS:
         raise PreprocessError(f"Unknown chemistry {chemistry}")
-
-    logging.info("Converting FASTQs to unmapped BAM...")
-    t0 = time.time()
-
     tag_map = constants.CHEMISTRY_BAM_TAGS[chemistry]
+    chemistry = ngs.chemistry.get_chemistry(chemistry)
+
+    logger.info(f"Using {chemistry} chemistry.")
     bam_fp = os.path.join(
         output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam"
     )
     ngs.fastq.fastqs_to_bam_with_chemistry(
         fastq_fps,
-        ngs.chemistry.get_chemistry(chemistry),
+        chemistry,
         tag_map,
         bam_fp,
         name=name,
         show_progress=True,
         n_threads=n_threads,
     )
-    logging.info(f"Finished writing unmapped BAM in {time.time() - t0} s.")
     return bam_fp
 
 
+@logger.namespaced("filter_bam")
+@utilities.log_kwargs
+@utilities.log_runtime
 def filter_bam(
     bam_fp: str,
     output_directory: str,
@@ -118,9 +123,11 @@ def filter_bam(
     Returns:
         Path to filtered BAM
     """
+    n_filtered = 0
 
     def filter_func(aln):
-        return all(
+        # False means this read will be filtered out
+        filter_bool = all(
             q >= quality_threshold
             for q in pysam.qualitystring_to_array(
                 aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
@@ -131,6 +138,9 @@ def filter_bam(
                 aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"])
             )
         )
+        nonlocal n_filtered
+        n_filtered += not filter_bool
+        return filter_bool
 
     prefix, ext = os.path.splitext(os.path.basename(bam_fp))
     filtered_fp = os.path.join(output_directory, f"{prefix}_filtered{ext}")
@@ -141,9 +151,13 @@ def filter_bam(
         show_progress=True,
         n_threads=n_threads,
     )
+    logger.info(f"Filtered {n_filtered} reads that didn't pass the filter.")
     return filtered_fp
 
 
+@logger.namespaced("error_correct_cellbcs_to_whitelist")
+@utilities.log_kwargs
+@utilities.log_runtime
 def error_correct_cellbcs_to_whitelist(
     bam_fp: str,
     whitelist: Union[str, List[str]],
@@ -175,9 +189,6 @@ def error_correct_cellbcs_to_whitelist(
     Returns:
         Path to corrected BAM
     """
-    logging.info("Correcting barcodes to whitelist...")
-    t0 = time.time()
-
     if isinstance(whitelist, list):
         whitelist_set = set(whitelist)
     else:
@@ -198,6 +209,7 @@ def error_correct_cellbcs_to_whitelist(
             qualities.append(
                 read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
             )
+    logger.info(f"Detected {len(set(barcodes))} raw barcodes.")
 
     # Correct
     corrections = ngs.sequence.correct_sequences_to_whitelist(
@@ -217,10 +229,12 @@ def error_correct_cellbcs_to_whitelist(
                 if corrections[i]:
                     read.set_tag(BAM_CONSTANTS["CELL_BC_TAG"], corrections[i])
                 f_out.write(read)
-    logging.info(f"Finished correcting barcodes in {time.time() - t0} s.")
     return corrected_fp
 
 
+@logger.namespaced("collapse")
+@utilities.log_kwargs
+@utilities.log_runtime
 def collapse_umis(
     bam_fp: str,
     output_directory: str,
@@ -260,11 +274,6 @@ def collapse_umis(
     Returns:
         A DataFrame of collapsed reads.
     """
-
-    logging.info("Collapsing UMI sequences...")
-
-    t0 = time.time()
-
     # pathing written such that the bam file that is being converted does not
     # have to exist currently in the output directory
     if output_directory[-1] == "/":
@@ -277,7 +286,7 @@ def collapse_umis(
     )
 
     cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
-    logging.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
+    logger.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
     max_read_length, total_reads_out = UMI_utils.sort_bam(
         bam_fp,
@@ -288,9 +297,9 @@ def collapse_umis(
         ),
         filter_func=lambda al: al.has_tag(cell_bc_tag),
     )
-    logging.info("Sorted bam directory saved to " + str(sorted_file_name))
-    logging.info("Max read length of " + str(max_read_length))
-    logging.info("Total reads: " + str(total_reads_out))
+    logger.info("Sorted bam directory saved to " + str(sorted_file_name))
+    logger.info("Max read length of " + str(max_read_length))
+    logger.info("Total reads: " + str(total_reads_out))
 
     collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
     UMI_utils.form_collapsed_clusters(
@@ -303,18 +312,19 @@ def collapse_umis(
         n_threads=n_threads,
     )
 
-    logging.info(f"Finished collapsing UMI sequences in {time.time() - t0} s.")
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
 
     df = utilities.convert_bam_to_df(
         str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True
     )
-    logging.info("Collapsed bam directory saved to " + str(collapsed_file_name))
-    logging.info("Converted dataframe saved to " + str(collapsed_df_file_name))
-
+    logger.info("Collapsed bam directory saved to " + str(collapsed_file_name))
+    logger.info("Converted dataframe saved to " + str(collapsed_df_file_name))
     return df
 
 
+@logger.namespaced("resolve")
+@utilities.log_kwargs
+@utilities.log_runtime
 def resolve_umi_sequence(
     molecule_table: pd.DataFrame,
     output_directory: str,
@@ -340,11 +350,6 @@ def resolve_umi_sequence(
     Return:
         A molecule table with unique mappings between cellBC-UMI pairs.
     """
-
-    logging.info("Resolving UMI sequences...")
-
-    t0 = time.time()
-
     if plot:
         # -------------------- Plot # of sequences per UMI -------------------- #
         equivClass_group = (
@@ -413,13 +418,11 @@ def resolve_umi_sequence(
     molecule_table["filter"] = molecule_table["readName"].map(mt_filter)
     n_filtered = molecule_table[molecule_table["filter"]].shape[0]
 
-    logging.info(f"Filtered out {n_filtered} reads.")
+    logger.info(f"Filtered out {n_filtered} reads.")
 
     # filter based on status & reindex
     filt_molecule_table = molecule_table[~molecule_table["filter"]].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
-
-    logging.info(f"Finished resolving UMI sequences in {time.time() - t0}s.")
 
     if plot:
         # ---------------- Plot Diagnositics after Resolving ---------------- #
@@ -451,6 +454,9 @@ def resolve_umi_sequence(
     return filt_molecule_table
 
 
+@logger.namespaced("align")
+@utilities.log_kwargs
+@utilities.log_runtime
 def align_sequences(
     queries: pd.DataFrame,
     ref_filepath: Optional[str] = None,
@@ -479,15 +485,15 @@ def align_sequences(
         A DataFrame mapping each sequence name to the CIGAR string, quality,
         and original query sequence.
     """
-    assert ref or ref_filepath
+    if (ref is None) == (ref_filepath is None):
+        raise PreprocessError(
+            "Either `ref_filepath` or `ref` must be provided."
+        )
 
     alignment_dictionary = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
-
-    logging.info("Beginning alignment to reference...")
-    t0 = time.time()
 
     # Helper function for paralleleization
     def align(seq):
@@ -523,12 +529,6 @@ def align_sequences(
         )
 
     final_time = time.time()
-
-    logging.info(f"Finished aligning in {final_time - t0}.")
-    logging.info(
-        f"Average time to align each sequence: {(final_time - t0) / queries.shape[0]})"
-    )
-
     alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
     alignment_df.columns = [
         "cellBC",
@@ -543,10 +543,12 @@ def align_sequences(
 
     alignment_df.index.name = "readName"
     alignment_df.reset_index(inplace=True)
-
     return alignment_df
 
 
+@logger.namespaced("call_alleles")
+@utilities.log_kwargs
+@utilities.log_runtime
 def call_alleles(
     alignments: pd.DataFrame,
     ref_filepath: Optional[str] = None,
@@ -578,17 +580,16 @@ def call_alleles(
     Returns:
         A DataFrame mapping each sequence alignment to the called indels.
     """
-
-    assert ref or ref_filepath
+    if (ref is None) == (ref_filepath is None):
+        raise PreprocessError(
+            "Either `ref_filepath` or `ref` must be provided."
+        )
 
     alignment_to_indel = {}
     alignment_to_intBC = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
-
-    logging.info("Calling indels...")
-    t0 = time.time()
 
     for _, row in tqdm(
         alignments.iterrows(),
@@ -629,12 +630,12 @@ def call_alleles(
 
     alignments.reset_index(inplace=True)
 
-    final_time = time.time()
-
-    logging.info(f"Finished calling alleles in {final_time - t0}s")
     return alignments
 
 
+@logger.namespaced("error_correct_intbcs_to_whitelist")
+@utilities.log_kwargs
+@utilities.log_runtime
 def error_correct_intbcs_to_whitelist(
     input_df: pd.DataFrame,
     whitelist: Union[str, List[str]],
@@ -656,10 +657,6 @@ def error_correct_intbcs_to_whitelist(
     Returns:
         A DataFrame of error corrected intBCs.
     """
-    t0 = time.time()
-
-    logging.info("Beginning correcting intBCs to whitelist...")
-
     if isinstance(whitelist, list):
         whitelist_set = set(whitelist)
     else:
@@ -670,6 +667,7 @@ def error_correct_intbcs_to_whitelist(
     whitelist = list(whitelist_set)
     unique_intbcs = list(input_df["intBC"].unique())
     corrections = {intbc: intbc for intbc in whitelist_set}
+    logger.info(f"{len(unique_intbcs)} intBCs detected.")
 
     for intbc in progress(unique_intbcs, desc="Correcting intBCs to whitelist"):
         min_distance = np.inf
@@ -690,12 +688,12 @@ def error_correct_intbcs_to_whitelist(
 
     input_df["intBC"] = input_df["intBC"].map(corrections)
 
-    final_time = time.time()
-    logging.info(f"Finished correcting intBCs in {final_time - t0}s")
-
     return input_df[~input_df["intBC"].isna()]
 
 
+@logger.namespaced("error_correct_umis")
+@utilities.log_kwargs
+@utilities.log_runtime
 def error_correct_umis(
     input_df: pd.DataFrame,
     max_umi_distance: int = 2,
@@ -724,8 +722,7 @@ def error_correct_umis(
     Returns:
         A DataFrame of error corrected UMIs.
     """
-
-    assert (
+    if (
         len(
             [
                 i
@@ -733,12 +730,11 @@ def error_correct_umis(
                 if i > 1
             ]
         )
-        == 0
-    ), "Non-unique cellBC-UMI pair exists, please resolve UMIs."
-
-    t0 = time.time()
-
-    logging.info("Beginning error correcting UMIs...")
+        != 0
+    ):
+        raise PreprocessError(
+            "Non-unique cellBC-UMI pair exists, please resolve UMIs."
+        )
 
     sorted_df = input_df.sort_values(
         ["cellBC", "intBC", "readCount", "UMI"],
@@ -746,7 +742,7 @@ def error_correct_umis(
     )
 
     if max_umi_distance == 0:
-        logging.info(
+        logger.info(
             "Distance of 0, no correction occurred, all alignments returned"
         )
         return sorted_df
@@ -773,11 +769,7 @@ def error_correct_umis(
 
         alignment_dfs.append(allele_group)
     alignment_df = pd.concat(alignment_dfs, sort=True)
-
-    final_time = time.time()
-
-    logging.info(f"Finished error correcting UMIs in {final_time - t0}.")
-    logging.info(
+    logger.info(
         f"{num_corrected} UMIs Corrected of {total}"
         + f"({round(float(num_corrected) / total, 5) * 100}%)"
     )
@@ -792,6 +784,9 @@ def error_correct_umis(
     return alignment_df
 
 
+@logger.namespaced("filter_molecule_table")
+@utilities.log_kwargs
+@utilities.log_runtime
 def filter_molecule_table(
     input_df: pd.DataFrame,
     output_directory: str,
@@ -804,7 +799,6 @@ def filter_molecule_table(
     doublet_threshold: float = 0.35,
     allow_allele_conflicts: bool = False,
     plot: bool = False,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """Filters and corrects a molecule table of cellBC-UMI pairs.
 
@@ -844,22 +838,16 @@ def filter_molecule_table(
             physical cells being captured for each barcode.
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
-        verbose: Indicates whether to log detailed information on each filter
-            and correction step
 
     Returns:
         A filtered and corrected allele table of cellBC-UMI-allele groups
 
     """
-
-    t0 = time.time()
-    logging.info("Begin filtering reads...")
     input_df["status"] = "good"
     input_df.sort_values("readCount", ascending=False, inplace=True)
     rc_profile, upi_profile, upc_profile = {}, {}, {}
-    utilities.generate_log_output(input_df, begin=True)
 
-    logging.info("Logging initial stats...")
+    logger.info("Logging initial stats...")
     if plot:
         (
             rc_profile["Init"],
@@ -867,14 +855,13 @@ def filter_molecule_table(
             upc_profile["Init"],
         ) = utilities.record_stats(input_df)
 
-    logging.info(
+    logger.info(
         f"Filtering out cell barcodes with fewer than {min_umi_per_cell} UMIs..."
     )
     filtered_df = utilities.filter_cells(
         input_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
     if plot:
         (
@@ -889,9 +876,9 @@ def filter_molecule_table(
             umi_read_thresh = np.percentile(R, 99) // 10
         else:
             umi_read_thresh = 0
-    logging.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
+    logger.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
     filtered_df = utilities.filter_umis(
-        filtered_df, readCountThresh=umi_read_thresh, verbose=verbose
+        filtered_df, readCountThresh=umi_read_thresh
     )
 
     if plot:
@@ -902,13 +889,12 @@ def filter_molecule_table(
         ) = utilities.record_stats(filtered_df)
 
     if intbc_dist_thresh > 0:
-        logging.info("Error correcting intBCs...")
+        logger.info("Error correcting intBCs...")
         filtered_df = utilities.error_correct_intbc(
             filtered_df,
             prop=intbc_prop_thresh,
             umiCountThresh=intbc_umi_thresh,
             bcDistThresh=intbc_dist_thresh,
-            verbose=verbose,
         )
 
     if plot:
@@ -918,25 +904,24 @@ def filter_molecule_table(
             upc_profile["Process_intBC"],
         ) = utilities.record_stats(filtered_df)
 
-    logging.info("Filtering cell barcodes one more time...")
+    logger.info("Filtering cell barcodes one more time...")
     filtered_df = utilities.filter_cells(
         filtered_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
 
     if doublet_threshold and not allow_allele_conflicts:
-        logging.info(
+        logger.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
         filtered_df = d_utils.filter_intra_doublets(
-            filtered_df, prop=doublet_threshold, verbose=verbose
+            filtered_df, prop=doublet_threshold
         )
 
     if not allow_allele_conflicts:
-        logging.info("Mapping remaining intBC conflicts...")
-        filtered_df = m_utils.map_intbcs(filtered_df, verbose=verbose)
+        logger.info("Mapping remaining intBC conflicts...")
+        filtered_df = m_utils.map_intbcs(filtered_df)
     if plot:
         (
             rc_profile["Final"],
@@ -995,9 +980,7 @@ def filter_molecule_table(
         plt.savefig(os.path.join(output_directory, "umis_per_intbc.png"))
         plt.close()
 
-    final_time = time.time()
-    logging.info(f"Finished filtering alignments in {final_time - t0}.")
-    logging.info(
+    logger.info(
         f"Overall, filtered {cellBC_count} cells, with {filtered_df.shape[0]} UMIs."
     )
 
@@ -1007,6 +990,9 @@ def filter_molecule_table(
     return filtered_df
 
 
+@logger.namespaced("call_lineages")
+@utilities.log_kwargs
+@utilities.log_runtime
 def call_lineage_groups(
     input_df: pd.DataFrame,
     output_directory: str,
@@ -1016,7 +1002,6 @@ def call_lineage_groups(
     min_intbc_thresh: float = 0.05,
     inter_doublet_threshold: float = 0.35,
     kinship_thresh: float = 0.25,
-    verbose: bool = False,
     plot: bool = False,
 ) -> pd.DataFrame:
     """Assigns cells to their clonal populations.
@@ -1061,20 +1046,15 @@ def call_lineage_groups(
             intBCs shared between a cell and the intBC set of a lineage group
             needed to assign that cell to that lineage group in putative
             assignment
-        verbose: Indicates whether to log detailed information on filtering
-            steps
         plot: Indicates whether to generate plots
 
     Returns:
         None, saves output allele table to file.
     """
-
-    t0 = time.time()
-
-    logging.info(
+    logger.info(
         f"{input_df.shape[0]} UMIs (rows), with {input_df.shape[1]} attributes (columns)"
     )
-    logging.info(str(len(input_df["cellBC"].unique())) + " Cells")
+    logger.info(str(len(input_df["cellBC"].unique())) + " Cells")
 
     # Create a pivot_table
     piv = pd.pivot_table(
@@ -1090,8 +1070,8 @@ def call_lineage_groups(
     piv = piv[ordered_intBCs]
     min_clust_size = int(min_cluster_prop * piv.shape[0])
 
-    logging.info("Assigning initial lineage groups...")
-    logging.info(f"Clustering with minimum cluster size {min_clust_size}...")
+    logger.info("Assigning initial lineage groups...")
+    logger.info(f"Clustering with minimum cluster size {min_clust_size}...")
     piv_assigned = l_utils.assign_lineage_groups(
         piv,
         min_clust_size,
@@ -1099,32 +1079,32 @@ def call_lineage_groups(
         kinship_thresh=kinship_thresh,
     )
 
-    logging.info("Refining lineage groups...")
-    logging.info(
+    logger.info("Refining lineage groups...")
+    logger.info(
         "Redefining lineage groups by removing low proportion intBCs..."
     )
     master_LGs, master_intBCs = l_utils.filter_intbcs_lg_sets(
         piv_assigned, min_intbc_thresh=min_intbc_thresh
     )
 
-    logging.info("Reassigning cells to refined lineage groups by kinship...")
+    logger.info("Reassigning cells to refined lineage groups by kinship...")
     kinship_scores = l_utils.score_lineage_kinships(
         piv_assigned, master_LGs, master_intBCs
     )
 
-    logging.info("Annotating alignment table with refined lineage groups...")
+    logger.info("Annotating alignment table with refined lineage groups...")
     allele_table = l_utils.annotate_lineage_groups(
         input_df, kinship_scores, master_intBCs
     )
     if inter_doublet_threshold:
-        logging.info(
+        logger.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
         allele_table = d_utils.filter_inter_doublets(
-            allele_table, rule=inter_doublet_threshold, verbose=verbose
+            allele_table, rule=inter_doublet_threshold
         )
 
-    logging.info(
+    logger.info(
         "Filtering out low proportion intBCs in finalized lineage groups..."
     )
     filtered_lgs = l_utils.filter_intbcs_final_lineages(
@@ -1133,27 +1113,20 @@ def call_lineage_groups(
 
     allele_table = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
 
-    if verbose:
-        logging.info("Final lineage group assignments:")
-        for n, g in allele_table.groupby(["lineageGrp"]):
-            logging.info(
-                f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells"
-            )
+    logger.debug("Final lineage group assignments:")
+    for n, g in allele_table.groupby(["lineageGrp"]):
+        logger.debug(f"LG {n}: " + str(len(g["cellBC"].unique())) + " cells")
 
-    logging.info("Filtering out low UMI cell barcodes...")
+    logger.info("Filtering out low UMI cell barcodes...")
     allele_table = utilities.filter_cells(
         allele_table,
         min_umi_per_cell=int(min_umi_per_cell),
         min_avg_reads_per_umi=min_avg_reads_per_umi,
-        verbose=verbose,
     )
     allele_table["lineageGrp"] = allele_table["lineageGrp"].astype(int)
 
-    final_time = time.time()
-    logging.info(f"Finished filtering alignments in {final_time - t0}.")
-
     if plot:
-        logging.info("Producing Plots...")
+        logger.info("Producing Plots...")
         at_pivot_I = pd.pivot_table(
             allele_table,
             index="cellBC",
@@ -1164,10 +1137,10 @@ def call_lineage_groups(
         at_pivot_I.fillna(value=0, inplace=True)
         at_pivot_I[at_pivot_I > 0] = 1
 
-        logging.info("Producing pivot table heatmap...")
+        logger.info("Producing pivot table heatmap...")
         l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
 
-        logging.info("Plotting filtered lineage group pivot table heatmap...")
+        logger.info("Plotting filtered lineage group pivot table heatmap...")
         l_utils.plot_overlap_heatmap_lg(
             allele_table, at_pivot_I, output_directory
         )

@@ -18,7 +18,7 @@ import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.mixins import ILPSolverError, is_ambiguous_state
+from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -90,6 +90,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.seed = seed
         self.mip_gap = mip_gap
 
+    @logger.namespaced("ILPSolver")
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
@@ -115,7 +116,21 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # setup logfile config
-        logging.basicConfig(filename=logfile, level=logging.INFO)
+        handler = logging.FileHandler(logfile)
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+        logger.info("Solving tree with the following parameters.")
+        logger.info(f"Convergence time limit: {self.convergence_time_limit}")
+        logger.info(
+            f"Convergence iteration limit: {self.convergence_iteration_limit}"
+        )
+        logger.info(
+            f"Max potential graph layer size: {self.maximum_potential_graph_layer_size}"
+        )
+        logger.info(
+            f"Max potential graph lca distance: {self.maximum_potential_graph_lca_distance}"
+        )
+        logger.info(f"MIP gap: {self.mip_gap}")
 
         if layer:
             character_matrix = cassiopeia_tree.layers[layer].copy()
@@ -220,6 +235,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+        logger.removeHandler(handler)
 
     def infer_potential_graph(
         self,
@@ -496,12 +512,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         minutes = execution_delta.seconds // 60
         seconds = execution_delta.seconds % 60
 
-        logging.info(
+        logger.info(
             f"(Process {pid}) Steiner tree solving tool {days} days, "
             f"{hours} hours, {minutes} minutes, and {seconds} seconds."
         )
         if model.status != gurobipy.GRB.status.OPTIMAL:
-            logging.info(
+            logger.info(
                 f"(Process {pid}) Warning: Steiner tree solving did "
                 "not result in an optimal model."
             )
