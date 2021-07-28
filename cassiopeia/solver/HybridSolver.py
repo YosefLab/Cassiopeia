@@ -87,14 +87,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         self.threads = threads
 
-        # create a tree to store in progress results
-        self.__tree = nx.DiGraph()
-
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
         logfile: str = "stdout.log",
         layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
     ):
         """The general hybrid solver routine.
 
@@ -107,6 +105,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree: CassiopeiaTree that stores the character matrix
                 and priors for reconstruction.
             logfile: Location to log progress.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
         """
         node_name_generator = solver_utilities.node_name_generator()
 
@@ -122,11 +126,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights = solver_utilities.transform_priors(
                 cassiopeia_tree.priors, self.prior_transformation
             )
-
+        
+        tree = nx.DiGraph()
         # call top-down solver until a desired cutoff is reached.
-        _, subproblems = self.apply_top_solver(
+        _, subproblems, tree = self.apply_top_solver(
             unique_character_matrix,
             list(unique_character_matrix.index),
+            tree,
             node_name_generator,
             weights=weights,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
@@ -160,7 +166,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
-            existing_nodes = [n for n in self.__tree]
+            existing_nodes = [n for n in tree]
 
             mapping = {}
             for n in subproblem_tree:
@@ -169,23 +175,24 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
-            self.__tree = nx.compose(self.__tree, subproblem_tree)
+            tree = nx.compose(tree, subproblem_tree)
 
-        cassiopeia_tree.populate_tree(self.__tree, layer=layer)
+        # append sample names to the solution and populate the tree
+        samples_tree = self.__append_sample_names(tree, character_matrix)
+        cassiopeia_tree.populate_tree(samples_tree, layer=layer)
+        cassiopeia_tree.collapse_unifurcations()
 
-        # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(
-            infer_ancestral_characters=True
-        )
-        samples_tree = self.__append_sample_names(
-            cassiopeia_tree.get_tree_topology(), character_matrix
-        )
-        cassiopeia_tree.populate_tree(samples_tree)
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
 
     def apply_top_solver(
         self,
         character_matrix: pd.DataFrame,
         samples: List[str],
+        tree: nx.DiGraph,
         node_name_generator: Generator[str, None, None],
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
@@ -199,6 +206,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             character_matrix: Character matrix
             samples: Samples in the subclade of interest.
+            tree: In progress tree for the HybridSolver.
+            node_name_generator: Generator for creating unique node names
+                while applying the top-solver.
             weights: Weights of character-state combinations, derived from
                 priors if these are available.
             missing_state_indicator: Indicator for missing data
@@ -218,11 +228,11 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         root = next(node_name_generator)
 
-        self.__tree.add_node(root)
+        tree.add_node(root)
         if len(clades) == 1:
             for clade in clades[0]:
-                self.__tree.add_edge(root, clade)
-            return root, []
+                tree.add_edge(root, clade)
+            return root, [], tree
 
         new_clades = []
         subproblems = []
@@ -240,19 +250,20 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             new_clades.append(clade)
 
         for clade in new_clades:
-            child, new_subproblems = self.apply_top_solver(
+            child, new_subproblems, tree = self.apply_top_solver(
                 character_matrix,
                 clade,
+                tree,
                 node_name_generator,
                 weights,
                 missing_state_indicator,
                 root,
             )
-            self.__tree.add_edge(root, child)
+            tree.add_edge(root, child)
 
             subproblems += new_subproblems
 
-        return root, subproblems
+        return root, subproblems, tree
 
     def apply_bottom_solver(
         self,

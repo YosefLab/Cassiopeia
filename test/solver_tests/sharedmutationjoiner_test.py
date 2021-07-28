@@ -1,12 +1,9 @@
 """
 Test SharedMutationJoiningSolver in Cassiopeia.solver.
 """
-import os
 import unittest
-import sys
 from functools import partial
-from typing import Dict, Optional
-from unittest import mock
+from typing import Dict
 
 import itertools
 import networkx as nx
@@ -204,7 +201,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         self.assertEqual(similarity_map.loc["a", "e"], expected_similarity)
 
     def test_update_similarity_map_and_character_matrix(self):
-
         nb_similarity = numba.jit(
             dissimilarity_functions.hamming_similarity_without_missing,
             nopython=True,
@@ -280,7 +276,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
                 )
 
     def test_basic_solver(self):
-
         self.smj_solver.solve(self.basic_tree)
 
         # test that the dissimilarity map and character matrix were not altered
@@ -321,9 +316,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
         # test relationships between samples
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "5", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -337,28 +329,27 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             ]
         )
 
-        T = self.basic_tree.get_tree_topology()
+        observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
 
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
         # compare tree distances
-        T = T.to_undirected()
+        observed_tree = observed_tree.to_undirected()
         expected_tree = expected_tree.to_undirected()
         for i in range(len(_leaves)):
             sample1 = _leaves[i]
             for j in range(i + 1, len(_leaves)):
                 sample2 = _leaves[j]
                 self.assertEqual(
-                    nx.shortest_path_length(T, sample1, sample2),
+                    nx.shortest_path_length(observed_tree, sample1, sample2),
                     nx.shortest_path_length(expected_tree, sample1, sample2),
                 )
 
     def test_solver_no_numba(self):
-
         self.smj_solver_no_numba.solve(self.basic_tree)
 
         # test that the dissimilarity map and character matrix were not altered
@@ -399,9 +390,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
         # test relationships between samples
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "5", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -415,35 +403,31 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
             ]
         )
 
-        T = self.basic_tree.get_tree_topology()
+        observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
 
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
         # compare tree distances
-        T = T.to_undirected()
+        observed_tree = observed_tree.to_undirected()
         expected_tree = expected_tree.to_undirected()
         for i in range(len(_leaves)):
             sample1 = _leaves[i]
             for j in range(i + 1, len(_leaves)):
                 sample2 = _leaves[j]
                 self.assertEqual(
-                    nx.shortest_path_length(T, sample1, sample2),
+                    nx.shortest_path_length(observed_tree, sample1, sample2),
                     nx.shortest_path_length(expected_tree, sample1, sample2),
                 )
 
     def test_smj_solver_weights(self):
-
         self.smj_solver_modified_pp.solve(self.pp_tree_priors)
-        T = self.pp_tree_priors.get_tree_topology()
+        observed_tree = self.pp_tree_priors.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "5", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -460,13 +444,26 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-    def test_pp_solver(self):
+        self.smj_solver_pp.solve(self.pp_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("5", "a"),
+                ("5", "e"),
+                ("6", "b"),
+                ("6", "c"),
+                ("8", "5"),
+                ("8", "d"),
+                ("8", "6"),
+            ]
+        )
 
+    def test_pp_solver(self):
         self.smj_solver_pp.solve(self.pp_tree)
-        T = self.pp_tree.get_tree_topology()
+        observed_tree = self.pp_tree.get_tree_topology()
 
         pp_cm = pd.DataFrame.from_dict(
             {
@@ -488,9 +485,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
                 )
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "5", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -507,7 +501,14 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.smj_solver_pp.solve(self.pp_tree, collapse_mutationless_edges=True)
+        observed_tree = self.pp_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_duplicate(self):
@@ -515,12 +516,9 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         # pair if the behavior is to ignore missing data
 
         self.smj_solver_pp.solve(self.duplicate_tree)
-        T = self.duplicate_tree.get_tree_topology()
+        observed_tree = self.duplicate_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "f", "5", "6", "7", "8", "9"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "b"),
@@ -538,7 +536,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
 
