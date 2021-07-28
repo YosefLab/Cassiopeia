@@ -180,8 +180,7 @@ class TestILPSolver(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(
-            expected_character_matrix,
-            self.pp_tree.character_matrix.copy(),
+            expected_character_matrix, self.pp_tree.character_matrix.copy()
         )
 
     def test_get_layer_for_potential_graph(self):
@@ -304,7 +303,7 @@ class TestILPSolver(unittest.TestCase):
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.pp_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -314,33 +313,26 @@ class TestILPSolver(unittest.TestCase):
         self.assertEqual(len(multi_parents), 0)
 
         # make sure the resulting tree has no unifurcations
-        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        one_child = [
+            n for n in self.pp_tree.nodes if len(self.pp_tree.children(n)) == 1
+        ]
         self.assertEqual(len(one_child), 0)
 
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
 
+        # apply camin-sokal parsimony
+        self.pp_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[0]) > 0:
-                if e[1] in expected_leaves:
-                    observed_parsimony += (
-                        cas.solver.dissimilarity.hamming_distance(
-                            e[0],
-                            str(
-                                tuple(
-                                    self.duplicates_tree.character_matrix.loc[
-                                        e[1]
-                                    ]
-                                )
-                            ),
-                        )
-                    )
-                else:
-                    observed_parsimony += (
-                        cas.solver.dissimilarity.hamming_distance(e[0], e[1])
-                    )
+
+        for e in self.pp_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.pp_tree.get_character_states(e[0]),
+                self.pp_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -430,7 +422,7 @@ class TestILPSolver(unittest.TestCase):
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.duplicates_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e", "f"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -440,33 +432,26 @@ class TestILPSolver(unittest.TestCase):
         self.assertEqual(len(multi_parents), 0)
 
         # make sure the resulting tree has no unifurcations
-        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        one_child = [
+            n
+            for n in self.duplicates_tree.nodes
+            if len(self.duplicates_tree.children(n)) == 1
+        ]
         self.assertEqual(len(one_child), 0)
 
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
-
+        self.duplicates_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[0]) > 0:
-                if e[1] in expected_leaves:
-                    observed_parsimony += (
-                        cas.solver.dissimilarity.hamming_distance(
-                            e[0],
-                            str(
-                                tuple(
-                                    self.duplicates_tree.character_matrix.loc[
-                                        e[1]
-                                    ]
-                                )
-                            ),
-                        )
-                    )
-                else:
-                    observed_parsimony += (
-                        cas.solver.dissimilarity.hamming_distance(e[0], e[1])
-                    )
+
+        for e in self.duplicates_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.duplicates_tree.get_character_states(e[0]),
+                self.duplicates_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
