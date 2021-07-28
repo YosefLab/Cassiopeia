@@ -1,9 +1,8 @@
 """
-This file contains functions pertaining to mapping intBCs. 
+This file contains functions pertaining to mapping intBCs.
 Invoked through pipeline.py and supports the filter_alignments function.
 """
 
-import logging
 import sys
 
 from typing import Dict, List, Tuple
@@ -14,13 +13,14 @@ import pylab
 
 from tqdm.auto import tqdm
 
+from cassiopeia.mixins import logger
 from cassiopeia.preprocess import utilities
 
 sys.setrecursionlimit(10000)
 
-
+@utilities.log_moleculetable
 def map_intbcs(
-    moleculetable: pd.DataFrame, verbose: bool = False
+    moleculetable: pd.DataFrame
 ) -> pd.DataFrame:
     """Performs a procedure to cleanly assign one allele to each intBC/cellBC
     pairing
@@ -30,8 +30,6 @@ def map_intbcs(
 
     Args:
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
-        verbose: Indicates whether to log every correction and the number of
-            cellBCs and UMIs remaining after filtering
 
     Returns
         An allele table with one allele per cellBC-intBC pair
@@ -90,17 +88,16 @@ def map_intbcs(
                 corrected += 1
                 numUMI_corrected += x1.loc[i, "UMI"]
 
-            if verbose:
-                for i in range(1, x1.shape[0]):
-                    logging.info(
-                        f"In group {n}, re-assigned allele "
-                        + str(x1.loc[i, "allele"])
-                        + f" to {a},"
-                        + " re-assigning UMI "
-                        + str(x1.loc[i, "UMI"])
-                        + " to "
-                        + str(x1.loc[0, "UMI"])
-                    )
+            for i in range(1, x1.shape[0]):
+                logger.debug(
+                    f"In group {n}, re-assigned allele "
+                    + str(x1.loc[i, "allele"])
+                    + f" to {a},"
+                    + " re-assigning UMI "
+                    + str(x1.loc[i, "UMI"])
+                    + " to "
+                    + str(x1.loc[0, "UMI"])
+                )
 
     moleculetable["status"] = moleculetable["filter_column2"].map(filter_dict)
     moleculetable = moleculetable[(moleculetable["status"] == "good")]
@@ -109,13 +106,10 @@ def map_intbcs(
         columns=["filter_column", "filter_column2", "allele_counter", "status"]
     )
 
-    # log results
-    if verbose:
-        logging.info("Picking alleles:")
-        logging.info(f"# Alleles removed: {corrected}")
-        logging.info(
-            f"# UMIs affected through removing alleles: {numUMI_corrected}"
-        )
-        utilities.generate_log_output(moleculetable)
+    logger.debug("Picking alleles:")
+    logger.debug(f"# Alleles removed: {corrected}")
+    logger.debug(
+        f"# UMIs affected through removing alleles: {numUMI_corrected}"
+    )
 
     return moleculetable

@@ -14,7 +14,6 @@ import heapq
 from hits import annotation as annotation_module
 from hits import fastq, utilities, sw, sam
 from joblib import delayed
-import logging
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
@@ -23,7 +22,7 @@ import pysam
 from tqdm.auto import tqdm
 import warnings
 
-from cassiopeia.mixins import PreprocessError, PreprocessWarning
+from cassiopeia.mixins import logger, PreprocessError, PreprocessWarning
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
@@ -646,7 +645,6 @@ def merge_annotated_clusters(
 def correct_umis_in_group(
     cell_group: pd.DataFrame,
     max_umi_distance: int = 2,
-    verbose=False,
 ) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
@@ -695,11 +693,10 @@ def correct_umis_in_group(
                 prev_nr = al["readCount"]
                 al["readCount"] = bad_nr + prev_nr
 
-                if verbose:
-                    logging.info(
-                        f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
-                        + f"for a total of {bad_nr + prev_nr} reads."
-                    )
+                logger.debug(
+                    f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
+                    + f"for a total of {bad_nr + prev_nr} reads."
+                )
 
                 # update alignment if already seen
                 if al["UMI"] in corrected_names:
