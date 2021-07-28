@@ -142,7 +142,7 @@ def sample_triplet_at_depth(
     ]
     node = np.random.choice(candidate_nodes, size=1, replace=False, p=probs)[0]
 
-    # Generate the probilities to sample each combination of 3 daughter clades
+    # Generate the probabilities to sample each combination of 3 daughter clades
     # to sample from, proportional to the number of triplets in each daughter
     # clade. Choices include all ways to choose 3 different daughter clades
     # or 2 from one daughter clade and one from another

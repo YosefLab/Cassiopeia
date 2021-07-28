@@ -102,6 +102,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         logfile: str = "stdout.log",
         layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -113,6 +114,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             logfile: Location to write standard out.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -236,11 +241,18 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, root, targets, pid
         )
 
+        # append sample names to the solution and populate the tree
         optimal_solution = self.__append_sample_names(
             optimal_solution, character_matrix
         )
-
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+        cassiopeia_tree.collapse_unifurcations()
+
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
         logger.removeHandler(handler)
 
     def infer_potential_graph(

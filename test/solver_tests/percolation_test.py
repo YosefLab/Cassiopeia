@@ -12,7 +12,6 @@ import pandas as pd
 from typing import Dict, List, Optional
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import dissimilarity_functions
 
 
@@ -71,13 +70,10 @@ class PercolationSolverTest(unittest.TestCase):
             add_root=True,
         )
         psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
-        psolver.solve(p_tree)
-        T = p_tree.get_tree_topology()
+        psolver.solve(p_tree, collapse_mutationless_edges=True)
+        observed_tree = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("6", "7"),
@@ -96,7 +92,31 @@ class PercolationSolverTest(unittest.TestCase):
         )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        psolver.solve(p_tree)
+        observed_tree = p_tree.get_tree_topology()
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("6", "7"),
+                ("6", "8"),
+                ("7", "c2"),
+                ("7", "c4"),
+                ("8", "c1"),
+                ("8", "c3"),
+                ("8", "9"),
+                ("9", "c5"),
+                ("9", "c6"),
+            ]
+        )
+
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
 
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -121,13 +141,10 @@ class PercolationSolverTest(unittest.TestCase):
             add_root=True,
         )
         psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
-        psolver.solve(p_tree)
-        T = p_tree.get_tree_topology()
+        psolver.solve(p_tree, collapse_mutationless_edges=True)
+        observed_tree = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", 7, 8, 10, 11, 12]
-        )
         expected_tree.add_edges_from(
             [
                 (7, 8),
@@ -149,7 +166,7 @@ class PercolationSolverTest(unittest.TestCase):
         )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_Greedy(self):
@@ -170,13 +187,10 @@ class PercolationSolverTest(unittest.TestCase):
 
         joining_solver = cas.solver.VanillaGreedySolver()
         psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
-        psolver.solve(p_tree)
-        T = p_tree.get_tree_topology()
+        psolver.solve(p_tree, collapse_mutationless_edges=True)
+        observed_tree = p_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", 7, 8, 10, 11]
-        )
         expected_tree.add_edges_from(
             [
                 (7, 8),
@@ -197,7 +211,7 @@ class PercolationSolverTest(unittest.TestCase):
         )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_priors_case(self):
@@ -230,18 +244,16 @@ class PercolationSolverTest(unittest.TestCase):
             add_root=True,
         )
         psolver = cas.solver.PercolationSolver(joining_solver=joining_solver)
-        psolver.solve(p_tree)
+        psolver.solve(p_tree, collapse_mutationless_edges=True)
         # Due to the way that networkx finds connected components, the ordering
         # of nodes is uncertain
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from([6, 7, 8, 9, "c1", "c2", "c3", "c4", "c5"])
         expected_tree.add_edges_from(
             [
                 (6, 7),
-                (6, 8),
+                (6, 9),
                 (7, "c1"),
                 (7, "c3"),
-                (8, 9),
                 (9, "c2"),
                 (9, "c4"),
                 (9, 10),
@@ -255,7 +267,29 @@ class PercolationSolverTest(unittest.TestCase):
             ["c1", "c2", "c3", "c4", "c5", "c6"], 3
         )
         for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
+        psolver.solve(p_tree)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (6, 7),
+                (6, 9),
+                (7, "c1"),
+                (7, "c3"),
+                (11, "c2"),
+                (11, "c4"),
+                (9, 11),
+                (9, 10),
+                (10, "c5"),
+                (10, "c6"),
+            ]
+        )
+
+        observed_tree = p_tree.get_tree_topology()
+        for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)

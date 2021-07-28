@@ -1,9 +1,8 @@
 """
 Test UPGMASolver in Cassiopeia.solver.
 """
-import os
 import unittest
-from typing import Dict, Optional
+from typing import Dict
 
 import itertools
 import networkx as nx
@@ -194,9 +193,6 @@ class TestUPGMASolver(unittest.TestCase):
 
         # test relationships between samples
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "5", "6", "7", "root"]
-        )
         expected_tree.add_edges_from(
             [
                 ("5", "a"),
@@ -210,39 +206,35 @@ class TestUPGMASolver(unittest.TestCase):
             ]
         )
 
-        T = self.basic_tree.get_tree_topology()
+        observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
 
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
         # compare tree distances
-        T = T.to_undirected()
+        observed_tree = observed_tree.to_undirected()
         expected_tree = expected_tree.to_undirected()
         for i in range(len(_leaves)):
             sample1 = _leaves[i]
             for j in range(i + 1, len(_leaves)):
                 sample2 = _leaves[j]
                 self.assertEqual(
-                    nx.shortest_path_length(T, sample1, sample2),
+                    nx.shortest_path_length(observed_tree, sample1, sample2),
                     nx.shortest_path_length(expected_tree, sample1, sample2),
                 )
 
     def test_upgma_solver_weights(self):
-
         self.upgma_solver_modified.solve(self.pp_tree_priors)
         initial_d_map = self.pp_tree_priors.get_dissimilarity_map()
         expected_dissimilarity = (-np.log(0.2) - np.log(0.8)) / 3
         self.assertEqual(initial_d_map.loc["a", "b"], expected_dissimilarity)
 
-        T = self.pp_tree_priors.get_tree_topology()
+        observed_tree = self.pp_tree_priors.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
-        )
         expected_tree.add_edges_from(
             [
                 ("root", "a"),
@@ -259,22 +251,42 @@ class TestUPGMASolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.upgma_solver_modified.solve(
+            self.pp_tree_priors, collapse_mutationless_edges=True
+        )
+        observed_tree = self.pp_tree_priors.get_tree_topology()
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("root", "a"),
+                ("root", "8"),
+                ("root", "9"),
+                ("8", "d"),
+                ("8", "e"),
+                ("9", "b"),
+                ("9", "c"),
+            ]
+        )
+
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_pp_solver(self):
-
         self.upgma_solver_delta.solve(self.pp_tree)
         initial_d_map = self.pp_tree.get_dissimilarity_map()
         expected_dissimilarity = 1 / 3
         self.assertEqual(initial_d_map.loc["d", "e"], expected_dissimilarity)
 
-        T = self.pp_tree.get_tree_topology()
+        observed_tree = self.pp_tree.get_tree_topology()
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "6", "7", "8"]
-        )
         expected_tree.add_edges_from(
             [
                 ("root", "8"),
@@ -292,7 +304,15 @@ class TestUPGMASolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.upgma_solver_delta.solve(self.pp_tree)
+        observed_tree = self.pp_tree.get_tree_topology()
+        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_duplicate(self):
@@ -300,15 +320,12 @@ class TestUPGMASolver(unittest.TestCase):
         # pair if the behavior is to ignore missing data
 
         self.upgma_solver_delta.solve(self.duplicate_tree)
-        T = self.duplicate_tree.get_tree_topology()
+        observed_tree = self.duplicate_tree.get_tree_topology()
         initial_d_map = self.duplicate_tree.get_dissimilarity_map()
         expected_dissimilarity = 1.5
         self.assertEqual(initial_d_map.loc["b", "d"], expected_dissimilarity)
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "f", "root", "6", "7", "8", "9"]
-        )
         expected_tree.add_edges_from(
             [
                 ("root", "9"),
@@ -326,7 +343,7 @@ class TestUPGMASolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, T)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
 

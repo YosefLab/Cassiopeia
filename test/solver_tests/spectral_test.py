@@ -1,13 +1,31 @@
 import unittest
 
+import itertools
 import networkx as nx
 import pandas as pd
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralSolver import SpectralSolver
 from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import dissimilarity_functions
+
+
+def find_triplet_structure(triplet, T):
+    a, b, c = triplet[0], triplet[1], triplet[2]
+    a_ancestors = [node for node in nx.ancestors(T, a)]
+    b_ancestors = [node for node in nx.ancestors(T, b)]
+    c_ancestors = [node for node in nx.ancestors(T, c)]
+    ab_common = len(set(a_ancestors) & set(b_ancestors))
+    ac_common = len(set(a_ancestors) & set(c_ancestors))
+    bc_common = len(set(b_ancestors) & set(c_ancestors))
+    structure = "-"
+    if ab_common > bc_common and ab_common > ac_common:
+        structure = "ab"
+    elif ac_common > bc_common and ac_common > ab_common:
+        structure = "ac"
+    elif bc_common > ab_common and bc_common > ac_common:
+        structure = "bc"
+    return structure
 
 
 class SpectralSolverTest(unittest.TestCase):
@@ -173,10 +191,54 @@ class SpectralSolverTest(unittest.TestCase):
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
+        spsolver.solve(sp_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (10, "c3"),
+                (7, "c1"),
+                (7, "c2"),
+                (8, "c6"),
+                (8, "c7"),
+                (9, "c4"),
+                (9, "c5"),
+                (10, 7),
+                (10, 8),
+                (10, 9),
+            ]
+        )
+        observed_tree = sp_tree.get_tree_topology()
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
         spsolver.solve(sp_tree)
-        expected_newick_string = "(c3,(c1,c2),(c6,c7),(c4,c5));"
-        observed_newick_string = sp_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (12, "c3"),
+                (7, "c1"),
+                (7, "c2"),
+                (8, "c6"),
+                (8, "c7"),
+                (9, "c4"),
+                (9, "c5"),
+                (10, 8),
+                (10, 9),
+                (11, 7),
+                (11, 10),
+                (12, 11),
+            ]
+        )
+        observed_tree = sp_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_simple_base_case_string(self):
         cm = pd.DataFrame.from_dict(
@@ -197,10 +259,32 @@ class SpectralSolverTest(unittest.TestCase):
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
-        spsolver.solve(sp_tree)
-        expected_newick_string = "(c3,(c1,c2),(c6,(c7,c8)),(c4,c5));"
-        observed_newick_string = sp_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        spsolver.solve(sp_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (8, "c7"),
+                (8, "c8"),
+                (9, "c4"),
+                (9, "c5"),
+                (10, 8),
+                (10, "c6"),
+                (11, "c1"),
+                (11, "c2"),
+                (12, 11),
+                (12, 10),
+                (12, 9),
+                (12, "c3"),
+            ]
+        )
+        observed_tree = sp_tree.get_tree_topology()
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_simple_base_case2(self):
         cm = pd.DataFrame.from_dict(
@@ -217,10 +301,31 @@ class SpectralSolverTest(unittest.TestCase):
         sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         spsolver = SpectralSolver()
+        spsolver.solve(sp_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c1"),
+                (4, "c3"),
+                (5, "c2"),
+                (5, "c4"),
+                (6, 4),
+                (6, 5),
+            ]
+        )
+        observed_tree = sp_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
         spsolver.solve(sp_tree)
-        expected_newick_string = "((c1,c3),(c2,c4));"
-        observed_newick_string = sp_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        observed_tree = sp_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_simple_base_case2_priors(self):
         cm = pd.DataFrame.from_dict(
@@ -247,10 +352,23 @@ class SpectralSolverTest(unittest.TestCase):
         )
 
         spsolver = SpectralSolver()
-        spsolver.solve(sp_tree)
-        expected_newick_string = "(c1,c2,(c3,c4));"
-        observed_newick_string = sp_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        spsolver.solve(sp_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c3"),
+                (4, "c4"),
+                (5, "c1"),
+                (5, "c2"),
+                (5, 4),
+            ]
+        )
+        observed_tree = sp_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
 
 if __name__ == "__main__":

@@ -98,7 +98,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
     ) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
 
@@ -117,6 +120,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree: CassiopeiaTree object to be populated
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
@@ -193,7 +200,12 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             N = similarity_map.shape[0]
 
-        cassiopeia_tree.populate_tree(tree)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
 
     def find_cherry(self, similarity_matrix: np.array) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
