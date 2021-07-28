@@ -8,6 +8,8 @@ from typing import List
 class BLEEnsemble(BranchLengthEstimator):
     r"""
     Ensemble several BranchLengthEstimator. Just averages the edge lengths.
+    The trees estimated by each estimator are normalized to unit length
+    before averaging their predictions.
 
     Args:
         branch_length_estimators: List of BranchLengthEstimator to ensemble.
@@ -28,6 +30,7 @@ class BLEEnsemble(BranchLengthEstimator):
         for ble in branch_length_estimators:
             tree_i = deepcopy(tree)
             ble.estimate_branch_lengths(tree_i)
+            tree_i.scale_to_unit_length()
             trees.append(tree_i)
         times = dict(
             [
