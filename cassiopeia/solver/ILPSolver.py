@@ -10,10 +10,6 @@ import time
 from typing import Dict, List, Optional
 import warnings
 
-try:
-    import gurobipy
-except ModuleNotFoundError:
-    warnings.warn("Gurobi not found. You must install Gurobi & gurobipy from source.")
 import hashlib
 import itertools
 import networkx as nx
@@ -377,6 +373,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A Gurobipy Model instance and the edge variables involved.
         """
+        try:
+            import gurobipy
+        except ModuleNotFoundError:
+            raise ILPSolverError("Gurobi not found. You must install Gurobi & "
+                                "gurobipy from source.")
+
+
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
         if root not in potential_graph.nodes:
@@ -482,6 +485,11 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A list of solutions
         """
+        try:
+            import gurobipy
+        except ModuleNotFoundError:
+            raise ILPSolverError("Gurobi not found. You must install Gurobi & "
+                                "gurobipy from source.")
 
         model.params.LogToConsole = 0
 

@@ -1,4 +1,3 @@
 include cassiopeia/preprocess/*.pyx
 include cassiopeia/solver/*.pyx
 include *.toml
-recursive-include cython *

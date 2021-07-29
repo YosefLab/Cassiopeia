@@ -3,8 +3,6 @@
 *.pyc
 *.so
 _build
-<<<<<<< HEAD
-=======
 _static
 _templates
 build
@@ -12,4 +10,3 @@ build
 *.c
 stdout.log
 notebooks/.ipynb_checkpoints
->>>>>>> e4187c1809b909c5bcaad851f9e25c55257c271c

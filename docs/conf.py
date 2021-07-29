@@ -248,6 +248,8 @@ from docutils.parsers.rst import directives
 from sphinx.util.inspect import safe_getattr
 import re
 
+# Code for creating autosummaries for class methods / attributes
+# Taken originally from Pandas documentation
 class AutoAutoSummary(Autosummary):
 
     option_spec = {
