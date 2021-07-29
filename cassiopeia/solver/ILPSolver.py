@@ -230,11 +230,24 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, root, targets, pid
         )
 
+        # append sample names to the Steiner solution
         optimal_solution = self.__append_sample_names(
             optimal_solution, character_matrix
         )
 
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+
+        # # remove Steiner solution nodes that did not a sample appended to them
+        # non_sample_leaves = set(cassiopeia_tree.leaves) - set(cassiopeia_tree.character_matrix)
+        # for leaf in non_sample_leaves:
+        #     cassiopeia_tree.remove_leaf_and_prune_lineage(leaf)
+
+        # rename internal nodes such that they are not tuples
+        node_name_generator = solver_utilities.node_name_generator()
+        internal_node_rename = {}
+        for _ in cassiopeia_tree.internal_nodes:
+            internal_node_rename[i] = next(node_name_generator)
+        cassiopeia_tree.relabel_nodes(internal_node_rename)
         logger.removeHandler(handler)
 
     def infer_potential_graph(

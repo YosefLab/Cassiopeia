@@ -4,6 +4,7 @@ Test HybridSolver in Cassiopeia.solver.
 import os
 import unittest
 
+import inspect
 import itertools
 import networkx as nx
 import numpy as np

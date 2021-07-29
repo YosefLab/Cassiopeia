@@ -10,6 +10,7 @@ of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
 from typing import Dict, List, Generator, Optional, Tuple
 
+import inspect
 import multiprocessing
 import networkx as nx
 import numpy as np
@@ -18,7 +19,7 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.mixins import HybridSolverError
+from cassiopeia.mixins import HybridSolverError, HybridSolverWarning
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -315,7 +316,14 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
             priors=cassiopeia_tree.priors,
         )
-        self.bottom_solver.solve(subtree)
+
+        if "logfile" not in inspect.signature(self.bottom_solver.solve).parameters:
+            self.bottom_solver.solve(subtree)
+            raise HybridSolverWarning(
+                "Bottom Solver lacks logging capabilities, skipping logging"
+            )
+        else:
+            self.bottom_solver.solve(subtree, logfile=logfile)
 
         subproblem_tree = subtree.get_tree_topology()
         subproblem_root = [

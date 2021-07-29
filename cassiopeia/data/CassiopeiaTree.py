@@ -86,7 +86,7 @@ class CassiopeiaTree:
             character matrix.
         cell_meta: Per-cell meta data
         character_meta: Per-character meta data
-        priors: A dictionary storing the probability of a character mutating
+        priors: A dictionary storing the probability of each character mutating
             to a particular state.
         tree: A tree for the lineage.
         dissimilarity_map: An NxN dataframe storing the pairwise dissimilarities
