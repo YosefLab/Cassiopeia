@@ -84,6 +84,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """Implements a solving procedure for the Percolation Algorithm.
         The procedure recursively splits a set of samples to build a tree. At
@@ -105,6 +106,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to write standard out.
         """
 
         node_name_generator = solver_utilities.node_name_generator()

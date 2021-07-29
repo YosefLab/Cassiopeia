@@ -100,9 +100,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        logfile: str = "stdout.log",
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -111,13 +111,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree
-            logfile: Location to write standard out.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
             collapse_mutationless_edges: Indicates if the final reconstructed
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to log progress.
         """
 
         if self.weighted and not cassiopeia_tree.priors:

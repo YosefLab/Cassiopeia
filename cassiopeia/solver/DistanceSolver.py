@@ -80,6 +80,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ) -> None:
         """Solves a tree for a general bottom-up distance-based solver routine.
 
@@ -98,6 +99,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: File location to log output.
         """
         node_name_generator = solver_utilities.node_name_generator()
 

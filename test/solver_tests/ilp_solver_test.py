@@ -295,7 +295,7 @@ class TestILPSolver(unittest.TestCase):
 
     def test_ilp_solver_perfect_phylogeny(self):
 
-        self.ilp_solver.solve(self.pp_tree, self.logfile)
+        self.ilp_solver.solve(self.pp_tree, logfile=self.logfile)
         tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
@@ -414,7 +414,7 @@ class TestILPSolver(unittest.TestCase):
 
     def test_ilp_solver_with_duplicates(self):
 
-        self.ilp_solver.solve(self.duplicates_tree, self.logfile)
+        self.ilp_solver.solve(self.duplicates_tree, logfile=self.logfile)
         tree = self.duplicates_tree.get_tree_topology()
 
         # make sure there's one root
@@ -484,7 +484,7 @@ class TestILPSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         self.ilp_solver.solve(
-            self.duplicates_tree, self.logfile, collapse_mutationless_edges=True
+            self.duplicates_tree, logfile=self.logfile, collapse_mutationless_edges=True
         )
         tree = self.duplicates_tree.get_tree_topology()
         for triplet in triplets:
@@ -494,7 +494,7 @@ class TestILPSolver(unittest.TestCase):
 
     def test_ilp_solver_missing_data(self):
 
-        self.ilp_solver.solve(self.missing_tree, self.logfile)
+        self.ilp_solver.solve(self.missing_tree, logfile=self.logfile)
         tree = self.missing_tree.get_tree_topology()
 
         # make sure there's one root
@@ -536,7 +536,7 @@ class TestILPSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         self.ilp_solver.solve(
-            self.missing_tree, self.logfile, collapse_mutationless_edges=True
+            self.missing_tree, logfile=self.logfile, collapse_mutationless_edges=True
         )
         tree = self.missing_tree.get_tree_topology()
         for triplet in triplets:

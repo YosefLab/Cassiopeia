@@ -93,9 +93,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        logfile: str = "stdout.log",
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """The general hybrid solver routine.
 
@@ -107,13 +107,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree that stores the character matrix
                 and priors for reconstruction.
-            logfile: Location to log progress.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
             collapse_mutationless_edges: Indicates if the final reconstructed
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to log progress.
         """
         node_name_generator = solver_utilities.node_name_generator()
 
