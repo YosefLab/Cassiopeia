@@ -165,6 +165,11 @@ html_static_path = ["_static"]
 html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
+nbsphinx_thumbnails = {
+    "user_guide/notebooks/preprocess": "_static/tutorials/preprocess.svg",
+    "user_guide/notebooks/benchmark": "_static/tutorials/benchmark.svg",
+    "user_guide/notebooks/reconstruct": "_static/tutorials/reconstruct.svg",
+}
 
 def setup(app):
     app.warningiserror = on_rtd

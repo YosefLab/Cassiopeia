@@ -653,4 +653,17 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 solution.add_edges_from([(node, sample) for sample in samples])
                 states_added.append(node)
 
+        # remove extant lineages that don't correspond to leaves
+        to_drop = []
+        leaves = [n for n in solution if solution.out_degree(n) == 0]
+        for l in leaves:
+            if l not in character_matrix.index:
+                to_drop.append(l)
+
+                parent = [p for p in solution.predecessors(l)][0]
+                while solution.out_degree(parent) < 2:
+                    to_drop.append(parent)
+                    parent = [p for p in solution.predecessors(parent)][0]
+        
+        solution.remove_nodes_from(to_drop)
         return solution

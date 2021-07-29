@@ -13,6 +13,7 @@ from typing import Dict, List, Generator, Optional, Tuple
 import multiprocessing
 import networkx as nx
 import numpy as np
+from numpy.lib.arraysetops import unique
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -180,7 +181,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree = nx.compose(tree, subproblem_tree)
 
         # append sample names to the solution and populate the tree
-        samples_tree = self.__append_sample_names(tree, character_matrix)
+        samples_tree = self.__append_sample_names(tree, character_matrix, node_name_generator)
+
+        leaves = [n for n in samples_tree if samples_tree.out_degree(n) == 0]
+
         cassiopeia_tree.populate_tree(samples_tree, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
 
@@ -301,7 +305,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 identifier
 
         """
-
         if len(samples) == 1:
             subproblem_tree = nx.DiGraph()
             subproblem_tree.add_edge(root, samples[0])
@@ -312,7 +315,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         else:
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
-        subproblem_character_matrix = character_matrix.loc[samples]
+        subproblem_character_matrix = character_matrix.loc[samples].drop_duplicates()
 
         subtree_root = data_utilities.get_lca_characters(
             subproblem_character_matrix.loc[samples].values.tolist(),
@@ -328,7 +331,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
             priors=cassiopeia_tree.priors,
         )
-        self.bottom_solver.solve(subtree)
+        self.bottom_solver.solve(subtree, logfile=logfile)
 
         subproblem_tree = subtree.get_tree_topology()
         subproblem_root = [
@@ -378,7 +381,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         return False
 
     def __append_sample_names(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Append sample names to character states in tree.
 
@@ -398,23 +401,34 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             A solution with extra leaves corresponding to sample names
         """
 
-        root = [n for n in tree if tree.in_degree(n) == 0][0]
-
-        sample_lookup = character_matrix.apply(
-            lambda x: tuple(x.values), axis=1
+        character_matrix.index.name = "index"
+        duplicate_groups = (
+            character_matrix[character_matrix.duplicated(keep=False) == True]
+            .reset_index()
+            .groupby(character_matrix.columns.tolist())["index"]
+            .agg(["first", tuple])
+            .set_index("first")["tuple"]
+            .to_dict()
         )
 
-        states_added = []
-        for node in nx.dfs_postorder_nodes(tree, source=root):
+        for i in duplicate_groups:
+            new_internal_node = next(node_name_generator)
+            nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
+            for duplicate in duplicate_groups[i]:
+                tree.add_edge(new_internal_node, duplicate)
 
-            # append nodes with this character state at the deepest place
-            # possible
-            if node in states_added:
-                continue
+        # remove extant lineages that don't correspond to leaves
+        to_drop = []
+        leaves = [n for n in tree if tree.out_degree(n) == 0]
+        for l in leaves:
+            if l not in character_matrix.index:
+                to_drop.append(l)
 
-            samples = sample_lookup[sample_lookup == node].index
-            if len(samples) > 0:
-                tree.add_edges_from([(node, sample) for sample in samples])
-                states_added.append(node)
+                parent = [p for p in tree.predecessors(l)][0]
+                while tree.out_degree(parent) < 2:
+                    to_drop.append(parent)
+                    parent = [p for p in tree.predecessors(parent)][0]
+        
+        tree.remove_nodes_from(to_drop)
 
         return tree
