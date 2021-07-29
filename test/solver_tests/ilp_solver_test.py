@@ -8,9 +8,9 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
@@ -34,6 +34,10 @@ def find_triplet_structure(triplet, T):
 
 
 class TestILPSolver(unittest.TestCase):
+    def assertIsFile(self, path):
+        if not pl.Path(path).resolve().is_file():
+            raise AssertionError("File does not exist: %s" % str(path))
+
     def setUp(self):
 
         # basic PP example with no missing data
@@ -180,8 +184,7 @@ class TestILPSolver(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(
-            expected_character_matrix,
-            self.pp_tree.character_matrix.copy(),
+            expected_character_matrix, self.pp_tree.character_matrix.copy()
         )
 
     def test_get_layer_for_potential_graph(self):
@@ -299,12 +302,15 @@ class TestILPSolver(unittest.TestCase):
         self.ilp_solver.solve(self.pp_tree, self.logfile)
         tree = self.pp_tree.get_tree_topology()
 
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
+
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.pp_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -313,16 +319,27 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [
+            n for n in self.pp_tree.nodes if len(self.pp_tree.children(n)) == 1
+        ]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
 
+        # apply camin-sokal parsimony
+        self.pp_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+
+        for e in self.pp_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.pp_tree.get_character_states(e[0]),
+                self.pp_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -350,6 +367,9 @@ class TestILPSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
 
     def test_potential_graph_inference_with_duplicates(self):
 
@@ -407,12 +427,15 @@ class TestILPSolver(unittest.TestCase):
         self.ilp_solver.solve(self.duplicates_tree, self.logfile)
         tree = self.duplicates_tree.get_tree_topology()
 
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
+
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.duplicates_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e", "f"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -421,16 +444,27 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [
+            n
+            for n in self.duplicates_tree.nodes
+            if len(self.duplicates_tree.children(n)) == 1
+        ]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
-
+        self.duplicates_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+
+        for e in self.duplicates_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.duplicates_tree.get_character_states(e[0]),
+                self.duplicates_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -445,8 +479,10 @@ class TestILPSolver(unittest.TestCase):
                 ("9", "8"),
                 ("9", "7"),
                 ("7", "6"),
-                ("7", "a"),
-                ("7", "f"),
+                ("7", "5"),
+                ("7", "5"),
+                ("5", "a"),
+                ("5", "f"),
                 ("6", "b"),
                 ("6", "c"),
                 ("8", "e"),
@@ -454,16 +490,31 @@ class TestILPSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        self.ilp_solver.solve(
+            self.duplicates_tree, self.logfile, collapse_mutationless_edges=True
+        )
+        tree = self.duplicates_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.duplicates_tree.get_newick()
+
     def test_ilp_solver_missing_data(self):
 
         self.ilp_solver.solve(self.missing_tree, self.logfile)
         tree = self.missing_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -498,6 +549,15 @@ class TestILPSolver(unittest.TestCase):
         triplets = itertools.combinations(
             ["a", "b", "c", "d", "e", "f", "g", "h"], 3
         )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        self.ilp_solver.solve(
+            self.missing_tree, self.logfile, collapse_mutationless_edges=True
+        )
+        tree = self.missing_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)

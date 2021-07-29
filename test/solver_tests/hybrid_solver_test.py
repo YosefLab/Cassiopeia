@@ -3,15 +3,15 @@ Test HybridSolver in Cassiopeia.solver.
 """
 import os
 import unittest
-
 import inspect
+
 import itertools
 import networkx as nx
-import numpy as np
 import pandas as pd
+import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import HybridSolverWarning
 from cassiopeia.solver import solver_utilities
 
 
@@ -34,6 +34,16 @@ def find_triplet_structure(triplet, T):
 
 
 class TestHybridSolver(unittest.TestCase):
+    def assertIsFile(self, path):
+        if not pl.Path(path).resolve().is_file():
+            raise AssertionError("File does not exist: %s" % str(path))
+
+    def assertIsNotFile(self, path):
+        if pl.Path(path).resolve().is_file():
+            raise AssertionError(
+                "File exists when it should not: %s" % str(path)
+            )
+
     def setUp(self):
 
         # basic PP example with no missing data
@@ -211,8 +221,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"])
@@ -228,8 +241,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver_large.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver_large.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (
@@ -253,8 +269,11 @@ class TestHybridSolver(unittest.TestCase):
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
 
-        _, subproblems = self.hybrid_pp_solver_missing.apply_top_solver(
-            unique_character_matrix, list(unique_character_matrix.index), names
+        _, subproblems, _ = self.hybrid_pp_solver_missing.apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            nx.DiGraph(),
+            names,
         )
 
         expected_clades = (["a", "b", "c"], ["d", "e"], ["f", "g", "h"])
@@ -267,8 +286,11 @@ class TestHybridSolver(unittest.TestCase):
     def test_full_hybrid(self):
 
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
-
         tree = self.pp_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -283,6 +305,10 @@ class TestHybridSolver(unittest.TestCase):
         # make sure every node has at most one parent
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
+
+        # make sure the resulting tree has no unifurcations
+        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        self.assertEqual(len(one_child), 0)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -307,12 +333,28 @@ class TestHybridSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        self.hybrid_pp_solver.solve(
+            self.pp_tree, logfile=self.logfile, collapse_mutationless_edges=True
+        )
+        tree = self.pp_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
 
     def test_full_hybrid_single_thread(self):
 
         self.hybrid_pp_solver.threads = 1
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
 
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
+
         tree = self.pp_tree.get_tree_topology()
 
         # make sure there's one root
@@ -328,6 +370,10 @@ class TestHybridSolver(unittest.TestCase):
         # make sure every node has at most one parent
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
+
+        # make sure the resulting tree has no unifurcations
+        one_child = [n for n in tree if tree.out_degree(n) == 1]
+        self.assertEqual(len(one_child), 0)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(
@@ -353,11 +399,21 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
+
     def test_full_hybrid_large(self):
 
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
-
         tree = self.large_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(
+            os.path.join(self.dir_path, "test_1-1-1-1-1-1-0-0.log")
+        )
+        self.assertIsFile(
+            os.path.join(self.dir_path, "test_2-0-0-0-0-0-0-0.log")
+        )
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -401,13 +457,31 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        self.hybrid_pp_solver_large.solve(
+            self.large_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
+        )
+        tree = self.large_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.large_tree.get_newick()
+
     def test_full_hybrid_maxcut(self):
 
         self.hybrid_pp_solver_maxcut.solve(
             self.missing_tree, logfile=self.logfile
         )
-
         tree = self.missing_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -446,14 +520,33 @@ class TestHybridSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        self.hybrid_pp_solver_maxcut.solve(
+            self.missing_tree, logfile=self.logfile
+        )
+        tree = self.missing_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.missing_tree.get_newick()
 
     def test_full_hybrid_missing(self):
 
         self.hybrid_pp_solver_missing.solve(
-            self.missing_tree, logfile=self.logfile
+            self.missing_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
         )
 
         tree = self.missing_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -492,6 +585,9 @@ class TestHybridSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.missing_tree.get_newick()
 
     def tearDown(self):
 

@@ -135,7 +135,7 @@ class TestLayers(unittest.TestCase):
 
         # first reconstruct basic tree
         greedy_solver = cas.solver.VanillaGreedySolver()
-        greedy_solver.solve(self.tree)
+        greedy_solver.solve(self.tree, collapse_mutationless_edges=True)
 
         reconstructed_tree = self.tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
@@ -161,7 +161,9 @@ class TestLayers(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
         self.tree.layers["modified"] = modified_character_matrix
-        greedy_solver.solve(self.tree, layer="modified")
+        greedy_solver.solve(
+            self.tree, collapse_mutationless_edges=True, layer="modified"
+        )
 
         expected_tree_topology = nx.DiGraph()
         expected_tree_topology.add_nodes_from(

@@ -33,7 +33,10 @@ class CassiopeiaSolver(abc.ABC):
 
     @abc.abstractmethod
     def solve(
-        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
     ):
         """Solves the inference problem.
 
@@ -42,5 +45,9 @@ class CassiopeiaSolver(abc.ABC):
                 phylogenetic inference.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
         """
         pass

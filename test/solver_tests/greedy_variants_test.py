@@ -1,14 +1,31 @@
 import unittest
 
+import itertools
 import networkx as nx
 import pandas as pd
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as tree_utilities
 from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
-from cassiopeia.solver import graph_utilities
 from cassiopeia.solver import solver_utilities
+
+
+def find_triplet_structure(triplet, T):
+    a, b, c = triplet[0], triplet[1], triplet[2]
+    a_ancestors = [node for node in nx.ancestors(T, a)]
+    b_ancestors = [node for node in nx.ancestors(T, b)]
+    c_ancestors = [node for node in nx.ancestors(T, c)]
+    ab_common = len(set(a_ancestors) & set(b_ancestors))
+    ac_common = len(set(a_ancestors) & set(c_ancestors))
+    bc_common = len(set(b_ancestors) & set(c_ancestors))
+    structure = "-"
+    if ab_common > bc_common and ab_common > ac_common:
+        structure = "ab"
+    elif ac_common > bc_common and ac_common > ab_common:
+        structure = "ac"
+    elif bc_common > ab_common and bc_common > ac_common:
+        structure = "bc"
+    return structure
 
 
 class GreedyVariantsTest(unittest.TestCase):
@@ -35,10 +52,48 @@ class GreedyVariantsTest(unittest.TestCase):
         self.assertListEqual(left, ["c1", "c3", "c4"])
         self.assertListEqual(right, ["c2"])
 
+        sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c1"),
+                (4, "c3"),
+                (4, "c4"),
+                (5, 4),
+                (5, "c2"),
+            ]
+        )
+        observed_tree = sg_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c1"),
+                (4, "c3"),
+                (4, "c4"),
+                (5, 4),
+                (5, "c2"),
+            ]
+        )
+        observed_tree = sg_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
         sgsolver.solve(sg_tree)
-        expected_newick_string = "((c1,c4,c3),c2);"
-        observed_newick_string = sg_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        observed_tree = sg_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_spectral_base_case(self):
         cm = pd.DataFrame.from_dict(
@@ -62,10 +117,35 @@ class GreedyVariantsTest(unittest.TestCase):
         self.assertEqual(left, ["c2", "c6"])
         self.assertEqual(right, ["c1", "c3"])
 
-        sgsolver.solve(sg_tree)
-        expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = sg_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c3"),
+                (4, "c4"),
+                (4, "c5"),
+                (5, 4),
+                (5, "c1"),
+                (6, "c2"),
+                (6, "c6"),
+                (6, 7),
+            ]
+        )
+        observed_tree = sg_tree.get_tree_topology()
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
+        observed_tree = sg_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_spectral_base_case_weights_almost_one(self):
         cm = pd.DataFrame.from_dict(
@@ -102,10 +182,28 @@ class GreedyVariantsTest(unittest.TestCase):
         self.assertEqual(left, ["c2", "c6"])
         self.assertEqual(right, ["c1", "c3"])
 
-        sgsolver.solve(sg_tree)
-        expected_newick_string = "((c2,c6),(c1,(c3,c4,c5)));"
-        observed_newick_string = sg_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (4, "c3"),
+                (4, "c4"),
+                (4, "c5"),
+                (5, 4),
+                (5, "c1"),
+                (6, "c2"),
+                (6, "c6"),
+                (6, 7),
+            ]
+        )
+        observed_tree = sg_tree.get_tree_topology()
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_maxcut_base_case(self):
         # A case in which the connectivity only has negative weights, so the
@@ -130,10 +228,31 @@ class GreedyVariantsTest(unittest.TestCase):
         self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
+        mcgsolver.solve(mcg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (5, "c1"),
+                (5, "c2"),
+                (5, "c3"),
+                (5, 4),
+                (4, "c4"),
+                (4, "c5"),
+            ]
+        )
+        observed_tree = mcg_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
         mcgsolver.solve(mcg_tree)
-        expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = mcg_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        observed_tree = mcg_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
     def test_maxcut_base_case_weights_trivial(self):
         # A case in which the connectivity only has negative weights, so the
@@ -172,10 +291,24 @@ class GreedyVariantsTest(unittest.TestCase):
         self.assertListEqual(left, ["c1", "c3", "c4", "c2"])
         self.assertListEqual(right, [])
 
-        mcgsolver.solve(mcg_tree)
-        expected_newick_string = "(c1,c3,c2,(c4,c5));"
-        observed_newick_string = mcg_tree.get_newick()
-        self.assertEqual(expected_newick_string, observed_newick_string)
+        mcgsolver.solve(mcg_tree, collapse_mutationless_edges=True)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (5, "c1"),
+                (5, "c2"),
+                (5, "c3"),
+                (5, 4),
+                (4, "c4"),
+                (4, "c5"),
+            ]
+        )
+        observed_tree = mcg_tree.get_tree_topology()
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
 
 
 if __name__ == "__main__":
