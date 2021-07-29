@@ -1873,3 +1873,7 @@ class CassiopeiaTree:
             _node: self.__cache["distances"][frozenset({node, _node})]
             for _node in (self.leaves if leaves_only else self.nodes)
         }
+
+    def copy(self) -> "CassiopeiaTree":
+        """Full copy of CassiopeiaTree"""
+        return copy.deepcopy(self)

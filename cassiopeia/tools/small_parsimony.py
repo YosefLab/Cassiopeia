@@ -51,7 +51,7 @@ def fitch_hartigan(
     fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, state_key)
 
     fitch_hartigan_top_down(
-        cassiopeia_tree, meta_item, root, state_key, label_key
+        cassiopeia_tree, root, state_key, label_key
     )
 
     return cassiopeia_tree if copy else None
@@ -91,7 +91,7 @@ def fitch_hartigan_bottom_up(
 
     meta = cassiopeia_tree.cell_meta[meta_item]
 
-    if meta.dtype != "str" or meta.dtype != "object":
+    if meta.dtype not in ['str', 'object']:
         raise CassiopeiaError("Meta item is not a categorical variable.")
 
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
@@ -99,7 +99,7 @@ def fitch_hartigan_bottom_up(
     for node in cassiopeia_tree.depth_first_traverse_nodes():
 
         if cassiopeia_tree.is_leaf(node):
-            cassiopeia_tree.set_attribute(node, add_key, meta.loc[node])
+            cassiopeia_tree.set_attribute(node, add_key, [meta.loc[node]])
 
         else:
             children = cassiopeia_tree.children(node)
@@ -107,7 +107,7 @@ def fitch_hartigan_bottom_up(
                 child_assignment = cassiopeia_tree.get_attribute(
                     children[0], add_key
                 )
-                cassiopeia_tree.set_attribute(node, add_key, child_assignment)
+                cassiopeia_tree.set_attribute(node, add_key, [child_assignment])
 
             all_labels = np.concatenate(
                 [
@@ -118,7 +118,7 @@ def fitch_hartigan_bottom_up(
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
-            cassiopeia_tree.add_attribute(node, add_key, S1)
+            cassiopeia_tree.set_attribute(node, add_key, S1)
 
     return cassiopeia_tree if copy else None
 
@@ -170,15 +170,14 @@ def fitch_hartigan_top_down(
 
         parent = cassiopeia_tree.parent(node)
         parent_label = cassiopeia_tree.get_attribute(parent, label_key)
-        optimal_node_states = cassiopeia_tree.get_attribute(parent, state_key)
+        optimal_node_states = cassiopeia_tree.get_attribute(node, state_key)
 
         if parent_label in optimal_node_states:
             cassiopeia_tree.set_attribute(node, label_key, parent_label)
 
         else:
-            node_states = cassiopeia_tree.get_attribute(node, state_key)
             cassiopeia_tree.set_attribute(
-                node, label_key, np.random.choice(node_states)
+                node, label_key, np.random.choice(optimal_node_states)
             )
 
     return cassiopeia_tree if copy else None
