@@ -183,8 +183,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         # append sample names to the solution and populate the tree
         samples_tree = self.__append_sample_names(tree, character_matrix, node_name_generator)
 
-        leaves = [n for n in samples_tree if samples_tree.out_degree(n) == 0]
-
         cassiopeia_tree.populate_tree(samples_tree, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
 
@@ -315,7 +313,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         else:
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
-        subproblem_character_matrix = character_matrix.loc[samples].drop_duplicates()
+        subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
             subproblem_character_matrix.loc[samples].values.tolist(),
