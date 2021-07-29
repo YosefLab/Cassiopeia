@@ -33,7 +33,9 @@ For use in our distance-based solver and for comparing character states, we also
 .. autosummary::
    :toctree: reference/
    
+   solver.dissimilarity_functions.cluster_dissimilarity
    solver.dissimilarity_functions.hamming_distance
+   solver.dissimilarity_functions.hamming_similarity_normalized_over_missing
    solver.dissimilarity_functions.hamming_similarity_without_missing
    solver.dissimilarity_functions.weighted_hamming_distance
    solver.dissimilarity_functions.weighted_hamming_similarity

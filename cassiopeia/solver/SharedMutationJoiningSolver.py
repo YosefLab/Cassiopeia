@@ -125,7 +125,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
-            logfile: Location to write standard out.
+            logfile: Location to write standard out. Not currently used.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
