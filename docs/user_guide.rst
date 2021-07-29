@@ -12,7 +12,8 @@ Tutorials
 
    notebooks/preprocess
    notebooks/benchmark
-
+   notebooks/reconstruct
+   
 Contributed tutorials
 ---------------------
 

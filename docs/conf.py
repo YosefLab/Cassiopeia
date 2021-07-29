@@ -50,6 +50,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "nbsphinx_link",
+    "sphinx_gallery.load_style",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
     "sphinx.ext.autosummary",
@@ -166,9 +167,9 @@ html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
 nbsphinx_thumbnails = {
-    "user_guide/notebooks/preprocess": "_static/tutorials/preprocess.svg",
-    "user_guide/notebooks/benchmark": "_static/tutorials/benchmark.svg",
-    "user_guide/notebooks/reconstruct": "_static/tutorials/reconstruct.svg",
+    "notebooks/preprocess": "_static/tutorials/preprocess.png",
+    "notebooks/benchmark": "_static/tutorials/benchmark.png",
+    "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
 }
 
 def setup(app):
