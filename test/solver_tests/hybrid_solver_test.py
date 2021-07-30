@@ -454,6 +454,9 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_maxcut(self):
 
         self.hybrid_pp_solver_maxcut.solve(
