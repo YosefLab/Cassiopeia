@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install pytest-cov
-        pip install .[dev]
+        make install
     - name: Test with pytest
       run: |
         make test
