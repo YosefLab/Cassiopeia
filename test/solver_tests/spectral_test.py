@@ -304,14 +304,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver.solve(sp_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (4, "c1"),
-                (4, "c3"),
-                (5, "c2"),
-                (5, "c4"),
-                (6, 4),
-                (6, 5),
-            ]
+            [(4, "c1"), (4, "c3"), (5, "c2"), (5, "c4"), (6, 4), (6, 5)]
         )
         observed_tree = sp_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
@@ -355,13 +348,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver.solve(sp_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (4, "c3"),
-                (4, "c4"),
-                (5, "c1"),
-                (5, "c2"),
-                (5, 4),
-            ]
+            [(4, "c3"), (4, "c4"), (5, "c1"), (5, "c2"), (5, 4)]
         )
         observed_tree = sp_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)

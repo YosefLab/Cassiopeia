@@ -299,8 +299,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         for i in self.basic_tree.character_matrix.index:
             for j in self.basic_tree.character_matrix.columns:
                 self.assertEqual(
-                    cm.loc[i, j],
-                    self.basic_tree.character_matrix.loc[i, j],
+                    cm.loc[i, j], self.basic_tree.character_matrix.loc[i, j]
                 )
 
         # test leaves exist in tree
@@ -373,8 +372,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         for i in self.basic_tree.character_matrix.index:
             for j in self.basic_tree.character_matrix.columns:
                 self.assertEqual(
-                    cm.loc[i, j],
-                    self.basic_tree.character_matrix.loc[i, j],
+                    cm.loc[i, j], self.basic_tree.character_matrix.loc[i, j]
                 )
 
         # test leaves exist in tree
@@ -480,8 +478,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         for i in self.pp_tree.character_matrix.index:
             for j in self.pp_tree.character_matrix.columns:
                 self.assertEqual(
-                    pp_cm.loc[i, j],
-                    self.pp_tree.character_matrix.loc[i, j],
+                    pp_cm.loc[i, j], self.pp_tree.character_matrix.loc[i, j]
                 )
 
         expected_tree = nx.DiGraph()

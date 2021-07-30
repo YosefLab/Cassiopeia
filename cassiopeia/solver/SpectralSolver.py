@@ -22,7 +22,8 @@ from cassiopeia.solver import (
 
 class SpectralSolver(GreedySolver.GreedySolver):
     """
-    TODO: Experiment to find the best default similarity function
+    A spectral-based CassiopeiaSolver.
+    
     The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,
     a similarity graph is generated for the sample set, where edges
@@ -32,6 +33,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
     cut is minimized in order to preserve similarities. The final partition
     is then improved upon by a greedy hill-climbing procedure that further
     optimizes the cut.
+
+    TODO: Experiment to find the best default similarity function
 
     Args:
         similarity_function: A function that calculates a similarity score

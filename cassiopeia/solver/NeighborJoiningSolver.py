@@ -21,7 +21,8 @@ from cassiopeia.solver import (
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """Neighbor-Joining class for Cassiopeia.
+    """
+    Neighbor-Joining class for Cassiopeia.
 
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
@@ -218,12 +219,13 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[
-                new_node_index, v
-            ] = 0.5 * (
-                dissimilarity_map[v, cherry_i]
-                + dissimilarity_map[v, cherry_j]
-                - dissimilarity_map[cherry_i, cherry_j]
+            updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
+                0.5
+                * (
+                    dissimilarity_map[v, cherry_i]
+                    + dissimilarity_map[v, cherry_j]
+                    - dissimilarity_map[cherry_i, cherry_j]
+                )
             )
 
         updated_map[new_node_index, new_node_index] = 0

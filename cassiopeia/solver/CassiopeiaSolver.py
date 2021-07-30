@@ -13,7 +13,7 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class CassiopeiaSolver(abc.ABC):
-    """
+    """    
     CassiopeiaSolver is an abstract class that all inference algorithms derive
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.
@@ -37,6 +37,7 @@ class CassiopeiaSolver(abc.ABC):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """Solves the inference problem.
 
@@ -49,5 +50,6 @@ class CassiopeiaSolver(abc.ABC):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: File location to log output.
         """
         pass

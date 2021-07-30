@@ -17,7 +17,6 @@ import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pysam
-from skbio import alignment
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
@@ -485,6 +484,12 @@ def align_sequences(
         A DataFrame mapping each sequence name to the CIGAR string, quality,
         and original query sequence.
     """
+    try:
+        from skbio import alignment
+    except ModuleNotFoundError:
+        raise PreprocessError("Scikit-bio is not installed. Try pip-installing "
+                            " first and then re-running this function.")
+
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
             "Either `ref_filepath` or `ref` must be provided."
