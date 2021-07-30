@@ -34,15 +34,9 @@ jobs:
       run: |
         pip install pytest-cov
         pip install .[dev]
-    - name: Format with black
-      run: |
-        black --check .
-    - name: Import sort
-      run: |
-        isort --check-only .
     - name: Test with pytest
       run: |
-        pytest --cov-report=xml --cov=cassiopeia --internet-tests
+        make test
     - name: After success
       run: |
         pip list
