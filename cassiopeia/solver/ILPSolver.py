@@ -173,7 +173,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = self.__append_sample_names(
+            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
                 optimal_solution, character_matrix
             )
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
@@ -238,7 +238,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # append sample names to the solution and populate the tree
-        optimal_solution = self.__append_sample_names(
+        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
             optimal_solution, character_matrix
         )
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
@@ -621,17 +621,20 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return processed_solution
 
-    def __append_sample_names(
+    def __append_sample_names_and_remove_spurious_leaves(
         self, solution: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
-        """Append sample names to character states in tree.
+        """Append samples to character states in tree and prune spurious leaves.
 
         Given a tree where every node corresponds to a set of character states,
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
         the tree (especially when using the Hybrid algorithm where parts of
         the tree are built independently), so we make sure we only add a
-        particular sample once to the tree.
+        particular sample once to the tree. Additionally, if there exist 
+        extant nodes that do not have samples appended to them, these nodes are
+        removed and their lineages pruned as to not create any spurious leaf 
+        nodes.
 
         Args:
             solution: A Steiner Tree solution that we wish to add sample

@@ -181,7 +181,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree = nx.compose(tree, subproblem_tree)
 
         # append sample names to the solution and populate the tree
-        samples_tree = self.__append_sample_names(tree, character_matrix, node_name_generator)
+        samples_tree = self.__add_duplicates_to_tree_and_remove_spurious_leaves(tree, character_matrix, node_name_generator)
 
         leaves = [n for n in samples_tree if samples_tree.out_degree(n) == 0]
 
@@ -315,7 +315,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         else:
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
-        subproblem_character_matrix = character_matrix.loc[samples].drop_duplicates()
+        subproblem_character_matrix = character_matrix.loc[samples]
 
         subtree_root = data_utilities.get_lca_characters(
             subproblem_character_matrix.loc[samples].values.tolist(),
@@ -380,25 +380,23 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return False
 
-    def __append_sample_names(
+    def __add_duplicates_to_tree_and_remove_spurious_leaves(
         self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
-        """Append sample names to character states in tree.
+        """Append duplicates and prune spurious extant lineages from the tree.
 
-        Given a tree where every node corresponds to a set of character states,
-        append sample names at the deepest node that has its character
-        state. Sometimes character states can exist in two separate parts of
-        the tree (especially when using the Hybrid algorithm where parts of
-        the tree are built independently), so we make sure we only add a
-        particular sample once to the tree.
+        Places samples removed in removing duplicates in the tree as sisters
+        to the corresponding cells that share the same mutations. If any extant
+        nodes that are not in the original character matrix are present, they
+        are removed and their lineages are pruned such that the remaining 
+        leaves match the set of samples in the character matrix.
 
         Args:
-            tree: A Steiner Tree solution that we wish to add sample
-                names to.
+            tree: The tree after solving
             character_matrix: Character matrix
 
         Returns:
-            A solution with extra leaves corresponding to sample names
+            The tree with duplicates added and spurious leaves pruned
         """
 
         character_matrix.index.name = "index"
