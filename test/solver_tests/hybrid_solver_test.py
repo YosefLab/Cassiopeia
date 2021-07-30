@@ -36,12 +36,6 @@ class TestHybridSolver(unittest.TestCase):
         if not pl.Path(path).resolve().is_file():
             raise AssertionError("File does not exist: %s" % str(path))
 
-    def assertIsNotFile(self, path):
-        if pl.Path(path).resolve().is_file():
-            raise AssertionError(
-                "File exists when it should not: %s" % str(path)
-            )
-
     def setUp(self):
 
         # basic PP example with no missing data
