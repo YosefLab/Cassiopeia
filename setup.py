@@ -28,7 +28,6 @@ requirements = [
     "pysam>=0.14.1",
     "python-Levenshtein",
     "PyYAML>=3.12",
-    "scikit-bio>=0.5.6",
     "scipy>=1.2.0",
     "typing-extensions>=3.7.4",
     "tqdm>=4",
