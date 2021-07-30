@@ -30,7 +30,7 @@ from cassiopeia.solver import (
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     The Cassiopeia ILP-based maximum parsimony solver.
-    
+
     ILPSolver is a subclass of CassiopeiaSolver and implements the
     Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The
     solver proceeds by constructing a tree over a network of possible
@@ -173,8 +173,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-                optimal_solution, character_matrix
+            optimal_solution = (
+                self.__append_sample_names_and_remove_spurious_leaves(
+                    optimal_solution, character_matrix
+                )
             )
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
@@ -238,8 +240,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # append sample names to the solution and populate the tree
-        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-            optimal_solution, character_matrix
+        optimal_solution = (
+            self.__append_sample_names_and_remove_spurious_leaves(
+                optimal_solution, character_matrix
+            )
         )
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
@@ -376,9 +380,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         try:
             import gurobipy
         except ModuleNotFoundError:
-            raise ILPSolverError("Gurobi not found. You must install Gurobi & "
-                                "gurobipy from source.")
-
+            raise ILPSolverError(
+                "Gurobi not found. You must install Gurobi & "
+                "gurobipy from source."
+            )
 
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
@@ -488,8 +493,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         try:
             import gurobipy
         except ModuleNotFoundError:
-            raise ILPSolverError("Gurobi not found. You must install Gurobi & "
-                                "gurobipy from source.")
+            raise ILPSolverError(
+                "Gurobi not found. You must install Gurobi & "
+                "gurobipy from source."
+            )
 
         model.params.LogToConsole = 0
 
@@ -631,9 +638,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         state. Sometimes character states can exist in two separate parts of
         the tree (especially when using the Hybrid algorithm where parts of
         the tree are built independently), so we make sure we only add a
-        particular sample once to the tree. Additionally, if there exist 
+        particular sample once to the tree. Additionally, if there exist
         extant nodes that do not have samples appended to them, these nodes are
-        removed and their lineages pruned as to not create any spurious leaf 
+        removed and their lineages pruned as to not create any spurious leaf
         nodes.
 
         Args:
@@ -675,6 +682,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 while solution.out_degree(parent) < 2:
                     to_drop.append(parent)
                     parent = [p for p in solution.predecessors(parent)][0]
-        
+
         solution.remove_nodes_from(to_drop)
         return solution

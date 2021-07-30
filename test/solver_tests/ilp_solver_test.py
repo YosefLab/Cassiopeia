@@ -484,7 +484,9 @@ class TestILPSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         self.ilp_solver.solve(
-            self.duplicates_tree, logfile=self.logfile, collapse_mutationless_edges=True
+            self.duplicates_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
         )
         tree = self.duplicates_tree.get_tree_topology()
         for triplet in triplets:
@@ -536,7 +538,9 @@ class TestILPSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         self.ilp_solver.solve(
-            self.missing_tree, logfile=self.logfile, collapse_mutationless_edges=True
+            self.missing_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
         )
         tree = self.missing_tree.get_tree_topology()
         for triplet in triplets:

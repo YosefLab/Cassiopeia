@@ -31,7 +31,7 @@ from cassiopeia.solver import (
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
     The Hybrid Cassiopeia solver.
-    
+
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
     starting with a top-down greedy algorithm until a predetermined criteria is
@@ -129,7 +129,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights = solver_utilities.transform_priors(
                 cassiopeia_tree.priors, self.prior_transformation
             )
-        
+
         tree = nx.DiGraph()
         # call top-down solver until a desired cutoff is reached.
         _, subproblems, tree = self.apply_top_solver(
@@ -181,7 +181,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree = nx.compose(tree, subproblem_tree)
 
         # append sample names to the solution and populate the tree
-        samples_tree = self.__add_duplicates_to_tree_and_remove_spurious_leaves(tree, character_matrix, node_name_generator)
+        samples_tree = self.__add_duplicates_to_tree_and_remove_spurious_leaves(
+            tree, character_matrix, node_name_generator
+        )
 
         leaves = [n for n in samples_tree if samples_tree.out_degree(n) == 0]
 
@@ -381,14 +383,17 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         return False
 
     def __add_duplicates_to_tree_and_remove_spurious_leaves(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame, node_name_generator: Generator[str, None, None],
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Append duplicates and prune spurious extant lineages from the tree.
 
         Places samples removed in removing duplicates in the tree as sisters
         to the corresponding cells that share the same mutations. If any extant
         nodes that are not in the original character matrix are present, they
-        are removed and their lineages are pruned such that the remaining 
+        are removed and their lineages are pruned such that the remaining
         leaves match the set of samples in the character matrix.
 
         Args:
@@ -426,7 +431,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 while tree.out_degree(parent) < 2:
                     to_drop.append(parent)
                     parent = [p for p in tree.predecessors(parent)][0]
-        
+
         tree.remove_nodes_from(to_drop)
 
         return tree
