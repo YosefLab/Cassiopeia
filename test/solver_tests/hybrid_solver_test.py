@@ -115,10 +115,8 @@ class TestHybridSolver(unittest.TestCase):
         )
 
         ## hybrid solver with Greedy on top and Maxcut on Bottom
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut = (
-            cas.solver.HybridSolver(
-                greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
-            )
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut = cas.solver.HybridSolver(
+            greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
         )
 
     def test_constructor(self):
@@ -189,12 +187,10 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = (
-            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-                ["a", "b", "c", "d", "e"],
-                character_matrix,
-                self.pp_tree.missing_state_indicator,
-            )
+        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+            ["a", "b", "c", "d", "e"],
+            character_matrix,
+            self.pp_tree.missing_state_indicator,
         )
 
         expected_dictionary = {
@@ -551,8 +547,7 @@ class TestHybridSolver(unittest.TestCase):
     def test_greedy_over_greedy_maxcut_missing(self):
 
         self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(
-            self.missing_tree,
-            collapse_mutationless_edges=True,
+            self.missing_tree, collapse_mutationless_edges=True
         )
 
         tree = self.missing_tree.get_tree_topology()

@@ -13,10 +13,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import (
-    DistanceSolver,
-    dissimilarity_functions,
-)
+from cassiopeia.solver import DistanceSolver, dissimilarity_functions
 
 
 class UPGMASolver(DistanceSolver.DistanceSolver):

@@ -150,10 +150,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.root_sample_name
             in cassiopeia_tree.character_matrix.index
         ):
-            cassiopeia_tree.character_matrix = (
-                cassiopeia_tree.character_matrix.drop(
-                    index=cassiopeia_tree.root_sample_name
-                )
+            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
+                index=cassiopeia_tree.root_sample_name
             )
 
         cassiopeia_tree.populate_tree(tree, layer=layer)

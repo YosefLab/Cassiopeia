@@ -31,15 +31,13 @@ import cassiopeia  # noqa
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
-autodoc_mock_imports = ["gurobipy",
-                        "skbio",
-                        ]
+autodoc_mock_imports = ["gurobipy", "skbio"]
 
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '3.4'  # Nicer param docs
+needs_sphinx = "3.4"  # Nicer param docs
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -172,6 +170,7 @@ nbsphinx_thumbnails = {
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
 }
 
+
 def setup(app):
     app.warningiserror = on_rtd
 
@@ -253,8 +252,8 @@ import re
 class AutoAutoSummary(Autosummary):
 
     option_spec = {
-        'methods': directives.unchanged,
-        'attributes': directives.unchanged
+        "methods": directives.unchanged,
+        "attributes": directives.unchanged,
     }
 
     required_arguments = 1
@@ -271,24 +270,35 @@ class AutoAutoSummary(Autosummary):
                 continue
             if documenter.objtype == typ:
                 items.append(name)
-        public = [x for x in items if x in include_public or not x.startswith('_')]
+        public = [
+            x for x in items if x in include_public or not x.startswith("_")
+        ]
         return public, items
 
     def run(self):
         clazz = str(self.arguments[0])
         try:
-            (module_name, class_name) = clazz.rsplit('.', 1)
+            (module_name, class_name) = clazz.rsplit(".", 1)
             m = __import__(module_name, globals(), locals(), [class_name])
             c = getattr(m, class_name)
-            if 'methods' in self.options:
-                _, methods = self.get_members(c, 'method', ['__init__'])
+            if "methods" in self.options:
+                _, methods = self.get_members(c, "method", ["__init__"])
 
-                self.content = ["~%s.%s" % (clazz, method) for method in methods if not method.startswith('_')]
-            if 'attributes' in self.options:
-                _, attribs = self.get_members(c, 'attribute')
-                self.content = ["~%s.%s" % (clazz, attrib) for attrib in attribs if not attrib.startswith('_')]
+                self.content = [
+                    "~%s.%s" % (clazz, method)
+                    for method in methods
+                    if not method.startswith("_")
+                ]
+            if "attributes" in self.options:
+                _, attribs = self.get_members(c, "attribute")
+                self.content = [
+                    "~%s.%s" % (clazz, attrib)
+                    for attrib in attribs
+                    if not attrib.startswith("_")
+                ]
         finally:
             return super(AutoAutoSummary, self).run()
 
+
 def setup(app):
-    app.add_directive('autoautosummary', AutoAutoSummary)
+    app.add_directive("autoautosummary", AutoAutoSummary)

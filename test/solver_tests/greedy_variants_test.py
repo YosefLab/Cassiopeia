@@ -55,13 +55,7 @@ class GreedyVariantsTest(unittest.TestCase):
         sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (4, "c1"),
-                (4, "c3"),
-                (4, "c4"),
-                (5, 4),
-                (5, "c2"),
-            ]
+            [(4, "c1"), (4, "c3"), (4, "c4"), (5, 4), (5, "c2")]
         )
         observed_tree = sg_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
@@ -73,13 +67,7 @@ class GreedyVariantsTest(unittest.TestCase):
         sgsolver.solve(sg_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (4, "c1"),
-                (4, "c3"),
-                (4, "c4"),
-                (5, 4),
-                (5, "c2"),
-            ]
+            [(4, "c1"), (4, "c3"), (4, "c4"), (5, 4), (5, "c2")]
         )
         observed_tree = sg_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
@@ -231,14 +219,7 @@ class GreedyVariantsTest(unittest.TestCase):
         mcgsolver.solve(mcg_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (5, "c1"),
-                (5, "c2"),
-                (5, "c3"),
-                (5, 4),
-                (4, "c4"),
-                (4, "c5"),
-            ]
+            [(5, "c1"), (5, "c2"), (5, "c3"), (5, 4), (4, "c4"), (4, "c5")]
         )
         observed_tree = mcg_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
@@ -294,14 +275,7 @@ class GreedyVariantsTest(unittest.TestCase):
         mcgsolver.solve(mcg_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
-            [
-                (5, "c1"),
-                (5, "c2"),
-                (5, "c3"),
-                (5, 4),
-                (4, "c4"),
-                (4, "c5"),
-            ]
+            [(5, "c1"), (5, "c2"), (5, "c3"), (5, 4), (4, "c4"), (4, "c5")]
         )
         observed_tree = mcg_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)

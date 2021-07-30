@@ -37,7 +37,7 @@ class CassiopeiaSolver(abc.ABC):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
-        logfile: str = "stdout.log"
+        logfile: str = "stdout.log",
     ):
         """Solves the inference problem.
 

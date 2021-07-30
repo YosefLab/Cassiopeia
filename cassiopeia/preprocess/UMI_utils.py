@@ -253,17 +253,14 @@ def form_collapsed_clusters(
             )
         elif method == "likelihood":
             clusters = form_clusters_likelihood(
-                UMI_group,
-                proportion=max_hq_mismatches / max_read_length,
+                UMI_group, proportion=max_hq_mismatches / max_read_length
             )
         else:
             raise PreprocessError(
                 f"Unknown method to form UMI clusters: {method}"
             )
         clusters = sorted(
-            clusters,
-            key=lambda c: c.get_tag(NUM_READS_TAG),
-            reverse=True,
+            clusters, key=lambda c: c.get_tag(NUM_READS_TAG), reverse=True
         )
 
         for i, cluster in enumerate(clusters):
@@ -643,8 +640,7 @@ def merge_annotated_clusters(
 
 
 def correct_umis_in_group(
-    cell_group: pd.DataFrame,
-    max_umi_distance: int = 2,
+    cell_group: pd.DataFrame, max_umi_distance: int = 2
 ) -> Tuple[pd.DataFrame, int, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.

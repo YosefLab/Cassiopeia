@@ -1,10 +1,10 @@
-/* .sphx-glr-thumbcontainer {
+.sphx-glr-thumbcontainer {
     background: none !important;
     border: 1px solid #003262!important;
     text-align: center !important;
     min-height: 220px !important;
 }
-.sphx-glr-thumbcontainer a.internal:hover {
+/* .sphx-glr-thumbcontainer a.internal:hover {
     color: #003262!important;
 }
 p.sphx-glr-timing {

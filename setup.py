@@ -62,17 +62,18 @@ to_cythonize = [
 
 setup(
     name="cassiopeia-lineage",
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     ext_modules=cythonize(
-            to_cythonize,
-            compiler_directives={'language_level' : "3"}
+        to_cythonize, compiler_directives={"language_level": "3"}
     ),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
-    entry_points={"console_scripts": [
-        "cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main",
-    ]},
+    entry_points={
+        "console_scripts": [
+            "cassiopeia-preprocess = cassiopeia.preprocess.cassiopeia_preprocess:main"
+        ]
+    },
     author_email="mattjones315@berkeley.edu",
     classifiers=[
         "Development Status :: 4 - Beta",
