@@ -77,8 +77,6 @@ class CassiopeiaTree:
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
-    TODO(Lioscro): Add support for a tree to hold multiple character matrices,
-        similar to "layers" of an AnnData object.
 
     Args:
         character_matrix: The character matrix for the lineage.

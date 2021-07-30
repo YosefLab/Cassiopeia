@@ -18,7 +18,8 @@ from cassiopeia.solver import (
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
-    """A class for the basic Cassiopeia-Greedy solver.
+    """
+    A class for the basic Cassiopeia-Greedy solver.
 
     The VanillaGreedySolver implements a top-down algorithm that optimizes
     for parsimony by recursively splitting the sample set based on the most

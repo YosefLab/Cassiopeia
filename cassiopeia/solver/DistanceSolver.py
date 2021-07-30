@@ -18,7 +18,8 @@ from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """Distance based solver class
+    """
+    Distance based solver class.
 
     This solver serves as a generic Distance-based solver. Briefly, all of the
     classes that derive from this class will use a dissimilarity map to
@@ -79,6 +80,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ) -> None:
         """Solves a tree for a general bottom-up distance-based solver routine.
 
@@ -97,6 +99,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: File location to log output. Not currently used.
         """
         node_name_generator = solver_utilities.node_name_generator()
 
@@ -147,10 +150,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.root_sample_name
             in cassiopeia_tree.character_matrix.index
         ):
-            cassiopeia_tree.character_matrix = (
-                cassiopeia_tree.character_matrix.drop(
-                    index=cassiopeia_tree.root_sample_name
-                )
+            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
+                index=cassiopeia_tree.root_sample_name
             )
 
         cassiopeia_tree.populate_tree(tree, layer=layer)

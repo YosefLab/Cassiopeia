@@ -13,6 +13,7 @@ from typing import Dict, List, Generator, Optional, Tuple
 import multiprocessing
 import networkx as nx
 import numpy as np
+from numpy.lib.arraysetops import unique
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -29,6 +30,8 @@ from cassiopeia.solver import (
 
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    The Hybrid Cassiopeia solver.
+
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree
     starting with a top-down greedy algorithm until a predetermined criteria is
@@ -90,9 +93,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        logfile: str = "stdout.log",
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """The general hybrid solver routine.
 
@@ -104,13 +107,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree that stores the character matrix
                 and priors for reconstruction.
-            logfile: Location to log progress.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
             collapse_mutationless_edges: Indicates if the final reconstructed
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to log progress.
         """
         node_name_generator = solver_utilities.node_name_generator()
 
@@ -126,7 +129,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights = solver_utilities.transform_priors(
                 cassiopeia_tree.priors, self.prior_transformation
             )
-        
+
         tree = nx.DiGraph()
         # call top-down solver until a desired cutoff is reached.
         _, subproblems, tree = self.apply_top_solver(
@@ -178,7 +181,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree = nx.compose(tree, subproblem_tree)
 
         # append sample names to the solution and populate the tree
-        samples_tree = self.__append_sample_names(tree, character_matrix)
+        samples_tree = self.__add_duplicates_to_tree_and_remove_spurious_leaves(
+            tree, character_matrix, node_name_generator
+        )
+
         cassiopeia_tree.populate_tree(samples_tree, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
 
@@ -299,7 +305,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 identifier
 
         """
-
         if len(samples) == 1:
             subproblem_tree = nx.DiGraph()
             subproblem_tree.add_edge(root, samples[0])
@@ -326,7 +331,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
             priors=cassiopeia_tree.priors,
         )
-        self.bottom_solver.solve(subtree)
+        self.bottom_solver.solve(subtree, logfile=logfile)
 
         subproblem_tree = subtree.get_tree_topology()
         subproblem_root = [
@@ -375,44 +380,56 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return False
 
-    def __append_sample_names(
-        self, tree: nx.DiGraph, character_matrix: pd.DataFrame
+    def __add_duplicates_to_tree_and_remove_spurious_leaves(
+        self,
+        tree: nx.DiGraph,
+        character_matrix: pd.DataFrame,
+        node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
-        """Append sample names to character states in tree.
+        """Append duplicates and prune spurious extant lineages from the tree.
 
-        Given a tree where every node corresponds to a set of character states,
-        append sample names at the deepest node that has its character
-        state. Sometimes character states can exist in two separate parts of
-        the tree (especially when using the Hybrid algorithm where parts of
-        the tree are built independently), so we make sure we only add a
-        particular sample once to the tree.
+        Places samples removed in removing duplicates in the tree as sisters
+        to the corresponding cells that share the same mutations. If any extant
+        nodes that are not in the original character matrix are present, they
+        are removed and their lineages are pruned such that the remaining
+        leaves match the set of samples in the character matrix.
 
         Args:
-            tree: A Steiner Tree solution that we wish to add sample
-                names to.
+            tree: The tree after solving
             character_matrix: Character matrix
 
         Returns:
-            A solution with extra leaves corresponding to sample names
+            The tree with duplicates added and spurious leaves pruned
         """
 
-        root = [n for n in tree if tree.in_degree(n) == 0][0]
-
-        sample_lookup = character_matrix.apply(
-            lambda x: tuple(x.values), axis=1
+        character_matrix.index.name = "index"
+        duplicate_groups = (
+            character_matrix[character_matrix.duplicated(keep=False) == True]
+            .reset_index()
+            .groupby(character_matrix.columns.tolist())["index"]
+            .agg(["first", tuple])
+            .set_index("first")["tuple"]
+            .to_dict()
         )
 
-        states_added = []
-        for node in nx.dfs_postorder_nodes(tree, source=root):
+        for i in duplicate_groups:
+            new_internal_node = next(node_name_generator)
+            nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
+            for duplicate in duplicate_groups[i]:
+                tree.add_edge(new_internal_node, duplicate)
 
-            # append nodes with this character state at the deepest place
-            # possible
-            if node in states_added:
-                continue
+        # remove extant lineages that don't correspond to leaves
+        to_drop = []
+        leaves = [n for n in tree if tree.out_degree(n) == 0]
+        for l in leaves:
+            if l not in character_matrix.index:
+                to_drop.append(l)
 
-            samples = sample_lookup[sample_lookup == node].index
-            if len(samples) > 0:
-                tree.add_edges_from([(node, sample) for sample in samples])
-                states_added.append(node)
+                parent = [p for p in tree.predecessors(l)][0]
+                while tree.out_degree(parent) < 2:
+                    to_drop.append(parent)
+                    parent = [p for p in tree.predecessors(parent)][0]
+
+        tree.remove_nodes_from(to_drop)
 
         return tree
