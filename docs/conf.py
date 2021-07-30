@@ -24,17 +24,20 @@ import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
-sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+# sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+
 
 import cassiopeia  # noqa
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 
+autodoc_mock_imports = ["gurobipy", "skbio"]
+
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "3.0"  # Nicer param docs
+needs_sphinx = "3.4"  # Nicer param docs
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -45,6 +48,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "nbsphinx_link",
+    "sphinx_gallery.load_style",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
     "sphinx.ext.autosummary",
@@ -52,6 +56,7 @@ extensions = [
     "scanpydoc.definition_list_typed_field",
     "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
+    *[p.stem for p in (HERE / "extensions").glob("*.pyx")],
 ]
 
 # nbsphinx specific settings
@@ -70,18 +75,12 @@ source_suffix = ".rst"
 # Generate the API documentation when building
 autosummary_generate = True
 autodoc_member_order = "bysource"
-napoleon_google_docstring = True
+napoleon_google_docstring = True  # for pytorch lightning
 napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = True
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
-napoleon_use_ivar = False
+napoleon_include_init_with_doc = False
+napoleon_use_rtype = True  # having a separate entry generally helps readability
 napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_type_aliases = None
+napoleon_custom_sections = [("Params", "Parameters")]
 todo_include_todos = False
 numpydoc_show_class_members = False
 annotate_defaults = True  # scanpydoc option, look into why we need this
@@ -99,10 +98,8 @@ intersphinx_mapping = dict(
 
 # General information about the project.
 project = u"cassiopeia"
-copyright = (
-    u"2020, Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
-)
-author = u"Matthew G Jones, Jeffrey J Quinn, Richard Zhang, Alex Khodaverdian"
+copyright = u"2021, Yosef Lab, UC Berkeley"
+author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -154,20 +151,24 @@ html_theme_options = {
     # "use_edit_page_button": True,
 }
 html_context = dict(
-    # display_github=True,  # Integrate GitHub
+    display_github=True,  # Integrate GitHub
     github_user="YosefLab",  # Username
     github_repo="Cassiopeia",  # Repo name
-    github_version="master",  # Version
+    github_version="refactor",  # Version
     doc_path="docs/",  # Path in the checkout to the docs root
 )
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-
-html_css_files = ["css/user_guide.css", "css/custom.css"]
-
+html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
+
+nbsphinx_thumbnails = {
+    "notebooks/preprocess": "_static/tutorials/preprocess.png",
+    "notebooks/benchmark": "_static/tutorials/benchmark.png",
+    "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
+}
 
 
 def setup(app):
@@ -239,3 +240,65 @@ texinfo_documents = [
         "Miscellaneous",
     )
 ]
+
+from sphinx.ext.autosummary import Autosummary
+from sphinx.ext.autosummary import get_documenter
+from docutils.parsers.rst import directives
+from sphinx.util.inspect import safe_getattr
+import re
+
+# Code for creating autosummaries for class methods / attributes
+# Taken originally from Pandas documentation
+class AutoAutoSummary(Autosummary):
+
+    option_spec = {
+        "methods": directives.unchanged,
+        "attributes": directives.unchanged,
+    }
+
+    required_arguments = 1
+
+    @staticmethod
+    def get_members(obj, typ, include_public=None):
+        if not include_public:
+            include_public = []
+        items = []
+        for name in dir(obj):
+            try:
+                documenter = get_documenter(safe_getattr(obj, name), obj)
+            except AttributeError:
+                continue
+            if documenter.objtype == typ:
+                items.append(name)
+        public = [
+            x for x in items if x in include_public or not x.startswith("_")
+        ]
+        return public, items
+
+    def run(self):
+        clazz = str(self.arguments[0])
+        try:
+            (module_name, class_name) = clazz.rsplit(".", 1)
+            m = __import__(module_name, globals(), locals(), [class_name])
+            c = getattr(m, class_name)
+            if "methods" in self.options:
+                _, methods = self.get_members(c, "method", ["__init__"])
+
+                self.content = [
+                    "~%s.%s" % (clazz, method)
+                    for method in methods
+                    if not method.startswith("_")
+                ]
+            if "attributes" in self.options:
+                _, attribs = self.get_members(c, "attribute")
+                self.content = [
+                    "~%s.%s" % (clazz, attrib)
+                    for attrib in attribs
+                    if not attrib.startswith("_")
+                ]
+        finally:
+            return super(AutoAutoSummary, self).run()
+
+
+def setup(app):
+    app.add_directive("autoautosummary", AutoAutoSummary)

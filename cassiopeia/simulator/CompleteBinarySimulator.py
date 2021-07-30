@@ -32,9 +32,7 @@ class CompleteBinarySimulator(TreeSimulator):
     """
 
     def __init__(
-        self,
-        num_cells: Optional[int] = None,
-        depth: Optional[int] = None,
+        self, num_cells: Optional[int] = None, depth: Optional[int] = None
     ):
         if (num_cells is None) == (depth is None):
             raise TreeSimulatorError(
@@ -49,9 +47,7 @@ class CompleteBinarySimulator(TreeSimulator):
             raise TreeSimulatorError("`depth` must be grater than 0.")
         self.depth = depth
 
-    def simulate_tree(
-        self,
-    ) -> CassiopeiaTree:
+    def simulate_tree(self,) -> CassiopeiaTree:
         """Simulates a complete binary tree.
 
         Returns:

@@ -264,13 +264,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "5", "6", "7"])
         expected_tree.add_edges_from(
-            [
-                ("6", "a"),
-                ("6", "e"),
-                ("b", "6"),
-                ("6", "d"),
-                ("6", "c"),
-            ]
+            [("6", "a"), ("6", "e"), ("b", "6"), ("6", "d"), ("6", "c")]
         )
         observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)

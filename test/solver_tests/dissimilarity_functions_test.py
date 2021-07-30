@@ -186,29 +186,23 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
     def test_hamming_similarity_normalized_identical(self):
 
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s1, -1
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s1, -1
         )
 
         self.assertEqual(similarity, 3 / 5)
 
     def test_hamming_similarity_normalized_no_priors(self):
 
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s2, -1
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s2, -1
         )
 
         self.assertEqual(similarity, 2 / 5)
 
     def test_hamming_similarity_normalized_priors(self):
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s2, -1, weights=self.nlweights
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s2, -1, weights=self.nlweights
         )
 
         expected_similarity = np.sum(
@@ -219,10 +213,8 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
     def test_hamming_similarity_normalized_all_missing(self):
 
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.all_missing, -1, weights=self.nlweights
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.all_missing, -1, weights=self.nlweights
         )
 
         self.assertEqual(similarity, 0)

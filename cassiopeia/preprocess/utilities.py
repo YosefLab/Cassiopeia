@@ -148,8 +148,7 @@ def filter_cells(
 
 @log_moleculetable
 def filter_umis(
-    moleculetable: pd.DataFrame,
-    readCountThresh: int = 100,
+    moleculetable: pd.DataFrame, readCountThresh: int = 100
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
