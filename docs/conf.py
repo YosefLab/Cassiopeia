@@ -154,7 +154,7 @@ html_context = dict(
     display_github=True,  # Integrate GitHub
     github_user="YosefLab",  # Username
     github_repo="Cassiopeia",  # Repo name
-    github_version="refactor",  # Version
+    github_version="master",  # Version
     doc_path="docs/",  # Path in the checkout to the docs root
 )
 # Add any paths that contain custom static files (such as style sheets) here,
