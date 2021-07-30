@@ -20,7 +20,7 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.mixins import HybridSolverError, HybridSolverWarning
+from cassiopeia.mixins import HybridSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,

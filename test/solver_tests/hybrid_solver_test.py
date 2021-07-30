@@ -3,7 +3,6 @@ Test HybridSolver in Cassiopeia.solver.
 """
 import os
 import unittest
-import inspect
 
 import itertools
 import networkx as nx
@@ -11,7 +10,6 @@ import pandas as pd
 import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.mixins import HybridSolverWarning
 from cassiopeia.solver import solver_utilities
 
 

@@ -241,11 +241,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
 
-        # # remove Steiner solution nodes that did not a sample appended to them
-        # non_sample_leaves = set(cassiopeia_tree.leaves) - set(cassiopeia_tree.character_matrix)
-        # for leaf in non_sample_leaves:
-        #     cassiopeia_tree.remove_leaf_and_prune_lineage(leaf)
-
         # rename internal nodes such that they are not tuples
         node_name_generator = solver_utilities.node_name_generator()
         internal_node_rename = {}

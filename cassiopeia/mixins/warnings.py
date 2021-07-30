@@ -12,6 +12,3 @@ class SharedMutationJoiningSolverWarning(UserWarning):
     """A warning class for SharedMutationJoiningSolver."""
 
     pass
-
-class HybridSolverWarning(UserWarning):
-    """A warning class for HybridSolver"""
