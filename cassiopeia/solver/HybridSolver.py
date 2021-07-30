@@ -9,9 +9,7 @@ In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
 from typing import Dict, List, Generator, Optional, Tuple
-import warnings
 
-import inspect
 import multiprocessing
 import networkx as nx
 import numpy as np
