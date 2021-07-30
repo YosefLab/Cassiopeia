@@ -45,11 +45,4 @@ jobs:
         pytest --cov-report=xml --cov=cassiopeia --internet-tests
     - name: After success
       run: |
-        codecov
         pip list
-    - name: Codacy upload
-      env:
-        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-      run: |
-        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -l Python -r coverage.xml
-      continue-on-error: true
