@@ -5,13 +5,13 @@ Cassiopeia is an end-to-end pipeline for single-cell lineage tracing experiments
 The software contained here comes equipped with modules for processing sequencing reads,
 reconstructing & plotting trees, analyzing these trees, and benchmarking new algorithms.
 
-You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/testdeployment/index.html).
+You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/master/index.html).
 
 We also have provided tutorials for three modules:
 
-- [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/testdeployment/notebooks/preprocess.ipynb)
-- [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/testdeployment/notebooks/reconstruct.ipynb)
-- [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/testdeployment/notebooks/benchmark.ipynb)
+- [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
+- [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
+- [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
 
 
 You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8)) 
