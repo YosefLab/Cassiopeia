@@ -13,6 +13,12 @@ import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import solver_utilities
 
+GUROBI_INSTALLED = True
+try:
+    import gurobipy
+except ModuleNotFoundError:
+    GUROBI_INSTALLED = False
+
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
@@ -270,6 +276,9 @@ class TestHybridSolver(unittest.TestCase):
         for clade in expected_clades:
             self.assertIn(clade, observed_clades)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid(self):
 
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
@@ -326,6 +335,9 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_single_thread(self):
 
         self.hybrid_pp_solver.threads = 1
@@ -375,6 +387,9 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_large(self):
 
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
@@ -487,6 +502,9 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_missing(self):
 
         self.hybrid_pp_solver_missing.solve(

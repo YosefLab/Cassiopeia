@@ -14,6 +14,12 @@ from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
+GUROBI_INSTALLED = True
+try:
+    import gurobipy
+except ModuleNotFoundError:
+    GUROBI_INSTALLED = False
+
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
@@ -141,6 +147,9 @@ class TestILPSolver(unittest.TestCase):
         )
         self.assertEqual(dist, 1)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_single_sample_ilp(self):
 
         # test single sample
@@ -293,6 +302,9 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_ilp_solver_perfect_phylogeny(self):
 
         self.ilp_solver.solve(self.pp_tree, self.logfile)
@@ -412,6 +424,9 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_ilp_solver_with_duplicates(self):
 
         self.ilp_solver.solve(self.duplicates_tree, self.logfile)
@@ -492,6 +507,9 @@ class TestILPSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_ilp_solver_missing_data(self):
 
         self.ilp_solver.solve(self.missing_tree, self.logfile)
