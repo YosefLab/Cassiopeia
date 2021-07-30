@@ -185,8 +185,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree, character_matrix, node_name_generator
         )
 
-        leaves = [n for n in samples_tree if samples_tree.out_degree(n) == 0]
-
         cassiopeia_tree.populate_tree(samples_tree, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
 
