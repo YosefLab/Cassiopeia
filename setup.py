@@ -92,7 +92,7 @@ setup(
     packages=find_packages(),
     keywords="scLT",
     url="https://github.com/YosefLab/Cassiopeia",
-    version="1.0.4",
+    version="2.0.0",
     zip_safe=False,
     test_suite="nose.collector",
     tests_require=["nose"],
