@@ -5,7 +5,7 @@ Cassiopeia is an end-to-end pipeline for single-cell lineage tracing experiments
 The software contained here comes equipped with modules for processing sequencing reads,
 reconstructing & plotting trees, analyzing these trees, and benchmarking new algorithms.
 
-You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/master/index.html).
+You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/latest/index.html).
 
 We also have provided tutorials for three modules:
 
