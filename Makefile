@@ -3,7 +3,19 @@ python=python
 pip=pip
 tests=./test
 version:=$(shell $(python) version.py)
-sdist_name:=PlotMAPQ-$(version).tar.gz
+sdist_name:=cassiopeia-$(version).tar.gz
+
+develop:
+	$(pip) install -e .
+
+clean_develop:
+	- $(pip) uninstall -y cassiopeia
+	- rm -rf *.egg-info
+
+clean_sdist:
+	- rm -rf dist
+
+clean: clean_develop clean_pypi
 
 install: 
 	- $(python) setup.py build
@@ -16,6 +28,7 @@ check_build_reqs:
 
 test: check_build_reqs
 	$(python) -m pytest -vv $(tests)
+
 
 pypi: clean clean_sdist
 	set -x \
