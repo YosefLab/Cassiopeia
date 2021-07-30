@@ -3,7 +3,6 @@ This file stores the SharedMutationJoiningSolver. The inference procedure is
 an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
-import abc
 import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 

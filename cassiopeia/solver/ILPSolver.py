@@ -242,6 +242,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             optimal_solution, character_matrix
         )
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+
+        # rename internal nodes such that they are not tuples
+        node_name_generator = solver_utilities.node_name_generator()
+        internal_node_rename = {}
+        for i in cassiopeia_tree.internal_nodes:
+            internal_node_rename[i] = next(node_name_generator)
+        cassiopeia_tree.relabel_nodes(internal_node_rename)
+
         cassiopeia_tree.collapse_unifurcations()
 
         # collapse mutationless edges

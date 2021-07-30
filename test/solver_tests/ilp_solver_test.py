@@ -8,9 +8,9 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
@@ -40,6 +40,10 @@ def find_triplet_structure(triplet, T):
 
 
 class TestILPSolver(unittest.TestCase):
+    def assertIsFile(self, path):
+        if not pl.Path(path).resolve().is_file():
+            raise AssertionError("File does not exist: %s" % str(path))
+
     def setUp(self):
 
         # basic PP example with no missing data
@@ -310,6 +314,9 @@ class TestILPSolver(unittest.TestCase):
         self.ilp_solver.solve(self.pp_tree, logfile=self.logfile)
         tree = self.pp_tree.get_tree_topology()
 
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
+
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
@@ -373,6 +380,9 @@ class TestILPSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
+
     def test_potential_graph_inference_with_duplicates(self):
 
         unique_character_matrix = (
@@ -431,6 +441,9 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver.solve(self.duplicates_tree, logfile=self.logfile)
         tree = self.duplicates_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -492,7 +505,7 @@ class TestILPSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
@@ -509,6 +522,9 @@ class TestILPSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.duplicates_tree.get_newick()
+
     @unittest.skipUnless(
         GUROBI_INSTALLED, "Gurobi installation not found."
     )
@@ -516,6 +532,9 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver.solve(self.missing_tree, logfile=self.logfile)
         tree = self.missing_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
