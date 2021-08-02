@@ -83,16 +83,12 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     g = nx.DiGraph()
     internal_node_iter = 0
     for n in tree.traverse():
-
-        if n.is_root():
-            if n.name == "":
-                n.name = f"node{internal_node_iter}"
-                internal_node_iter += 1
-            continue
-
         if n.name == "":
-            n.name = f"node{internal_node_iter}"
+            n.name = f"cassiopeia_internal_node{internal_node_iter}"
             internal_node_iter += 1
+        
+        if n.is_root():
+            continue
 
         g.add_edge(n.up.name, n.name)
 
@@ -312,10 +308,8 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = (
-        preprocessing_utilities.convert_alleletable_to_lineage_profile(
-            allele_table, cut_sites
-        )
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table, cut_sites
     )
 
     intbcs = allele_table["intBC"].unique()

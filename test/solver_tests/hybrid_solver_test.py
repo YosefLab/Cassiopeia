@@ -6,12 +6,17 @@ import unittest
 
 import itertools
 import networkx as nx
-import numpy as np
 import pandas as pd
+import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import solver_utilities
+
+GUROBI_INSTALLED = True
+try:
+    import gurobipy
+except ModuleNotFoundError:
+    GUROBI_INSTALLED = False
 
 
 def find_triplet_structure(triplet, T):
@@ -33,6 +38,10 @@ def find_triplet_structure(triplet, T):
 
 
 class TestHybridSolver(unittest.TestCase):
+    def assertIsFile(self, path):
+        if not pl.Path(path).resolve().is_file():
+            raise AssertionError("File does not exist: %s" % str(path))
+
     def setUp(self):
 
         # basic PP example with no missing data
@@ -74,6 +83,7 @@ class TestHybridSolver(unittest.TestCase):
                 "f": [2, 0, 0, 0],
                 "g": [2, 4, -1, -1],
                 "h": [2, 4, 2, 0],
+                "i": [2, 4, 2, 0],
             },
             orient="index",
         )
@@ -111,6 +121,11 @@ class TestHybridSolver(unittest.TestCase):
         greedy_maxcut_solver = cas.solver.MaxCutGreedySolver()
         self.hybrid_pp_solver_maxcut = cas.solver.HybridSolver(
             greedy_maxcut_solver, ilp_solver, cell_cutoff=3, threads=2
+        )
+
+        ## hybrid solver with Greedy on top and Maxcut on Bottom
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut = cas.solver.HybridSolver(
+            greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
         )
 
     def test_constructor(self):
@@ -181,10 +196,12 @@ class TestHybridSolver(unittest.TestCase):
 
         character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-            ["a", "b", "c", "d", "e"],
-            character_matrix,
-            self.pp_tree.missing_state_indicator,
+        mutation_frequencies = (
+            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+                ["a", "b", "c", "d", "e"],
+                character_matrix,
+                self.pp_tree.missing_state_indicator,
+            )
         )
 
         expected_dictionary = {
@@ -270,10 +287,17 @@ class TestHybridSolver(unittest.TestCase):
         for clade in expected_clades:
             self.assertIn(clade, observed_clades)
 
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid(self):
 
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
         tree = self.pp_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -326,10 +350,20 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
+
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_single_thread(self):
 
         self.hybrid_pp_solver.threads = 1
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
+
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
 
         tree = self.pp_tree.get_tree_topology()
 
@@ -375,10 +409,24 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
+
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_large(self):
 
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
         tree = self.large_tree.get_tree_topology()
+
+        # make sure log files are created correctly
+        self.assertIsFile(
+            os.path.join(self.dir_path, "test_1-1-1-1-1-1-0-0.log")
+        )
+        self.assertIsFile(
+            os.path.join(self.dir_path, "test_2-0-0-0-0-0-0-0.log")
+        )
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -433,6 +481,12 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.large_tree.get_newick()
+
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_maxcut(self):
 
         self.hybrid_pp_solver_maxcut.solve(
@@ -440,13 +494,18 @@ class TestHybridSolver(unittest.TestCase):
         )
         tree = self.missing_tree.get_tree_topology()
 
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
+
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
         tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
-        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
 
@@ -466,12 +525,14 @@ class TestHybridSolver(unittest.TestCase):
                 ("node2", "f"),
                 ("node2", "node5"),
                 ("node5", "g"),
-                ("node5", "h"),
+                ("node5", "node7"),
+                ("node7", "h"),
+                ("node7", "i"),
             ]
         )
 
         triplets = itertools.combinations(
-            ["a", "b", "c", "d", "e", "f", "g", "h"], 3
+            ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3
         )
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
@@ -487,6 +548,12 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.missing_tree.get_newick()
+
+    @unittest.skipUnless(
+        GUROBI_INSTALLED, "Gurobi installation not found."
+    )
     def test_full_hybrid_missing(self):
 
         self.hybrid_pp_solver_missing.solve(
@@ -497,6 +564,58 @@ class TestHybridSolver(unittest.TestCase):
 
         tree = self.missing_tree.get_tree_topology()
 
+        # make sure log files are created correctly
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
+
+        # make sure there's one root
+        roots = [n for n in tree if tree.in_degree(n) == 0]
+        self.assertEqual(len(roots), 1)
+
+        # make sure all samples are leaves
+        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+        for leaf in expected_leaves:
+            self.assertIn(leaf, tree_leaves)
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ("node0", "node1"),
+                ("node0", "node2"),
+                ("node1", "node3"),
+                ("node1", "node4"),
+                ("node3", "c"),
+                ("node3", "node6"),
+                ("node6", "a"),
+                ("node6", "b"),
+                ("node4", "d"),
+                ("node4", "e"),
+                ("node2", "f"),
+                ("node2", "node5"),
+                ("node5", "g"),
+                ("node5", "h"),
+                ("node5", "i"),
+            ]
+        )
+
+        triplets = itertools.combinations(
+            ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3
+        )
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_greedy_over_greedy_maxcut_missing(self):
+
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(
+            self.missing_tree, collapse_mutationless_edges=True
+        )
+
+        tree = self.missing_tree.get_tree_topology()
+
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
@@ -534,6 +653,9 @@ class TestHybridSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.missing_tree.get_newick()
 
     def tearDown(self):
 

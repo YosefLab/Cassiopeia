@@ -62,8 +62,8 @@ class TestCollapseUMIs(unittest.TestCase):
             + "_sorted.bam"
         )
         self.uncorrected_sorted_file_name = uncorrected_sorted_file_name
-        self.uncorrected_collapsed_file_name = (
-            uncorrected_sorted_file_name.with_suffix(".collapsed.bam")
+        self.uncorrected_collapsed_file_name = uncorrected_sorted_file_name.with_suffix(
+            ".collapsed.bam"
         )
 
         _, _ = UMI_utils.sort_bam(

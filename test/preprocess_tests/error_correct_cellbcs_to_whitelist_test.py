@@ -57,7 +57,7 @@ class TestErrorCorrectCellBCsToWhitelist(unittest.TestCase):
         bam_fp = pipeline.error_correct_cellbcs_to_whitelist(
             self.bam_slideseq2_fp,
             self.whitelist_slideseq2_fp,
-            tempfile.mkdtemp()
+            tempfile.mkdtemp(),
         )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
@@ -67,15 +67,14 @@ class TestErrorCorrectCellBCsToWhitelist(unittest.TestCase):
 
     def test_slideseq2_whitelist_list(self):
         bam_fp = pipeline.error_correct_cellbcs_to_whitelist(
-            self.bam_slideseq2_fp,
-            self.whitelist_slideseq2,
-            tempfile.mkdtemp()
+            self.bam_slideseq2_fp, self.whitelist_slideseq2, tempfile.mkdtemp()
         )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
         self.assertEqual(2, len(alignments))
         self.assertEqual([True, False], [al.has_tag("CB") for al in alignments])
         self.assertEqual("CTTTGNTCAAAGTT", alignments[0].get_tag("CB"))
+
 
 if __name__ == "__main__":
     unittest.main()

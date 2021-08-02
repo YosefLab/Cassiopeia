@@ -3,7 +3,6 @@ This file stores the SharedMutationJoiningSolver. The inference procedure is
 an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
-import abc
 import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -27,7 +26,8 @@ from cassiopeia.solver import (
 
 
 class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """Shared-Mutation-Joining class for Cassiopeia.
+    """
+    Shared-Mutation-Joining class for Cassiopeia.
 
     Implements an iterative, bottom-up agglomerative clustering procedure. The
     algorithm iteratively clusters the samples in the sample pool by the number
@@ -101,6 +101,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
 
@@ -123,6 +124,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to write standard out. Not currently used.
         """
 
         node_name_generator = solver_utilities.node_name_generator()

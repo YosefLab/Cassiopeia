@@ -77,8 +77,6 @@ class CassiopeiaTree:
     TODO(mattjones315): Add bulk set_states method.
     TODO(mattjones): Add boolean to `get_tree_topology` which will include
         all attributes (e.g., node times)
-    TODO(Lioscro): Add support for a tree to hold multiple character matrices,
-        similar to "layers" of an AnnData object.
 
     Args:
         character_matrix: The character matrix for the lineage.
@@ -86,7 +84,7 @@ class CassiopeiaTree:
             character matrix.
         cell_meta: Per-cell meta data
         character_meta: Per-character meta data
-        priors: A dictionary storing the probability of a character mutating
+        priors: A dictionary storing the probability of each character mutating
             to a particular state.
         tree: A tree for the lineage.
         dissimilarity_map: An NxN dataframe storing the pairwise dissimilarities

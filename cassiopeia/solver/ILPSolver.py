@@ -8,8 +8,8 @@ import datetime
 import logging
 import time
 from typing import Dict, List, Optional
+import warnings
 
-import gurobipy
 import hashlib
 import itertools
 import networkx as nx
@@ -29,6 +29,8 @@ from cassiopeia.solver import (
 
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    The Cassiopeia ILP-based maximum parsimony solver.
+
     ILPSolver is a subclass of CassiopeiaSolver and implements the
     Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The
     solver proceeds by constructing a tree over a network of possible
@@ -94,9 +96,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        logfile: str = "stdout.log",
         layer: Optional[str] = None,
         collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
     ):
         """Infers a tree with Cassiopeia-ILP.
 
@@ -105,13 +107,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree
-            logfile: Location to write standard out.
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
             collapse_mutationless_edges: Indicates if the final reconstructed
                 tree should collapse mutationless edges based on internal states
                 inferred by Camin-Sokal parsimony. In scoring accuracy, this
                 removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to log progress.
         """
 
         if self.weighted and not cassiopeia_tree.priors:
@@ -171,7 +173,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = self.__append_sample_names(
+            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
                 optimal_solution, character_matrix
             )
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
@@ -236,10 +238,18 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # append sample names to the solution and populate the tree
-        optimal_solution = self.__append_sample_names(
+        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
             optimal_solution, character_matrix
         )
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
+
+        # rename internal nodes such that they are not tuples
+        node_name_generator = solver_utilities.node_name_generator()
+        internal_node_rename = {}
+        for i in cassiopeia_tree.internal_nodes:
+            internal_node_rename[i] = next(node_name_generator)
+        cassiopeia_tree.relabel_nodes(internal_node_rename)
+
         cassiopeia_tree.collapse_unifurcations()
 
         # collapse mutationless edges
@@ -285,14 +295,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph_edges = (
-            ilp_solver_utilities.infer_potential_graph_cython(
-                character_matrix.values.astype(str),
-                pid,
-                lca_height,
-                self.maximum_potential_graph_layer_size,
-                missing_state_indicator,
-            )
+        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
+            character_matrix.values.astype(str),
+            pid,
+            lca_height,
+            self.maximum_potential_graph_layer_size,
+            missing_state_indicator,
         )
 
         # the potential graph edges returned are strings in the form
@@ -371,6 +379,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A Gurobipy Model instance and the edge variables involved.
         """
+        try:
+            import gurobipy
+        except ModuleNotFoundError:
+            raise ILPSolverError(
+                "Gurobi not found. You must install Gurobi & "
+                "gurobipy from source."
+            )
+
         source_flow = {v: 0 for v in potential_graph.nodes()}
 
         if root not in potential_graph.nodes:
@@ -448,8 +464,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def solve_steiner_instance(
         self,
-        model: gurobipy.Model,
-        edge_variables: gurobipy.Var,
+        model,
+        edge_variables,
         potential_graph: nx.DiGraph,
         pid: int,
         logfile: str,
@@ -476,6 +492,13 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             A list of solutions
         """
+        try:
+            import gurobipy
+        except ModuleNotFoundError:
+            raise ILPSolverError(
+                "Gurobi not found. You must install Gurobi & "
+                "gurobipy from source."
+            )
 
         model.params.LogToConsole = 0
 
@@ -607,17 +630,20 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return processed_solution
 
-    def __append_sample_names(
+    def __append_sample_names_and_remove_spurious_leaves(
         self, solution: nx.DiGraph, character_matrix: pd.DataFrame
     ) -> nx.DiGraph:
-        """Append sample names to character states in tree.
+        """Append samples to character states in tree and prune spurious leaves.
 
         Given a tree where every node corresponds to a set of character states,
         append sample names at the deepest node that has its character
         state. Sometimes character states can exist in two separate parts of
         the tree (especially when using the Hybrid algorithm where parts of
         the tree are built independently), so we make sure we only add a
-        particular sample once to the tree.
+        particular sample once to the tree. Additionally, if there exist
+        extant nodes that do not have samples appended to them, these nodes are
+        removed and their lineages pruned as to not create any spurious leaf
+        nodes.
 
         Args:
             solution: A Steiner Tree solution that we wish to add sample
@@ -647,4 +673,17 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 solution.add_edges_from([(node, sample) for sample in samples])
                 states_added.append(node)
 
+        # remove extant lineages that don't correspond to leaves
+        to_drop = []
+        leaves = [n for n in solution if solution.out_degree(n) == 0]
+        for l in leaves:
+            if l not in character_matrix.index:
+                to_drop.append(l)
+
+                parent = [p for p in solution.predecessors(l)][0]
+                while solution.out_degree(parent) < 2:
+                    to_drop.append(parent)
+                    parent = [p for p in solution.predecessors(parent)][0]
+
+        solution.remove_nodes_from(to_drop)
         return solution

@@ -23,8 +23,8 @@ from cassiopeia.solver import (
 
 class SpectralGreedySolver(GreedySolver.GreedySolver):
     """
-    TODO: Implement FuzzySolver
-    TODO: Experiment to find the best default similarity function
+    A CassiopeiaGreedy solver with a spectral heuristic.
+
     The SpectralGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence, or absence, of the most
     frequent mutation. Additionally, the hill-climbing procedure from the
@@ -35,6 +35,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
     included for handling the case when a sample has a missing value on the
     character being split, where presence or absence of the character is
     ambiguous. The user can also specify a missing data method.
+
+    TODO: Implement FuzzySolver
+    TODO: Experiment to find the best default similarity function
 
     Args:
         missing_data_classifier: Takes either a string specifying one of the
@@ -62,6 +65,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         threshold: A minimum similarity threshold
         prior_transformation: Function to use when transforming priors into
             weights.
+            
     """
 
     def __init__(

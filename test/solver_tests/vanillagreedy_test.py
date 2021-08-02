@@ -178,13 +178,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (3, "c1"),
-                (3, "c3"),
-                (3, "c2"),
-            ]
-        )
+        expected_tree.add_edges_from([(3, "c1"), (3, "c3"), (3, "c2")])
         observed_tree = vg_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3"], 3)
         for triplet in triplets:

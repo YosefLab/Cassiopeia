@@ -137,5 +137,6 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
 
         pd.testing.assert_frame_equal(df, expected_df)
 
+
 if __name__ == "__main__":
     unittest.main()
