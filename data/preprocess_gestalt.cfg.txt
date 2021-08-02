@@ -1,0 +1,45 @@
+[general]
+name = "test_sample"
+output_directory = "/gestalt_barcode_data/cassiopeia_output"
+reference_filepath = "/gestalt_barcode_data/reference/gestalt.abbrv.fa"
+entry = "collapse"
+exit = "filter_molecule_table"
+input_files = ["/gestalt_barcode_data/raw/possorted_genome_bam.bam", "/gestalt_barcode_data/raw/possorted_genome_bam.bam.bai"]
+n_threads = 32
+allow_allele_conflicts = False
+verbose = True
+
+[collapse]
+max_hq_mismatches = 3
+max_indels = 2
+method = "cutoff"
+skip_existing = False
+
+[resolve]
+min_avg_reads_per_umi = 2.0
+min_umi_per_cell = 3
+plot = True
+
+[align]
+gap_open_penalty = 10
+gap_extend_penalty = 0.05
+
+[call_alleles]
+barcode_interval = (0, 0)
+cutsite_locations = [42, 69, 96, 123, 150, 177, 204, 231, 258, 285]
+cutsite_width = 4
+context = True
+context_size = 5
+
+[error_correct_umis]
+max_umi_distance = 2
+
+[filter_molecule_table]
+min_umi_per_cell = 3
+min_avg_reads_per_umi = 2.0
+umi_read_thresh = -1
+intbc_prop_thresh = 0.5
+intbc_umi_thresh = 10
+intbc_dist_thresh = 1
+doublet_threshold = None
+plot = True
