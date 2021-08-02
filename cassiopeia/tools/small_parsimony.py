@@ -5,13 +5,14 @@ phylogenies.
 Amongst these tools are basic Fitch-Hartigan reconstruction, parsimony scoring,
 and the FitchCount algorithm described in Quinn, Jones et al, Science (2021).
 """
-from cassiopeia.mixins.errors import CassiopeiaTreeError
 from typing import Optional
 
 import numpy as np
+from pandas.api.types import is_categorical_dtype, is_numeric_dtype
+
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import CassiopeiaError
+from cassiopeia.mixins.errors import CassiopeiaError, CassiopeiaTreeError
 
 
 def fitch_hartigan(
@@ -83,7 +84,7 @@ def fitch_hartigan_bottom_up(
 
     Raises:
         CassiopeiaError if the tree does not have the specified meta data
-            of the meta data is not categorical.
+            or the meta data is not categorical.
     """
 
     if meta_item not in cassiopeia_tree.cell_meta.columns:
@@ -91,8 +92,12 @@ def fitch_hartigan_bottom_up(
 
     meta = cassiopeia_tree.cell_meta[meta_item]
 
-    if meta.dtype not in ['str', 'object']:
+    if is_numeric_dtype(meta):
         raise CassiopeiaError("Meta item is not a categorical variable.")
+
+    if not is_categorical_dtype(meta):
+        meta = meta.astype('category')
+            
 
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
 
