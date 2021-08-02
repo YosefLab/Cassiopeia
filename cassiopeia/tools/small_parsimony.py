@@ -38,7 +38,8 @@ def fitch_hartigan(
         meta_item: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         root: Root from which to begin this refinement.
-        state_key: Attribute key that stores the Fitch-Hartigan ancestral states.
+        state_key: Attribute key that stores the Fitch-Hartigan ancestral
+            states.
         label_key: Key to add that stores the maximum-parsimony assignment
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
@@ -141,7 +142,8 @@ def fitch_hartigan_top_down(
         cassiopeia_tree: CassiopeiaTree that has been processed with the
             Fitch-Hartigan bottom-up algorithm.
         root: Root from which to begin this refinement.
-        state_key: Attribute key that stores the Fitch-Hartigan ancestral states.
+        state_key: Attribute key that stores the Fitch-Hartigan ancestral
+            states.
         label_key: Key to add that stores the maximum-parsimony assignment
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
