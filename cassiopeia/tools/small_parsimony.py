@@ -231,5 +231,6 @@ def score_small_parsimony(
                 parsimony += 1
         except CassiopeiaTreeError:
             raise CassiopeiaError(f"{label_key} does not exist for a node, "
-                                "try running Fitch-Hartigan.")
+                                "try running Fitch-Hartigan or passing "
+                                "infer_ancestral_states=True.")
     return parsimony
