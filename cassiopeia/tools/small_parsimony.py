@@ -51,9 +51,7 @@ def fitch_hartigan(
 
     fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, state_key)
 
-    fitch_hartigan_top_down(
-        cassiopeia_tree, root, state_key, label_key
-    )
+    fitch_hartigan_top_down(cassiopeia_tree, root, state_key, label_key)
 
     return cassiopeia_tree if copy else None
 
@@ -96,8 +94,7 @@ def fitch_hartigan_bottom_up(
         raise CassiopeiaError("Meta item is not a categorical variable.")
 
     if not is_categorical_dtype(meta):
-        meta = meta.astype('category')
-            
+        meta = meta.astype("category")
 
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
 
@@ -222,15 +219,21 @@ def score_small_parsimony(
 
     if infer_ancestral_states:
         fitch_hartigan(cassiopeia_tree, meta_item, root, label_key=label_key)
-    
+
     parsimony = 0
-    for (parent, child) in cassiopeia_tree.depth_first_traverse_edges(source=root):
-        
+    for (parent, child) in cassiopeia_tree.depth_first_traverse_edges(
+        source=root
+    ):
+
         try:
-            if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(child, label_key):
+            if cassiopeia_tree.get_attribute(
+                parent, label_key
+            ) != cassiopeia_tree.get_attribute(child, label_key):
                 parsimony += 1
         except CassiopeiaTreeError:
-            raise CassiopeiaError(f"{label_key} does not exist for a node, "
-                                "try running Fitch-Hartigan or passing "
-                                "infer_ancestral_states=True.")
+            raise CassiopeiaError(
+                f"{label_key} does not exist for a node, "
+                "try running Fitch-Hartigan or passing "
+                "infer_ancestral_states=True."
+            )
     return parsimony
