@@ -3,7 +3,6 @@ This file stores the SharedMutationJoiningSolver. The inference procedure is
 an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
-import abc
 import warnings
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -15,6 +14,10 @@ import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import (
+    SharedMutationJoiningSolverError,
+    SharedMutationJoiningSolverWarning,
+)
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -22,20 +25,9 @@ from cassiopeia.solver import (
 )
 
 
-class SharedMutationJoiningSolverError(Exception):
-    """An Exception class for SharedMutationJoiningSolver."""
-
-    pass
-
-
-class SharedMutationJoiningSolverWarning(UserWarning):
-    """A warning class for SharedMutationJoiningSolver."""
-
-    pass
-
-
 class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """Shared-Mutation-Joining class for Cassiopeia.
+    """
+    Shared-Mutation-Joining class for Cassiopeia.
 
     Implements an iterative, bottom-up agglomerative clustering procedure. The
     algorithm iteratively clusters the samples in the sample pool by the number
@@ -104,7 +96,13 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 self.__update_similarity_map, nopython=True
             )
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree) -> None:
+    def solve(
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
+    ) -> None:
         """Solves a tree for the SharedMutationJoiningSolver.
 
         The solver routine calculates an n x n similarity matrix of all
@@ -120,11 +118,22 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Args:
             cassiopeia_tree: CassiopeiaTree object to be populated
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to write standard out. Not currently used.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
 
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
         weights = None
         if cassiopeia_tree.priors:
             weights = solver_utilities.transform_priors(
@@ -192,7 +201,12 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             N = similarity_map.shape[0]
 
-        cassiopeia_tree.populate_tree(tree)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
 
     def find_cherry(self, similarity_matrix: np.array) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.

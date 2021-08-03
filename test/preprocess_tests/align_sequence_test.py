@@ -8,6 +8,11 @@ import pandas as pd
 
 import cassiopeia
 
+SCIKIT_BIO_INSTALLED = True
+try:
+    import skbio
+except ModuleNotFoundError:
+    SCIKIT_BIO_INSTALLED = False
 
 class TestResolveUMISequence(unittest.TestCase):
     def setUp(self):
@@ -35,6 +40,9 @@ class TestResolveUMISequence(unittest.TestCase):
 
         self.reference = "AACCTTGG"
 
+    @unittest.skipUnless(
+        SCIKIT_BIO_INSTALLED, "Gurobi installation not found."
+    )
     def test_alignment_dataframe_structure(self):
 
         aln_df = cassiopeia.pp.align_sequences(
@@ -42,6 +50,7 @@ class TestResolveUMISequence(unittest.TestCase):
             ref=self.reference,
             gap_open_penalty=20,
             gap_extend_penalty=1,
+            n_threads=2,
         )
 
         self.assertEqual(aln_df.shape[0], self.queries.shape[0])
@@ -64,6 +73,9 @@ class TestResolveUMISequence(unittest.TestCase):
         for column in expected_columns:
             self.assertIn(column, aln_df.columns)
 
+    @unittest.skipUnless(
+        SCIKIT_BIO_INSTALLED, "Gurobi installation not found."
+    )
     def test_extremely_large_gap_open_penalty(self):
 
         aln_df = cassiopeia.pp.align_sequences(
@@ -80,6 +92,9 @@ class TestResolveUMISequence(unittest.TestCase):
             self.assertNotIn("D", row.CIGAR)
             self.assertNotIn("I", row.CIGAR)
 
+    @unittest.skipUnless(
+        SCIKIT_BIO_INSTALLED, "Gurobi installation not found."
+    )
     def test_default_alignment_works(self):
 
         aln_df = cassiopeia.pp.align_sequences(

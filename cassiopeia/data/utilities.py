@@ -13,6 +13,7 @@ import numba
 import numpy as np
 import pandas as pd
 
+from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
@@ -90,16 +91,12 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     g = nx.DiGraph()
     internal_node_iter = 0
     for n in tree.traverse():
-
-        if n.is_root():
-            if n.name == "":
-                n.name = f"node{internal_node_iter}"
-                internal_node_iter += 1
-            continue
-
         if n.name == "":
-            n.name = f"node{internal_node_iter}"
+            n.name = f"cassiopeia_internal_node{internal_node_iter}"
             internal_node_iter += 1
+        
+        if n.is_root():
+            continue
 
         g.add_edge(n.up.name, n.name)
 
@@ -210,17 +207,19 @@ def compute_dissimilarity_map(
 
         return dm
 
-    # Don't numbaize _compute_dissimilarity_map when we failed to numbaize
-    # the dissimilarity function. Otherwise, if we try to call a Python
-    # function from a numbaized (in object mode) a LOT of warnings are raised.
-    if numbaize:
+    # Numbaize _compute_dissimilarity_map in nopython mode only if the
+    # dissimilarity function has been successfully numbaized. Otherwise,
+    # numbaize in object mode.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=numba.NumbaDeprecationWarning)
+        warnings.simplefilter("ignore", category=numba.NumbaWarning)
         _compute_dissimilarity_map = numba.jit(
-            _compute_dissimilarity_map, nopython=True
+            _compute_dissimilarity_map, nopython=numbaize
         )
 
-    return _compute_dissimilarity_map(
-        cm, C, missing_state_indicator, nb_weights
-    )
+        return _compute_dissimilarity_map(
+            cm, C, missing_state_indicator, nb_weights
+        )
 
 
 def sample_bootstrap_character_matrices(
@@ -317,10 +316,8 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = (
-        preprocessing_utilities.convert_alleletable_to_lineage_profile(
-            allele_table, cut_sites
-        )
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table, cut_sites
     )
 
     intbcs = allele_table["intBC"].unique()

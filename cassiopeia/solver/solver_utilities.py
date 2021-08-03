@@ -1,4 +1,4 @@
-"""This file contains general utilities to be called by functions throughout 
+"""This file contains general utilities to be called by functions throughout
 the solver module"""
 
 import logging
@@ -9,11 +9,7 @@ from hashlib import blake2b
 import numpy as np
 import time
 
-
-class PriorTransformationError(Exception):
-    """An Exception class for generating weights from priors."""
-
-    pass
+from cassiopeia.mixins import PriorTransformationError
 
 
 def node_name_generator() -> Generator[str, None, None]:

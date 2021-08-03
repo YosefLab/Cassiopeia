@@ -2,10 +2,10 @@
 This file stores generally important functionality for the Cassiopeia-Preprocess
 pipeline.
 """
+import functools
 import os
-import logging
-from typing import Dict, List, Optional, Tuple
-
+import time
+from typing import Callable, Dict, List, Optional, Tuple
 
 from collections import defaultdict, OrderedDict
 import Levenshtein
@@ -18,34 +18,78 @@ import pysam
 import re
 from tqdm.auto import tqdm
 
+from cassiopeia.mixins import is_ambiguous_state, logger
 
-def generate_log_output(df: pd.DataFrame, begin: bool = False):
-    """A function for the logging of the number of filtered elements.
 
-    Simple function that logs the number of total reads, the number of unique
-    UMIs, and the number of unique cellBCs in a DataFrame.
+def log_moleculetable(wrapped: Callable):
+    """Function decorator that logs moleculetable stats.
+
+    Simple decorator that logs the number of total reads, the number of unique
+    UMIs, and the number of unique cellBCs in a DataFrame that is returned
+    from a function.
 
     Args:
-        df: A DataFrame
-
-    Returns:
-        None, logs elements to log file
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
     """
 
-    if begin:
-        logging.info("Before filtering:")
-    else:
-        logging.info("After this filtering step:")
-        logging.info("# Reads: " + str(sum(df["readCount"])))
-        logging.info(f"# UMIs: {df.shape[0]}")
-        logging.info("# Cell BCs: " + str(len(np.unique(df["cellBC"]))))
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        df = wrapped(*args, **kwargs)
+        logger.debug("Resulting moleculetable statistics:")
+        logger.debug(f"# Reads: {sum(df['readCount'])}")
+        logger.debug(f"# UMIs: {df.shape[0]}")
+        logger.debug(f"# Cell BCs: {len(np.unique(df['cellBC']))}")
+        return df
+
+    return wrapper
 
 
+def log_runtime(wrapped: Callable):
+    """Function decorator that logs the start, end and runtime of a function.
+
+    Args:
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
+    """
+
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        t0 = time.time()
+        logger.info("Starting...")
+        try:
+            return wrapped(*args, **kwargs)
+        finally:
+            logger.info(f"Finished in {time.time() - t0} s.")
+
+    return wrapper
+
+
+def log_kwargs(wrapped: Callable):
+    """Function decorator that logs the keyword arguments of a function.
+
+    This function only logs keyword arguments because usually the unnamed
+    arguments contain Pandas DataFrames, which are difficult to log cleanly as
+    text.
+
+    Args:
+        wrapped: The wrapped original function. Since this is a function
+            decorator, this argument is passed implicitly by Python internals.
+    """
+
+    @functools.wraps(wrapped)
+    def wrapper(*args, **kwargs):
+        logger.debug(f"Keyword arguments: {kwargs}")
+        return wrapped(*args, **kwargs)
+
+    return wrapper
+
+
+@log_moleculetable
 def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """Filter out cell barcodes that have too few UMIs or too few reads/UMI
 
@@ -55,8 +99,6 @@ def filter_cells(
             filtered
         min_avg_reads_per_umi: Minimum coverage (i.e. average) reads per
             UMI in a cell needed in order for that cell not to be filtered
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Returns:
         A filtered molecule table
@@ -93,24 +135,20 @@ def filter_cells(
         molecule_table.loc[molecule_table["filter"] == True, "cellBC"].unique()
     )
 
-    logging.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
-    logging.info(f"Filtered out {n_umi_filt} UMIs as a result.")
+    logger.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
+    logger.info(f"Filtered out {n_umi_filt} UMIs as a result.")
 
     filt_molecule_table = molecule_table[
         molecule_table["filter"] == False
     ].copy()
     filt_molecule_table.drop(columns=["filter"], inplace=True)
 
-    if verbose:
-        generate_log_output(filt_molecule_table)
-
     return filt_molecule_table
 
 
+@log_moleculetable
 def filter_umis(
-    moleculetable: pd.DataFrame,
-    readCountThresh: int = 100,
-    verbose: bool = False,
+    moleculetable: pd.DataFrame, readCountThresh: int = 100
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
@@ -121,8 +159,6 @@ def filter_umis(
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
         readCountThresh: The minimum read count needed for a UMI to not be
             filtered
-        verbose: Indicates whether to log the number of cellBCs and UMIs
-            remaining after filtering
 
     Returns:
         A filtered molecule table
@@ -134,18 +170,15 @@ def filter_umis(
     ]
     n_moleculetable.index = [i for i in range(n_moleculetable.shape[0])]
 
-    if verbose:
-        generate_log_output(n_moleculetable)
-
     return n_moleculetable
 
 
+@log_moleculetable
 def error_correct_intbc(
     moleculetable: pd.DataFrame,
     prop: float = 0.5,
     umiCountThresh: int = 10,
     bcDistThresh: int = 1,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """
     Error corrects close intBCs with small enough unique UMI counts.
@@ -168,8 +201,6 @@ def error_correct_intbc(
         umiCountThresh: maximum umi count for which to correct barcodes
         bcDistThresh: barcode distance threshold, to decide what's similar
             enough to error correct
-        verbose: Indicates whether to log every cellBC correction and the
-            number of cellBCs and UMIs remaining after filtering
 
     Returns:
         Filtered molecule table with error corrected intBCs
@@ -217,19 +248,15 @@ def error_correct_intbc(
                                 bad_locs.index.values, "intBC"
                             ] = iBC1
 
-                            if verbose:
-                                logging.info(
-                                    f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
-                                    + "correcting UMI "
-                                    + str({x1.loc[r2, "UMI"]})
-                                    + "to "
-                                    + str({x1.loc[r1, "UMI"]})
-                                )
+                            logger.debug(
+                                f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
+                                + "correcting UMI "
+                                + str({x1.loc[r2, "UMI"]})
+                                + "to "
+                                + str({x1.loc[r1, "UMI"]})
+                            )
 
     moleculetable.index = [i for i in range(moleculetable.shape[0])]
-
-    if verbose:
-        generate_log_output(moleculetable)
 
     return moleculetable
 
@@ -360,6 +387,7 @@ def convert_alleletable_to_character_matrix(
     missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
     cut_sites: Optional[List[str]] = None,
+    collapse_duplicates: bool = True,
 ) -> Tuple[
     pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
 ]:
@@ -368,7 +396,7 @@ def convert_alleletable_to_character_matrix(
     Given an AlleleTable storing the observed mutations for each intBC / cellBC
     combination, create a character matrix for input into a CassiopeiaSolver
     object. By default, we codify uncut mutations as '0' and missing data items
-    as '-'. The function also have the ability to ignore certain intBC sets as
+    as '-1'. The function also have the ability to ignore certain intBC sets as
     well as cut sites with too little diversity.
 
     Args:
@@ -383,49 +411,45 @@ def convert_alleletable_to_character_matrix(
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
+        collapse_duplicates: Whether or not to collapse duplicate character
+            states present for a single cellBC-intBC pair. This option has no
+            effect if there are no allele conflicts. Defaults to True.
 
         Returns:
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
     """
+    if cut_sites is None:
+        cut_sites = get_default_cut_site_columns(alleletable)
 
     filtered_samples = defaultdict(OrderedDict)
     for sample in alleletable.index:
         cell = alleletable.loc[sample, "cellBC"]
         intBC = alleletable.loc[sample, "intBC"]
 
-        if cut_sites is None:
-            cut_sites = get_default_cut_site_columns(alleletable)
+        if intBC in ignore_intbcs:
+            continue
 
-        to_add = []
-        i = 1
-        for c in cut_sites:
+        for i, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
-                to_add.append(("intBC", c, cut_sites[i - 1]))
-
-            i += 1
-
-        for ent in to_add:
-            filtered_samples[cell][
-                alleletable.loc[sample, ent[0]] + ent[1]
-            ] = alleletable.loc[sample, ent[2]]
+                filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(
+                    alleletable.loc[sample, c]
+                )
 
     character_strings = defaultdict(list)
     allele_counter = defaultdict(OrderedDict)
 
-    _intbc_uniq = []
+    _intbc_uniq = set()
     allele_dist = defaultdict(list)
     for s in filtered_samples:
         for key in filtered_samples[s]:
-            if key not in _intbc_uniq:
-                _intbc_uniq.append(key)
-            allele_dist[key].append(filtered_samples[s][key])
+            _intbc_uniq.add(key)
+            allele_dist[key].extend(list(set(filtered_samples[s][key])))
 
     # remove intBCs that are not diverse enough
     intbc_uniq = []
     dropped = []
     for key in allele_dist.keys():
-
         props = np.unique(allele_dist[key], return_counts=True)[1]
         props = props / len(allele_dist[key])
         if np.any(props > allele_rep_thresh):
@@ -453,33 +477,49 @@ def convert_alleletable_to_character_matrix(
 
             if c in filtered_samples[sample]:
 
-                state = filtered_samples[sample][c]
+                # This is a list of states
+                states = filtered_samples[sample][c]
+                transformed_states = []
 
-                if type(state) != str and np.isnan(state):
-                    character_strings[sample].append(missing_data_state)
-                    continue
+                for state in states:
 
-                if state == "NONE" or "None" in state:
-                    character_strings[sample].append(0)
-                else:
-                    if state in allele_counter[c]:
-                        character_strings[sample].append(
-                            allele_counter[c][state]
-                        )
+                    if type(state) != str and np.isnan(state):
+                        transformed_states.append(missing_data_state)
+                        continue
+
+                    if state == "NONE" or "None" in state:
+                        transformed_states.append(0)
                     else:
-                        # if this is the first time we're seeing the state for this character,
-                        # add a new entry to the allele_counter
-                        allele_counter[c][state] = len(allele_counter[c]) + 1
-                        character_strings[sample].append(
-                            allele_counter[c][state]
-                        )
+                        if state in allele_counter[c]:
+                            transformed_states.append(allele_counter[c][state])
+                        else:
+                            # if this is the first time we're seeing the state for this character,
+                            # add a new entry to the allele_counter
+                            allele_counter[c][state] = (
+                                len(allele_counter[c]) + 1
+                            )
+                            transformed_states.append(allele_counter[c][state])
 
-                        indel_to_charstate[i][len(allele_counter[c])] = state
+                            indel_to_charstate[i][
+                                len(allele_counter[c])
+                            ] = state
 
-                        # add a new entry to the character's probability map
-                        if mutation_priors is not None:
-                            prob = np.mean(mutation_priors.loc[state, "freq"])
-                            prior_probs[i][len(allele_counter[c])] = float(prob)
+                            # add a new entry to the character's probability map
+                            if mutation_priors is not None:
+                                prob = np.mean(
+                                    mutation_priors.loc[state, "freq"]
+                                )
+                                prior_probs[i][len(allele_counter[c])] = float(
+                                    prob
+                                )
+
+                if collapse_duplicates:
+                    # Sort for testing
+                    transformed_states = sorted(set(transformed_states))
+                transformed_states = tuple(transformed_states)
+                if len(transformed_states) == 1:
+                    transformed_states = transformed_states[0]
+                character_strings[sample].append(transformed_states)
 
             else:
                 character_strings[sample].append(missing_data_state)
@@ -494,7 +534,9 @@ def convert_alleletable_to_character_matrix(
 
 
 def convert_alleletable_to_lineage_profile(
-    allele_table, cut_sites: Optional[List[str]] = None
+    allele_table,
+    cut_sites: Optional[List[str]] = None,
+    collapse_duplicates: bool = True,
 ) -> pd.DataFrame:
     """Converts an AlleleTable to a lineage profile.
 
@@ -509,6 +551,9 @@ def convert_alleletable_to_lineage_profile(
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
+        collapse_duplicates: Whether or not to collapse duplicate character
+            states present for a single cellBC-intBC pair. This option has no
+            effect if there are no allele conflicts. Defaults to True.
 
     Returns:
         An NxM lineage profile.
@@ -518,7 +563,7 @@ def convert_alleletable_to_lineage_profile(
         cut_sites = get_default_cut_site_columns(allele_table)
 
     agg_recipe = dict(
-        zip([cutsite for cutsite in cut_sites], ["unique"] * len(cut_sites))
+        zip([cutsite for cutsite in cut_sites], [list] * len(cut_sites))
     )
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
@@ -533,8 +578,13 @@ def convert_alleletable_to_lineage_profile(
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
-        vals = map(lambda x: x[0], g.loc[j])
-        for val, cutsite in zip(vals, cut_sites):
+        for val, cutsite in zip(g.loc[j], cut_sites):
+            if collapse_duplicates:
+                # Sort for testing
+                val = sorted(set(val))
+            val = tuple(val)
+            if len(val) == 1:
+                val = val[0]
             allele_piv.loc[j[0]][j[1], cutsite] = val
 
     allele_piv2 = pd.pivot_table(
@@ -573,6 +623,12 @@ def convert_lineage_profile_to_character_matrix(
     Takes in a lineage profile summarizing the explicit indel identities
     observed at each cut site in a cell and converts this into a character
     matrix where the indels are abstracted into integers.
+
+    Note:
+        The lineage profile is converted directly into a character matrix,
+        without performing any collapsing of duplicate states. Instead, this
+        should have been done in the previous step, when calling
+        :func:`convert_alleletable_to_lineage_profile`.
 
     Args:
         lineage_profile: Lineage profile
@@ -616,26 +672,40 @@ def convert_lineage_profile_to_character_matrix(
         c = column_to_number[col]
         indel_to_charstate[c] = {}
 
-        for indel in column_to_unique_values[col]:
-            if indel == "Missing" or indel == "NC":
-                mutation_to_state[col][indel] = -1
+        for indels in column_to_unique_values[col]:
+            if not is_ambiguous_state(indels):
+                indels = (indels,)
 
-            elif "none" in indel.lower():
-                mutation_to_state[col][indel] = 0
+            for indel in indels:
+                if indel == "Missing" or indel == "NC":
+                    mutation_to_state[col][indel] = -1
 
+                elif "none" in indel.lower():
+                    mutation_to_state[col][indel] = 0
+
+                elif indel not in mutation_to_state[col]:
+                    mutation_to_state[col][indel] = mutation_counter[col] + 1
+                    mutation_counter[col] += 1
+
+                    indel_to_charstate[c][mutation_to_state[col][indel]] = indel
+
+                    if indel_priors is not None:
+                        prob = np.mean(indel_priors.loc[indel]["freq"])
+                        prior_probs[c][mutation_to_state[col][indel]] = float(
+                            prob
+                        )
+
+    # Helper function to apply to lineage profile
+    def apply_mutation_to_state(x):
+        column = []
+        for v in x.values:
+            if is_ambiguous_state(v):
+                column.append(tuple(mutation_to_state[x.name][_v] for _v in v))
             else:
-                mutation_to_state[col][indel] = mutation_counter[col] + 1
-                mutation_counter[col] += 1
+                column.append(mutation_to_state[x.name][v])
+        return column
 
-                indel_to_charstate[c][mutation_to_state[col][indel]] = indel
-
-                if indel_priors is not None:
-                    prob = np.mean(indel_priors.loc[indel]["freq"])
-                    prior_probs[c][mutation_to_state[col][indel]] = float(prob)
-
-    character_matrix = lineage_profile.apply(
-        lambda x: [mutation_to_state[x.name][v] for v in x.values], axis=0
-    )
+    character_matrix = lineage_profile.apply(apply_mutation_to_state, axis=0)
 
     character_matrix.index = lineage_profile.index
     character_matrix.columns = [

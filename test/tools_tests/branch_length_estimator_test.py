@@ -33,7 +33,7 @@ class TestBLEEnsemble(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6"), ("3", "7")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 0, -1],
             "2": [1, 0, 0],
@@ -66,7 +66,7 @@ class TestIgnoreCharactersWrapper(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6"), ("3", "7")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 0, -1],
             "2": [1, 0, 0],
@@ -100,7 +100,7 @@ class TestNumberOfMutationsBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 0, -1],
             "2": [1, 0, 0],
@@ -124,7 +124,7 @@ class TestNumberOfMutationsBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 0, -1],
             "2": [1, 0, 0],
@@ -150,7 +150,7 @@ class TestNumberOfMutationsBLE(unittest.TestCase):
                             ("4", "9"), ("4", "10"), ("5", "11"), ("5", "12"),
                             ("6", "13"), ("6", "14")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             "1": [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             "2": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -192,7 +192,7 @@ class TestNumberOfMutationsBLE(unittest.TestCase):
                             ("4", "9"), ("4", "10"), ("5", "11"), ("5", "12"),
                             ("6", "13"), ("6", "14")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             "1": [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             "2": [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -243,7 +243,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_node("0"), tree.add_node("1")
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [0]}
         )
@@ -272,7 +272,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [1]}
         )
@@ -302,7 +302,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0],
             "1": [0, 1]}
         )
@@ -334,7 +334,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 1, 1]}
         )
@@ -366,7 +366,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [0, 0, 1]}
         )
@@ -391,7 +391,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0, 0],
             "1": [0, 0, 0, 0],
             "2": [0, 0, 0, 0],
@@ -425,7 +425,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [0],
             "2": [0],
@@ -457,7 +457,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [0],
             "2": [1],
@@ -486,7 +486,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
             "1": [1, 0, 0, 0, 0, 0, 0, 0, 0],
             "2": [0, 0, 0, 0, 0, 6, 0, 0, 0],
@@ -517,7 +517,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0, 0],
             "1": [1, 0, 0],
             "2": [1, 0, 0],
@@ -556,7 +556,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0],
             "1": [1, 0],
             "2": [1, 0],
@@ -618,7 +618,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1", "2", "3", "4"]),
         tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3"), ("0", "4")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [1],
             "2": [1],
@@ -645,7 +645,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         tree.add_nodes_from(["0", "1", "2", "3", "4"])
         tree.add_edges_from([("0", "1"), ("0", "2"), ("0", "3"), ("2", "4")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_character_states_at_leaves(
+        tree.set_character_states_at_leaves(
             {"1": [1],
             "3": [1],
             "4": [1]}
@@ -672,7 +672,7 @@ class TestIIDExponentialBLEGridSearchCV(unittest.TestCase):
         tree.add_nodes_from(["0", "1"]),
         tree.add_edges_from([("0", "1")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0],
             "1": [1]},
         )
@@ -697,7 +697,7 @@ class TestIIDExponentialBLEGridSearchCV(unittest.TestCase):
             ("3", "7")]
         )
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_character_states_at_leaves(
+        tree.set_character_states_at_leaves(
             {"4": [1, 1, 0],
             "5": [1, 1, 0],
             "6": [1, 0, 0],
@@ -894,14 +894,14 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
         tree = CassiopeiaTree(tree=tree)
         if many_characters:
-            tree.initialize_all_character_states(
+            tree.set_all_character_states(
                 {"0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
                 "1": [0, 1, 0, 0, 0, 0, 1, -1, 0],
                 "2": [0, -1, 0, 1, 1, 0, 1, -1, -1],
                 "3": [0, -1, -1, 1, 0, 0, -1, -1, -1]},
             )
         else:
-            tree.initialize_all_character_states(
+            tree.set_all_character_states(
                 {"0": [0],
                 "1": [1],
                 "2": [-1],
@@ -1015,7 +1015,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0],
             "1": [0, 0],
             "2": [1, 0],
@@ -1118,7 +1118,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
             ("0", "7")]
         )
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0],
             "1": [0, 0],
             "2": [1, 0],
@@ -1210,7 +1210,7 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
                             ("2", "5"), ("2", "6")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_character_states_at_leaves(
+        tree.set_character_states_at_leaves(
             {"3": [2, 0, 1, 1, 0, 0, 0, 1, 1, 1],
             "4": [2, 0, 1, 1, 0, 1, 0, 1, 1, 1],
             "5": [2, 0, 1, 1, 0, 1, 0, 1, 1, 1],
@@ -1334,85 +1334,85 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
         # plt.show()
 
 
-class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
-    @parameterized.expand([("cpp", True), ("no_cpp", False)])
-    def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke(self, name, use_cpp_implementation):
-        r"""
-        Just want to see that it runs in both single and multiprocessor mode
-        """
-        tree = nx.DiGraph()
-        tree.add_nodes_from(["0", "1"]),
-        tree.add_edges_from([("0", "1")])
-        tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
-            {"0": [0],
-            "1": [1]}
-        )
-        for processes in [1, 2]:
-            model = IIDExponentialPosteriorMeanBLEGridSearchCV(
-                mutation_rates=(0.5,),
-                birth_rates=(1.5,),
-                discretization_level=5,
-                verbose=True,
-                use_cpp_implementation=use_cpp_implementation
-            )
-            model.estimate_branch_lengths(tree)
+# class TestIIDExponentialPosteriorMeanBLEGridSeachCV(unittest.TestCase):
+#     @parameterized.expand([("cpp", True), ("no_cpp", False)])
+#     def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke(self, name, use_cpp_implementation):
+#         r"""
+#         Just want to see that it runs in both single and multiprocessor mode
+#         """
+#         tree = nx.DiGraph()
+#         tree.add_nodes_from(["0", "1"]),
+#         tree.add_edges_from([("0", "1")])
+#         tree = CassiopeiaTree(tree=tree)
+#         tree.set_all_character_states(
+#             {"0": [0],
+#             "1": [1]}
+#         )
+#         for processes in [1, 2]:
+#             model = IIDExponentialPosteriorMeanBLEGridSearchCV(
+#                 mutation_rates=(0.5,),
+#                 birth_rates=(1.5,),
+#                 discretization_level=5,
+#                 verbose=True,
+#                 use_cpp_implementation=use_cpp_implementation
+#             )
+#             model.estimate_branch_lengths(tree)
 
-    @parameterized.expand([("cpp", True), ("no_cpp", False)])
-    def test_IIDExponentialPosteriorMeanBLEGridSeachCV(self, name, use_cpp_implementation):
-        r"""
-        We just check that the grid search estimator does its job on a small grid.
-        """
-        tree = nx.DiGraph()
-        tree.add_nodes_from(["0", "1", "2", "3", "4"]),
-        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3"), ("0", "4")])
-        tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
-            {"0": [0],
-            "1": [1],
-            "2": [1],
-            "3": [1],
-            "4": [0]}
-        )
+#     @parameterized.expand([("cpp", True), ("no_cpp", False)])
+#     def test_IIDExponentialPosteriorMeanBLEGridSeachCV(self, name, use_cpp_implementation):
+#         r"""
+#         We just check that the grid search estimator does its job on a small grid.
+#         """
+#         tree = nx.DiGraph()
+#         tree.add_nodes_from(["0", "1", "2", "3", "4"]),
+#         tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3"), ("0", "4")])
+#         tree = CassiopeiaTree(tree=tree)
+#         tree.set_all_character_states(
+#             {"0": [0],
+#             "1": [1],
+#             "2": [1],
+#             "3": [1],
+#             "4": [0]}
+#         )
 
-        discretization_level = 100
-        mutation_rates = (0.625, 0.750, 0.875)
-        birth_rates = (0.25, 0.50, 0.75)
-        model = IIDExponentialPosteriorMeanBLEGridSearchCV(
-            mutation_rates=mutation_rates,
-            birth_rates=birth_rates,
-            discretization_level=discretization_level,
-            verbose=True,
-            use_cpp_implementation=use_cpp_implementation
-        )
+#         discretization_level = 100
+#         mutation_rates = (0.625, 0.750, 0.875)
+#         birth_rates = (0.25, 0.50, 0.75)
+#         model = IIDExponentialPosteriorMeanBLEGridSearchCV(
+#             mutation_rates=mutation_rates,
+#             birth_rates=birth_rates,
+#             discretization_level=discretization_level,
+#             verbose=True,
+#             use_cpp_implementation=use_cpp_implementation
+#         )
 
-        # Test the model log likelihood against its numerical computation
-        model.estimate_branch_lengths(tree)
-        numerical_log_likelihood = (
-            IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
-                tree=tree,
-                mutation_rate=model.mutation_rate,
-                birth_rate=model.birth_rate,
-            )
-        )
-        np.testing.assert_approx_equal(
-            model.log_likelihood, numerical_log_likelihood, significant=3
-        )
+#         # Test the model log likelihood against its numerical computation
+#         model.estimate_branch_lengths(tree)
+#         numerical_log_likelihood = (
+#             IIDExponentialPosteriorMeanBLE.numerical_log_likelihood(
+#                 tree=tree,
+#                 mutation_rate=model.mutation_rate,
+#                 birth_rate=model.birth_rate,
+#             )
+#         )
+#         np.testing.assert_approx_equal(
+#             model.log_likelihood, numerical_log_likelihood, significant=3
+#         )
 
-        # import matplotlib.pyplot as plt
-        # import seaborn as sns
-        # sns.heatmap(
-        #     model.grid,
-        #     yticklabels=mutation_rates,
-        #     xticklabels=birth_rates
-        # )
-        # plt.ylabel('Mutation Rate')
-        # plt.xlabel('Birth Rate')
-        # plt.show()
+#         # import matplotlib.pyplot as plt
+#         # import seaborn as sns
+#         # sns.heatmap(
+#         #     model.grid,
+#         #     yticklabels=mutation_rates,
+#         #     xticklabels=birth_rates
+#         # )
+#         # plt.ylabel('Mutation Rate')
+#         # plt.xlabel('Birth Rate')
+#         # plt.show()
 
-        np.testing.assert_almost_equal(model.mutation_rate, 0.75)
-        np.testing.assert_almost_equal(model.birth_rate, 0.5)
-        np.testing.assert_almost_equal(model.posterior_means["1"], 0.6815, decimal=3)
+#         np.testing.assert_almost_equal(model.mutation_rate, 0.75)
+#         np.testing.assert_almost_equal(model.birth_rate, 0.5)
+#         np.testing.assert_almost_equal(model.posterior_means["1"], 0.6815, decimal=3)
 
 
 class TestBLEMultifurcationWrapper(unittest.TestCase):
@@ -1421,7 +1421,7 @@ class TestBLEMultifurcationWrapper(unittest.TestCase):
         tree.add_nodes_from(["0", "1", "2", "3"])
         tree.add_edges_from([("0", "1"), ("0", "2"), ("0", "3")])
         tree = CassiopeiaTree(tree=tree)
-        tree.initialize_all_character_states(
+        tree.set_all_character_states(
             {"0": [0, 0],
              "1": [0, 1],
              "2": [0, 1],

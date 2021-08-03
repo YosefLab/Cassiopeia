@@ -336,8 +336,8 @@ class IIDExponentialBLEGridSearchCV(BranchLengthEstimator):
             valid_states[node] = valid_state
         train_tree = CassiopeiaTree(tree=tree_topology)
         valid_tree = CassiopeiaTree(tree=tree_topology)
-        train_tree.initialize_all_character_states(train_states)
-        valid_tree.initialize_all_character_states(valid_states)
+        train_tree.set_all_character_states(train_states)
+        valid_tree.set_all_character_states(valid_states)
         return train_tree, valid_tree
 
     def plot_grid(

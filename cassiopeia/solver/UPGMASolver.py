@@ -13,14 +13,12 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import (
-    DistanceSolver,
-    dissimilarity_functions,
-)
+from cassiopeia.solver import DistanceSolver, dissimilarity_functions
 
 
 class UPGMASolver(DistanceSolver.DistanceSolver):
-    """UPGMA class for Cassiopeia.
+    """
+    UPGMA CassiopeiaSolver.
 
     Implements the UPGMA algorithm described as a derived class of
     DistanceSolver. This class inherits the generic `solve` method, but
@@ -128,9 +126,9 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         Updates the dissimilarity map after joining together two nodes (m1, m2)
         at a cherry m. For all other nodes v, the new dissimilarity map d' is:
 
-        d'(m, v) = (|m1| * d(m1, v) + |m2| * d(m2, v))/(|m1| + |m2|)
+        d'(m, v) = (<m1> * d(m1, v) + <m2> * d(m2, v))/(<m1> + <m2>)
 
-        where |m1| is the size of cluster m1, i.e. the number of sample leaves
+        where <m1> is the size of cluster m1, i.e. the number of sample leaves
         under node m1.
 
         Args:

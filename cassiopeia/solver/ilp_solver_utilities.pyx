@@ -3,7 +3,6 @@ Cython utilities for the ILPSolver.
 """
 import cython
 
-import logging
 from typing import List, Tuple, Union
 
 # we need to doubly-import numpy so we have access to cython-optimized numpy
@@ -12,6 +11,7 @@ from numpy cimport ndarray
 import numpy as np
 
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins import logger
 from cassiopeia.solver import dissimilarity_functions
 
 
@@ -54,10 +54,10 @@ def infer_potential_graph_cython(
 
     Importantly, this function represents samples as "character strings", where
     a sample's characters are concatenated together, delimitted by the symbol
-    "|". This string representation is much more memory efficient than numpy 
+    "|". This string representation is much more memory efficient than numpy
     arrays of strings or integers, for example, and so we use these here. In
     the `ILPSolver` method `infer_potential_graph`, these strings are decoded
-    into character state tuples. 
+    into character state tuples.
 
     Args:
         character_array: Character array where items are strings, not integers.
@@ -73,7 +73,7 @@ def infer_potential_graph_cython(
             of strings. Each string represents a set of character states, each
             delimited by a `|` (e.g. "1|2|3|0|0|").
     """
-    logging.info(
+    logger.info(
         f"(Process: {pid}) Estimating a potential graph with "
         "a maximum layer size of "
         f"{maximum_potential_graph_layer_size} and a maximum "
@@ -114,7 +114,7 @@ def infer_potential_graph_cython(
         while source_nodes.shape[0] > 1:
 
             if source_nodes.shape[0] > maximum_potential_graph_layer_size:
-                logging.info(
+                logger.info(
                     f"(Process: {pid}) Maximum layer size "
                     "exceeded, returning network."
                 )
@@ -152,7 +152,7 @@ def infer_potential_graph_cython(
 
             max_layer_width = max(max_layer_width, source_nodes.shape[0])
 
-        logging.info(
+        logger.info(
             f"(Process: {pid}) LCA distance {distance_threshold} "
             f"completed with a neighborhood size of {max_layer_width}."
         )
@@ -177,14 +177,14 @@ def infer_layer_of_potential_graph(
 
     This function is invoked by `infer_potential_graph` and returns a layer
     of samples that represent evolutionary ancestors of the passed in source
-    nodes. Ancestors are added to the layer if the distance from a pair of 
+    nodes. Ancestors are added to the layer if the distance from a pair of
     source nodes to the ancestor is less than the specified distance
     threshold. The function returns a set of nodes to use as the next layer
     of the potential graph as well as the edges to add to the potential
     graph.
 
     The edge representation here is a bit unorthodox, as a way of avoiding
-    the use of tuples. The edges are returned as concatenated numpy arrays of 
+    the use of tuples. The edges are returned as concatenated numpy arrays of
     length 2M (where M is the number of characters). The first M characters
     correspond to the first node in the edge and the latter half correspond
     to the second node.
@@ -192,7 +192,7 @@ def infer_layer_of_potential_graph(
     Args:
         source_nodes: A list of samples, represented by their character
             states.
-        distance_threshold: Maximum hamming distance allowed between a pair of 
+        distance_threshold: Maximum hamming distance allowed between a pair of
             source nodes through their ancestor.
 
     Returns:

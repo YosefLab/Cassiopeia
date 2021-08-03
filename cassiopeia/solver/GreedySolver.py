@@ -3,20 +3,21 @@ This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
 represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
-import logging
 from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
-import abc
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import GreedySolverError, is_ambiguous_state
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    A Greedy Cassiopeia solver.
+    
     GreedySolver is an abstract class representing the structure of top-down
     inference algorithms. The solver procedure contains logic to build a tree
     from the root by recursively partitioning the set of samples. Each subclass
@@ -62,7 +63,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         pass
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree):
+    def solve(
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
+    ):
         """Implements a top-down greedy solving procedure.
 
         The procedure recursively splits a set of samples to build a tree. At
@@ -77,6 +84,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: File location to log output. Not currently used.
         """
 
         # A helper function that builds the subtree given a set of samples
@@ -132,7 +146,18 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
+
+        # Raise exception if the character matrix has ambiguous states.
+        if any(
+            is_ambiguous_state(state)
+            for state in character_matrix.values.flatten()
+        ):
+            raise GreedySolverError("Solver does not support ambiguous states.")
+
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -146,18 +171,17 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        cassiopeia_tree.populate_tree(tree)
-
-        # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(
-            infer_ancestral_characters=True
-        )
+        # Append duplicate samples
         duplicates_tree = self.__add_duplicates_to_tree(
-            cassiopeia_tree.get_tree_topology(),
-            character_matrix,
-            node_name_generator,
+            tree, character_matrix, node_name_generator
         )
-        cassiopeia_tree.populate_tree(duplicates_tree)
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
+
+        # Collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
 
     def compute_mutation_frequencies(
         self,
