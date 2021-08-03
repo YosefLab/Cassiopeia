@@ -24,7 +24,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
             v
             child [state = '0']
         This is thus the simplest possible example of no mutations, and the MLE
-        branch length should be 0, so it should error out.
+        branch length should be 0, collapsing the tree and causing the
+        estimator to error out.
         """
         tree = nx.DiGraph()
         tree.add_node("0"), tree.add_node("1")
@@ -45,7 +46,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             v
             child [state = '1']
         This is thus the simplest possible example of saturation, and the MLE
-        mutation rate should be infinity, so should error out.
+        mutation rate should be infinity, causing the estimator to error out.
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
