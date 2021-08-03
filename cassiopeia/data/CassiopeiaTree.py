@@ -1909,7 +1909,9 @@ class CassiopeiaTree:
         times_dict = self.get_times()
         return max(times_dict.values()) - min(times_dict.values())
 
-    def get_mutated_characters_along_edge(self, parent: str, child: str) -> List[int]:
+    def get_mutated_characters_along_edge(
+        self, parent: str, child: str
+    ) -> List[int]:
         """
         List of mutated characters along edge.
 
@@ -1930,12 +1932,20 @@ class CassiopeiaTree:
         parent_states = self.get_character_states(parent)
         child_states = self.get_character_states(child)
         res = []
-        for i, (parent_state, child_state) in enumerate(zip(parent_states, child_states)):
-            if parent_state == 0 and child_state != 0 and child_state != self.missing_state_indicator:
+        for i, (parent_state, child_state) in enumerate(
+            zip(parent_states, child_states)
+        ):
+            if (
+                parent_state == 0
+                and child_state != 0
+                and child_state != self.missing_state_indicator
+            ):
                 res.append(i)
         return res
 
-    def get_unmutated_characters_along_edge(self, parent: str, child: str) -> List[int]:
+    def get_unmutated_characters_along_edge(
+        self, parent: str, child: str
+    ) -> List[int]:
         """
         List of unmutated characters along edge.
 
@@ -1954,7 +1964,9 @@ class CassiopeiaTree:
         parent_states = self.get_character_states(parent)
         child_states = self.get_character_states(child)
         res = []
-        for i, (parent_state, child_state) in enumerate(zip(parent_states, child_states)):
+        for i, (parent_state, child_state) in enumerate(
+            zip(parent_states, child_states)
+        ):
             if parent_state == 0 and child_state == 0:
                 res.append(i)
         return res
