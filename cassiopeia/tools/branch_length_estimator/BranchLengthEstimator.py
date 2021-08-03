@@ -25,4 +25,3 @@ class BranchLengthEstimator(abc.ABC):
                 phylogenetic inference; the tree topology must have been
                 initialized (for example by means of a CassiopeiaSolver).
         """
-        pass

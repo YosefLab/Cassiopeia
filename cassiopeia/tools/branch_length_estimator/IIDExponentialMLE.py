@@ -48,9 +48,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
         verbose: bool = False,
         solver: str = "SCS",
     ):
-        self.minimum_branch_length = minimum_branch_length
-        self.verbose = verbose
-        self.solver = solver
+        self._minimum_branch_length = minimum_branch_length
+        self._verbose = verbose
+        self._solver = solver
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
@@ -62,9 +62,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
             IIDExponentialMLEError
         """
         # Extract parameters
-        minimum_branch_length = self.minimum_branch_length
-        solver = self.solver
-        verbose = self.verbose
+        minimum_branch_length = self._minimum_branch_length
+        solver = self._solver
+        verbose = self._verbose
 
         # # # # # Create variables of the optimization problem # # # # #
         r_X_t_variables = dict(
@@ -113,11 +113,11 @@ class IIDExponentialMLE(BranchLengthEstimator):
         prob = cp.Problem(obj, all_constraints)
         try:
             prob.solve(solver=solver, verbose=verbose)
-        except:
-            raise IIDExponentialMLEError
+        except:  # pragma: no cover
+            raise IIDExponentialMLEError("Third-party solver failed")
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
-        times = {node: r_X_t_variables[node].value for node in tree.nodes}
+        times = {node: float(r_X_t_variables[node].value) for node in tree.nodes}
         # Make sure that the root has time 0 (avoid epsilons)
         times[tree.root] = 0.0
         # We smooth out epsilons that might make a parent's time greater
@@ -126,10 +126,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
             times[child] = max(times[parent], times[child])
         tree.set_times(times)
 
-        log_likelihood = log_likelihood.value
+        log_likelihood = float(log_likelihood.value)
         if np.isnan(log_likelihood):
             log_likelihood = -np.inf
-        self.log_likelihood = log_likelihood
+        self._log_likelihood = log_likelihood
         tree_depth = tree.get_depth()
         if tree_depth < 1e-6:
             raise IIDExponentialMLEError(
@@ -139,5 +139,13 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError(
                 "Branch lengths estimated as infinite."
             )
-        self.mutation_rate = tree_depth
+        self._mutation_rate = tree_depth
         tree.scale_to_unit_length()
+
+    @property
+    def log_likelihood(self):
+        return self._log_likelihood
+
+    @property
+    def mutation_rate(self):
+        return self._mutation_rate

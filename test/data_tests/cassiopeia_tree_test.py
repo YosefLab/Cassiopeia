@@ -1664,6 +1664,35 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "node3", {leaf: 0 for leaf in tree_no_map.leaves}
             )
 
+    def test_get_depth(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        self.assertEqual(tree.get_depth(), 8)
+
+    def test_scale_to_unit_length(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree.scale_to_unit_length()
+        self.assertEqual(tree.get_depth(), 1)
+
+    def test_get_mutated_characters_along_edge(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.reconstruct_ancestral_characters()
+        self.assertEqual(
+            tree.get_mutated_characters_along_edge("node2", "node6"),
+            [1]
+        )
+
+    def test_get_unmutated_characters_along_edge(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.reconstruct_ancestral_characters()
+        self.assertEqual(
+            tree.get_unmutated_characters_along_edge("node2", "node6"),
+            [2, 3, 4, 5, 6, 7]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
