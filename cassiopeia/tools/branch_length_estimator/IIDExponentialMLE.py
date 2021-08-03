@@ -142,6 +142,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             times[child] = max(times[parent], times[child])
         tree.set_times(times)
 
+        # # # # # Extract log-likelihood, and detect border cases # # # # #
         log_likelihood = float(log_likelihood.value)
         if np.isnan(log_likelihood):
             log_likelihood = -np.inf
