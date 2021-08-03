@@ -1,5 +1,7 @@
 """
 This file stores a subclass of BranchLengthEstimator, the IIDExponentialMLE.
+Briefly, this model assumes that CRISPR/Cas9 mutates each site independently
+and identically, with an exponential waiting time.
 """
 import cvxpy as cp
 import numpy as np
