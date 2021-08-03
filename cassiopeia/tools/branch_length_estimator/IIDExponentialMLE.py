@@ -85,6 +85,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 for node_id in tree.nodes
             ]
         )
+
+        # # # # # Create constraints of the optimization problem # # # # #
         a_leaf = tree.leaves[0]
         root = tree.root
         root_has_time_0_constraint = [r_X_t_variables[root] == 0]
