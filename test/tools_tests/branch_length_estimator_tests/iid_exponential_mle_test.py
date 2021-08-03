@@ -1,3 +1,6 @@
+"""
+Test IIDExponentialMLE in Cassiopeia.tools.
+"""
 import unittest
 
 import networkx as nx
