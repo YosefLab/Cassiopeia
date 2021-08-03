@@ -1907,7 +1907,7 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        times = self.get_times()
+        times = self.get_times().values()
         return max(times) - min(times)
 
     def get_mutated_characters_along_edge(

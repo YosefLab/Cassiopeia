@@ -27,13 +27,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
     method if they are not known, which is usually the case for real data).
 
     Because branch lengths and CRISPR/Cas9 mutation rate are not identifiable,
-    this estimator assumes that the tree has a depth of 1.
+    this estimator assumes that the tree has a depth of 1. In other words,
+    the estimated tree will have depth 1. The estimated mutation rate under
+    this unit-depth assumption will be stored as an attribute called
+    `mutation_rate`.
 
     Missing states are assumed to be missing at random.
 
     Args:
         minimum_branch_length: Estimated branch lengths will be constrained to
-            have length at least this value.
+            have length at least this value. By default it is set to 0.01,
+            since the MLE tends to collapse mutationless edges to length 0.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
         verbose: Verbosity level.
@@ -41,7 +45,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
     Attributes:
         log_likelihood: The log-likelihood of the training data under the
             estimated model.
-        mutation_rate: The estimated CRISPR/Cas9 mutation rate.
+        mutation_rate: The estimated CRISPR/Cas9 mutation rate, assuming that
+            the tree has depth exactly 1.
     """
 
     def __init__(
@@ -50,6 +55,11 @@ class IIDExponentialMLE(BranchLengthEstimator):
         verbose: bool = False,
         solver: str = "SCS",
     ):
+        allowed_solvers = ["ECOS", "SCS", "MOSEK"]
+        if solver not in allowed_solvers:
+            raise ValueError(
+                f"Solver {solver} not allowed. Allowed solvers: {allowed_solvers}"
+            )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
         self._verbose = verbose
         self._solver = solver
@@ -119,7 +129,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError("Third-party solver failed")
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
-        times = {node: float(r_X_t_variables[node].value) for node in tree.nodes}
+        times = {
+            node: float(r_X_t_variables[node].value) for node in tree.nodes
+        }
         # Make sure that the root has time 0 (avoid epsilons)
         times[tree.root] = 0.0
         # We smooth out epsilons that might make a parent's time greater
