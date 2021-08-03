@@ -21,7 +21,6 @@ class BranchLengthEstimator(abc.ABC):
         """Estimates branch lengths for the given tree.
 
         Args:
-            cassiopeia_tree: CassiopeiaTree storing character information for
-                phylogenetic inference; the tree topology must have been
-                initialized (for example by means of a CassiopeiaSolver).
+            cassiopeia_tree: CassiopeiaTree storing character information
+                and an initialized tree topology.
         """
