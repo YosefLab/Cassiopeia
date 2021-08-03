@@ -1971,3 +1971,6 @@ class CassiopeiaTree:
             if parent_state == 0 and child_state == 0:
                 res.append(i)
         return res
+    def copy(self) -> "CassiopeiaTree":
+        """Full copy of CassiopeiaTree"""
+        return copy.deepcopy(self)
