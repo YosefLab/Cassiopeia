@@ -142,12 +142,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
             times[child] = max(times[parent], times[child])
         tree.set_times(times)
 
-        # # # # # Extract log-likelihood, and detect border cases # # # # #
+        # # # # # Extract log-likelihood # # # # #
         log_likelihood = float(log_likelihood.value)
         if np.isnan(log_likelihood):
             log_likelihood = -np.inf
         self._log_likelihood = log_likelihood
+
+        # # # # # Extract mutation rate # # # # #
         tree_depth = tree.get_depth()
+        self._mutation_rate = tree_depth
+
+        # # # # # Raise errors on border cases # # # # #
         if tree_depth < 1e-6:
             raise IIDExponentialMLEError(
                 "All branch lengths estimated as zero."
@@ -156,7 +161,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError(
                 "Branch lengths estimated as infinite."
             )
-        self._mutation_rate = tree_depth
+        
+        # # # # # Make tree have depth 1 # # # # #
         tree.scale_to_unit_length()
 
     @property
