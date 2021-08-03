@@ -1,19 +1,14 @@
-sphinx
+sphinx_rtd_theme==0.5.0
+sphinx==4.0.0
 nbsphinx
-sphinx-autodoc-typehints
+sphinx-autodoc-typehints<1.12.0
+nbsphinx-link
+sphinx_gallery
 pandas
+numpy>=1.9
 networkx >= 2.0
-tqdm
-ete3
-numpy > 1.0, < 1.15
-matplotlib
-argparse
-Biopython
-pandas-charm
-pysam
-bokeh
-PyYAML
 Cython >= 0.29.2
-scipy
-python-Levenshtein
+scanpydoc>=0.4.5
+pydata-sphinx-theme>=0.4.0
 pathlib
+typing_extensions; python_version < '3.8'

@@ -2,6 +2,14 @@
 
 """Top-level for Cassiopeia development."""
 
-__author__ = "Matt Jones, Alex Khodaveridan"
+package_name = "cassiopeia"
+__author__ = "Matt Jones, Alex Khodaveridan, Richard Zhang, Sebastian Prillo"
 __email__ = "mattjones315@berkeley.edu"
 __version__ = "0.0.1"
+
+from . import pp
+from . import solver
+from . import pl
+from . import data
+from . import critique
+from . import sim

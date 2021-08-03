@@ -5,3 +5,8 @@
 _build
 _static
 _templates
+build
+*.egg-info
+*.c
+stdout.log
+notebooks/.ipynb_checkpoints

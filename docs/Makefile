@@ -3,10 +3,10 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = python3.6 -msphinx
+SPHINXBUILD   = python -msphinx
+SPHINXPROJ    = cassiopeia
 SOURCEDIR     = .
 BUILDDIR      = _build
-SPHINXPROJ    = Cassiopeia
 
 # Put it first so that "make" without argument is like "make help".
 help:
