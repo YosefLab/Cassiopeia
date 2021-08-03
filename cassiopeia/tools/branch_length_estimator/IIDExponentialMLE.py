@@ -155,11 +155,11 @@ class IIDExponentialMLE(BranchLengthEstimator):
         # # # # # Raise errors on border cases # # # # #
         if tree_depth < 1e-6:
             raise IIDExponentialMLEError(
-                "All branch lengths estimated as zero."
+                "All branch lengths estimated as zero. Cannot scale to depth 1."
             )
         if tree_depth > 15.0:
             raise IIDExponentialMLEError(
-                "Branch lengths estimated as infinite."
+                "Branch lengths estimated as infinite. Cannot scale to depth 1."
             )
 
         # # # # # Make tree have depth 1 # # # # #
