@@ -161,7 +161,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError(
                 "Branch lengths estimated as infinite."
             )
-        
+
         # # # # # Make tree have depth 1 # # # # #
         tree.scale_to_unit_length()
 
