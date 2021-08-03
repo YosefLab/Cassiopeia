@@ -72,3 +72,12 @@ class UnknownCigarStringError(Exception):
 
 class UnspecifiedConfigParameterError(Exception):
     pass
+
+
+class BranchLengthEstimatorError(Exception):
+    """An Exception class for the BranchLengthEstimator class."""
+    pass
+
+
+class IIDExponentialMLEError(BranchLengthEstimatorError):
+    pass

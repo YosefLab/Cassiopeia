@@ -1871,3 +1871,90 @@ class CassiopeiaTree:
             _node: self.__cache["distances"][frozenset({node, _node})]
             for _node in (self.leaves if leaves_only else self.nodes)
         }
+
+    def scale_to_unit_length(self) -> None:
+        """
+        Scales the tree to have unit length.
+
+        The longest path from root to leaf will have length 1 after the
+        scaling.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        times = {}
+        max_time = max(self.get_times().values())
+        min_time = min(self.get_times().values())
+        for node in self.nodes:
+            times[node] = self.get_time(node) / (max_time - min_time)
+        self.set_times(times)
+
+    def get_depth(self) -> float:
+        """
+        Depth of the tree (in terms of time).
+
+        The depth of the tree (in terms of time) is defined as the greatest
+        time distance of any leaf of the tree from the root.
+
+        Returns:
+            Depth of the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        times_dict = self.get_times()
+        return max(times_dict.values()) - min(times_dict.values())
+
+    def get_mutated_characters_along_edge(self, parent: str, child: str) -> List[int]:
+        """
+        List of mutated characters along edge.
+
+        A character is considered to mutate if it goes from the zero state
+        to a non-zero state that is also not a missing state. In other words,
+        if a character goes missing, it is NOT considered as mutated by this
+        method.
+
+        Raises:
+            CassiopeiaTreeError if the edge does not exist or if the tree is
+                not initialized.
+        """
+        self.__check_network_initialized()
+
+        if child not in self.children(parent):
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        parent_states = self.get_character_states(parent)
+        child_states = self.get_character_states(child)
+        res = []
+        for i, (parent_state, child_state) in enumerate(zip(parent_states, child_states)):
+            if parent_state == 0 and child_state != 0 and child_state != self.missing_state_indicator:
+                res.append(i)
+        return res
+
+    def get_unmutated_characters_along_edge(self, parent: str, child: str) -> List[int]:
+        """
+        List of unmutated characters along edge.
+
+        A character is considered to not mutate if it goes from the zero state
+        to the zero state.
+
+        Raises:
+            CassiopeiaTreeError if the edge does not exist or if the tree is
+                not initialized.
+        """
+        self.__check_network_initialized()
+
+        if child not in self.children(parent):
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        parent_states = self.get_character_states(parent)
+        child_states = self.get_character_states(child)
+        res = []
+        for i, (parent_state, child_state) in enumerate(zip(parent_states, child_states)):
+            if parent_state == 0 and child_state == 0:
+                res.append(i)
+        return res
