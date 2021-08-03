@@ -65,6 +65,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         The solution can be verified by hand. The optimization problem is:
             min_{r * t0} log(exp(-r * t0)) + log(1 - exp(-r * t0))
         The solution is r * t0 = ln(2) ~ 0.693
+        (Note that because the depth of the tree is fixed to 1, r * t0 = r * 1
+        is the mutation rate.)
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
@@ -92,6 +94,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         The solution can be verified by hand. The optimization problem is:
             min_{r * t0} log(exp(-r * t0)) + 2 * log(1 - exp(-r * t0))
         The solution is r * t0 = ln(3) ~ 1.098
+        (Note that because the depth of the tree is fixed to 1, r * t0 = r * 1
+        is the mutation rate.)
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
@@ -119,6 +123,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         The solution can be verified by hand. The optimization problem is:
             min_{r * t0} 2 * log(exp(-r * t0)) + log(1 - exp(-r * t0))
         The solution is r * t0 = ln(1.5) ~ 0.405
+        (Note that because the depth of the tree is fixed to 1, r * t0 = r * 1
+        is the mutation rate.)
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
@@ -142,6 +148,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         problem:
             min_{r * t0} 2 * log(exp(-r * t0)) + log(1 - exp(-r * t0))
         The solution is r * t0 = ln(1.5) ~ 0.405
+        (Note that because the depth of the tree is fixed to 1, r * t0 = r * 1
+        is the mutation rate.)
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
@@ -235,6 +243,10 @@ class TestIIDExponentialMLE(unittest.TestCase):
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_on_simulated_data(self, name, solver):
+        """
+        We run the estimator on data simulated under the correct model.
+        The estimator should be close to the ground truth.
+        """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
         tree.add_edges_from(
