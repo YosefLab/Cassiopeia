@@ -1339,7 +1339,6 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
 #     def test_IIDExponentialPosteriorMeanBLEGridSeachCV_smoke(self, name, use_cpp_implementation):
 #         r"""
 #         Just want to see that it runs in both single and multiprocessor mode
-#         """
 #         tree = nx.DiGraph()
 #         tree.add_nodes_from(["0", "1"]),
 #         tree.add_edges_from([("0", "1")])
