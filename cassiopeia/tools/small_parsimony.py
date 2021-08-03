@@ -5,9 +5,11 @@ phylogenies.
 Amongst these tools are basic Fitch-Hartigan reconstruction, parsimony scoring,
 and the FitchCount algorithm described in Quinn, Jones et al, Science (2021).
 """
-from typing import Optional
+from typing import List, Optional
 
+import itertools
 import numpy as np
+import pandas as pd
 from pandas.api.types import is_categorical_dtype, is_numeric_dtype
 
 
@@ -239,3 +241,200 @@ def score_small_parsimony(
                 "infer_ancestral_states=True."
             )
     return parsimony
+
+
+def fitch_count(
+    cassiopeia_tree: CassiopeiaTree,
+    meta_item: str,
+    root: Optional[str] = None,
+    infer_ancestral_states: bool = True,
+    state_key: str = "S1",
+):
+    """Runs the FitchCount algorithm.
+
+    Performs the FitchCount algorithm for inferring the number of times that
+    two two states transition to one another across all equally-parsimonious
+    solutions returned by the Fitch-Hartigan algorithm. The original algorithm
+    was described in Quinn, Jones, et al, Science (2021). The output is an 
+    MxM count matrix, where the values indicate the number of times that
+    m1 transitioned to m2 along an edge in a Fitch-Hartigan solution.
+    To obtain probabilities P(m1 -> m2), divide each row by its row-sum.
+
+    This procedure will only work on categorical data and will otherwise raise
+    an error.
+
+    Args:
+        cassiopeia_tree: CassiopeiaTree object with a tree and cell meta data.
+        meta_item: A column in the CassiopeiaTree cell meta corresponding to a
+            categorical variable.
+        root: Node to treat as the root.
+        infer_ancestral_states: Whether or not to initialize the ancestral state
+            sets with Fitch-Hartigan.
+        state_key: If ancestral state sets have already been created, then this
+            argument specifies what the attribute name is in the CassiopeiaTree
+
+    Returns:
+        An MxM count matrix indicating the number of edges that contained a
+            transition between two states across all equally parsimonious
+            solutions returned by Fitch-Hartigan.
+    """
+    cassiopeia_tree = cassiopeia_tree.copy()
+    cassiopeia_tree.subset_tree_at_node(root)
+
+    if infer_ancestral_states:
+        fitch_hartigan_bottom_up(
+            cassiopeia_tree, meta_item, root, state_key=state_key
+        )
+
+    meta = cassiopeia_tree.cell_meta[meta_item]
+    unique_states = meta.unique()
+
+    # create mapping from nodes to integers
+    bfs_postorder = [root]
+    for edge in cassiopeia_tree.breadth_first_search_edges():
+        bfs_postorder.append(edge[1])
+
+    node_to_i = dict(zip(bfs_postorder), range(len(bfs_postorder)))
+    label_to_j = dict(zip(unique_states, range(len(unique_states))))
+
+    N = _N_fitch_count(
+        cassiopeia_tree, unique_states, node_to_i, label_to_j, root, state_key
+    )
+    C = _C_fitch_count(
+        cassiopeia_tree,
+        N,
+        unique_states,
+        node_to_i,
+        label_to_j,
+        root,
+        state_key,
+    )
+
+    M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
+    M.columns = unique_states
+    M.index = unique_states
+
+    # create count matrix
+    for s1 in unique_states:
+        for s2 in unique_states:
+            M.loc[s1, s2] = np.sum(
+                C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
+            )
+
+    return M
+
+
+def _N_fitch_count(
+    cassiopeia_tree: CassiopeiaTree,
+    unique_states: List[str],
+    node_to_i: Dict[str, int],
+    label_to_j: Dict[str, int],
+    state_key: str = "S1",
+) -> np.array(int):
+    def _fill(v: str, s: str):
+        """Fills in the dynamic programming table N for FitchCount.
+
+        Computes N[v, s], corresponding to the number of solutions below
+        a node v in the tree given v takes on the state s.
+        """
+
+        if cassiopeia_tree.is_leaf(v):
+            return 1
+
+        children = cassiopeia_tree.children(v)
+        A = np.zeros((len(children)))
+
+        legal_states = []
+        for i, u in zip(range(len(children)), children):
+
+            if s not in cassiopeia_tree.get_attribute(u, state_key):
+                legal_states = cassiopeia_tree.get_attribute(u, state_key)
+            else:
+                legal_states = [s]
+
+            A[i] = np.sum(
+                [L[node_to_i[u], label_to_j[sp]] for sp in legal_states]
+            )
+        return np.prod([A[u] for u in range(len(A))])
+
+    L = np.full((len(cassiopeia_tree.nodes), len(unique_states)), 0.0)
+    for n in cassiopeia_tree.depth_first_traverse_nodes():
+        for s in cassiopeia_tree.get_attribute(n, state_key):
+            L[node_to_i[n], label_to_j[s]] = _fill(n, s)
+
+    return L
+
+
+def _C_fitch_count(
+    cassiopeia_tree: CassiopeiaTree,
+    N: np.array(int, int),
+    unique_states: List[str],
+    node_to_i: Dict[str, int],
+    label_to_j: Dict[str, int],
+    state_key: str = "S1",
+) -> np.array(int):
+    def _fill(v: str, s: str, s1: str, s2: str) -> int:
+        """Fills in the dynamic programming table C for FitchCount.
+
+        Computes C[v, s, s1, s2], the number of transitions from state s1 to
+        state s2 in the subtree rooted at v, given that state v takes on the
+        state s. 
+        """
+
+        if cassiopeia_tree.is_leaf(v):
+            return 0
+
+        children = cassiopeia_tree.children(v)
+        A = np.zeros((len(children)))
+        LS = [[]] * len(children)
+
+        for i, u in zip(len(children), children):
+            if s in cassiopeia_tree.get_attribute(u, state_key):
+                LS[i] = [s]
+            else:
+                LS[i] = cassiopeia_tree.get_attribute(u, state_key)
+
+            A[i] = np.sum(
+                [
+                    C[
+                        node_to_i[u],
+                        label_to_j[sp],
+                        label_to_j[s1],
+                        label_to_j[s2],
+                    ]
+                    for sp in LS[i]
+                ]
+            )
+
+            if s1 == s and s2 in LS[i]:
+                A[i] += N[node_to_i[u], label_to_j[s2]]
+
+        parts = []
+        for i, u in zip(range(len(children)), children):
+            prod = 1
+
+            for k, up in zip(range(len(children)), children):
+                fact = 0
+                if up == u:
+                    continue
+                for sp in LS[k]:
+                    fact += N[node_to_i[up], label_to_j[sp]]
+                prod *= fact
+
+            part = A[i] * prod
+            parts.append(part)
+
+        return np.sum(parts)
+
+    C = np.zeros(
+        (len(cassiopeia_tree.nodes), N.shape[1], N.shape[1], N.shape[1])
+    )
+
+    for n in cassiopeia_tree.depth_first_traverse_nodes():
+        for s in cassiopeia_tree.get_attribute(n, state_key):
+            for (s1, s2) in itertools.product(unique_states, repeat=2):
+                C[
+                    node_to_i[n], label_to_j[s], label_to_j[s1], label_to_j[s2]
+                ] = _fill(n, s, s1, s2)
+
+    return C

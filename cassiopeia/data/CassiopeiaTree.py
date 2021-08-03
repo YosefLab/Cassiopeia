@@ -1116,6 +1116,30 @@ class CassiopeiaTree:
 
         return nx.dfs_edges(self.__network, source=source)
 
+    def breadth_first_traverse_edges(
+        self, source: Optional[int] = None
+    ) -> Iterator[Tuple[str, str]]:
+        """Edges from breadth first traversal of the tree.
+
+        Returns the edges from a BFS on the tree.
+
+        Args:
+            source: Where to begin the breadth first traversal.
+
+        Returns:
+            A list of edges from the breadth first traversal.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+
+        self.__check_network_initialized()
+
+        if source is None:
+            source = self.root
+
+        return nx.bfs_edges(self.__network, source=source)
+
     def leaves_in_subtree(self, node) -> List[str]:
         """Get leaves in subtree below a given node.
 
@@ -1143,6 +1167,30 @@ class CassiopeiaTree:
                     self.__cache["subtree"][n] = leaves
 
         return self.__cache["subtree"][node]
+
+    def subset_tree_at_node(
+        self, node: str, copy: bool = False
+    ) -> Optional["CassiopeiaTree"]:
+        """Subset CassiopeiaTree object at node.
+
+        Given a node in the CassiopeiaTree, subset the entire tree object
+        to only the nodes that fall below that node.
+
+        Args:
+            node: Node identifier in the object.
+            copy: Return a copy or operate in place.
+        
+        Returns:
+            A subset CassiopeiaTree object if copy is set to true, else None. 
+        """
+        if copy:
+            new_tree = self.copy()
+            self.subset_tree_at_node(new_tree, node)
+            return new_tree
+
+        to_remove = list(set(self.nodes) - set(self.leaves_in_subtree(node)))
+        for node in to_remove:
+            self.remove_leaf_and_prune_lineage(node)
 
     def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.
