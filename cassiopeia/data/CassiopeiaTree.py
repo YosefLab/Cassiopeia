@@ -1884,12 +1884,13 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        times = {}
-        max_time = max(self.get_times().values())
-        min_time = min(self.get_times().values())
+        current_times = self.get_times().values()
+        max_time = max(current_times)
+        min_time = min(current_times)
+        new_times = {}
         for node in self.nodes:
-            times[node] = self.get_time(node) / (max_time - min_time)
-        self.set_times(times)
+            new_times[node] = self.get_time(node) / (max_time - min_time)
+        self.set_times(new_times)
 
     def get_depth(self) -> float:
         """
@@ -1906,8 +1907,8 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        times_dict = self.get_times()
-        return max(times_dict.values()) - min(times_dict.values())
+        times = self.get_times()
+        return max(times) - min(times)
 
     def get_mutated_characters_along_edge(
         self, parent: str, child: str
