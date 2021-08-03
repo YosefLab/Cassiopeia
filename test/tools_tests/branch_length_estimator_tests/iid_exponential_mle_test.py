@@ -28,7 +28,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0], "1": [0]})
-        model = IIDExponentialMLE(solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         with self.assertRaises(IIDExponentialMLEError):
             model.estimate_branch_lengths(tree)
 
@@ -49,7 +49,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0], "1": [1]})
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         with self.assertRaises(IIDExponentialMLEError):
             model.estimate_branch_lengths(tree)
 
@@ -71,7 +71,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0], "1": [0, 1]})
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         log_likelihood = model.log_likelihood
         self.assertAlmostEqual(model.mutation_rate, np.log(2), places=3)
@@ -98,7 +98,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0], "1": [0, 1, 1]})
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         log_likelihood = model.log_likelihood
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
@@ -125,7 +125,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0], "1": [0, 0, 1]})
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
         self.assertAlmostEqual(model.mutation_rate, np.log(1.5), places=3)
@@ -167,7 +167,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "6": [1],
             }
         )
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
         self.assertAlmostEqual(tree.get_branch_length("0", "2"), 0.0, places=3)
@@ -210,7 +210,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "6": [0, 0, 0, 4, 0, 6, 0, 8, 9],
             }
         )
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(model.mutation_rate, 0.378, places=3)
         self.assertAlmostEqual(
@@ -257,7 +257,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             size_of_cassette=1,
             mutation_rate=1.5,
         ).overlay_data(tree)
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertTrue(0.05 < tree.get_time("1") < 0.15)
         self.assertTrue(0.8 < tree.get_time("2") < 1.0)
@@ -281,7 +281,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.set_all_character_states(
             {"0": [0], "1": [1], "2": [1], "3": [1], "4": [0]}
         )
-        model = IIDExponentialMLE()
+        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(model.log_likelihood, -1.386, places=3)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
@@ -323,7 +323,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "6": [1],
             }
         )
-        model = IIDExponentialMLE(minimum_branch_length=0.01)
+        model = IIDExponentialMLE(minimum_branch_length=0.01, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(
             tree.get_branch_length("0", "1"), 0.990, places=3

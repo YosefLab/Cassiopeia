@@ -44,9 +44,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
 
     def __init__(
         self,
-        minimum_branch_length: float = 0.0,
+        minimum_branch_length: float = 0.01,
         verbose: bool = False,
-        solver: str = "ECOS",
+        solver: str = "SCS",
     ):
         self.minimum_branch_length = minimum_branch_length
         self.verbose = verbose
@@ -87,14 +87,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
             for leaf in tree.leaves
             if leaf != a_leaf
         ]
-        non_negative_r_X_t_constraints = [
-            r_X_t >= 0 for r_X_t in r_X_t_variables.values()
-        ]  # Although not necessary, they seem to stabilize the solver.
         all_constraints = (
             root_has_time_0_constraint
             + time_increases_constraints
             + ultrametric_constraints
-            + non_negative_r_X_t_constraints
         )
 
         # # # # # Compute the log-likelihood # # # # #
@@ -109,7 +105,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )
             log_likelihood += num_unmutated * (-edge_length)
             log_likelihood += num_mutated * cp.log(
-                1 - cp.exp(-edge_length - 1e-8)
+                1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
             )
 
         # # # # # Solve the problem # # # # #
