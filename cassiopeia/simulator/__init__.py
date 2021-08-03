@@ -1,6 +1,7 @@
 """Top level for simulator."""
 
 from .BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
+from .BrownianSpatialDataSimulator import BrownianSpatialDataSimulator
 from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
 from .CompleteBinarySimulator import CompleteBinarySimulator
 from .DataSimulator import DataSimulator, DataSimulatorError
