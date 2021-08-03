@@ -47,11 +47,13 @@ class IIDExponentialBLE(BranchLengthEstimator):
         l2_regularization: float = 0,
         treat_missing_states_as_mutations: bool = True,
         verbose: bool = False,
+        solver: str = "ECOS",
     ):
         self.minimum_branch_length = minimum_branch_length
         self.l2_regularization = l2_regularization
         self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
         self.verbose = verbose
+        self.solver = solver
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
@@ -66,6 +68,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
         l2_regularization = self.l2_regularization
         treat_missing_states_as_mutations = self.treat_missing_states_as_mutations
         verbose = self.verbose
+        solver = self.solver
 
         # # # # # Create variables of the optimization problem # # # # #
         r_X_t_variables = dict(
@@ -148,7 +151,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
         obj = cp.Maximize(log_likelihood - l2_penalty)
         prob = cp.Problem(obj, all_constraints)
 
-        f_star = prob.solve(solver="ECOS", verbose=verbose)
+        f_star = prob.solve(solver=solver, verbose=verbose)
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
 
