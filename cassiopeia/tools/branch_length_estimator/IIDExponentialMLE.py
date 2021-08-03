@@ -90,7 +90,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         a_leaf = tree.leaves[0]
         root = tree.root
         root_has_time_0_constraint = [r_X_t_variables[root] == 0]
-        time_increases_constraints = [
+        minimum_branch_length_constraints = [
             r_X_t_variables[child]
             >= r_X_t_variables[parent]
             + minimum_branch_length * r_X_t_variables[a_leaf]
@@ -103,7 +103,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         ]
         all_constraints = (
             root_has_time_0_constraint
-            + time_increases_constraints
+            + minimum_branch_length_constraints
             + ultrametric_constraints
         )
 
