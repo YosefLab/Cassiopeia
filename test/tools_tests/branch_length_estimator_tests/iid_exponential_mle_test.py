@@ -1,5 +1,5 @@
 """
-Test IIDExponentialMLE in Cassiopeia.tools.
+Test IIDExponentialMLE in cassiopeia.tools.
 """
 import unittest
 
