@@ -32,7 +32,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     this unit-depth assumption will be stored as an attribute called
     `mutation_rate`.
 
-    Missing states are assumed to be missing at random.
+    Missing states are treated as missing at random by the model.
 
     Args:
         minimum_branch_length: Estimated branch lengths will be constrained to
