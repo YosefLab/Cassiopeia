@@ -1917,7 +1917,7 @@ class CassiopeiaTree:
         List of mutated characters along edge.
 
         A character is considered to mutate if it goes from the zero state
-        to a non-zero state that is also not a missing state. In other words,
+        to a non-zero state that is also not a missing state. In particular,
         if a character goes missing, it is NOT considered as mutated by this
         method.
 
