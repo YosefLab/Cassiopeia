@@ -38,7 +38,8 @@ jobs:
         make install
     - name: Test with pytest
       run: |
-        make test
+        python -m pytest -vv test/ --cov-report=xml --cov=cassiopeia
     - name: After success
       run: |
+        codecov
         pip list
