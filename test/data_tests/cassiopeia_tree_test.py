@@ -475,6 +475,11 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
+        # Shift all times so that the tree's root doesn't have time 0.
+        # This checks for border cases.
+        new_times = {node: tree.get_time(node) + 1 for node in tree.nodes}
+        tree.set_times(new_times)
+
         mean_depth = tree.get_mean_depth_of_tree()
         self.assertEqual(mean_depth, 4.7)
 

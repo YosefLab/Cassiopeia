@@ -1185,19 +1185,37 @@ class CassiopeiaTree:
         else:
             return None
 
-    def get_mean_depth_of_tree(self) -> float:
-        """Computes mean depth of tree.
+    def _get_node_depths(self) -> List[float]:
+        """
+        Computes the depth of each node in the tree.
 
-        Returns the mean depth of the tree. If branch lengths have not been
-        estimated, depth is by default the number of edges in the tree.
+        Returns:
+            List with depth of each node in the tree
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
 
-        depths = [self.get_time(l) for l in self.leaves]
-        return np.mean(depths)
+        root_time = self.get_time(self.root)
+        depths = [self.get_time(l) - root_time for l in self.leaves]
+        return depths
+
+    def get_mean_depth_of_tree(self) -> float:
+        """Computes mean depth of tree.
+
+        Returns the mean depth of the tree. If branch lengths have not been
+        estimated, depth is by default the number of edges in the tree.
+
+        Returns:
+            Mean depth of the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        return np.mean(self._get_node_depths())
 
     def get_max_depth_of_tree(self) -> float:
         """
@@ -1218,9 +1236,7 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        root_time = self.get_time(self.root)
-        depths = [self.get_time(l) - root_time for l in self.leaves]
-        return np.max(depths)
+        return np.max(self._get_node_depths())
 
     def get_mutations_along_edge(
         self,
