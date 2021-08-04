@@ -8,6 +8,7 @@ from .DataSimulator import DataSimulator, DataSimulatorError
 from .LeafSubsampler import LeafSubsampler, LeafSubsamplerError
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
+from .SpatialSampler import SpatialSampler
 from .SupercellularSampler import SupercellularSampler
 from .TreeSimulator import TreeSimulator, TreeSimulatorError
 from .UniformLeafSubsampler import UniformLeafSubsampler
