@@ -279,16 +279,14 @@ def fitch_count(
             solutions returned by Fitch-Hartigan.
     """
     cassiopeia_tree = cassiopeia_tree.copy()
-    
+
     unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
 
     if root != cassiopeia_tree.root:
         cassiopeia_tree.subset_tree_at_node(root)
 
     if infer_ancestral_states:
-        fitch_hartigan_bottom_up(
-            cassiopeia_tree, meta_item, add_key=state_key
-        )
+        fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, add_key=state_key)
 
     # create mapping from nodes to integers
     bfs_postorder = [cassiopeia_tree.root]
@@ -299,20 +297,11 @@ def fitch_count(
     label_to_j = dict(zip(unique_states, range(len(unique_states))))
 
     N = _N_fitch_count(
-        cassiopeia_tree,
-        unique_states,
-        node_to_i,
-        label_to_j,
-        state_key
+        cassiopeia_tree, unique_states, node_to_i, label_to_j, state_key
     )
 
     C = _C_fitch_count(
-        cassiopeia_tree,
-        N,
-        unique_states,
-        node_to_i,
-        label_to_j,
-        state_key,
+        cassiopeia_tree, N, unique_states, node_to_i, label_to_j, state_key
     )
 
     M = pd.DataFrame(np.zeros((N.shape[1], N.shape[1])))
@@ -323,7 +312,12 @@ def fitch_count(
     for s1 in unique_states:
         for s2 in unique_states:
             M.loc[s1, s2] = np.sum(
-                C[node_to_i[cassiopeia_tree.root], :, label_to_j[s1], label_to_j[s2]]
+                C[
+                    node_to_i[cassiopeia_tree.root],
+                    :,
+                    label_to_j[s1],
+                    label_to_j[s2],
+                ]
             )
 
     return M
@@ -418,6 +412,7 @@ def _C_fitch_count(
             transitions from state s1 to s2 below a node v given v takes on
             the state s.
     """
+
     def _fill(v: str, s: str, s1: str, s2: str) -> int:
         """Helper function to fill in a single entry in C."""
 
