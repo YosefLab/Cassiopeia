@@ -29,6 +29,7 @@ requirements = [
     "python-Levenshtein",
     "PyYAML>=3.12",
     "scipy>=1.2.0",
+    "shapely>=1.7.0",
     "typing-extensions>=3.7.4",
     "tqdm>=4",
 ]
