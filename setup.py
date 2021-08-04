@@ -31,6 +31,8 @@ requirements = [
     "scipy>=1.2.0",
     "typing-extensions>=3.7.4",
     "tqdm>=4",
+    "cvxpy",
+    "parameterized",
 ]
 
 
