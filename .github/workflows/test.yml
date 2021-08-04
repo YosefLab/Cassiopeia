@@ -35,6 +35,7 @@ jobs:
         pip install pytest-cov
         pip install numpy
         pip install Cython
+        pip install codecov
         make install
     - name: Test with pytest
       run: |
