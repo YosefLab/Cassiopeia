@@ -305,27 +305,27 @@ def fitch_count(
         state_key
     )
 
-    # C = _C_fitch_count(
-    #     cassiopeia_tree,
-    #     N,
-    #     unique_states,
-    #     node_to_i,
-    #     label_to_j,
-    #     state_key,
-    # )
+    C = _C_fitch_count(
+        cassiopeia_tree,
+        N,
+        unique_states,
+        node_to_i,
+        label_to_j,
+        state_key,
+    )
 
-    # M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
-    # M.columns = unique_states
-    # M.index = unique_states
+    M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
+    M.columns = unique_states
+    M.index = unique_states
 
-    # # create count matrix
-    # for s1 in unique_states:
-    #     for s2 in unique_states:
-    #         M.loc[s1, s2] = np.sum(
-    #             C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
-    #         )
+    # create count matrix
+    for s1 in unique_states:
+        for s2 in unique_states:
+            M.loc[s1, s2] = np.sum(
+                C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
+            )
 
-    # return M
+    return M
 
 
 def _N_fitch_count(
