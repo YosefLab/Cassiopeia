@@ -249,7 +249,6 @@ class SpatialSampler(LeafSubsampler):
             captured = self.capture_cells_on_spot(spot, cells)
             if captured:
                 captured_spots[i] = captured
-        print(captured_spots)
 
         # Construct a new network and character matrix
         sampled_tree = tree.copy()
