@@ -445,7 +445,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node14", "node15"),
             ("node14", "node16"),
             ("node16", "node17"),
-            ("node16", "node18")
+            ("node16", "node18"),
         ]
         self.assertCountEqual(obs_ordering, expected_ordering)
 
@@ -456,7 +456,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node14", "node15"),
             ("node14", "node16"),
             ("node16", "node17"),
-            ("node16", "node18")
+            ("node16", "node18"),
         ]
         self.assertCountEqual(obs_ordering, expected_ordering)
 
@@ -505,7 +505,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(tree.root, "node2")
         self.assertCountEqual(tree.leaves, ["node5", "node6"])
         self.assertCountEqual(tree.nodes, expected_nodes)
-        
 
     def test_reconstruct_ancestral_states(self):
 
@@ -533,7 +532,6 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         tree.reconstruct_ancestral_characters()
 
-        edge_of_interest = ("node4", "node8")
         expected_mutations = [(2, 1)]
         observed_mutations = tree.get_mutations_along_edge("node4", "node8")
 

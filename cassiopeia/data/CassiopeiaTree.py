@@ -1199,7 +1199,6 @@ class CassiopeiaTree:
         # Remove all removed nodes from data fields
         self.__register_data_with_tree()
 
-
     def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.
 
