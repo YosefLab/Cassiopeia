@@ -5,7 +5,7 @@ phylogenies.
 Amongst these tools are basic Fitch-Hartigan reconstruction, parsimony scoring,
 and the FitchCount algorithm described in Quinn, Jones et al, Science (2021).
 """
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import itertools
 import numpy as np
@@ -298,30 +298,34 @@ def fitch_count(
     label_to_j = dict(zip(unique_states, range(len(unique_states))))
 
     N = _N_fitch_count(
-        cassiopeia_tree, unique_states, node_to_i, label_to_j, root, state_key
-    )
-    C = _C_fitch_count(
         cassiopeia_tree,
-        N,
         unique_states,
         node_to_i,
         label_to_j,
-        root,
-        state_key,
+        state_key
     )
 
-    M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
-    M.columns = unique_states
-    M.index = unique_states
+    # C = _C_fitch_count(
+    #     cassiopeia_tree,
+    #     N,
+    #     unique_states,
+    #     node_to_i,
+    #     label_to_j,
+    #     state_key,
+    # )
 
-    # create count matrix
-    for s1 in unique_states:
-        for s2 in unique_states:
-            M.loc[s1, s2] = np.sum(
-                C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
-            )
+    # M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
+    # M.columns = unique_states
+    # M.index = unique_states
 
-    return M
+    # # create count matrix
+    # for s1 in unique_states:
+    #     for s2 in unique_states:
+    #         M.loc[s1, s2] = np.sum(
+    #             C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
+    #         )
+
+    # return M
 
 
 def _N_fitch_count(
@@ -367,7 +371,7 @@ def _N_fitch_count(
 
 def _C_fitch_count(
     cassiopeia_tree: CassiopeiaTree,
-    N: np.array(int, int),
+    N: np.array,
     unique_states: List[str],
     node_to_i: Dict[str, int],
     label_to_j: Dict[str, int],
