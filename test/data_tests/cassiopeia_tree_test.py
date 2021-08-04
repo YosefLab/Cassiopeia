@@ -1664,23 +1664,28 @@ class TestCassiopeiaTree(unittest.TestCase):
                 "node3", {leaf: 0 for leaf in tree_no_map.leaves}
             )
 
-    def test_get_depth(self):
-        tree = cas.data.CassiopeiaTree(tree=self.test_network)
-        self.assertEqual(tree.get_depth(), 8)
-
     def test_scale_to_unit_length(self):
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
         tree.scale_to_unit_length()
-        self.assertEqual(tree.get_depth(), 1)
+        self.assertEqual(tree.get_max_depth_of_tree(), 1)
 
-    def test_get_mutated_characters_along_edge(self):
-        tree = cas.data.CassiopeiaTree(
-            character_matrix=self.character_matrix, tree=self.test_network
-        )
-        tree.reconstruct_ancestral_characters()
+    def test_get_mutations_along_edge_exclude_missing_states(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1"])
+        tree.add_edge("0", "1")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0, 0, -1], "1": [0, 1, -1, -1]})
         self.assertEqual(
-            tree.get_mutated_characters_along_edge("node2", "node6"),
-            [1]
+            tree.get_mutations_along_edge(
+                "0", "1", treat_missing_as_mutations=False
+            ),
+            [(1, 1)],
+        )
+        self.assertEqual(
+            tree.get_mutations_along_edge(
+                "0", "1", treat_missing_as_mutations=True
+            ),
+            [(1, 1), (2, -1)],
         )
 
     def test_get_unmutated_characters_along_edge(self):
@@ -1690,7 +1695,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree.reconstruct_ancestral_characters()
         self.assertEqual(
             tree.get_unmutated_characters_along_edge("node2", "node6"),
-            [2, 3, 4, 5, 6, 7]
+            [2, 3, 4, 5, 6, 7],
         )
 
 

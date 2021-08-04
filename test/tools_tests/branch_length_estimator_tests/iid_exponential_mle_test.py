@@ -8,7 +8,6 @@ import numpy as np
 from parameterized import parameterized
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import IIDExponentialMLEError
 from cassiopeia.simulator import Cas9LineageTracingDataSimulator
 from cassiopeia.tools import IIDExponentialMLE
 
@@ -23,17 +22,16 @@ class TestIIDExponentialMLE(unittest.TestCase):
             |
             v
             child [state = '0']
-        This is thus the simplest possible example of no mutations, and the MLE
-        branch length should be 0, collapsing the tree and causing the
-        estimator to error out.
+        Since the character matrix is degenerate (it has no mutations),
+        an error should be raised.
         """
         tree = nx.DiGraph()
         tree.add_node("0"), tree.add_node("1")
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0], "1": [0]})
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
-        with self.assertRaises(IIDExponentialMLEError):
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
+        with self.assertRaises(ValueError):
             model.estimate_branch_lengths(tree)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
@@ -45,16 +43,16 @@ class TestIIDExponentialMLE(unittest.TestCase):
             |
             v
             child [state = '1']
-        This is thus the simplest possible example of saturation, and the MLE
-        mutation rate should be infinity, causing the estimator to error out.
+        Since the character matrix is degenerate (it is saturated),
+        an error should be raised.
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0], "1": [1]})
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
-        with self.assertRaises(IIDExponentialMLEError):
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
+        with self.assertRaises(ValueError):
             model.estimate_branch_lengths(tree)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
@@ -77,7 +75,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0], "1": [0, 1]})
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         log_likelihood = model.log_likelihood
         self.assertAlmostEqual(model.mutation_rate, np.log(2), places=3)
@@ -106,9 +104,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0], "1": [0, 1, 1]})
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
-        log_likelihood = model.log_likelihood
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
         self.assertAlmostEqual(tree.get_time("1"), 1.0, places=3)
         self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
@@ -135,7 +132,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("0", "1")
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0], "1": [0, 0, 1]})
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
         self.assertAlmostEqual(model.mutation_rate, np.log(1.5), places=3)
@@ -146,10 +143,10 @@ class TestIIDExponentialMLE(unittest.TestCase):
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_small_tree_with_one_mutation(self, name, solver):
         """
-        Perfect binary tree with one mutation at a node 6: Should give very short
-        edges 1->3,1->4,0->2.
-        The problem can be solved by hand: it trivially reduces to a 1-dimensional
-        problem:
+        Perfect binary tree with one mutation at a node 6: Should give very
+        short edges 1->3,1->4,0->2.
+        The problem can be solved by hand: it trivially reduces to a
+        1-dimensional problem:
             min_{r * t0} 2 * log(exp(-r * t0)) + log(1 - exp(-r * t0))
         The solution is r * t0 = ln(1.5) ~ 0.405
         (Note that because the depth of the tree is fixed to 1, r * t0 = r * 1
@@ -179,7 +176,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "6": [1],
             }
         )
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        # Need to make minimum_branch_length be epsilon or else SCS fails...
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
         self.assertAlmostEqual(tree.get_branch_length("0", "2"), 0.0, places=3)
@@ -195,8 +193,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
         """
         Perfect binary tree with "normal" amount of mutations on each edge.
 
-        Regression test. Cannot be solved by hand. We just check that this solution
-        never changes.
+        Regression test. Cannot be solved by hand. We just check that this
+        solution never changes.
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
@@ -222,7 +220,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "6": [0, 0, 0, 4, 0, 6, 0, 8, 9, -1],
             }
         )
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(model.mutation_rate, 0.378, places=3)
         self.assertAlmostEqual(
@@ -273,7 +271,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             size_of_cassette=1,
             mutation_rate=1.5,
         ).overlay_data(tree)
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertTrue(0.05 < tree.get_time("1") < 0.15)
         self.assertTrue(0.8 < tree.get_time("2") < 1.0)
@@ -287,8 +285,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_subtree_collapses_when_no_mutations(self, name, solver):
         """
-        A subtree with no mutations should collapse to 0. It reduces the problem to
-        the same as in 'test_hand_solvable_problem_1'
+        A subtree with no mutations should collapse to 0. It reduces the
+        problem to the same as in 'test_hand_solvable_problem_1'
         """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3", "4"]),
@@ -297,7 +295,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.set_all_character_states(
             {"0": [0], "1": [1], "2": [1], "3": [1], "4": [0]}
         )
-        model = IIDExponentialMLE(minimum_branch_length=0.0, solver=solver)
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, solver=solver)
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(model.log_likelihood, -1.386, places=3)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
