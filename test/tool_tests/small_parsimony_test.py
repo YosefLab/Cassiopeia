@@ -313,6 +313,9 @@ class TestSmallParsimony(unittest.TestCase):
         )
         self.assertEqual(parsimony, 5)
 
+    def test_fitch_count_basic_binary(self):
+
+        fitch_matrix = cas.tl.fitch_count(self.binary_tree, "nucleotide")
 
 if __name__ == "__main__":
     unittest.main()

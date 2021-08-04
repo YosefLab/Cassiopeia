@@ -1185,12 +1185,20 @@ class CassiopeiaTree:
         """
         if copy:
             new_tree = self.copy()
-            self.subset_tree_at_node(new_tree, node)
+            new_tree.subset_tree_at_node(node)
             return new_tree
 
-        to_remove = list(set(self.nodes) - set(self.leaves_in_subtree(node)))
+        nodes_in_subtree = self.depth_first_traverse_nodes(source=node)
+        to_remove = list(set(self.nodes) - set(nodes_in_subtree))
         for node in to_remove:
-            self.remove_leaf_and_prune_lineage(node)
+            self.__remove_node(node)
+
+        # reset cache because we've changed the tree topology
+        self.__cache = {}
+
+        # Remove all removed nodes from data fields
+        self.__register_data_with_tree()
+
 
     def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.

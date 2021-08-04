@@ -279,7 +279,9 @@ def fitch_count(
             solutions returned by Fitch-Hartigan.
     """
     cassiopeia_tree = cassiopeia_tree.copy()
-    cassiopeia_tree.subset_tree_at_node(root)
+
+    if root != cassiopeia_tree.root:
+        cassiopeia_tree.subset_tree_at_node(root)
 
     if infer_ancestral_states:
         fitch_hartigan_bottom_up(
