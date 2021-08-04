@@ -279,24 +279,23 @@ def fitch_count(
             solutions returned by Fitch-Hartigan.
     """
     cassiopeia_tree = cassiopeia_tree.copy()
+    
+    unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
 
     if root != cassiopeia_tree.root:
         cassiopeia_tree.subset_tree_at_node(root)
 
     if infer_ancestral_states:
         fitch_hartigan_bottom_up(
-            cassiopeia_tree, meta_item, root, state_key=state_key
+            cassiopeia_tree, meta_item, add_key=state_key
         )
 
-    meta = cassiopeia_tree.cell_meta[meta_item]
-    unique_states = meta.unique()
-
     # create mapping from nodes to integers
-    bfs_postorder = [root]
-    for edge in cassiopeia_tree.breadth_first_search_edges():
-        bfs_postorder.append(edge[1])
+    bfs_postorder = [cassiopeia_tree.root]
+    for (_, e1) in cassiopeia_tree.breadth_first_traverse_edges():
+        bfs_postorder.append(e1)
 
-    node_to_i = dict(zip(bfs_postorder), range(len(bfs_postorder)))
+    node_to_i = dict(zip(bfs_postorder, range(len(bfs_postorder))))
     label_to_j = dict(zip(unique_states, range(len(unique_states))))
 
     N = _N_fitch_count(
@@ -316,7 +315,7 @@ def fitch_count(
         state_key,
     )
 
-    M = pd.DataFrame(np.zeros(N.shape[1], N.shape[1]))
+    M = pd.DataFrame(np.zeros((N.shape[1], N.shape[1])))
     M.columns = unique_states
     M.index = unique_states
 
@@ -324,7 +323,7 @@ def fitch_count(
     for s1 in unique_states:
         for s2 in unique_states:
             M.loc[s1, s2] = np.sum(
-                C[node_to_i[root], :, label_to_j[s1], label_to_j[s2]]
+                C[node_to_i[cassiopeia_tree.root], :, label_to_j[s1], label_to_j[s2]]
             )
 
     return M
@@ -337,12 +336,29 @@ def _N_fitch_count(
     label_to_j: Dict[str, int],
     state_key: str = "S1",
 ) -> np.array(int):
-    def _fill(v: str, s: str):
-        """Fills in the dynamic programming table N for FitchCount.
+    """Fill in the dynamic programming table N for FitchCount.
+    
+    Computes N[v, s], corresponding to the number of solutions below
+    a node v in the tree given v takes on the state s.
 
-        Computes N[v, s], corresponding to the number of solutions below
-        a node v in the tree given v takes on the state s.
-        """
+    Args:
+        cassiopeia_tree: CassiopeiaTree object
+        unique_states: The state space that a node can take on
+        node_to_i: Helper array storing a mapping of each node to a unique
+            integer
+        label_to_j: Helper array storing a mapping of each unique state in the
+            state space to a unique integer
+        state_key: Attribute name in the CassiopeiaTree storing the possible
+            states for each node, as inferred with the Fitch-Hartigan algorithm
+
+    Returns:
+        A 2-dimensional array storing N[v, s] - the number of
+            equally-parsimonious solutions below node v, given v takes on
+            state s
+    """
+
+    def _fill(v: str, s: str):
+        """Helper function to fill in a single entry in N."""
 
         if cassiopeia_tree.is_leaf(v):
             return 1
@@ -359,16 +375,16 @@ def _N_fitch_count(
                 legal_states = [s]
 
             A[i] = np.sum(
-                [L[node_to_i[u], label_to_j[sp]] for sp in legal_states]
+                [N[node_to_i[u], label_to_j[sp]] for sp in legal_states]
             )
         return np.prod([A[u] for u in range(len(A))])
 
-    L = np.full((len(cassiopeia_tree.nodes), len(unique_states)), 0.0)
+    N = np.full((len(cassiopeia_tree.nodes), len(unique_states)), 0.0)
     for n in cassiopeia_tree.depth_first_traverse_nodes():
         for s in cassiopeia_tree.get_attribute(n, state_key):
-            L[node_to_i[n], label_to_j[s]] = _fill(n, s)
+            N[node_to_i[n], label_to_j[s]] = _fill(n, s)
 
-    return L
+    return N
 
 
 def _C_fitch_count(
@@ -379,13 +395,31 @@ def _C_fitch_count(
     label_to_j: Dict[str, int],
     state_key: str = "S1",
 ) -> np.array(int):
-    def _fill(v: str, s: str, s1: str, s2: str) -> int:
-        """Fills in the dynamic programming table C for FitchCount.
+    """Fill in the dynamic programming table C for FitchCount.
+    
+    Computes C[v, s, s1, s2], the number of transitions from state s1 to
+    state s2 in the subtree rooted at v, given that state v takes on the
+    state s. 
 
-        Computes C[v, s, s1, s2], the number of transitions from state s1 to
-        state s2 in the subtree rooted at v, given that state v takes on the
-        state s. 
-        """
+    Args:
+        cassiopeia_tree: CassiopeiaTree object
+        N: N array computed during FitchCount storing the number of solutions
+            below a node v given v takes on state s
+        unique_states: The state space that a node can take on
+        node_to_i: Helper array storing a mapping of each node to a unique
+            integer
+        label_to_j: Helper array storing a mapping of each unique state in the
+            state space to a unique integer
+        state_key: Attribute name in the CassiopeiaTree storing the possible
+            states for each node, as inferred with the Fitch-Hartigan algorithm
+
+    Returns:
+        A 4-dimensional array storing C[v, s, s1, s2] - the number of
+            transitions from state s1 to s2 below a node v given v takes on
+            the state s.
+    """
+    def _fill(v: str, s: str, s1: str, s2: str) -> int:
+        """Helper function to fill in a single entry in C."""
 
         if cassiopeia_tree.is_leaf(v):
             return 0
@@ -394,7 +428,7 @@ def _C_fitch_count(
         A = np.zeros((len(children)))
         LS = [[]] * len(children)
 
-        for i, u in zip(len(children), children):
+        for i, u in zip(range(len(children)), children):
             if s in cassiopeia_tree.get_attribute(u, state_key):
                 LS[i] = [s]
             else:

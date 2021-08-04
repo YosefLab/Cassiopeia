@@ -64,14 +64,13 @@ class TestSmallParsimony(unittest.TestCase):
                 ("1", "3"),
                 ("1", "4"),
                 ("2", "5"),
-                ("2", "6"),
+                ("2", "14"),
                 ("4", "8"),
                 ("4", "9"),
                 ("4", "10"),
                 ("5", "11"),
                 ("5", "12"),
                 ("5", "13"),
-                ("6", "14"),
                 ("1", "15"),
                 ("4", "16"),
             ]
@@ -262,7 +261,6 @@ class TestSmallParsimony(unittest.TestCase):
             "3": ["A"],
             "4": ["G", "A"],
             "5": ["C", "A", "G"],
-            "6": ["G"],
             "8": ["G"],
             "9": ["G"],
             "10": ["A"],
@@ -290,7 +288,6 @@ class TestSmallParsimony(unittest.TestCase):
             "3": "A",
             "4": "G",
             "5": "G",
-            "6": "G",
             "8": "G",
             "9": "G",
             "10": "A",
@@ -316,6 +313,65 @@ class TestSmallParsimony(unittest.TestCase):
     def test_fitch_count_basic_binary(self):
 
         fitch_matrix = cas.tl.fitch_count(self.binary_tree, "nucleotide")
+
+        num_nucleotides = self.binary_tree.cell_meta["nucleotide"].nunique()
+        self.assertEqual(fitch_matrix.shape, (num_nucleotides, num_nucleotides))
+
+        expected_matrix = pd.DataFrame.from_dict(
+            {"A": [9, 2, 1], "G": [0, 2, 0], "C": [0, 0, 0]},
+            orient="index",
+            columns=["A", "G", "C"],
+        ).astype(float)
+
+        pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
+
+        # test if ancestral states are already assigned
+        fitch_hartigan_bottom_up(
+            self.binary_tree, "nucleotide", add_key="nucleotide_sets"
+        )
+        fitch_matrix_no_ancestral_state_inferred = cas.tl.fitch_count(
+            self.binary_tree,
+            "nucleotide",
+            infer_ancestral_states=False,
+            state_key="nucleotide_sets",
+        )
+
+        pd.testing.assert_frame_equal(
+            expected_matrix, fitch_matrix_no_ancestral_state_inferred
+        )
+
+    def test_fitch_count_basic_binary_internal_node(self):
+
+        fitch_matrix = cas.tl.fitch_count(
+            self.binary_tree, "nucleotide", root="5"
+        )
+
+        num_nucleotides = self.binary_tree.cell_meta["nucleotide"].nunique()
+        self.assertEqual(fitch_matrix.shape, (num_nucleotides, num_nucleotides))
+
+        expected_matrix = pd.DataFrame.from_dict(
+            {"A": [1, 0, 1], "G": [0, 0, 0], "C": [1, 0, 1]},
+            orient="index",
+            columns=["A", "G", "C"],
+        ).astype(float)
+
+        pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
+
+    def test_fitch_count_general_tree(self):
+
+        fitch_matrix = cas.tl.fitch_count(self.general_tree, "nucleotide")
+
+        num_nucleotides = self.general_tree.cell_meta["nucleotide"].nunique()
+        self.assertEqual(fitch_matrix.shape, (num_nucleotides, num_nucleotides))
+
+        expected_matrix = pd.DataFrame.from_dict(
+            {"A": [0, 0, 0], "G": [4, 9, 1], "C": [0, 0, 0]},
+            orient="index",
+            columns=["A", "G", "C"],
+        ).astype(float)
+
+        pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
+
 
 if __name__ == "__main__":
     unittest.main()
