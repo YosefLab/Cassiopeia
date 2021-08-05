@@ -250,13 +250,19 @@ class TestSpatialSampler(unittest.TestCase):
             sampled_tree.character_matrix, expected_character_matrix
         )
 
+        expected_spatial = {
+            "s0": (0.5, 0.5),
+            "s1": (0.5, 1.5),
+            "s2": (1.5, 0.5),
+            "s3": (1.5, 1.5),
+        }
+        self.assertEqual({
+            leaf: sampled_tree.get_attribute(leaf, "spatial")
+            for leaf in sampled_tree.leaves
+        }, expected_spatial)
+
         expected_cell_meta = pd.DataFrame.from_dict(
-            {
-                "s0": [0.5, 0.5],
-                "s1": [0.5, 1.5],
-                "s2": [1.5, 0.5],
-                "s3": [1.5, 1.5],
-            },
+            expected_spatial,
             orient="index",
             columns=["spatial_0", "spatial_1"],
         )
