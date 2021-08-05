@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.DataSimulator import DataSimulatorError
+from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator.SpatialDataSimulator import SpatialDataSimulator
 
 
@@ -21,9 +21,12 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
     The simulation procedure is as follows. The tree is traversed from the root
     to the leaves. The the root cell is placed at the origin. At each split
     (i.e. when a cell divides), two new cells are placed at new coordinate X
-    where X is a n-dimensional vector with x_i ~ Normal(0, 2*D*t), where D is
-    the diffusion coefficient and t is the time since the last cell division.
-    Note that this process is dependent on the scale of the branch lengths.
+    relative to the position of the parent X' (so, the absolute coordinate is
+    X' + X). X is a n-dimensional vector with x_i ~ Normal(0, 2*D*t), where D is
+    the diffusion coefficient and t is the time since the last cell division. X
+    is sampled independently for each dimension for each cell, so the two new
+    cells will be placed at different coordinates. Note that this process is
+    dependent on the scale of the branch lengths.
 
     Args:
         dim: Number of spatial dimensions. For instance, a value of 2 indicates
@@ -61,7 +64,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
         tree: CassiopeiaTree,
         attribute_key: str = "spatial",
     ):
-        """Overlays spatial coordinates onto the CassiopeiaTree.
+        """Overlays spatial data onto the CassiopeiaTree via Brownian motion.
 
         Args:
             tree: The CassiopeiaTree to overlay spatial data on to.
@@ -104,7 +107,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
 
         # Set cell meta
         cell_meta = (
-            ree.cell_meta.copy()
+            tree.cell_meta.copy()
             if tree.cell_meta is not None
             else pd.DataFrame(index=tree.leaves)
         )

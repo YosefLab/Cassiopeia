@@ -12,7 +12,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.DataSimulator import DataSimulatorError
+from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator.LineageTracingDataSimulator import (
     LineageTracingDataSimulator,
 )
