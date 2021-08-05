@@ -25,12 +25,12 @@ class SpatialSampler(LeafSubsampler):
     Simulate a non-single-cell 2D spatial assay.
 
     At a high level, this sampler overlays a grid on the spatial coordinates,
-    representing beads/spots. A cell (not a biological cell, but a cell of the
-    grid) then captures characters of leaves that are contained within its
-    boundaries. For simplicity, spots and leaves are represented as squares.
+    representing beads/spots. A spot then captures characters of cells that
+    are contained within its boundaries. For simplicity, spots and cells are
+    represented as squares.
 
     Args:
-        grid_size: The size of each dimension of the unit cell (of the grid).
+        spot_size: The size of each dimension of a spot.
         cell_size: The size of each dimension of a cell (i.e. leaf). This can
             be set to zero to constrain the entirety of each cell be
             captured by a single spot (i.e. a "point" cell).
@@ -44,22 +44,23 @@ class SpatialSampler(LeafSubsampler):
 
     def __init__(
         self,
-        grid_size: float,
+        spot_size: float,
         cell_size: float = 0.0,
         capture_rate_function: Callable[[float], float] = lambda p: p,
     ):
-        self.grid_size = grid_size
+        self.spot_size = spot_size
         self.cell_size = cell_size
         self.capture_rate_function = capture_rate_function
 
-    def create_spot_polygons(
+    def create_spots(
         self,
         bounds_x: Tuple[float, float],
         bounds_y: Tuple[float, float],
     ) -> List[Polygon]:
         """Create a 2D grid, representing capture spots/beads.
 
-        The first grid cell always has `(bounds_x[0], bounds_y[0])` as a vertex.
+        The first spot always has `(bounds_x[0], bounds_y[0])` as its
+        bottom-left vertex.
 
         Args:
             bounds_x: Tuple representing the lower and upper bounds in the
@@ -86,17 +87,17 @@ class SpatialSampler(LeafSubsampler):
             Polygon(
                 [
                     (x, y),
-                    (x + self.grid_size, y),
-                    (x + self.grid_size, y + self.grid_size),
-                    (x, y + self.grid_size),
+                    (x + self.spot_size, y),
+                    (x + self.spot_size, y + self.spot_size),
+                    (x, y + self.spot_size),
                 ]
             )
-            for x in np.arange(min_x, max_x, self.grid_size)
-            for y in np.arange(min_y, max_y, self.grid_size)
+            for x in np.arange(min_x, max_x, self.spot_size)
+            for y in np.arange(min_y, max_y, self.spot_size)
         ]
 
-    def create_cell_polygon(self, x: float, y: float) -> Union[Point, Polygon]:
-        """Create a polygon representing a cell (leaf).
+    def create_cell(self, x: float, y: float) -> Union[Point, Polygon]:
+        """Create a polygon representing a cell.
 
         A cell is represented as a square with `cell_size` as the length of
         each dimension.
@@ -121,7 +122,7 @@ class SpatialSampler(LeafSubsampler):
         else:
             return Point(x, y)
 
-    def capture_cells_on_spot(
+    def capture_cells(
         self, spot: Polygon, cells: Dict[str, Union[Polygon, Point]]
     ) -> Dict[str, float]:
         """Find all cells captured by the given spot.
@@ -149,7 +150,7 @@ class SpatialSampler(LeafSubsampler):
                     captured[cell] = 1.0
         return captured
 
-    def sample_spot_states(
+    def sample_states(
         self, tree: CassiopeiaTree, captured: Dict[str, float]
     ) -> List[Union[int, Tuple[int, ...]]]:
         """Sample states from captured cells to generate spot states.
@@ -231,12 +232,12 @@ class SpatialSampler(LeafSubsampler):
             max_y = max(max_y, location[1])
 
         # Construct grid and cells
-        spots = self.create_spot_polygons(
+        spots = self.create_spots(
             (min_x, max_x + self.cell_size),
             (min_y, max_y + self.cell_size),
         )
         cells = {
-            leaf: self.create_cell_polygon(location[0], location[1])
+            leaf: self.create_cell(location[0], location[1])
             for leaf, location in locations.items()
         }
 
@@ -246,7 +247,7 @@ class SpatialSampler(LeafSubsampler):
         # `capture_cells_on_spot`) as values.
         captured_spots = {}
         for i, spot in enumerate(spots):
-            captured = self.capture_cells_on_spot(spot, cells)
+            captured = self.capture_cells(spot, cells)
             if captured:
                 captured_spots[i] = captured
 
@@ -256,7 +257,7 @@ class SpatialSampler(LeafSubsampler):
         for spot_i, captured in captured_spots.items():
             spot_uuid = str(uuid.uuid4())
             spot_leaves[spot_uuid] = spot_i
-            spot_states = self.sample_spot_states(tree, captured)
+            spot_states = self.sample_states(tree, captured)
 
             # Add new leaf
             captured_leaves = list(captured.keys())
@@ -279,7 +280,7 @@ class SpatialSampler(LeafSubsampler):
             columns=tree.character_matrix.columns, dtype=object
         )
         meta_columns = [f"{attribute_key}_0", f"{attribute_key}_1"]
-        cell_meta = pd.DataFrame(columns=meta_columns)
+        cell_meta = pd.DataFrame(columns=meta_columns, dtype=float)
         for leaf in sampled_tree.leaves:
             if leaf not in spot_leaves:
                 sampled_tree.remove_leaf_and_prune_lineage(leaf)
