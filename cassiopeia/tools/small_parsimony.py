@@ -309,7 +309,7 @@ def fitch_count(
             )
 
     if root != cassiopeia_tree.root:
-        cassiopeia_tree.subset_tree_at_node(root)
+        cassiopeia_tree.subset_clade(root)
 
     if infer_ancestral_states:
         fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, add_key=state_key)

@@ -479,7 +479,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        subtree = tree.subset_tree_at_node("node16", copy=True)
+        subtree = tree.subset_clade("node16", copy=True)
         expected_nodes = ["node16", "node17", "node18"]
 
         self.assertEqual(subtree.root, "node16")
@@ -491,7 +491,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
-        subtree = tree.subset_tree_at_node("node15", copy=True)
+        subtree = tree.subset_clade("node15", copy=True)
         expected_nodes = ["node15"]
 
         self.assertEqual(subtree.root, "node15")
@@ -499,7 +499,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertCountEqual(subtree.nodes, expected_nodes)
 
         # test subset and modify in place
-        tree.subset_tree_at_node("node2", copy=False)
+        tree.subset_clade("node2", copy=False)
         expected_nodes = ["node2", "node5", "node6"]
 
         self.assertEqual(tree.root, "node2")

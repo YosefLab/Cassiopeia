@@ -1168,7 +1168,7 @@ class CassiopeiaTree:
 
         return self.__cache["subtree"][node]
 
-    def subset_tree_at_node(
+    def subset_clade(
         self, node: str, copy: bool = False
     ) -> Optional["CassiopeiaTree"]:
         """Subset CassiopeiaTree object at node.
@@ -1185,7 +1185,7 @@ class CassiopeiaTree:
         """
         if copy:
             new_tree = self.copy()
-            new_tree.subset_tree_at_node(node)
+            new_tree.subset_clade(node)
             return new_tree
 
         nodes_in_subtree = self.depth_first_traverse_nodes(source=node)
@@ -1375,7 +1375,7 @@ class CassiopeiaTree:
 
         # this will change the topology of the tree, so reset the cache
         self.__cache = {}
-        
+
         leaves_set = set(self.leaves)
         if self.character_matrix is not None:
             remove_from_character_matrix = (
