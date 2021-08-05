@@ -14,7 +14,11 @@ from pandas.api.types import is_categorical_dtype, is_numeric_dtype
 
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins.errors import CassiopeiaError, CassiopeiaTreeError
+from cassiopeia.mixins.errors import (
+    CassiopeiaError,
+    CassiopeiaTreeError,
+    FitchCountError,
+)
 
 
 def fitch_hartigan(
@@ -252,6 +256,7 @@ def fitch_count(
     root: Optional[str] = None,
     infer_ancestral_states: bool = True,
     state_key: str = "S1",
+    unique_states: Optional[List[str]] = None,
 ):
     """Runs the FitchCount algorithm.
 
@@ -276,6 +281,9 @@ def fitch_count(
             sets with Fitch-Hartigan.
         state_key: If ancestral state sets have already been created, then this
             argument specifies what the attribute name is in the CassiopeiaTree
+        unique_states: State space that can be optionally provided by the user.
+            If this is not provided, we take the unique values in
+            `cell_meta[meta_item]` to be the state space.
 
     Returns:
         An MxM count matrix indicating the number of edges that contained a
@@ -284,7 +292,21 @@ def fitch_count(
     """
     cassiopeia_tree = cassiopeia_tree.copy()
 
-    unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
+    if unique_states is None:
+        unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
+    else:
+        if (
+            len(
+                np.setdiff1d(
+                    cassiopeia_tree.cell_meta[meta_item].unique(), unique_states
+                )
+            )
+            > 0
+        ):
+            raise FitchCountError(
+                "Specified state space does not span the set"
+                " of states that appear in the meta data."
+            )
 
     if root != cassiopeia_tree.root:
         cassiopeia_tree.subset_tree_at_node(root)

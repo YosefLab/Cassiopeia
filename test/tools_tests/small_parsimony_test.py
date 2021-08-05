@@ -8,7 +8,11 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
-from cassiopeia.mixins import CassiopeiaError, CassiopeiaTreeError
+from cassiopeia.mixins import (
+    CassiopeiaError,
+    CassiopeiaTreeError,
+    FitchCountError,
+)
 from cassiopeia.tools.small_parsimony import (
     fitch_hartigan_bottom_up,
     fitch_hartigan_top_down,
@@ -339,6 +343,25 @@ class TestSmallParsimony(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_matrix, fitch_matrix_no_ancestral_state_inferred
         )
+
+    def test_fitch_count_basic_binary_custom_state_space(self):
+
+        fitch_matrix = cas.tl.fitch_count(
+            self.binary_tree, "nucleotide", unique_states=["A", "G", "C", "N"]
+        )
+
+        expected_matrix = pd.DataFrame.from_dict(
+            {"A": [9, 2, 1, 0], "G": [0, 2, 0, 0], "C": [0, 0, 0, 0], "N": [0, 0, 0, 0]},
+            orient="index",
+            columns=["A", "G", "C", "N"],
+        ).astype(float)
+
+        pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
+
+        with self.assertRaises(FitchCountError):
+            fitch_matrix = cas.tl.fitch_count(
+                self.binary_tree, "nucleotide", unique_states=["A", "G"]
+            )
 
     def test_fitch_count_basic_binary_internal_node(self):
 
