@@ -1193,10 +1193,8 @@ class CassiopeiaTree:
         for node in to_remove:
             self.__remove_node(node)
 
-        # reset cache because we've changed the tree topology
-        self.__cache = {}
-
         # Remove all removed nodes from data fields
+        # This function will also clear the cache
         self.__register_data_with_tree()
 
     def get_newick(self, record_branch_lengths=False) -> str:
@@ -1364,12 +1362,20 @@ class CassiopeiaTree:
         Removes any leaves from the character matrix, cell metadata, and
         dissimilarity maps that do not appear in the tree.
         Additionally, adds any leaves that appear in the tree but not in the
-        character matrix, cell metadata, or dissimilarity map with default values.
+        character matrix, cell metadata, or dissimilarity map with default
+        values.
+        
         The default values for each table is as follows:
-        * character matrix: all states are missing values (``missing_state_indicator``)
+        * character matrix: all states are missing values
+            (``missing_state_indicator``)
         * cell metadata: None
-        * dissimilarity map: ``np.inf`` distance from the leaf to all other leaves
+        * dissimilarity map: ``np.inf`` distance from the leaf to all other
+            leaves
         """
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+        
         leaves_set = set(self.leaves)
         if self.character_matrix is not None:
             remove_from_character_matrix = (
@@ -1493,10 +1499,8 @@ class CassiopeiaTree:
         if dissimilarity:
             self.set_dissimilarity(node, dissimilarity)
 
-        # reset cache because we've changed the tree topology
-        self.__cache = {}
-
         # Update new leaf data with defaults
+        # This function will also clear the cache
         self.__register_data_with_tree()
 
     def remove_leaf_and_prune_lineage(self, node: str) -> None:
@@ -1532,10 +1536,8 @@ class CassiopeiaTree:
                 self.__remove_node(curr_parent)
                 curr_parent = next_parent
 
-        # reset cache because we've changed the tree topology
-        self.__cache = {}
-
         # Remove all removed nodes from data fields
+        # This function will also clear the cache
         self.__register_data_with_tree()
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:

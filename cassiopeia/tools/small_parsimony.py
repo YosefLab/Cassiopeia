@@ -39,7 +39,8 @@ def fitch_hartigan(
             Fitch-Hartigan bottom-up algorithm.
         meta_item: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
-        root: Root from which to begin this refinement.
+        root: Root from which to begin this refinement. Only the subtree below
+            this node will be considered.
         state_key: Attribute key that stores the Fitch-Hartigan ancestral
             states.
         label_key: Key to add that stores the maximum-parsimony assignment
@@ -143,7 +144,8 @@ def fitch_hartigan_top_down(
     Args:
         cassiopeia_tree: CassiopeiaTree that has been processed with the
             Fitch-Hartigan bottom-up algorithm.
-        root: Root from which to begin this refinement.
+        root: Root from which to begin this refinement. Only the subtree below
+            this node will be considered.
         state_key: Attribute key that stores the Fitch-Hartigan ancestral
             states.
         label_key: Key to add that stores the maximum-parsimony assignment
@@ -205,7 +207,8 @@ def score_small_parsimony(
         cassiopeia_tree: CassiopeiaTree object with cell meta data.
         meta_item: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
-        root: Node to treat as the root.
+        root: Node to treat as the root. Only the subtree below
+            this node will be considered.
         infer_ancestral_states: Whether or not ancestral states must be inferred
             (this will be False if `fitch_hartigan` has already been called on
             the tree.)
@@ -267,7 +270,8 @@ def fitch_count(
         cassiopeia_tree: CassiopeiaTree object with a tree and cell meta data.
         meta_item: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
-        root: Node to treat as the root.
+        root: Node to treat as the root. Only the subtree below this node will
+            be considered for the procedure.
         infer_ancestral_states: Whether or not to initialize the ancestral state
             sets with Fitch-Hartigan.
         state_key: If ancestral state sets have already been created, then this
