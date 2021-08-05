@@ -253,7 +253,7 @@ def fitch_count(
     """Runs the FitchCount algorithm.
 
     Performs the FitchCount algorithm for inferring the number of times that
-    two two states transition to one another across all equally-parsimonious
+    two states transition to one another across all equally-parsimonious
     solutions returned by the Fitch-Hartigan algorithm. The original algorithm
     was described in Quinn, Jones, et al, Science (2021). The output is an 
     MxM count matrix, where the values indicate the number of times that
