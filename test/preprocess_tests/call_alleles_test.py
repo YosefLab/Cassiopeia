@@ -1,6 +1,8 @@
 """
 Tests for the allele calling in alignment_utilities.py and pipeline.py
 """
+from cassiopeia.mixins.errors import PreprocessError
+from cassiopeia.mixins.warnings import PreprocessWarning
 import unittest
 
 import numpy as np
@@ -57,6 +59,20 @@ class TestCallAlleles(unittest.TestCase):
         self.alignment_dataframe["readName"] = self.alignment_dataframe.apply(
             lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.readCount), axis=1
         )
+
+        new_row = pd.DataFrame.from_dict({
+            "cellBC": "C",
+            "UMI": "CTG",
+            "readCount": 10,
+            "CIGAR": "3M",
+            "QueryBegin": 0,
+            "ReferenceBegin": 0,
+            "AlignmentScore": 100,
+            "Seq": "ACG",
+            "readName": "C_CTG_10",
+        }, orient='index').T
+        self.alignment_dataframe_with_missing = pd.concat([self.alignment_dataframe, new_row])
+
 
     def test_basic_cigar_string_match(self):
 
@@ -362,6 +378,18 @@ class TestCallAlleles(unittest.TestCase):
 
             self.assertEqual(row.r1, expected_indels[row.readName])
             self.assertEqual(row.intBC, expected_intbcs[row.readName])
+
+    def test_missing_data_in_allele_throws_warning(self):
+        
+        with self.assertWarns(PreprocessWarning):
+            molecule_table = cassiopeia.pp.call_alleles(
+                self.alignment_dataframe_with_missing,
+                ref=self.basic_ref,
+                barcode_interval=self.basic_barcode_interval,
+                cutsite_locations=self.basic_cutsites,
+                cutsite_width=1,
+                context=False,
+            )
 
 
 if __name__ == "__main__":

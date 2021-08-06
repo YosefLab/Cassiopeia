@@ -6,7 +6,7 @@ import pandas as pd
 import pathlib as Path
 
 import cassiopeia
-from cassiopeia.preprocess import pipeline
+from cassiopeia.preprocess import pipeline, lineage_utils
 
 
 class TestCallLineageGroup(unittest.TestCase):
@@ -334,9 +334,6 @@ class TestCallLineageGroup(unittest.TestCase):
             inter_doublet_threshold=0.6,
         )
 
-        samples = aln_df["Sample"]
-        self.assertNotIn("C", samples)
-        self.assertNotIn("F", samples)
 
         expected_rows = {
             ("A", "XX"): (1, 2),
@@ -451,6 +448,39 @@ class TestCallLineageGroup(unittest.TestCase):
                 expected_lineage[1],
             )
 
+    def test_filter_lineage_group_to_allele_table_single_lineage(self):
+
+        aln_df = lineage_utils.filtered_lineage_group_to_allele_table([self.basic_grouping])
+
+        self.assertIn("lineageGrp", aln_df)
+        
+        expected_rows = {
+            ("A", "XX"): (1, 3),
+            ("B", "XX"): (1, 1),
+            ("C", "XZ"): (1, 1),
+        }
+
+        for pair in expected_rows:
+
+            expected_lineage = expected_rows[pair]
+
+            self.assertEqual(
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "lineageGrp",
+                ].iloc[0],
+                expected_lineage[0],
+            )
+
+            self.assertEqual(
+                aln_df.loc[
+                    (aln_df["cellBC"] == pair[0])
+                    & (aln_df["intBC"] == pair[1]),
+                    "UMI",
+                ].iloc[0],
+                expected_lineage[1],
+            )
 
 if __name__ == "__main__":
     unittest.main()

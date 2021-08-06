@@ -3,6 +3,7 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
+import warnings
 
 from functools import partial
 import os
@@ -21,6 +22,7 @@ from tqdm.auto import tqdm
 from typing_extensions import Literal
 
 from cassiopeia.mixins import logger, PreprocessError
+from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import (
     alignment_utilities,
     constants,
@@ -634,6 +636,17 @@ def call_alleles(
     alignments = alignments.join(indel_df)
 
     alignments.reset_index(inplace=True)
+
+    # check cut-sites and raise a warning if any missing data is detected
+    cutsites = utilities.get_default_cut_site_columns(alignments)
+    if np.any((alignments[cutsites] == "").sum(axis=0) > 0):
+        warnings.warn(
+                "Detected missing data in alleles. You might"
+                " consider re-running align_sequences with a"
+                " lower gap-open penalty, or using a separate"
+                " alignment strategy.",
+                PreprocessWarning,
+            )
 
     return alignments
 
