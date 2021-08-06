@@ -1972,7 +1972,7 @@ class CassiopeiaTree:
 
         Raises:
             CassiopeiaTreeError if the character vectors do not all have
-            the same length.
+            the same length, or if the tree has not been initialized.
         """
         self.__check_network_initialized()
         for (parent, child) in self.depth_first_traverse_edges():
