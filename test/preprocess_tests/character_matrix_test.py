@@ -100,7 +100,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_character_matrix_formation_custom_missing_data(self):
-        
+
         self.alleletable_basic.loc[0, "r1"] = "missing"
 
         (
@@ -108,7 +108,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             priors,
             indel_states,
         ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic, missing_data_allele="missing", missing_data_state=-3
+            self.alleletable_basic,
+            missing_data_allele="missing",
+            missing_data_state=-3,
         )
 
         self.assertEqual(character_matrix.shape[0], 3)
@@ -872,7 +874,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         self.alleletable_basic.fillna("MISSING", inplace=True)
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_basic,
+            self.alleletable_basic
         )
 
         (
@@ -880,7 +882,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             priors,
             state_to_indel,
         ) = cas.pp.convert_lineage_profile_to_character_matrix(
-            lineage_profile, self.mutation_priors, missing_allele_indicator="MISSING",
+            lineage_profile,
+            self.mutation_priors,
+            missing_allele_indicator="MISSING",
         )
 
         self.assertEqual(len(priors), 7)

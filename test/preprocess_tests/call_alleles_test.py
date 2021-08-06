@@ -60,19 +60,23 @@ class TestCallAlleles(unittest.TestCase):
             lambda x: x.cellBC + "_" + x.UMI + "_" + str(x.readCount), axis=1
         )
 
-        new_row = pd.DataFrame.from_dict({
-            "cellBC": "C",
-            "UMI": "CTG",
-            "readCount": 10,
-            "CIGAR": "3M",
-            "QueryBegin": 0,
-            "ReferenceBegin": 0,
-            "AlignmentScore": 100,
-            "Seq": "ACG",
-            "readName": "C_CTG_10",
-        }, orient='index').T
-        self.alignment_dataframe_with_missing = pd.concat([self.alignment_dataframe, new_row])
-
+        new_row = pd.DataFrame.from_dict(
+            {
+                "cellBC": "C",
+                "UMI": "CTG",
+                "readCount": 10,
+                "CIGAR": "3M",
+                "QueryBegin": 0,
+                "ReferenceBegin": 0,
+                "AlignmentScore": 100,
+                "Seq": "ACG",
+                "readName": "C_CTG_10",
+            },
+            orient="index",
+        ).T
+        self.alignment_dataframe_with_missing = pd.concat(
+            [self.alignment_dataframe, new_row]
+        )
 
     def test_basic_cigar_string_match(self):
 
@@ -380,7 +384,7 @@ class TestCallAlleles(unittest.TestCase):
             self.assertEqual(row.intBC, expected_intbcs[row.readName])
 
     def test_missing_data_in_allele_throws_warning(self):
-        
+
         with self.assertWarns(PreprocessWarning):
             molecule_table = cassiopeia.pp.call_alleles(
                 self.alignment_dataframe_with_missing,

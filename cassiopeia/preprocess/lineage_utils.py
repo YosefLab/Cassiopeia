@@ -391,7 +391,7 @@ def filtered_lineage_group_to_allele_table(
     final_df = pd.concat(filtered_lgs, sort=True)
 
     if "lineageGrp" not in final_df.columns:
-        final_df['lineageGrp'] = 1
+        final_df["lineageGrp"] = 1
 
     grouping = []
     for i in final_df.columns:
@@ -404,7 +404,6 @@ def filtered_lineage_group_to_allele_table(
     )
 
     return final_df
-
 
 
 def plot_overlap_heatmap(at, at_pivot_I, output_directory):

@@ -489,8 +489,10 @@ def align_sequences(
     try:
         from skbio import alignment
     except ModuleNotFoundError:
-        raise PreprocessError("Scikit-bio is not installed. Try pip-installing "
-                            " first and then re-running this function.")
+        raise PreprocessError(
+            "Scikit-bio is not installed. Try pip-installing "
+            " first and then re-running this function."
+        )
 
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
@@ -641,12 +643,12 @@ def call_alleles(
     cutsites = utilities.get_default_cut_site_columns(alignments)
     if np.any((alignments[cutsites] == "").sum(axis=0) > 0):
         warnings.warn(
-                "Detected missing data in alleles. You might"
-                " consider re-running align_sequences with a"
-                " lower gap-open penalty, or using a separate"
-                " alignment strategy.",
-                PreprocessWarning,
-            )
+            "Detected missing data in alleles. You might"
+            " consider re-running align_sequences with a"
+            " lower gap-open penalty, or using a separate"
+            " alignment strategy.",
+            PreprocessWarning,
+        )
 
     return alignments
 

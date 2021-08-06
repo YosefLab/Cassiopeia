@@ -334,7 +334,6 @@ class TestCallLineageGroup(unittest.TestCase):
             inter_doublet_threshold=0.6,
         )
 
-
         expected_rows = {
             ("A", "XX"): (1, 2),
             ("B", "XX"): (1, 2),
@@ -450,10 +449,12 @@ class TestCallLineageGroup(unittest.TestCase):
 
     def test_filter_lineage_group_to_allele_table_single_lineage(self):
 
-        aln_df = lineage_utils.filtered_lineage_group_to_allele_table([self.basic_grouping])
+        aln_df = lineage_utils.filtered_lineage_group_to_allele_table(
+            [self.basic_grouping]
+        )
 
         self.assertIn("lineageGrp", aln_df)
-        
+
         expected_rows = {
             ("A", "XX"): (1, 3),
             ("B", "XX"): (1, 1),
@@ -481,6 +482,7 @@ class TestCallLineageGroup(unittest.TestCase):
                 ].iloc[0],
                 expected_lineage[1],
             )
+
 
 if __name__ == "__main__":
     unittest.main()

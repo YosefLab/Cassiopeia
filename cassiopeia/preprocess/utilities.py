@@ -659,7 +659,9 @@ def convert_lineage_profile_to_character_matrix(
 
     lineage_profile = lineage_profile.fillna("Missing").copy()
     if missing_allele_indicator:
-        lineage_profile.replace({missing_allele_indicator: "Missing"}, inplace=True)
+        lineage_profile.replace(
+            {missing_allele_indicator: "Missing"}, inplace=True
+        )
 
     samples = []
 
