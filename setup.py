@@ -63,6 +63,9 @@ to_cythonize = [
         "cassiopeia.tools.branch_length_estimator.iid_exponential_bayesian_cpp",
         ["cassiopeia/preprocess/doublet_utils.pyx"],
     ),
+]
+
+extension_modules_with_custom_compile_args = [
     Extension(
         "cassiopeia.tools.branch_length_estimator._iid_exponential_bayesian",
         sources=[
@@ -73,7 +76,6 @@ to_cythonize = [
             "-std=c++17",
             "-Wall",
             "-Wextra",
-            "-Werror",
             "-pedantic",
             "-O3",
         ],
@@ -86,7 +88,8 @@ setup(
     python_requires=">=3.6",
     ext_modules=cythonize(
         to_cythonize, compiler_directives={"language_level": "3"}
-    ),
+    )
+    + extension_modules_with_custom_compile_args,
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,

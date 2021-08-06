@@ -273,3 +273,38 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             model.estimate_branch_lengths(tree)
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2"])
+        tree.add_edges_from([("0", "1"), ("1", "2")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {"0": [0], "1": [1], "2": [1]},
+        )
+
+        model = IIDExponentialBayesian(
+            mutation_rate=1.0,
+            birth_rate=1.0,
+            sampling_probability=1.0,
+            discretization_level=500,
+        )
+        with self.assertRaises(ValueError):
+            model.estimate_branch_lengths(tree)
+
+    def test_invalid_sampling_probability_raises_error(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {"0": [0], "1": [1], "2": [-1], "3": [1]},
+        )
+
+        for sampling_probability in [-1.0, 2.0]:
+            with self.assertRaises(ValueError):
+                IIDExponentialBayesian(
+                    mutation_rate=1.0,
+                    birth_rate=1.0,
+                    sampling_probability=sampling_probability,
+                    discretization_level=500,
+                )

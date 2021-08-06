@@ -354,10 +354,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
     def _precompute_Ks(self, tree: CassiopeiaTree):
         """
         For each vertex in the tree, how many states are not missing.
-
-        Raises:
-            ValueError if there are unambiguously imputable missing states.
-            (This should never happen.)
         """
         self._Ks = {}
         self._Ks[tree.root] = tree.n_character
@@ -380,15 +376,12 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                     # should track it.
                     k += 1
                 # Check that imputable missing states have been imputed.
-                if (
+                # (This should ALWAYS pass)
+                assert not (
                     parent_state != 0
                     and parent_state != tree.missing_state_indicator
                     and child_state == tree.missing_state_indicator
-                ):
-                    raise ValueError(
-                        "Imputable missing states should have been imputed first. "
-                        "Use the CassiopeiaTree.reconstruct_ancestral_characters method to do this."
-                    )
+                )
             self._Ks[child] = k
         # Check monotonicity of Ks
         for (parent, child) in tree.edges:
