@@ -8,7 +8,6 @@ import datetime
 import logging
 import time
 from typing import Dict, List, Optional
-import warnings
 
 import hashlib
 import itertools
@@ -173,8 +172,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-                optimal_solution, character_matrix
+            optimal_solution = (
+                self.__append_sample_names_and_remove_spurious_leaves(
+                    optimal_solution, character_matrix
+                )
             )
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
@@ -233,14 +234,18 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # select best model and post process the solution
         optimal_solution = proposed_solutions[0]
         optimal_solution = nx.relabel_nodes(optimal_solution, decoder)
+
         optimal_solution = self.post_process_steiner_solution(
-            optimal_solution, root, targets, pid
+            optimal_solution, root
         )
 
         # append sample names to the solution and populate the tree
-        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-            optimal_solution, character_matrix
+        optimal_solution = (
+            self.__append_sample_names_and_remove_spurious_leaves(
+                optimal_solution, character_matrix
+            )
         )
+
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
 
         # rename internal nodes such that they are not tuples
@@ -295,12 +300,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix.values.astype(str),
-            pid,
-            lca_height,
-            self.maximum_potential_graph_layer_size,
-            missing_state_indicator,
+        potential_graph_edges = (
+            ilp_solver_utilities.infer_potential_graph_cython(
+                character_matrix.values.astype(str),
+                pid,
+                lca_height,
+                self.maximum_potential_graph_layer_size,
+                missing_state_indicator,
+            )
         )
 
         # the potential graph edges returned are strings in the form
@@ -563,8 +570,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         solution: nx.DiGraph,
         root: List[int],
-        targets: List[List[int]],
-        pid: int,
     ) -> nx.DiGraph:
         """Post-processes the returned graph from Gurobi.
 
@@ -586,6 +591,23 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         for edge in nx.selfloop_edges(processed_solution):
             processed_solution.remove_edge(edge[0], edge[1])
 
+        # remove spurious roots
+        spurious_roots = [
+            n
+            for n in processed_solution
+            if processed_solution.in_degree(n) == 0
+        ]
+        while len(spurious_roots) > 1:
+            for r in spurious_roots:
+                if r != root:
+                    processed_solution.remove_node(r)
+            spurious_roots = [
+                n
+                for n in processed_solution
+                if processed_solution.in_degree(n) == 0
+            ]
+
+        # impose that each node only has one parent
         non_tree_nodes = [
             n
             for n in processed_solution.nodes()
@@ -611,22 +633,6 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             else:
                 for parent in parents[1:]:
                     processed_solution.remove_edge(parent, node)
-
-        # remove spurious roots
-        spurious_roots = [
-            n
-            for n in processed_solution
-            if processed_solution.in_degree(n) == 0
-        ]
-        while len(spurious_roots) > 1:
-            for r in spurious_roots:
-                if r != root:
-                    processed_solution.remove_node(r)
-            spurious_roots = [
-                n
-                for n in processed_solution
-                if processed_solution.in_degree(n) == 0
-            ]
 
         return processed_solution
 
@@ -674,16 +680,17 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 states_added.append(node)
 
         # remove extant lineages that don't correspond to leaves
-        to_drop = []
         leaves = [n for n in solution if solution.out_degree(n) == 0]
         for l in leaves:
             if l not in character_matrix.index:
-                to_drop.append(l)
+                curr_parent = list(solution.predecessors(l))[0]
+                solution.remove_node(l)
+                while (
+                    len(list(solution.successors(curr_parent))) < 1
+                    and curr_parent != root
+                ):
+                    next_parent = list(solution.predecessors(curr_parent))[0]
+                    solution.remove_node(curr_parent)
+                    curr_parent = next_parent
 
-                parent = [p for p in solution.predecessors(l)][0]
-                while solution.out_degree(parent) < 2:
-                    to_drop.append(parent)
-                    parent = [p for p in solution.predecessors(parent)][0]
-
-        solution.remove_nodes_from(to_drop)
         return solution
