@@ -32,6 +32,8 @@ requirements = [
     "shapely>=1.7.0",
     "typing-extensions>=3.7.4",
     "tqdm>=4",
+    "cvxpy",
+    "parameterized",
 ]
 
 

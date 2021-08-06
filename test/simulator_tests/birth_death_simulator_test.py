@@ -7,10 +7,10 @@ from typing import List, Tuple
 
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
+from cassiopeia.mixins import TreeSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
-from cassiopeia.simulator.TreeSimulator import TreeSimulatorError
 
 import cassiopeia.data.utilities as utilities
 

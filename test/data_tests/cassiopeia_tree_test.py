@@ -475,6 +475,11 @@ class TestCassiopeiaTree(unittest.TestCase):
             character_matrix=self.character_matrix, tree=self.test_network
         )
 
+        # Shift all times so that the tree's root doesn't have time 0.
+        # This checks for border cases.
+        new_times = {node: tree.get_time(node) + 1 for node in tree.nodes}
+        tree.set_times(new_times)
+
         mean_depth = tree.get_mean_depth_of_tree()
         self.assertEqual(mean_depth, 4.7)
 
@@ -1663,6 +1668,40 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree_no_map.set_dissimilarity(
                 "node3", {leaf: 0 for leaf in tree_no_map.leaves}
             )
+
+    def test_scale_to_unit_length(self):
+        tree = cas.data.CassiopeiaTree(tree=self.test_network)
+        tree.scale_to_unit_length()
+        self.assertEqual(tree.get_max_depth_of_tree(), 1)
+
+    def test_get_mutations_along_edge_exclude_missing_states(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1"])
+        tree.add_edge("0", "1")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0, 0, -1], "1": [0, 1, -1, -1]})
+        self.assertEqual(
+            tree.get_mutations_along_edge(
+                "0", "1", treat_missing_as_mutations=False
+            ),
+            [(1, 1)],
+        )
+        self.assertEqual(
+            tree.get_mutations_along_edge(
+                "0", "1", treat_missing_as_mutations=True
+            ),
+            [(1, 1), (2, -1)],
+        )
+
+    def test_get_unmutated_characters_along_edge(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+        tree.reconstruct_ancestral_characters()
+        self.assertEqual(
+            tree.get_unmutated_characters_along_edge("node2", "node6"),
+            [2, 3, 4, 5, 6, 7],
+        )
 
 
 if __name__ == "__main__":
