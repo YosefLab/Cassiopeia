@@ -407,7 +407,7 @@ def convert_alleletable_to_character_matrix(
             allele represented by this proportion
         missing_data_allele: Value in the allele table that indicates that the
             cut-site is missing. This will be converted into 
-            :param:`missing_data_state` 
+            ``missing_data_state`` 
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
@@ -420,8 +420,8 @@ def convert_alleletable_to_character_matrix(
             effect if there are no allele conflicts. Defaults to True.
 
         Returns:
-        A character matrix, a probability dictionary, and a dictionary mapping
-            states to the original mutation.
+            A character matrix, a probability dictionary, and a dictionary mapping
+                states to the original mutation.
     """
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(alleletable)
