@@ -59,10 +59,6 @@ to_cythonize = [
         ["cassiopeia/solver/ilp_solver_utilities.pyx"],
         include_dirs=[numpy.get_include()],
     ),
-    Extension(
-        "cassiopeia.tools.branch_length_estimator.iid_exponential_bayesian_cpp",
-        ["cassiopeia/preprocess/doublet_utils.pyx"],
-    ),
 ]
 
 extension_modules_with_custom_compile_args = [
