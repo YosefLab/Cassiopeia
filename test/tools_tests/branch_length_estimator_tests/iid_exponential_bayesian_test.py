@@ -1,6 +1,7 @@
 """
-Test IIDExponentialMLE in cassiopeia.tools.
+Test IIDExponentialBayesian in cassiopeia.tools.
 """
+import pytest
 import unittest
 
 import networkx as nx
@@ -9,37 +10,44 @@ from parameterized import parameterized
 from scipy.special import logsumexp
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator import Cas9LineageTracingDataSimulator
 from cassiopeia.tools import IIDExponentialBayesian
+
+
+def relative_error(x: float, y: float) -> float:
+    """
+    Relative error between x and y.
+    """
+    assert x > 0 and y > 0
+    return max(np.abs(y / x - 1), np.abs(x / y - 1))
 
 
 class TestIIDExponentialBayesian(unittest.TestCase):
     @parameterized.expand(
         [
-            ("1", 1.0, 0.8, False, 500, 3),
-            ("2", 1.0, 0.8, True, 500, 3),
-            ("3", 0.1, 5.0, False, 500, 2),
-            ("4", 0.1, 5.0, True, 500, 2),
-            ("5", 0.3, 4.0, False, 500, 3),
-            ("6", 0.3, 4.0, True, 500, 3),
+            ("1", 1.0, 0.8, False, 500),
+            ("2", 1.0, 0.8, True, 500),
+            ("3", 0.1, 5.0, False, 500),
+            ("4", 0.1, 5.0, True, 500),
+            ("5", 0.3, 4.0, False, 500),
+            ("6", 0.3, 4.0, True, 500),
         ]
     )
-    def test_against_closed_form_solution(
+    def test_against_closed_form_solution_small(
         self,
         name,
         sampling_probability,
         birth_rate,
         many_characters,
         discretization_level,
-        significance,
     ):
-        r"""
-        For a small tree with only one internal node, the likelihood of the data,
-        and the posterior age of the internal node, can be computed easily in
-        closed form. We check the theoretical values against those obtained from
-        our model.
         """
-
+        For a small tree with only one internal node, the likelihood of the
+        data, and the posterior age of the internal node, can be computed
+        easily in closed form. We check the theoretical values against those
+        obtained from our model. We try different settings of the model
+        hyperparameters, particularly the birth rate and sampling probability.
+        """
+        # First, we create the ground truth tree and character states
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3"])
         tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
@@ -59,44 +67,23 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             )
         tree.impute_unambiguous_missing_states()
 
-        mutation_rate = 0.3
+        # Estimate branch lengths
+        mutation_rate = 0.3  # This is kind of arbitrary; not super relevant.
         model = IIDExponentialBayesian(
             mutation_rate=mutation_rate,
             birth_rate=birth_rate,
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
         )
-
         model.estimate_branch_lengths(tree)
 
         # Test the model log likelihood vs its computation from the joint of the
         # age of vertex 1.
-        model_log_joints = model.log_joints("1")
-        model_log_likelihood_2 = logsumexp(model_log_joints)
-        print(f"{model_log_likelihood_2} = {model_log_likelihood_2}")
-        np.testing.assert_approx_equal(
-            model.log_likelihood,
-            model_log_likelihood_2,
-            significant=significance,
-        )
+        re = relative_error(-model.log_likelihood, -logsumexp(model.log_joints("1")))
+        self.assertLessEqual(re, 0.01)
 
         # Test the model log likelihood vs its computation from the leaf nodes.
-        for leaf in ["2", "3"]:
-            model_log_likelihood_up = (
-                model._up(
-                    leaf,
-                    discretization_level,
-                    model._get_number_of_mutated_characters_in_node(tree, leaf),
-                )
-                - np.log(birth_rate * 1.0 / discretization_level)
-                + np.log(sampling_probability)
-            )
-            print(f"{model_log_likelihood_up} = model_log_likelihood_up")
-            np.testing.assert_approx_equal(
-                model.log_likelihood,
-                model_log_likelihood_up,
-                significant=significance,
-            )
+        model._simple_inference_sanity_check()
 
         # Test the model log likelihood against its numerical computation
         numerical_log_likelihood = (
@@ -107,12 +94,8 @@ class TestIIDExponentialBayesian(unittest.TestCase):
                 sampling_probability=sampling_probability,
             )
         )
-        print(f"{numerical_log_likelihood} = numerical_log_likelihood")
-        np.testing.assert_approx_equal(
-            model.log_likelihood,
-            numerical_log_likelihood,
-            significant=significance,
-        )
+        re = relative_error(-model.log_likelihood, -numerical_log_likelihood)
+        self.assertLessEqual(re, 0.01)
 
         # Test the _whole_ array of log joints P(t_v = t, X, T) against its
         # numerical computation
@@ -130,7 +113,7 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             decimal=1,
         )
 
-        # Test the model posterior against its numerical posterior
+        # Test the model posterior times against its numerical posterior
         numerical_posterior = IIDExponentialBayesian.numerical_posterior_time(
             tree=tree,
             node="1",
@@ -139,6 +122,7 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
         )
+        # # For debugging; these two plots should look very similar.
         # import matplotlib.pyplot as plt
         # plt.plot(model.posterior_time("1"))
         # plt.show()
@@ -147,7 +131,7 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         total_variation = np.sum(
             np.abs(model.posterior_time("1") - numerical_posterior)
         )
-        assert total_variation < 0.03
+        self.assertLessEqual(total_variation, 0.03)
 
         # Test the posterior mean against the numerical posterior mean.
         numerical_posterior_mean = np.sum(
@@ -156,34 +140,42 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             / discretization_level
         )
         posterior_mean = tree.get_time("1")
-        np.testing.assert_approx_equal(
-            posterior_mean, numerical_posterior_mean, significant=2
-        )
+        re = relative_error(posterior_mean, numerical_posterior_mean)
+        self.assertLessEqual(re, 0.01)
 
-    def test_IIDExponentialPosteriorMeanBLE_2(self):
+    @pytest.mark.slow
+    def test_against_closed_form_solution_medium(self):
         r"""
-        We run the Bayesian estimator on a small tree with all different leaves,
-        and then check that:
-        - The likelihood of the data, computed from all of the leaves, is the
-            same.
-        - The posteriors of the internal node ages matches their numerical
-            counterpart.
+        Same as test_against_closed_form_solution_small but with a tree having
+        two internal nodes instead of 1. This makes the test slow, but more
+        interesting. Because this test is slow, we only try one sensible
+        setting of the model hyperparameters.
         """
+        # First, we create the ground truth tree and character states
         tree = nx.DiGraph()
-        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
-        tree.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"),
-                            ("2", "5"), ("2", "6")])
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5"]),
+        tree.add_edges_from(
+            [
+                ("0", "1"),
+                ("1", "2"),
+                ("2", "3"),
+                ("2", "4"),
+                ("1", "5"),
+            ]
+        )
         tree = CassiopeiaTree(tree=tree)
         tree.set_all_character_states(
-            {"0": [0, 0],
-             "1": [0, 0],
-             "2": [1, 0],
-             "3": [0, 0],
-             "4": [0, 1],
-             "5": [1, 0],
-             "6": [1, 1]},
+            {
+                "0": [0, 0],
+                "1": [0, 0],
+                "2": [1, 0],
+                "3": [1, 0],
+                "4": [1, 1],
+                "5": [0, 1],
+            },
         )
 
+        # Estimate branch lengths
         mutation_rate = 0.625
         birth_rate = 0.75
         sampling_probability = 0.1
@@ -194,53 +186,34 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             sampling_probability=sampling_probability,
             discretization_level=discretization_level,
         )
-
         model.estimate_branch_lengths(tree)
-        print(model.log_likelihood)
 
         # Test the model log likelihood against its numerical computation
         numerical_log_likelihood = (
             IIDExponentialBayesian.numerical_log_likelihood(
-                tree=tree, mutation_rate=mutation_rate, birth_rate=birth_rate,
+                tree=tree,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
                 sampling_probability=sampling_probability,
             )
         )
-        np.testing.assert_approx_equal(
-            model.log_likelihood, numerical_log_likelihood, significant=3
-        )
+        re = relative_error(-model.log_likelihood, -numerical_log_likelihood)
+        self.assertLessEqual(re, 0.01)
 
-        # Check that the likelihood computed from each leaf node is correct.
-        for leaf in tree.leaves:
-            model_log_likelihood_up = model._up(
-                leaf, discretization_level, model._get_number_of_mutated_characters_in_node(tree, leaf)
-            ) - np.log(birth_rate * 1.0 / discretization_level)\
-                + np.log(sampling_probability)
-            print(model_log_likelihood_up)
-            np.testing.assert_approx_equal(
-                model.log_likelihood, model_log_likelihood_up, significant=3
-            )
-
-            model_log_likelihood_up_wrong = model._up(
-                leaf, discretization_level, (model._get_number_of_mutated_characters_in_node(tree, leaf) + 1) % 2
-            )
-            with self.assertRaises(AssertionError):
-                np.testing.assert_approx_equal(
-                    model.log_likelihood,
-                    model_log_likelihood_up_wrong,
-                    significant=3,
-                )
+        # Test the likelihood computation from the leaves.
+        model._simple_inference_sanity_check()
 
         # Check that the posterior ages of the nodes are correct.
-        for node in model._non_root_internal_nodes(tree):
-            numerical_log_joints = (
-                IIDExponentialBayesian.numerical_log_joints(
-                    tree=tree,
-                    node=node,
-                    mutation_rate=mutation_rate,
-                    birth_rate=birth_rate,
-                    sampling_probability=sampling_probability,
-                    discretization_level=discretization_level,
-                )
+        for node in tree.internal_nodes:
+            if node == tree.root:
+                continue
+            numerical_log_joints = IIDExponentialBayesian.numerical_log_joints(
+                tree=tree,
+                node=node,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                sampling_probability=sampling_probability,
+                discretization_level=discretization_level,
             )
             np.testing.assert_array_almost_equal(
                 model.log_joints(node)[25:-25],
@@ -253,12 +226,13 @@ class TestIIDExponentialBayesian(unittest.TestCase):
                 numerical_log_joints - numerical_log_joints.max()
             )
             numerical_posterior /= numerical_posterior.sum()
+            # # For debugging; these two plots should look very similar.
             # import matplotlib.pyplot as plt
-            # plt.plot(model.posteriors[node])
+            # plt.plot(model.posterior_time(node))
             # plt.show()
-            # plt.plot(analytical_posterior)
+            # plt.plot(numerical_posterior)
             # plt.show()
             total_variation = np.sum(
                 np.abs(model.posterior_time(node) - numerical_posterior)
             )
-            assert total_variation < 0.03
+            self.assertLessEqual(total_variation, 0.03)

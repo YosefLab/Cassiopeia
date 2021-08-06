@@ -1,6 +1,6 @@
 # distutils: language = c++
 
-from .iid_exponential_bayesian cimport DP
+from ._iid_exponential_bayesian cimport DP
 from libcpp.vector cimport vector
 from libcpp.map cimport map
 

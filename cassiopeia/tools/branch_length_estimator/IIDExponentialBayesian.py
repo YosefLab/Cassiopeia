@@ -6,22 +6,18 @@ and that the phylogeny follows a subsampled Birth Process. Conditional on the
 observed topology and on the character data, the posterior mean branch lengths
 are used as branch length estimates.
 """
-import numpy as np
-
-from scipy.special import binom
-from scipy import integrate
-
 import time
+from copy import deepcopy
+from typing import Dict, List, Tuple
+
+import numpy as np
+from scipy import integrate
+from scipy.special import binom
 
 from cassiopeia.data import CassiopeiaTree
 
 from .BranchLengthEstimator import BranchLengthEstimator
-
-from .iid_exponential_bayesian import PyDP
-
-from typing import List
-
-from copy import deepcopy
+from ._iid_exponential_bayesian import PyDP
 
 
 class IIDExponentialBayesian(BranchLengthEstimator):
@@ -40,7 +36,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
     method if they are not known, which is usually the case for real data).
 
     This estimator also assumes that the tree is binary (except for the root,
-    which should have degree 1). TODO: Check this precondition and raise error if not.
+    which should have degree 1).
 
     Missing states are treated as missing at random by the model.
 
@@ -83,25 +79,25 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         self._log_likelihood = None
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
-        r"""
+        """
         Posterior mean under a Birth Process and IID memoryless mutations.
 
         The only caveat is that this method raises a ValueError if the
         discretization_size is too small.
 
         Raises:
-            ValueError
+            ValueError if discretization_size is too small.
         """
-        self._validate_input_tree()
+        self._validate_input_tree(tree)
 
         verbose = self._verbose
 
         self._precompute_Ks(tree)
-        self._down_cache = {}
-        self._up_cache = {}
-        self._log_joints = {}
-        self._posterior_means = {}
-        self._posteriors = {}
+        self._down_cache = {}  # type: Dict[Tuple[str, int, int], float]
+        self._up_cache = {}  # type: Dict[Tuple[str, int, int], float]
+        self._log_joints = {}  # type: Dict[str, np.array]
+        self._posterior_means = {}  # type: Dict[str, float]
+        self._posteriors = {}  # type: Dict[str, np.array]
         self._tree = tree
 
         time_start = time.time()
@@ -153,12 +149,25 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             times[leaf] = 1.0
         tree.set_times(times)
 
-    def _validate_input_tree(self):
-        # TODO
-        pass
+    @staticmethod
+    def _validate_input_tree(tree):
+        """
+        Checks that the tree is binary, except for the root node, which should
+        have degree exactly 1.
+
+        Raises:
+            ValueError
+        """
+        if len(tree.children(tree.root)) != 1:
+            raise ValueError("The root of the tree should have degree exactly "
+                             "1.")
+        for node in tree.internal_nodes:
+            if node != tree.root and len(tree.children(node)) != 2:
+                raise ValueError("Each internal node (different from the root)"
+                                 " should have degree exactly 2.")
 
     def _populate_attributes_with_cpp_implementation(self):
-        r"""
+        """
         A cpp implementation is run to compute the up and down caches,
         which is the computational bottleneck. The other attributes such as the
         log-likelihood, and the posteriors, are also populated because
@@ -360,7 +369,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         return list(set(tree.nodes) - set(tree.root) - set(tree.leaves))
 
     def _precompute_Ks(self, tree: CassiopeiaTree):
-        r"""
+        """
         For each vertex in the tree, we determine how many characters k are
         not considered missing starting here.
         """
@@ -797,3 +806,22 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         )
         numerical_posterior /= numerical_posterior.sum()
         return numerical_posterior.copy()
+
+    def _simple_inference_sanity_check(self):
+        """
+        Tests that the likelihood computed from each leaf node is correct.
+        """
+        tree = self._tree
+        for leaf in tree.leaves:
+            model_log_likelihood_up = (
+                self._up(
+                    leaf,
+                    self._discretization_level,
+                    self._get_number_of_mutated_characters_in_node(tree, leaf),
+                )
+                - np.log(self._birth_rate * 1.0 / self._discretization_level)
+                + np.log(self._sampling_probability)
+            )
+            np.testing.assert_approx_equal(
+                self._log_likelihood, model_log_likelihood_up, significant=2
+            )

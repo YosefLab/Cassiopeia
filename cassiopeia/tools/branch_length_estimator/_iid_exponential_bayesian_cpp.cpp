@@ -4,7 +4,7 @@
 #include <vector>
 #include <assert.h>
 #include <math.h>
-#include "iid_exponential_bayesian_cpp.h"
+#include "_iid_exponential_bayesian_cpp.h"
 
 #define forn(i, n) for(int i = 0; i < int(n); i++)
 #define forall(i,c) for(typeof((c).begin()) i = (c).begin();i != (c).end();i++)

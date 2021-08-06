@@ -3,7 +3,7 @@ from libcpp.map cimport map
 from libcpp.pair cimport pair
 
 # Declare the class with cdef
-cdef extern from "iid_exponential_bayesian_cpp.h":
+cdef extern from "_iid_exponential_bayesian_cpp.h":
     cdef cppclass DP:
         DP() except +
         void run(

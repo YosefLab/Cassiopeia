@@ -64,10 +64,10 @@ to_cythonize = [
         ["cassiopeia/preprocess/doublet_utils.pyx"],
     ),
     Extension(
-        'cassiopeia.tools.branch_length_estimator.iid_exponential_bayesian',
+        'cassiopeia.tools.branch_length_estimator._iid_exponential_bayesian',
         sources=[
-            'cassiopeia/tools/branch_length_estimator/iid_exponential_bayesian.pyx',
-            'cassiopeia/tools/branch_length_estimator/iid_exponential_bayesian_cpp.cpp',
+            'cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.pyx',
+            'cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian_cpp.cpp',
         ],
         extra_compile_args=['-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', '-O3'],
         language="c++",
