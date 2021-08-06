@@ -388,8 +388,10 @@ def filtered_lineage_group_to_allele_table(
     Returns:
         final_df: A final processed DataFrame with indel information
     """
-
     final_df = pd.concat(filtered_lgs, sort=True)
+
+    if "lineageGrp" not in final_df.columns:
+        final_df['lineageGrp'] = 1
 
     grouping = []
     for i in final_df.columns:
@@ -401,11 +403,8 @@ def filtered_lineage_group_to_allele_table(
         {"UMI": "count", "readCount": "sum"}
     )
 
-    final_df["Sample"] = final_df.apply(
-        lambda x: x.cellBC.split(".")[0], axis=1
-    )
-
     return final_df
+
 
 
 def plot_overlap_heatmap(at, at_pivot_I, output_directory):
