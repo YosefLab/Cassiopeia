@@ -408,8 +408,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 posterior log joint.
 
         Returns:
-            log P(node time = t, character states, tree topology) for t in [0, T]
-            where T is the discretization_level.
+            log P(node time = t, character states, tree topology) for t in
+            [0, T], where T is the discretization_level.
         """
         if node not in self._posteriors.keys():
             raise ValueError(f"Unexistent node: {node}")
@@ -662,8 +662,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 performed.
 
         Returns:
-            log P(node time = t, character states, tree topology) for t in [0, T]
-            where T is the discretization_level.
+            log P(node time = t, character states, tree topology) for t in
+            [0, T], where T is the discretization_level.
         """
         res = np.zeros(shape=(discretization_level + 1,))
         other_nodes = [n for n in _non_root_internal_nodes(tree) if n != node]
