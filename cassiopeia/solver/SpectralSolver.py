@@ -23,7 +23,7 @@ from cassiopeia.solver import (
 class SpectralSolver(GreedySolver.GreedySolver):
     """
     A spectral-based CassiopeiaSolver.
-    
+
     The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,
     a similarity graph is generated for the sample set, where edges

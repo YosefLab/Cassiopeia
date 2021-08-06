@@ -37,7 +37,7 @@ Installation
     * Run the command ``gurobi.sh`` from a terminal window
     * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
     
-4. Install Cassiopeia by running `make install` from the directory where you have Cassiopeia installed.
+4. Install Cassiopeia by running `make install` from the directory where you have Cassiopeia downloaded.
     
 To verify that it installed correctly, try running our tests with `make test`.
 

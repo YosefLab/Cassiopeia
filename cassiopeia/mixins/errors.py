@@ -21,6 +21,9 @@ class DistanceSolverError(Exception):
 
     pass
 
+class FitchCountError(Exception):
+    """An ExceptionClass for FitchCount."""
+    pass
 
 class GreedySolverError(Exception):
     pass

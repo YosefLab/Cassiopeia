@@ -58,58 +58,70 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         self.basic_tree = tree
 
-        self.basic_lineage_tracing_data_simulator = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
-            heritable_silencing_rate=1e-5,
-            stochastic_silencing_rate=1e-2,
-            random_seed=123412232,
+        self.basic_lineage_tracing_data_simulator = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=1e-5,
+                stochastic_silencing_rate=1e-2,
+                random_seed=123412232,
+            )
         )
 
-        self.basic_lineage_tracing_data_simulator_no_collapse = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
-            heritable_silencing_rate=0,
-            stochastic_silencing_rate=0,
-            random_seed=123412232,
-            collapse_sites_on_cassette=False,
+        self.basic_lineage_tracing_data_simulator_no_collapse = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=0,
+                stochastic_silencing_rate=0,
+                random_seed=123412232,
+                collapse_sites_on_cassette=False,
+            )
         )
 
-        self.basic_lineage_tracing_no_resection = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=9,
-            size_of_cassette=1,
-            mutation_rate=0.3,
-            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
-            heritable_silencing_rate=0,
-            stochastic_silencing_rate=0,
-            random_seed=123412232,
+        self.basic_lineage_tracing_no_resection = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=9,
+                size_of_cassette=1,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=0,
+                stochastic_silencing_rate=0,
+                random_seed=123412232,
+            )
         )
 
-        self.lineage_tracing_data_simulator_state_distribution = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_generating_distribution=lambda: np.random.exponential(1e-5),
-            number_of_states=10,
-            heritable_silencing_rate=1e-5,
-            stochastic_silencing_rate=1e-2,
-            random_seed=123412232,
+        self.lineage_tracing_data_simulator_state_distribution = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_generating_distribution=lambda: np.random.exponential(
+                    1e-5
+                ),
+                number_of_states=10,
+                heritable_silencing_rate=1e-5,
+                stochastic_silencing_rate=1e-2,
+                random_seed=123412232,
+            )
         )
 
-        self.lineage_tracing_data_simulator_missing_data = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
-            heritable_silencing_rate=1e-5,
-            stochastic_silencing_rate=1e-2,
-            heritable_missing_data_state=-2,
-            stochastic_missing_data_state=-1,
-            random_seed=123412232,
+        self.lineage_tracing_data_simulator_missing_data = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=1e-5,
+                stochastic_silencing_rate=1e-2,
+                heritable_missing_data_state=-2,
+                stochastic_missing_data_state=-1,
+                random_seed=123412232,
+            )
         )
 
     def test_basic_setup(self):
@@ -224,8 +236,10 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         np.random.seed(123412232)
 
         character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        updated_character_array = self.basic_lineage_tracing_data_simulator.introduce_states(
-            character_array, [0, 3, 5, 6]
+        updated_character_array = (
+            self.basic_lineage_tracing_data_simulator.introduce_states(
+                character_array, [0, 3, 5, 6]
+            )
         )
 
         expected_character_array = [3, 0, 0, 3, 0, 3, 3, 0, 0]
@@ -242,8 +256,10 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        updated_character_array = self.basic_lineage_tracing_data_simulator.silence_cassettes(
-            character_array, 0.1
+        updated_character_array = (
+            self.basic_lineage_tracing_data_simulator.silence_cassettes(
+                character_array, 0.1
+            )
         )
 
         expected_character_array = [0, 0, 0, 0, 0, 0, -1, -1, -1]

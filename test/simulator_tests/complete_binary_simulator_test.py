@@ -1,7 +1,8 @@
 import numpy as np
 import unittest
 
-from cassiopeia.simulator import CompleteBinarySimulator, TreeSimulatorError
+from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.simulator import CompleteBinarySimulator
 
 
 class TestCompleteBinarySimulator(unittest.TestCase):

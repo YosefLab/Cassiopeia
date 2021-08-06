@@ -22,7 +22,7 @@ from cassiopeia.solver import graph_utilities, GreedySolver
 class MaxCutSolver(GreedySolver.GreedySolver):
     """
     A MaxCut graph-based CassiopeiaSolver.
-    
+
     The MaxCutSolver implements a top-down algorithm that recursively
     partitions the sample set based on connectivity. At each recursive step,
     a connectivity graph is generated for the sample set, where edge weights
