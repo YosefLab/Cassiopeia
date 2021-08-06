@@ -99,6 +99,33 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
+    def test_character_matrix_formation_custom_missing_data(self):
+        
+        self.alleletable_basic.loc[0, "r1"] = "missing"
+
+        (
+            character_matrix,
+            priors,
+            indel_states,
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_basic, missing_data_allele="missing", missing_data_state=-3
+        )
+
+        self.assertEqual(character_matrix.shape[0], 3)
+        self.assertEqual(character_matrix.shape[1], 9)
+
+        expected_df = pd.DataFrame.from_dict(
+            {
+                "cellA": [-3, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -3, -3, -3, -3, -3, -3],
+                "cellC": [-3, -3, -3, -3, -3, -3, 2, 1, 1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(1, 10)],
+        )
+
+        pd.testing.assert_frame_equal(character_matrix, expected_df)
+
     def test_character_matrix_formation_with_conflicts(self):
         (
             character_matrix,
@@ -840,6 +867,64 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 indel_probabilities.loc[indel, "freq"],
                 delta=0.01,
             )
+
+    def test_lineage_profile_to_character_matrix_custom_missing_data(self):
+
+        self.alleletable_basic.fillna("MISSING", inplace=True)
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
+            self.alleletable_basic,
+        )
+
+        (
+            character_matrix,
+            priors,
+            state_to_indel,
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(
+            lineage_profile, self.mutation_priors, missing_allele_indicator="MISSING",
+        )
+
+        self.assertEqual(len(priors), 7)
+        self.assertEqual(len(state_to_indel), 9)
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "cellA": [1, 1, 1, 0, 0, 1, 1, 1, 1],
+                "cellB": [-1, -1, -1, 0, 0, 2, -1, -1, -1],
+                "cellC": [2, 1, 1, -1, -1, -1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix.index.name = "cellBC"
+        # Behavior on ties is different depending on the numpy version. So we
+        # need to check against two different expected character matrices.
+        # Specifically, intBC A and C are tied.
+        expected_character_matrix2 = pd.DataFrame.from_dict(
+            {
+                "cellA": [0, 0, 1, 1, 1, 1, 1, 1, 1],
+                "cellB": [0, 0, 2, -1, -1, -1, -1, -1, -1],
+                "cellC": [-1, -1, -1, 2, 1, 1, -1, -1, -1],
+            },
+            orient="index",
+            columns=[f"r{i}" for i in range(9)],
+        )
+        expected_character_matrix2.index.name = "cellBC"
+
+        try:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix, character_matrix
+            )
+        except AssertionError:
+            pd.testing.assert_frame_equal(
+                expected_character_matrix2, character_matrix
+            )
+
+        # test prior dictionary formation
+        for character in priors.keys():
+            for state in priors[character].keys():
+                indel = state_to_indel[character][state]
+                prob = self.mutation_priors.loc[indel].iloc[0]
+                self.assertEqual(prob, priors[character][state])
 
 
 if __name__ == "__main__":
