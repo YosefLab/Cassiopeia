@@ -124,8 +124,10 @@ class TestHybridSolver(unittest.TestCase):
         )
 
         ## hybrid solver with Greedy on top and Maxcut on Bottom
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut = cas.solver.HybridSolver(
-            greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut = (
+            cas.solver.HybridSolver(
+                greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
+            )
         )
 
     def test_constructor(self):
@@ -287,9 +289,7 @@ class TestHybridSolver(unittest.TestCase):
         for clade in expected_clades:
             self.assertIn(clade, observed_clades)
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid(self):
 
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
@@ -353,9 +353,7 @@ class TestHybridSolver(unittest.TestCase):
         # make sure that the tree can be converted to newick format
         tree_newick = self.pp_tree.get_newick()
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_single_thread(self):
 
         self.hybrid_pp_solver.threads = 1
@@ -412,9 +410,7 @@ class TestHybridSolver(unittest.TestCase):
         # make sure that the tree can be converted to newick format
         tree_newick = self.pp_tree.get_newick()
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_large(self):
 
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
@@ -484,9 +480,7 @@ class TestHybridSolver(unittest.TestCase):
         # make sure that the tree can be converted to newick format
         tree_newick = self.large_tree.get_newick()
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_maxcut(self):
 
         self.hybrid_pp_solver_maxcut.solve(
@@ -551,9 +545,7 @@ class TestHybridSolver(unittest.TestCase):
         # make sure that the tree can be converted to newick format
         tree_newick = self.missing_tree.get_newick()
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_missing(self):
 
         self.hybrid_pp_solver_missing.solve(

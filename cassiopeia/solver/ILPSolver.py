@@ -172,8 +172,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-                optimal_solution, character_matrix
+            optimal_solution = (
+                self.__append_sample_names_and_remove_spurious_leaves(
+                    optimal_solution, character_matrix
+                )
             )
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
@@ -238,8 +240,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # append sample names to the solution and populate the tree
-        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(
-            optimal_solution, character_matrix
+        optimal_solution = (
+            self.__append_sample_names_and_remove_spurious_leaves(
+                optimal_solution, character_matrix
+            )
         )
 
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
@@ -296,12 +300,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             A potential graph represented by a directed graph.
         """
 
-        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-            character_matrix.values.astype(str),
-            pid,
-            lca_height,
-            self.maximum_potential_graph_layer_size,
-            missing_state_indicator,
+        potential_graph_edges = (
+            ilp_solver_utilities.infer_potential_graph_cython(
+                character_matrix.values.astype(str),
+                pid,
+                lca_height,
+                self.maximum_potential_graph_layer_size,
+                missing_state_indicator,
+            )
         )
 
         # the potential graph edges returned are strings in the form
@@ -679,7 +685,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             if l not in character_matrix.index:
                 curr_parent = list(solution.predecessors(l))[0]
                 solution.remove_node(l)
-                while len(list(solution.successors(curr_parent))) < 1 and curr_parent != root:
+                while (
+                    len(list(solution.successors(curr_parent))) < 1
+                    and curr_parent != root
+                ):
                     next_parent = list(solution.predecessors(curr_parent))[0]
                     solution.remove_node(curr_parent)
                     curr_parent = next_parent

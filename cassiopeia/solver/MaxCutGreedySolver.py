@@ -24,7 +24,7 @@ from cassiopeia.solver import (
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
     """
     A CassioepiaGreedy solver with the max cut criterion.
-    
+
     The MaxCutGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence/absence of the most frequent
     mutation. Additionally, the hill-climbing procedure from the MaxCutSolver is

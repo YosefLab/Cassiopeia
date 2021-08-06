@@ -152,9 +152,7 @@ class TestILPSolver(unittest.TestCase):
         )
         self.assertEqual(dist, 1)
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_single_sample_ilp(self):
 
         # test single sample
@@ -324,10 +322,10 @@ class TestILPSolver(unittest.TestCase):
                 (10, "c4", 1.5),
                 (11, 10, 1.5),
                 (9, 6, 1.5),
-                (8, "c2", 0.5)
+                (8, "c2", 0.5),
             ]
         )
-        
+
         processed_tree = self.ilp_solver.post_process_steiner_solution(tree, 9)
 
         expected_tree = nx.DiGraph()
@@ -353,45 +351,45 @@ class TestILPSolver(unittest.TestCase):
         tree = nx.DiGraph()
         tree.add_edges_from(
             [
-                ((0,0,0), (1,0,0)),
-                ((0,0,0), (2,0,0)),
-                ((2,0,0), (2,0,2)),
-                ((2,0,0), (2,0,1)),
-                ((1,0,0), (1,1,0)),
-                ((1,0,0), (1,2,0)),
-                ((1,2,0), (1,2,1)),
-                ((1,2,0), (1,2,2)),
-                ((2,0,1), (2,1,1)),
-                ((2,0,1), (2,2,1)),
-                ((2,0,1), (2,3,1)),
-                ((1,0,0), (1,1,2)),
-                ((1,0,0), (1,1,1)),
+                ((0, 0, 0), (1, 0, 0)),
+                ((0, 0, 0), (2, 0, 0)),
+                ((2, 0, 0), (2, 0, 2)),
+                ((2, 0, 0), (2, 0, 1)),
+                ((1, 0, 0), (1, 1, 0)),
+                ((1, 0, 0), (1, 2, 0)),
+                ((1, 2, 0), (1, 2, 1)),
+                ((1, 2, 0), (1, 2, 2)),
+                ((2, 0, 1), (2, 1, 1)),
+                ((2, 0, 1), (2, 2, 1)),
+                ((2, 0, 1), (2, 3, 1)),
+                ((1, 0, 0), (1, 1, 2)),
+                ((1, 0, 0), (1, 1, 1)),
             ]
         )
-        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(tree, cm)
+        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(
+            tree, cm
+        )
 
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
             [
-                ((0,0,0), (1,0,0)),
-                ((0,0,0), (2,0,0)),
-                ((2,0,0), 'd'),
-                ((2,0,0), (2,0,2)),
-                ((2,0,2), 'e'),
-                ((1,0,0), (1,1,0)),
-                ((1,1,0), 'a'),
-                ((1,1,0), 'f'),
-                ((1,0,0), (1,2,0)),
-                ((1,2,0), 'b'),
-                ((1,2,0), (1,2,1)),
-                ((1,2,1), 'c'),
+                ((0, 0, 0), (1, 0, 0)),
+                ((0, 0, 0), (2, 0, 0)),
+                ((2, 0, 0), "d"),
+                ((2, 0, 0), (2, 0, 2)),
+                ((2, 0, 2), "e"),
+                ((1, 0, 0), (1, 1, 0)),
+                ((1, 1, 0), "a"),
+                ((1, 1, 0), "f"),
+                ((1, 0, 0), (1, 2, 0)),
+                ((1, 2, 0), "b"),
+                ((1, 2, 0), (1, 2, 1)),
+                ((1, 2, 1), "c"),
             ]
         )
         self.assertEqual(set(processed_tree.edges), set(expected_tree.edges))
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_perfect_phylogeny(self):
 
         self.ilp_solver.solve(self.pp_tree, logfile=self.logfile)
@@ -517,9 +515,7 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_with_duplicates(self):
 
         self.ilp_solver.solve(self.duplicates_tree, logfile=self.logfile)
@@ -608,9 +604,7 @@ class TestILPSolver(unittest.TestCase):
         # make sure that the tree can be converted to newick format
         tree_newick = self.duplicates_tree.get_newick()
 
-    @unittest.skipUnless(
-        GUROBI_INSTALLED, "Gurobi installation not found."
-    )
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_missing_data(self):
 
         self.ilp_solver.solve(self.missing_tree, logfile=self.logfile)
