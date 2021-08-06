@@ -1,3 +1,11 @@
+<img src="https://github.com/YosefLab/cassiopeia/blob/master/docs/_static/logo.png?raw=true" width="400" alt="cassiopeia">
+
+[![Stars](https://img.shields.io/github/stars/YosefLab/cassiopeia?logo=GitHub&color=yellow)](https://github.com/YosefLab/cassiopeia/stargazers)
+[![Documentation Status](https://readthedocs.org/projects/cassiopeia/badge/?version=latest)](https://cassiopeia.readthedocs.io/en/stable/?badge=stable)
+![Build
+Status](https://github.com/YosefLab/cassiopeia/workflows/cassiopeia/badge.svg)
+[![Coverage](https://codecov.io/gh/YosefLab/cassiopeia/branch/master/graph/badge.svg)](https://codecov.io/gh/YosefLab/cassiopeia)
+
 Cassiopeia: A pipeline for single-cell lineage tracing data
 =============================================================
 
@@ -14,7 +22,7 @@ We also have provided tutorials for three modules:
 - [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
 
 
-You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8)) 
+You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8).
 
 Free Software: MIT License
 
@@ -29,7 +37,7 @@ Installation
     * Run the command ``gurobi.sh`` from a terminal window
     * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
     
-4. Install Cassiopeia by running `make install` from the directory where you have Cassiopeia installed.
+4. Install Cassiopeia by running `make install` from the directory where you have Cassiopeia downloaded.
     
 To verify that it installed correctly, try running our tests with `make test`.
 

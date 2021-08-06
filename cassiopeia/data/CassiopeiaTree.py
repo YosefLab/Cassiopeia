@@ -1065,7 +1065,7 @@ class CassiopeiaTree:
         return ancestors
 
     def depth_first_traverse_nodes(
-        self, source: Optional[int] = None, postorder: bool = True
+        self, source: Optional[str] = None, postorder: bool = True
     ) -> Iterator[str]:
         """Nodes from depth first traversal of the tree.
 
@@ -1093,7 +1093,7 @@ class CassiopeiaTree:
             return nx.dfs_preorder_nodes(self.__network, source=source)
 
     def depth_first_traverse_edges(
-        self, source: Optional[int] = None
+        self, source: Optional[str] = None
     ) -> Iterator[Tuple[str, str]]:
         """Edges from depth first traversal of the tree.
 
@@ -1115,6 +1115,30 @@ class CassiopeiaTree:
             source = self.root
 
         return nx.dfs_edges(self.__network, source=source)
+
+    def breadth_first_traverse_edges(
+        self, source: Optional[str] = None
+    ) -> Iterator[Tuple[str, str]]:
+        """Edges from breadth first traversal of the tree.
+
+        Returns the edges from a BFS on the tree.
+
+        Args:
+            source: Where to begin the breadth first traversal.
+
+        Returns:
+            A list of edges from the breadth first traversal.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+
+        self.__check_network_initialized()
+
+        if source is None:
+            source = self.root
+
+        return nx.bfs_edges(self.__network, source=source)
 
     def leaves_in_subtree(self, node) -> List[str]:
         """Get leaves in subtree below a given node.
@@ -1143,6 +1167,35 @@ class CassiopeiaTree:
                     self.__cache["subtree"][n] = leaves
 
         return self.__cache["subtree"][node]
+
+    def subset_clade(
+        self, node: str, copy: bool = False
+    ) -> Optional["CassiopeiaTree"]:
+        """Subset CassiopeiaTree object at node.
+
+        Given a node in the CassiopeiaTree, subset the entire tree object
+        to only the nodes that fall below that node.
+
+        Args:
+            node: Node identifier in the object.
+            copy: Return a copy or operate in place.
+        
+        Returns:
+            A subset CassiopeiaTree object if copy is set to true, else None. 
+        """
+        if copy:
+            new_tree = self.copy()
+            new_tree.subset_clade(node)
+            return new_tree
+
+        nodes_in_subtree = self.depth_first_traverse_nodes(source=node)
+        to_remove = list(set(self.nodes) - set(nodes_in_subtree))
+        for node in to_remove:
+            self.__remove_node(node)
+
+        # Remove all removed nodes from data fields
+        # This function will also clear the cache
+        self.__register_data_with_tree()
 
     def get_newick(self, record_branch_lengths=False) -> str:
         """Returns newick format of tree.
@@ -1185,36 +1238,64 @@ class CassiopeiaTree:
         else:
             return None
 
+    def _get_node_depths(self) -> List[float]:
+        """
+        Computes the depth of each node in the tree.
+
+        Returns:
+            List with depth of each node in the tree
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        root_time = self.get_time(self.root)
+        depths = [self.get_time(l) - root_time for l in self.leaves]
+        return depths
+
     def get_mean_depth_of_tree(self) -> float:
         """Computes mean depth of tree.
 
         Returns the mean depth of the tree. If branch lengths have not been
         estimated, depth is by default the number of edges in the tree.
 
+        Returns:
+            Mean depth of the tree.
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
 
-        depths = [self.get_time(l) for l in self.leaves]
-        return np.mean(depths)
+        return np.mean(self._get_node_depths())
 
     def get_max_depth_of_tree(self) -> float:
-        """Computes the max depth of the tree.
+        """
+        Computes the maximum depth of the tree (in terms of time).
 
-        Returns the maximum depth of the tree. If branch lengths have not been
-        estimated, depth is by default the number of edges in the tree.
+        The maximum depth of the tree (in terms of time) is defined as the
+        greatest time distance of any leaf of the tree from the root. Because
+        branch lengths are by default equal to 1, if branch lengths have not
+        yet been estimated (say with the
+        cassiopeia.tools.branch_length_estimator module), then the max depth
+        will be the number of edges in the tree from root to the furthest leaf.
+
+        Returns:
+            Maximum depth of the tree.
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
 
-        depths = [self.get_time(l) for l in self.leaves]
-        return np.max(depths)
+        return np.max(self._get_node_depths())
 
     def get_mutations_along_edge(
-        self, parent: str, child: str
+        self,
+        parent: str,
+        child: str,
+        treat_missing_as_mutations: bool = False,
     ) -> List[Tuple[int, int]]:
         """Gets the mutations along an edge of interest.
 
@@ -1224,6 +1305,8 @@ class CassiopeiaTree:
         Args:
             parent: parent in tree
             child: child in tree
+            treat_missing_as_mutations: Whether to treat missing states as
+                mutations.
 
         Returns:
             A list of (character, state) tuples indicating which character
@@ -1244,7 +1327,13 @@ class CassiopeiaTree:
         mutations = []
         for i in range(self.n_character):
             if parent_states[i] != child_states[i]:
-                mutations.append((i, child_states[i]))
+                if treat_missing_as_mutations:
+                    mutations.append((i, child_states[i]))
+                elif (
+                    parent_states[i] != self.missing_state_indicator
+                    and child_states[i] != self.missing_state_indicator
+                ):
+                    mutations.append((i, child_states[i]))
 
         return mutations
 
@@ -1273,12 +1362,20 @@ class CassiopeiaTree:
         Removes any leaves from the character matrix, cell metadata, and
         dissimilarity maps that do not appear in the tree.
         Additionally, adds any leaves that appear in the tree but not in the
-        character matrix, cell metadata, or dissimilarity map with default values.
+        character matrix, cell metadata, or dissimilarity map with default
+        values.
+        
         The default values for each table is as follows:
-        * character matrix: all states are missing values (``missing_state_indicator``)
+        * character matrix: all states are missing values
+            (``missing_state_indicator``)
         * cell metadata: None
-        * dissimilarity map: ``np.inf`` distance from the leaf to all other leaves
+        * dissimilarity map: ``np.inf`` distance from the leaf to all other
+            leaves
         """
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
         leaves_set = set(self.leaves)
         if self.character_matrix is not None:
             remove_from_character_matrix = (
@@ -1402,10 +1499,8 @@ class CassiopeiaTree:
         if dissimilarity:
             self.set_dissimilarity(node, dissimilarity)
 
-        # reset cache because we've changed the tree topology
-        self.__cache = {}
-
         # Update new leaf data with defaults
+        # This function will also clear the cache
         self.__register_data_with_tree()
 
     def remove_leaf_and_prune_lineage(self, node: str) -> None:
@@ -1441,10 +1536,8 @@ class CassiopeiaTree:
                 self.__remove_node(curr_parent)
                 curr_parent = next_parent
 
-        # reset cache because we've changed the tree topology
-        self.__cache = {}
-
         # Remove all removed nodes from data fields
+        # This function will also clear the cache
         self.__register_data_with_tree()
 
     def collapse_unifurcations(self, source: Optional[int] = None) -> None:
@@ -1871,3 +1964,57 @@ class CassiopeiaTree:
             _node: self.__cache["distances"][frozenset({node, _node})]
             for _node in (self.leaves if leaves_only else self.nodes)
         }
+
+    def scale_to_unit_length(self) -> None:
+        """
+        Scales the tree to have unit length.
+
+        The longest path from root to leaf will have length 1 after the
+        scaling.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        current_times = self.get_times().values()
+        max_time = max(current_times)
+        min_time = min(current_times)
+        new_times = {}
+        for node in self.nodes:
+            new_times[node] = (self.get_time(node) - min_time) / (
+                max_time - min_time
+            )
+        self.set_times(new_times)
+
+    def get_unmutated_characters_along_edge(
+        self, parent: str, child: str
+    ) -> List[int]:
+        """
+        List of unmutated characters along edge.
+
+        A character is considered to not mutate if it goes from the zero state
+        to the zero state.
+
+        Raises:
+            CassiopeiaTreeError if the edge does not exist or if the tree is
+                not initialized.
+        """
+        self.__check_network_initialized()
+
+        if child not in self.children(parent):
+            raise CassiopeiaTreeError("Edge does not exist.")
+
+        parent_states = self.get_character_states(parent)
+        child_states = self.get_character_states(child)
+        res = []
+        for i, (parent_state, child_state) in enumerate(
+            zip(parent_states, child_states)
+        ):
+            if parent_state == 0 and child_state == 0:
+                res.append(i)
+        return res
+
+    def copy(self) -> "CassiopeiaTree":
+        """Full copy of CassiopeiaTree"""
+        return copy.deepcopy(self)

@@ -15,3 +15,4 @@ Import Cassiopeia as::
    solver
    simulator
    plotting
+   tools
