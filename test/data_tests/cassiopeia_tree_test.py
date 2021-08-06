@@ -1703,6 +1703,33 @@ class TestCassiopeiaTree(unittest.TestCase):
             [2, 3, 4, 5, 6, 7],
         )
 
+    def test_impute_unambiguous_missing_states(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {
+                "0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "1": [0, 1, 0, 0, 0, 0, 1, -1, 0],
+                "2": [0, -1, 0, 1, 1, 0, 1, -1, -1],
+                "3": [0, -1, -1, 1, 0, 0, -1, -1, -1],
+            },
+        )
+        tree.impute_unambiguous_missing_states()
+        self.assertEqual(
+            tree.get_character_states("0"), [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertEqual(
+            tree.get_character_states("1"), [0, 1, 0, 0, 0, 0, 1, -1, 0]
+        )
+        self.assertEqual(
+            tree.get_character_states("2"), [0, 1, 0, 1, 1, 0, 1, -1, -1]
+        )
+        self.assertEqual(
+            tree.get_character_states("3"), [0, 1, -1, 1, 0, 0, 1, -1, -1]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

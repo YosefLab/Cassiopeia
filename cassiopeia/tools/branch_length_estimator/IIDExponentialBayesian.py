@@ -6,7 +6,6 @@ and that the phylogeny follows a subsampled Birth Process. Conditional on the
 observed topology and on the character data, the posterior mean branch lengths
 are used as branch length estimates.
 """
-import time
 from copy import deepcopy
 from typing import Dict, List, Tuple
 
@@ -16,8 +15,29 @@ from scipy.special import binom
 
 from cassiopeia.data import CassiopeiaTree
 
-from .BranchLengthEstimator import BranchLengthEstimator
 from ._iid_exponential_bayesian import PyDP
+from .BranchLengthEstimator import BranchLengthEstimator
+
+
+def _get_number_of_mutated_characters_in_node(tree: CassiopeiaTree, v: str):
+    """
+    The number of mutated characters in node v of the tree,
+    excluding missing characters.
+    """
+    states = tree.get_character_states(v)
+    return len(
+        [s for s in states if s != 0 and s != tree.missing_state_indicator]
+    )
+
+
+def _non_root_internal_nodes(tree: CassiopeiaTree) -> List[str]:
+    """Internal nodes of the tree, excluding the root.
+
+    Returns:
+        The internal nodes of the tree that are not the root (i.e. all
+        nodes not at the leaves, and not the root)
+    """
+    return list(set(tree.internal_nodes) - set(tree.root))
 
 
 class IIDExponentialBayesian(BranchLengthEstimator):
@@ -46,7 +66,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         sampling_probability: The probability that a leaf in the ground truth
             tree was sampled. Must be in (0, 1]
         discretization_level: How many timesteps are used to discretize time.
-        verbose: Verbosity level.
 
     Attributes:
         mutation_rate: The CRISPR/Cas9 mutation rate.
@@ -64,7 +83,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         birth_rate: float,
         sampling_probability: float,
         discretization_level: int = 600,
-        verbose: bool = False,
     ):
         if sampling_probability <= 0 or sampling_probability > 1:
             raise ValueError(
@@ -75,22 +93,34 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         self._birth_rate = birth_rate
         self._sampling_probability = sampling_probability
         self._discretization_level = discretization_level
-        self._verbose = verbose
         self._log_likelihood = None
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         """
-        Posterior mean under a Birth Process and IID memoryless mutations.
+        Estimate branch lengths of the tree using the given model.
 
-        The only caveat is that this method raises a ValueError if the
-        discretization_size is too small.
+        The tree must be binary except for the root, which should have degree
+        1.
+
+        This method raises a ValueError if the discretization_size is too
+        small or the tree topology is not valid.
+
+        The computational complexity of this method is:
+        O(discretization_level * tree.n_cell * tree.n_character)
 
         Raises:
-            ValueError if discretization_size is too small.
+            ValueError if discretization_size is too small or the tree topology
+            is not valid.
         """
         self._validate_input_tree(tree)
+        self._tree_orig = tree
 
-        verbose = self._verbose
+        tree = deepcopy(tree)
+        # We first impute the unambiguous missing states because it makes
+        # the number of mutated states at each vertex increase monotonically
+        # from parent to child, making the dynamic programming state and code
+        # much clearer.
+        tree.impute_unambiguous_missing_states()
 
         self._precompute_Ks(tree)
         self._down_cache = {}  # type: Dict[Tuple[str, int, int], float]
@@ -100,17 +130,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         self._posteriors = {}  # type: Dict[str, np.array]
         self._tree = tree
 
-        time_start = time.time()
         self._populate_attributes_with_cpp_implementation()
-        time_end = time.time()
-        if verbose:
-            print(f"time_cpp = {time_end - time_start}")
-
-        time_start = time.time()
         self._populate_branch_lengths()
-        time_end = time.time()
-        if verbose:
-            print(f"time_populate_branch_lengths = {time_end - time_start}")
 
     def _up(self, v, t, x) -> float:
         """
@@ -140,9 +161,12 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             return -np.inf
 
     def _populate_branch_lengths(self):
-        tree = self._tree
+        """
+        Populate the branch lengths of the tree using the posterior means.
+        """
+        tree = self._tree_orig
         times = {}
-        for node in self._non_root_internal_nodes(tree):
+        for node in _non_root_internal_nodes(tree):
             times[node] = self._posterior_means[node]
         times[tree.root] = 0.0
         for leaf in tree.leaves:
@@ -159,37 +183,36 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             ValueError
         """
         if len(tree.children(tree.root)) != 1:
-            raise ValueError("The root of the tree should have degree exactly "
-                             "1.")
+            raise ValueError(
+                "The root of the tree should have degree exactly " "1."
+            )
         for node in tree.internal_nodes:
             if node != tree.root and len(tree.children(node)) != 2:
-                raise ValueError("Each internal node (different from the root)"
-                                 " should have degree exactly 2.")
+                raise ValueError(
+                    "Each internal node (different from the root)"
+                    " should have degree exactly 2."
+                )
 
     def _populate_attributes_with_cpp_implementation(self):
         """
-        A cpp implementation is run to compute the up and down caches,
-        which is the computational bottleneck. The other attributes such as the
-        log-likelihood, and the posteriors, are also populated because
-        even these trivial computations are too slow in vanilla python.
-        Looking forward, a cython implementation will hopefully be the
-        best way forward.
-        To remove anything that has to do with the cpp implementation, you just
-        have to remove this function (and the gates around it).
-        I.e., this python implementation is loosely coupled to the cpp call: we
-        just have to remove the call to this method to turn it off, and all
-        other code will work just fine. This is because all that this method
-        does is *warm up the cache* with values computed from the cpp
-        subprocess, and the caching process is totally transparent to the
-        other methods of the class.
+        Run c++ implementation.
+
+        Wrapper that calls a fast c++ implementation to populate the
+        _down_cache, _up_cache, _log_joints, _posterior_means, _posteriors,
+        _log_likelihood. The key here is that the nodes of the tree are
+        mapped to integer ids from 0 to tree.n_cell - 1. This mapping is
+        then undone at the end of this method.
         """
-        # First extract the relevant information from the tree and serialize it.
+        # First extract the relevant information from the tree to pass on to
+        # the c++ module.
         tree = self._tree
+
         node_to_id = dict(zip(tree.nodes, range(len(tree.nodes))))
         id_to_node = dict(zip(range(len(tree.nodes)), tree.nodes))
 
         N = len(tree.nodes)
 
+        # children[i] holds the children of node i in the tree.
         children = sorted(
             [
                 [node_to_id[v]] + [node_to_id[c] for c in tree.children(v)]
@@ -197,11 +220,12 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             ]
         )
         children = [vec[1:] for vec in children]
-        # print(f"children = {children}")
-        # assert(False)
 
+        # The id of the root of the tree.
         root = node_to_id[tree.root]
 
+        # is_internal_node[i] is a binary indicator telling whether node i
+        # is internal in the tree.
         is_internal_node = np.array(
             sorted(
                 [
@@ -210,33 +234,30 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 ]
             )
         )[:, 1]
-        # print(f"is_internal_node = {is_internal_node}")
-        # assert(False)
 
+        # get_number_of_mutated_characters_in_node[i] is the number of
+        # mutated characters (this excludes missing characters) in node i.
         get_number_of_mutated_characters_in_node = np.array(
             sorted(
                 [
                     [
                         node_to_id[v],
-                        self._get_number_of_mutated_characters_in_node(tree, v),
+                        _get_number_of_mutated_characters_in_node(tree, v),
                     ]
                     for v in tree.nodes
                 ]
             )
         )[:, 1]
-        # print(f"get_number_of_mutated_characters_in_node = {get_number_of_mutated_characters_in_node}")
-        # assert(False)
 
+        # The list of internal nodes different from the root.
         non_root_internal_nodes = [
-            node_to_id[v] for v in self._non_root_internal_nodes(tree)
+            node_to_id[v] for v in _non_root_internal_nodes(tree)
         ]
-        # print(f"non_root_internal_nodes = {non_root_internal_nodes}")
-        # assert(False)
 
+        # The leaves of the tree.
         leaves = [node_to_id[v] for v in tree.leaves]
-        # print(f"leaves = {leaves}")
-        # assert(False)
 
+        # parent[i] contains the parent of node i.
         parent = np.array(
             sorted(
                 [
@@ -247,41 +268,33 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 + [[node_to_id[tree.root], -100000000]]
             )
         )[:, 1]
-        # print(f"parent = {parent}")
-        # assert(False)
 
+        # The number of characters.
         K = tree.n_character
-        # print(f"K = {K}")
-        # assert(False)
 
+        # The number of characters, after ignoring missing characters.
         Ks = np.array(
             sorted([[node_to_id[v], self._Ks[v]] for v in tree.nodes])
         )[:, 1]
-        # print(f"Ks = {Ks}")
-        # assert(False)
 
+        # The number of timesteps used to discretize time.
         T = self._discretization_level
-        # print(f"T = {T}")
-        # assert(False)
 
+        # The mutation rate.
         r = self._mutation_rate
-        # print(f"r = {r}")
-        # assert(False)
 
+        # The birth rate
         lam = self._birth_rate
-        # print(f"lam = {lam}")
-        # assert(False)
 
+        # The probability of each leaf being sampled.
         sampling_probability = self._sampling_probability
-        # print(f"sampling_probability = {sampling_probability}")
-        # assert(False)
 
+        # is_leaf[i] is a binary indicator for whether i is a leaf.
         is_leaf = np.array(
             sorted([[node_to_id[v], 1 * tree.is_leaf(v)] for v in tree.nodes])
         )[:, 1]
-        # print(f"is_leaf = {is_leaf}")
-        # assert(False)
 
+        # Now we pass in all the tree data to the c++ implementation.
         dp = PyDP()
         dp.run(
             N=N,
@@ -301,15 +314,13 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             is_leaf=is_leaf,
         )
 
-        # Map back to strings
+        # Finally, we map back the results for the cpp implementation to strings
         for key_value in dp.get_down_res():
             assert len(key_value) == 2
             key = key_value[0]
             assert len(key) == 3
             value = key_value[1]
             self._down_cache[(id_to_node[key[0]], key[1], key[2])] = value
-        # print(f"self._down_cache = {self._down_cache}")
-        # assert(False)
 
         for key_value in dp.get_up_res():
             assert len(key_value) == 2
@@ -317,12 +328,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             assert len(key) == 3
             value = key_value[1]
             self._up_cache[(id_to_node[key[0]], key[1], key[2])] = value
-        # print(f"self._up_cache = {self._up_cache}")
-        # assert(False)
 
         self._log_likelihood = dp.get_log_likelihood_res()
-        # print(f"self._log_likelihood = {self._log_likelihood}")
-        # assert(False)
 
         for key_value in dp.get_log_joints_res():
             assert len(key_value) == 2
@@ -330,8 +337,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             value = key_value[1]
             assert len(value) == self._discretization_level + 1
             self._log_joints[id_to_node[key]] = np.array(value)
-        # print(f"self._log_joints = {self._log_joints}")
-        # assert(False)
 
         for key_value in dp.get_posteriors_res():
             assert len(key_value) == 2
@@ -339,39 +344,20 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             value = key_value[1]
             assert len(value) == self._discretization_level + 1
             self._posteriors[id_to_node[key]] = np.array(value)
-        # print(f"self._posteriors = {self._posteriors}")
-        # assert(False)
 
         for key_value in dp.get_posterior_means_res():
             assert len(key_value) == 2
             key = key_value[0]
             value = key_value[1]
             self._posterior_means[id_to_node[key]] = np.array(value)
-        # print(f"self._posterior_means = {self._posterior_means}")
-        # assert(False)
-
-    def _get_number_of_mutated_characters_in_node(
-        self, tree: CassiopeiaTree, v: str
-    ):
-        states = tree.get_character_states(v)
-        return len(
-            [s for s in states if s != 0 and s != tree.missing_state_indicator]
-        )
-
-    @classmethod
-    def _non_root_internal_nodes(cls, tree: CassiopeiaTree) -> List[str]:
-        """Returns internal nodes in tree (excluding the root).
-
-        Returns:
-            The internal nodes of the tree that are not the root (i.e. all
-            nodes not at the leaves, and not the root)
-        """
-        return list(set(tree.nodes) - set(tree.root) - set(tree.leaves))
 
     def _precompute_Ks(self, tree: CassiopeiaTree):
         """
-        For each vertex in the tree, we determine how many characters k are
-        not considered missing starting here.
+        For each vertex in the tree, how many states are not missing.
+
+        Raises:
+            ValueError if there are unambiguously imputable missing states.
+            (This should never happen.)
         """
         self._Ks = {}
         self._Ks[tree.root] = tree.n_character
@@ -390,7 +376,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                     parent_state == 0
                     and child_state != tree.missing_state_indicator
                 ):
-                    # Is an unmutated character that did not go missing so we should track.
+                    # Is an unmutated character that did not go missing so we
+                    # should track it.
                     k += 1
                 # Check that imputable missing states have been imputed.
                 if (
@@ -416,10 +403,10 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
     def log_joints(self, node: str) -> np.array:
         """
-        log joint note time probabilities.
+        log joint node time probabilities.
 
         The log joint probability density of the observed tree topology, state
-        vectors, and all possible times of a node in the tree. In other words:
+        vectors, and all possible times for the node. In other words:
         log P(node time = t, character states, tree topology) for t in [0, T]
         where T is the discretization_level.
 
@@ -535,8 +522,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         for (p, c) in tree.edges:
             t = tree.get_branch_length(p, c)
             # Birth process with subsampling likelihood
-            h = T - tree.get_time(p)
-            h_tilde = T - tree.get_time(c)
+            h = T - tree.get_time(p) + tree.get_time(tree.root)
+            h_tilde = T - tree.get_time(c) + tree.get_time(tree.root)
             if c in tree.leaves:
                 # "Easy" case
                 assert h_tilde == 0
@@ -612,7 +599,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             times_list = args
             times = {}
             for node, t in list(
-                zip(self._non_root_internal_nodes(tree), times_list)
+                zip(_non_root_internal_nodes(tree), times_list)
             ):
                 times[node] = t
             times[tree.root] = 0
@@ -634,7 +621,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         res = np.log(
             integrate.nquad(
                 f,
-                [[0, 1]] * len(self._non_root_internal_nodes(tree)),
+                [[0, 1]] * len(_non_root_internal_nodes(tree)),
                 opts={"epsrel": epsrel},
             )[0]
         )
@@ -686,9 +673,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             where T is the discretization_level.
         """
         res = np.zeros(shape=(discretization_level + 1,))
-        other_nodes = [
-            n for n in self._non_root_internal_nodes(tree) if n != node
-        ]
+        other_nodes = [n for n in _non_root_internal_nodes(tree) if n != node]
         node_time = -1
 
         tree = deepcopy(tree)
@@ -739,7 +724,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                         integrate.nquad(
                             f,
                             [[0, 1]]
-                            * (len(self._non_root_internal_nodes(tree)) - 1),
+                            * (len(_non_root_internal_nodes(tree)) - 1),
                             opts={"epsrel": epsrel},
                         )[0]
                     )
@@ -817,7 +802,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 self._up(
                     leaf,
                     self._discretization_level,
-                    self._get_number_of_mutated_characters_in_node(tree, leaf),
+                    _get_number_of_mutated_characters_in_node(tree, leaf),
                 )
                 - np.log(self._birth_rate * 1.0 / self._discretization_level)
                 + np.log(self._sampling_probability)

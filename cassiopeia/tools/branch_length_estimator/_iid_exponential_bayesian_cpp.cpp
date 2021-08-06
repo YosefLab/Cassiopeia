@@ -36,7 +36,7 @@ void DP::precompute_p_unsampled(){
     double dt = 1.0 / T;
     if(1 - lam * dt <= 0){
         cerr << "1 - lam * dt = " << 1 - lam * dt << " should be positive!" << endl;
-        exit(1);
+        throw std::invalid_argument("Discretization level too small. Please increase it.");
     }
     forn(i, T + 1) p_unsampled[i] = -100000000.0;
     if(sampling_probability < 1.0){
@@ -74,8 +74,7 @@ double DP::down(int v, int t, int x){
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= Kv);
     if(!(1.0 - lam * dt - Kv * r * dt > 0)){
-        cerr << "Please choose a bigger discretization_level." << endl;
-        exit(1);
+        throw std::invalid_argument("Discretization level too small. Please increase it.");
     }
     double log_likelihood = 0.0;
     if(t == T){
@@ -144,8 +143,7 @@ double DP::up(int v, int t, int x){
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= Kv);
     if(!(1.0 - lam * dt - Kv * r * dt > 0)){
-        cerr << "Please choose a bigger discretization_level." << endl;
-        exit(1);
+        throw std::invalid_argument("Discretization level too small. Please increase it.");
     }
     double log_likelihood = 0.0;
     if(v == root){
@@ -207,7 +205,7 @@ void DP::populate_down_res(){
             forn(x, K + 1){
                 if(state_is_valid(v, x)){
                     double ll = down(v, t, x);
-                    down_res.push_back(pair<vector<int>, float>(vector<int> {v, t, x}, ll));
+                    down_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
                 }
             }
         }
@@ -220,7 +218,7 @@ void DP::populate_up_res(){
             forn(x, K + 1){
                 if(state_is_valid(v, x)){
                     double ll = up(v, t, x);
-                    up_res.push_back(pair<vector<int>, float>(vector<int> {v, t, x}, ll));
+                    up_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
                 }
             }
         }
@@ -235,10 +233,7 @@ void DP::populate_log_likelihood_res(){
 }
 
 double DP::compute_log_joint(int v, int t){
-    if(!(is_internal_node[v] and v != root)){
-        cerr << "compute_log_joint received invalid inputs" << endl;
-        exit(1);
-    }
+    assert(is_internal_node[v] and v != root);
     vector<int> valid_num_cuts;
     valid_num_cuts.push_back(get_number_of_mutated_characters_in_node[v]);
     vector<double> ll_for_xs;

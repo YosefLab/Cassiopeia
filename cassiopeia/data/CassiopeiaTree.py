@@ -1964,8 +1964,15 @@ class CassiopeiaTree:
 
     def impute_unambiguous_missing_states(self):
         """
-        If a mutated state goes missing down the lineage,
-        we can impute it with certainty with the known mutated state.
+        Impute unambiguous missing states.
+
+        If a state is missing in a node but present in its parent,
+        then it can be imputed unambiguously as the parent's state.
+        We perform all these imputations.
+
+        Raises:
+            CassiopeiaTreeError if the character vectors do not all have
+            the same length.
         """
         self.__check_network_initialized()
         for (parent, child) in self.depth_first_traverse_edges():

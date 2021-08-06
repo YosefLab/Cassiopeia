@@ -1,11 +1,11 @@
 """
 Test IIDExponentialBayesian in cassiopeia.tools.
 """
-import pytest
 import unittest
 
 import networkx as nx
 import numpy as np
+import pytest
 from parameterized import parameterized
 from scipy.special import logsumexp
 
@@ -65,7 +65,6 @@ class TestIIDExponentialBayesian(unittest.TestCase):
             tree.set_all_character_states(
                 {"0": [0], "1": [1], "2": [-1], "3": [1]},
             )
-        tree.impute_unambiguous_missing_states()
 
         # Estimate branch lengths
         mutation_rate = 0.3  # This is kind of arbitrary; not super relevant.
@@ -79,7 +78,9 @@ class TestIIDExponentialBayesian(unittest.TestCase):
 
         # Test the model log likelihood vs its computation from the joint of the
         # age of vertex 1.
-        re = relative_error(-model.log_likelihood, -logsumexp(model.log_joints("1")))
+        re = relative_error(
+            -model.log_likelihood, -logsumexp(model.log_joints("1"))
+        )
         self.assertLessEqual(re, 0.01)
 
         # Test the model log likelihood vs its computation from the leaf nodes.
