@@ -9,7 +9,8 @@ import networkx as nx
 import numpy as np
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.simulator.TreeSimulator import TreeSimulator, TreeSimulatorError
+from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
 
 class CompleteBinarySimulator(TreeSimulator):
@@ -47,7 +48,9 @@ class CompleteBinarySimulator(TreeSimulator):
             raise TreeSimulatorError("`depth` must be grater than 0.")
         self.depth = depth
 
-    def simulate_tree(self,) -> CassiopeiaTree:
+    def simulate_tree(
+        self,
+    ) -> CassiopeiaTree:
         """Simulates a complete binary tree.
 
         Returns:
