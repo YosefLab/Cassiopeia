@@ -50,6 +50,15 @@ void DP::precompute_p_unsampled(){
     }
 }
 
+pair<int, int> DP::valid_cuts_range(int v){
+    if(v == root)
+        return pair<int, int> (0, 0);
+    int p = parent[v];
+    int cuts_v = get_number_of_mutated_characters_in_node[v];
+    int cuts_p = get_number_of_mutated_characters_in_node[p];
+    return pair<int, int> (cuts_p, cuts_v);
+}
+
 bool DP::state_is_valid(int v, int x){
     if(v == root)
         return x == 0;
@@ -202,11 +211,10 @@ void DP::populate_down_res(){
     forn(v, N){
         if(v == root) continue;
         forn(t, T + 1){
-            forn(x, K + 1){
-                if(state_is_valid(v, x)){
-                    double ll = down(v, t, x);
-                    down_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
-                }
+            pair<int, int> x_range = valid_cuts_range(v);
+            for(int x = x_range.first; x <= x_range.second; x++){
+                double ll = down(v, t, x);
+                down_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
             }
         }
     }
@@ -215,11 +223,10 @@ void DP::populate_down_res(){
 void DP::populate_up_res(){
     forn(v, N){
         forn(t, T + 1){
-            forn(x, K + 1){
-                if(state_is_valid(v, x)){
-                    double ll = up(v, t, x);
-                    up_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
-                }
+            pair<int, int> x_range = valid_cuts_range(v);
+            for(int x = x_range.first; x <= x_range.second; x++){
+                double ll = up(v, t, x);
+                up_res.push_back(pair<vector<int>, double>(vector<int> {v, t, x}, ll));
             }
         }
     }

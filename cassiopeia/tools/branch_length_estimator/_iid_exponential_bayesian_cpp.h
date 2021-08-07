@@ -66,6 +66,7 @@ class DP{
             double posterior_means[maxN];
 
             void precompute_p_unsampled();
+            pair<int, int> valid_cuts_range(int v);
             bool state_is_valid(int v, int x);
             double down(int v, int t, int x);
             double up(int v, int t, int x);
