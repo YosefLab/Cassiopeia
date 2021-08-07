@@ -290,7 +290,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             )
 
         cm_copy = self.character_matrix.copy()
-        cm_copy = cm_copy.rename({"node7": "node20"})
+        cm_renamed = cm_copy.rename({"node7": "node20"})
+        cm_int = cm_copy.rename({s: int(s[4:]) for s in cm_copy.index})
 
         renamed_network = nx.relabel_nodes(
             self.test_network, ({"node7": "node20"})
@@ -298,8 +299,11 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         with self.assertRaises(CassiopeiaTreeError):
             tree = CassiopeiaTree(
-                character_matrix=cm_copy, tree=self.test_network
+                character_matrix=cm_renamed, tree=self.test_network
             )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            tree = CassiopeiaTree(character_matrix=cm_int)
 
         with self.assertRaises(CassiopeiaTreeError):
             tree = CassiopeiaTree(
