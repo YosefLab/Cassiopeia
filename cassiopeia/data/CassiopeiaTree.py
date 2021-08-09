@@ -178,9 +178,12 @@ class CassiopeiaTree:
 
         if character_matrix is not None:
             self.set_character_states_at_leaves(layer=layer)
+            for n in self.internal_nodes:
+                self.__network.nodes[n]["character_states"] = []
 
-        for n in self.nodes:
-            self.__network.nodes[n]["character_states"] = []
+        else:
+            for n in self.nodes:
+                self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
         for u, v in self.edges:
@@ -390,11 +393,11 @@ class CassiopeiaTree:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
-            if "character_states" in self.__network.nodes[self.leaves[0]]:
-                return len(self.get_character_states(self.leaves[0]))
-            raise CassiopeiaTreeError(
-                "Character states have not been initialized."
-            )
+            if len(self.get_character_states(self.leaves[0])) == 0:
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized."
+                )
+            return len(self.get_character_states(self.leaves[0]))
         return self.character_matrix.shape[1]
 
     @property
