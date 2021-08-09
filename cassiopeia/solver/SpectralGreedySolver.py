@@ -65,7 +65,7 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
         threshold: A minimum similarity threshold
         prior_transformation: Function to use when transforming priors into
             weights.
-            
+
     """
 
     def __init__(
