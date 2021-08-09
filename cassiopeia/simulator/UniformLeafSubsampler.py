@@ -60,7 +60,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         character states, meta data, and the dissimilarity map for the sampled
         cells only.
 
-        Has the option to keep the single edge leading from root in the
+        Has the option to keep the single edge leading from the root in the
         induced subtree, if it exists. This edge is often used to represent the
         time that the root lives before any divisions occur in the phyologeny,
         and is useful in instances where the branch lengths are critical, like
@@ -68,16 +68,16 @@ class UniformLeafSubsampler(LeafSubsampler):
 
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
-            keep_root_unary_edge: Whether or not to collapse the single edge
+            keep_singular_root_edge: Whether or not to collapse the single edge
                 leading from the root in the subsample, if it exists
 
         Returns:
             A new CassiopeiaTree that is the induced subtree on a sample of the
-            leaves in the given tree
+                leaves in the given tree
 
         Raises:
             LeafSubsamplerError if the sample size is <= 0, or larger than the
-            number of leaves in the tree
+                number of leaves in the tree
         """
         ratio = self.__ratio
         number_of_leaves = self.__number_of_leaves

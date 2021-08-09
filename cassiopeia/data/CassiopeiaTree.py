@@ -179,7 +179,7 @@ class CassiopeiaTree:
         if character_matrix is not None:
             self.set_character_states_at_leaves(layer=layer)
 
-        for n in self.internal_nodes:
+        for n in self.nodes:
             self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
@@ -1020,15 +1020,9 @@ class CassiopeiaTree:
             The full character state array of the specified node.
 
         Raises:
-            CassiopeiaTreeError if the tree has not been initialized or if
-            the character states are not annotated at the specified node.
+            CassiopeiaTreeError if the tree has not been initialized.
         """
         self.__check_network_initialized()
-
-        if "character_states" not in self.__network.nodes[node]:
-            raise CassiopeiaTreeError(
-                f"Character states not annotated at node {node}."
-            )
 
         return self.__network.nodes[node]["character_states"][:]
 
@@ -1365,8 +1359,8 @@ class CassiopeiaTree:
     def __register_data_with_tree(self) -> None:
         """Makes the leaf data consistent with the leaves in the tree.
 
-        Removes any leaves from the character matrix, cell metadata, and
-        dissimilarity maps that do not appear in the tree.
+        Removes any leaves from the character matrix (all layers), cell
+        metadata, and dissimilarity maps that do not appear in the tree.
         Additionally, adds any leaves that appear in the tree but not in the
         character matrix, cell metadata, or dissimilarity map with default
         values.
@@ -1622,8 +1616,9 @@ class CassiopeiaTree:
         for n in list(self.depth_first_traverse_nodes(postorder=True)):
             if len(self.get_character_states(n)) == 0:
                 raise CassiopeiaTreeError(
-                    f"Character states empty at node {n}, annotate"
-                    " character states or infer ancestral characters before"
+                    f"Character states empty at node {n}. Annotate"
+                    " character states or infer ancestral characters by"
+                    " setting infer_ancestral_characters=True before"
                     " mutationless edges can be collaped."
                 )
             if self.is_leaf(n):
