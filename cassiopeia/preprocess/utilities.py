@@ -384,6 +384,7 @@ def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
     ignore_intbcs: List[str] = [],
     allele_rep_thresh: float = 1.0,
+    missing_data_allele: Optional[str] = None,
     missing_data_state: int = -1,
     mutation_priors: Optional[pd.DataFrame] = None,
     cut_sites: Optional[List[str]] = None,
@@ -404,6 +405,9 @@ def convert_alleletable_to_character_matrix(
         ignore_intbcs: A set of intBCs to ignore
         allele_rep_thresh: A threshold for removing target sites that have an
             allele represented by this proportion
+        missing_data_allele: Value in the allele table that indicates that the
+            cut-site is missing. This will be converted into 
+            ``missing_data_state`` 
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
@@ -416,8 +420,8 @@ def convert_alleletable_to_character_matrix(
             effect if there are no allele conflicts. Defaults to True.
 
         Returns:
-        A character matrix, a probability dictionary, and a dictionary mapping
-            states to the original mutation.
+            A character matrix, a probability dictionary, and a dictionary mapping
+                states to the original mutation.
     """
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(alleletable)
@@ -489,6 +493,11 @@ def convert_alleletable_to_character_matrix(
 
                     if state == "NONE" or "None" in state:
                         transformed_states.append(0)
+                    elif (
+                        missing_data_allele is not None
+                        and state == missing_data_allele
+                    ):
+                        transformed_states.append(missing_data_state)
                     else:
                         if state in allele_counter[c]:
                             transformed_states.append(allele_counter[c][state])
@@ -614,6 +623,7 @@ def convert_alleletable_to_lineage_profile(
 def convert_lineage_profile_to_character_matrix(
     lineage_profile: pd.DataFrame,
     indel_priors: Optional[pd.DataFrame] = None,
+    missing_allele_indicator: Optional[str] = None,
     missing_state_indicator: int = -1,
 ) -> Tuple[
     pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
@@ -633,6 +643,8 @@ def convert_lineage_profile_to_character_matrix(
     Args:
         lineage_profile: Lineage profile
         indel_priors: Dataframe mapping indels to prior probabilities
+        missing_allele_indicator: An allele that is being used to represent
+            missing data.
         missing_state_indicator: State to indicate missing data
 
     Returns:
@@ -643,7 +655,13 @@ def convert_lineage_profile_to_character_matrix(
     prior_probs = defaultdict(dict)
     indel_to_charstate = defaultdict(dict)
 
+    lineage_profile = lineage_profile.copy()
+
     lineage_profile = lineage_profile.fillna("Missing").copy()
+    if missing_allele_indicator:
+        lineage_profile.replace(
+            {missing_allele_indicator: "Missing"}, inplace=True
+        )
 
     samples = []
 
