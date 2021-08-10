@@ -393,9 +393,9 @@ class CassiopeiaTree:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
-            if len(self.get_character_states(self.leaves[0])) == 0:
+            if self.get_character_states(self.leaves[0]) == []:
                 raise CassiopeiaTreeError(
-                    "Character states have not been initialized."
+                    "Character states have not been initialized at leaves."
                 )
             return len(self.get_character_states(self.leaves[0]))
         return self.character_matrix.shape[1]
@@ -627,11 +627,9 @@ class CassiopeiaTree:
 
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
-                if len(self.get_character_states(n)) == 0:
+                if self.get_character_states(n) == []:
                     raise CassiopeiaTreeError(
-                        "Character states not annotated "
-                        "at a leaf node, initialize character states at leaves "
-                        "before reconstructing ancestral characters."
+                        "Character states have not been initialized at leaves."
                     )
                 continue
             children = self.children(n)
@@ -965,7 +963,7 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             if self.get_character_states(node) == []:
                 raise CassiopeiaTreeError(
-                    "Leaf node character states have not been instantiated"
+                    "Character states have not been initialized at leaves."
                 )
 
         self.__set_character_states(node, states)
@@ -1617,15 +1615,20 @@ class CassiopeiaTree:
             self.reconstruct_ancestral_characters()
 
         for n in list(self.depth_first_traverse_nodes(postorder=True)):
-            if len(self.get_character_states(n)) == 0:
-                raise CassiopeiaTreeError(
-                    f"Character states empty at node {n}. Annotate"
-                    " character states or infer ancestral characters by"
-                    " setting infer_ancestral_characters=True before"
-                    " mutationless edges can be collaped."
-                )
             if self.is_leaf(n):
+                if self.get_character_states(n) == []:
+                    raise CassiopeiaTreeError(
+                        "Character states have not been initialized at leaves."
+                    )
                 continue
+
+            if self.get_character_states(n) == []:
+                raise CassiopeiaTreeError(
+                    f"Character states empty at internal node. Annotate"
+                    " character states or infer ancestral characters by"
+                    " setting infer_ancestral_characters=True."
+                )
+
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)
