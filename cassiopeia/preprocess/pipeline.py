@@ -812,7 +812,7 @@ def filter_molecule_table(
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    umi_read_thresh: int = -1,
+    min_reads_per_umi: int = -1,
     intbc_prop_thresh: float = 0.5,
     intbc_umi_thresh: int = 10,
     intbc_dist_thresh: int = 1,
@@ -823,11 +823,17 @@ def filter_molecule_table(
     """Filters and corrects a molecule table of cellBC-UMI pairs.
 
     Performs the following steps on the alignments in a DataFrame:
-        1. Filters out cellBCs with less than <= `min_umi_per_cell` unique UMIs
-        2. Filters out UMIs with read count less than <= `umi_read_thresh`
-        3. Error corrects intBCs by changing intBCs with low UMI counts to intBCs with the same allele and a close sequence
-        4. Filters out cellBCs that contain too much conflicting allele information as intra-lineage doublets
-        5. Chooses one allele for each cellBC-intBC pair, by selecting the most common
+        1. Filters out UMIs with read count < `min_reads_per_umi`. If
+            `min_reads_per_umi` is less than 0, a dynamic threshold is
+            calculated as `(99th percentile of read counts) // 10`.
+        2. Filters out cellBCs with unique UMIs < `min_umi_per_cell` and
+            average read count per UMI < `min_avg_reads_per_umi`.
+        3. Error corrects intBCs by changing intBCs with low UMI counts to
+            intBCs with the same allele and a close sequence
+        4. Filters out cellBCs that contain too much conflicting allele
+            information as intra-lineage doublets
+        5. Chooses one allele for each cellBC-intBC pair, by selecting the most
+            common. This is not performed when `allow_allele_conflicts` is True.
 
     Args:
         input_df: A molecule table, i.e. cellBC-UMI pairs. Note that
@@ -838,9 +844,9 @@ def filter_molecule_table(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed in order for that
             cell to be retained during filtering
-        umi_read_thresh: The threshold specifying the minimum read count needed
-            for a UMI to be retained during filtering. Set dynamically if value
-            is < 0
+        min_reads_per_umi: The threshold specifying the minimum read count
+            needed for a UMI to be retained during filtering. Set dynamically
+            if value is < 0.
         intbc_prop_thresh: The threshold specifying the maximum proportion of
             the total UMI counts for a intBC to be corrected to another
         intbc_umi_thresh: The threshold specifying the maximum UMI count for
@@ -875,11 +881,29 @@ def filter_molecule_table(
             upc_profile["Init"],
         ) = utilities.record_stats(input_df)
 
+    if min_reads_per_umi < 0:
+        R = input_df["readCount"]
+        if list(R):
+            min_reads_per_umi = np.percentile(R, 99) // 10
+        else:
+            min_reads_per_umi = 0
+    logger.info(f"Filtering UMIs with less than {min_reads_per_umi} reads...")
+    filtered_df = utilities.filter_umis(
+        input_df, min_reads_per_umi=min_reads_per_umi
+    )
+    if plot:
+        (
+            rc_profile["Filtered_UMI"],
+            upi_profile["Filtered_UMI"],
+            upc_profile["Filtered_UMI"],
+        ) = utilities.record_stats(filtered_df)
+
     logger.info(
-        f"Filtering out cell barcodes with fewer than {min_umi_per_cell} UMIs..."
+        f"Filtering out cellBCs with fewer than {min_umi_per_cell} UMIs and"
+        f"less than {min_avg_reads_per_umi} average reads per UMI..."
     )
     filtered_df = utilities.filter_cells(
-        input_df,
+        filtered_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
     )
@@ -888,24 +912,6 @@ def filter_molecule_table(
             rc_profile["CellFilter"],
             upi_profile["CellFilter"],
             upc_profile["CellFilter"],
-        ) = utilities.record_stats(filtered_df)
-
-    if umi_read_thresh < 0:
-        R = filtered_df["readCount"]
-        if list(R):
-            umi_read_thresh = np.percentile(R, 99) // 10
-        else:
-            umi_read_thresh = 0
-    logger.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
-    filtered_df = utilities.filter_umis(
-        filtered_df, readCountThresh=umi_read_thresh
-    )
-
-    if plot:
-        (
-            rc_profile["Filtered_UMI"],
-            upi_profile["Filtered_UMI"],
-            upc_profile["Filtered_UMI"],
         ) = utilities.record_stats(filtered_df)
 
     if intbc_dist_thresh > 0:
@@ -923,13 +929,6 @@ def filter_molecule_table(
             upi_profile["Process_intBC"],
             upc_profile["Process_intBC"],
         ) = utilities.record_stats(filtered_df)
-
-    logger.info("Filtering cell barcodes one more time...")
-    filtered_df = utilities.filter_cells(
-        filtered_df,
-        min_umi_per_cell=min_umi_per_cell,
-        min_avg_reads_per_umi=min_avg_reads_per_umi,
-    )
 
     if doublet_threshold and not allow_allele_conflicts:
         logger.info(
