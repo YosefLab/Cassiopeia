@@ -136,7 +136,7 @@ def filter_cells(
         else molecule_table_filt.shape[0]
     )
     logger.info(f"Filtered out {n_umi_filt} UMIs as a result.")
-    return molecule_table[passing_mask].reset_index().copy()
+    return molecule_table[passing_mask].copy()
 
 
 @log_moleculetable
@@ -156,9 +156,7 @@ def filter_umis(
     Returns:
         A filtered molecule table
     """
-    return moleculetable[
-        moleculetable["readCount"] >= min_reads_per_umi
-    ].reset_index()
+    return moleculetable[moleculetable["readCount"] >= min_reads_per_umi]
 
 
 @log_moleculetable
