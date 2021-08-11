@@ -97,7 +97,7 @@ def main():
         ):
             data = data_filepaths[0]
         else:
-            data = pd.read_csv(data_filepaths[0], sep="\t")
+            data = pd.read_csv(data_filepaths[0], sep="\t", na_filter=False)
 
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
