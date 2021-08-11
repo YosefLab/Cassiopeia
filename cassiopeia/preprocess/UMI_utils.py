@@ -230,11 +230,13 @@ def form_collapsed_clusters(
         max_read_length = max(max_read_length, al.query_length)
 
     # Raise warning when max_hq_mismatches / max_read_length > 0.5
-    warnings.warn(
-        "Provided `max_hq_mismatches` exceeds half of the maximum read length. "
-        "Most reads will be collapsed into a single consensus sequence.",
-        PreprocessWarning,
-    )
+    if max_hq_mismatches / max_read_length > 0.5:
+        warnings.warn(
+            "Provided `max_hq_mismatches` exceeds half of the maximum read "
+            "length. Most reads will be collapsed into a single consensus "
+            "sequence.",
+            PreprocessWarning,
+        )
 
     # Read in the AlignmentFile again as iterating over it in the previous for
     # loop has destructively removed all alignments from the file object
