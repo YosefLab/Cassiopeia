@@ -176,14 +176,11 @@ class CassiopeiaTree:
         else:
             character_matrix = self.character_matrix
 
+        for n in self.nodes:
+            self.__network.nodes[n]["character_states"] = []
+
         if character_matrix is not None:
             self.set_character_states_at_leaves(layer=layer)
-            for n in self.internal_nodes:
-                self.__network.nodes[n]["character_states"] = []
-
-        else:
-            for n in self.nodes:
-                self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
         for u, v in self.edges:
@@ -396,6 +393,9 @@ class CassiopeiaTree:
             if self.get_character_states(self.leaves[0]) == []:
                 raise CassiopeiaTreeError(
                     "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
                 )
             return len(self.get_character_states(self.leaves[0]))
         return self.character_matrix.shape[1]
@@ -630,6 +630,9 @@ class CassiopeiaTree:
                 if self.get_character_states(n) == []:
                     raise CassiopeiaTreeError(
                         "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
                     )
                 continue
             children = self.children(n)
@@ -964,6 +967,9 @@ class CassiopeiaTree:
             if self.get_character_states(node) == []:
                 raise CassiopeiaTreeError(
                     "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
                 )
 
         self.__set_character_states(node, states)
@@ -1599,7 +1605,7 @@ class CassiopeiaTree:
         mutation in this context. Either takes the existing character states on
         the tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
-        by connecting the parent and children of removed nodes by branchs with
+        by connecting the parent and children of removed nodes by branches with
         lengths equal to the total time elapsed from parent to each child.
 
         Args:
@@ -1609,7 +1615,7 @@ class CassiopeiaTree:
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized or if
-            a node does not have character states
+                a node does not have character states initialized
         """
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
@@ -1619,6 +1625,9 @@ class CassiopeiaTree:
                 if self.get_character_states(n) == []:
                     raise CassiopeiaTreeError(
                         "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
                     )
                 continue
 
