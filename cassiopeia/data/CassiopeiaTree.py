@@ -1179,9 +1179,9 @@ class CassiopeiaTree:
         Args:
             node: Node identifier in the object.
             copy: Return a copy or operate in place.
-        
+
         Returns:
-            A subset CassiopeiaTree object if copy is set to true, else None. 
+            A subset CassiopeiaTree object if copy is set to true, else None.
         """
         if copy:
             new_tree = self.copy()
@@ -1364,7 +1364,7 @@ class CassiopeiaTree:
         Additionally, adds any leaves that appear in the tree but not in the
         character matrix, cell metadata, or dissimilarity map with default
         values.
-        
+
         The default values for each table is as follows:
         * character matrix: all states are missing values
             (``missing_state_indicator``)
@@ -1503,38 +1503,43 @@ class CassiopeiaTree:
         # This function will also clear the cache
         self.__register_data_with_tree()
 
-    def remove_leaf_and_prune_lineage(self, node: str) -> None:
-        """Removes a leaf from the tree and prunes the lineage.
+    def remove_leaves_and_prune_lineages(
+        self, nodes: Union[str, List[str]]
+    ) -> None:
+        """Removes a leaf (leaves) from the tree and prunes the lineage(s).
 
-        Removes a leaf and all ancestors of that leaf that are no longer the
-        ancestor of any leaves. In the context of a phylogeny, this prunes the
-        lineage of all nodes no longer relevant to observed samples.
-        Additionally, maintains consistency with the updated tree by removing
-        the node from all leaf data.
+        Removes the specified leaves and all ancestors of those leaves that are
+        no longer the ancestor of any of the remaining leaves. In the context
+        of a phylogeny, this prunes the lineage of all nodes no longer relevant
+        to observed samples. Additionally, maintains consistency with the
+        updated tree by removing the node from all leaf data.
 
         Args:
-            node: The leaf node to be removed
+            nodes: The leaf (leaves) to be removed
 
         Raises:
-            CassiopeiaTreeError if the tree is not initialized or input node is
-            not a leaf
+            CassiopeiaTreeError if the tree is not initialized or any of the
+            input nodes are not leaves
         """
         self.__check_network_initialized()
 
-        if not self.is_leaf(node):
-            raise CassiopeiaTreeError("Node is not a leaf.")
+        if isinstance(nodes, str):
+            nodes = [nodes]
+        for n in nodes:
+            if not self.is_leaf(n):
+                raise CassiopeiaTreeError("A specified node is not a leaf.")
 
-        if len(self.nodes) == 1:
-            self.__remove_node(node)
-        else:
-            curr_parent = self.parent(node)
-            self.__remove_node(node)
-            while len(self.children(curr_parent)) < 1 and not self.is_root(
-                curr_parent
-            ):
-                next_parent = self.parent(curr_parent)
-                self.__remove_node(curr_parent)
-                curr_parent = next_parent
+            if len(self.nodes) == 1:
+                self.__remove_node(n)
+            else:
+                curr_parent = self.parent(n)
+                self.__remove_node(n)
+                while len(self.children(curr_parent)) < 1 and not self.is_root(
+                    curr_parent
+                ):
+                    next_parent = self.parent(curr_parent)
+                    self.__remove_node(curr_parent)
+                    curr_parent = next_parent
 
         # Remove all removed nodes from data fields
         # This function will also clear the cache

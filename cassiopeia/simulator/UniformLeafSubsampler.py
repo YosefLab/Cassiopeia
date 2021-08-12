@@ -94,8 +94,7 @@ class UniformLeafSubsampler(LeafSubsampler):
             subsampled_tree.leaves, n_remove, replace=False
         )
 
-        for i in leaf_remove:
-            subsampled_tree.remove_leaf_and_prune_lineage(i)
+        subsampled_tree.remove_leaves_and_prune_lineages(leaf_remove)
 
         if collapse_source is None:
             collapse_source = subsampled_tree.root
