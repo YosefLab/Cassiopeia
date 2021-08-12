@@ -36,10 +36,13 @@ def log_moleculetable(wrapped: Callable):
     @functools.wraps(wrapped)
     def wrapper(*args, **kwargs):
         df = wrapped(*args, **kwargs)
-        logger.debug("Resulting moleculetable statistics:")
-        logger.debug(f"# Reads: {sum(df['readCount'])}")
-        logger.debug(f"# UMIs: {df.shape[0]}")
-        logger.debug(f"# Cell BCs: {len(np.unique(df['cellBC']))}")
+        umi_count = df["UMI"].dtype != object
+        logger.debug(
+            f"Resulting {'alleletable' if umi_count else 'moleculetable'} statistics:"
+        )
+        logger.debug(f"# Reads: {df['readCount'].sum()}")
+        logger.debug(f"# UMIs: {df['UMI'].sum() if umi_count else df.shape[0]}")
+        logger.debug(f"# Cell BCs: {df['cellBC'].nunique()}")
         return df
 
     return wrapper
@@ -91,86 +94,69 @@ def filter_cells(
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
 ) -> pd.DataFrame:
-    """Filter out cell barcodes that have too few UMIs or too few reads/UMI
+    """Filter out cell barcodes that have too few UMIs or too few reads/UMI.
 
     Args:
         molecule_table: A molecule table of cellBC-UMI pairs to be filtered
         min_umi_per_cell: Minimum number of UMIs per cell for cell to not be
-            filtered
+            filtered. Defaults to 10.
         min_avg_reads_per_umi: Minimum coverage (i.e. average) reads per
-            UMI in a cell needed in order for that cell not to be filtered
+            UMI in a cell needed in order for that cell not to be filtered.
+            Defaults to 2.0.
 
     Returns:
         A filtered molecule table
     """
+    # Detect if the UMI column contains UMI counts or the actual UMI sequence
+    umi_count = molecule_table["UMI"].dtype != object
 
-    tooFewUMI_UMI = []
-
-    # Create a cell-filter dictionary for hash lookup later on when filling
-    # in the table
-    cell_filter = {}
-
-    for n, group in molecule_table.groupby(["cellBC"]):
-        if group["UMI"].dtypes == object:
-            umi_per_cellBC_n = group.shape[0]
-        else:
-            umi_per_cellBC_n = group.agg({"UMI": "sum"}).UMI
-        reads_per_cellBC_n = group.agg({"readCount": "sum"}).readCount
-        avg_reads_per_UMI_n = float(reads_per_cellBC_n) / float(
-            umi_per_cellBC_n
-        )
-        if (umi_per_cellBC_n <= min_umi_per_cell) or (
-            avg_reads_per_UMI_n <= min_avg_reads_per_umi
-        ):
-            cell_filter[n] = True
-            tooFewUMI_UMI.append(group.shape[0])
-        else:
-            cell_filter[n] = False
-
-    # apply the filter using the hash table created above
-    molecule_table["filter"] = molecule_table["cellBC"].map(cell_filter)
-
-    n_umi_filt = molecule_table[molecule_table["filter"] == True].shape[0]
-    n_cells_filt = len(
-        molecule_table.loc[molecule_table["filter"] == True, "cellBC"].unique()
+    cell_groups = molecule_table.groupby("cellBC")
+    umis_per_cell = (
+        cell_groups["UMI"].sum() if umi_count else cell_groups.size()
     )
+    umis_per_cell_mask = umis_per_cell >= min_umi_per_cell
+    avg_reads_per_umi = cell_groups["readCount"].sum() / umis_per_cell
+    avg_read_per_umi_mask = avg_reads_per_umi >= min_avg_reads_per_umi
 
-    logger.info(f"Filtered out {n_cells_filt} cells with too few UMIs.")
+    umis_per_cell_passing = set(umis_per_cell_mask.index[umis_per_cell_mask])
+    avg_read_per_umi_passing = set(
+        avg_read_per_umi_mask.index[avg_read_per_umi_mask]
+    )
+    passing_cells = umis_per_cell_passing & avg_read_per_umi_passing
+    passing_mask = molecule_table["cellBC"].isin(passing_cells)
+    n_cells = molecule_table["cellBC"].nunique()
+    logger.info(
+        f"Filtered out {n_cells - len(passing_cells)} cells with too few UMIs "
+        "or too few average number of reads per UMI."
+    )
+    molecule_table_filt = molecule_table[~passing_mask]
+    n_umi_filt = (
+        molecule_table_filt["UMI"].sum()
+        if umi_count
+        else molecule_table_filt.shape[0]
+    )
     logger.info(f"Filtered out {n_umi_filt} UMIs as a result.")
-
-    filt_molecule_table = molecule_table[
-        molecule_table["filter"] == False
-    ].copy()
-    filt_molecule_table.drop(columns=["filter"], inplace=True)
-
-    return filt_molecule_table
+    return molecule_table[passing_mask].copy()
 
 
 @log_moleculetable
 def filter_umis(
-    moleculetable: pd.DataFrame, readCountThresh: int = 100
+    moleculetable: pd.DataFrame, min_reads_per_umi: int = 100
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
 
-    Filters out all UMIs with a read count <= readCountThresh.
+    Filters out all UMIs with a read count <= min_reads_per_umi.
 
     Args:
         moleculetable: A molecule table of cellBC-UMI pairs to be filtered
-        readCountThresh: The minimum read count needed for a UMI to not be
-            filtered
+        min_reads_per_umi: The minimum read count needed for a UMI to not be
+            filtered. Defaults to 100.
 
     Returns:
         A filtered molecule table
     """
-
-    # filter based on status & reindex
-    n_moleculetable = moleculetable[
-        moleculetable["readCount"] > readCountThresh
-    ]
-    n_moleculetable.index = [i for i in range(n_moleculetable.shape[0])]
-
-    return n_moleculetable
+    return moleculetable[moleculetable["readCount"] >= min_reads_per_umi]
 
 
 @log_moleculetable
@@ -406,8 +392,8 @@ def convert_alleletable_to_character_matrix(
         allele_rep_thresh: A threshold for removing target sites that have an
             allele represented by this proportion
         missing_data_allele: Value in the allele table that indicates that the
-            cut-site is missing. This will be converted into 
-            ``missing_data_state`` 
+            cut-site is missing. This will be converted into
+            ``missing_data_state``
         missing_data_state: A state to use for missing data.
         mutation_priors: A table storing the prior probability of a mutation
             occurring. This table is used to create a character matrix-specific
