@@ -1603,12 +1603,14 @@ class CassiopeiaTree:
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Infer the ancestral characters states
-                of the tree
+            infer_ancestral_characters: Whether to infer the ancestral characters
+                states of the tree
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
+        self.__check_network_initialized()
+
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
@@ -1696,7 +1698,7 @@ class CassiopeiaTree:
 
         Raises:
             CassiopeiaTreeError if the dissimilarity map does not exist, if
-                the ``dissimilarity`` dictionary does not contain all other leaves,
+                the ``dissimilarity`` dictionary does not contain all other leaves
         """
         if self.__dissimilarity_map is None:
             raise CassiopeiaTreeError(
@@ -2014,6 +2016,58 @@ class CassiopeiaTree:
             if parent_state == 0 and child_state == 0:
                 res.append(i)
         return res
+
+    def get_parsimony(self, infer_ancestral_characters: bool, treat_missing_as_mutation: bool = False) -> int:
+        """
+        Calculates the number of mutations that have occurred on a tree.
+
+        Calculates the parsimony, defined as the number of character/state
+        mutations that occur on edges of the tree, from the character state 
+        annotations at the nodes. A mutation is said to have occurred on an
+        edge if it is present in the character state of the child node and
+        not in the parent node.
+
+        Args:
+            infer_ancestral_characters: Whether to infer the ancestral characters
+                states of the tree
+            treat_missing_as_mutations: Whether to treat missing states as
+                mutations
+
+        Returns:
+            The number of mutations that have occurred on the tree
+        
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized or if
+                a node does not have character states initialized
+
+        """
+        self.__check_network_initialized()
+
+        if infer_ancestral_characters:
+            self.reconstruct_ancestral_characters()
+
+        for n in self.leaves:
+            if self.get_character_states(n) == []:
+                    raise CassiopeiaTreeError(
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
+                    )
+
+        for n in self.internal_nodes:
+            if self.get_character_states(n) == []:
+                raise CassiopeiaTreeError(
+                    f"Character states empty at internal node. Annotate"
+                    " character states or infer ancestral characters by"
+                    " setting infer_ancestral_characters=True."
+                )
+
+        parsimony = 0
+        for u, v in self.edges:
+            parsimony += len(self.get_mutations_along_edge(u, v, treat_missing_as_mutation))
+
+        return parsimony
 
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
