@@ -65,7 +65,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "align": {
         "gap_open_penalty": 20,
         "gap_extend_penalty": 1,
-        "method": "local",
+        "method": "'local'",
     },
     "call_alleles": {
         "barcode_interval": (20, 34),
