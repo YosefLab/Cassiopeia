@@ -118,7 +118,6 @@ class BirthDeathSimulatorTest(unittest.TestCase):
                 lambda _: 2, 1, lambda: 1, num_extant=4
             )
             tree = bd_sim.simulate_tree()
-            print(tree.nodes)
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
