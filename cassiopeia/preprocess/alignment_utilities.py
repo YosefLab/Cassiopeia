@@ -3,10 +3,101 @@ This file stores useful functions for dealing with alignments.
 Invoked through pipeline.py and supports the align_sequences function.
 """
 import re
-from typing import List, Tuple
+from typing import Dict, List, Tuple
+
+import ngs_tools as ngs
+from pyseq_align import NeedlemanWunsch
+
+try:
+    from skbio.alignment import StripedSmithWaterman
+except ModuleNotFoundError:
+    StripedSmithWaterman = None
+
+from cassiopeia.mixins import PreprocessError, UnknownCigarStringError
 
 
-from cassiopeia.mixins import UnknownCigarStringError
+def align_local(
+    ref: str,
+    seq: str,
+    substitution_matrix: Dict[str, Dict[str, int]],
+    gap_open_penalty: int,
+    gap_extend_penalty: int,
+) -> Tuple[str, int, int, float, str]:
+    """Perform local alignment of `seq` to `ref` using Smith-Waterman.
+
+    Todo:
+        Deprecate dependency on skbio.
+
+    Args:
+        ref: The reference sequence.
+        seq: The query sequence.
+        substitution_matrix: Nested dictionary encoding the substitution matrix.
+        gap_open_penalty: Gap open penalty.
+        gap_extend_penalty: Gap extend penalty.
+
+    Returns:
+        A tuple containing the CIGAR string, query sequence start position,
+        reference sequence start position, alignment score, and query sequence
+
+    Raises:
+        PreprocessError if skbio could not be imported.
+    """
+    if StripedSmithWaterman is None:
+        raise PreprocessError(
+            "Scikit-bio is not installed. Try pip-installing "
+            " first and then re-running this function."
+        )
+    aligner = StripedSmithWaterman(
+        seq,
+        substitution_matrix=substitution_matrix,
+        gap_open_penalty=gap_open_penalty,
+        gap_extend_penalty=gap_extend_penalty,
+    )
+    aln = aligner(ref)
+    return (
+        aln.cigar,
+        aln.query_begin,
+        aln.target_begin,
+        aln.optimal_alignment_score,
+        aln.query_sequence,
+    )
+
+
+def align_global(
+    ref: str,
+    seq: str,
+    substitution_matrix: Dict[str, Dict[str, int]],
+    gap_open_penalty: int,
+    gap_extend_penalty: int,
+) -> Tuple[str, int, int, float, str]:
+    """Perform local alignment of `seq` to `ref` using Needleman-Wunsch.
+
+    Args:
+        ref: The reference sequence.
+        seq: The query sequence.
+        substitution_matrix: Nested dictionary encoding the substitution matrix.
+        gap_open_penalty: Gap open penalty.
+        gap_extend_penalty: Gap extend penalty.
+
+    Returns:
+        A tuple containing the CIGAR string, query sequence start position,
+        reference sequence start position, alignment score, and query sequence
+    """
+    aligner = NeedlemanWunsch(
+        substitution_matrix=substitution_matrix,
+        gap_open=-gap_open_penalty
+        + 1,  # Slight difference in score calculation
+        gap_extend=-gap_extend_penalty,
+        no_end_gap_penalty=True,  # Reads are expected to be shorter
+    )
+    aln = aligner.align(ref, seq)
+    return (
+        ngs.sequence.alignment_to_cigar(aln.result_a, aln.result_b),
+        aln.pos_b,
+        aln.pos_a,
+        aln.score,
+        seq,
+    )
 
 
 def parse_cigar(

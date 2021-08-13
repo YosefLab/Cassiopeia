@@ -18,13 +18,14 @@ import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pysam
+from pyseq_align import SmithWaterman
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
 from cassiopeia.mixins import logger, PreprocessError
 from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import (
-    alignment_utilities,
+    alignment_utilities as a_utils,
     constants,
     map_utils as m_utils,
     doublet_utils as d_utils,
@@ -348,7 +349,7 @@ def resolve_umi_sequence(
             (i.e. average) reads per UMI in a cell needed for that cell to be
             retained during filtering
 
-    Return:
+    Returns:
         A molecule table with unique mappings between cellBC-UMI pairs.
     """
     if plot:
@@ -464,70 +465,71 @@ def align_sequences(
     ref: Optional[str] = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
+    method: Literal["local", "global"] = "local",
     n_threads: int = 1,
 ) -> pd.DataFrame:
     """Align reads to the TargetSite reference.
 
     Take in several queries stored in a DataFrame mapping cellBC-UMIs to a
-    sequence of interest and align each to a reference sequence. The alignment
-    algorithm used is the Smith-Waterman local alignment algorithm. The desired
-    output consists of the best alignment score and the CIGAR string storing the
-    indel locations in the query sequence.
+    sequence of interest and align each to a reference sequence. Either local
+    or global alignment may be performed, depending on the `method` argument.
+    The defaults for the gap open and gap extend penalties were selected via
+    in-silico simulation (which also happens to be equivalent to the values
+    used in the GESTALT technology described in McKenna et. al, 2016).
+    The desired output consists of the best alignment score and the CIGAR string
+    storing the indel locations in the query sequence.
 
     Args:
         queries: DataFrame storing a list of sequences to align.
         ref_filepath: Filepath to the reference FASTA.
         ref: Reference sequence.
-        gapopen: Gap open penalty
-        gapextend: Gap extension penalty
+        gap_open_penalty: Gap open penalty
+        gap_extend_penalty: Gap extension penalty
+        method: What alignment algorithm to use. Can be either "local" to
+            perform local alignment using Smith-Waterman or "global" to
+            perform global alignment using Needleman Wunsch.
         n_threads: Number of threads to use.
 
     Returns:
         A DataFrame mapping each sequence name to the CIGAR string, quality,
         and original query sequence.
-    """
-    try:
-        from skbio import alignment
-    except ModuleNotFoundError:
-        raise PreprocessError(
-            "Scikit-bio is not installed. Try pip-installing "
-            " first and then re-running this function."
-        )
 
+    Raises:
+        PreprocessError if both or neither `ref_filepath` and `ref` are
+        provided, or if the `method` is not either "local" or "global".
+    """
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
             "Either `ref_filepath` or `ref` must be provided."
         )
+    if method == "local":
+        align = a_utils.align_local
+    elif method == "global":
+        align = a_utils.align_global
+    else:
+        raise PreprocessError("`method` must be either 'local' or 'global'.")
 
     alignment_dictionary = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
 
-    # Helper function for paralleleization
-    def align(seq):
-        aligner = alignment.StripedSmithWaterman(
-            seq,
-            substitution_matrix=DNA_SUBSTITUTION_MATRIX,
-            gap_open_penalty=gap_open_penalty,
-            gap_extend_penalty=gap_extend_penalty,
-        )
-        aln = aligner(ref)
-        return (
-            aln.cigar,
-            aln.query_begin,
-            aln.target_begin,
-            aln.optimal_alignment_score,
-            aln.query_sequence,
-        )
-
+    align_partial = partial(
+        align,
+        substitution_matrix=DNA_SUBSTITUTION_MATRIX,
+        gap_open_penalty=gap_open_penalty,
+        gap_extend_penalty=gap_extend_penalty,
+    )
     for umi, aln in zip(
         queries.index,
         ngs.utils.ParallelWithProgress(
             n_jobs=n_threads,
             total=queries.shape[0],
             desc="Aligning sequences to reference",
-        )(delayed(align)(queries.loc[umi].seq) for umi in queries.index),
+        )(
+            delayed(align_partial)(ref, queries.loc[umi].seq)
+            for umi in queries.index
+        ),
     ):
         query = queries.loc[umi]
         alignment_dictionary[query.readName] = (
@@ -606,7 +608,7 @@ def call_alleles(
         desc="Parsing CIGAR strings into indels",
     ):
 
-        intBC, indels = alignment_utilities.parse_cigar(
+        intBC, indels = a_utils.parse_cigar(
             row.CIGAR,
             row.Seq,
             ref,
@@ -867,7 +869,6 @@ def filter_molecule_table(
 
     Returns:
         A filtered and corrected allele table of cellBC-UMI-allele groups
-
     """
     input_df["status"] = "good"
     input_df.sort_values("readCount", ascending=False, inplace=True)
