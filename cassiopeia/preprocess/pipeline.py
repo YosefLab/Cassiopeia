@@ -18,7 +18,6 @@ import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pysam
-from pyseq_align import SmithWaterman
 from tqdm.auto import tqdm
 from typing_extensions import Literal
 
