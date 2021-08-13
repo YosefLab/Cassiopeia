@@ -194,13 +194,15 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Generates a dictionary that maps each character to a dictionary of state/
         sample frequency pairs, allowing quick lookup. Subsets the character matrix
         to only include the samples in the sample set.
+
         Args:
             samples: The set of relevant samples in calculating frequencies
             unique_character_matrix: The character matrix from which to calculate frequencies
             missing_state_indicator: The character representing missing values
+
         Returns:
             A dictionary containing frequency information for each character/state
-            pair
+                pair
         """
 
         subset_cm = unique_character_matrix.loc[samples, :].to_numpy()
