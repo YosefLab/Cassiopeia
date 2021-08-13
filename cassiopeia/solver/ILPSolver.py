@@ -213,6 +213,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
+        if len(potential_graph.edges()) == 0:
+            raise ILPSolverError("Potential Graph could not be found with" 
+                                " solver parameters. Try increasing"
+                                " `maximum_potential_graph_layer_size` or"
+                                " using another solver.")
+
         # generate Steiner Tree ILP model
         nodes = list(potential_graph.nodes())
         encoder = dict(zip(nodes, list(range(len(nodes)))))

@@ -669,7 +669,8 @@ class TestILPSolver(unittest.TestCase):
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_throws_error_when_potential_graph_is_not_found(self):
         
-        self.ilp_solver_small.solve(self.missing_tree, logfile=self.logfile)
+        with self.assertRaises(ILPSolverError):
+            self.ilp_solver_small.solve(self.missing_tree, logfile=self.logfile)
 
     def tearDown(self):
 
