@@ -103,6 +103,10 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
+        # for the purposes of making sure we throw an error when a potential
+        # graph cannot be solved
+        self.ilp_solver_small = cas.solver.ILPSolver(mip_gap=0.0, maximum_potential_graph_layer_size=3)
+
     def test_raises_error_on_ambiguous(self):
         cm = pd.DataFrame.from_dict(
             {
@@ -661,6 +665,11 @@ class TestILPSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
+    def test_ilp_throws_error_when_potential_graph_is_not_found(self):
+        
+        self.ilp_solver_small.solve(self.missing_tree, logfile=self.logfile)
 
     def tearDown(self):
 
