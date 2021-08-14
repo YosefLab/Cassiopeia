@@ -24,11 +24,11 @@ from typing_extensions import Literal
 from cassiopeia.mixins import logger, PreprocessError
 from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import (
-    alignment_utilities as a_utils,
+    alignment_utilities,
     constants,
-    map_utils as m_utils,
-    doublet_utils as d_utils,
-    lineage_utils as l_utils,
+    map_utils,
+    doublet_utils,
+    lineage_utils,
     UMI_utils,
     utilities,
 )
@@ -473,10 +473,10 @@ def align_sequences(
     sequence of interest and align each to a reference sequence. Either local
     or global alignment may be performed, depending on the `method` argument.
     The defaults for the gap open and gap extend penalties were selected via
-    in-silico simulation (which also happens to be equivalent to the values
-    used in the GESTALT technology described in McKenna et. al, 2016).
-    The desired output consists of the best alignment score and the CIGAR string
-    storing the indel locations in the query sequence.
+    in-silico simulation (and are also equivalent to the values used in the
+    GESTALT technology described in McKenna et. al, 2016). The desired output
+    consists of the best alignment score and the CIGAR string storing the indel
+    locations in the query sequence.
 
     Args:
         queries: DataFrame storing a list of sequences to align.
@@ -495,16 +495,16 @@ def align_sequences(
 
     Raises:
         PreprocessError if both or neither `ref_filepath` and `ref` are
-        provided, or if the `method` is not either "local" or "global".
+            provided, or if the `method` is not either "local" or "global".
     """
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
             "Either `ref_filepath` or `ref` must be provided."
         )
     if method == "local":
-        align = a_utils.align_local
+        align = alignment_utilities.align_local
     elif method == "global":
-        align = a_utils.align_global
+        align = alignment_utilities.align_global
     else:
         raise PreprocessError("`method` must be either 'local' or 'global'.")
 
@@ -607,7 +607,7 @@ def call_alleles(
         desc="Parsing CIGAR strings into indels",
     ):
 
-        intBC, indels = a_utils.parse_cigar(
+        intBC, indels = alignment_utilities.parse_cigar(
             row.CIGAR,
             row.Seq,
             ref,
@@ -934,13 +934,13 @@ def filter_molecule_table(
         logger.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
-        filtered_df = d_utils.filter_intra_doublets(
+        filtered_df = doublet_utils.filter_intra_doublets(
             filtered_df, prop=doublet_threshold
         )
 
     if not allow_allele_conflicts:
         logger.info("Mapping remaining intBC conflicts...")
-        filtered_df = m_utils.map_intbcs(filtered_df)
+        filtered_df = map_utils.map_intbcs(filtered_df)
     if plot:
         (
             rc_profile["Final"],
@@ -1091,7 +1091,7 @@ def call_lineage_groups(
 
     logger.info("Assigning initial lineage groups...")
     logger.info(f"Clustering with minimum cluster size {min_clust_size}...")
-    piv_assigned = l_utils.assign_lineage_groups(
+    piv_assigned = lineage_utils.assign_lineage_groups(
         piv,
         min_clust_size,
         min_intbc_thresh=min_intbc_thresh,
@@ -1102,35 +1102,37 @@ def call_lineage_groups(
     logger.info(
         "Redefining lineage groups by removing low proportion intBCs..."
     )
-    master_LGs, master_intBCs = l_utils.filter_intbcs_lg_sets(
+    master_LGs, master_intBCs = lineage_utils.filter_intbcs_lg_sets(
         piv_assigned, min_intbc_thresh=min_intbc_thresh
     )
 
     logger.info("Reassigning cells to refined lineage groups by kinship...")
-    kinship_scores = l_utils.score_lineage_kinships(
+    kinship_scores = lineage_utils.score_lineage_kinships(
         piv_assigned, master_LGs, master_intBCs
     )
 
     logger.info("Annotating alignment table with refined lineage groups...")
-    allele_table = l_utils.annotate_lineage_groups(
+    allele_table = lineage_utils.annotate_lineage_groups(
         input_df, kinship_scores, master_intBCs
     )
     if inter_doublet_threshold:
         logger.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
-        allele_table = d_utils.filter_inter_doublets(
+        allele_table = doublet_utils.filter_inter_doublets(
             allele_table, rule=inter_doublet_threshold
         )
 
     logger.info(
         "Filtering out low proportion intBCs in finalized lineage groups..."
     )
-    filtered_lgs = l_utils.filter_intbcs_final_lineages(
+    filtered_lgs = lineage_utils.filter_intbcs_final_lineages(
         allele_table, min_intbc_thresh=min_intbc_thresh
     )
 
-    allele_table = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
+    allele_table = lineage_utils.filtered_lineage_group_to_allele_table(
+        filtered_lgs
+    )
 
     logger.debug("Final lineage group assignments:")
     for n, g in allele_table.groupby(["lineageGrp"]):
@@ -1157,10 +1159,12 @@ def call_lineage_groups(
         at_pivot_I[at_pivot_I > 0] = 1
 
         logger.info("Producing pivot table heatmap...")
-        l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
+        lineage_utils.plot_overlap_heatmap(
+            allele_table, at_pivot_I, output_directory
+        )
 
         logger.info("Plotting filtered lineage group pivot table heatmap...")
-        l_utils.plot_overlap_heatmap_lg(
+        lineage_utils.plot_overlap_heatmap_lg(
             allele_table, at_pivot_I, output_directory
         )
 

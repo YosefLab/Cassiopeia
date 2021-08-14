@@ -6,12 +6,7 @@ import re
 from typing import Dict, List, Tuple
 
 import ngs_tools as ngs
-from pyseq_align import NeedlemanWunsch
-
-try:
-    from skbio.alignment import StripedSmithWaterman
-except ModuleNotFoundError:
-    StripedSmithWaterman = None
+from pyseq_align import NeedlemanWunsch, SmithWaterman
 
 from cassiopeia.mixins import PreprocessError, UnknownCigarStringError
 
@@ -37,29 +32,24 @@ def align_local(
 
     Returns:
         A tuple containing the CIGAR string, query sequence start position,
-        reference sequence start position, alignment score, and query sequence
+            reference sequence start position, alignment score, and query
+            sequence
 
     Raises:
         PreprocessError if skbio could not be imported.
     """
-    if StripedSmithWaterman is None:
-        raise PreprocessError(
-            "Scikit-bio is not installed. Try pip-installing "
-            " first and then re-running this function."
-        )
-    aligner = StripedSmithWaterman(
-        seq,
+    aligner = SmithWaterman(
         substitution_matrix=substitution_matrix,
-        gap_open_penalty=gap_open_penalty,
-        gap_extend_penalty=gap_extend_penalty,
+        gap_open=-gap_open_penalty + 1,
+        gap_extend=-gap_extend_penalty,
     )
-    aln = aligner(ref)
+    aln = aligner.align(ref, seq, n=1)[0]
     return (
-        aln.cigar,
-        aln.query_begin,
-        aln.target_begin,
-        aln.optimal_alignment_score,
-        aln.query_sequence,
+        ngs.sequence.alignment_to_cigar(aln.result_a, aln.result_b),
+        aln.pos_b,
+        aln.pos_a,
+        aln.score,
+        seq,
     )
 
 
@@ -70,7 +60,7 @@ def align_global(
     gap_open_penalty: int,
     gap_extend_penalty: int,
 ) -> Tuple[str, int, int, float, str]:
-    """Perform local alignment of `seq` to `ref` using Needleman-Wunsch.
+    """Perform global alignment of `seq` to `ref` using Needleman-Wunsch.
 
     Args:
         ref: The reference sequence.
@@ -81,7 +71,8 @@ def align_global(
 
     Returns:
         A tuple containing the CIGAR string, query sequence start position,
-        reference sequence start position, alignment score, and query sequence
+            reference sequence start position, alignment score, and query
+            sequence
     """
     aligner = NeedlemanWunsch(
         substitution_matrix=substitution_matrix,
