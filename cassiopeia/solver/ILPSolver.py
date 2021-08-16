@@ -310,6 +310,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
         )
 
+        if len(potential_graph_edges) == 0:
+            raise ILPSolverError("Potential Graph could not be found with" 
+                                " solver parameters. Try increasing"
+                                " `maximum_potential_graph_layer_size` or"
+                                " using another solver.")
+
         # the potential graph edges returned are strings in the form
         # "state1|state2|...", so we "decode" them here
         decoded_edges = []
