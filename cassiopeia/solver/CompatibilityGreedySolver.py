@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.solver import (
-    graph_utilities,
     GreedySolver,
     missing_data_methods,
     solver_utilities,
@@ -82,7 +81,7 @@ class CompatibilityGreedySolver(GreedySolver.GreedySolver):
         )
 
         compatibility_graph = self.create_compatibility_graph(
-            character_matrix,
+            character_matrix.values,
             weights=weights,
             missing_state_indicator=missing_state_indicator,
         )
@@ -145,7 +144,7 @@ class CompatibilityGreedySolver(GreedySolver.GreedySolver):
 
     def create_compatibility_graph(
         self,
-        character_matrix: pd.DataFrame,
+        character_matrix: np.array,
         weights: Optional[Dict[int, Dict[int, float]]] = None,
         missing_state_indicator: int = -1,
     ) -> nx.DiGraph:
@@ -199,14 +198,15 @@ class CompatibilityGreedySolver(GreedySolver.GreedySolver):
                                 w = weights[j][s2] * len(row_j)
                             else:
                                 w = len(row_j)
+                                
                             compatibility_graph.add_edge(
-                                i + "-" + s1, j + "-" + s2, weight=w
+                                f"{i}-{s1}", f"{j}-{s2}", weight=w
                             )
 
         return compatibility_graph
 
     def get_risk(
-        character: int, state: int, compatibility_graph: nx.DiGraph
+        self, character: int, state: int, compatibility_graph: nx.DiGraph
     ) -> float:
         """Score the risk of a node in the compatibility graph.
 
@@ -223,6 +223,6 @@ class CompatibilityGreedySolver(GreedySolver.GreedySolver):
             The risk of the node. 
         """
         risk = 0
-        for e in compatibility_graph.out_edges(character + "-" + state):
+        for e in compatibility_graph.out_edges(f"{character}-{state}"):
             risk += compatibility_graph[e[0]][e[1]]["weight"]
         return risk

@@ -4,6 +4,7 @@ __author__ = "Matt Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo"
 __email__ = "mattjones315@berkeley.edu"
 __version__ = "0.0.1"
 
+from .CompatibilityGreedySolver import CompatibilityGreedySolver
 from .HybridSolver import HybridSolver
 from .ILPSolver import ILPSolver
 from .MaxCutGreedySolver import MaxCutGreedySolver
