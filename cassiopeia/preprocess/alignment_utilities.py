@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 import ngs_tools as ngs
 from pyseq_align import NeedlemanWunsch, SmithWaterman
 
-from cassiopeia.mixins import PreprocessError, UnknownCigarStringError
+from cassiopeia.mixins import UnknownCigarStringError
 
 
 def align_local(
@@ -19,9 +19,6 @@ def align_local(
     gap_extend_penalty: int,
 ) -> Tuple[str, int, int, float, str]:
     """Perform local alignment of `seq` to `ref` using Smith-Waterman.
-
-    Todo:
-        Deprecate dependency on skbio.
 
     Args:
         ref: The reference sequence.
@@ -34,9 +31,6 @@ def align_local(
         A tuple containing the CIGAR string, query sequence start position,
             reference sequence start position, alignment score, and query
             sequence
-
-    Raises:
-        PreprocessError if skbio could not be imported.
     """
     aligner = SmithWaterman(
         substitution_matrix=substitution_matrix,
