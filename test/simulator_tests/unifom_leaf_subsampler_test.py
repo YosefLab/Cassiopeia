@@ -7,8 +7,6 @@ from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator.LeafSubsampler import LeafSubsamplerError
 from cassiopeia.simulator.UniformLeafSubsampler import UniformLeafSubsampler
 
-import cassiopeia.data.utilities as utilities
-
 
 class UniformLeafSubsamplerTest(unittest.TestCase):
     def test_bad_parameters(self):
@@ -41,7 +39,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(number_of_leaves=3)
-        res = uni.subsample_leaves(tree=tree)
+        res = uni.subsample_leaves(tree=tree, keep_singular_root_edge=False)
         expected_edges = [
             ("node15", "node8"),
             ("node15", "node5"),
@@ -52,7 +50,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio=0.65)
-        res = uni.subsample_leaves(tree=tree)
+        res = uni.subsample_leaves(tree=tree, keep_singular_root_edge=False)
         expected_edges = [
             ("node15", "node2"),
             ("node15", "node3"),
@@ -94,7 +92,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         uni = UniformLeafSubsampler(ratio=0.5)
-        res = uni.subsample_leaves(tree=tree, collapse_source="node0")
+        res = uni.subsample_leaves(tree=tree)
 
         expected_edges = {
             ("node16", "node0"): 1.5,
@@ -126,7 +124,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
         np.random.seed(11)
         uni = UniformLeafSubsampler(number_of_leaves=6)
-        res = uni.subsample_leaves(tree=tree, collapse_source="node0")
+        res = uni.subsample_leaves(tree=tree, keep_singular_root_edge=True)
 
         expected_edges = [
             ("node16", "node0"),

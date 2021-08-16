@@ -37,7 +37,7 @@ requirements = [
 ]
 
 
-author = "Matthew Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo"
+author = "Matthew Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo, Joseph Min"
 
 cmdclass = {"build_ext": build_ext}
 
