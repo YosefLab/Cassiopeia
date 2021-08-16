@@ -62,7 +62,11 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "min_umi_per_cell": 10,
         "plot": True,
     },
-    "align": {"gap_open_penalty": 20, "gap_extend_penalty": 1},
+    "align": {
+        "gap_open_penalty": 20,
+        "gap_extend_penalty": 1,
+        "method": "'local'",
+    },
     "call_alleles": {
         "barcode_interval": (20, 34),
         "cutsite_locations": [112, 166, 220],
