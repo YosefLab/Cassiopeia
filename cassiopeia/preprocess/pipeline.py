@@ -473,10 +473,10 @@ def align_sequences(
     sequence of interest and align each to a reference sequence. Either local
     or global alignment may be performed, depending on the `method` argument.
     The defaults for the gap open and gap extend penalties were selected via
-    in-silico simulation (and are also equivalent to the values used in the
-    GESTALT technology described in McKenna et. al, 2016). The desired output
-    consists of the best alignment score and the CIGAR string storing the indel
-    locations in the query sequence.
+    in-silico simulation (and are functionally equivalent to the values used
+    in the GESTALT technology described in McKenna et al, 2016). The desired
+    output consists of the best alignment score and the CIGAR string storing the
+    indel locations in the query sequence.
 
     Args:
         queries: DataFrame storing a list of sequences to align.
@@ -491,7 +491,7 @@ def align_sequences(
 
     Returns:
         A DataFrame mapping each sequence name to the CIGAR string, quality,
-        and original query sequence.
+            and original query sequence.
 
     Raises:
         PreprocessError if both or neither `ref_filepath` and `ref` are
