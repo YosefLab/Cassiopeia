@@ -314,10 +314,8 @@ def collapse_umis(
     )
 
     collapsed_df_file_name = sorted_file_name.with_suffix(".collapsed.txt")
-
-    df = utilities.convert_bam_to_df(
-        str(collapsed_file_name), str(collapsed_df_file_name), create_pd=True
-    )
+    df = utilities.convert_bam_to_df(tr(collapsed_file_name))
+    df.to_csv(str(collapsed_df_file_name), sep="\t", index=False)
     logger.info("Collapsed bam directory saved to " + str(collapsed_file_name))
     logger.info("Converted dataframe saved to " + str(collapsed_df_file_name))
     return df
@@ -779,14 +777,14 @@ def error_correct_umis(
     allele_groups = sorted_df.groupby(groupby)
 
     alignment_dfs = []
-    for allele_group, num_corr, tot in ngs.utils.ParallelWithProgress(
+    for allele_group, num_corr in ngs.utils.ParallelWithProgress(
         n_jobs=n_threads, total=len(allele_groups), desc="Error-correcting UMIs"
     )(
         delayed(UMI_utils.correct_umis_in_group)(allele_group, max_umi_distance)
         for _, allele_group in allele_groups
     ):
         num_corrected += num_corr
-        total += tot
+        total += allele_group.shape[0]
 
         alignment_dfs.append(allele_group)
     alignment_df = pd.concat(alignment_dfs, sort=True)
@@ -919,8 +917,8 @@ def filter_molecule_table(
         filtered_df = utilities.error_correct_intbc(
             filtered_df,
             prop=intbc_prop_thresh,
-            umiCountThresh=intbc_umi_thresh,
-            bcDistThresh=intbc_dist_thresh,
+            umi_count_thresh=intbc_umi_thresh,
+            dist_thresh=intbc_dist_thresh,
         )
 
     if plot:
