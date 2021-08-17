@@ -14,7 +14,6 @@ import pandas as pd
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.data.CassiopeiaTree import (
-    CassiopeiaTree,
     CassiopeiaTreeError,
     CassiopeiaTreeWarning,
 )
@@ -278,6 +277,43 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(len(obs_nodes), len(expected_nodes))
         for n in obs_nodes:
             self.assertIn(n, expected_nodes)
+
+        for n in tree.nodes:
+            self.assertEqual(len(tree.get_character_states(n)), 0)
+
+    def test_construction_with_character_matrix(self):
+        tree = cas.data.CassiopeiaTree(
+            character_matrix=self.character_matrix, tree=self.test_network
+        )
+
+        for n in tree.internal_nodes:
+            self.assertEqual(len(tree.get_character_states(n)), 0)
+
+        for i in tree.leaves:
+            self.assertEqual(
+                tree.get_character_states(i), list(self.character_matrix.loc[i])
+            )
+
+        cm_copy = self.character_matrix.copy()
+        cm_renamed = cm_copy.rename({"node7": "node20"})
+        cm_int = cm_copy.rename({s: int(s[4:]) for s in cm_copy.index})
+
+        renamed_network = nx.relabel_nodes(
+            self.test_network, ({"node7": "node20"})
+        )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            tree = cas.data.CassiopeiaTree(
+                character_matrix=cm_renamed, tree=self.test_network
+            )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            tree = cas.data.CassiopeiaTree(character_matrix=cm_int)
+
+        with self.assertRaises(CassiopeiaTreeError):
+            tree = cas.data.CassiopeiaTree(
+                character_matrix=self.character_matrix, tree=renamed_network
+            )
 
     def test_n_cell_uses_current_character_matrix(self):
         tree = cas.data.CassiopeiaTree(
@@ -766,10 +802,10 @@ class TestCassiopeiaTree(unittest.TestCase):
         """
         tree = cas.data.CassiopeiaTree(tree=self.test_network)
         for method in [
-            CassiopeiaTree.leaves,
-            CassiopeiaTree.internal_nodes,
-            CassiopeiaTree.nodes,
-            CassiopeiaTree.edges,
+            cas.data.CassiopeiaTree.leaves,
+            cas.data.CassiopeiaTree.internal_nodes,
+            cas.data.CassiopeiaTree.nodes,
+            cas.data.CassiopeiaTree.edges,
         ]:
             res = method.fget(tree)  # Should return a COPY of the list
             res.clear()  # Thus, this should NOT clear the cache's internal list
@@ -1157,6 +1193,16 @@ class TestCassiopeiaTree(unittest.TestCase):
             ("node6", "node14"),
         ]
         self.assertEqual(cas_tree.edges, expected_edges)
+
+    def test_bad_mutationless_edge_collapse(self):
+        annotated_tree = cas.data.CassiopeiaTree(
+            tree=self.test_network, character_matrix=self.character_matrix
+        )
+
+        with self.assertRaises(CassiopeiaTreeError):
+            annotated_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=False
+            )
 
     def test_collapse_unifurcations_source(self):
         """Tests a case where a non-root source is provided."""
@@ -1804,7 +1850,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
-        tree = CassiopeiaTree(tree=tree)
+        tree = cas.data.CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0, -1], "1": [0, 1, -1, -1]})
         self.assertEqual(
             tree.get_mutations_along_edge(

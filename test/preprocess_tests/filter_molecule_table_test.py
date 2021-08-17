@@ -139,7 +139,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
     def test_umi_and_cellbc_filter(self):
 
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, ".", min_umi_per_cell=2
+            self.base_filter_case, ".", min_umi_per_cell=3, min_reads_per_umi=11
         )
 
         expected_alignments = {
@@ -165,7 +165,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
             self.doublets_case,
             ".",
             min_umi_per_cell=1,
-            umi_read_thresh=0,
+            min_reads_per_umi=0,
             doublet_threshold=0.4,
         )
 
@@ -190,7 +190,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
             self.intBC_case,
             ".",
             min_umi_per_cell=1,
-            umi_read_thresh=0,
+            min_reads_per_umi=0,
             doublet_threshold=None,
         )
 
@@ -219,7 +219,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
             self.doublets_case,
             ".",
             min_umi_per_cell=1,
-            umi_read_thresh=0,
+            min_reads_per_umi=0,
             doublet_threshold=0.4,
             allow_allele_conflicts=True,
         )

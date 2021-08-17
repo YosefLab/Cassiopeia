@@ -97,15 +97,14 @@ def main():
         ):
             data = data_filepaths[0]
         else:
-            data = pd.read_csv(data_filepaths[0], sep="\t")
+            data = pd.read_csv(data_filepaths[0], sep="\t", na_filter=False)
 
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
         # Skip barcode correction if whitelist was not provided
-        if stage == "error_correct_cellbcs_to_whitelist" and not pipeline_parameters[
-            stage
-        ].get(
-            "whitelist"
+        if (
+            stage == "error_correct_cellbcs_to_whitelist"
+            and not pipeline_parameters[stage].get("whitelist")
         ):
             logger.warning(
                 "Skipping barcode error correction because no whitelist was "
@@ -113,10 +112,9 @@ def main():
             )
             continue
         # Skip intBC correction to whitelist if whitelist was not provided
-        if stage == "error_correct_intbcs_to_whitelist" and not pipeline_parameters[
-            stage
-        ].get(
-            "whitelist"
+        if (
+            stage == "error_correct_intbcs_to_whitelist"
+            and not pipeline_parameters[stage].get("whitelist")
         ):
             logger.warning(
                 "Skipping intBC error correction because no whitelist was "

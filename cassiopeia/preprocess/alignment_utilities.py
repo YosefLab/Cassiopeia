@@ -3,10 +3,86 @@ This file stores useful functions for dealing with alignments.
 Invoked through pipeline.py and supports the align_sequences function.
 """
 import re
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
+import ngs_tools as ngs
+from pyseq_align import NeedlemanWunsch, SmithWaterman
 
 from cassiopeia.mixins import UnknownCigarStringError
+
+
+def align_local(
+    ref: str,
+    seq: str,
+    substitution_matrix: Dict[str, Dict[str, int]],
+    gap_open_penalty: int,
+    gap_extend_penalty: int,
+) -> Tuple[str, int, int, float, str]:
+    """Perform local alignment of `seq` to `ref` using Smith-Waterman.
+
+    Args:
+        ref: The reference sequence.
+        seq: The query sequence.
+        substitution_matrix: Nested dictionary encoding the substitution matrix.
+        gap_open_penalty: Gap open penalty.
+        gap_extend_penalty: Gap extend penalty.
+
+    Returns:
+        A tuple containing the CIGAR string, query sequence start position,
+            reference sequence start position, alignment score, and query
+            sequence
+    """
+    aligner = SmithWaterman(
+        substitution_matrix=substitution_matrix,
+        gap_open=-gap_open_penalty + 1,
+        gap_extend=-gap_extend_penalty,
+    )
+    aln = aligner.align(ref, seq, n=1)[0]
+    return (
+        ngs.sequence.alignment_to_cigar(aln.result_a, aln.result_b),
+        aln.pos_b,
+        aln.pos_a,
+        aln.score,
+        seq,
+    )
+
+
+def align_global(
+    ref: str,
+    seq: str,
+    substitution_matrix: Dict[str, Dict[str, int]],
+    gap_open_penalty: int,
+    gap_extend_penalty: int,
+) -> Tuple[str, int, int, float, str]:
+    """Perform global alignment of `seq` to `ref` using Needleman-Wunsch.
+
+    Args:
+        ref: The reference sequence.
+        seq: The query sequence.
+        substitution_matrix: Nested dictionary encoding the substitution matrix.
+        gap_open_penalty: Gap open penalty.
+        gap_extend_penalty: Gap extend penalty.
+
+    Returns:
+        A tuple containing the CIGAR string, query sequence start position,
+            reference sequence start position, alignment score, and query
+            sequence
+    """
+    aligner = NeedlemanWunsch(
+        substitution_matrix=substitution_matrix,
+        gap_open=-gap_open_penalty
+        + 1,  # Slight difference in score calculation
+        gap_extend=-gap_extend_penalty,
+        no_end_gap_penalty=True,  # Reads are expected to be shorter
+    )
+    aln = aligner.align(ref, seq)
+    return (
+        ngs.sequence.alignment_to_cigar(aln.result_a, aln.result_b),
+        aln.pos_b,
+        aln.pos_a,
+        aln.score,
+        seq,
+    )
 
 
 def parse_cigar(
