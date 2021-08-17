@@ -202,11 +202,7 @@ class TestCollapseUMIs(unittest.TestCase):
         collapsed_df_file_name = self.sorted_file_name.with_suffix(
             ".collapsed.txt"
         )
-        ret = utilities.convert_bam_to_df(
-            str(self.collapsed_file_name),
-            str(collapsed_df_file_name),
-            create_pd=True,
-        )
+        ret = utilities.convert_bam_to_df(str(self.collapsed_file_name))
 
         expected_qual = "#@@@@@@@@@@@@@@"
         expected_readcount = 3
