@@ -27,7 +27,6 @@ requirements = [
     "pandas>=1.1.4",
     "pysam>=0.14.1",
     "pyseq-align>=1.0.2",
-    "python-Levenshtein",
     "PyYAML>=3.12",
     "scipy>=1.2.0",
     "typing-extensions>=3.7.4",
