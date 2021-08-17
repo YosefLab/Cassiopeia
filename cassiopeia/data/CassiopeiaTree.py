@@ -1515,20 +1515,23 @@ class CassiopeiaTree:
         updated tree by removing the node from all leaf data.
 
         Args:
-            nodes: The leaf (leaves) to be removed
+            nodes: The leaf (leaves) to be removed. Can be a single string or
+                a list of strings
 
         Raises:
             CassiopeiaTreeError if the tree is not initialized or any of the
-            input nodes are not leaves
+                input nodes are not leaves
         """
         self.__check_network_initialized()
 
         if isinstance(nodes, str):
             nodes = [nodes]
+
         for n in nodes:
             if not self.is_leaf(n):
                 raise CassiopeiaTreeError("A specified node is not a leaf.")
 
+        for n in nodes:
             if len(self.nodes) == 1:
                 self.__remove_node(n)
             else:
