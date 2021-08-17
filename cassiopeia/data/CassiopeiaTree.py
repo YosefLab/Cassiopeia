@@ -176,11 +176,11 @@ class CassiopeiaTree:
         else:
             character_matrix = self.character_matrix
 
+        for n in self.nodes:
+            self.__network.nodes[n]["character_states"] = []
+
         if character_matrix is not None:
             self.set_character_states_at_leaves(layer=layer)
-
-        for n in self.internal_nodes:
-            self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
         for u, v in self.edges:
@@ -390,11 +390,14 @@ class CassiopeiaTree:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
-            if "character_states" in self.__network.nodes[self.leaves[0]]:
-                return len(self.get_character_states(self.leaves[0]))
-            raise CassiopeiaTreeError(
-                "Character states have not been initialized."
-            )
+            if self.get_character_states(self.leaves[0]) == []:
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
+                )
+            return len(self.get_character_states(self.leaves[0]))
         return self.character_matrix.shape[1]
 
     @property
@@ -624,11 +627,12 @@ class CassiopeiaTree:
 
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
-                if len(self.get_character_states(n)) == 0:
+                if self.get_character_states(n) == []:
                     raise CassiopeiaTreeError(
-                        "Character states not annotated "
-                        "at a leaf node, initialize character states at leaves "
-                        "before reconstructing ancestral characters."
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
                     )
                 continue
             children = self.children(n)
@@ -962,7 +966,10 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             if self.get_character_states(node) == []:
                 raise CassiopeiaTreeError(
-                    "Leaf node character states have not been instantiated"
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
                 )
 
         self.__set_character_states(node, states)
@@ -1179,9 +1186,9 @@ class CassiopeiaTree:
         Args:
             node: Node identifier in the object.
             copy: Return a copy or operate in place.
-        
+
         Returns:
-            A subset CassiopeiaTree object if copy is set to true, else None. 
+            A subset CassiopeiaTree object if copy is set to true, else None.
         """
         if copy:
             new_tree = self.copy()
@@ -1359,12 +1366,12 @@ class CassiopeiaTree:
     def __register_data_with_tree(self) -> None:
         """Makes the leaf data consistent with the leaves in the tree.
 
-        Removes any leaves from the character matrix, cell metadata, and
-        dissimilarity maps that do not appear in the tree.
+        Removes any leaves from the character matrix (all layers), cell
+        metadata, and dissimilarity maps that do not appear in the tree.
         Additionally, adds any leaves that appear in the tree but not in the
         character matrix, cell metadata, or dissimilarity map with default
         values.
-        
+
         The default values for each table is as follows:
         * character matrix: all states are missing values
             (``missing_state_indicator``)
@@ -1598,7 +1605,7 @@ class CassiopeiaTree:
         mutation in this context. Either takes the existing character states on
         the tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
-        by connecting the parent and children of removed nodes by branchs with
+        by connecting the parent and children of removed nodes by branches with
         lengths equal to the total time elapsed from parent to each child.
 
         Args:
@@ -1607,7 +1614,8 @@ class CassiopeiaTree:
                 states of the tree
 
         Raises:
-            CassiopeiaTreeError if the tree has not been initialized.
+            CassiopeiaTreeError if the tree has not been initialized or if
+                a node does not have character states initialized
         """
         self.__check_network_initialized()
 
@@ -1616,7 +1624,22 @@ class CassiopeiaTree:
 
         for n in list(self.depth_first_traverse_nodes(postorder=True)):
             if self.is_leaf(n):
+                if self.get_character_states(n) == []:
+                    raise CassiopeiaTreeError(
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
+                    )
                 continue
+
+            if self.get_character_states(n) == []:
+                raise CassiopeiaTreeError(
+                    f"Character states empty at internal node. Annotate"
+                    " character states or infer ancestral characters by"
+                    " setting infer_ancestral_characters=True."
+                )
+
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)

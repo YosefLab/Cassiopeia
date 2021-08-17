@@ -21,11 +21,12 @@ requirements = [
     "nbconvert>=5.4.0",
     "nbformat>=4.4.0",
     "networkx>=2.5",
-    "ngs-tools>=1.5.3",
+    "ngs-tools>=1.5.6",
     "numba>=0.51.0",
     "numpy>=1.19.5",
     "pandas>=1.1.4",
     "pysam>=0.14.1",
+    "pyseq-align>=1.0.2",
     "python-Levenshtein",
     "PyYAML>=3.12",
     "scipy>=1.2.0",
@@ -36,7 +37,7 @@ requirements = [
 ]
 
 
-author = "Matthew Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo"
+author = "Matthew Jones, Alex Khodaverdian, Richard Zhang, Sebastian Prillo, Joseph Min"
 
 cmdclass = {"build_ext": build_ext}
 
