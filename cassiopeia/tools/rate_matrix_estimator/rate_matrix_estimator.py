@@ -1,14 +1,11 @@
-import numpy as np
-from itertools import cycle
-
-from collections import defaultdict
-
 import abc
-
-from cassiopeia.data import CassiopeiaTree
-
+from collections import defaultdict
+from itertools import cycle
 from typing import List, Optional, Tuple, TypeVar
 
+import numpy as np
+
+from cassiopeia.data import CassiopeiaTree
 
 # Enable lazy trees somehow? E.g. with Proxy Value pattern? How about CassiopeiaTreeProxy subclassing CassiopeiaTree? __init__ on the superclass is only called on attempt to __getattr__. Also: conditioning beyond the leaves is allowed!
 Tree = CassiopeiaTree

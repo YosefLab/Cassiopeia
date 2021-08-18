@@ -1,15 +1,10 @@
-import numpy as np
-
 import unittest
 
+import numpy as np
+
 from cassiopeia.tools.rate_matrix_estimator.rate_matrix_estimator import (
-    GeometricQuantizationScheme,
-    MarkovModel,
-    QuantizationScheme,
-    QuantizedTransitionModel,
-    Statistics,
-    NoQuantizationScheme,
-)
+    GeometricQuantizationScheme, MarkovModel, NoQuantizationScheme,
+    QuantizationScheme, QuantizedTransitionModel, Statistics)
 
 
 class TestGeometricQuantizationScheme(unittest.TestCase):
