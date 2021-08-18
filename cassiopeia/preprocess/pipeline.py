@@ -511,46 +511,43 @@ def align_sequences(
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
 
+    # First, align all unique sequences and save results into dictionary.
     align_partial = partial(
         align,
         substitution_matrix=DNA_SUBSTITUTION_MATRIX,
         gap_open_penalty=gap_open_penalty,
         gap_extend_penalty=gap_extend_penalty,
     )
-    for umi, aln in zip(
-        queries.index,
+    all_sequences = list(set(queries["seq"]))
+    alignments = []
+    for seq, aln in zip(
+        all_sequences,
         ngs.utils.ParallelWithProgress(
             n_jobs=n_threads,
-            total=queries.shape[0],
+            total=len(all_sequences),
             desc="Aligning sequences to reference",
-        )(
-            delayed(align_partial)(ref, queries.loc[umi].seq)
-            for umi in queries.index
-        ),
+        )(delayed(align_partial)(ref, seq) for seq in all_sequences),
     ):
-        query = queries.loc[umi]
-        alignment_dictionary[query.readName] = (
-            query.cellBC,
-            query.UMI,
-            query.readCount,
-            *aln,
-        )
+        alignments.append(aln)
+    alignment_table = pd.DataFrame(
+        alignments,
+        columns=[
+            "CIGAR",
+            "QueryBegin",
+            "ReferenceBegin",
+            "AlignmentScore",
+            "seq",
+        ],
+    )
 
-    final_time = time.time()
-    alignment_df = pd.DataFrame.from_dict(alignment_dictionary, orient="index")
-    alignment_df.columns = [
-        "cellBC",
-        "UMI",
-        "readCount",
-        "CIGAR",
-        "QueryBegin",
-        "ReferenceBegin",
-        "AlignmentScore",
-        "Seq",
-    ]
-
-    alignment_df.index.name = "readName"
-    alignment_df.reset_index(inplace=True)
+    # Merge alignments into input dataframe
+    alignment_df = pd.merge(
+        queries[["readName", "cellBC", "UMI", "readCount", "seq"]],
+        alignment_table,
+        how="left",
+        on="seq",
+    )
+    alignment_df.rename(columns={"seq": "Seq"}, inplace=True)
     return alignment_df
 
 
