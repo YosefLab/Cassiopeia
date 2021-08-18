@@ -9,7 +9,7 @@ from cassiopeia.mixins import logger
 from cassiopeia.preprocess import utilities
 
 
-@utilities.log_moleculetable
+@utilities.log_molecule_table
 def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
     """Assign one allele to each intBC/cellBC pair.
 

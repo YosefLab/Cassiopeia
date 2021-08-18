@@ -23,8 +23,8 @@ from tqdm.auto import tqdm
 from cassiopeia.mixins import is_ambiguous_state, logger, PreprocessWarning
 
 
-def log_moleculetable(wrapped: Callable):
-    """Function decorator that logs moleculetable stats.
+def log_molecule_table(wrapped: Callable):
+    """Function decorator that logs molecule_table stats.
 
     Simple decorator that logs the number of total reads, the number of unique
     UMIs, and the number of unique cellBCs in a DataFrame that is returned
@@ -40,7 +40,7 @@ def log_moleculetable(wrapped: Callable):
         df = wrapped(*args, **kwargs)
         umi_count = df["UMI"].dtype != object
         logger.debug(
-            f"Resulting {'alleletable' if umi_count else 'moleculetable'} statistics:"
+            f"Resulting {'alleletable' if umi_count else 'molecule_table'} statistics:"
         )
         logger.debug(f"# Reads: {df['readCount'].sum()}")
         logger.debug(f"# UMIs: {df['UMI'].sum() if umi_count else df.shape[0]}")
@@ -90,7 +90,7 @@ def log_kwargs(wrapped: Callable):
     return wrapper
 
 
-@log_moleculetable
+@log_molecule_table
 def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
@@ -141,9 +141,9 @@ def filter_cells(
     return molecule_table[passing_mask].copy()
 
 
-@log_moleculetable
+@log_molecule_table
 def filter_umis(
-    moleculetable: pd.DataFrame, min_reads_per_umi: int = 100
+    molecule_table: pd.DataFrame, min_reads_per_umi: int = 100
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
@@ -151,17 +151,17 @@ def filter_umis(
     Filters out all UMIs with a read count <= min_reads_per_umi.
 
     Args:
-        moleculetable: A molecule table of cellBC-UMI pairs to be filtered
+        molecule_table: A molecule table of cellBC-UMI pairs to be filtered
         min_reads_per_umi: The minimum read count needed for a UMI to not be
             filtered. Defaults to 100.
 
     Returns:
         A filtered molecule table
     """
-    return moleculetable[moleculetable["readCount"] >= min_reads_per_umi]
+    return molecule_table[molecule_table["readCount"] >= min_reads_per_umi]
 
 
-@log_moleculetable
+@log_molecule_table
 def error_correct_intbc(
     molecule_table: pd.DataFrame,
     prop: float = 0.5,

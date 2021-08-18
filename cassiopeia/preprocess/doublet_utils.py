@@ -11,7 +11,7 @@ from cassiopeia.mixins import logger
 from cassiopeia.preprocess import utilities
 
 
-@utilities.log_moleculetable
+@utilities.log_molecule_table
 def filter_intra_doublets(
     molecule_table: pd.DataFrame, prop: float = 0.1
 ) -> pd.DataFrame:
@@ -23,7 +23,7 @@ def filter_intra_doublets(
     out alignments with that cellBC from the DataFrame.
 
     Args:
-        moleculetable: A molecule table of cellBC-UMI pairs to be filtered
+        molecule_table: A molecule table of cellBC-UMI pairs to be filtered
         prop: The threshold representing the minimum proportion of conflicting
         UMIs needed to filter out a cellBC from the DataFrame
 
