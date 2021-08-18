@@ -168,35 +168,3 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
     n_cells = at["cellBC"].nunique()
     logger.debug(f"Filtered {n_filtered} inter-doublets of {n_cells} cells")
     return at[at["cellBC"].isin(passing_cellBCs)]
-
-    # def filter_cell(cell, rule):
-    #     true_lg = cell.loc["LG"]
-    #     return float(cell.loc[true_lg]) < rule
-    #
-    # # Calculate kinship for each lineage group for each cell
-    # mems = {}
-    # for n, g in at.groupby("cellBC"):
-    #     lg = int(g["lineageGrp"].iloc[0])
-    #     mem = compute_lg_membership(g, ibc_sets, dropouts)
-    #     mem["LG"] = lg
-    #     mems[n] = mem
-    #
-    # mem_df = pd.DataFrame.from_dict(mems).T
-    #
-    # filter_dict = {}
-    #
-    # for cell in mem_df.index:
-    #     if filter_cell(mem_df.loc[cell], rule):
-    #         filter_dict[cell] = "bad"
-    #     else:
-    #         filter_dict[cell] = "good"
-    #
-    # at["status"] = at["cellBC"].map(filter_dict)
-    # at_n = at[at["status"] == "good"]
-    #
-    # dl = len(at[at["status"] == "bad"]["cellBC"].unique())
-    # tot = len(at["cellBC"].unique())
-    #
-    # logger.debug(f"Filtered {dl} inter-doublets of {tot} cells")
-    #
-    # return at_n.drop(columns=["status"])
