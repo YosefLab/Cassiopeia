@@ -47,10 +47,6 @@ to_cythonize = [
         ["cassiopeia/preprocess/doublet_utils.pyx"],
     ),
     Extension(
-        "cassiopeia.preprocess.map_utils",
-        ["cassiopeia/preprocess/map_utils.pyx"],
-    ),
-    Extension(
         "cassiopeia.preprocess.collapse_cython",
         ["cassiopeia/preprocess/collapse_cython.pyx"],
     ),

@@ -198,25 +198,30 @@ def error_correct_intbc(
     if prop > 0.5:
         warnings.warn(
             "No intBC correction was done because `prop` is greater than 0.5.",
-            PreprocessWarning
+            PreprocessWarning,
         )
         return molecule_table
 
-    cellBC_intBC_allele_groups = molecule_table.groupby([
-        "cellBC", "intBC", "allele"
-    ], sort=False)
+    cellBC_intBC_allele_groups = molecule_table.groupby(
+        ["cellBC", "intBC", "allele"], sort=False
+    )
     cellBC_intBC_allele_indices = cellBC_intBC_allele_groups.groups
-    molecule_table_agg = cellBC_intBC_allele_groups.agg({
-        "UMI": "count", "readCount": "sum"
-    }).sort_values("UMI", ascending=False).reset_index()
-    for (cellBC, allele), intBC_table in tqdm(molecule_table_agg.groupby(["cellBC", "allele"], sort=False), desc="Error Correcting intBCs"):
+    molecule_table_agg = (
+        cellBC_intBC_allele_groups.agg({"UMI": "count", "readCount": "sum"})
+        .sort_values("UMI", ascending=False)
+        .reset_index()
+    )
+    for (cellBC, allele), intBC_table in tqdm(
+        molecule_table_agg.groupby(["cellBC", "allele"], sort=False),
+        desc="Error Correcting intBCs",
+    ):
         # NOTE: row1 UMIs >= row2 UMIs because groupby operations preserve
         # row orders
         for i1 in range(intBC_table.shape[0]):
             row1 = intBC_table.iloc[i1]
             intBC1 = row1["intBC"]
             UMI1 = row1["UMI"]
-            for i2 in range(i1+1, intBC_table.shape[0]):
+            for i2 in range(i1 + 1, intBC_table.shape[0]):
                 row2 = intBC_table.iloc[i2]
                 intBC2 = row2["intBC"]
                 UMI2 = row2["UMI"]
@@ -225,7 +230,11 @@ def error_correct_intbc(
                 distance = ngs.sequence.levenshtein_distance(intBC1, intBC2)
 
                 # Correct
-                if distance <= dist_thresh and proportion < prop and UMI2 <= umi_count_thresh:
+                if (
+                    distance <= dist_thresh
+                    and proportion < prop
+                    and UMI2 <= umi_count_thresh
+                ):
                     key_to_correct = (cellBC, intBC2, allele)
                     molecule_table.loc[
                         cellBC_intBC_allele_indices[key_to_correct], "intBC"
@@ -251,9 +260,9 @@ def record_stats(
         Read counts for each alignment, number of unique UMIs per intBC, number
             of UMIs per cellBC
     """
-    umis_per_intBC = molecule_table.groupby([
-        "cellBC", "intBC"
-    ], sort=False).size().values
+    umis_per_intBC = (
+        molecule_table.groupby(["cellBC", "intBC"], sort=False).size().values
+    )
     umis_per_cellBC = molecule_table.groupby("cellBC", sort=False).size().values
 
     return (
@@ -273,18 +282,37 @@ def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
         A Pandas dataframe containing the BAM information.
     """
     als = []
-    with pysam.AlignmentFile(data_fp, ignore_truncation=True, check_sq=False) as bam_fh:
+    with pysam.AlignmentFile(
+        data_fp, ignore_truncation=True, check_sq=False
+    ) as bam_fh:
         for al in bam_fh:
             cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
             seq = al.query_sequence
             qual = al.query_qualities
             encode_qual = pysam.array_to_qualitystring(qual)
-            als.append([
-                cellBC, UMI, int(readCount), grpFlag, seq, encode_qual, al.query_name
-            ])
-    return pd.DataFrame(als, columns=[
-        "cellBC", "UMI", "readCount", "grpFlag", "seq", "qual", "readName"
-    ])
+            als.append(
+                [
+                    cellBC,
+                    UMI,
+                    int(readCount),
+                    grpFlag,
+                    seq,
+                    encode_qual,
+                    al.query_name,
+                ]
+            )
+    return pd.DataFrame(
+        als,
+        columns=[
+            "cellBC",
+            "UMI",
+            "readCount",
+            "grpFlag",
+            "seq",
+            "qual",
+            "readName",
+        ],
+    )
 
 
 def convert_alleletable_to_character_matrix(
