@@ -132,8 +132,7 @@ class SupercellularSampler(LeafSubsampler):
                     char2 = (char2,)
                 new_state.append(char1 + char2)
             merged_tree.add_leaf(lca, new_leaf, states=new_state, time=new_time)
-            merged_tree.remove_leaf_and_prune_lineage(leaf1)
-            merged_tree.remove_leaf_and_prune_lineage(leaf2)
+            merged_tree.remove_leaves_and_prune_lineages([leaf1, leaf2])
 
         if collapse_source is None:
             collapse_source = merged_tree.root
