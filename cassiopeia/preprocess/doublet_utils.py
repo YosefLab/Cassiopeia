@@ -134,13 +134,13 @@ def compute_lg_membership(
 
 def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
     """Filters out cells whose kinship with their assigned lineage is low.
-    Essentially, filters out cells that have ambigious kinship across multiple
-    lineage groups.
 
-    For every cell, calculates the kinship it has with its assigned lineage,
-    with kinship defined as the weighted proportion of intBCs it shares with
-    the intBC set for a lineage (see compute_lg_membership for more details
-    on the weighting). If that kinship is <= rule, then it is filtered out.
+    Essentially, filters out cells that have ambigious kinship across multiple
+    lineage groups. For every cell, calculates the kinship it has with its
+    assigned lineage, with kinship defined as the weighted proportion of intBCs
+    it shares with the intBC set for a lineage (see compute_lg_membership for
+    more details on the weighting). If that kinship is <= rule, then it is
+    filtered out.
 
     Args:
         at: An allele table of cellBC-intBC-allele groups to be filtered
