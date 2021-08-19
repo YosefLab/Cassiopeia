@@ -2040,7 +2040,7 @@ class CassiopeiaTree:
                 res.append(i)
         return res
 
-    def get_parsimony(self, infer_ancestral_characters: bool, treat_missing_as_mutation: bool = False) -> int:
+    def score_parsimony(self, infer_ancestral_characters: bool, treat_missing_as_mutation: bool = False) -> int:
         """
         Calculates the number of mutations that have occurred on a tree.
 
@@ -2091,6 +2091,19 @@ class CassiopeiaTree:
             parsimony += len(self.get_mutations_along_edge(u, v, treat_missing_as_mutation))
 
         return parsimony
+
+    def calculate_likelihood(self, 
+        mutation_probability_function_of_time, 
+        missing_probability_function_of_time
+    ):
+
+        likelihoods_at_nodes = dict(zip(self.nodes, [] * self.n_character))
+        for n in self.depth_first_traverse_nodes(postorder=True):
+            for char in self.n_character:
+                likelihoods_at_nodes = {}
+
+
+        
 
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
