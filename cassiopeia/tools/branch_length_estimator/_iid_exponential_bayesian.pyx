@@ -1,17 +1,17 @@
 # distutils: language = c++
 
-from ._iid_exponential_bayesian cimport DP
+from ._iid_exponential_bayesian cimport InferPosteriorTimes
 from libcpp.vector cimport vector
 from libcpp.map cimport map
 
 # Create a Cython extension type which holds a C++ instance
 # as an attribute and create a bunch of forwarding methods
 # Python extension type.
-cdef class PyDP:
-    cdef DP* c_dp
+cdef class PyInferPosteriorTimes:
+    cdef InferPosteriorTimes* c_infer_posterior_times
 
     def __cinit__(self):
-        self.c_dp = new DP();
+        self.c_infer_posterior_times = new InferPosteriorTimes();
 
     def run(
         self,
@@ -31,7 +31,7 @@ cdef class PyDP:
         double sampling_probability,
         vector[int] is_leaf,
     ):
-        self.c_dp.run(
+        self.c_infer_posterior_times.run(
             N,
             children,
             root,
@@ -50,23 +50,23 @@ cdef class PyDP:
         )
         
     def get_down_res(self):
-        return self.c_dp.get_down_res()
+        return self.c_infer_posterior_times.get_down_res()
     
     def get_up_res(self):
-        return self.c_dp.get_up_res()
+        return self.c_infer_posterior_times.get_up_res()
     
     def get_posterior_means_res(self):
-        return self.c_dp.get_posterior_means_res()
+        return self.c_infer_posterior_times.get_posterior_means_res()
     
     def get_posteriors_res(self):
-        return self.c_dp.get_posteriors_res()
+        return self.c_infer_posterior_times.get_posteriors_res()
     
     def get_log_joints_res(self):
-        return self.c_dp.get_log_joints_res()
+        return self.c_infer_posterior_times.get_log_joints_res()
     
     def get_log_likelihood_res(self):
-        return self.c_dp.get_log_likelihood_res()
+        return self.c_infer_posterior_times.get_log_likelihood_res()
 
     def __dealloc__(self):
-        del self.c_dp
+        del self.c_infer_posterior_times
 

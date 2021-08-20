@@ -30,9 +30,9 @@ double logsumexp(const vector<double> & lls){
     return res;
 }
 
-DP::DP(){}
+InferPosteriorTimes::InferPosteriorTimes(){}
 
-void DP::precompute_p_unsampled(){
+void InferPosteriorTimes::precompute_p_unsampled(){
     double dt = 1.0 / T;
     if(1 - lam * dt <= 0){
         cerr << "1 - lam * dt = " << 1 - lam * dt << " should be positive!" << endl;
@@ -50,7 +50,7 @@ void DP::precompute_p_unsampled(){
     }
 }
 
-pair<int, int> DP::valid_cuts_range(int v){
+pair<int, int> InferPosteriorTimes::valid_cuts_range(int v){
     if(v == root)
         return pair<int, int> (0, 0);
     int p = parent[v];
@@ -59,7 +59,7 @@ pair<int, int> DP::valid_cuts_range(int v){
     return pair<int, int> (cuts_p, cuts_v);
 }
 
-bool DP::state_is_valid(int v, int x){
+bool InferPosteriorTimes::state_is_valid(int v, int x){
     if(v == root)
         return x == 0;
     int p = parent[v];
@@ -68,7 +68,7 @@ bool DP::state_is_valid(int v, int x){
     return cuts_p <= x && x <= cuts_v;
 }
 
-double DP::down(int v, int t, int x){
+double InferPosteriorTimes::down(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!state_is_valid(v, x)){
         return -INF;
@@ -138,7 +138,7 @@ double DP::down(int v, int t, int x){
     return log_likelihood;
 }
 
-double DP::up(int v, int t, int x){
+double InferPosteriorTimes::up(int v, int t, int x){
     // Avoid doing anything at all for invalid states.
     if(!state_is_valid(v, x))
         return -INF;
@@ -207,7 +207,7 @@ double DP::up(int v, int t, int x){
     return log_likelihood;
 }
 
-void DP::populate_down_res(){
+void InferPosteriorTimes::populate_down_res(){
     forn(v, N){
         if(v == root) continue;
         forn(t, T + 1){
@@ -220,7 +220,7 @@ void DP::populate_down_res(){
     }
 }
 
-void DP::populate_up_res(){
+void InferPosteriorTimes::populate_up_res(){
     forn(v, N){
         forn(t, T + 1){
             pair<int, int> x_range = valid_cuts_range(v);
@@ -232,14 +232,14 @@ void DP::populate_up_res(){
     }
 }
 
-void DP::populate_log_likelihood_res(){
+void InferPosteriorTimes::populate_log_likelihood_res(){
     log_likelihood_res = 0.0;
     for(auto child_of_root: children[root]){
         log_likelihood_res += down(child_of_root, 0, 0);
     }
 }
 
-double DP::compute_log_joint(int v, int t){
+double InferPosteriorTimes::compute_log_joint(int v, int t){
     assert(is_internal_node[v] and v != root);
     vector<int> valid_num_cuts;
     valid_num_cuts.push_back(get_number_of_mutated_characters_in_node[v]);
@@ -254,7 +254,7 @@ double DP::compute_log_joint(int v, int t){
     return logsumexp(ll_for_xs);
 }
 
-void DP::populate_log_joints_res(){
+void InferPosteriorTimes::populate_log_joints_res(){
     for(auto v: non_root_internal_nodes){
         vector<double> vec;
         for(int t = 0; t <= T; t++){
@@ -264,7 +264,7 @@ void DP::populate_log_joints_res(){
     }
 }
 
-void DP::populate_posteriors_res(){
+void InferPosteriorTimes::populate_posteriors_res(){
     for(auto v: non_root_internal_nodes){
         vector<double> vec;
         for(int t = 0; t <= T; t++){
@@ -274,13 +274,13 @@ void DP::populate_posteriors_res(){
     }
 }
 
-void DP::populate_posterior_means_res(){
+void InferPosteriorTimes::populate_posterior_means_res(){
     for(auto v: non_root_internal_nodes){
         posterior_means_res.push_back(pair<int, double>(v, posterior_means[v]));
     }
 }
 
-void DP::populate_posterior_results(){
+void InferPosteriorTimes::populate_posterior_results(){
     // mimmicks _compute_posteriors of the python implementation.
     for(auto v: non_root_internal_nodes){
         // Compute the log_joints.
@@ -319,7 +319,7 @@ void DP::populate_posterior_results(){
     populate_posterior_means_res();
 }
 
-void DP::run(
+void InferPosteriorTimes::run(
     int N,
     vector<vector<int> > children,
     int root,
@@ -370,29 +370,29 @@ void DP::run(
     populate_posterior_results();
 }
 
-DP::~DP(){}
+InferPosteriorTimes::~InferPosteriorTimes(){}
 
-vector<pair<vector<int>, double> > DP::get_down_res(){
+vector<pair<vector<int>, double> > InferPosteriorTimes::get_down_res(){
     return down_res;
 }
 
-vector<pair<vector<int>, double> > DP::get_up_res(){
+vector<pair<vector<int>, double> > InferPosteriorTimes::get_up_res(){
     return up_res;
 }
 
-vector<pair<int, double> > DP::get_posterior_means_res(){
+vector<pair<int, double> > InferPosteriorTimes::get_posterior_means_res(){
     return posterior_means_res;
 }
 
-vector<pair<int, vector<double> > > DP::get_posteriors_res(){
+vector<pair<int, vector<double> > > InferPosteriorTimes::get_posteriors_res(){
     return posteriors_res;
 }
 
-vector<pair<int, vector<double> > > DP::get_log_joints_res(){
+vector<pair<int, vector<double> > > InferPosteriorTimes::get_log_joints_res(){
     return log_joints_res;
 }
 
-double DP::get_log_likelihood_res(){
+double InferPosteriorTimes::get_log_likelihood_res(){
     return log_likelihood_res;
 }
 

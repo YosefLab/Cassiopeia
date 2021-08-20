@@ -5,10 +5,10 @@
 
 using namespace std;
 
-class DP{
+class InferPosteriorTimes{
     public:
-        DP();
-        ~DP();
+        InferPosteriorTimes();
+        ~InferPosteriorTimes();
         void run(
             int N,
             vector<vector<int> > children,

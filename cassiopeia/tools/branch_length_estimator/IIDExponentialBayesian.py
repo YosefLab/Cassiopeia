@@ -15,7 +15,7 @@ from scipy.special import binom
 
 from cassiopeia.data import CassiopeiaTree
 
-from ._iid_exponential_bayesian import PyDP
+from ._iid_exponential_bayesian import PyInferPosteriorTimes
 from .BranchLengthEstimator import BranchLengthEstimator
 
 
@@ -295,8 +295,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         )[:, 1]
 
         # Now we pass in all the tree data to the c++ implementation.
-        dp = PyDP()
-        dp.run(
+        infer_posterior_times = PyInferPosteriorTimes()
+        infer_posterior_times.run(
             N=N,
             children=children,
             root=root,
@@ -315,37 +315,37 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         )
 
         # Finally, we map back the results for the cpp implementation to strings
-        for key_value in dp.get_down_res():
+        for key_value in infer_posterior_times.get_down_res():
             assert len(key_value) == 2
             key = key_value[0]
             assert len(key) == 3
             value = key_value[1]
             self._down_cache[(id_to_node[key[0]], key[1], key[2])] = value
 
-        for key_value in dp.get_up_res():
+        for key_value in infer_posterior_times.get_up_res():
             assert len(key_value) == 2
             key = key_value[0]
             assert len(key) == 3
             value = key_value[1]
             self._up_cache[(id_to_node[key[0]], key[1], key[2])] = value
 
-        self._log_likelihood = dp.get_log_likelihood_res()
+        self._log_likelihood = infer_posterior_times.get_log_likelihood_res()
 
-        for key_value in dp.get_log_joints_res():
+        for key_value in infer_posterior_times.get_log_joints_res():
             assert len(key_value) == 2
             key = key_value[0]
             value = key_value[1]
             assert len(value) == self._discretization_level + 1
             self._log_joints[id_to_node[key]] = np.array(value)
 
-        for key_value in dp.get_posteriors_res():
+        for key_value in infer_posterior_times.get_posteriors_res():
             assert len(key_value) == 2
             key = key_value[0]
             value = key_value[1]
             assert len(value) == self._discretization_level + 1
             self._posteriors[id_to_node[key]] = np.array(value)
 
-        for key_value in dp.get_posterior_means_res():
+        for key_value in infer_posterior_times.get_posterior_means_res():
             assert len(key_value) == 2
             key = key_value[0]
             value = key_value[1]

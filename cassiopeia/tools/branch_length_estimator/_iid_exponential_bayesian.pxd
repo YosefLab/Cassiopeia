@@ -4,8 +4,8 @@ from libcpp.pair cimport pair
 
 # Declare the class with cdef
 cdef extern from "_iid_exponential_bayesian_cpp.h":
-    cdef cppclass DP:
-        DP() except +
+    cdef cppclass InferPosteriorTimes:
+        InferPosteriorTimes() except +
         void run(
             int N,
             vector[vector[int]] children,
