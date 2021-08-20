@@ -13,11 +13,11 @@ depth or agreement between character states and phylogeny.
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
-import copy
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
-import warnings
-
 import collections
+import copy
+import warnings
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+
 import ete3
 import networkx as nx
 import numpy as np
@@ -26,11 +26,8 @@ import scipy
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
-from cassiopeia.mixins import (
-    CassiopeiaTreeError,
-    CassiopeiaTreeWarning,
-    is_ambiguous_state,
-)
+from cassiopeia.mixins import (CassiopeiaTreeError, CassiopeiaTreeWarning,
+                               is_ambiguous_state)
 from cassiopeia.solver import solver_utilities
 
 
