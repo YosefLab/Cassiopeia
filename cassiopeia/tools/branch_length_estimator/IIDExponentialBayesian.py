@@ -35,7 +35,7 @@ def _non_root_internal_nodes(tree: CassiopeiaTree) -> List[str]:
 
     Returns:
         The internal nodes of the tree that are not the root (i.e. all
-        nodes not at the leaves, and not the root)
+            nodes not at the leaves, and not the root)
     """
     return list(set(tree.internal_nodes) - set(tree.root))
 
@@ -360,7 +360,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         Returns:
             log P(node time = t, character states, tree topology) for t in
-            [0, T], where T is the discretization_level.
+                [0, T], where T is the discretization_level.
         """
         if node not in self._posteriors.keys():
             raise ValueError(f"Unexistent node: {node}")
@@ -380,7 +380,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         Returns:
             P(node time = t | character states, tree topology) for t in [0, T]
-            where T is the discretization_level.
+                where T is the discretization_level.
 
         Raises:
             ValueError if the node is not an internal node.
@@ -614,7 +614,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         Returns:
             log P(node time = t, character states, tree topology) for t in
-            [0, T], where T is the discretization_level.
+                [0, T], where T is the discretization_level.
         """
         res = np.zeros(shape=(discretization_level + 1,))
         other_nodes = [n for n in _non_root_internal_nodes(tree) if n != node]
@@ -719,7 +719,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         Returns:
             P(node time = t | character states, tree topology) for t in [0, T]
-            where T is the discretization_level.
+                where T is the discretization_level.
         """
         numerical_log_joints = self.numerical_log_joints(
             tree=tree,
