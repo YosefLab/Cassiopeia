@@ -118,7 +118,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         # the number of mutated states at each vertex increase monotonically
         # from parent to child, making the dynamic programming state and code
         # much clearer.
-        tree.impute_unambiguous_missing_states()
+        tree.impute_deducible_missing_states()
 
         self._precompute_K_non_missing(tree)
         self._log_joints = {}  # type: Dict[str, np.array]

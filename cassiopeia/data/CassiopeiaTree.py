@@ -2019,12 +2019,12 @@ class CassiopeiaTree:
         """Full copy of CassiopeiaTree"""
         return copy.deepcopy(self)
 
-    def impute_unambiguous_missing_states(self):
+    def impute_deducible_missing_states(self):
         """
-        Impute unambiguous missing states.
+        Impute deducible missing states.
 
         If a state is missing in a node but present in its parent,
-        then it can be imputed unambiguously as the parent's state.
+        then it can be imputed as the parent's state.
         We perform all these imputations.
 
         Raises:
