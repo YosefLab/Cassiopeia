@@ -19,7 +19,7 @@ class _InferPosteriorTimes{
             vector<int> leaves,
             vector<int> parent,
             int K,
-            vector<int> Ks,
+            vector<int> K_non_missing,
             int T,
             double r,
             double lam,
@@ -47,7 +47,7 @@ class _InferPosteriorTimes{
             vector<int> leaves;
             vector<int> parent;
             int K;
-            vector<int> Ks;
+            vector<int> K_non_missing;
             int T;
             double r;
             double lam;

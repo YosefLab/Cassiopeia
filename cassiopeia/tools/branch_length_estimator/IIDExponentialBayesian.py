@@ -122,7 +122,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         # much clearer.
         tree.impute_unambiguous_missing_states()
 
-        self._precompute_Ks(tree)
+        self._precompute_K_non_missing(tree)
         self._log_joints = {}  # type: Dict[str, np.array]
         self._posterior_means = {}  # type: Dict[str, float]
         self._posteriors = {}  # type: Dict[str, np.array]
@@ -244,8 +244,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         K = tree.n_character
 
         # The number of characters, after ignoring missing characters.
-        Ks = np.array(
-            sorted([[node_to_id[v], self._Ks[v]] for v in tree.nodes])
+        K_non_missing = np.array(
+            sorted([[node_to_id[v], self._K_non_missing[v]] for v in tree.nodes])
         )[:, 1]
 
         # The number of timesteps used to discretize time.
@@ -277,7 +277,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             leaves=leaves,
             parent=parent,
             K=K,
-            Ks=Ks,
+            K_non_missing=K_non_missing,
             T=T,
             r=r,
             lam=lam,
@@ -307,12 +307,12 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             value = key_value[1]
             self._posterior_means[id_to_node[key]] = np.array(value)
 
-    def _precompute_Ks(self, tree: CassiopeiaTree):
+    def _precompute_K_non_missing(self, tree: CassiopeiaTree):
         """
         For each vertex in the tree, how many states are not missing.
         """
-        self._Ks = {}
-        self._Ks[tree.root] = tree.n_character
+        self._K_non_missing = {}
+        self._K_non_missing[tree.root] = tree.n_character
         for (parent, child) in tree.edges:
             parent_states = tree.get_character_states(parent)
             child_states = tree.get_character_states(child)
@@ -338,10 +338,10 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                     and parent_state != tree.missing_state_indicator
                     and child_state == tree.missing_state_indicator
                 )
-            self._Ks[child] = k
-        # Check monotonicity of Ks
+            self._K_non_missing[child] = k
+        # Check monotonicity of K_non_missing
         for (parent, child) in tree.edges:
-            assert self._Ks[parent] >= self._Ks[child]
+            assert self._K_non_missing[parent] >= self._K_non_missing[child]
 
     @property
     def log_likelihood(self):

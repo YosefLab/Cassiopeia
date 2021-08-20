@@ -83,7 +83,7 @@ double _InferPosteriorTimes::down(int v, int t, int x){
     }
     // Pull out params
     double dt = 1.0 / T;
-    int Kv = Ks[v];
+    int Kv = K_non_missing[v];
     assert(v != root);
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= Kv);
@@ -160,7 +160,7 @@ double _InferPosteriorTimes::up(int v, int t, int x){
     }
     // Pull out params
     double dt = 1.0 / T;
-    int Kv = Ks[v];
+    int Kv = K_non_missing[v];
     assert(0 <= v  && v < N);
     assert(0 <= t && t <= T);
     assert(0 <= x && x <= Kv);
@@ -342,7 +342,7 @@ void _InferPosteriorTimes::run(
     vector<int> leaves,
     vector<int> parent,
     int K,
-    vector<int> Ks,
+    vector<int> K_non_missing,
     int T,
     double r,
     double lam,
@@ -361,7 +361,7 @@ void _InferPosteriorTimes::run(
     this->leaves = leaves;
     this->parent = parent;
     this->K = K;
-    this->Ks = Ks;
+    this->K_non_missing = K_non_missing;
     this->T = T;
     this->r = r;
     this->lam = lam;

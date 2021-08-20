@@ -16,7 +16,7 @@ cdef extern from "_iid_exponential_bayesian_cpp.h":
             vector[int] leaves,
             vector[int] parent,
             int K,
-            vector[int] Ks,
+            vector[int] K_non_missing,
             int T,
             double r,
             double lam,

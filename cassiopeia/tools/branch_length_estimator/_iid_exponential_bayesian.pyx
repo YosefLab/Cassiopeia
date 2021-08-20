@@ -31,7 +31,7 @@ cdef class _PyInferPosteriorTimes:
         vector[int] leaves,
         vector[int] parent,
         int K,
-        vector[int] Ks,
+        vector[int] K_non_missing,
         int T,
         double r,
         double lam,
@@ -54,7 +54,7 @@ cdef class _PyInferPosteriorTimes:
             parent: The parent of each node in the tree (or a negative number
                 for the root)
             K: The number of characters
-            Ks: The number of non-missing characters in each node.
+            K_non_missing: The number of non-missing characters in each node.
             T: The number of timesteps of the discretization.
             r: The CRISRP/Cas9 mutation rate.
             lam: The birth rate.
@@ -75,7 +75,7 @@ cdef class _PyInferPosteriorTimes:
             leaves,
             parent,
             K,
-            Ks,
+            K_non_missing,
             T,
             r,
             lam,
