@@ -5,10 +5,8 @@ import unittest
 from functools import partial
 from typing import Dict, Optional
 
-import ete3
 import networkx as nx
 import numpy as np
-from numpy.testing._private.utils import assert_equal
 import pandas as pd
 
 import cassiopeia as cas
