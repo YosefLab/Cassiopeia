@@ -103,8 +103,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             is not valid.
         """
         self._validate_input_tree(tree)
-        self._tree_orig = tree
-
+        tree_orig = tree
         tree = deepcopy(tree)
         # We first impute the unambiguous missing states because it makes
         # the number of mutated states at each vertex increase monotonically
@@ -116,16 +115,12 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         self._log_joints = {}  # type: Dict[str, np.array]
         self._posterior_means = {}  # type: Dict[str, float]
         self._posteriors = {}  # type: Dict[str, np.array]
-        self._tree = tree
 
-        self._populate_attributes_with_cpp_implementation()
-        self._populate_branch_lengths()
+        self._populate_attributes_with_cpp_implementation(tree)
+        self._populate_branch_lengths(tree_orig)
 
-    def _populate_branch_lengths(self):
-        """
-        Populate the branch lengths of the tree using the posterior means.
-        """
-        tree = self._tree_orig
+    def _populate_branch_lengths(self, tree):
+        """Populate the branch lengths of the tree using the posterior means."""
         times = {}
         for node in _non_root_internal_nodes(tree):
             times[node] = self._posterior_means[node]
@@ -140,8 +135,11 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         Checks that the tree is binary, except for the root node, which should
         have degree exactly 1.
 
+        Arguments:
+            tree: The CassiopeiaTree
+
         Raises:
-            ValueError
+            ValueError is the condition is violated
         """
         if len(tree.children(tree.root)) != 1:
             raise ValueError(
@@ -154,7 +152,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                     " should have degree exactly 2."
                 )
 
-    def _populate_attributes_with_cpp_implementation(self):
+    def _populate_attributes_with_cpp_implementation(self, tree):
         """
         Run c++ implementation that infers posterior node times.
 
@@ -166,8 +164,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         """
         # First extract the relevant information from the tree to pass on to
         # the c++ module.
-        tree = self._tree
-
         node_to_id = dict(zip(tree.nodes, range(len(tree.nodes))))
         id_to_node = dict(zip(range(len(tree.nodes)), tree.nodes))
 
