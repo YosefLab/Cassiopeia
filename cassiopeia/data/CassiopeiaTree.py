@@ -26,8 +26,11 @@ import scipy
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
-from cassiopeia.mixins import (CassiopeiaTreeError, CassiopeiaTreeWarning,
-                               is_ambiguous_state)
+from cassiopeia.mixins import (
+    CassiopeiaTreeError,
+    CassiopeiaTreeWarning,
+    is_ambiguous_state,
+)
 from cassiopeia.solver import solver_utilities
 
 
@@ -1176,9 +1179,9 @@ class CassiopeiaTree:
         Args:
             node: Node identifier in the object.
             copy: Return a copy or operate in place.
-        
+
         Returns:
-            A subset CassiopeiaTree object if copy is set to true, else None. 
+            A subset CassiopeiaTree object if copy is set to true, else None.
         """
         if copy:
             new_tree = self.copy()
@@ -1361,7 +1364,7 @@ class CassiopeiaTree:
         Additionally, adds any leaves that appear in the tree but not in the
         character matrix, cell metadata, or dissimilarity map with default
         values.
-        
+
         The default values for each table is as follows:
         * character matrix: all states are missing values
             (``missing_state_indicator``)

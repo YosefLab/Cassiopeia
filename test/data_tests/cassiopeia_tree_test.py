@@ -1748,7 +1748,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1"])
         tree.add_edge("0", "1")
-        tree = CassiopeiaTree(tree=tree)
+        tree = cas.data.CassiopeiaTree(tree=tree)
         tree.set_all_character_states({"0": [0, 0, 0, -1], "1": [0, 1, -1, -1]})
         self.assertEqual(
             tree.get_mutations_along_edge(
@@ -1777,7 +1777,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3"])
         tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
-        tree = CassiopeiaTree(tree=tree)
+        tree = cas.data.CassiopeiaTree(tree=tree)
         tree.set_all_character_states(
             {
                 "0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
