@@ -15,7 +15,7 @@ from scipy.special import binom
 
 from cassiopeia.data import CassiopeiaTree
 
-from ._iid_exponential_bayesian import PyInferPosteriorTimes
+from ._iid_exponential_bayesian import _PyInferPosteriorTimes
 from .BranchLengthEstimator import BranchLengthEstimator
 
 
@@ -295,7 +295,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         )[:, 1]
 
         # Now we pass in all the tree data to the c++ implementation.
-        infer_posterior_times = PyInferPosteriorTimes()
+        infer_posterior_times = _PyInferPosteriorTimes()
         infer_posterior_times.run(
             N=N,
             children=children,

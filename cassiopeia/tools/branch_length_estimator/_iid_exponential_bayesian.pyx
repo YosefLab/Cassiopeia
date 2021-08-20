@@ -1,17 +1,22 @@
 # distutils: language = c++
 
-from ._iid_exponential_bayesian cimport InferPosteriorTimes
+from ._iid_exponential_bayesian cimport _InferPosteriorTimes
 from libcpp.vector cimport vector
 from libcpp.map cimport map
 
 # Create a Cython extension type which holds a C++ instance
 # as an attribute and create a bunch of forwarding methods
 # Python extension type.
-cdef class PyInferPosteriorTimes:
-    cdef InferPosteriorTimes* c_infer_posterior_times
+cdef class _PyInferPosteriorTimes:
+    """
+    Infer posterior node times under the Bayesian model.
+
+    The method 'run' takes in all the information needed to perform inference.
+    """
+    cdef _InferPosteriorTimes* c_infer_posterior_times
 
     def __cinit__(self):
-        self.c_infer_posterior_times = new InferPosteriorTimes();
+        self.c_infer_posterior_times = new _InferPosteriorTimes();
 
     def run(
         self,
