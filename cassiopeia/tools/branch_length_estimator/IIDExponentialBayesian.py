@@ -363,7 +363,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
                 [0, T], where T is the discretization_level.
         """
         if node not in self._posteriors.keys():
-            raise ValueError(f"Unexistent node: {node}")
+            raise ValueError(f"Nonexistent node: {node}")
 
         return self._log_joints[node].copy()
 
@@ -386,7 +386,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             ValueError if the node is not an internal node.
         """
         if node not in self._posteriors.keys():
-            raise ValueError(f"Unexistent node: {node}")
+            raise ValueError(f"Nonexistent node: {node}")
 
         return self._posteriors[node].copy()
 
