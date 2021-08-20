@@ -18,10 +18,7 @@ from .BranchLengthEstimator import BranchLengthEstimator
 
 
 def _get_number_of_mutated_characters_in_node(tree: CassiopeiaTree, v: str):
-    """
-    The number of mutated characters in node v of the tree,
-    excluding missing characters.
-    """
+    """Mutated characters in node v, excluding missing characters."""
     states = tree.get_character_states(v)
     return len(
         [s for s in states if s != 0 and s != tree.missing_state_indicator]
@@ -29,12 +26,7 @@ def _get_number_of_mutated_characters_in_node(tree: CassiopeiaTree, v: str):
 
 
 def _non_root_internal_nodes(tree: CassiopeiaTree) -> List[str]:
-    """Internal nodes of the tree, excluding the root.
-
-    Returns:
-        The internal nodes of the tree that are not the root (i.e. all
-            nodes not at the leaves, and not the root)
-    """
+    """Internal nodes of the tree, excluding the root."""
     return list(set(tree.internal_nodes) - set(tree.root))
 
 
