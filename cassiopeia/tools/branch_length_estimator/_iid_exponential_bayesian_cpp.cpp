@@ -69,6 +69,11 @@ bool _InferPosteriorTimes::state_is_valid(int v, int x){
 }
 
 double _InferPosteriorTimes::down(int v, int t, int x){
+    /* Down log probability.
+
+    The probability of generating all data at and below node v, starting
+    from the branch of v at state x and time t.
+    */
     // Avoid doing anything at all for invalid states.
     if(!state_is_valid(v, x)){
         return -INF;
@@ -139,6 +144,14 @@ double _InferPosteriorTimes::down(int v, int t, int x){
 }
 
 double _InferPosteriorTimes::up(int v, int t, int x){
+    /* Up log probability.
+
+    The probability of generating all data above node v, and having node v
+    be in state x and divide at time t. Recall that the process is
+    discretized, so technically this is a probability mass, not a
+    probability density. (Upon suitable normalization by a power of dt, we
+    recover the density).
+    */
     // Avoid doing anything at all for invalid states.
     if(!state_is_valid(v, x))
         return -INF;
@@ -371,14 +384,6 @@ void _InferPosteriorTimes::run(
 }
 
 _InferPosteriorTimes::~_InferPosteriorTimes(){}
-
-vector<pair<vector<int>, double> > _InferPosteriorTimes::get_down_res(){
-    return down_res;
-}
-
-vector<pair<vector<int>, double> > _InferPosteriorTimes::get_up_res(){
-    return up_res;
-}
 
 vector<pair<int, double> > _InferPosteriorTimes::get_posterior_means_res(){
     return posterior_means_res;

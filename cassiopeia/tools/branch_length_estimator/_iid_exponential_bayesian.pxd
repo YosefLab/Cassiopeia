@@ -23,8 +23,6 @@ cdef extern from "_iid_exponential_bayesian_cpp.h":
             double sampling_probability,
             vector[int] is_leaf,
         ) except +
-        vector[pair[vector[int], double]] get_down_res()
-        vector[pair[vector[int], double]] get_up_res()
         vector[pair[int, double]] get_posterior_means_res()
         vector[pair[int, vector[double]]] get_posteriors_res()
         vector[pair[int, vector[double]]] get_log_joints_res()

@@ -83,9 +83,6 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         )
         self.assertLessEqual(re, 0.01)
 
-        # Test the model log likelihood vs its computation from the leaf nodes.
-        model._simple_inference_sanity_check()
-
         # Test the model log likelihood against its numerical computation
         numerical_log_likelihood = (
             IIDExponentialBayesian.numerical_log_likelihood(
@@ -200,9 +197,6 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         )
         re = relative_error(-model.log_likelihood, -numerical_log_likelihood)
         self.assertLessEqual(re, 0.01)
-
-        # Test the likelihood computation from the leaves.
-        model._simple_inference_sanity_check()
 
         # Check that the posterior ages of the nodes are correct.
         for node in tree.internal_nodes:

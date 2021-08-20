@@ -123,8 +123,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         tree.impute_unambiguous_missing_states()
 
         self._precompute_Ks(tree)
-        self._down_cache = {}  # type: Dict[Tuple[str, int, int], float]
-        self._up_cache = {}  # type: Dict[Tuple[str, int, int], float]
         self._log_joints = {}  # type: Dict[str, np.array]
         self._posterior_means = {}  # type: Dict[str, float]
         self._posteriors = {}  # type: Dict[str, np.array]
@@ -132,33 +130,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         self._populate_attributes_with_cpp_implementation()
         self._populate_branch_lengths()
-
-    def _up(self, v, t, x) -> float:
-        """
-        Up log probability.
-
-        The probability of generating all data above node v, and having node v
-        be in state x and divide at time t. Recall that the process is
-        discretized, so technically this is a probability mass, not a
-        probability density. (Upon suitable normalization by a power of dt, we
-        recover the density).
-        """
-        if (v, t, x) in self._up_cache:
-            return self._up_cache[(v, t, x)]
-        else:
-            return -np.inf
-
-    def _down(self, v, t, x) -> float:
-        """
-        Down log probability.
-
-        The probability of generating all data at and below node v, starting
-        from the branch of v at state x and time t.
-        """
-        if (v, t, x) in self._down_cache:
-            return self._down_cache[(v, t, x)]
-        else:
-            return -np.inf
 
     def _populate_branch_lengths(self):
         """
@@ -195,13 +166,13 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
     def _populate_attributes_with_cpp_implementation(self):
         """
-        Run c++ implementation.
+        Run c++ implementation that infers posterior node times.
 
-        Wrapper that calls a fast c++ implementation to populate the
-        _down_cache, _up_cache, _log_joints, _posterior_means, _posteriors,
-        _log_likelihood. The key here is that the nodes of the tree are
-        mapped to integer ids from 0 to tree.n_cell - 1. This mapping is
-        then undone at the end of this method.
+        Wrapper that calls a fast c++ implementation to compute the
+        _log_joints, _posterior_means, _posteriors, _log_likelihood.
+        The key here is that the nodes of the tree are mapped to integer ids
+        from 0 to tree.n_cell - 1. This mapping is then undone at the end of
+        this method.
         """
         # First extract the relevant information from the tree to pass on to
         # the c++ module.
@@ -313,21 +284,6 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             sampling_probability=sampling_probability,
             is_leaf=is_leaf,
         )
-
-        # Finally, we map back the results for the cpp implementation to strings
-        for key_value in infer_posterior_times.get_down_res():
-            assert len(key_value) == 2
-            key = key_value[0]
-            assert len(key) == 3
-            value = key_value[1]
-            self._down_cache[(id_to_node[key[0]], key[1], key[2])] = value
-
-        for key_value in infer_posterior_times.get_up_res():
-            assert len(key_value) == 2
-            key = key_value[0]
-            assert len(key) == 3
-            value = key_value[1]
-            self._up_cache[(id_to_node[key[0]], key[1], key[2])] = value
 
         self._log_likelihood = infer_posterior_times.get_log_likelihood_res()
 
@@ -784,22 +740,3 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         )
         numerical_posterior /= numerical_posterior.sum()
         return numerical_posterior.copy()
-
-    def _simple_inference_sanity_check(self):
-        """
-        Tests that the likelihood computed from each leaf node is correct.
-        """
-        tree = self._tree
-        for leaf in tree.leaves:
-            model_log_likelihood_up = (
-                self._up(
-                    leaf,
-                    self._discretization_level,
-                    _get_number_of_mutated_characters_in_node(tree, leaf),
-                )
-                - np.log(self._birth_rate * 1.0 / self._discretization_level)
-                + np.log(self._sampling_probability)
-            )
-            np.testing.assert_approx_equal(
-                self._log_likelihood, model_log_likelihood_up, significant=2
-            )

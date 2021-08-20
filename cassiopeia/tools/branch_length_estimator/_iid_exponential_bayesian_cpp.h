@@ -27,8 +27,6 @@ class _InferPosteriorTimes{
             vector<int> is_leaf
         );
         // The following methods access the results of the run() method.
-        vector<pair<vector<int>, double> > get_down_res();
-        vector<pair<vector<int>, double> > get_up_res();
         vector<pair<int, double> > get_posterior_means_res();
         vector<pair<int, vector<double> > > get_posteriors_res();
         vector<pair<int, vector<double> > > get_log_joints_res();

@@ -82,13 +82,7 @@ cdef class _PyInferPosteriorTimes:
             sampling_probability,
             is_leaf,
         )
-        
-    def get_down_res(self):
-        return self.c_infer_posterior_times.get_down_res()
-    
-    def get_up_res(self):
-        return self.c_infer_posterior_times.get_up_res()
-    
+
     def get_posterior_means_res(self) -> List[Tuple[int, float]]:
         """
         Posterior mean node times.
