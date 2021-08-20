@@ -7,7 +7,7 @@ import cassiopeia
 from cassiopeia.preprocess import pipeline
 
 
-class TestFiltermolecule_table(unittest.TestCase):
+class TestFilterMolculeTable(unittest.TestCase):
     def setUp(self):
 
         self.base_filter_case = pd.DataFrame.from_dict(

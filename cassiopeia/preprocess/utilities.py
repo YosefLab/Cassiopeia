@@ -354,9 +354,9 @@ def convert_alleletable_to_character_matrix(
             states present for a single cellBC-intBC pair. This option has no
             effect if there are no allele conflicts. Defaults to True.
 
-        Returns:
-            A character matrix, a probability dictionary, and a dictionary mapping
-                states to the original mutation.
+    Returns:
+        A character matrix, a probability dictionary, and a dictionary mapping
+            states to the original mutation.
     """
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(alleletable)

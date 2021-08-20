@@ -216,9 +216,6 @@ def form_collapsed_clusters(
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
         n_threads: Number of threads to use.
-
-    None:
-        Saves the sorted bam to file
     """
 
     sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
@@ -343,7 +340,7 @@ def form_clusters(
 
     Returns:
         A list of annotated aligned segments representing the consensus of each
-        cluster.
+            cluster.
     """
 
     if len(als) == 0:
@@ -403,7 +400,7 @@ def form_clusters_likelihood(
 
     Returns:
         A list of annotated aligned segments representing the consensus of each
-        cluster.
+            cluster.
     """
     sequences = []
     qualities = []
@@ -445,7 +442,7 @@ def align_clusters(
 
     Returns:
         The number of differing indels and the number of high quality
-        mismatches.
+            mismatches.
     """
 
     al = sw.global_alignment(first.query_sequence, second.query_sequence)
@@ -479,8 +476,8 @@ def within_radius_of_seed(
 
     Returns:
         A list of aligned segments with sequences that are within radius of seed
-        and a list of aligned segments with sequences that are not within radius
-        of seed.
+            and a list of aligned segments with sequences that are not within
+            radius of seed.
     """
     seed_b = seed.encode()
     ds = [
@@ -665,7 +662,7 @@ def correct_umis_in_group(
 
     Returns:
         A DataFrame of error corrected UMIs within the grouping, and the
-        number of corrected UMIs
+            number of corrected UMIs
 
     Raises:
         PreprocessError if there are duplicate UMIs

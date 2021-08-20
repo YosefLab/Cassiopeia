@@ -146,6 +146,7 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
         at: An allele table of cellBC-intBC-allele groups to be filtered
         rule: The minimum kinship threshold which a cell needs to pass in order
             to be included in the final DataFrame
+
     Returns:
         A filtered allele table
     """

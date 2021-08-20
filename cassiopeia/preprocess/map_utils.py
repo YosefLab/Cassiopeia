@@ -19,7 +19,7 @@ def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
     Args:
         molecule_table: A molecule table of cellBC-UMI pairs to be filtered
 
-    Returns
+    Returns:
         An allele table with one allele per cellBC-intBC pair
     """
 
@@ -32,7 +32,7 @@ def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
         molecule_table.groupby(["cellBC", "intBC", "allele"])
         .agg({"readCount": "sum", "UMI": "count"})
         .reset_index()
-        .sort_values(["readCount", "UMI"], ascending=False)
+        .sort_values(["UMI", "readCount"], ascending=False)
     )
     duplicated_mask = allele_table.duplicated(["cellBC", "intBC"])
     mapped_alleles = set(
