@@ -176,11 +176,11 @@ class CassiopeiaTree:
         else:
             character_matrix = self.character_matrix
 
+        for n in self.nodes:
+            self.__network.nodes[n]["character_states"] = []
+
         if character_matrix is not None:
             self.set_character_states_at_leaves(layer=layer)
-
-        for n in self.internal_nodes:
-            self.__network.nodes[n]["character_states"] = []
 
         # instantiate branch lengths
         for u, v in self.edges:
@@ -390,11 +390,14 @@ class CassiopeiaTree:
                 raise CassiopeiaTreeError(
                     "This is an empty object with no tree or character matrix."
                 )
-            if "character_states" in self.__network.nodes[self.leaves[0]]:
-                return len(self.get_character_states(self.leaves[0]))
-            raise CassiopeiaTreeError(
-                "Character states have not been initialized."
-            )
+            if self.get_character_states(self.leaves[0]) == []:
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
+                )
+            return len(self.get_character_states(self.leaves[0]))
         return self.character_matrix.shape[1]
 
     @property
@@ -624,11 +627,12 @@ class CassiopeiaTree:
 
         for n in self.depth_first_traverse_nodes(postorder=True):
             if self.is_leaf(n):
-                if len(self.get_character_states(n)) == 0:
+                if self.get_character_states(n) == []:
                     raise CassiopeiaTreeError(
-                        "Character states not annotated "
-                        "at a leaf node, initialize character states at leaves "
-                        "before reconstructing ancestral characters."
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
                     )
                 continue
             children = self.children(n)
@@ -962,7 +966,10 @@ class CassiopeiaTree:
         if self.is_leaf(node):
             if self.get_character_states(node) == []:
                 raise CassiopeiaTreeError(
-                    "Leaf node character states have not been instantiated"
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
                 )
 
         self.__set_character_states(node, states)
@@ -1359,8 +1366,8 @@ class CassiopeiaTree:
     def __register_data_with_tree(self) -> None:
         """Makes the leaf data consistent with the leaves in the tree.
 
-        Removes any leaves from the character matrix, cell metadata, and
-        dissimilarity maps that do not appear in the tree.
+        Removes any leaves from the character matrix (all layers), cell
+        metadata, and dissimilarity maps that do not appear in the tree.
         Additionally, adds any leaves that appear in the tree but not in the
         character matrix, cell metadata, or dissimilarity map with default
         values.
@@ -1503,38 +1510,46 @@ class CassiopeiaTree:
         # This function will also clear the cache
         self.__register_data_with_tree()
 
-    def remove_leaf_and_prune_lineage(self, node: str) -> None:
-        """Removes a leaf from the tree and prunes the lineage.
+    def remove_leaves_and_prune_lineages(
+        self, nodes: Union[str, List[str]]
+    ) -> None:
+        """Removes a leaf (leaves) from the tree and prunes the lineage(s).
 
-        Removes a leaf and all ancestors of that leaf that are no longer the
-        ancestor of any leaves. In the context of a phylogeny, this prunes the
-        lineage of all nodes no longer relevant to observed samples.
-        Additionally, maintains consistency with the updated tree by removing
-        the node from all leaf data.
+        Removes the specified leaves and all ancestors of those leaves that are
+        no longer the ancestor of any of the remaining leaves. In the context
+        of a phylogeny, this prunes the lineage of all nodes no longer relevant
+        to observed samples. Additionally, maintains consistency with the
+        updated tree by removing the node from all leaf data.
 
         Args:
-            node: The leaf node to be removed
+            nodes: The leaf (leaves) to be removed. Can be a single string or
+                a list of strings
 
         Raises:
-            CassiopeiaTreeError if the tree is not initialized or input node is
-            not a leaf
+            CassiopeiaTreeError if the tree is not initialized or any of the
+                input nodes are not leaves
         """
         self.__check_network_initialized()
 
-        if not self.is_leaf(node):
-            raise CassiopeiaTreeError("Node is not a leaf.")
+        if isinstance(nodes, str):
+            nodes = [nodes]
 
-        if len(self.nodes) == 1:
-            self.__remove_node(node)
-        else:
-            curr_parent = self.parent(node)
-            self.__remove_node(node)
-            while len(self.children(curr_parent)) < 1 and not self.is_root(
-                curr_parent
-            ):
-                next_parent = self.parent(curr_parent)
-                self.__remove_node(curr_parent)
-                curr_parent = next_parent
+        for n in nodes:
+            if not self.is_leaf(n):
+                raise CassiopeiaTreeError("A specified node is not a leaf.")
+
+        for n in nodes:
+            if len(self.nodes) == 1:
+                self.__remove_node(n)
+            else:
+                curr_parent = self.parent(n)
+                self.__remove_node(n)
+                while len(self.children(curr_parent)) < 1 and not self.is_root(
+                    curr_parent
+                ):
+                    next_parent = self.parent(curr_parent)
+                    self.__remove_node(curr_parent)
+                    curr_parent = next_parent
 
         # Remove all removed nodes from data fields
         # This function will also clear the cache
@@ -1598,7 +1613,7 @@ class CassiopeiaTree:
         mutation in this context. Either takes the existing character states on
         the tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
-        by connecting the parent and children of removed nodes by branchs with
+        by connecting the parent and children of removed nodes by branches with
         lengths equal to the total time elapsed from parent to each child.
 
         Args:
@@ -1607,14 +1622,30 @@ class CassiopeiaTree:
                 of the tree
 
         Raises:
-            CassiopeiaTreeError if the tree has not been initialized.
+            CassiopeiaTreeError if the tree has not been initialized or if
+                a node does not have character states initialized
         """
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
         for n in list(self.depth_first_traverse_nodes(postorder=True)):
             if self.is_leaf(n):
+                if self.get_character_states(n) == []:
+                    raise CassiopeiaTreeError(
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
+                    )
                 continue
+
+            if self.get_character_states(n) == []:
+                raise CassiopeiaTreeError(
+                    f"Character states empty at internal node. Annotate"
+                    " character states or infer ancestral characters by"
+                    " setting infer_ancestral_characters=True."
+                )
+
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)

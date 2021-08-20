@@ -5,9 +5,7 @@ Takes a uniform random sample of the leaves of a CassiopeiaTree and produces a
 new CassiopeiaTree that keeps only the lineages pertaining to the sample.
 """
 
-import abc
 import copy
-import networkx as nx
 import numpy as np
 from typing import Optional
 
@@ -51,7 +49,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         self.__number_of_leaves = number_of_leaves
 
     def subsample_leaves(
-        self, tree: CassiopeiaTree, collapse_source: str = None
+        self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True
     ) -> CassiopeiaTree:
         """Uniformly subsample leaf samples of a given tree.
 
@@ -62,14 +60,24 @@ class UniformLeafSubsampler(LeafSubsampler):
         character states, meta data, and the dissimilarity map for the sampled
         cells only.
 
+        Has the option to keep the single edge leading from the root in the
+        induced subtree, if it exists. This edge is often used to represent the
+        time that the root lives before any divisions occur in the phyologeny,
+        and is useful in instances where the branch lengths are critical, like
+        simulating ground truth phylogenies or estimating branch lengths.
+
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
-            collapse_source: The source node from which to collapse
-                unifurcations
+            keep_singular_root_edge: Whether or not to collapse the single edge
+                leading from the root in the subsample, if it exists
 
         Returns:
             A new CassiopeiaTree that is the induced subtree on a sample of the
-            leaves in the given tree.
+                leaves in the given tree
+
+        Raises:
+            LeafSubsamplerError if the sample size is <= 0, or larger than the
+                number of leaves in the tree
         """
         ratio = self.__ratio
         number_of_leaves = self.__number_of_leaves
@@ -94,11 +102,16 @@ class UniformLeafSubsampler(LeafSubsampler):
             subsampled_tree.leaves, n_remove, replace=False
         )
 
-        for i in leaf_remove:
-            subsampled_tree.remove_leaf_and_prune_lineage(i)
+        subsampled_tree.remove_leaves_and_prune_lineages(leaf_remove)
 
-        if collapse_source is None:
-            collapse_source = subsampled_tree.root
+        # Keep the singular root edge if it exists and is indicated to be kept
+        if (
+            len(subsampled_tree.children(subsampled_tree.root)) == 1
+            and keep_singular_root_edge
+        ):
+            collapse_source = subsampled_tree.children(subsampled_tree.root)[0]
+        else:
+            collapse_source = None
         subsampled_tree.collapse_unifurcations(source=collapse_source)
 
         # Copy and annotate branch lengths and times

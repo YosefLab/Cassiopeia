@@ -244,9 +244,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         cassiopeia_tree.set_times(time_dictionary)
 
         # Prune dead lineages and collapse resulting unifurcations
-        for i in cassiopeia_tree.nodes:
-            if cassiopeia_tree.is_leaf(i) and i not in observed_nodes:
-                cassiopeia_tree.remove_leaf_and_prune_lineage(i)
+        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
+        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
             cassiopeia_tree.collapse_unifurcations(source="1")
 

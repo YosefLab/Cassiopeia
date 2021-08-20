@@ -3,6 +3,7 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
+import warnings
 
 from functools import partial
 import os
@@ -21,12 +22,13 @@ from tqdm.auto import tqdm
 from typing_extensions import Literal
 
 from cassiopeia.mixins import logger, PreprocessError
+from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import (
     alignment_utilities,
     constants,
-    map_utils as m_utils,
-    doublet_utils as d_utils,
-    lineage_utils as l_utils,
+    map_utils,
+    doublet_utils,
+    lineage_utils,
     UMI_utils,
     utilities,
 )
@@ -346,7 +348,7 @@ def resolve_umi_sequence(
             (i.e. average) reads per UMI in a cell needed for that cell to be
             retained during filtering
 
-    Return:
+    Returns:
         A molecule table with unique mappings between cellBC-UMI pairs.
     """
     if plot:
@@ -462,13 +464,17 @@ def align_sequences(
     ref: Optional[str] = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
+    method: Literal["local", "global"] = "local",
     n_threads: int = 1,
 ) -> pd.DataFrame:
     """Align reads to the TargetSite reference.
 
     Take in several queries stored in a DataFrame mapping cellBC-UMIs to a
-    sequence of interest and align each to a reference sequence. The alignment
-    algorithm used is the Smith-Waterman local alignment algorithm. The desired
+    sequence of interest and align each to a reference sequence. Either local
+    or global alignment may be performed, depending on the `method` argument.
+    The defaults for the gap open and gap extend penalties were selected via
+    in-silico simulation (and are functionally equivalent to the values used
+    in the GESTALT technology described in McKenna et al, 2016). The desired
     output consists of the best alignment score and the CIGAR string storing the
     indel locations in the query sequence.
 
@@ -476,54 +482,53 @@ def align_sequences(
         queries: DataFrame storing a list of sequences to align.
         ref_filepath: Filepath to the reference FASTA.
         ref: Reference sequence.
-        gapopen: Gap open penalty
-        gapextend: Gap extension penalty
+        gap_open_penalty: Gap open penalty
+        gap_extend_penalty: Gap extension penalty
+        method: What alignment algorithm to use. Can be either "local" to
+            perform local alignment using Smith-Waterman or "global" to
+            perform global alignment using Needleman Wunsch.
         n_threads: Number of threads to use.
 
     Returns:
         A DataFrame mapping each sequence name to the CIGAR string, quality,
-        and original query sequence.
-    """
-    try:
-        from skbio import alignment
-    except ModuleNotFoundError:
-        raise PreprocessError("Scikit-bio is not installed. Try pip-installing "
-                            " first and then re-running this function.")
+            and original query sequence.
 
+    Raises:
+        PreprocessError if both or neither `ref_filepath` and `ref` are
+            provided, or if the `method` is not either "local" or "global".
+    """
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
             "Either `ref_filepath` or `ref` must be provided."
         )
+    if method == "local":
+        align = alignment_utilities.align_local
+    elif method == "global":
+        align = alignment_utilities.align_global
+    else:
+        raise PreprocessError("`method` must be either 'local' or 'global'.")
 
     alignment_dictionary = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
 
-    # Helper function for paralleleization
-    def align(seq):
-        aligner = alignment.StripedSmithWaterman(
-            seq,
-            substitution_matrix=DNA_SUBSTITUTION_MATRIX,
-            gap_open_penalty=gap_open_penalty,
-            gap_extend_penalty=gap_extend_penalty,
-        )
-        aln = aligner(ref)
-        return (
-            aln.cigar,
-            aln.query_begin,
-            aln.target_begin,
-            aln.optimal_alignment_score,
-            aln.query_sequence,
-        )
-
+    align_partial = partial(
+        align,
+        substitution_matrix=DNA_SUBSTITUTION_MATRIX,
+        gap_open_penalty=gap_open_penalty,
+        gap_extend_penalty=gap_extend_penalty,
+    )
     for umi, aln in zip(
         queries.index,
         ngs.utils.ParallelWithProgress(
             n_jobs=n_threads,
             total=queries.shape[0],
             desc="Aligning sequences to reference",
-        )(delayed(align)(queries.loc[umi].seq) for umi in queries.index),
+        )(
+            delayed(align_partial)(ref, queries.loc[umi].seq)
+            for umi in queries.index
+        ),
     ):
         query = queries.loc[umi]
         alignment_dictionary[query.readName] = (
@@ -634,6 +639,17 @@ def call_alleles(
     alignments = alignments.join(indel_df)
 
     alignments.reset_index(inplace=True)
+
+    # check cut-sites and raise a warning if any missing data is detected
+    cutsites = utilities.get_default_cut_site_columns(alignments)
+    if np.any((alignments[cutsites] == "").sum(axis=0) > 0):
+        warnings.warn(
+            "Detected missing data in alleles. You might"
+            " consider re-running align_sequences with a"
+            " lower gap-open penalty, or using a separate"
+            " alignment strategy.",
+            PreprocessWarning,
+        )
 
     return alignments
 
@@ -797,7 +813,7 @@ def filter_molecule_table(
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
-    umi_read_thresh: int = -1,
+    min_reads_per_umi: int = -1,
     intbc_prop_thresh: float = 0.5,
     intbc_umi_thresh: int = 10,
     intbc_dist_thresh: int = 1,
@@ -808,11 +824,17 @@ def filter_molecule_table(
     """Filters and corrects a molecule table of cellBC-UMI pairs.
 
     Performs the following steps on the alignments in a DataFrame:
-        1. Filters out cellBCs with less than <= `min_umi_per_cell` unique UMIs
-        2. Filters out UMIs with read count less than <= `umi_read_thresh`
-        3. Error corrects intBCs by changing intBCs with low UMI counts to intBCs with the same allele and a close sequence
-        4. Filters out cellBCs that contain too much conflicting allele information as intra-lineage doublets
-        5. Chooses one allele for each cellBC-intBC pair, by selecting the most common
+        1. Filters out UMIs with read count < `min_reads_per_umi`. If
+            `min_reads_per_umi` is less than 0, a dynamic threshold is
+            calculated as `(99th percentile of read counts) // 10`.
+        2. Filters out cellBCs with unique UMIs < `min_umi_per_cell` and
+            average read count per UMI < `min_avg_reads_per_umi`.
+        3. Error corrects intBCs by changing intBCs with low UMI counts to
+            intBCs with the same allele and a close sequence
+        4. Filters out cellBCs that contain too much conflicting allele
+            information as intra-lineage doublets
+        5. Chooses one allele for each cellBC-intBC pair, by selecting the most
+            common. This is not performed when `allow_allele_conflicts` is True.
 
     Args:
         input_df: A molecule table, i.e. cellBC-UMI pairs. Note that
@@ -823,9 +845,9 @@ def filter_molecule_table(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed in order for that
             cell to be retained during filtering
-        umi_read_thresh: The threshold specifying the minimum read count needed
-            for a UMI to be retained during filtering. Set dynamically if value
-            is < 0
+        min_reads_per_umi: The threshold specifying the minimum read count
+            needed for a UMI to be retained during filtering. Set dynamically
+            if value is < 0.
         intbc_prop_thresh: The threshold specifying the maximum proportion of
             the total UMI counts for a intBC to be corrected to another
         intbc_umi_thresh: The threshold specifying the maximum UMI count for
@@ -846,7 +868,6 @@ def filter_molecule_table(
 
     Returns:
         A filtered and corrected allele table of cellBC-UMI-allele groups
-
     """
     input_df["status"] = "good"
     input_df.sort_values("readCount", ascending=False, inplace=True)
@@ -860,11 +881,29 @@ def filter_molecule_table(
             upc_profile["Init"],
         ) = utilities.record_stats(input_df)
 
+    if min_reads_per_umi < 0:
+        R = input_df["readCount"]
+        if list(R):
+            min_reads_per_umi = np.percentile(R, 99) // 10
+        else:
+            min_reads_per_umi = 0
+    logger.info(f"Filtering UMIs with less than {min_reads_per_umi} reads...")
+    filtered_df = utilities.filter_umis(
+        input_df, min_reads_per_umi=min_reads_per_umi
+    )
+    if plot:
+        (
+            rc_profile["Filtered_UMI"],
+            upi_profile["Filtered_UMI"],
+            upc_profile["Filtered_UMI"],
+        ) = utilities.record_stats(filtered_df)
+
     logger.info(
-        f"Filtering out cell barcodes with fewer than {min_umi_per_cell} UMIs..."
+        f"Filtering out cellBCs with fewer than {min_umi_per_cell} UMIs and"
+        f"less than {min_avg_reads_per_umi} average reads per UMI..."
     )
     filtered_df = utilities.filter_cells(
-        input_df,
+        filtered_df,
         min_umi_per_cell=min_umi_per_cell,
         min_avg_reads_per_umi=min_avg_reads_per_umi,
     )
@@ -873,24 +912,6 @@ def filter_molecule_table(
             rc_profile["CellFilter"],
             upi_profile["CellFilter"],
             upc_profile["CellFilter"],
-        ) = utilities.record_stats(filtered_df)
-
-    if umi_read_thresh < 0:
-        R = filtered_df["readCount"]
-        if list(R):
-            umi_read_thresh = np.percentile(R, 99) // 10
-        else:
-            umi_read_thresh = 0
-    logger.info(f"Filtering UMIs with read threshold {umi_read_thresh}...")
-    filtered_df = utilities.filter_umis(
-        filtered_df, readCountThresh=umi_read_thresh
-    )
-
-    if plot:
-        (
-            rc_profile["Filtered_UMI"],
-            upi_profile["Filtered_UMI"],
-            upc_profile["Filtered_UMI"],
         ) = utilities.record_stats(filtered_df)
 
     if intbc_dist_thresh > 0:
@@ -909,24 +930,17 @@ def filter_molecule_table(
             upc_profile["Process_intBC"],
         ) = utilities.record_stats(filtered_df)
 
-    logger.info("Filtering cell barcodes one more time...")
-    filtered_df = utilities.filter_cells(
-        filtered_df,
-        min_umi_per_cell=min_umi_per_cell,
-        min_avg_reads_per_umi=min_avg_reads_per_umi,
-    )
-
     if doublet_threshold and not allow_allele_conflicts:
         logger.info(
             f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
         )
-        filtered_df = d_utils.filter_intra_doublets(
+        filtered_df = doublet_utils.filter_intra_doublets(
             filtered_df, prop=doublet_threshold
         )
 
     if not allow_allele_conflicts:
         logger.info("Mapping remaining intBC conflicts...")
-        filtered_df = m_utils.map_intbcs(filtered_df)
+        filtered_df = map_utils.map_intbcs(filtered_df)
     if plot:
         (
             rc_profile["Final"],
@@ -1077,7 +1091,7 @@ def call_lineage_groups(
 
     logger.info("Assigning initial lineage groups...")
     logger.info(f"Clustering with minimum cluster size {min_clust_size}...")
-    piv_assigned = l_utils.assign_lineage_groups(
+    piv_assigned = lineage_utils.assign_lineage_groups(
         piv,
         min_clust_size,
         min_intbc_thresh=min_intbc_thresh,
@@ -1088,35 +1102,37 @@ def call_lineage_groups(
     logger.info(
         "Redefining lineage groups by removing low proportion intBCs..."
     )
-    master_LGs, master_intBCs = l_utils.filter_intbcs_lg_sets(
+    master_LGs, master_intBCs = lineage_utils.filter_intbcs_lg_sets(
         piv_assigned, min_intbc_thresh=min_intbc_thresh
     )
 
     logger.info("Reassigning cells to refined lineage groups by kinship...")
-    kinship_scores = l_utils.score_lineage_kinships(
+    kinship_scores = lineage_utils.score_lineage_kinships(
         piv_assigned, master_LGs, master_intBCs
     )
 
     logger.info("Annotating alignment table with refined lineage groups...")
-    allele_table = l_utils.annotate_lineage_groups(
+    allele_table = lineage_utils.annotate_lineage_groups(
         input_df, kinship_scores, master_intBCs
     )
     if inter_doublet_threshold:
         logger.info(
             f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
         )
-        allele_table = d_utils.filter_inter_doublets(
+        allele_table = doublet_utils.filter_inter_doublets(
             allele_table, rule=inter_doublet_threshold
         )
 
     logger.info(
         "Filtering out low proportion intBCs in finalized lineage groups..."
     )
-    filtered_lgs = l_utils.filter_intbcs_final_lineages(
+    filtered_lgs = lineage_utils.filter_intbcs_final_lineages(
         allele_table, min_intbc_thresh=min_intbc_thresh
     )
 
-    allele_table = l_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
+    allele_table = lineage_utils.filtered_lineage_group_to_allele_table(
+        filtered_lgs
+    )
 
     logger.debug("Final lineage group assignments:")
     for n, g in allele_table.groupby(["lineageGrp"]):
@@ -1143,10 +1159,12 @@ def call_lineage_groups(
         at_pivot_I[at_pivot_I > 0] = 1
 
         logger.info("Producing pivot table heatmap...")
-        l_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
+        lineage_utils.plot_overlap_heatmap(
+            allele_table, at_pivot_I, output_directory
+        )
 
         logger.info("Plotting filtered lineage group pivot table heatmap...")
-        l_utils.plot_overlap_heatmap_lg(
+        lineage_utils.plot_overlap_heatmap_lg(
             allele_table, at_pivot_I, output_directory
         )
 

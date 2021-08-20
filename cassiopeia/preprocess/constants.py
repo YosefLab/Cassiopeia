@@ -62,7 +62,11 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "min_umi_per_cell": 10,
         "plot": True,
     },
-    "align": {"gap_open_penalty": 20, "gap_extend_penalty": 1},
+    "align": {
+        "gap_open_penalty": 20,
+        "gap_extend_penalty": 1,
+        "method": "'local'",
+    },
     "call_alleles": {
         "barcode_interval": (20, 34),
         "cutsite_locations": [112, 166, 220],
@@ -75,7 +79,7 @@ DEFAULT_PIPELINE_PARAMETERS = {
     "filter_molecule_table": {
         "min_umi_per_cell": 10,
         "min_avg_reads_per_umi": 2.0,
-        "umi_read_thresh": -1,
+        "min_reads_per_umi": -1,
         "intbc_prop_thresh": 0.5,
         "intbc_umi_thresh": 10,
         "intbc_dist_thresh": 1,

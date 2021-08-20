@@ -15,5 +15,6 @@ Small-Parsimony
 .. autosummary::
    :toctree: reference/
    
+   tl.fitch_count
    tl.fitch_hartigan
    tl.score_small_parsimony
