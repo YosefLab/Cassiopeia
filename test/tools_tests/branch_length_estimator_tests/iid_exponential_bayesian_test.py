@@ -348,12 +348,12 @@ def relative_error(x: float, y: float) -> float:
 class TestIIDExponentialBayesian(unittest.TestCase):
     @parameterized.expand(
         [
-            ("1", 1.0, 0.8, False, 500),
-            ("2", 1.0, 0.8, True, 500),
-            ("3", 0.1, 5.0, False, 500),
-            ("4", 0.1, 5.0, True, 500),
-            ("5", 0.3, 4.0, False, 500),
-            ("6", 0.3, 4.0, True, 500),
+            ("1", 1.0, 0.8, False, 200),
+            ("2", 1.0, 0.8, True, 200),
+            ("3", 0.1, 5.0, False, 200),
+            ("4", 0.1, 5.0, True, 200),
+            ("5", 0.3, 4.0, False, 200),
+            ("6", 0.3, 4.0, True, 200),
         ]
     )
     def test_against_closed_form_solution_small(
