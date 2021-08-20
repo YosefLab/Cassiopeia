@@ -245,7 +245,9 @@ class IIDExponentialBayesian(BranchLengthEstimator):
 
         # The number of characters, after ignoring missing characters.
         K_non_missing = np.array(
-            sorted([[node_to_id[v], self._K_non_missing[v]] for v in tree.nodes])
+            sorted(
+                [[node_to_id[v], self._K_non_missing[v]] for v in tree.nodes]
+            )
         )[:, 1]
 
         # The number of timesteps used to discretize time.
@@ -311,37 +313,30 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         """
         For each vertex in the tree, how many states are not missing.
         """
-        self._K_non_missing = {}
-        self._K_non_missing[tree.root] = tree.n_character
+        # Check precondition: Add deducible states must have been imputed.
         for (parent, child) in tree.edges:
             parent_states = tree.get_character_states(parent)
             child_states = tree.get_character_states(child)
-            k = 0
             for (parent_state, child_state) in zip(parent_states, child_states):
+                # Check that deducible missing states have been imputed.
+                # (This should ALWAYS pass)
                 if (
                     parent_state != 0
                     and parent_state != tree.missing_state_indicator
-                ):
-                    # Is an already-existing mutation
-                    k += 1
-                elif (
-                    parent_state == 0
-                    and child_state != tree.missing_state_indicator
-                ):
-                    # Is an unmutated character that did not go missing so we
-                    # should track it.
-                    k += 1
-                # Check that imputable missing states have been imputed.
-                # (This should ALWAYS pass)
-                assert not (
-                    parent_state != 0
-                    and parent_state != tree.missing_state_indicator
                     and child_state == tree.missing_state_indicator
-                )
-            self._K_non_missing[child] = k
-        # Check monotonicity of K_non_missing
+                ):
+                    raise ValueError("Some deducible missing states have not been imputed.")
+
+        # Compute _K_non_missing
+        self._K_non_missing = {}
+        self._K_non_missing[tree.root] = tree.n_character
+        for node in tree.nodes:
+            self._K_non_missing[node] = tree.n_character - tree.get_character_states(node).count(tree.missing_state_indicator)
+
+        # Validate monotonicity of K_non_missing
         for (parent, child) in tree.edges:
-            assert self._K_non_missing[parent] >= self._K_non_missing[child]
+            if self._K_non_missing[parent] < self._K_non_missing[child]:
+                raise ValueError("The number of missing states is not monotone.")
 
     @property
     def log_likelihood(self):
