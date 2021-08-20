@@ -13,6 +13,59 @@ using namespace std;
 
 const double INF = 1e16;
 
+
+// From: https://www.techiedelight.com/dynamic-memory-allocation-in-c-for-2d-3d-array/
+void _allocate_1d(double* & array, int X){
+    try {
+        array = new double[X];
+    }
+    catch (const bad_alloc& e) {
+        throw std::invalid_argument("Memory allocation failed.");
+    }
+}
+
+void _deallocate_1d(double* & array){
+    delete[] array;
+}
+
+void _allocate_2d(double** & array, int X, int Y){
+    try{
+            array = new double*[X];
+            forn(x, X) array[x] = new double[Y];
+    }
+    catch (const bad_alloc& e) {
+        throw std::invalid_argument("Memory allocation failed.");
+    }
+}
+
+void _deallocate_2d(double** & array, int X){
+    forn(x, X) delete[] array[x];
+    delete[] array;
+}
+
+void _allocate_3d(double*** & array, int X, int Y, int Z){
+    try{
+        array = new double**[X];
+        forn(x, X){
+            array[x] = new double*[Y];
+            forn(y, Y) array[x][y] = new double[Z];
+        }
+    }
+    catch (const bad_alloc& e) {
+        throw std::invalid_argument("Memory allocation failed.");
+    }
+}
+
+void _deallocate_3d(double*** & array, int X, int Y){
+    forn(x, X){
+        forn(y, Y){
+            delete[] array[x][y];
+        }
+        delete[] array[x];
+    }
+    delete[] array;
+}
+
 int _compatible_with_observed_data(int x, int observed_cuts){
     return x <= observed_cuts;
 }
@@ -332,6 +385,30 @@ void _InferPosteriorTimes::populate_posterior_results(){
     populate_posterior_means_res();
 }
 
+void _InferPosteriorTimes::allocate_memory(){
+    // First make sure that we will be able to allocate _all_ memory
+    double* large_array;
+    _allocate_1d(large_array, 2 * (this -> N) * ((this -> T) + 1) * ((this -> K) + 1));
+    _deallocate_1d(large_array);
+
+    // Good. Now allocate recursively what we need.
+    _allocate_3d(this->down_cache, this->N, (this->T) + 1, (this->K) + 1);
+    _allocate_3d(this->up_cache, this->N, (this->T) + 1, (this->K) + 1);
+    _allocate_1d(this->p_unsampled, (this->T) + 1);
+    _allocate_2d(this->log_joints, this->N, (this->T) + 1);
+    _allocate_2d(this->posteriors, this->N, (this->T) + 1);
+    _allocate_1d(this->posterior_means, this->N);
+}
+
+void _InferPosteriorTimes::deallocate_memory(){
+    _deallocate_3d(this->down_cache, this->N, (this->T) + 1);
+    _deallocate_3d(this->up_cache, this->N, (this->T) + 1);
+    _deallocate_1d(this->p_unsampled);
+    _deallocate_2d(this->log_joints, this->N);
+    _deallocate_2d(this->posteriors, this->N);
+    _deallocate_1d(this->posterior_means);
+}
+
 void _InferPosteriorTimes::run(
     int N,
     vector<vector<int> > children,
@@ -349,9 +426,6 @@ void _InferPosteriorTimes::run(
     double sampling_probability,
     vector<int> is_leaf
 ){
-    if((N > maxN) || (T > maxT) || (K > maxK)){
-        throw std::invalid_argument("N or T or K too large");
-    }
     this->N = N;
     this->children = children;
     this->root = root;
@@ -367,8 +441,8 @@ void _InferPosteriorTimes::run(
     this->lam = lam;
     this->sampling_probability = sampling_probability;
     this->is_leaf = is_leaf;
-
     this->dt = 1.0 / T;
+    allocate_memory();
 
     forn(v, N)
         forn(t, T + 1)
@@ -381,6 +455,7 @@ void _InferPosteriorTimes::run(
     populate_up_res();
     populate_log_likelihood_res();
     populate_posterior_results();
+    deallocate_memory();
 }
 
 _InferPosteriorTimes::~_InferPosteriorTimes(){}

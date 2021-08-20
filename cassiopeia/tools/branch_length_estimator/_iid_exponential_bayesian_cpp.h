@@ -33,10 +33,6 @@ class _InferPosteriorTimes{
         double get_log_likelihood_res();
 
         private:
-            static const int maxN = 4096;
-            static const int maxK = 151;
-            static const int maxT = 601;
-
             // These are the parameters to the run() call.
             int N;
             vector<vector<int> > children;
@@ -56,13 +52,15 @@ class _InferPosteriorTimes{
 
             // These are computed internally.
             double dt;
-            double down_cache[maxN][maxT + 1][maxK + 1];
-            double up_cache[maxN][maxT + 1][maxK + 1];
-            double p_unsampled[maxT + 1];
-            double log_joints[maxN][maxT + 1];
-            double posteriors[maxN][maxT + 1];
-            double posterior_means[maxN];
+            double*** down_cache;  // [N][T + 1][K]
+            double*** up_cache;  // [N][T + 1][K]
+            double* p_unsampled;  // [T + 1]
+            double** log_joints;  // [N][T + 1]
+            double** posteriors;  // [N][T + 1]
+            double* posterior_means;  // [N]
 
+            void allocate_memory();
+            void deallocate_memory();
             void precompute_p_unsampled();
             pair<int, int> valid_cuts_range(int v);
             bool state_is_valid(int v, int x);
