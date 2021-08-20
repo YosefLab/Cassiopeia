@@ -297,20 +297,6 @@ class EStep(abc.ABC):
         raise NotImplementedError
 
 
-class EStepFilterWrapper(
-    EStep
-):  # Use wrapping pattern to stack orthogonal behaviors!
-    def __init__(self, e_step: EStep, max_depth: float, max_path_depth: int):
-        ...
-
-    def perform_e_step(self, tree, transition_model):
-        tree_stat = self.e_step.perform_e_step(tree, transition_model)
-        return self.filter(tree_stat)
-
-    def filter(self, tree_stat):
-        ...
-
-
 class MStep(abc.ABC):
     @abc.abstractmethod
     def perform_m_step(
