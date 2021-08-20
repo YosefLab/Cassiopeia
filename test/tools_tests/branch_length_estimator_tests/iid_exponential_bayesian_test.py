@@ -2,15 +2,339 @@
 Test IIDExponentialBayesian in cassiopeia.tools.
 """
 import unittest
+from copy import deepcopy
+from typing import List
 
 import networkx as nx
 import numpy as np
 import pytest
 from parameterized import parameterized
-from scipy.special import logsumexp
+from scipy import integrate
+from scipy.special import binom, logsumexp
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.tools import IIDExponentialBayesian
+
+
+def _non_root_internal_nodes(tree: CassiopeiaTree) -> List[str]:
+    """Internal nodes of the tree, excluding the root.
+
+    Returns:
+        The internal nodes of the tree that are not the root (i.e. all
+            nodes not at the leaves, and not the root)
+    """
+    return list(set(tree.internal_nodes) - set(tree.root))
+
+
+def calc_exact_log_full_joint(
+    tree: CassiopeiaTree,
+    mutation_rate: float,
+    birth_rate: float,
+    sampling_probability: float,
+) -> float:
+    """
+    Exact log full joint probability computation.
+
+    This method is used for testing the implementation of the model.
+
+    The log full joint probability density of the observed tree topology,
+    state vectors, and branch lengths. In other words:
+    log P(branch lengths, character states, tree topology)
+    Intergrating this function allows computing the marginals and hence
+    the posteriors of the times of any internal node in the tree.
+
+    Note that this method is only fast enough for small trees. It's
+    run time scales exponentially with the number of internal nodes of the
+    tree.
+
+    Args:
+        tree: The CassiopeiaTree containing the tree topology and all
+            character states.
+        node: An internal node of the tree, for which to compute the
+            posterior log joint.
+        mutation_rate: The mutation rate of the model.
+        birth_rate: The birth rate of the model.
+        sampling_probability: The sampling probability of the model.
+
+    Returns:
+        log P(branch lengths, character states, tree topology)
+    """
+    tree = deepcopy(tree)
+    ll = 0.0
+    lam = birth_rate
+    r = mutation_rate
+    p = sampling_probability
+    q_inv = (1.0 - p) / p
+    lg = np.log
+    e = np.exp
+    b = binom
+    T = tree.get_max_depth_of_tree()
+    for (p, c) in tree.edges:
+        t = tree.get_branch_length(p, c)
+        # Birth process with subsampling likelihood
+        h = T - tree.get_time(p) + tree.get_time(tree.root)
+        h_tilde = T - tree.get_time(c) + tree.get_time(tree.root)
+        if c in tree.leaves:
+            # "Easy" case
+            assert h_tilde == 0
+            ll += (
+                2.0 * lg(q_inv + 1.0)
+                + lam * h
+                - 2.0 * lg(q_inv + e(lam * h))
+                + lg(sampling_probability)
+            )
+        else:
+            ll += (
+                lg(lam)
+                + lam * h
+                - 2.0 * lg(q_inv + e(lam * h))
+                + 2.0 * lg(q_inv + e(lam * h_tilde))
+                - lam * h_tilde
+            )
+        # Mutation process likelihood
+        cuts = len(
+            tree.get_mutations_along_edge(
+                p, c, treat_missing_as_mutations=False
+            )
+        )
+        uncuts = tree.get_character_states(c).count(0)
+        # Care must be taken here, we might get a nan
+        if np.isnan(lg(1 - e(-t * r)) * cuts):
+            return -np.inf
+        ll += (
+            (-t * r) * uncuts
+            + lg(1 - e(-t * r)) * cuts
+            + lg(b(cuts + uncuts, cuts))
+        )
+    return ll
+
+
+def calc_numerical_log_likelihood(
+    tree: CassiopeiaTree,
+    mutation_rate: float,
+    birth_rate: float,
+    sampling_probability: float,
+    epsrel: float = 0.01,
+) -> np.array:
+    """
+    Numerical log likelihood of the observed data.
+
+    This method is used for testing the implementation of log_likelihood of
+    the model.
+
+    The log likelihood of the observed tree topology and state vectors,
+    i.e.:
+    log P(character states, tree topology)
+
+    Note that this method is only fast enough for small trees. Its
+    run time scales exponentially with the number of internal nodes of the
+    tree.
+
+    Args:
+        tree: The CassiopeiaTree containing the tree topology and all
+            character states.
+        mutation_rate: The mutation rate of the model.
+        birth_rate: The birth rate of the model.
+        sampling_probability: The sampling probability of the model.
+        epsrel: The degree of tolerance for the numerical integrals
+            performed.
+
+    Returns:
+        log P(character states, tree topology)
+    """
+    tree = deepcopy(tree)
+
+    def f(*args):
+        times_list = args
+        times = {}
+        for node, t in list(zip(_non_root_internal_nodes(tree), times_list)):
+            times[node] = t
+        times[tree.root] = 0
+        for leaf in tree.leaves:
+            times[leaf] = 1.0
+        for (p, c) in tree.edges:
+            if times[p] >= times[c]:
+                return 0.0
+        tree.set_times(times)
+        return np.exp(
+            calc_exact_log_full_joint(
+                tree=tree,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                sampling_probability=sampling_probability,
+            )
+        )
+
+    res = np.log(
+        integrate.nquad(
+            f,
+            [[0, 1]] * len(_non_root_internal_nodes(tree)),
+            opts={"epsrel": epsrel},
+        )[0]
+    )
+    assert not np.isnan(res)
+    return res
+
+
+def calc_numerical_log_joints(
+    tree: CassiopeiaTree,
+    node: str,
+    mutation_rate: float,
+    birth_rate: float,
+    sampling_probability: float,
+    discretization_level: int,
+    epsrel: float = 0.01,
+) -> np.array:
+    """
+    Numerical log joint probability computation.
+
+    This method is used for testing the implementation of log_joints of the
+    model.
+
+    The log joint probability density of the observed tree topology, state
+    vectors, and all possible times of a node in the tree. In other words:
+    log P(node time = t, character states, tree topology) for t in [0, T]
+    where T is the discretization_level.
+
+    Note that this method is only fast enough for small trees. It's
+    run time scales exponentially with the number of internal nodes of the
+    tree.
+
+    Args:
+        tree: The CassiopeiaTree containing the tree topology and all
+            character states.
+        node: An internal node of the tree, for which to compute the
+            posterior log joint.
+        mutation_rate: The mutation rate of the model.
+        birth_rate: The birth rate of the model.
+        sampling_probability: The sampling probability of the model.
+        discretization_level: The number of timesteps used to discretize
+            time. The output thus is a vector of length
+            discretization_level + 1.
+        epsrel: The degree of tolerance for the numerical integrals
+            performed.
+
+    Returns:
+        log P(node time = t, character states, tree topology) for t in
+            [0, T], where T is the discretization_level.
+    """
+    res = np.zeros(shape=(discretization_level + 1,))
+    other_nodes = [n for n in _non_root_internal_nodes(tree) if n != node]
+    node_time = -1
+
+    tree = deepcopy(tree)
+
+    def f(*args):
+        times_list = args
+        times = {}
+        times[node] = node_time
+        assert len(other_nodes) == len(times_list)
+        for other_node, t in list(zip(other_nodes, times_list)):
+            times[other_node] = t
+        times[tree.root] = 0
+        for leaf in tree.leaves:
+            times[leaf] = 1.0
+        for (p, c) in tree.edges:
+            if times[p] >= times[c]:
+                return 0.0
+        tree.set_times(times)
+        return np.exp(
+            calc_exact_log_full_joint(
+                tree=tree,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                sampling_probability=sampling_probability,
+            )
+        )
+
+    for i in range(discretization_level + 1):
+        node_time = i / discretization_level
+        if len(other_nodes) == 0:
+            # There is nothing to integrate over.
+            times = {}
+            times[tree.root] = 0
+            for leaf in tree.leaves:
+                times[leaf] = 1.0
+            times[node] = node_time
+            tree.set_times(times)
+            res[i] = calc_exact_log_full_joint(
+                tree=tree,
+                mutation_rate=mutation_rate,
+                birth_rate=birth_rate,
+                sampling_probability=sampling_probability,
+            )
+            res[i] -= np.log(discretization_level)
+        else:
+            res[i] = (
+                np.log(
+                    integrate.nquad(
+                        f,
+                        [[0, 1]] * (len(_non_root_internal_nodes(tree)) - 1),
+                        opts={"epsrel": epsrel},
+                    )[0]
+                )
+                - np.log(discretization_level)
+            )
+            assert not np.isnan(res[i])
+
+    return res
+
+
+def numerical_posterior_time(
+    tree: CassiopeiaTree,
+    node: str,
+    mutation_rate: float,
+    birth_rate: float,
+    sampling_probability: float,
+    discretization_level: int,
+    epsrel: float = 0.01,
+) -> np.array:
+    """
+    Numerical posterior time inference under the model.
+
+    This method is used for testing the implementation of posterior_time of
+    the model.
+
+    The posterior time distribution of a node, numerically computed, i.e.:
+    P(node time = t | character states, tree topology) for t in [0, T]
+    where T is the discretization_level.
+
+    Note that this method is only fast enough for small trees. It's
+    run time scales exponentially with the number of internal nodes of the
+    tree.
+
+    Args:
+        tree: The CassiopeiaTree containing the tree topology and all
+            character states.
+        node: An internal node of the tree, for which to compute the
+            posterior time distribution.
+        mutation_rate: The mutation rate of the model.
+        birth_rate: The birth rate of the model.
+        sampling_probability: The sampling probability of the model.
+        discretization_level: The number of timesteps used to discretize
+            time. The output thus is a vector of length
+            discretization_level + 1.
+        epsrel: The degree of tolerance for the numerical integrals
+            performed.
+
+    Returns:
+        P(node time = t | character states, tree topology) for t in [0, T]
+            where T is the discretization_level.
+    """
+    numerical_log_joints = calc_numerical_log_joints(
+        tree=tree,
+        node=node,
+        mutation_rate=mutation_rate,
+        birth_rate=birth_rate,
+        sampling_probability=sampling_probability,
+        discretization_level=discretization_level,
+        epsrel=epsrel,
+    )
+    numerical_posterior = np.exp(
+        numerical_log_joints - numerical_log_joints.max()
+    )
+    numerical_posterior /= numerical_posterior.sum()
+    return numerical_posterior.copy()
 
 
 def relative_error(x: float, y: float) -> float:
@@ -84,20 +408,18 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         self.assertLessEqual(re, 0.01)
 
         # Test the model log likelihood against its numerical computation
-        numerical_log_likelihood = (
-            IIDExponentialBayesian.numerical_log_likelihood(
-                tree=tree,
-                mutation_rate=mutation_rate,
-                birth_rate=birth_rate,
-                sampling_probability=sampling_probability,
-            )
+        numerical_log_likelihood = calc_numerical_log_likelihood(
+            tree=tree,
+            mutation_rate=mutation_rate,
+            birth_rate=birth_rate,
+            sampling_probability=sampling_probability,
         )
         re = relative_error(-model.log_likelihood, -numerical_log_likelihood)
         self.assertLessEqual(re, 0.01)
 
         # Test the _whole_ array of log joints P(t_v = t, X, T) against its
         # numerical computation
-        numerical_log_joints = IIDExponentialBayesian.numerical_log_joints(
+        numerical_log_joints = calc_numerical_log_joints(
             tree=tree,
             node="1",
             mutation_rate=mutation_rate,
@@ -112,7 +434,7 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         )
 
         # Test the model posterior times against its numerical posterior
-        numerical_posterior = IIDExponentialBayesian.numerical_posterior_time(
+        numerical_posterior = numerical_posterior_time(
             tree=tree,
             node="1",
             mutation_rate=mutation_rate,
@@ -187,13 +509,11 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         model.estimate_branch_lengths(tree)
 
         # Test the model log likelihood against its numerical computation
-        numerical_log_likelihood = (
-            IIDExponentialBayesian.numerical_log_likelihood(
-                tree=tree,
-                mutation_rate=mutation_rate,
-                birth_rate=birth_rate,
-                sampling_probability=sampling_probability,
-            )
+        numerical_log_likelihood = calc_numerical_log_likelihood(
+            tree=tree,
+            mutation_rate=mutation_rate,
+            birth_rate=birth_rate,
+            sampling_probability=sampling_probability,
         )
         re = relative_error(-model.log_likelihood, -numerical_log_likelihood)
         self.assertLessEqual(re, 0.01)
@@ -202,7 +522,7 @@ class TestIIDExponentialBayesian(unittest.TestCase):
         for node in tree.internal_nodes:
             if node == tree.root:
                 continue
-            numerical_log_joints = IIDExponentialBayesian.numerical_log_joints(
+            numerical_log_joints = calc_numerical_log_joints(
                 tree=tree,
                 node=node,
                 mutation_rate=mutation_rate,
