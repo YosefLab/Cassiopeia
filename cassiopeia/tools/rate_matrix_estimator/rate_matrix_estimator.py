@@ -1,5 +1,6 @@
 import abc
 from collections import defaultdict
+from copy import deepcopy
 from itertools import cycle
 from typing import List, Optional, Tuple, TypeVar
 
@@ -185,15 +186,37 @@ class QuantizedTransitionModel(TransitionModel):
 TransitionModels = TypeVar("TransitionModels", bound=List[TransitionModel])
 
 
-TreeStatistic = TypeVar(  # What you think it is.
-    "TreeStatistic",
-    bound=Tuple[
-        np.array,  # The root frequencies
-        List[
-            Tuple[float, np.array]
-        ],  # The transition frequencies for each branch length
-    ],
-)
+class TreeStatistic:
+    def __init__(
+        self,
+        root_frequencies: np.array,
+        transition_frequencies: List[Tuple[float, np.array]],
+    ):
+        self.root_frequencies = root_frequencies.copy()
+        self.transition_frequencies = deepcopy(transition_frequencies)
+
+    def __eq__(self, other):
+        if np.any(~np.isclose(self.root_frequencies, other.root_frequencies)):
+            return False
+        if len(self.transition_frequencies) != len(
+            other.transition_frequencies
+        ):
+            return False
+        num_branch_lengths = len(self.transition_frequencies)
+        for i in range(num_branch_lengths):
+            if (
+                self.transition_frequencies[i][0]
+                != other.transition_frequencies[i][0]
+            ):
+                return False
+            if np.any(
+                ~np.isclose(
+                    self.transition_frequencies[i][1],
+                    other.transition_frequencies[i][1],
+                )
+            ):
+                return False
+        return True
 
 
 class Statistics:
@@ -207,47 +230,49 @@ class Statistics:
         self._quantization_scheme = quantization_scheme
         self._num_states = num_states
 
-        self._root_statistics = defaultdict(
+        self._root_frequencies = defaultdict(
             lambda: np.zeros(shape=num_states, dtype=np.float)
         )
-        self._transition_statistics = defaultdict(
+        self._transition_frequencies = defaultdict(
             lambda: defaultdict(
                 lambda: np.zeros(shape=(num_states, num_states), dtype=np.float)
             )
         )
 
     def add_tree_statistic(self, tree_id: int, tree_statistic: TreeStatistic):
-        self._root_statistics[self._tree_key(tree_id)] += tree_statistic[0]
-        for (t, frequency_matrix) in tree_statistic[1]:
-            self._transition_statistics[self._tree_key(tree_id)][
+        self._root_frequencies[
+            self._tree_key(tree_id)
+        ] += tree_statistic.root_frequencies
+        for (t, frequency_matrix) in tree_statistic.transition_frequencies:
+            self._transition_frequencies[self._tree_key(tree_id)][
                 self._branch_length_key(t)
             ] += frequency_matrix
         return self  # For chaining
 
-    def __add__(self, other):
+    def __iadd__(self, other):
         if other._per_tree_statistics != self._per_tree_statistics:
             raise ValueError(
-                f"Cannot add a tree statistics that is per-tree with a tree statistic that is not per-tree."
+                "Cannot add a tree statistics that is per-tree with a tree "
+                "statistic that is not per-tree."
             )
-        res = Statistics(
-            per_tree_statistics=self._transition_statistics,
-            quantization_scheme=self._quantization_scheme,
-            num_states=self._num_states,
-        )
-        for who in [self, other]:
-            for tree_key, value in who._root_statistics.items():
-                res._root_statistics[tree_key] += value
+        for tree_key, value in other._root_frequencies.items():
+            self._root_frequencies[tree_key] += value
+        for (
+            tree_key,
+            frequency_matrices,
+        ) in other._transition_frequencies.items():
             for (
-                tree_key,
-                frequency_matrices,
-            ) in who._transition_statistics.items():
-                for (
-                    branch_length_key,
-                    frequency_matrix,
-                ) in frequency_matrices.items():
-                    res._transition_statistics[tree_key][
-                        branch_length_key
-                    ] += frequency_matrix
+                branch_length_key,
+                frequency_matrix,
+            ) in frequency_matrices.items():
+                self._transition_frequencies[tree_key][
+                    branch_length_key
+                ] += frequency_matrix
+        return self
+
+    def __add__(self, other):
+        res = deepcopy(self)
+        res += other
         return res
 
     def _tree_key(self, tree_id: int) -> int:
@@ -261,9 +286,9 @@ class Statistics:
 
     def get_statistics_for_tree(self, tree_id: int) -> TreeStatistic:
         tree_key = self._tree_key(tree_id)
-        root_statistics = self._root_statistics[tree_key].copy()
+        root_frequencies = self._root_frequencies[tree_key].copy()
         transition_statistics = []
-        for branch_length_key, frequency_matrix in self._transition_statistics[
+        for branch_length_key, frequency_matrix in self._transition_frequencies[
             tree_key
         ].items():
             transition_statistics.append(
@@ -272,13 +297,13 @@ class Statistics:
                     frequency_matrix,
                 )
             )
-        return (
-            root_statistics,
-            sorted(transition_statistics),
+        return TreeStatistic(
+            root_frequencies=root_frequencies,
+            transition_frequencies=sorted(transition_statistics),
         )
 
     def get_statistics(self) -> List[Tuple[int, TreeStatistic]]:
-        tree_ids = self._root_statistics.keys()
+        tree_ids = self._root_frequencies.keys()
         return [
             (
                 tree_id,
@@ -365,7 +390,7 @@ class EM:
                 for tree_id, (tree, transition_model) in enumerate(
                     zip(trees, cycle(transition_models))
                 )
-            ]  # Parallelizable! MapReduce!
+            ]  # Parallelizable! MapReduce! Carefull though: we want this is O(n) time, not O(n^2). It might require using __iadd__ rather than __add__ in the sum reduction (how can we do that in a pythonic way?)
 
             # M-Step
             transition_models = m_step.perform_m_step(

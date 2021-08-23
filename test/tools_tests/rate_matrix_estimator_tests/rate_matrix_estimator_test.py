@@ -4,7 +4,8 @@ import numpy as np
 
 from cassiopeia.tools.rate_matrix_estimator.rate_matrix_estimator import (
     GeometricQuantizationScheme, MarkovModel, NoQuantizationScheme,
-    QuantizationScheme, QuantizedTransitionModel, Statistics)
+    QuantizationScheme, QuantizedTransitionModel, Statistics, Tree,
+    TreeStatistic)
 
 
 class TestGeometricQuantizationScheme(unittest.TestCase):
@@ -79,9 +80,9 @@ class TestQuantizedTransitionModel(unittest.TestCase):
 
 class TestStatistics(unittest.TestCase):
     def test_basic(self):
-        tree_statistic_1 = [
-            np.array([0.2, 0.8]),
-            [
+        tree_statistic_1 = TreeStatistic(
+            root_frequencies=np.array([0.2, 0.8]),
+            transition_frequencies=[
                 (
                     3.14,
                     np.array([[0.5, 1.1], [3.1, 4.4]]),
@@ -95,17 +96,19 @@ class TestStatistics(unittest.TestCase):
                     np.array([[4.1, 5.1], [7.1, 6.4]]),
                 ),
             ],
-        ]
+        )
 
-        tree_statistic_2 = [
-            np.array([0.1, 0.9]),
-            [
+        tree_statistic_2 = TreeStatistic(
+            root_frequencies=np.array([0.1, 0.9]),
+            transition_frequencies=[
                 (
                     3.14,
                     np.array([[0.6, 1.2], [3.2, 4.5]]),
                 ),
             ],
-        ]
+        )
+
+        self.assertNotEqual(tree_statistic_1, tree_statistic_2)
 
         quantization_scheme = GeometricQuantizationScheme(
             center=3.0,
@@ -131,9 +134,9 @@ class TestStatistics(unittest.TestCase):
             tree_statistic=tree_statistic_2,
         )
 
-        expected_statistics_for_tree_1 = (
-            np.array([0.2, 0.8]),
-            [
+        expected_statistics_for_tree_1 = TreeStatistic(
+            root_frequencies=np.array([0.2, 0.8]),
+            transition_frequencies=[
                 (
                     2.0,
                     np.array([[4.1, 5.1], [7.1, 6.4]]),
@@ -145,14 +148,18 @@ class TestStatistics(unittest.TestCase):
             ],
         )
 
-        expected_statistics_for_tree_2 = (
-            np.array([0.1, 0.9]),
-            [
+        expected_statistics_for_tree_2 = TreeStatistic(
+            root_frequencies=np.array([0.1, 0.9]),
+            transition_frequencies=[
                 (
                     3.0,
                     np.array([[0.6, 1.2], [3.2, 4.5]]),
                 ),
             ],
+        )
+
+        self.assertNotEqual(
+            expected_statistics_for_tree_1, expected_statistics_for_tree_2
         )
 
         expected_statistics = [
@@ -165,19 +172,19 @@ class TestStatistics(unittest.TestCase):
             statistics_2 + statistics_1,
         ]:
             statistics = statistics_1_plus_2.get_statistics()
-            self._assert_statistics_are_equal(statistics, expected_statistics)
+            self.assertListEqual(statistics, expected_statistics)
 
             statistics_for_tree_1 = statistics_1_plus_2.get_statistics_for_tree(
                 tree_id=1
             )
-            self._assert_statistics_for_tree_are_equal(
+            self.assertEqual(
                 statistics_for_tree_1, expected_statistics_for_tree_1
             )
 
             statistics_for_tree_2 = statistics_1_plus_2.get_statistics_for_tree(
                 tree_id=2
             )
-            self._assert_statistics_for_tree_are_equal(
+            self.assertEqual(
                 statistics_for_tree_2, expected_statistics_for_tree_2
             )
 
@@ -199,9 +206,9 @@ class TestStatistics(unittest.TestCase):
             tree_statistic=tree_statistic_2,
         )
 
-        expected_statistics_for_tree_0 = (
-            np.array([0.3, 1.7]),
-            [
+        expected_statistics_for_tree_0 = TreeStatistic(
+            root_frequencies=np.array([0.3, 1.7]),
+            transition_frequencies=[
                 (
                     2.0,
                     np.array([[4.1, 5.1], [7.1, 6.4]]),
@@ -222,42 +229,13 @@ class TestStatistics(unittest.TestCase):
             statistics_2 + statistics_1,
         ]:
             statistics = statistics_1_plus_2.get_statistics()
-            self._assert_statistics_are_equal(statistics, expected_statistics)
+            self.assertListEqual(statistics, expected_statistics)
 
             statistics_for_tree_0 = statistics_1_plus_2.get_statistics_for_tree(
                 tree_id=0
             )
-            self._assert_statistics_for_tree_are_equal(
-                statistics_for_tree_0, expected_statistics_for_tree_0
-            )
-
-    def _assert_statistics_for_tree_are_equal(
-        self, statistics_for_tree, expected_statistics_for_tree
-    ):
-        np.testing.assert_almost_equal(
-            statistics_for_tree[0], expected_statistics_for_tree[0]
-        )
-        self.assertEqual(
-            len(statistics_for_tree[1]), len(expected_statistics_for_tree[1])
-        )
-        num_branch_lengths = len(statistics_for_tree[1])
-        for i in range(num_branch_lengths):
             self.assertEqual(
-                statistics_for_tree[1][i][0],
-                expected_statistics_for_tree[1][i][0],
-            )
-            np.testing.assert_almost_equal(
-                statistics_for_tree[1][i][1],
-                expected_statistics_for_tree[1][i][1],
-            )
-
-    def _assert_statistics_are_equal(self, statistics, expected_statistics):
-        assert len(statistics) == len(expected_statistics)
-        num_trees = len(statistics)
-        for i in range(num_trees):
-            self.assertEqual(statistics[i][0], expected_statistics[i][0])
-            self._assert_statistics_for_tree_are_equal(
-                statistics[i][1], expected_statistics[i][1]
+                statistics_for_tree_0, expected_statistics_for_tree_0
             )
 
 
