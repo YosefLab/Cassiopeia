@@ -172,7 +172,7 @@ class TestStatistics(unittest.TestCase):
             statistics_2 + statistics_1,
         ]:
             statistics = statistics_1_plus_2.get_statistics()
-            self.assertListEqual(statistics, expected_statistics)
+            self.assertEqual(statistics, expected_statistics)
 
             statistics_for_tree_1 = statistics_1_plus_2.get_statistics_for_tree(
                 tree_id=1
@@ -229,7 +229,7 @@ class TestStatistics(unittest.TestCase):
             statistics_2 + statistics_1,
         ]:
             statistics = statistics_1_plus_2.get_statistics()
-            self.assertListEqual(statistics, expected_statistics)
+            self.assertEqual(statistics, expected_statistics)
 
             statistics_for_tree_0 = statistics_1_plus_2.get_statistics_for_tree(
                 tree_id=0
