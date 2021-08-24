@@ -3,14 +3,16 @@ This file stores generally important functionality for the Cassiopeia-Preprocess
 pipeline.
 """
 import functools
+import itertools
 import os
 import time
 from typing import Callable, Dict, List, Optional, Tuple
+import warnings
 
 from collections import defaultdict, OrderedDict
-import Levenshtein
 import matplotlib
 import matplotlib.pyplot as plt
+import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pylab
@@ -18,11 +20,11 @@ import pysam
 import re
 from tqdm.auto import tqdm
 
-from cassiopeia.mixins import is_ambiguous_state, logger
+from cassiopeia.mixins import is_ambiguous_state, logger, PreprocessWarning
 
 
-def log_moleculetable(wrapped: Callable):
-    """Function decorator that logs moleculetable stats.
+def log_molecule_table(wrapped: Callable):
+    """Function decorator that logs molecule_table stats.
 
     Simple decorator that logs the number of total reads, the number of unique
     UMIs, and the number of unique cellBCs in a DataFrame that is returned
@@ -38,7 +40,7 @@ def log_moleculetable(wrapped: Callable):
         df = wrapped(*args, **kwargs)
         umi_count = df["UMI"].dtype != object
         logger.debug(
-            f"Resulting {'alleletable' if umi_count else 'moleculetable'} statistics:"
+            f"Resulting {'alleletable' if umi_count else 'molecule_table'} statistics:"
         )
         logger.debug(f"# Reads: {df['readCount'].sum()}")
         logger.debug(f"# UMIs: {df['UMI'].sum() if umi_count else df.shape[0]}")
@@ -88,7 +90,7 @@ def log_kwargs(wrapped: Callable):
     return wrapper
 
 
-@log_moleculetable
+@log_molecule_table
 def filter_cells(
     molecule_table: pd.DataFrame,
     min_umi_per_cell: int = 10,
@@ -139,9 +141,9 @@ def filter_cells(
     return molecule_table[passing_mask].copy()
 
 
-@log_moleculetable
+@log_molecule_table
 def filter_umis(
-    moleculetable: pd.DataFrame, min_reads_per_umi: int = 100
+    molecule_table: pd.DataFrame, min_reads_per_umi: int = 100
 ) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
@@ -149,22 +151,22 @@ def filter_umis(
     Filters out all UMIs with a read count <= min_reads_per_umi.
 
     Args:
-        moleculetable: A molecule table of cellBC-UMI pairs to be filtered
+        molecule_table: A molecule table of cellBC-UMI pairs to be filtered
         min_reads_per_umi: The minimum read count needed for a UMI to not be
             filtered. Defaults to 100.
 
     Returns:
         A filtered molecule table
     """
-    return moleculetable[moleculetable["readCount"] >= min_reads_per_umi]
+    return molecule_table[molecule_table["readCount"] >= min_reads_per_umi]
 
 
-@log_moleculetable
+@log_molecule_table
 def error_correct_intbc(
-    moleculetable: pd.DataFrame,
+    molecule_table: pd.DataFrame,
     prop: float = 0.5,
-    umiCountThresh: int = 10,
-    bcDistThresh: int = 1,
+    umi_count_thresh: int = 10,
+    dist_thresh: int = 1,
 ) -> pd.DataFrame:
     """
     Error corrects close intBCs with small enough unique UMI counts.
@@ -172,170 +174,122 @@ def error_correct_intbc(
     Considers each pair of intBCs sharing a cellBC in the DataFrame for
     correction. For a pair of intBCs, changes all instances of one to other if:
         1. They have the same allele.
-        2. The Levenshtein distance between their sequences is <= bcDistThresh.
-        3. The number of UMIs of the intBC to be changed is <= umiCountThresh.
+        2. The Levenshtein distance between their sequences is <= dist_thresh.
+        3. The number of UMIs of the intBC to be changed is <= umi_count_thresh.
         4. The proportion of the UMI count in the intBC to be changed out of the
         total UMI count in both intBCs <= prop.
-    Note: Prop should be <= 0.5, as this algorithm only corrects intBCs with
-    fewer/equal UMIs towards intBCs with more UMIs. Additionally, if multiple
-    intBCs are within the distance threshold of an intBC, it corrects the intBC
-    towards the intBC with the most UMIs.
+
+    Note:
+        Prop should be <= 0.5, as this algorithm only corrects intBCs with
+            fewer/equal UMIs towards intBCs with more UMIs. Additionally, if
+            multiple intBCs are within the distance threshold of an intBC, it
+            corrects the intBC towards the intBC with the most UMIs.
 
     Args:
-        moleculetable: A molecule table of cellBC-UMI pairs to be filtered
+        molecule_table: A molecule table of cellBC-UMI pairs to be filtered
         prop: proportion by which to filter integration barcodes
-        umiCountThresh: maximum umi count for which to correct barcodes
-        bcDistThresh: barcode distance threshold, to decide what's similar
+        umi_count_thresh: maximum umi count for which to correct barcodes
+        dist_thresh: barcode distance threshold, to decide what's similar
             enough to error correct
 
     Returns:
         Filtered molecule table with error corrected intBCs
     """
-
-    # create index filter hash map
-    index_filter = {}
-    for n in moleculetable.index.values:
-        index_filter[n] = "good"
-
-    recovered = 0
-    numUMI_corrected = 0
-    for name, grp in tqdm(
-        moleculetable.groupby(["cellBC"]), desc="Error Correcting intBCs"
-    ):
-
-        x1 = (
-            grp.groupby(["intBC", "allele"])
-            .agg({"UMI": "count", "readCount": "sum"})
-            .sort_values("UMI", ascending=False)
-            .reset_index()
+    if prop > 0.5:
+        warnings.warn(
+            "No intBC correction was done because `prop` is greater than 0.5.",
+            PreprocessWarning,
         )
+        return molecule_table
 
-        if x1.shape[0] > 1:
-            for r1 in range(x1.shape[0]):
-                iBC1, allele1 = x1.loc[r1, "intBC"], x1.loc[r1, "allele"]
-                for r2 in range(r1 + 1, x1.shape[0]):
-                    iBC2, allele2 = x1.loc[r2, "intBC"], x1.loc[r2, "allele"]
-                    bclDist = Levenshtein.distance(iBC1, iBC2)
-                    if bclDist <= bcDistThresh and allele1 == allele2:
-                        totalCount = x1.loc[[r1, r2], "UMI"].sum()
-                        umiCounts = x1.loc[[r1, r2], "UMI"]
-                        props = umiCounts / totalCount
+    cellBC_intBC_allele_groups = molecule_table.groupby(
+        ["cellBC", "intBC", "allele"], sort=False
+    )
+    cellBC_intBC_allele_indices = cellBC_intBC_allele_groups.groups
+    molecule_table_agg = (
+        cellBC_intBC_allele_groups.agg({"UMI": "count", "readCount": "sum"})
+        .sort_values("UMI", ascending=False)
+        .reset_index()
+    )
+    for (cellBC, allele), intBC_table in tqdm(
+        molecule_table_agg.groupby(["cellBC", "allele"], sort=False),
+        desc="Error Correcting intBCs",
+    ):
+        # NOTE: row1 UMIs >= row2 UMIs because groupby operations preserve
+        # row orders
+        for i1 in range(intBC_table.shape[0]):
+            row1 = intBC_table.iloc[i1]
+            intBC1 = row1["intBC"]
+            UMI1 = row1["UMI"]
+            for i2 in range(i1 + 1, intBC_table.shape[0]):
+                row2 = intBC_table.iloc[i2]
+                intBC2 = row2["intBC"]
+                UMI2 = row2["UMI"]
+                total_count = UMI1 + UMI2
+                proportion = UMI2 / total_count
+                distance = ngs.sequence.levenshtein_distance(intBC1, intBC2)
 
-                        # if the alleles are the same and the proportions are good, then let's error correct
-                        if props[r2] < prop and umiCounts[r2] <= umiCountThresh:
-                            bad_locs = moleculetable[
-                                (moleculetable["cellBC"] == name)
-                                & (moleculetable["intBC"] == iBC2)
-                                & (moleculetable["allele"] == allele2)
-                            ]
-                            recovered += 1
-                            numUMI_corrected += len(bad_locs.index.values)
-                            moleculetable.loc[
-                                bad_locs.index.values, "intBC"
-                            ] = iBC1
+                # Correct
+                if (
+                    distance <= dist_thresh
+                    and proportion < prop
+                    and UMI2 <= umi_count_thresh
+                ):
+                    key_to_correct = (cellBC, intBC2, allele)
+                    molecule_table.loc[
+                        cellBC_intBC_allele_indices[key_to_correct], "intBC"
+                    ] = intBC1
 
-                            logger.debug(
-                                f"In cellBC {name}, intBC {iBC2} corrected to {iBC1},"
-                                + "correcting UMI "
-                                + str({x1.loc[r2, "UMI"]})
-                                + "to "
-                                + str({x1.loc[r1, "UMI"]})
-                            )
-
-    moleculetable.index = [i for i in range(moleculetable.shape[0])]
-
-    return moleculetable
+                    logger.info(
+                        f"In cellBC {cellBC}, intBC {intBC2} corrected to "
+                        f"{intBC1}, correcting {UMI2} UMIs to {UMI1} UMIs."
+                    )
+    return molecule_table
 
 
 def record_stats(
-    moleculetable: pd.DataFrame,
+    molecule_table: pd.DataFrame,
 ) -> Tuple[np.array, np.array, np.array]:
     """
     Simple function to record the number of UMIs.
 
     Args:
-        moleculetable: A DataFrame of alignments
+        molecule_table: A DataFrame of alignments
 
     Returns:
         Read counts for each alignment, number of unique UMIs per intBC, number
             of UMIs per cellBC
     """
-
-    # Count UMI per intBC
-    umi_per_ibc = np.array([])
-    for n, g in moleculetable.groupby(["cellBC"]):
-        x = g.groupby(["intBC"]).agg({"UMI": "nunique"})["UMI"]
-        if x.shape[0] > 0:
-            umi_per_ibc = np.concatenate([umi_per_ibc, np.array(x)])
-
-    # Count UMI per cellBC
-    umi_per_cbc = (
-        moleculetable.groupby(["cellBC"])
-        .agg({"UMI": "count"})
-        .sort_values("UMI", ascending=False)["UMI"]
+    umis_per_intBC = (
+        molecule_table.groupby(["cellBC", "intBC"], sort=False).size().values
     )
+    umis_per_cellBC = molecule_table.groupby("cellBC", sort=False).size().values
 
     return (
-        np.array(moleculetable["readCount"]),
-        umi_per_ibc,
-        np.array(umi_per_cbc),
+        molecule_table["readCount"].values,
+        umis_per_intBC,
+        umis_per_cellBC,
     )
 
 
-def convert_bam_to_df(
-    data_fp: str, out_fp: str, create_pd: bool = False
-) -> pd.DataFrame:
-    """Converts a BAM file to a dataframe.
-
-    Saves the contents of a BAM file to a tab-delimited table saved to a text
-    file. Rows represent alignments with relevant fields such as the CellBC,
-    UMI, read count, sequence, and sequence qualities.
+def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
+    """Converts a BAM file to a Pandas dataframe.
 
     Args:
         data_fp: The input filepath for the BAM file to be converted.
-        out_fp: The output filepath specifying where the resulting dataframe is to
-            be stored and its name.
-        create_pd: Specifies whether to generate and return a pd.Dataframe.
 
     Returns:
-        If create_pd: a pd.Dataframe containing the BAM information.
-        Else: None, output saved to file
-
+        A Pandas dataframe containing the BAM information.
     """
-    f = open(out_fp, "w")
-    f.write("cellBC\tUMI\treadCount\tgrpFlag\tseq\tqual\treadName\n")
-
     als = []
-
-    bam_fh = pysam.AlignmentFile(
+    with pysam.AlignmentFile(
         data_fp, ignore_truncation=True, check_sq=False
-    )
-    for al in bam_fh:
-        cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
-        seq = al.query_sequence
-        qual = al.query_qualities
-        # Pysam qualities are represented as an array of unsigned chars,
-        # so they are converted to the ASCII-encoded format that are found
-        # in the typical SAM formatting.
-        encode_qual = "".join(map(lambda x: chr(x + 33), qual))
-        f.write(
-            cellBC
-            + "\t"
-            + UMI
-            + "\t"
-            + readCount
-            + "\t"
-            + grpFlag
-            + "\t"
-            + seq
-            + "\t"
-            + encode_qual
-            + "\t"
-            + al.query_name
-            + "\n"
-        )
-
-        if create_pd:
+    ) as bam_fh:
+        for al in bam_fh:
+            cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
+            seq = al.query_sequence
+            qual = al.query_qualities
+            encode_qual = pysam.array_to_qualitystring(qual)
             als.append(
                 [
                     cellBC,
@@ -347,23 +301,18 @@ def convert_bam_to_df(
                     al.query_name,
                 ]
             )
-
-    f.close()
-
-    if create_pd:
-        df = pd.DataFrame(als)
-        df = df.rename(
-            columns={
-                0: "cellBC",
-                1: "UMI",
-                2: "readCount",
-                3: "grpFlag",
-                4: "seq",
-                5: "qual",
-                6: "readName",
-            }
-        )
-        return df
+    return pd.DataFrame(
+        als,
+        columns=[
+            "cellBC",
+            "UMI",
+            "readCount",
+            "grpFlag",
+            "seq",
+            "qual",
+            "readName",
+        ],
+    )
 
 
 def convert_alleletable_to_character_matrix(
@@ -405,9 +354,9 @@ def convert_alleletable_to_character_matrix(
             states present for a single cellBC-intBC pair. This option has no
             effect if there are no allele conflicts. Defaults to True.
 
-        Returns:
-            A character matrix, a probability dictionary, and a dictionary mapping
-                states to the original mutation.
+    Returns:
+        A character matrix, a probability dictionary, and a dictionary mapping
+            states to the original mutation.
     """
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(alleletable)
