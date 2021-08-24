@@ -102,8 +102,7 @@ class UniformLeafSubsampler(LeafSubsampler):
             subsampled_tree.leaves, n_remove, replace=False
         )
 
-        for i in leaf_remove:
-            subsampled_tree.remove_leaf_and_prune_lineage(i)
+        subsampled_tree.remove_leaves_and_prune_lineages(leaf_remove)
 
         # Keep the singular root edge if it exists and is indicated to be kept
         if (

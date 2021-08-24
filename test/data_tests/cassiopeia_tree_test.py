@@ -319,7 +319,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree = cas.data.CassiopeiaTree(
             character_matrix=self.character_matrix, tree=self.test_network
         )
-        tree.remove_leaf_and_prune_lineage("node3")
+        tree.remove_leaves_and_prune_lineages("node3")
         self.assertEqual(tree.n_cell, 9)
 
     def test_get_children(self):
@@ -994,7 +994,19 @@ class TestCassiopeiaTree(unittest.TestCase):
             columns=["node3", "node4", "node5", "node6"],
         )
         cas_tree.set_dissimilarity_map(delta)
-        cas_tree.remove_leaf_and_prune_lineage("node5")
+
+        cell_meta = pd.DataFrame.from_dict(
+            {
+                "node3": "a",
+                "node4": "ab",
+                "node5": "a",
+                "node6": "ab",
+            },
+            orient="index",
+        )
+        cas_tree.cell_meta = cell_meta
+
+        cas_tree.remove_leaves_and_prune_lineages("node5")
 
         self.assertEqual(
             set(cas_tree.character_matrix.index),
@@ -1007,6 +1019,31 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(
             set(cas_tree.get_dissimilarity_map().columns),
             set(["node3", "node4", "node6"]),
+        )
+
+        self.assertEqual(
+            set(cas_tree.cell_meta.index),
+            set(["node3", "node4", "node6"]),
+        )
+
+        cas_tree.remove_leaves_and_prune_lineages(["node3", "node6"])
+
+        self.assertEqual(
+            set(cas_tree.character_matrix.index),
+            set(["node4"]),
+        )
+        self.assertEqual(
+            set(cas_tree.get_dissimilarity_map().index),
+            set(["node4"]),
+        )
+        self.assertEqual(
+            set(cas_tree.get_dissimilarity_map().columns),
+            set(["node4"]),
+        )
+
+        self.assertEqual(
+            set(cas_tree.cell_meta.index),
+            set(["node4"]),
         )
 
     def test_register_data_with_tree_added(self):
@@ -1045,6 +1082,18 @@ class TestCassiopeiaTree(unittest.TestCase):
             columns=["node3", "node4", "node5", "node6"],
         )
         cas_tree.set_dissimilarity_map(delta)
+
+        cell_meta = pd.DataFrame.from_dict(
+            {
+                "node3": "a",
+                "node4": "ab",
+                "node5": "a",
+                "node6": "ab",
+            },
+            orient="index",
+        )
+        cas_tree.cell_meta = cell_meta
+
         cas_tree.add_leaf("node2", "node7")
 
         self.assertEqual(
@@ -1066,28 +1115,32 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(
             list(cas_tree.get_dissimilarity_map()["node7"]), [np.inf] * 5
         )
+        self.assertEqual(
+            set(cas_tree.cell_meta.index),
+            set(["node3", "node4", "node5", "node6", "node7"]),
+        )
+        self.assertEqual(list(cas_tree.cell_meta.loc["node7"]), [np.nan])
 
-    def test_remove_leaf_and_prune_lineage_all(self):
+    def test_remove_leaves_and_prune_lineages_all(self):
         """Tests the case where all lineages are removed and pruned."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
-        for i in cas_tree.leaves:
-            cas_tree.remove_leaf_and_prune_lineage(i)
+        cas_tree.remove_leaves_and_prune_lineages(cas_tree.leaves)
 
         self.assertEqual(cas_tree.nodes, ["node0"])
         self.assertEqual(cas_tree.edges, [])
 
-    def test_remove_leaf_and_prune_lineage_some(self):
+    def test_remove_leaves_and_prune_lineages_some(self):
         """Tests a case where some lineages are removed"""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
         for u, v in cas_tree.edges:
             cas_tree.set_branch_length(u, v, 1.5)
-        cas_tree.remove_leaf_and_prune_lineage("node11")
-        cas_tree.remove_leaf_and_prune_lineage("node13")
-        cas_tree.remove_leaf_and_prune_lineage("node14")
+        cas_tree.remove_leaves_and_prune_lineages(
+            ["node11", "node13", "node14"]
+        )
 
         expected_edges = [
             ("node0", "node1"),
@@ -1121,13 +1174,14 @@ class TestCassiopeiaTree(unittest.TestCase):
         for u in cas_tree.nodes:
             self.assertEqual(cas_tree.get_time(u), expected_times[u])
 
-    def test_remove_leaf_and_prune_lineage_one_side(self):
+    def test_remove_leaves_and_prune_lineages_one_side(self):
         """Tests a case where the entire one side of a tree is removed."""
         cas_tree = cas.data.CassiopeiaTree(
             tree=self.simple_complete_binary_tree
         )
-        for i in range(7, 11):
-            cas_tree.remove_leaf_and_prune_lineage("node" + str(i))
+        cas_tree.remove_leaves_and_prune_lineages(
+            ["node" + str(i) for i in range(7, 11)]
+        )
 
         expected_edges = [
             ("node0", "node2"),
