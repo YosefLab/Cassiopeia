@@ -4,7 +4,7 @@ CassiopeiaTree. This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
-associated with this clonal  population.
+associated with this clonal population.
 
 When a solver has been called on this object, a tree will be added to the data
 structure at which point basic properties can be queried like the average tree
@@ -20,6 +20,7 @@ import warnings
 import collections
 import ete3
 import networkx as nx
+from networkx.readwrite.json_graph import tree
 import numpy as np
 import pandas as pd
 import scipy
@@ -686,6 +687,9 @@ class CassiopeiaTree:
 
         self.__network.remove_node(node)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_node(self, node) -> None:
         """Private method to add node to tree.
 
@@ -698,6 +702,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_node(node)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def __remove_edge(self, u, v) -> None:
         """Private method to remove edge from tree.
@@ -713,6 +720,9 @@ class CassiopeiaTree:
 
         self.__network.remove_edge(u, v)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_edge(self, u, v) -> None:
         """Private method to add edge to tree.
 
@@ -726,6 +736,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_edge(u, v)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def set_time(self, node: str, new_time: float) -> None:
         """Sets the time of a node.
@@ -2048,12 +2061,16 @@ class CassiopeiaTree:
                 res.append(i)
         return res
 
-    def score_parsimony(self, infer_ancestral_characters: bool, treat_missing_as_mutation: bool = False) -> int:
+    def calculate_parsimony(
+        self,
+        infer_ancestral_characters: bool,
+        treat_missing_as_mutation: bool = False,
+    ) -> int:
         """
         Calculates the number of mutations that have occurred on a tree.
 
         Calculates the parsimony, defined as the number of character/state
-        mutations that occur on edges of the tree, from the character state 
+        mutations that occur on edges of the tree, from the character state
         annotations at the nodes. A mutation is said to have occurred on an
         edge if it is present in the character state of the child node and
         not in the parent node.
@@ -2066,7 +2083,7 @@ class CassiopeiaTree:
 
         Returns:
             The number of mutations that have occurred on the tree
-        
+
         Raises:
             CassiopeiaTreeError if the tree has not been initialized or if
                 a node does not have character states initialized
@@ -2079,12 +2096,12 @@ class CassiopeiaTree:
 
         for n in self.leaves:
             if self.get_character_states(n) == []:
-                    raise CassiopeiaTreeError(
-                        "Character states have not been initialized at leaves."
-                        " Use set_character_states_at_leaves or populate_tree"
-                        " with the character matrix that specifies the leaf"
-                        " character states."
-                    )
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
+                )
 
         for n in self.internal_nodes:
             if self.get_character_states(n) == []:
@@ -2096,22 +2113,262 @@ class CassiopeiaTree:
 
         parsimony = 0
         for u, v in self.edges:
-            parsimony += len(self.get_mutations_along_edge(u, v, treat_missing_as_mutation))
+            parsimony += len(
+                self.get_mutations_along_edge(u, v, treat_missing_as_mutation)
+            )
 
         return parsimony
 
-    def calculate_likelihood(self, 
-        mutation_probability_function_of_time, 
-        missing_probability_function_of_time
+    def calculate_irreversible_likelihood(
+        self,
+        mutation_rate: float,
+        missing_rate: float,
+        use_branch_lengths: bool = True,
+        use_internal_character_states: bool = False,
+        mutation_probability_function_of_time: Callable = lambda rate, t: 1
+        - np.exp(-rate * t),
+        missing_probability_function_of_time: Callable = lambda rate, t: 1
+        - np.exp(-rate * t),
     ):
+        """
+        Calculates the likelihood of a tree assuming irreversible mutations.
 
-        likelihoods_at_nodes = dict(zip(self.nodes, [] * self.n_character))
+        Calculates the likelihood of a tree given the character states at the
+        leaves using Felsenstein's Pruning Algorithm, which sets up a
+        recursive relation between the likelihoods of states at nodes. The
+        likelihood (L(s, n)) at a given state s at a given node n is:
+
+        L(s, n) = Π_{n'}(Σ_{s'}(P(s'|s) * L(s', n')))
+
+        for all n' that are children of n, and s' in the state space, with
+        P(s'|s) being the transition probability from s to s'. That is,
+        the likelihood at a given state at a given node is the product of
+        the likelihoods of the states at the children scaled by the
+        probability of the current state transitioning to those states.
+
+        We assume here that characters mutate independently and that mutations
+        are irreversible. Once a character mutates to a certain state that
+        character cannot mutate again. To determine the probability of
+        acquiring a given state once a mutation occurs, the priors of the
+        tree are used.
+
+        Additionally, the likelihood accounts for missing data. For a given
+        character, at any point along a lineage a missing data event can occur
+        that causes that character to acquire the missing state. This
+        missing state is the 'missing_state_indicator' of the tree.
+
+        The user must specify the rate at which mutations and missing data
+        events occur to calculate the transition probabilities between
+        states. If branch lengths are to be used, this rate is the probability
+        that a mutation occurs on a branch. If branch lengths are to be used,
+        this rate is supplied to a function that gives the probability of
+        acquiring a mutation as a function of time. The default is the
+        exponential CDF, giving the probability a mutation occurs in time t
+        assuming that mutations occur according to an exponential process.
+
+        The user can choose to use the character states annotated at internal
+        nodes. If these are not used, then the likelihood is marginalized over
+        all possible internal state characters.
+
+        Args:
+            mutation_rate: The rate at which mutations occur
+            missing_rate: The rate at which missing data events occur
+            use_branch_lengths: Indicates if take branch lengths into account
+                in the likelihood calculation
+            use_internal_character_states: Indicates if internal node
+                character states should be used in calculating the likelihood
+            mutation_probability_function_of_time: Specifies the mutation
+                probability as a function of time. Default is exponential CDF
+            missing_probability_function_of_time: Specifies the missing data
+                probability as a function of time. Default is exponential CDF
+
+        Returns:
+            The log likelihood of the tree given the observed character states.
+        """
+
+        def transition_probability(s, s_, t, character):
+            """Gives the transition probability between two given states.
+
+            Gives the transition probability between two states assuming
+            irreversibility and that 0 is the base state.
+
+            Args:
+                s: The original state
+                s_: The state being transitioned to
+                t: The length of time that the transition can occur along
+                character: The character whose distribution to draw the prior
+                    from
+
+            Returns:
+                The transition probability between the states
+            """
+            if s_ == -1:
+                if s == -1:
+                    return 1.0
+                else:
+                    return missing_probability_function_of_time(missing_rate, t)
+            # "*" represents all non-missing states. The sum probability of
+            # transitioning from any non-missing state to all non-missing
+            # states is (1 - the probability of an missing event). If s is not
+            # 0, then the only state with non-zero transition probability is s
+            # with probability is (1 - the probability of an missing event),
+            # with all others being 0. If s is 0, then the total probability of
+            # transitioning to all non-missing states is (1 - the probability
+            # of an missing event).
+            if s_ == "*":
+                if s == -1:
+                    return 0.0
+                else:
+                    return 1 - missing_probability_function_of_time(
+                        missing_rate, t
+                    )
+            if s != 0:
+                if s != s_:
+                    return 0.0
+                else:
+                    return 1 - missing_probability_function_of_time(
+                        missing_rate, t
+                    )
+            if s_ == 0:
+                return (
+                    1 - mutation_probability_function_of_time(mutation_rate, t)
+                ) * (1 - missing_probability_function_of_time(missing_rate, t))
+            else:
+                return (
+                    mutation_probability_function_of_time(mutation_rate, t)
+                    * self.priors[character][s_]
+                    * (
+                        1
+                        - missing_probability_function_of_time(missing_rate, t)
+                    )
+                )
+
+        if self.priors is None:
+            raise CassiopeiaTreeError(
+                "Priors must be specified for this tree to calculate the"
+                " likelihood."
+            )
+
+        for l in self.leaves:
+            if self.get_character_states(l) == []:
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
+                )
+
+        if use_internal_character_states:
+            for i in self.internal_nodes:
+                if self.get_character_states(i) == []:
+                    raise CassiopeiaTreeError(
+                        "Character states empty at internal node. Character"
+                        " states must be annotated at each node if internal"
+                        " character states are to be used."
+                    )
+
+        if not use_branch_lengths:
+            mutation_probability_function_of_time = lambda rate, t: rate
+            missing_probability_function_of_time = lambda rate, t: rate
+
+        # We track the likelihoods for each state, at each character,
+        # at each node
+        likelihoods_at_nodes = {}
+
+        # Perform a DFS to propagate the likelihood from the leaves
         for n in self.depth_first_traverse_nodes(postorder=True):
-            for char in self.n_character:
-                likelihoods_at_nodes = {}
+            states_at_n = self.get_character_states(n)
+            # If states are observed, their likelihoods are set to 1
+            if self.is_leaf(n):
+                likelihoods_at_nodes[n] = [{i: 1} for i in states_at_n]
+                continue
 
+            possible_states = {}
+            # If internal character states are to be used, then the likelihood
+            # for all other states are ignored. Otherwise, marginalize over
+            # only states that do not break irreversibility, as all states that
+            # do have likelihood of 0
+            if use_internal_character_states:
+                possible_states = [[i] for i in states_at_n]
+            else:
+                for char in range(self.n_character):
+                    child_possible_states = []
+                    for c in [
+                        set(likelihoods_at_nodes[child][char])
+                        for child in self.children(n)
+                    ]:
+                        if (
+                            self.missing_state_indicator not in c
+                            and "*" not in c
+                        ):
+                            child_possible_states.append(c)
+                    # '*' represents all non-missing states, and is a
+                    # possible state when all children are missing, as any
+                    # state could have occurred before if all missing states
+                    # occurred independently.
+                    if child_possible_states == []:
+                        possible_states[char] = [
+                            "*",
+                            self.missing_state_indicator,
+                        ]
+                    else:
+                        possible_states[char] = list(
+                            set.intersection(*child_possible_states)
+                        )
+                        if 0 not in possible_states[char]:
+                            possible_states[char].append(0)
 
-        
+            likelihoods_at_n = [{} for i in range(self.n_character)]
+
+            # We calculate the likelihood of the states at each character at
+            # the current node according to the recurrence relation
+            for char in range(self.n_character):
+                for s in possible_states[char]:
+                    likelihood_s = 1
+                    for child in self.children(n):
+                        likelihood_for_child = 0
+                        for s_ in likelihoods_at_nodes[child][char]:
+                            likelihood_for_child += (
+                                transition_probability(
+                                    s,
+                                    s_,
+                                    self.get_branch_length(n, child),
+                                    char,
+                                )
+                                * likelihoods_at_nodes[child][char][s_]
+                            )
+                        likelihood_s *= likelihood_for_child
+                    likelihoods_at_n[char][s] = likelihood_s
+
+            likelihoods_at_nodes[n] = likelihoods_at_n
+
+        # If we are not to use the internal state annotations explicitly,
+        # then we impose an implicit root of all 0s if it does not exist
+        if (
+            not use_internal_character_states
+            and len(self.children(self.root)) != 1
+        ):
+            likelihoods_at_implicit_root = [{} for i in range(self.n_character)]
+            for char in range(self.n_character):
+                likelihood_at_root = 0
+                for s_ in likelihoods_at_nodes[self.root][char]:
+                    likelihood_at_root += (
+                        transition_probability(0, s_, 1, char)
+                        * likelihoods_at_nodes[self.root][char][s_]
+                    )
+                likelihoods_at_implicit_root[char][0] = likelihood_at_root
+
+            return np.log(np.prod([i[0] for i in likelihoods_at_implicit_root]))
+
+        else:
+            return np.log(
+                np.prod(
+                    [
+                        list(i.values())[0]
+                        for i in likelihoods_at_nodes[self.root]
+                    ]
+                )
+            )
 
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
