@@ -7,7 +7,7 @@ import cassiopeia
 from cassiopeia.preprocess import pipeline
 
 
-class TestFilterMoleculeTable(unittest.TestCase):
+class TestFilterMolculeTable(unittest.TestCase):
     def setUp(self):
 
         self.base_filter_case = pd.DataFrame.from_dict(
@@ -60,7 +60,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
                 ],
                 "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
                 "Seq": ["NC"] * 9,
-                "intBC": ["X", "X", "X", "X", "Z", "Z", "Z", "Z", "Z"],
+                "intBC": ["T", "T", "T", "T", "A", "A", "A", "A", "A"],
                 "r1": ["1", "1", "2", "2", "1", "1", "1", "1", "1"],
                 "r2": ["2", "2", "2", "2", "2", "2", "2", "2", "2"],
                 "r3": ["3", "3", "3", "3", "3", "3", "3", "2", "2"],
@@ -94,7 +94,7 @@ class TestFilterMoleculeTable(unittest.TestCase):
                 ],
                 "readCount": [10, 30, 30, 40, 10, 110, 20, 15, 10],
                 "Seq": ["NC"] * 9,
-                "intBC": ["ZX", "XZ", "XZ", "ZZ", "XZ", "XZ", "ZZ", "ZZ", "ZZ"],
+                "intBC": ["AT", "TA", "TA", "AA", "TA", "TA", "AA", "AA", "AA"],
                 "r1": ["1", "1", "1", "1", "1", "1", "1", "1", "1"],
                 "r2": ["2", "2", "2", "2", "2", "2", "2", "2", "2"],
                 "r3": ["3", "3", "3", "3", "3", "3", "3", "3", "2"],
@@ -195,14 +195,14 @@ class TestFilterMoleculeTable(unittest.TestCase):
         )
 
         expected_alignments = {
-            "A_AACCT_10": "ZX",
-            "A_AACCG_30": "XZ",
-            "A_AACCC_30": "XZ",
-            "A_AACGT_40": "XZ",
-            "C_AACCG_10": "XZ",
-            "C_AACCT_110": "XZ",
-            "C_AACTA_20": "ZZ",
-            "C_AAGGA_15": "ZZ",
+            "A_AACCT_10": "AT",
+            "A_AACCG_30": "TA",
+            "A_AACCC_30": "TA",
+            "A_AACGT_40": "TA",
+            "C_AACCG_10": "TA",
+            "C_AACCT_110": "TA",
+            "C_AACTA_20": "AA",
+            "C_AAGGA_15": "AA",
         }
 
         for read_name in aln_df["readName"]:
@@ -225,15 +225,15 @@ class TestFilterMoleculeTable(unittest.TestCase):
         )
 
         expected_alignments = {
-            "C_AACCT_110": "Z",
-            "A_AACGT_40": "X",
-            "A_AACCG_30": "X",
-            "A_AACCC_30": "X",
-            "C_AACTA_20": "Z",
-            "C_AAGGA_15": "Z",
-            "A_AACCT_10": "X",
-            "C_AACCG_10": "Z",
-            "C_ACGTA_10": "Z",
+            "C_AACCT_110": "A",
+            "A_AACGT_40": "T",
+            "A_AACCG_30": "T",
+            "A_AACCC_30": "T",
+            "C_AACTA_20": "A",
+            "C_AAGGA_15": "A",
+            "A_AACCT_10": "T",
+            "C_AACCG_10": "A",
+            "C_ACGTA_10": "A",
         }
         for read_name in aln_df["readName"]:
 

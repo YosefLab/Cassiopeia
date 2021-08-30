@@ -27,7 +27,6 @@ requirements = [
     "pandas>=1.1.4",
     "pysam>=0.14.1",
     "pyseq-align>=1.0.2",
-    "python-Levenshtein",
     "PyYAML>=3.12",
     "scipy>=1.2.0",
     "typing-extensions>=3.7.4",
@@ -43,14 +42,6 @@ cmdclass = {"build_ext": build_ext}
 
 # files to wrap with cython
 to_cythonize = [
-    Extension(
-        "cassiopeia.preprocess.doublet_utils",
-        ["cassiopeia/preprocess/doublet_utils.pyx"],
-    ),
-    Extension(
-        "cassiopeia.preprocess.map_utils",
-        ["cassiopeia/preprocess/map_utils.pyx"],
-    ),
     Extension(
         "cassiopeia.preprocess.collapse_cython",
         ["cassiopeia/preprocess/collapse_cython.pyx"],

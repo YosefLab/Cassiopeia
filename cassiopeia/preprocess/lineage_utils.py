@@ -43,8 +43,7 @@ def assign_lineage_groups(
             in order to included in that group
 
     Returns:
-        piv_assigned: A pivot table of cells labled with lineage group
-            assignments
+        A pivot table of cells labled with lineage group assignments
     """
     # initiate output variables
     piv_assigned = pd.DataFrame()
@@ -101,8 +100,8 @@ def find_top_lg(
             to share with the cluster in order to included in that cluster
 
     Returns:
-        PIV_LG: A pivot table of cells labled with lineage group assignments
-        PIV_noLG: A pivot table of the remaining unassigned cells
+        A pivot table of cells labled with lineage group assignments, and a
+            pivot table of the remaining unassigned cells
     """
 
     # Calculate sum of observed intBCs, identify top intBC
@@ -172,9 +171,9 @@ def filter_intbcs_lg_sets(
             group set
 
     Returns:
-        master_LGs: A list of the lineage groups
-        master_intBCs: A dictionary that has mappings from the lineage group
-            number to the set of intBCs being used for reconstruction
+        A list of the lineage groups, and a dictionary that has mappings from
+            the lineage group number to the set of intBCs being used for
+            reconstruction
 
     """
     master_intBCs = {}
@@ -221,8 +220,8 @@ def score_lineage_kinships(
 
 
     Returns:
-        max_kinship_LG: A DataFrame that contains the lineage group for each
-        cell with the greatest kinship
+        A DataFrame that contains the lineage group for each cell with the
+            greatest kinship
     """
 
     dfLG2intBC = pd.DataFrame()
@@ -333,8 +332,8 @@ def filter_intbcs_final_lineages(
         min_intbc_thresh: The proportion threshold by which to filter intBCs
             from each lineage group
     Returns:
-        lgs: A list of alignment DataFrames recording the UMI counts, intBCs,
-            and cellBCs of each lineage group, one table for each lineage group
+        A list of alignment DataFrames recording the UMI counts, intBCs, and
+            cellBCs of each lineage group, one table for each lineage group
     """
 
     lineageGrps = at["lineageGrp"].unique()
@@ -386,7 +385,7 @@ def filtered_lineage_group_to_allele_table(
         filtered_lgs: A DataFrame of alignments annotated with lineage groups
 
     Returns:
-        final_df: A final processed DataFrame with indel information
+        A final processed DataFrame with indel information
     """
     final_df = pd.concat(filtered_lgs, sort=True)
 
