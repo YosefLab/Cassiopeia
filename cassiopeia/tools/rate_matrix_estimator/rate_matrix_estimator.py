@@ -1,8 +1,11 @@
+import os
 import abc
 from collections import defaultdict
 from copy import deepcopy
 from itertools import cycle
 from typing import List, Optional, Tuple, TypeVar
+import hashlib
+import pickle
 
 import numpy as np
 
@@ -11,16 +14,34 @@ from cassiopeia.data import CassiopeiaTree
 # Enable lazy trees somehow? E.g. with Proxy Value pattern? How about CassiopeiaTreeProxy subclassing CassiopeiaTree? __init__ on the superclass is only called on attempt to __getattr__. Also: conditioning beyond the leaves is allowed!
 Tree = CassiopeiaTree
 Trees = TypeVar("Trees", bound=List[Tree])
+# Trees = List[Tree]
+
+f(t: Trees) -> Trees:
 
 
-class QuantizationScheme(abc.ABC):
-    @abc.abstractmethod
-    def construct_grid(self, trees: Trees):
-        """
-        Allows learning the grid from the trees.
-        """
-        raise NotImplementedError
+class LongHashable(abc.ABC):
+    """
+    An object composed of basic objects, or long hashables,
+    allowing for recursive long hashing (the hash has length
+    512)
+    """
+    def long_hash(self):
+        keys = sorted([k for k in vars(self) if k.startswith('_') and not k.endswith('_')])
+        sub_hashes = [self._get_sub_hash(key) for key in keys]
+        return hashlib.sha512(''.join(sub_hashes).encode("utf-8")).hexdigest()
 
+    def _get_sub_hash(self, key):
+        val = vars(self)[key]
+        if isinstance(val, LongHashable):
+            return val.long_hash()
+        else:
+            if isinstance(val, int) or isinstance(val, float) or isinstance(val, str) or isinstance(val, bool) or (val is None):
+                return hashlib.sha512((str(type(val).__name__) + str(val)).encode("utf-8")).hexdigest()
+            else:
+                raise ValueError(f"Do not know how to long hash key {key} with value {val}.")
+
+
+class QuantizationScheme(abc.ABC, LongHashable):
     @abc.abstractmethod
     def quantize(self, t: float) -> float:
         """
@@ -30,9 +51,6 @@ class QuantizationScheme(abc.ABC):
 
 
 class NoQuantizationScheme(QuantizationScheme):
-    def construct_grid(self, trees: Trees):
-        pass
-
     def quantize(self, t: float) -> float:
         return t
 
@@ -47,27 +65,25 @@ class GeometricQuantizationScheme(QuantizationScheme):
         self._center = center
         self._step_size = step_size
         self._n_steps = n_steps
-        self._grid = np.array(
+
+        self._grid_ = np.array(
             [
                 center * (1.0 + step_size) ** i
                 for i in range(-n_steps, n_steps + 1, 1)
             ]
         )
 
-    def construct_grid(self):
-        pass
-
     def quantize(self, t: float) -> float:
         """
         Closest grid point in **log**-space.
         """
-        if t <= self._grid[0]:
-            return self._grid[0]
-        id = np.argmin(np.abs(np.log(self._grid) - np.log(t)))
-        return self._grid[id]
+        if t <= self._grid_[0]:
+            return self._grid_[0]
+        id = np.argmin(np.abs(np.log(self._grid_) - np.log(t)))
+        return self._grid_[id]
 
     def get_grid(self) -> np.array:
-        return self._grid.copy()
+        return self._grid_.copy()
 
 
 class TransitionModel(abc.ABC):
@@ -91,19 +107,19 @@ class MarkovModel(TransitionModel):
             rate_matrix
         )
         self._stationary_distribution = stationary_distribution
-        self._S = self._symmetrize_rate_matrix(
+        self._S_ = self._symmetrize_rate_matrix(
             rate_matrix, stationary_distribution
         )
-        self._P1, self._P2 = self._diagonal_stationary_matrix(
+        self._P1_, self._P2_ = self._diagonal_stationary_matrix(
             stationary_distribution
         )
-        self._D, self._U = np.linalg.eigh(self._S)
+        self._D_, self._U_ = np.linalg.eigh(self._S_)
         self._root_prior = root_prior
 
     def transition_probability_matrix(self, t: float) -> np.array:
-        exp_D = np.diag(np.exp(t * self._D))
-        exp_S = np.dot(np.dot(self._U, exp_D), self._U.transpose())
-        exp_R = np.dot(np.dot(self._P2, exp_S), self._P1)
+        exp_D = np.diag(np.exp(t * self._D_))
+        exp_S = np.dot(np.dot(self._U_, exp_D), self._U_.transpose())
+        exp_R = np.dot(np.dot(self._P2_, exp_S), self._P1_)
         return exp_R
 
     def root_prior(self) -> np.array:
@@ -150,9 +166,9 @@ class QuantizedTransitionModel(TransitionModel):
     ):
         self._wrapped_transition_model = wrapped_transition_model
         self._quantization_scheme = quantization_scheme
-        self._cache = {}
-        self._cache_hits = 0
-        self._cache_misses = 0
+        self._cache_ = {}
+        self._cache_hits_ = 0
+        self._cache_misses_ = 0
 
     def transition_probability_matrix(self, t: float) -> np.array:
         return self._cached_transition_probability_matrix(
@@ -163,24 +179,24 @@ class QuantizedTransitionModel(TransitionModel):
         return self._wrapped_transition_model.root_prior()
 
     def _cached_transition_probability_matrix(self, t: float) -> np.array:
-        if t in self._cache:
-            self._cache_hits += 1
-            return self._cache[t]
+        if t in self._cache_:
+            self._cache_hits_ += 1
+            return self._cache_[t]
         else:
-            self._cache_misses += 1
+            self._cache_misses_ += 1
             res = self._wrapped_transition_model.transition_probability_matrix(
                 t
             )
-            self._cache[t] = res
+            self._cache_[t] = res
             return res
 
     @property
     def cache_hits(self) -> int:
-        return self._cache_hits
+        return self._cache_hits_
 
     @property
     def cache_misses(self) -> int:
-        return self._cache_misses
+        return self._cache_misses_
 
 
 TransitionModels = TypeVar("TransitionModels", bound=List[TransitionModel])
@@ -192,27 +208,27 @@ class TreeStatistic:
         root_frequencies: np.array,
         transition_frequencies: List[Tuple[float, np.array]],
     ):
-        self.root_frequencies = root_frequencies.copy()
-        self.transition_frequencies = deepcopy(transition_frequencies)
+        self._root_frequencies = root_frequencies.copy()
+        self._transition_frequencies = deepcopy(transition_frequencies)
 
     def __eq__(self, other):
-        if np.any(~np.isclose(self.root_frequencies, other.root_frequencies)):
+        if np.any(~np.isclose(self._root_frequencies, other._root_frequencies)):
             return False
-        if len(self.transition_frequencies) != len(
-            other.transition_frequencies
+        if len(self._transition_frequencies) != len(
+            other._transition_frequencies
         ):
             return False
-        num_branch_lengths = len(self.transition_frequencies)
+        num_branch_lengths = len(self._transition_frequencies)
         for i in range(num_branch_lengths):
             if (
-                self.transition_frequencies[i][0]
-                != other.transition_frequencies[i][0]
+                self._transition_frequencies[i][0]
+                != other._transition_frequencies[i][0]
             ):
                 return False
             if np.any(
                 ~np.isclose(
-                    self.transition_frequencies[i][1],
-                    other.transition_frequencies[i][1],
+                    self._transition_frequencies[i][1],
+                    other._transition_frequencies[i][1],
                 )
             ):
                 return False
@@ -313,7 +329,7 @@ class Statistics:
         ]
 
 
-class EStep(abc.ABC):
+class EStep(abc.ABC, LongHashable):
     @abc.abstractmethod
     def perform_e_step(
         tree: CassiopeiaTree,
@@ -322,11 +338,10 @@ class EStep(abc.ABC):
         raise NotImplementedError
 
 
-class MStep(abc.ABC):
+class MStep(abc.ABC, LongHashable):
     @abc.abstractmethod
     def perform_m_step(
         stats: Statistics,
-        params: Optional[TransitionModels],  # For XRATE
     ) -> TransitionModels:
         raise NotImplementedError
 
@@ -341,61 +356,122 @@ class MStep(abc.ABC):
         raise NotImplementedError
 
 
-class EM:
+class Lazy(LongHashable):
+    def __init__(self, wrapped_long_hashable: LongHashable):
+        long_hash = wrapped_long_hashable.long_hash()
+        filename = os.path.join(CACHE_DIR, long_hash + '.pkl')
+        with open(filename, 'wb') as f:
+            pickle.dump(wrapped_long_hashable, f)
+        self._filename = filename
+
+    def load(self):
+        with open(self._filename, 'rb') as f:
+            return pickle.load(f)
+
+
+class EMWithCaching(LongHashable):
+    """
+    In charge of loading lazy objects when needed, or otherwise returning
+    cached results.
+    """
     def __init__(
         self,
         e_step: EStep,
         m_step: MStep,
-        initialization: Optional[TransitionModels],
+        maybe_lazy_initialization: Optional[Lazy[List[Lazy[TransitionModel]]]],  # E.g. None the first time to get JTT-IPW, then JTT-IPW
         num_em_steps: int,
         quantization_scheme: QuantizationScheme,
     ):
         self._e_step = e_step
         self._m_step = m_step
-        self._initialization = initialization
+        self._maybe_lazy_initialization = maybe_lazy_initialization
         self._num_em_steps = num_em_steps
         self._quantization_scheme = quantization_scheme
 
-    def perform_em(self, trees: Trees):
-        e_step = self.e_step
-        m_step = self.m_step
-        initialization = self._initialization
-        num_em_steps = self._num_em_steps
-        quantization_scheme = self._quantization_scheme
+    # @cached
+    def perform_em(
+        self,
+        lazy_list_of_lazy_trees: Lazy[List[Lazy[Tree]]]
+    ):
+        lazy_transition_models = self.get_initialization(lazy_list_of_lazy_trees)
 
-        quantization_scheme.construct_grid(trees)
-
-        transition_models = (
-            initialization if initialization else m_step.initialization(trees)
-        )
-
-        for step in range(num_em_steps):
-            # Quantization and caching scaffold
+        for _ in range(self._num_em_steps):
+            # Quantization and in-memory caching scaffold
             transition_models = self._quantize_transition_models(
-                transition_models, quantization_scheme
+                transition_models, self._quantization_scheme
             )
             # Warm-start the expm caches; only if it's just one global model.
             if len(transition_models) == 1:
                 transition_models[0].precompute()
 
             # E-Step
-            stats = sum
-            [
-                Statistics(
-                    m_step.requires_per_tree_statistics,
-                    quantization_scheme,
-                    tree_id,
-                    e_step.perform_e_step(tree, transition_model),
-                )
-                for tree_id, (tree, transition_model) in enumerate(
-                    zip(trees, cycle(transition_models))
-                )
-            ]  # Parallelizable! MapReduce! Carefull though: we want this is O(n) time, not O(n^2). It might require using __iadd__ rather than __add__ in the sum reduction (how can we do that in a pythonic way?)
+            lazy_stats = self.perform_e_step(
+                lazy_list_of_lazy_trees,
+                lazy_list_of_lazy_transition_models
+            )
 
             # M-Step
-            transition_models = m_step.perform_m_step(
-                stats
-            )  # Stats must contain the info about each tree.
+            transition_models = self.perform_m_step(
+                lazy_stats,
+            )
+
+    # @cached
+    def get_initialization(
+        self,
+        lazy_list_of_lazy_trees: Lazy[List[Lazy[Tree]]],
+    ):
+        return self._maybe_lazy_initialization if self._maybe_lazy_initialization else self._m_step.initialization(lazy_list_of_lazy_trees)
+
+    # @cached
+    # @lazy_output
+    def perform_e_step(
+        self,
+        lazy_list_of_lazy_trees: Lazy[List[Lazy[Tree]]],
+        lazy_list_of_lazy_transition_models: Lazy[List[Lazy[TransitionModel]]],
+    ) -> Statistics:
+        stats = sum(
+            [
+                self.perform_e_step_individual(
+                    tree_id,
+                    lazy_tree,
+                    lazy_transition_model,
+                )
+                for tree_id, (lazy_tree, lazy_transition_model) in enumerate(
+                    zip(
+                        lazy_list_of_lazy_trees.materialize(),
+                        cycle(lazy_list_of_lazy_transition_models.materialize())
+                    )
+                )
+            ]  # Parallelizable! MapReduce! Carefull though: we want this is O(n) time, not O(n^2). It might require using __iadd__ rather than __add__ in the sum reduction (how can we do that in a pythonic way?)
+        )
+        return stats
+
+    # @cached
+    # Note that functions called from within @cached functions will always be materialized, so no need to make their outputs lazy.
+    def perform_e_step_individual(
+        self,
+        tree_id: int,
+        lazy_tree: Lazy[Tree],
+        lazy_transition_model: Lazy[TransitionModel],
+    ) -> Statistics:
+        stats = Statistics(
+            self._m_step.requires_per_tree_statistics,
+            self._quantization_scheme,
+            tree_id,
+            self._e_step.perform_e_step(lazy_tree.materialize(), lazy_transition_model.materialize()),
+        )
+        return stats
+
+    # @cached
+    # @lazy_output
+    def perform_m_step(
+        self,
+        stats: Lazy[Statistics],
+    ) -> TransitionModels:
+        transition_models = self._m_step.perform_m_step(
+            stats.materialize()
+        )  # Stats must contain the info about each tree.
+        return transition_models
 
     @staticmethod
     def _quantize_transition_models(transition_models, quantization_scheme):
