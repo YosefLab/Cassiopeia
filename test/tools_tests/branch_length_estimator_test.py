@@ -907,7 +907,6 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
                 "2": [-1],
                 "3": [1]},
             )
-        tree.impute_unambiguous_missing_states()
 
         mutation_rate = 0.3
         model = IIDExponentialPosteriorMeanBLE(
@@ -935,8 +934,10 @@ class TestIIDExponentialPosteriorMeanBLE(unittest.TestCase):
 
         # Test the model log likelihood vs its computation from the leaf nodes.
         for leaf in ["2", "3"]:
+            tree_2 = deepcopy(tree)
+            tree_2.impute_unambiguous_missing_states()
             model_log_likelihood_up = model.up(
-                leaf, discretization_level, tree.get_number_of_mutated_characters_in_node(leaf, include_missing=treat_missing_states_as_mutations)
+                leaf, discretization_level, tree_2.get_number_of_mutated_characters_in_node(leaf, include_missing=treat_missing_states_as_mutations)
             ) - np.log(birth_rate * 1.0 / discretization_level)\
                 + np.log(sampling_probability)
             print(f"{model_log_likelihood_up} = model_log_likelihood_up")

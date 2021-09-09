@@ -132,7 +132,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         self.posterior_means = posterior_means
 
     def _populate_branch_lengths(self):
-        tree = self.tree
+        tree = self.tree_orig
         posterior_means = self.posterior_means
         times = {}
         for node in tree.non_root_internal_nodes:
@@ -182,11 +182,15 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         r"""
         See base class.
         """
+        self.tree_orig = tree
+        tree = deepcopy(tree)
+        tree.impute_unambiguous_missing_states()
+        self.tree = tree
+
         self._precompute_p_unsampled()
         self._precompute_Ks(tree)
         self._down_cache = {}
         self._up_cache = {}
-        self.tree = tree
         verbose = self.verbose
         if self.debug_cpp_implementation:
             # Write out true dp values to check by eye against c++
@@ -730,6 +734,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         """
 
         tree = deepcopy(tree)
+        tree.impute_unambiguous_missing_states()
 
         def f(*args):
             times_list = args
@@ -786,6 +791,7 @@ class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
         node_time = -1
 
         tree = deepcopy(tree)
+        tree.impute_unambiguous_missing_states()
 
         def f(*args):
             times_list = args
