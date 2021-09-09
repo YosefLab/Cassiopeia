@@ -48,16 +48,25 @@ DNA_SUBSTITUTION_MATRIX = {
 }
 
 DEFAULT_PIPELINE_PARAMETERS = {
-    "general": {"entry": "'convert'", "exit": "'call_lineages'"},
+    "general": {
+        "entry": "'convert'",
+        "exit": "'call_lineages'",
+        "verbose": False,
+    },
     "convert": {},
-    "error_correct_barcodes": {},
+    "filter_bam": {"quality_threshold": 10},
+    "error_correct_cellbcs_to_whitelist": {},
     "collapse": {"max_hq_mismatches": 3, "max_indels": 2},
     "resolve": {
         "min_avg_reads_per_umi": 2.0,
         "min_umi_per_cell": 10,
         "plot": True,
     },
-    "align": {"gap_open_penalty": 20, "gap_extend_penalty": 1},
+    "align": {
+        "gap_open_penalty": 20,
+        "gap_extend_penalty": 1,
+        "method": "'local'",
+    },
     "call_alleles": {
         "barcode_interval": (20, 34),
         "cutsite_locations": [112, 166, 220],
@@ -65,20 +74,17 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "context": True,
         "context_size": 5,
     },
-    "error_correct_umis": {
-        "max_umi_distance": 2,
-        "verbose": False,
-    },
+    "error_correct_intbcs_to_whitelist": {"intbc_dist_thresh": 1},
+    "error_correct_umis": {"max_umi_distance": 2},
     "filter_molecule_table": {
         "min_umi_per_cell": 10,
         "min_avg_reads_per_umi": 2.0,
-        "umi_read_thresh": -1,
+        "min_reads_per_umi": -1,
         "intbc_prop_thresh": 0.5,
         "intbc_umi_thresh": 10,
         "intbc_dist_thresh": 1,
         "doublet_threshold": 0.35,
         "plot": True,
-        "verbose": False,
     },
     "call_lineages": {
         "min_umi_per_cell": 10,
@@ -87,7 +93,6 @@ DEFAULT_PIPELINE_PARAMETERS = {
         "min_intbc_thresh": 0.05,
         "inter_doublet_threshold": 0.35,
         "kinship_thresh": 0.25,
-        "verbose": False,
         "plot": True,
     },
 }

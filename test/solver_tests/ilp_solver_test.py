@@ -8,10 +8,18 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pathlib as pl
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
+from cassiopeia.solver.ILPSolver import ILPSolver
+from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
+
+GUROBI_INSTALLED = True
+try:
+    import gurobipy
+except ModuleNotFoundError:
+    GUROBI_INSTALLED = False
 
 
 def find_triplet_structure(triplet, T):
@@ -33,6 +41,10 @@ def find_triplet_structure(triplet, T):
 
 
 class TestILPSolver(unittest.TestCase):
+    def assertIsFile(self, path):
+        if not pl.Path(path).resolve().is_file():
+            raise AssertionError("File does not exist: %s" % str(path))
+
     def setUp(self):
 
         # basic PP example with no missing data
@@ -91,10 +103,31 @@ class TestILPSolver(unittest.TestCase):
 
         self.ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
+        # for the purposes of making sure we throw an error when a potential
+        # graph cannot be solved
+        self.ilp_solver_small = cas.solver.ILPSolver(mip_gap=0.0, maximum_potential_graph_layer_size=3)
+
+    def test_raises_error_on_ambiguous(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, 2, 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        with self.assertRaises(ILPSolverError):
+            solver = cas.solver.ILPSolver()
+            solver.solve(tree)
+
     def test_get_lca_cython(self):
 
         # test single sample
-        cm = self.missing_tree.get_current_character_matrix().astype(str)
+        cm = self.missing_tree.character_matrix.copy().astype(str)
 
         lca = ilp_solver_utilities.get_lca_characters_cython(
             cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
@@ -123,6 +156,7 @@ class TestILPSolver(unittest.TestCase):
         )
         self.assertEqual(dist, 1)
 
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_single_sample_ilp(self):
 
         # test single sample
@@ -162,14 +196,13 @@ class TestILPSolver(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(
-            expected_character_matrix,
-            self.pp_tree.get_original_character_matrix(),
+            expected_character_matrix, self.pp_tree.character_matrix.copy()
         )
 
     def test_get_layer_for_potential_graph(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
         source_nodes = unique_character_matrix.values
         dim = source_nodes.shape[1]
@@ -228,7 +261,7 @@ class TestILPSolver(unittest.TestCase):
     def test_simple_potential_graph_inference(self):
 
         unique_character_matrix = (
-            self.pp_tree.get_original_character_matrix().drop_duplicates()
+            self.pp_tree.character_matrix.drop_duplicates()
         )
 
         max_lca_height = 10
@@ -276,17 +309,105 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
+    def test_post_process_steiner_solution(self):
+        tree = nx.DiGraph()
+        tree.add_weighted_edges_from(
+            [
+                (6, "c1", 1),
+                (6, "c2", 1),
+                (8, "c3", 1),
+                (8, "c4", 1),
+                (7, "c5", 1),
+                (7, "c6", 1),
+                (7, "c7", 1),
+                (8, 6, 1),
+                (9, 7, 1),
+                (9, 8, 1),
+                (10, "c4", 1.5),
+                (11, 10, 1.5),
+                (9, 6, 1.5),
+                (8, "c2", 0.5),
+            ]
+        )
+
+        processed_tree = self.ilp_solver.post_process_steiner_solution(tree, 9)
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_weighted_edges_from(
+            [
+                (6, "c1", 1),
+                (6, "c2", 1),
+                (8, "c3", 1),
+                (8, "c4", 1),
+                (7, "c5", 1),
+                (7, "c6", 1),
+                (7, "c7", 1),
+                (8, 6, 1),
+                (9, 7, 1),
+                (9, 8, 1),
+            ]
+        )
+
+        self.assertEqual(set(processed_tree.edges), set(expected_tree.edges))
+
+    def test_append_sample_nodes_and_remove_spurious_leaves(self):
+        cm = self.duplicates_tree.character_matrix
+        tree = nx.DiGraph()
+        tree.add_edges_from(
+            [
+                ((0, 0, 0), (1, 0, 0)),
+                ((0, 0, 0), (2, 0, 0)),
+                ((2, 0, 0), (2, 0, 2)),
+                ((2, 0, 0), (2, 0, 1)),
+                ((1, 0, 0), (1, 1, 0)),
+                ((1, 0, 0), (1, 2, 0)),
+                ((1, 2, 0), (1, 2, 1)),
+                ((1, 2, 0), (1, 2, 2)),
+                ((2, 0, 1), (2, 1, 1)),
+                ((2, 0, 1), (2, 2, 1)),
+                ((2, 0, 1), (2, 3, 1)),
+                ((1, 0, 0), (1, 1, 2)),
+                ((1, 0, 0), (1, 1, 1)),
+            ]
+        )
+        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(
+            tree, cm
+        )
+
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                ((0, 0, 0), (1, 0, 0)),
+                ((0, 0, 0), (2, 0, 0)),
+                ((2, 0, 0), "d"),
+                ((2, 0, 0), (2, 0, 2)),
+                ((2, 0, 2), "e"),
+                ((1, 0, 0), (1, 1, 0)),
+                ((1, 1, 0), "a"),
+                ((1, 1, 0), "f"),
+                ((1, 0, 0), (1, 2, 0)),
+                ((1, 2, 0), "b"),
+                ((1, 2, 0), (1, 2, 1)),
+                ((1, 2, 1), "c"),
+            ]
+        )
+        self.assertEqual(set(processed_tree.edges), set(expected_tree.edges))
+
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_perfect_phylogeny(self):
 
-        self.ilp_solver.solve(self.pp_tree, self.logfile)
+        self.ilp_solver.solve(self.pp_tree, logfile=self.logfile)
         tree = self.pp_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.pp_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -295,16 +416,27 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [
+            n for n in self.pp_tree.nodes if len(self.pp_tree.children(n)) == 1
+        ]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
 
+        # apply camin-sokal parsimony
+        self.pp_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+
+        for e in self.pp_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.pp_tree.get_character_states(e[0]),
+                self.pp_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -333,10 +465,13 @@ class TestILPSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.pp_tree.get_newick()
+
     def test_potential_graph_inference_with_duplicates(self):
 
         unique_character_matrix = (
-            self.duplicates_tree.get_original_character_matrix().drop_duplicates()
+            self.duplicates_tree.character_matrix.drop_duplicates()
         )
 
         max_lca_height = 10
@@ -384,17 +519,21 @@ class TestILPSolver(unittest.TestCase):
 
         self.assertEqual(len(potential_graph.edges()), len(expected_edges))
 
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_with_duplicates(self):
 
-        self.ilp_solver.solve(self.duplicates_tree, self.logfile)
+        self.ilp_solver.solve(self.duplicates_tree, logfile=self.logfile)
         tree = self.duplicates_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
         self.assertEqual(len(roots), 1)
 
         # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
+        tree_leaves = self.duplicates_tree.leaves
         expected_leaves = ["a", "b", "c", "d", "e", "f"]
         for leaf in expected_leaves:
             self.assertIn(leaf, tree_leaves)
@@ -403,16 +542,27 @@ class TestILPSolver(unittest.TestCase):
         multi_parents = [n for n in tree if tree.in_degree(n) > 1]
         self.assertEqual(len(multi_parents), 0)
 
+        # make sure the resulting tree has no unifurcations
+        one_child = [
+            n
+            for n in self.duplicates_tree.nodes
+            if len(self.duplicates_tree.children(n)) == 1
+        ]
+        self.assertEqual(len(one_child), 0)
+
         # expected parsimony
         expected_parsimony = 6
-        root = roots[0]
-
+        self.duplicates_tree.reconstruct_ancestral_characters()
         observed_parsimony = 0
-        for e in nx.dfs_edges(tree, source=root):
-            if tree.out_degree(e[1]) > 0:
-                observed_parsimony += cas.solver.dissimilarity.hamming_distance(
-                    e[0], e[1]
-                )
+
+        for e in self.duplicates_tree.depth_first_traverse_edges():
+            c1, c2 = (
+                self.duplicates_tree.get_character_states(e[0]),
+                self.duplicates_tree.get_character_states(e[1]),
+            )
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -427,8 +577,10 @@ class TestILPSolver(unittest.TestCase):
                 ("9", "8"),
                 ("9", "7"),
                 ("7", "6"),
-                ("7", "a"),
-                ("7", "f"),
+                ("7", "5"),
+                ("7", "5"),
+                ("5", "a"),
+                ("5", "f"),
                 ("6", "b"),
                 ("6", "c"),
                 ("8", "e"),
@@ -436,16 +588,34 @@ class TestILPSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
+        self.ilp_solver.solve(
+            self.duplicates_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
+        )
+        tree = self.duplicates_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+        # make sure that the tree can be converted to newick format
+        tree_newick = self.duplicates_tree.get_newick()
+
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_ilp_solver_missing_data(self):
 
-        self.ilp_solver.solve(self.missing_tree, self.logfile)
+        self.ilp_solver.solve(self.missing_tree, logfile=self.logfile)
         tree = self.missing_tree.get_tree_topology()
+
+        # make sure log file is created correctly
+        self.assertIsFile(self.logfile)
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -484,6 +654,23 @@ class TestILPSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
+
+        self.ilp_solver.solve(
+            self.missing_tree,
+            logfile=self.logfile,
+            collapse_mutationless_edges=True,
+        )
+        tree = self.missing_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
+    def test_ilp_throws_error_when_potential_graph_is_not_found(self):
+        
+        with self.assertRaises(ILPSolverError):
+            self.ilp_solver_small.solve(self.missing_tree, logfile=self.logfile)
 
     def tearDown(self):
 

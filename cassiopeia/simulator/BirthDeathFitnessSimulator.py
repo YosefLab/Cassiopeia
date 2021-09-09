@@ -1,6 +1,6 @@
 """
 This file stores a general phylogenetic tree simulator using forward birth-death
-process, including differing fitness on lineages on the tree. Allows for a 
+process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
 from typing import Callable, Dict, Generator, List, Optional, Union
@@ -10,7 +10,8 @@ import numpy as np
 from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.simulator.TreeSimulator import TreeSimulator, TreeSimulatorError
+from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
 
 class BirthDeathFitnessSimulator(TreeSimulator):
@@ -243,9 +244,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         cassiopeia_tree.set_times(time_dictionary)
 
         # Prune dead lineages and collapse resulting unifurcations
-        for i in cassiopeia_tree.nodes:
-            if cassiopeia_tree.is_leaf(i) and i not in observed_nodes:
-                cassiopeia_tree.remove_leaf_and_prune_lineage(i)
+        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
+        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
             cassiopeia_tree.collapse_unifurcations(source="1")
 

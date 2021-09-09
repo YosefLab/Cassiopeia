@@ -77,4 +77,4 @@ class IIDExponentialLineageTracer(LineageTracingSimulator):
         root = tree.root
         states[root] = [0] * num_characters
         dfs(root, tree)
-        tree.initialize_all_character_states(states)
+        tree.set_all_character_states(states)

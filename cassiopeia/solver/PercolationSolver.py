@@ -16,6 +16,8 @@ from cassiopeia.solver import (
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
+    A top-down percolatin-based CassiopeiaSolver.
+
     The PercolationSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity in the observed mutations.
     It is an implicit version of Aho's algorithm for tree discovery (1981).
@@ -77,7 +79,13 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.threshold = threshold
         self.similarity_function = similarity_function
 
-    def solve(self, cassiopeia_tree: CassiopeiaTree):
+    def solve(
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
+    ):
         """Implements a solving procedure for the Percolation Algorithm.
         The procedure recursively splits a set of samples to build a tree. At
         each partition of the samples produced by the percolation procedure,
@@ -88,9 +96,17 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         placed as sister nodes and the procedure terminates, generating a
         polytomy in the tree. This function will populate a tree inside the
         input CassiopeiaTree.
+
         Args:
             cassiopeia_tree: CassiopeiaTree storing a character matrix and
                 priors.
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: Location to write standard out. Not currently used.
         """
 
         node_name_generator = solver_utilities.node_name_generator()
@@ -152,7 +168,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             priors = cassiopeia_tree.priors
 
         # extract character matrix
-        character_matrix = cassiopeia_tree.get_current_character_matrix()
+        if layer:
+            character_matrix = cassiopeia_tree.layers[layer].copy()
+        else:
+            character_matrix = cassiopeia_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
 
         tree = nx.DiGraph()
@@ -167,18 +186,17 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        cassiopeia_tree.populate_tree(tree)
-
-        # Collapse 0-mutation edges and append duplicate samples
-        cassiopeia_tree.collapse_mutationless_edges(
-            infer_ancestral_characters=True
-        )
+        # Append duplicate samples
         duplicates_tree = self.__add_duplicates_to_tree(
-            cassiopeia_tree.get_tree_topology(),
-            character_matrix,
-            node_name_generator,
+            tree, character_matrix, node_name_generator
         )
-        cassiopeia_tree.populate_tree(duplicates_tree)
+        cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
+
+        # Collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
 
     def percolate(
         self,
@@ -278,7 +296,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 priors=priors,
             )
 
-            self.joining_solver.solve(lca_tree)
+            self.joining_solver.solve(
+                lca_tree, collapse_mutationless_edges=False
+            )
             grouped_components = []
 
             # Take the split at the root as the clusters of components

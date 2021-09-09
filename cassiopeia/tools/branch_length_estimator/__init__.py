@@ -1,3 +1,6 @@
+"""Top level for branch length estimator."""
+from .IIDExponentialMLE import IIDExponentialMLE
+
 from .BLEEnsemble import BLEEnsemble
 from .BLEMultifurcationWrapper import BLEMultifurcationWrapper
 from .BranchLengthEstimator import BranchLengthEstimator

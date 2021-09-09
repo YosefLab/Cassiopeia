@@ -1,9 +1,8 @@
 """
 This file contains functions pertaining to calling lineage groups.
-Invoked through pipeline.py and supports the call_lineage_group function. 
+Invoked through pipeline.py and supports the call_lineage_group function.
 """
 import os
-import logging
 import sys
 import time
 
@@ -16,6 +15,8 @@ import pandas as pd
 import pylab
 import re
 
+from cassiopeia.mixins import logger
+
 sys.setrecursionlimit(10000)
 
 
@@ -24,7 +25,6 @@ def assign_lineage_groups(
     min_clust_size: int,
     min_intbc_thresh: float = 0.2,
     kinship_thresh: float = 0.2,
-    verbose: bool = False,
 ) -> pd.DataFrame:
     """A wrapper function to find lineage groups and assign cells to them.
 
@@ -41,11 +41,9 @@ def assign_lineage_groups(
         kinship_thresh: A parameter for the grouping algorithm that determines
             the proportion of intBCs that a cell needs to share with the group
             in order to included in that group
-        verbose: Indicates whether to log the size of each group
 
     Returns:
-        piv_assigned: A pivot table of cells labled with lineage group
-            assignments
+        A pivot table of cells labled with lineage group assignments
     """
     # initiate output variables
     piv_assigned = pd.DataFrame()
@@ -60,7 +58,6 @@ def assign_lineage_groups(
             i,
             min_intbc_prop=min_intbc_thresh,
             kinship_thresh=kinship_thresh,
-            verbose=verbose,
         )
 
         # append returned objects to output variable
@@ -81,7 +78,6 @@ def find_top_lg(
     iteration: int,
     min_intbc_prop: float = 0.2,
     kinship_thresh: float = 0.2,
-    verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     """Algorithm to creates lineage groups from a pivot table of UMI counts
@@ -102,11 +98,10 @@ def find_top_lg(
             the most frequent intBC
         kinship_thresh: Determines the proportion of intBCs that a cell needs
             to share with the cluster in order to included in that cluster
-        verbose: Indicates whether to log the size of each cluster
 
     Returns:
-        PIV_LG: A pivot table of cells labled with lineage group assignments
-        PIV_noLG: A pivot table of the remaining unassigned cells
+        A pivot table of cells labled with lineage group assignments, and a
+            pivot table of the remaining unassigned cells
     """
 
     # Calculate sum of observed intBCs, identify top intBC
@@ -151,10 +146,9 @@ def find_top_lg(
     PIV_LG["lineageGrp"] = iteration + 1
 
     # Print statements
-    if verbose:
-        logging.info(
-            f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
-        )
+    logger.debug(
+        f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
+    )
 
     return PIV_LG, PIV_noLG
 
@@ -177,9 +171,9 @@ def filter_intbcs_lg_sets(
             group set
 
     Returns:
-        master_LGs: A list of the lineage groups
-        master_intBCs: A dictionary that has mappings from the lineage group
-            number to the set of intBCs being used for reconstruction
+        A list of the lineage groups, and a dictionary that has mappings from
+            the lineage group number to the set of intBCs being used for
+            reconstruction
 
     """
     master_intBCs = {}
@@ -226,8 +220,8 @@ def score_lineage_kinships(
 
 
     Returns:
-        max_kinship_LG: A DataFrame that contains the lineage group for each
-        cell with the greatest kinship
+        A DataFrame that contains the lineage group for each cell with the
+            greatest kinship
     """
 
     dfLG2intBC = pd.DataFrame()
@@ -338,8 +332,8 @@ def filter_intbcs_final_lineages(
         min_intbc_thresh: The proportion threshold by which to filter intBCs
             from each lineage group
     Returns:
-        lgs: A list of alignment DataFrames recording the UMI counts, intBCs,
-            and cellBCs of each lineage group, one table for each lineage group
+        A list of alignment DataFrames recording the UMI counts, intBCs, and
+            cellBCs of each lineage group, one table for each lineage group
     """
 
     lineageGrps = at["lineageGrp"].unique()
@@ -391,10 +385,12 @@ def filtered_lineage_group_to_allele_table(
         filtered_lgs: A DataFrame of alignments annotated with lineage groups
 
     Returns:
-        final_df: A final processed DataFrame with indel information
+        A final processed DataFrame with indel information
     """
-
     final_df = pd.concat(filtered_lgs, sort=True)
+
+    if "lineageGrp" not in final_df.columns:
+        final_df["lineageGrp"] = 1
 
     grouping = []
     for i in final_df.columns:
@@ -404,10 +400,6 @@ def filtered_lineage_group_to_allele_table(
 
     final_df = final_df.groupby(grouping, as_index=False).agg(
         {"UMI": "count", "readCount": "sum"}
-    )
-
-    final_df["Sample"] = final_df.apply(
-        lambda x: x.cellBC.split(".")[0], axis=1
     )
 
     return final_df

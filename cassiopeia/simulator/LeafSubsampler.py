@@ -1,5 +1,5 @@
 """
-Abstract class LeafSubsampler. Samples the leaves of CassiopeiaTrees and 
+Abstract class LeafSubsampler. Samples the leaves of CassiopeiaTrees and
 generates a tree that keeps only the lineages pertaining to the sample.
 
 All leaf subsamplers are derived classes of this abstract class, and at a minimum
@@ -12,12 +12,7 @@ import numpy as np
 from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
-
-
-class LeafSubsamplerError(Exception):
-    """An Exception class for the LeafSubsampler class."""
-
-    pass
+from cassiopeia.mixins import LeafSubsamplerError
 
 
 class EmptySubtreeError(Exception):

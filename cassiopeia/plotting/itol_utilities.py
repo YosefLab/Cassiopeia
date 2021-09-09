@@ -19,13 +19,8 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import iTOLError
 from cassiopeia.preprocess import utilities
-
-
-class iTOLError(Exception):
-    """Raises errors related to iTOL plotting"""
-
-    pass
 
 
 def upload_and_export_itol(

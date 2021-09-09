@@ -23,7 +23,8 @@ from cassiopeia.solver import (
 
 class MaxCutGreedySolver(GreedySolver.GreedySolver):
     """
-    TODO: Implement fuzzy solver
+    A CassiopeiaGreedy solver with the max cut criterion.
+
     The MaxCutGreedySolver implements a top-down algorithm that recursively
     splits the sample set based on the presence/absence of the most frequent
     mutation. Additionally, the hill-climbing procedure from the MaxCutSolver is
@@ -34,6 +35,8 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
     are included for handling the case when a sample has a missing value on the
     character being split, where presence or absence of the character is
     ambiguous. The user can also specify a missing data method.
+
+    TODO: Implement fuzzy solver
 
     Args:
         prior_transformation: A function defining a transformation on the priors

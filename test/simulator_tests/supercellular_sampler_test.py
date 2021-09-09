@@ -85,7 +85,7 @@ class SupercellularSamplerTest(unittest.TestCase):
         np.random.seed(10)
         sampler = SupercellularSampler(number_of_merges=2)
         res = sampler.subsample_leaves(tree=tree)
-        cm = res.get_current_character_matrix()
+        cm = res.character_matrix
         expected_character_matrix = pd.DataFrame.from_dict(
             {
                 "node7": [1, 1, 0, 0, 0, 0, 0, 0],
@@ -137,7 +137,7 @@ class SupercellularSamplerTest(unittest.TestCase):
 
         np.random.seed(10)
         res = sampler.subsample_leaves(tree=tree, collapse_duplicates=False)
-        cm = res.get_current_character_matrix()
+        cm = res.character_matrix
         expected_character_matrix = pd.DataFrame.from_dict(
             {
                 "node7": [1, 1, 0, 0, 0, 0, 0, 0],
