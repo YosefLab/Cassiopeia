@@ -92,14 +92,10 @@ class IIDExponentialBLE(BranchLengthEstimator):
             for leaf in tree.leaves
             if leaf != a_leaf
         ]
-        non_negative_r_X_t_constraints = [
-            r_X_t >= 0 for r_X_t in r_X_t_variables.values()
-        ]
         all_constraints = (
             root_has_time_0_constraint
             + time_increases_constraints
             + leaves_have_same_time_constraints
-            + non_negative_r_X_t_constraints
         )
 
         # # # # # Compute the log-likelihood # # # # #
@@ -130,7 +126,7 @@ class IIDExponentialBLE(BranchLengthEstimator):
             log_likelihood += num_uncuts * (-edge_length)
             # Add log-lik for characters that got cut
             log_likelihood += num_cuts * cp.log(
-                1 - cp.exp(-edge_length - 1e-8)
+                1 - cp.exp(-edge_length - 1e-5)
             )
 
         # # # # # Add regularization # # # # #
@@ -157,6 +153,8 @@ class IIDExponentialBLE(BranchLengthEstimator):
         # # # # # Populate the tree with the estimated branch lengths # # # # #
 
         times = {node: r_X_t_variables[node].value for node in tree.nodes}
+        # Make sure that the root has time 0 (avoid epsilons)
+        times[tree.root] = 0.0
         # We smooth out epsilons that might make a parent's time greater
         # than its child
         for (parent, child) in tree.depth_first_traverse_edges():

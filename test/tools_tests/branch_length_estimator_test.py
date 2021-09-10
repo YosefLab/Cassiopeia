@@ -607,7 +607,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         assert 0.9 < tree.get_time("6") < 1.1
         np.testing.assert_almost_equal(tree.get_time("0"), 0)
         log_likelihood_2 = IIDExponentialBLE.log_likelihood(tree)
-        np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=3)
+        np.testing.assert_almost_equal(log_likelihood, log_likelihood_2, decimal=2)
 
     def test_subtree_collapses_when_no_mutations(self):
         r"""
@@ -656,7 +656,7 @@ class TestIIDExponentialBLE(unittest.TestCase):
         model.estimate_branch_lengths(tree)
         for node in tree.nodes:
             print(f"{node} = {tree.get_time(node)}")
-        assert model.log_likelihood == -np.inf
+        assert model.log_likelihood < -20.0  # Should be really negative (but not inf due to numerically stable computation of LL)
         # An okay minimum_branch_length
         model = IIDExponentialBLE(minimum_branch_length=0.4)
         model.estimate_branch_lengths(tree)
