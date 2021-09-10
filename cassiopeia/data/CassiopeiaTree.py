@@ -20,7 +20,6 @@ import warnings
 import collections
 import ete3
 import networkx as nx
-from networkx.readwrite.json_graph import tree
 import numpy as np
 import pandas as pd
 import scipy
@@ -2063,7 +2062,7 @@ class CassiopeiaTree:
 
     def calculate_parsimony(
         self,
-        infer_ancestral_characters: bool,
+        infer_ancestral_characters: bool = False,
         treat_missing_as_mutation: bool = False,
     ) -> int:
         """
@@ -2094,15 +2093,6 @@ class CassiopeiaTree:
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
-        for n in self.leaves:
-            if self.get_character_states(n) == []:
-                raise CassiopeiaTreeError(
-                    "Character states have not been initialized at leaves."
-                    " Use set_character_states_at_leaves or populate_tree"
-                    " with the character matrix that specifies the leaf"
-                    " character states."
-                )
-
         for n in self.internal_nodes:
             if self.get_character_states(n) == []:
                 raise CassiopeiaTreeError(
@@ -2113,13 +2103,20 @@ class CassiopeiaTree:
 
         parsimony = 0
         for u, v in self.edges:
+            if self.get_character_states(u) == [] or self.get_character_states(v) == []:
+                raise CassiopeiaTreeError(
+                    "Character states have not been initialized at leaves."
+                    " Use set_character_states_at_leaves or populate_tree"
+                    " with the character matrix that specifies the leaf"
+                    " character states."
+                )
             parsimony += len(
                 self.get_mutations_along_edge(u, v, treat_missing_as_mutation)
             )
 
         return parsimony
 
-    def calculate_irreversible_likelihood(
+    def calculate_likelihood(
         self,
         mutation_rate: float,
         missing_rate: float,
@@ -2131,10 +2128,10 @@ class CassiopeiaTree:
         - np.exp(-rate * t),
     ):
         """
-        Calculates the likelihood of a tree assuming irreversible mutations.
+        Calculates the log likelihood of a tree with irreversible mutations.
 
-        Calculates the likelihood of a tree given the character states at the
-        leaves using Felsenstein's Pruning Algorithm, which sets up a
+        Calculates the log likelihood of a tree given the character states at 
+        the leaves using Felsenstein's Pruning Algorithm, which sets up a
         recursive relation between the likelihoods of states at nodes. The
         likelihood (L(s, n)) at a given state s at a given node n is:
 
@@ -2155,7 +2152,7 @@ class CassiopeiaTree:
         Additionally, the likelihood accounts for missing data. For a given
         character, at any point along a lineage a missing data event can occur
         that causes that character to acquire the missing state. This
-        missing state is the 'missing_state_indicator' of the tree.
+        missing state is the 'missing_state_indicator' attribute of the tree.
 
         The user must specify the rate at which mutations and missing data
         events occur to calculate the transition probabilities between
@@ -2209,12 +2206,12 @@ class CassiopeiaTree:
                     return missing_probability_function_of_time(missing_rate, t)
             # "*" represents all non-missing states. The sum probability of
             # transitioning from any non-missing state to all non-missing
-            # states is (1 - the probability of an missing event). If s is not
+            # states is (1 - the probability of n missing event). If s is not
             # 0, then the only state with non-zero transition probability is s
-            # with probability is (1 - the probability of an missing event),
+            # with probability is (1 - the probability of a missing event),
             # with all others being 0. If s is 0, then the total probability of
             # transitioning to all non-missing states is (1 - the probability
-            # of an missing event).
+            # of a missing event).
             if s_ == "*":
                 if s == -1:
                     return 0.0
@@ -2358,17 +2355,10 @@ class CassiopeiaTree:
                     )
                 likelihoods_at_implicit_root[char][0] = likelihood_at_root
 
-            return np.log(np.prod([i[0] for i in likelihoods_at_implicit_root]))
+            return np.sum([np.log(i[0]) for i in likelihoods_at_implicit_root])
 
         else:
-            return np.log(
-                np.prod(
-                    [
-                        list(i.values())[0]
-                        for i in likelihoods_at_nodes[self.root]
-                    ]
-                )
-            )
+            return np.sum([np.log(list(i.values())[0]) for i in likelihoods_at_nodes[self.root]])
 
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
