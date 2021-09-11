@@ -8,6 +8,7 @@ from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
 from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLE,
     IIDExponentialPosteriorMeanBLEAutotune,
+    IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
 from .NumberOfMutationsBLE import NumberOfMutationsBLE

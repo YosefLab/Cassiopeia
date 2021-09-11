@@ -22,6 +22,7 @@ from .BranchLengthEstimator import (
     BranchLengthEstimator,
     BranchLengthEstimatorError,
 )
+from .IIDExponentialMLE import IIDExponentialMLE
 
 
 class IIDExponentialPosteriorMeanBLE(BranchLengthEstimator):
@@ -1064,6 +1065,100 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         r"""
         See base class.
         """
+        self.tree = tree
+        ray.init(num_cpus=self.processes)
+        try:
+            analysis = tune.run(
+                self._trainable,
+                config=self.space,
+                num_samples=self.num_samples,
+                search_alg=self.search_alg,
+                metric='log_likelihood',
+                mode='max',
+                progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
+            )
+        except:
+            ray.shutdown()
+            raise BranchLengthEstimatorError(f"Ray tune failed")
+        ray.shutdown()
+        self.analysis = analysis
+        best_config = analysis.best_config
+        self.model = self._create_model_from_config(best_config)
+        self.model.estimate_branch_lengths(tree)
+        # Copy over attributes associated with the bayesian estimator.
+        self.mutation_rate = self.model.mutation_rate
+        self.birth_rate = self.model.birth_rate
+        self.log_likelihood = self.model.log_likelihood
+        self.log_joints = self.model.log_joints
+        self.posteriors = self.model.posteriors
+        self.posterior_means = self.model.posterior_means
+
+    def _trainable(self, config: Dict):
+        model = self._create_model_from_config(config)
+        model.estimate_branch_lengths(deepcopy(self.tree))
+        tune.report(log_likelihood=model.log_likelihood)
+
+    def _create_model_from_config(self, config):
+        return IIDExponentialPosteriorMeanBLE(
+            mutation_rate=config['mutation_rate'],
+            birth_rate=config['birth_rate'],
+            discretization_level=self.discretization_level,
+            sampling_probability=config['sampling_probability'],
+            enforce_parsimony=self.enforce_parsimony,
+            treat_missing_states_as_mutations=self.treat_missing_states_as_mutations,
+            use_cpp_implementation=self.use_cpp_implementation,
+            verbose=self.verbose,
+        )
+
+
+class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
+    """
+    Like IIDExponentialPosteriorMeanBLEAutotune, but we use the MLE
+    to get the mutation rate.
+    """
+    def __init__(
+        self,
+        discretization_level: int,
+        enforce_parsimony: bool = True,
+        treat_missing_states_as_mutations: bool = True,
+        use_cpp_implementation: bool = False,
+        processes: int = 6,
+        num_samples: int = 100,
+        space: Optional[Dict] = None,
+        search_alg=None,
+        verbose: bool = False,
+    ) -> None:
+        self.discretization_level = discretization_level
+        self.enforce_parsimony = enforce_parsimony
+        self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
+        self.use_cpp_implementation = use_cpp_implementation
+        self.processes = processes
+        self.num_samples = num_samples
+        self.verbose = verbose
+        if space is None:
+            space = {
+                "birth_rate": tune.loguniform(0.01, 30.0),
+                "sampling_probability": tune.loguniform(0.0000001, 1.0),
+            }
+        else:
+            assert sorted(list(set(space.keys()))) == ["birth_rate", "sampling_probability"]
+        self.space = space
+        if search_alg is None:
+            search_alg = HyperOptSearch(
+                metric="log_likelihood", mode="max"
+            )
+        self.search_alg = search_alg
+
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
+        r"""
+        See base class.
+        """
+        # Estimate mutation rate with MLE
+        assert(self.treat_missing_states_as_mutations == False)
+        mle = IIDExponentialMLE()
+        mle.estimate_branch_lengths(deepcopy(tree))
+        self.space["mutation_rate"] = mle.mutation_rate
+
         self.tree = tree
         ray.init(num_cpus=self.processes)
         try:
