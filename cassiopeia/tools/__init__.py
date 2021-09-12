@@ -10,7 +10,6 @@ from .branch_length_estimator import (
     IgnoreCharactersWrapper,
     IIDExponentialBLE,
     IIDExponentialBLEGridSearchCV,
-    IIDExponentialPosteriorMeanBLE,
     IIDExponentialPosteriorMeanBLEAutotune,
     IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
