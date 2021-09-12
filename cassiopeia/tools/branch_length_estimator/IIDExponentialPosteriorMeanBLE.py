@@ -14,6 +14,7 @@ import ray
 from ray import tune
 from ray.tune.suggest.hyperopt import HyperOptSearch
 from ray.tune import ProgressReporter
+import logging
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -188,7 +189,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         See base class.
         """
         self.tree = tree
-        ray.init(num_cpus=self.processes)
+        ray.init(num_cpus=self.processes, logging_level=logging.FATAL, log_to_driver=False)
         try:
             analysis = tune.run(
                 self._trainable,
