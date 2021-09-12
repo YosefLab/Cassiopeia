@@ -165,7 +165,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         num_samples: int = 100,
         space: Optional[Dict] = None,
         search_alg=None,
-        verbose: bool = False,
+        verbose: int = 0,
     ) -> None:
         self.discretization_level = discretization_level
         self.processes = processes
@@ -174,7 +174,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         if space is None:
             space = {
                 "mutation_rate": tune.loguniform(0.01, 5.0),
-                "birth_rate": tune.loguniform(0.01, 30.0),
+                "birth_rate": tune.loguniform(1.0, 30.0),
                 "sampling_probability": tune.loguniform(0.0000001, 1.0),
             }
         self.space = space
@@ -199,11 +199,13 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
                 metric='log_likelihood',
                 mode='max',
                 progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
+                verbose=self.verbose,
             )
         except:
             ray.shutdown()
             raise BranchLengthEstimatorError(f"Ray tune failed")
         ray.shutdown()
+        del self.tree
         self.analysis = analysis
         best_config = analysis.best_config
         self.model = self._create_model_from_config(best_config)
@@ -239,7 +241,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
         num_samples: int = 100,
         space: Optional[Dict] = None,
         search_alg=None,
-        verbose: bool = False,
+        verbose: int = 0,
     ) -> None:
         self.discretization_level = discretization_level
         self.processes = processes
@@ -247,7 +249,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
         self.verbose = verbose
         if space is None:
             space = {
-                "birth_rate": tune.loguniform(0.01, 30.0),
+                "birth_rate": tune.loguniform(1.0, 30.0),
                 "sampling_probability": tune.loguniform(0.0000001, 1.0),
             }
         else:
@@ -266,7 +268,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
         # Estimate mutation rate with MLE
         mle = IIDExponentialMLE()
         mle.estimate_branch_lengths(deepcopy(tree))
-        self.space["mutation_rate"] = mle.mutation_rate
+        self.space["mutation_rate"] = tune.loguniform(mle.mutation_rate / 2.0, mle.mutation_rate * 2.0)
 
         self.tree = tree
         ray.init(num_cpus=self.processes)
@@ -279,11 +281,13 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
                 metric='log_likelihood',
                 mode='max',
                 progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
+                verbose=self.verbose,
             )
         except:
             ray.shutdown()
             raise BranchLengthEstimatorError(f"Ray tune failed")
         ray.shutdown()
+        del self.tree
         self.analysis = analysis
         best_config = analysis.best_config
         self.model = self._create_model_from_config(best_config)
@@ -302,6 +306,83 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
         return IIDExponentialBayesian(
             mutation_rate=config['mutation_rate'],
             birth_rate=config['birth_rate'],
+            discretization_level=self.discretization_level,
+            sampling_probability=config['sampling_probability'],
+        )
+
+
+class IIDExponentialPosteriorMeanBLEAutotuneSmart(BranchLengthEstimator):
+    """
+    Like IIDExponentialPosteriorMeanBLEAutotune, but we use the MLE
+    to get the mutation rate, and use moment matching to inform
+    a reasonable grid for the birth rate and subsampling probability.
+    """
+    def __init__(
+        self,
+        discretization_level: int,
+        processes: int = 6,
+        num_samples: int = 100,
+        search_alg=None,
+        verbose: int = 0,
+    ) -> None:
+        self.discretization_level = discretization_level
+        self.processes = processes
+        self.num_samples = num_samples
+        self.verbose = verbose
+        if search_alg is None:
+            search_alg = HyperOptSearch(
+                metric="log_likelihood", mode="max"
+            )
+        self.search_alg = search_alg
+
+    def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
+        r"""
+        See base class.
+        """
+        # Estimate mutation rate with MLE
+        mle = IIDExponentialMLE()
+        mle.estimate_branch_lengths(deepcopy(tree))
+        self.space = {}
+        self.space["mutation_rate"] = tune.loguniform(mle.mutation_rate / 2.0, mle.mutation_rate * 2.0)
+        self.space["e_pop_size"] = tune.loguniform(tree.n_cell / 10.0, tree.n_cell * 10.0)
+        self.space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
+
+        self.tree = tree
+        ray.init(num_cpus=self.processes)
+        try:
+            analysis = tune.run(
+                self._trainable,
+                config=self.space,
+                num_samples=self.num_samples,
+                search_alg=self.search_alg,
+                metric='log_likelihood',
+                mode='max',
+                progress_reporter=EmptyReporter(),  # Doesn't seem to work as I intend it to...
+                verbose=self.verbose,
+            )
+        except:
+            ray.shutdown()
+            raise BranchLengthEstimatorError(f"Ray tune failed")
+        ray.shutdown()
+        del self.tree
+        self.analysis = analysis
+        best_config = analysis.best_config
+        self.model = self._create_model_from_config(best_config)
+        self.model.estimate_branch_lengths(tree)
+        # Copy over attributes associated with the bayesian estimator.
+        self.mutation_rate = self.model.mutation_rate
+        self.birth_rate = self.model.birth_rate
+        self.log_likelihood = self.model.log_likelihood
+
+    def _trainable(self, config: Dict):
+        model = self._create_model_from_config(config)
+        model.estimate_branch_lengths(deepcopy(self.tree))
+        tune.report(log_likelihood=model.log_likelihood)
+
+    def _create_model_from_config(self, config):
+        return IIDExponentialBayesian(
+            mutation_rate=config['mutation_rate'],
+            birth_rate=np.log(config['e_pop_size']) + np.log(1.0 / config['sampling_probability']),
             discretization_level=self.discretization_level,
             sampling_probability=config['sampling_probability'],
         )

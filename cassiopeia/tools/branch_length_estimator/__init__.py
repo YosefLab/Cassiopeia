@@ -7,6 +7,7 @@ from .BranchLengthEstimator import BranchLengthEstimator
 from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
 from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLEAutotune,
+    IIDExponentialPosteriorMeanBLEAutotuneSmart,
     IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )
