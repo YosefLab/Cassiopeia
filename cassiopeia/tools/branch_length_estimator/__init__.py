@@ -13,3 +13,4 @@ from .IIDExponentialPosteriorMeanBLE import (
 )
 from .NumberOfMutationsBLE import NumberOfMutationsBLE
 from .IgnoreCharactersWrapper import IgnoreCharactersWrapper
+from .IIDExponentialBayesian import IIDExponentialBayesian

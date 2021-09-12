@@ -58,12 +58,31 @@ to_cythonize = [
     ),
 ]
 
+extension_modules_with_custom_compile_args = [
+    Extension(
+        "cassiopeia.tools.branch_length_estimator._iid_exponential_bayesian",
+        sources=[
+            "cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.pyx",
+            "cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian_cpp.cpp",
+        ],
+        extra_compile_args=[
+            "-std=c++17",
+            "-Wall",
+            "-Wextra",
+            "-pedantic",
+            "-O3",
+        ],
+        language="c++",
+    ),
+]
+
 setup(
     name="cassiopeia-lineage",
     python_requires=">=3.6",
     ext_modules=cythonize(
         to_cythonize, compiler_directives={"language_level": "3"}
-    ),
+    )
+    + extension_modules_with_custom_compile_args,
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,

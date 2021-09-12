@@ -13,11 +13,11 @@ depth or agreement between character states and phylogeny.
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
-import copy
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
-import warnings
-
 import collections
+import copy
+import warnings
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+
 import ete3
 import networkx as nx
 import numpy as np
@@ -2144,6 +2144,41 @@ class CassiopeiaTree:
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
         return copy.deepcopy(self)
+
+    def impute_deducible_missing_states(self):
+        """
+        Impute deducible missing states.
+
+        If a state is missing in a node but present in its parent,
+        then it can be imputed as the parent's state.
+        We perform all these imputations.
+
+        Raises:
+            CassiopeiaTreeError if the character vectors do not all have
+            the same length, or if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+        for (parent, child) in self.depth_first_traverse_edges():
+            parent_states = self.get_character_states(parent)
+            child_states = self.get_character_states(child)
+            if not len(parent_states) == len(child_states):
+                raise CassiopeiaTreeError(
+                    "Parent and child node have different length character "
+                    "states."
+                )
+            new_child_states = []
+            for i, (parent_state, child_state) in enumerate(
+                zip(parent_states, child_states)
+            ):
+                if (
+                    parent_state != 0
+                    and parent_state != self.missing_state_indicator
+                    and child_state == self.missing_state_indicator
+                ):
+                    new_child_states.append(parent_state)
+                else:
+                    new_child_states.append(child_state)
+            self.set_character_states(child, new_child_states)
 
 
 def resolve_multifurcations(tree: CassiopeiaTree) -> None:
