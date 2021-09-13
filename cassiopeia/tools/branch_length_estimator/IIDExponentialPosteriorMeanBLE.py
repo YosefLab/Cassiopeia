@@ -456,6 +456,11 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartCV(BranchLengthEstimator):
         ray.shutdown()
         self.analysis = analysis
         best_config = analysis.best_config
+        if self.verbose_cv:
+            print(
+                f"Refitting full model with:\n"
+                f"config={best_config}"
+            )
         self.model = self._create_model_from_config(best_config)
         self.model.estimate_branch_lengths(tree)
         # Copy over attributes associated with the bayesian estimator.
