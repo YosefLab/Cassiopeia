@@ -27,6 +27,10 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
     Uses character-level cross validation to tune the hyperparameters
     of the model.
 
+    n_folds = 0 means that it is a training-based procedure only,
+    such as in Empirical Bayes. This is a (somewhat hacky) way
+    of leveraging ray tune to perform Empirical Bayes.
+
     TODO
     """
 
@@ -60,7 +64,11 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
                 self._trainable,
                 config=self._create_space(tree),
                 num_samples=self._n_hyperparams,
-                search_alg=HyperOptSearch(metric="cv_metric", mode="max", random_state_seed=self._random_seed),
+                search_alg=HyperOptSearch(
+                    metric="cv_metric",
+                    mode="max",
+                    random_state_seed=self._random_seed,
+                ),
                 metric="cv_metric",
                 mode="max",
                 verbose=0,
@@ -75,7 +83,7 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
         )
         best_config = analysis.best_config
         self.results_df = analysis.results_df
-        self.best_cv_metric = analysis.best_result['cv_metric']
+        self.best_cv_metric = analysis.best_result["cv_metric"]
         if self._verbose:
             print(f"Refitting full model with:\n" f"config={best_config}")
         model = self._create_model_from_config(best_config)
@@ -103,17 +111,28 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
             print(f"Cross-validating hyperparameters:" f"\nconfig={config}")
         n_characters = tree.n_character
         params = []
-        split_size = int((n_characters + n_folds - 1) / n_folds)
         random_char_indices = self._random_char_indices
-        for split_id in range(n_folds):
+        for split_id in range(
+            max(n_folds, 1)
+        ):  # Want to loop exactly once if n_folds == 0
             if n_folds == 0:
-                held_out_character_idxs = []
+                train_indices = random_char_indices[:]
+                # CassiopeiaTree complains if we don't use at least
+                # one character... Doesn't matter cause it won't be
+                # used anyway...
+                cv_indices = [0]
             else:
-                held_out_character_idxs = random_char_indices[
+                split_size = int((n_characters + n_folds - 1) / n_folds)
+                cv_indices = random_char_indices[
                     (split_id * split_size) : ((split_id + 1) * split_size)
                 ]
+                train_indices = [
+                    i for i in range(n_characters) if i not in cv_indices
+                ]
             train_tree, valid_tree = self._cv_split(
-                tree=tree, held_out_character_idxs=held_out_character_idxs
+                tree=tree,
+                train_indices=train_indices,
+                cv_indices=cv_indices,
             )
             model = self._create_model_from_config(config)
             params.append((model, train_tree, valid_tree, self._cv_metric))
@@ -126,25 +145,22 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
         return np.mean(np.array(cv_metric_folds))
 
     def _cv_split(
-        self, tree: CassiopeiaTree, held_out_character_idxs: List[int]
+        self,
+        tree: CassiopeiaTree,
+        train_indices: List[int],
+        cv_indices: List[int],
     ) -> Tuple[CassiopeiaTree, CassiopeiaTree]:
         verbose = self._verbose
         if verbose:
-            print(
-                "CrossValidatedBLE held_out_character_idxs "
-                f"= {held_out_character_idxs}"
-            )
+            print("CrossValidatedBLE train_indices " f"= {train_indices}")
+            print("CrossValidatedBLE cv_indices " f"= {cv_indices}")
         tree_topology = tree.get_tree_topology()
         train_states = {}
         valid_states = {}
         for node in tree.nodes:
             state = tree.get_character_states(node)
-            train_state = [
-                state[i]
-                for i in range(len(state))
-                if i not in held_out_character_idxs
-            ]
-            valid_state = [state[i] for i in held_out_character_idxs]
+            train_state = [state[i] for i in train_indices]
+            valid_state = [state[i] for i in cv_indices]
             train_states[node] = train_state
             valid_states[node] = valid_state
         train_tree = CassiopeiaTree(tree=tree_topology)
@@ -153,12 +169,14 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
         valid_tree.set_all_character_states(valid_states)
         return train_tree, valid_tree
 
+    @staticmethod
     @abc.abstractmethod
-    def _create_space(self, tree: CassiopeiaTree):
+    def _create_space(tree: CassiopeiaTree):
         raise NotImplementedError
 
+    @staticmethod
     @abc.abstractmethod
-    def _create_model_from_config(self, config: Dict):
+    def _create_model_from_config(config: Dict):
         raise NotImplementedError
 
     @staticmethod
@@ -181,28 +199,42 @@ def _get_cv_metric_folds(args: Tuple):
     return cv_metric
 
 
-class IIDExponentialBayesianCrossValidated(CrossValidatedBLE):
-    def _create_space(self, tree: CassiopeiaTree):
-        mle = IIDExponentialMLE()
-        mle.estimate_branch_lengths(deepcopy(tree))
-        space = {}
-        space["mutation_rate"] = tune.loguniform(
-            mle.mutation_rate / 2.0, mle.mutation_rate * 2.0
-        )
-        space["e_pop_size"] = tune.loguniform(
-            tree.n_cell / 10.0, tree.n_cell * 10.0
-        )
-        space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
-        return space
+def _create_space_iid_exponential_bayesian(tree: CassiopeiaTree) -> Dict:
+    mle = IIDExponentialMLE()
+    mle.estimate_branch_lengths(deepcopy(tree))
+    space = {}
+    space["mutation_rate"] = tune.loguniform(
+        mle.mutation_rate / 2.0, mle.mutation_rate * 2.0
+    )
+    space["e_pop_size"] = tune.loguniform(
+        tree.n_cell / 10.0, tree.n_cell * 10.0
+    )
+    space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
+    return space
 
-    def _create_model_from_config(self, config: Dict):
-        return IIDExponentialBayesian(
-            mutation_rate=config["mutation_rate"],
-            birth_rate=np.log(config["e_pop_size"])
-            + np.log(1.0 / config["sampling_probability"]),
-            sampling_probability=config["sampling_probability"],
-            discretization_level=600,
-        )
+
+def _create_model_from_config_iid_exponential_bayesian(config: Dict) -> Dict:
+    return IIDExponentialBayesian(
+        mutation_rate=config["mutation_rate"],
+        birth_rate=np.log(config["e_pop_size"])
+        + np.log(1.0 / config["sampling_probability"]),
+        sampling_probability=config["sampling_probability"],
+        discretization_level=600,
+    )
+
+
+class IIDExponentialBayesianCrossValidated(CrossValidatedBLE):
+    """
+    TODO
+    """
+
+    @staticmethod
+    def _create_space(tree: CassiopeiaTree):
+        return _create_space_iid_exponential_bayesian(tree)
+
+    @staticmethod
+    def _create_model_from_config(config: Dict):
+        return _create_model_from_config_iid_exponential_bayesian(config)
 
     @staticmethod
     def _cv_metric(fitted_model, valid_tree: CassiopeiaTree) -> float:
@@ -213,14 +245,20 @@ class IIDExponentialBayesianCrossValidated(CrossValidatedBLE):
 
 
 class IIDExponentialMLECrossValidated(CrossValidatedBLE):
-    def _create_space(self, tree: CassiopeiaTree):
+    """
+    TODO
+    """
+
+    @staticmethod
+    def _create_space(tree: CassiopeiaTree):
         space = {}
         space["minimum_branch_length"] = tune.loguniform(
             0.0000001, 1.0 / (tree.get_edge_depth() + 1e-8)
         )
         return space
 
-    def _create_model_from_config(self, config: Dict):
+    @staticmethod
+    def _create_model_from_config(config: Dict):
         return IIDExponentialMLE(**config)
 
     @staticmethod
@@ -229,3 +267,37 @@ class IIDExponentialMLECrossValidated(CrossValidatedBLE):
             valid_tree,
             mutation_rate=fitted_model.mutation_rate,
         )
+
+
+class IIDExponentialBayesianEmpiricalBayes(CrossValidatedBLE):
+    """
+    TODO
+    """
+
+    def __init__(
+        self,
+        n_hyperparams: int = 60,
+        n_parallel_hyperparams: int = 6,
+        random_seed: int = 0,
+        verbose: bool = False,
+    ) -> None:
+        super().__init__(
+            n_hyperparams=n_hyperparams,
+            n_parallel_hyperparams=n_parallel_hyperparams,
+            n_folds=0,
+            n_parallel_folds=1,
+            random_seed=random_seed,
+            verbose=verbose,
+        )
+
+    @staticmethod
+    def _create_space(tree: CassiopeiaTree):
+        return _create_space_iid_exponential_bayesian(tree)
+
+    @staticmethod
+    def _create_model_from_config(config: Dict):
+        return _create_model_from_config_iid_exponential_bayesian(config)
+
+    @staticmethod
+    def _cv_metric(fitted_model, valid_tree: CassiopeiaTree) -> float:
+        return fitted_model.log_likelihood

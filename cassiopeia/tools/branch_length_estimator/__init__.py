@@ -15,4 +15,4 @@ from .IIDExponentialPosteriorMeanBLE import (
 from .NumberOfMutationsBLE import NumberOfMutationsBLE
 from .IgnoreCharactersWrapper import IgnoreCharactersWrapper
 from .IIDExponentialBayesian import IIDExponentialBayesian
-from .CrossValidatedBLE import IIDExponentialMLECrossValidated, IIDExponentialBayesianCrossValidated
+from .CrossValidatedBLE import IIDExponentialMLECrossValidated, IIDExponentialBayesianCrossValidated, IIDExponentialBayesianEmpiricalBayes

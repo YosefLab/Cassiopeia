@@ -7,6 +7,7 @@ from .branch_length_estimator import (
     IIDExponentialMLE,
     IIDExponentialMLECrossValidated,
     IIDExponentialBayesianCrossValidated,
+    IIDExponentialBayesianEmpiricalBayes,
     IIDExponentialMLEGridSearchCV,
     BranchLengthEstimator,
     BLEMultifurcationWrapper,
