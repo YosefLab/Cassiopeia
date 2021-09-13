@@ -1,5 +1,5 @@
 """Top level for branch length estimator."""
-from .IIDExponentialMLE import IIDExponentialMLE
+from .IIDExponentialMLE import IIDExponentialMLE, IIDExponentialMLEGridSearchCV
 
 from .BLEEnsemble import BLEEnsemble
 from .BLEMultifurcationWrapper import BLEMultifurcationWrapper
@@ -8,6 +8,7 @@ from .IIDExponentialBLE import IIDExponentialBLE, IIDExponentialBLEGridSearchCV
 from .IIDExponentialPosteriorMeanBLE import (
     IIDExponentialPosteriorMeanBLEAutotune,
     IIDExponentialPosteriorMeanBLEAutotuneSmart,
+    IIDExponentialPosteriorMeanBLEAutotuneSmartCV,
     IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
 )

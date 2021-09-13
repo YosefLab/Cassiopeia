@@ -900,6 +900,27 @@ class CassiopeiaTree:
         times_dict = self.get_times()
         return max(times_dict.values())
 
+    def get_edge_depth(self) -> float:
+        """
+        Depth of the tree (in maximum number of edges from root to any leaf).
+        TODO: Test
+
+        The depth of the tree (in time) is defined as the greatest time of any
+        leaf of the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        def dfs(v):
+            res = 0
+            for u in self.children(v):
+                res = max(res, 1 + dfs(u))
+            return res
+
+        return dfs(self.root)
+
     def __set_branch_length(
         self, parent: str, child: str, length: float
     ) -> None:

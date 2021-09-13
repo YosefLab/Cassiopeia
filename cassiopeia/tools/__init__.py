@@ -5,6 +5,7 @@ from .small_parsimony import fitch_count, fitch_hartigan, score_small_parsimony
 
 from .branch_length_estimator import (
     IIDExponentialMLE,
+    IIDExponentialMLEGridSearchCV,
     BranchLengthEstimator,
     BLEMultifurcationWrapper,
     IgnoreCharactersWrapper,
@@ -12,6 +13,7 @@ from .branch_length_estimator import (
     IIDExponentialBLEGridSearchCV,
     IIDExponentialPosteriorMeanBLEAutotune,
     IIDExponentialPosteriorMeanBLEAutotuneSmart,
+    IIDExponentialPosteriorMeanBLEAutotuneSmartCV,
     IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate,
     IIDExponentialPosteriorMeanBLEGridSearchCV,
     NumberOfMutationsBLE,
