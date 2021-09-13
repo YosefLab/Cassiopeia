@@ -36,12 +36,14 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
         n_parallel_hyperparams: int = 6,
         n_folds: int = 6,
         n_parallel_folds: int = 6,
+        random_seed: int = 0,
         verbose: bool = False,
     ) -> None:
         self._n_hyperparams = n_hyperparams
         self._n_parallel_hyperparams = n_parallel_hyperparams
         self._n_folds = n_folds
         self._n_parallel_folds = n_parallel_folds
+        self._random_seed = random_seed
         self._verbose = verbose
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
@@ -58,8 +60,8 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
                 self._trainable,
                 config=self._create_space(tree),
                 num_samples=self._n_hyperparams,
-                search_alg=HyperOptSearch(metric="log_likelihood", mode="max"),
-                metric="log_likelihood",
+                search_alg=HyperOptSearch(metric="cv_metric", mode="max", random_state_seed=self._random_seed),
+                metric="cv_metric",
                 mode="max",
                 verbose=0,
             )
@@ -72,6 +74,8 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
             self._random_char_indices,
         )
         best_config = analysis.best_config
+        self.results_df = analysis.results_df
+        self.best_cv_metric = analysis.best_result['cv_metric']
         if self._verbose:
             print(f"Refitting full model with:\n" f"config={best_config}")
         model = self._create_model_from_config(best_config)
@@ -82,10 +86,10 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
 
     def _trainable(self, config: Dict):
         tune.report(
-            log_likelihood=self._cv_log_likelihood(deepcopy(self._tree), config)
+            cv_metric=self._cv_metric_from_config(deepcopy(self._tree), config)
         )
 
-    def _cv_log_likelihood(
+    def _cv_metric_from_config(
         self,
         tree: CassiopeiaTree,
         config: Dict,
@@ -102,21 +106,24 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
         split_size = int((n_characters + n_folds - 1) / n_folds)
         random_char_indices = self._random_char_indices
         for split_id in range(n_folds):
-            held_out_character_idxs = random_char_indices[
-                (split_id * split_size) : ((split_id + 1) * split_size)
-            ]
+            if n_folds == 0:
+                held_out_character_idxs = []
+            else:
+                held_out_character_idxs = random_char_indices[
+                    (split_id * split_size) : ((split_id + 1) * split_size)
+                ]
             train_tree, valid_tree = self._cv_split(
                 tree=tree, held_out_character_idxs=held_out_character_idxs
             )
             model = self._create_model_from_config(config)
-            params.append((model, train_tree, valid_tree))
+            params.append((model, train_tree, valid_tree, self._cv_metric))
         with multiprocessing.Pool(processes=processes) as pool:
             map_fn = pool.map if processes > 1 else map
-            log_likelihood_folds = list(map_fn(_fit_model, params))
+            cv_metric_folds = list(map_fn(_get_cv_metric_folds, params))
         if verbose:
-            print(f"log_likelihood_folds = {log_likelihood_folds}")
-            print(f"mean log likelihood = {np.mean(log_likelihood_folds)}")
-        return np.mean(np.array(log_likelihood_folds))
+            print(f"cv_metric_folds = {cv_metric_folds}")
+            print(f"mean log likelihood = {np.mean(cv_metric_folds)}")
+        return np.mean(np.array(cv_metric_folds))
 
     def _cv_split(
         self, tree: CassiopeiaTree, held_out_character_idxs: List[int]
@@ -154,21 +161,24 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
     def _create_model_from_config(self, config: Dict):
         raise NotImplementedError
 
+    @staticmethod
+    @abc.abstractmethod
+    def _cv_metric(fitted_model, valid_tree: CassiopeiaTree) -> float:
+        raise NotImplementedError
 
-def _fit_model(args):
+
+def _get_cv_metric_folds(args: Tuple):
     """
     TODO
     """
-    model, train_tree, valid_tree = args
+    model, train_tree, valid_tree, _cv_metric = args
     try:
         model.estimate_branch_lengths(train_tree)
         valid_tree.set_times(train_tree.get_times())
-        held_out_log_likelihood = IIDExponentialMLE.model_log_likelihood(
-            valid_tree, mutation_rate=model.mutation_rate
-        )
-    except (IIDExponentialMLEError, ValueError):
-        held_out_log_likelihood = -np.inf
-    return held_out_log_likelihood
+        cv_metric = _cv_metric(model, valid_tree)
+    except:
+        cv_metric = -np.inf
+    return cv_metric
 
 
 class IIDExponentialBayesianCrossValidated(CrossValidatedBLE):
@@ -194,6 +204,13 @@ class IIDExponentialBayesianCrossValidated(CrossValidatedBLE):
             discretization_level=600,
         )
 
+    @staticmethod
+    def _cv_metric(fitted_model, valid_tree: CassiopeiaTree) -> float:
+        return IIDExponentialMLE.model_log_likelihood(
+            valid_tree,
+            mutation_rate=fitted_model.mutation_rate,
+        )
+
 
 class IIDExponentialMLECrossValidated(CrossValidatedBLE):
     def _create_space(self, tree: CassiopeiaTree):
@@ -205,3 +222,10 @@ class IIDExponentialMLECrossValidated(CrossValidatedBLE):
 
     def _create_model_from_config(self, config: Dict):
         return IIDExponentialMLE(**config)
+
+    @staticmethod
+    def _cv_metric(fitted_model, valid_tree: CassiopeiaTree) -> float:
+        return IIDExponentialMLE.model_log_likelihood(
+            valid_tree,
+            mutation_rate=fitted_model.mutation_rate,
+        )
