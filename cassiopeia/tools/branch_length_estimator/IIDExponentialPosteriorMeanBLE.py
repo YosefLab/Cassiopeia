@@ -180,7 +180,7 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
         self.space = space
         if search_alg is None:
             search_alg = HyperOptSearch(
-                metric="log_likelihood", mode="max"
+                metric="log_likelihood", mode="max", random_state_seed=0
             )
         self.search_alg = search_alg
 
@@ -258,7 +258,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartMutRate(BranchLengthEstimator):
         self.space = space
         if search_alg is None:
             search_alg = HyperOptSearch(
-                metric="log_likelihood", mode="max"
+                metric="log_likelihood", mode="max", random_state_seed=0
             )
         self.search_alg = search_alg
 
@@ -333,7 +333,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmart(BranchLengthEstimator):
         self.verbose = verbose
         if search_alg is None:
             search_alg = HyperOptSearch(
-                metric="log_likelihood", mode="max"
+                metric="log_likelihood", mode="max", random_state_seed=0
             )
         self.search_alg = search_alg
 
@@ -416,7 +416,7 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmartCV(BranchLengthEstimator):
         self.verbose_cv = verbose_cv
         if search_alg is None:
             search_alg = HyperOptSearch(
-                metric="log_likelihood", mode="max"
+                metric="log_likelihood", mode="max", random_state_seed=0
             )
         self.search_alg = search_alg
         self.n_fold = n_fold
