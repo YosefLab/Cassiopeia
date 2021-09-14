@@ -2201,11 +2201,10 @@ class CassiopeiaTree:
                     new_child_states.append(child_state)
             self.set_character_states(child, new_child_states)
 
-
-def resolve_multifurcations(tree: CassiopeiaTree) -> None:
-    r"""
-    Resolves the multifurcations of the CassiopeiaTree inplace.
-    """
-    binary_topology = utilities.resolve_multifurcations_networkx(
-        tree.get_tree_topology())
-    tree.populate_tree(binary_topology)
+    def resolve_multifurcations(self) -> None:
+        """
+        Resolves the multifurcations of the CassiopeiaTree inplace.
+        """
+        binary_topology = utilities.resolve_multifurcations_networkx(
+            self.get_tree_topology())
+        self.populate_tree(binary_topology)
