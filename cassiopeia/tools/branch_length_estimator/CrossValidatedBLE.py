@@ -122,9 +122,10 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
                 # used anyway...
                 cv_indices = [0]
             else:
-                split_size = int((n_characters + n_folds - 1) / n_folds)
-                cv_indices = random_char_indices[
-                    (split_id * split_size) : ((split_id + 1) * split_size)
+                cv_indices = [
+                    random_char_indices[i]
+                    for i in range(n_characters)
+                    if i % n_folds == split_id
                 ]
                 train_indices = [
                     i for i in range(n_characters) if i not in cv_indices
