@@ -368,6 +368,8 @@ class IIDExponentialPosteriorMeanBLEAutotuneSmart(BranchLengthEstimator):
         ray.shutdown()
         self.analysis = analysis
         best_config = analysis.best_config
+        self.results_df = analysis.results_df
+        self.best_cv_metric = analysis.best_result["log_likelihood"]
         self.model = self._create_model_from_config(best_config)
         self.model.estimate_branch_lengths(tree)
         # Copy over attributes associated with the bayesian estimator.
