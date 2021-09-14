@@ -27,7 +27,7 @@ from .IIDExponentialMLE import IIDExponentialMLE, IIDExponentialMLEError
 from .IIDExponentialBayesian import IIDExponentialBayesian
 
 
-def _fit_model(model_and_tree):
+def _fit_model_old(model_and_tree):
     r"""
     This is used by IIDExponentialPosteriorMeanBLEGridSearchCV to
     parallelize the grid search. It must be defined here (at the top level of
@@ -104,7 +104,7 @@ class IIDExponentialPosteriorMeanBLEGridSearchCV(BranchLengthEstimator):
             map_fn = pool.map if processes > 1 else map
             lls = list(
                 map_fn(
-                    _fit_model,
+                    _fit_model_old,
                     zip(models, [deepcopy(tree) for _ in range(len(models))]),
                 )
             )
