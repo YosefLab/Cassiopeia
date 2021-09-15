@@ -130,14 +130,15 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         q = np.zeros(dissimilarity_map.shape)
         n = dissimilarity_map.shape[0]
+        dissimilarity_map_rowsums = dissimilarity_map.sum(axis=1)
         for i in range(n):
             for j in range(i):
                 q[i, j] = q[j, i] = (dissimilarity_map[i, j]) - (
                     1
                     / (n - 2)
                     * (
-                        dissimilarity_map[i, :].sum()
-                        + dissimilarity_map[j, :].sum()
+                        dissimilarity_map_rowsums[i]
+                        + dissimilarity_map_rowsums[j]
                     )
                 )
         return q
