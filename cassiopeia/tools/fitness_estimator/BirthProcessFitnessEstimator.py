@@ -16,8 +16,11 @@ class BirthProcessFitnessEstimator(FitnessEstimator):
             mean fitness of its ancestors (including itself).
     """
 
-    def __init__(self, smooth: bool = True):
+    def __init__(
+        self, smooth: bool = True, leaf_average_for_internal_nodes: bool = False
+    ):
         self._smooth = smooth
+        self._leaf_average_for_internal_nodes = leaf_average_for_internal_nodes
 
     def estimate_fitness(self, tree: CassiopeiaTree):
         """
@@ -33,9 +36,11 @@ class BirthProcessFitnessEstimator(FitnessEstimator):
             ch = tree.children(v)
             if len(ch) == 0:
                 # Is a leaf
-                # Use the reflection heuristic.
-                branch_length = tree.get_branch_length(tree.parent(v), v)
-                fitness[v] = 0.5 / branch_length
+                # Use the last branch length seen.
+                branch_length = tree.get_branch_length(
+                    tree.parent(tree.parent(v)), tree.parent(v)
+                )
+                fitness[v] = 1.0 / branch_length
                 return 0, 0
             else:
                 # Is internal
@@ -49,9 +54,9 @@ class BirthProcessFitnessEstimator(FitnessEstimator):
                     length += length_u + tree.get_branch_length(v, u)
                 if num_internal == 0:
                     # Border case: this is a cherry
-                    # Use the reflection heuristic to create pseudo-births.
-                    branch_length = tree.get_branch_length(v, ch[0])
-                    fitness[v] = 0.5 / branch_length
+                    # Use the last branch length seen
+                    branch_length = tree.get_branch_length(tree.parent(v), v)
+                    fitness[v] = 1.0 / branch_length
                 else:
                     fitness[v] = num_internal / length
                 return num_internal, length
@@ -73,5 +78,32 @@ class BirthProcessFitnessEstimator(FitnessEstimator):
         else:
             smoothed_fitness = fitness
 
+        final_fitness = {}
+        if self._leaf_average_for_internal_nodes:
+
+            def dfs(v: str) -> Tuple[int, float]:
+                """
+                The sum of fitness of the leaves in this subtree,
+                and the size of the subtree
+                """
+                ch = tree.children(v)
+                if len(ch) == 0:
+                    # Is a leaf
+                    final_fitness[v] = smoothed_fitness[v] / 1
+                    return 1, smoothed_fitness[v]
+                else:
+                    n_leaves = 0
+                    sum_of_leaves_fitness = 0
+                    for u in ch:
+                        n_leaves_u, sum_of_leaves_fitness_u = dfs(u)
+                        n_leaves += n_leaves_u
+                        sum_of_leaves_fitness += sum_of_leaves_fitness_u
+                    final_fitness[v] = sum_of_leaves_fitness / n_leaves
+                    return n_leaves, sum_of_leaves_fitness
+
+            dfs(tree.root)
+        else:
+            final_fitness = smoothed_fitness
+
         for node in tree.nodes:
-            tree.set_attribute(node, "fitness", smoothed_fitness[node])
+            tree.set_attribute(node, "fitness", final_fitness[node])
