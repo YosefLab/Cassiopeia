@@ -38,3 +38,8 @@ from .cell_subsampler import (
     EmptySubtreeError,
     UniformCellSubsampler,
 )
+from .fitness_estimator import (
+    FitnessEstimator,
+    FitnessEstimatorError,
+    BirthProcessFitnessEstimator,
+)
