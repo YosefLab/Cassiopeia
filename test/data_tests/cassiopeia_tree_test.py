@@ -1964,7 +1964,7 @@ class TestCassiopeiaTree(unittest.TestCase):
     def test_likelihood_bad_cases(self):
         small_tree = cas.data.CassiopeiaTree(tree=self.small_net)
         with self.assertRaises(CassiopeiaTreeError):
-            small_tree.calculate_irreversible_likelihood(0.5, 0.25)
+            small_tree.calculate_likelihood(mutation_rate = 0.5, missing_rate = 0.25)
 
         small_cm = pd.DataFrame.from_dict(
             {
@@ -1980,7 +1980,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree=self.small_net, character_matrix=small_cm
         )
         with self.assertRaises(CassiopeiaTreeError):
-            small_tree.calculate_irreversible_likelihood(0.5, 0.25)
+            small_tree.calculate_likelihood(mutation_rate = 0.5, missing_rate = 0.25)
 
         priors = {
             0: {1: 0.3, 2: 0.7},
@@ -1993,30 +1993,30 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
 
         with self.assertRaises(CassiopeiaTreeError):
-            small_tree.calculate_irreversible_likelihood(
-                0.5,
-                0.25,
+            small_tree.calculate_likelihood(
                 use_branch_lengths=False,
                 use_internal_character_states=True,
+                mutation_rate = 0.5,
+                missing_rate = 0.25
             )
 
         small_tree.set_character_states("node7", [0, 0, 0])
         small_tree.set_character_states("node5", [0, 0, 0])
 
         with self.assertRaises(CassiopeiaTreeError):
-            small_tree.calculate_irreversible_likelihood(
-                0.5,
-                0.25,
+            small_tree.calculate_likelihood(
                 use_branch_lengths=False,
                 use_internal_character_states=True,
+                mutation_rate = 0.5,
+                missing_rate = 0.25
             )
 
         small_tree.set_character_states("node6", [0, 0, 1])
-        L = small_tree.calculate_irreversible_likelihood(
-            0.5,
-            0.25,
+        L = small_tree.calculate_likelihood(
             use_branch_lengths=False,
             use_internal_character_states=True,
+            mutation_rate = 0.5,
+            missing_rate = 0.25
         )
         self.assertEqual(-np.inf, L)
 
@@ -2035,10 +2035,25 @@ class TestCassiopeiaTree(unittest.TestCase):
         small_tree = cas.data.CassiopeiaTree(
             tree=self.small_net, character_matrix=small_cm, priors=priors
         )
-        L = small_tree.calculate_irreversible_likelihood(
-            0.5, 0.25, use_branch_lengths=False
+        L = small_tree.calculate_likelihood(
+            use_branch_lengths=False, mutation_rate = 0.5, missing_rate = 0.25
         )
         self.assertTrue(np.isclose(L, -10.549534744691526))
+        L = small_tree.calculate_likelihood(
+            use_branch_lengths=False,
+        )
+        self.assertTrue(np.isclose(L, -10.563753361212125))
+        L = small_tree.calculate_likelihood(
+            use_branch_lengths=False,
+            mutation_rate=0.5
+        )
+        self.assertTrue(np.isclose(L, -10.578226514454402))
+        L = small_tree.calculate_likelihood(
+            use_branch_lengths=False,
+            missing_rate=0.25
+        )
+        self.assertTrue(np.isclose(L, -10.53506159144925))
+        
 
     def test_likelihood_more_complex_case(self):
         small_cm = pd.DataFrame.from_dict(
@@ -2060,8 +2075,8 @@ class TestCassiopeiaTree(unittest.TestCase):
         small_tree = cas.data.CassiopeiaTree(
             tree=self.small_net, character_matrix=small_cm, priors=priors
         )
-        L = small_tree.calculate_irreversible_likelihood(
-            0.5, 0.25, use_branch_lengths=False
+        L = small_tree.calculate_likelihood(
+            use_branch_lengths=False, mutation_rate = 0.5, missing_rate = 0.25
         )
         self.assertTrue(np.isclose(L, -33.11623901010781))
 
@@ -2086,22 +2101,22 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree=self.small_net, character_matrix=small_cm, priors=priors
         )
         small_tree.reconstruct_ancestral_characters()
-        L = small_tree.calculate_irreversible_likelihood(
-            0.5,
-            0.25,
+        L = small_tree.calculate_likelihood(
             use_branch_lengths=False,
             use_internal_character_states=True,
+            mutation_rate = 0.5,
+            missing_rate = 0.25
         )
         self.assertTrue(np.isclose(L, -24.57491637086155))
 
         small_tree.set_character_states("node7", [0, 0, 0])
         small_tree.set_character_states("node5", [0, 0, 0])
         small_tree.set_character_states("node6", [0, 0, 2])
-        L = small_tree.calculate_irreversible_likelihood(
-            0.5,
-            0.25,
+        L = small_tree.calculate_likelihood(
             use_branch_lengths=False,
             use_internal_character_states=True,
+            mutation_rate = 0.5,
+            missing_rate = 0.25
         )
         self.assertTrue(np.isclose(L, -28.68500929005179))
 
@@ -2126,12 +2141,21 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
         small_tree.set_branch_length("node5", "node0", 1.5)
         small_tree.set_branch_length("node6", "node3", 2)
-        L = small_tree.calculate_irreversible_likelihood(0.5, 0.25)
-        self.assertTrue(np.isclose(L, -21.622010953883887))
+        L = small_tree.calculate_likelihood(mutation_rate = 0.5, missing_rate = 0.25)
+        self.assertTrue(np.isclose(L, -21.943439525312456))
+        L = small_tree.calculate_likelihood()
+        self.assertTrue(np.isclose(L, -21.202539074643276))
+        L = small_tree.calculate_likelihood(mutation_rate = 0.5)
+        self.assertTrue(np.isclose(L, -21.352813462794856))
+        L = small_tree.calculate_likelihood(missing_rate = 0.25)
+        self.assertTrue(np.isclose(L, -21.793165137160877))
 
     def test_likelihood_sum_to_one(self):
         priors = {0: {1: 0.2, 2: 0.8}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.2, 2: 0.8}}
-        ls = []
+        ls_branch = []
+        ls_no_branch = []
+        ls_branch_infer_rates = []
+        ls_no_branch_infer_rates = []
         for (
             a,
             b,
@@ -2151,14 +2175,32 @@ class TestCassiopeiaTree(unittest.TestCase):
                 small_tree = cas.data.CassiopeiaTree(
                     tree=small_net, character_matrix=small_cm, priors=priors
                 )
-                L = small_tree.calculate_irreversible_likelihood(
-                    0.5,
-                    0.25,
+                L_no_branch = small_tree.calculate_likelihood(
+                    use_branch_lengths=False,
+                    use_internal_character_states=False,
+                    mutation_rate = 0.5,
+                    missing_rate = 0.25
+                )
+                L_branch = small_tree.calculate_likelihood(
+                    use_branch_lengths=True,
+                    use_internal_character_states=False,
+                    mutation_rate = 0.5,
+                    missing_rate = 0.25
+                )
+                L_no_branch_infer_rates = small_tree.calculate_likelihood(
                     use_branch_lengths=False,
                     use_internal_character_states=False,
                 )
-                ls.append(np.exp(L))
-        self.assertTrue(np.isclose(sum(ls), 1.0))
+                L_branch_infer_rates = small_tree.calculate_likelihood(
+                    use_branch_lengths=True,
+                    use_internal_character_states=False,
+                )
+                ls_no_branch.append(np.exp(L_no_branch))
+                ls_branch.append(np.exp(L_branch))
+                ls_branch_infer_rates.append(np.exp(L_no_branch_infer_rates))
+                ls_no_branch_infer_rates.append(np.exp(L_branch_infer_rates))
+        self.assertTrue(np.isclose(sum(ls_branch), 1.0))
+        self.assertTrue(np.isclose(sum(ls_no_branch), 1.0))
 
 
 if __name__ == "__main__":

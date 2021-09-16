@@ -2071,12 +2071,19 @@ class CassiopeiaTree:
         Calculates the parsimony, defined as the number of character/state
         mutations that occur on edges of the tree, from the character state
         annotations at the nodes. A mutation is said to have occurred on an
-        edge if it is present in the character state of the child node and
-        not in the parent node.
+        edge if a state is present at a character at the child node and this
+        state is not in the parent node.
+
+        If `infer_ancestral_characters` is set to True, then the internal
+        nodes' character states are inferred by Camin-Sokal Parsimony. 
+        Otherwise, the existing annotations at the internal states are used.
+        If `treat_missing_as_mutations` is set to True, then transitions
+        from a non-missing state to a missing state are counted in the 
+        parsimony calculation. Otherwise, they are not included.
 
         Args:
-            infer_ancestral_characters: Whether to infer the ancestral characters
-                states of the tree
+            infer_ancestral_characters: Whether to infer the ancestral 
+                characters states of the tree
             treat_missing_as_mutations: Whether to treat missing states as
                 mutations
 
@@ -2093,23 +2100,31 @@ class CassiopeiaTree:
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
-        for n in self.internal_nodes:
-            if self.get_character_states(n) == []:
-                raise CassiopeiaTreeError(
-                    f"Character states empty at internal node. Annotate"
-                    " character states or infer ancestral characters by"
-                    " setting infer_ancestral_characters=True."
-                )
-
         parsimony = 0
-        for u, v in self.edges:
-            if self.get_character_states(u) == [] or self.get_character_states(v) == []:
-                raise CassiopeiaTreeError(
-                    "Character states have not been initialized at leaves."
-                    " Use set_character_states_at_leaves or populate_tree"
-                    " with the character matrix that specifies the leaf"
-                    " character states."
-                )
+
+        if self.get_character_states(self.root) == []:
+            raise CassiopeiaTreeError(
+                f"Character states empty at internal node. Annotate"
+                " character states or infer ancestral characters by"
+                " setting infer_ancestral_characters=True."
+            )
+
+        for u, v in self.depth_first_traverse_edges():
+            if self.get_character_states(v) == []:
+                if self.is_leaf(v):
+                    raise CassiopeiaTreeError(
+                        "Character states have not been initialized at leaves."
+                        " Use set_character_states_at_leaves or populate_tree"
+                        " with the character matrix that specifies the leaf"
+                        " character states."
+                    )
+                else: 
+                    raise CassiopeiaTreeError(
+                        f"Character states empty at internal node. Annotate"
+                        " character states or infer ancestral characters by"
+                        " setting infer_ancestral_characters=True."
+                    )
+
             parsimony += len(
                 self.get_mutations_along_edge(u, v, treat_missing_as_mutation)
             )
@@ -2118,14 +2133,10 @@ class CassiopeiaTree:
 
     def calculate_likelihood(
         self,
-        mutation_rate: float,
-        missing_rate: float,
         use_branch_lengths: bool = True,
         use_internal_character_states: bool = False,
-        mutation_probability_function_of_time: Callable = lambda rate, t: 1
-        - np.exp(-rate * t),
-        missing_probability_function_of_time: Callable = lambda rate, t: 1
-        - np.exp(-rate * t),
+        mutation_rate: Optional[float] = None,
+        missing_rate: Optional[float] = None
     ):
         """
         Calculates the log likelihood of a tree with irreversible mutations.
@@ -2133,7 +2144,7 @@ class CassiopeiaTree:
         Calculates the log likelihood of a tree given the character states at 
         the leaves using Felsenstein's Pruning Algorithm, which sets up a
         recursive relation between the likelihoods of states at nodes. The
-        likelihood (L(s, n)) at a given state s at a given node n is:
+        likelihood L(s, n) at a given state s at a given node n is:
 
         L(s, n) = Π_{n'}(Σ_{s'}(P(s'|s) * L(s', n')))
 
@@ -2154,30 +2165,48 @@ class CassiopeiaTree:
         that causes that character to acquire the missing state. This
         missing state is the 'missing_state_indicator' attribute of the tree.
 
-        The user must specify the rate at which mutations and missing data
-        events occur to calculate the transition probabilities between
-        states. If branch lengths are to be used, this rate is the probability
-        that a mutation occurs on a branch. If branch lengths are to be used,
-        this rate is supplied to a function that gives the probability of
-        acquiring a mutation as a function of time. The default is the
-        exponential CDF, giving the probability a mutation occurs in time t
-        assuming that mutations occur according to an exponential process.
+        The mode uses a mutation rate and a missing data rate.
+        If branch lengths are to be used, these rates are per-generation
+        rates, i.e. the probability that a mutation/missing data occurs
+        on a branch. If branch lengths are to be used, this rate is the 
+        instantaneous rate assuming that the waiting time until a mutation/
+        missing data is exponentially distributed. The probability that an
+        event occurred in time t is then given by the exponential CDF.
+
+        If the mutation rate and missing data rates are not specified by the
+        user, then they are inferred using the proportion of the characters
+        in the leaves that have either mutations or missing data and the 
+        number of generations/the total time of the tree. We treat each 
+        lineage as independent and use the proportion as an estimate for the
+        probability that a mutation occurs on a lineage. In the case when the
+        rates are per-generation, then the rate is estimated using: 
+
+        proportion = 1 - (1-rate)^(average depth of tree)
+
+        In the case when the rates are instantaneous, the rate is using:
+
+        proportion = ExponentialCDF(total time of tree, rate)
+
+        Note that these naive estimates perform better when the tree is 
+        ultrametric in depth or time.
 
         The user can choose to use the character states annotated at internal
         nodes. If these are not used, then the likelihood is marginalized over
-        all possible internal state characters.
+        all possible internal state characters. If the actual internal states
+        are not provided, then the root is assumed to have the unmutated state
+        at each character. Additionally, it is assumed that there is a single
+        branch leading from the root that represents the roots' lifetime. If 
+        this branch does not exist and `use_internal_character_states` is set 
+        to False, then this branch is added with branch length equal to the 
+        average branch length of this tree.
 
         Args:
-            mutation_rate: The rate at which mutations occur
-            missing_rate: The rate at which missing data events occur
             use_branch_lengths: Indicates if take branch lengths into account
                 in the likelihood calculation
             use_internal_character_states: Indicates if internal node
                 character states should be used in calculating the likelihood
-            mutation_probability_function_of_time: Specifies the mutation
-                probability as a function of time. Default is exponential CDF
-            missing_probability_function_of_time: Specifies the missing data
-                probability as a function of time. Default is exponential CDF
+            mutation_rate: The rate at which mutations occur
+            missing_rate: The rate at which missing data events occur
 
         Returns:
             The log likelihood of the tree given the observed character states.
@@ -2204,14 +2233,10 @@ class CassiopeiaTree:
                     return 1.0
                 else:
                     return missing_probability_function_of_time(missing_rate, t)
-            # "*" represents all non-missing states. The sum probability of
-            # transitioning from any non-missing state to all non-missing
-            # states is (1 - the probability of n missing event). If s is not
-            # 0, then the only state with non-zero transition probability is s
-            # with probability is (1 - the probability of a missing event),
-            # with all others being 0. If s is 0, then the total probability of
-            # transitioning to all non-missing states is (1 - the probability
-            # of a missing event).
+            # "*" represents all non-missing states (including the uncut state). 
+            # The sum probability of transitioning from any non-missing state s 
+            # to any non-missing state s' is 1 - P(missing event). This can be
+            # shown through marginalization.
             if s_ == "*":
                 if s == -1:
                     return 0.0
@@ -2264,9 +2289,59 @@ class CassiopeiaTree:
                         " character states are to be used."
                     )
 
+        # We estimate the mutation and missing rates from the character matrix
+        if (missing_rate is None or mutation_rate is None) and self.character_matrix is None:
+            raise CassiopeiaTreeError(
+                "Character matrix must be specified for this tree if rates are"
+                " to be inferred. Please initialize the character matrix or"
+                " specify explicit mutation and missing data rates."
+            )
+
+        if missing_rate is None or mutation_rate is None:
+            # Get the proportion of mutation or missing data in the character 
+            # matrix
+            num_dropped = (self.character_matrix.values == self.missing_state_indicator).sum()
+            dropout_prop = num_dropped/(self.character_matrix.shape[0] * self.character_matrix.shape[1])
+            if mutation_rate is None:
+                num_mut = self.character_matrix.shape[0] * self.character_matrix.shape[1] - num_dropped - (self.character_matrix.values == 0).sum()
+                mutation_prop = num_mut/(self.character_matrix.shape[0] * self.character_matrix.shape[1] - num_dropped)
+
+            if not use_branch_lengths:
+                mean_depth = self.get_mean_depth_of_tree()
+                # We account for the added depth of the implicit edge leading 
+                # from the root, if it is to be added
+                if (
+                    not use_internal_character_states
+                    and len(self.children(self.root)) != 1
+                ):
+                    mean_depth += 1
+                if missing_rate is None:
+                    missing_rate = 1 - (1 - dropout_prop)**(1/mean_depth)
+                if mutation_rate is None:
+                    mutation_rate = 1 - (1 - mutation_prop)**(1/mean_depth)
+                
+            else:
+                times = self.get_times()
+                mean_time = np.mean([times[l] for l in self.leaves])
+                # We account for the length of the implicit edge leading from 
+                # the root, if it is to be added
+                if (
+                    not use_internal_character_states
+                    and len(self.children(self.root)) != 1
+                ):
+                    mean_time += np.mean([self.get_branch_length(u, v) for u, v in self.edges])
+                if missing_rate is None:
+                    missing_rate = -1/mean_time * np.log(1 - dropout_prop)
+                if mutation_rate is None:
+                    mutation_rate = -1/mean_time * np.log(1 - mutation_prop)
+
         if not use_branch_lengths:
             mutation_probability_function_of_time = lambda rate, t: rate
             missing_probability_function_of_time = lambda rate, t: rate
+
+        else:
+            mutation_probability_function_of_time = lambda rate, t: 1 - np.exp(-rate * t)
+            missing_probability_function_of_time = lambda rate, t: 1 - np.exp(-rate * t)
 
         # We track the likelihoods for each state, at each character,
         # at each node
@@ -2299,10 +2374,10 @@ class CassiopeiaTree:
                             and "*" not in c
                         ):
                             child_possible_states.append(c)
-                    # '*' represents all non-missing states, and is a
-                    # possible state when all children are missing, as any
-                    # state could have occurred before if all missing states
-                    # occurred independently.
+                    # '*' represents all non-missing states (including 0), and
+                    # is a possible state when all children are missing, as any
+                    # state could have occurred at the parent if all missing 
+                    # data events occurred independently.
                     if child_possible_states == []:
                         possible_states[char] = [
                             "*",
@@ -2345,12 +2420,18 @@ class CassiopeiaTree:
             not use_internal_character_states
             and len(self.children(self.root)) != 1
         ):
+            # If branch lengths are to be used, we calculate the length of the
+            # implicit root edge as the average of all other edges
+            if use_branch_lengths:
+                t = np.mean([self.get_branch_length(u, v) for u, v in self.edges])
+            else:
+                t = 1
             likelihoods_at_implicit_root = [{} for i in range(self.n_character)]
             for char in range(self.n_character):
                 likelihood_at_root = 0
                 for s_ in likelihoods_at_nodes[self.root][char]:
                     likelihood_at_root += (
-                        transition_probability(0, s_, 1, char)
+                        transition_probability(0, s_, t, char)
                         * likelihoods_at_nodes[self.root][char][s_]
                     )
                 likelihoods_at_implicit_root[char][0] = likelihood_at_root
