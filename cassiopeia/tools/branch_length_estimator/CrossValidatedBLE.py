@@ -88,7 +88,7 @@ class CrossValidatedBLE(BranchLengthEstimator, abc.ABC):
             print(f"Refitting full model with:\n" f"config={best_config}")
         model = self._create_model_from_config(best_config)
         model.estimate_branch_lengths(tree)
-        # Copy over attributes of underlying model
+        # Copy over attributes of underlying model. TODO: This doesn't get us the properties w/0 underscore.
         for attr in vars(model):
             setattr(self, attr, getattr(model, attr))
 

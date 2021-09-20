@@ -186,6 +186,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         # than its child (which can happen if minimum_branch_length=0)
         for (parent, child) in tree.depth_first_traverse_edges():
             times[child] = max(times[parent], times[child])
+        # Make sure all leaves have the same time.
+        tree_depth = max([times[leaf] for leaf in tree.leaves])
+        for leaf in tree.leaves:
+            times[leaf] = tree_depth
         tree.set_times(times)
 
     @property

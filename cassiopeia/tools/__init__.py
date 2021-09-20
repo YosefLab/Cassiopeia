@@ -42,4 +42,6 @@ from .fitness_estimator import (
     FitnessEstimator,
     FitnessEstimatorError,
     BirthProcessFitnessEstimator,
+    GenerationNumberFitnessEstimator,
+    LocalBranchingIndex,
 )

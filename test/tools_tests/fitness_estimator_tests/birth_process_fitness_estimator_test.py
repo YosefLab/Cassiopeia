@@ -11,7 +11,10 @@ from cassiopeia.tools import BirthProcessFitnessEstimator
 
 
 class TestBirthProcessFitnessEstimator(unittest.TestCase):
-    def test_no_mutations(self):
+    def test_basic(self):
+        """
+        Verified by hand.
+        """
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3", "4", "5"]),
         tree.add_edges_from(
