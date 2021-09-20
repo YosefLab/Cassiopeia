@@ -10,7 +10,7 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.tools import LocalBranchingIndex
 
 
-class TestBirthProcessFitnessEstimator(unittest.TestCase):
+class TestLocalBranchingIndex(unittest.TestCase):
     def test_basic(self):
         """
         Verified by hand.

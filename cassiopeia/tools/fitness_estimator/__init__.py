@@ -2,3 +2,4 @@ from .BirthProcessFitnessEstimator import BirthProcessFitnessEstimator
 from .FitnessEstimator import FitnessEstimator, FitnessEstimatorError
 from .GenerationNumberFitnessEstimator import GenerationNumberFitnessEstimator
 from .LocalBranchingIndex import LocalBranchingIndex
+from .SimilarityBasedFitness import SimilarityBasedFitness
