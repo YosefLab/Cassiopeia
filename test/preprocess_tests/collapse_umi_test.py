@@ -62,8 +62,8 @@ class TestCollapseUMIs(unittest.TestCase):
             + "_sorted.bam"
         )
         self.uncorrected_sorted_file_name = uncorrected_sorted_file_name
-        self.uncorrected_collapsed_file_name = uncorrected_sorted_file_name.with_suffix(
-            ".collapsed.bam"
+        self.uncorrected_collapsed_file_name = (
+            uncorrected_sorted_file_name.with_suffix(".collapsed.bam")
         )
 
         _, _ = UMI_utils.sort_bam(
@@ -80,6 +80,25 @@ class TestCollapseUMIs(unittest.TestCase):
             max_indels=2,
             cell_key=lambda al: al.get_tag("CR"),
             n_threads=2,
+        )
+
+        # BAM generated with cellranger, where each alignment requires header
+        # information. This BAM is to test that the collapsing parallelization
+        # passes the header information to the spawned processes.
+        self.header_file_name = Path(
+            dir_path + "/test_files/collapse_header_required.bam"
+        )
+        self.header_collapsed_file_name = self.header_file_name.with_suffix(
+            ".collapsed.bam"
+        )
+        UMI_utils.form_collapsed_clusters(
+            str(self.header_file_name),
+            str(self.header_collapsed_file_name),
+            max_hq_mismatches=3,
+            max_indels=2,
+            cell_key=lambda al: al.get_tag("CB"),
+            n_threads=1,
+            method="likelihood",
         )
 
     def test_sort_bam(self):
@@ -219,6 +238,15 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(df.iloc[2, 5], expected_qual)
         self.assertEqual(df.iloc[3, 2], expected_readcount)
         self.assertEqual(df.iloc[4, 6], expected_readname)
+
+    def test_collapsing_passes_header(self):
+        with pysam.AlignmentFile(
+            self.header_collapsed_file_name, check_sq=False
+        ) as f:
+            als = list(f.fetch(until_eof=True))
+        self.assertEqual(1, len(als))
+        self.assertIsNotNone(als[0].query_sequence)
+        self.assertIsNotNone(als[0].query_qualities)
 
 
 if __name__ == "__main__":
