@@ -241,8 +241,8 @@ def form_collapsed_clusters(
     cell_groups = utilities.group_by(sorted_als, cell_key)
 
     # Helper function so that we can use joblib to parallelize the computation
-    def cluster_group(cell_BC, UMI, UMI_group):
-        header = pysam.AlignmentHeader()
+    def cluster_group(cell_BC, UMI, UMI_group, header_text):
+        header = pysam.AlignmentHeader.from_text(header_text)
         UMI_group = [
             pysam.AlignedSegment.fromstring(s, header) for s in UMI_group
         ]
@@ -302,7 +302,10 @@ def form_collapsed_clusters(
         n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
     )(
         delayed(cluster_group)(
-            cell_BC, UMI, [aln.to_string() for aln in UMI_group]
+            cell_BC,
+            UMI,
+            [aln.to_string() for aln in UMI_group],
+            str(sorted_als.header)
         )
         for cell_BC, cell_group in cell_groups
         for UMI, UMI_group in utilities.group_by(cell_group, UMI_key)
