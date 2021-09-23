@@ -2166,25 +2166,25 @@ class CassiopeiaTree:
         Additionally, the likelihood accounts for missing data. For a given
         character, a missing data event can occur that causes that character
         to acquire the missing state, even if that character has previously
-        mutated to a non-base state. This missing state is the 
-        'missing_state_indicator' attribute of the tree. The are two sources 
-        of missing data accounted for, stochastic and heritable. Heritable 
-        missing data behaves like a heritable mutation and can occur anywhere 
+        mutated to a non-base state. This missing state is the
+        'missing_state_indicator' attribute of the tree. The are two sources
+        of missing data accounted for, stochastic and heritable. Heritable
+        missing data behaves like a heritable mutation and can occur anywhere
         along the phylogeny, and once a lineage acquires a heritable mutation
-        all descendants of that lineage acquire the missing state at that 
+        all descendants of that lineage acquire the missing state at that
         character. On the other hand, stochastic missing data can only occur
         on the leaves, and represents missing data that occurs at the time of
-        observation. 
+        observation.
 
         The model consumes rates for mutation, heritable missing data, and
         stochastic missing data. For the first two, if branch lengths are to be
         used, these rates are per-generation rates, i.e. the probability that a
-        mutation/missing data occurs on a branch. If branch lengths are to be 
+        mutation/missing data occurs on a branch. If branch lengths are to be
         used, this rate is the instantaneous rate assuming that the waiting time
-        until a mutation/missing data is exponentially distributed. The 
-        probability that an event occurred in time t is then given by the 
+        until a mutation/missing data is exponentially distributed. The
+        probability that an event occurred in time t is then given by the
         exponential CDF. The rate for stochastic missing data is a flat rate and
-        represents the probability at which a stochastic missing event will 
+        represents the probability at which a stochastic missing event will
         occur at a character on a leaf, given that no heritable missing data has
         already occurred on that character.
 
@@ -2192,14 +2192,14 @@ class CassiopeiaTree:
         user, then they are inferred using the proportion of the characters
         in the leaves that have either mutations or missing data and the
         number of generations/the total time of the tree. For the mutation and
-        heritable missing data rates, we treat each lineage as independent and 
+        heritable missing data rates, we treat each lineage as independent and
         use the proportion as an estimate for the probability that an event
-        occurs on a lineage. In the case when the rates are per-generation, 
+        occurs on a lineage. In the case when the rates are per-generation,
         then the rates are estimated using:
 
         proportion = 1 - (1-rate)^(average depth of tree)
 
-        In the case when the rates are instantaneous, the rates are 
+        In the case when the rates are instantaneous, the rates are
         estimated using:
 
         proportion = ExponentialCDF(total time of tree, rate)
@@ -2214,11 +2214,11 @@ class CassiopeiaTree:
 
         total_missing_proportion = heritable_proportion + stochastic_proportion
         - heritable_proportion * stochastic proportion
-        
-        If neither rates are provided, then the user provides the proportion 
+
+        If neither rates are provided, then the user provides the proportion
         of the total missing data that believed to be due to stochastic missing
-        data events (specified by `proportion_of_missing_as_stochastic`), and 
-        the heritable missing data is then estimated using the remaining 
+        data events (specified by `proportion_of_missing_as_stochastic`), and
+        the heritable missing data is then estimated using the remaining
         proportion of missing data that is then heritable. The default is 0.5.
 
         The user can choose to use the character states annotated at internal
@@ -2342,9 +2342,7 @@ class CassiopeiaTree:
         # Check for invalid parameter values
         if mutation_rate is not None:
             if mutation_rate < 0:
-                raise CassiopeiaTreeError(
-                    "Mutation rate must be > 0."
-                )
+                raise CassiopeiaTreeError("Mutation rate must be > 0.")
             if not use_branch_lengths and mutation_rate > 1:
                 raise CassiopeiaTreeError(
                     "Per-generation mutation rate must be < 1."
@@ -2359,7 +2357,7 @@ class CassiopeiaTree:
                 raise CassiopeiaTreeError(
                     "Per-generation heritable missing data rate must be < 1."
                 )
-                
+
         if stochastic_missing_rate is not None:
             if stochastic_missing_rate < 0:
                 raise CassiopeiaTreeError(
@@ -2417,7 +2415,8 @@ class CassiopeiaTree:
                 if stochastic_missing_rate is None:
                     if heritable_missing_rate is None:
                         stochastic_missing_rate = (
-                            proportion_of_missing_as_stochastic * total_missing_proportion
+                            proportion_of_missing_as_stochastic
+                            * total_missing_proportion
                         )
                     else:
                         heritable_proportion = 1 - (
@@ -2428,10 +2427,13 @@ class CassiopeiaTree:
                         ) / (1 - heritable_proportion)
                 if heritable_missing_rate is None:
                     heritable_missing_rate = 1 - (
-                        (1 - total_missing_proportion) / (1 - stochastic_missing_rate)
+                        (1 - total_missing_proportion)
+                        / (1 - stochastic_missing_rate)
                     ) ** (1 / mean_depth)
                 if mutation_rate is None:
-                    mutation_rate = 1 - (1 - mutation_proportion) ** (1 / mean_depth)
+                    mutation_rate = 1 - (1 - mutation_proportion) ** (
+                        1 / mean_depth
+                    )
 
             else:
                 times = self.get_times()
@@ -2448,7 +2450,8 @@ class CassiopeiaTree:
                 if stochastic_missing_rate is None:
                     if heritable_missing_rate is None:
                         stochastic_missing_rate = (
-                            proportion_of_missing_as_stochastic * total_missing_proportion
+                            proportion_of_missing_as_stochastic
+                            * total_missing_proportion
                         )
                     else:
                         heritable_proportion = 1 - np.exp(
@@ -2460,12 +2463,14 @@ class CassiopeiaTree:
                 if heritable_missing_rate is None:
                     heritable_missing_rate = (
                         -np.log(
-                            (1 - total_missing_proportion) / (1 - stochastic_missing_rate)
-                        ) / mean_time
+                            (1 - total_missing_proportion)
+                            / (1 - stochastic_missing_rate)
+                        )
+                        / mean_time
                     )
                 if mutation_rate is None:
                     mutation_rate = -np.log(1 - mutation_proportion) / mean_time
-                    
+
             if heritable_missing_rate < 0:
                 raise CassiopeiaTreeWarning(
                     "Estimate of the heritable missing rate using "
