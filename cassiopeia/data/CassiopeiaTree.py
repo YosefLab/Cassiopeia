@@ -20,6 +20,7 @@ import warnings
 import collections
 import ete3
 import networkx as nx
+from networkx.generators import stochastic
 import numpy as np
 import pandas as pd
 import scipy
@@ -2075,14 +2076,14 @@ class CassiopeiaTree:
         state is not in the parent node.
 
         If `infer_ancestral_characters` is set to True, then the internal
-        nodes' character states are inferred by Camin-Sokal Parsimony. 
+        nodes' character states are inferred by Camin-Sokal Parsimony.
         Otherwise, the existing annotations at the internal states are used.
         If `treat_missing_as_mutations` is set to True, then transitions
-        from a non-missing state to a missing state are counted in the 
+        from a non-missing state to a missing state are counted in the
         parsimony calculation. Otherwise, they are not included.
 
         Args:
-            infer_ancestral_characters: Whether to infer the ancestral 
+            infer_ancestral_characters: Whether to infer the ancestral
                 characters states of the tree
             treat_missing_as_mutations: Whether to treat missing states as
                 mutations
@@ -2118,7 +2119,7 @@ class CassiopeiaTree:
                         " with the character matrix that specifies the leaf"
                         " character states."
                     )
-                else: 
+                else:
                     raise CassiopeiaTreeError(
                         f"Character states empty at internal node. Annotate"
                         " character states or infer ancestral characters by"
@@ -2136,12 +2137,14 @@ class CassiopeiaTree:
         use_branch_lengths: bool = True,
         use_internal_character_states: bool = False,
         mutation_rate: Optional[float] = None,
-        missing_rate: Optional[float] = None
+        heritable_missing_rate: Optional[float] = None,
+        stochastic_missing_rate: Optional[float] = None,
+        proportion_of_missing_as_stochastic: float = 0.5,
     ):
         """
         Calculates the log likelihood of a tree with irreversible mutations.
 
-        Calculates the log likelihood of a tree given the character states at 
+        Calculates the log likelihood of a tree given the character states at
         the leaves using Felsenstein's Pruning Algorithm, which sets up a
         recursive relation between the likelihoods of states at nodes. The
         likelihood L(s, n) at a given state s at a given node n is:
@@ -2161,43 +2164,71 @@ class CassiopeiaTree:
         tree are used.
 
         Additionally, the likelihood accounts for missing data. For a given
-        character, at any point along a lineage a missing data event can occur
-        that causes that character to acquire the missing state. This
-        missing state is the 'missing_state_indicator' attribute of the tree.
+        character, a missing data event can occur that causes that character
+        to acquire the missing state, even if that character has previously
+        mutated to a non-base state. This missing state is the 
+        'missing_state_indicator' attribute of the tree. The are two sources 
+        of missing data accounted for, stochastic and heritable. Heritable 
+        missing data behaves like a heritable mutation and can occur anywhere 
+        along the phylogeny, and once a lineage acquires a heritable mutation
+        all descendants of that lineage acquire the missing state at that 
+        character. On the other hand, stochastic missing data can only occur
+        on the leaves, and represents missing data that occurs at the time of
+        observation. 
 
-        The mode uses a mutation rate and a missing data rate.
-        If branch lengths are to be used, these rates are per-generation
-        rates, i.e. the probability that a mutation/missing data occurs
-        on a branch. If branch lengths are to be used, this rate is the 
-        instantaneous rate assuming that the waiting time until a mutation/
-        missing data is exponentially distributed. The probability that an
-        event occurred in time t is then given by the exponential CDF.
+        The model consumes rates for mutation, heritable missing data, and
+        stochastic missing data. For the first two, if branch lengths are to be
+        used, these rates are per-generation rates, i.e. the probability that a
+        mutation/missing data occurs on a branch. If branch lengths are to be 
+        used, this rate is the instantaneous rate assuming that the waiting time
+        until a mutation/missing data is exponentially distributed. The 
+        probability that an event occurred in time t is then given by the 
+        exponential CDF. The rate for stochastic missing data is a flat rate and
+        represents the probability at which a stochastic missing event will 
+        occur at a character on a leaf, given that no heritable missing data has
+        already occurred on that character.
 
         If the mutation rate and missing data rates are not specified by the
         user, then they are inferred using the proportion of the characters
-        in the leaves that have either mutations or missing data and the 
-        number of generations/the total time of the tree. We treat each 
-        lineage as independent and use the proportion as an estimate for the
-        probability that a mutation occurs on a lineage. In the case when the
-        rates are per-generation, then the rate is estimated using: 
+        in the leaves that have either mutations or missing data and the
+        number of generations/the total time of the tree. For the mutation and
+        heritable missing data rates, we treat each lineage as independent and 
+        use the proportion as an estimate for the probability that an event
+        occurs on a lineage. In the case when the rates are per-generation, 
+        then the rates are estimated using:
 
         proportion = 1 - (1-rate)^(average depth of tree)
 
-        In the case when the rates are instantaneous, the rate is using:
+        In the case when the rates are instantaneous, the rates are 
+        estimated using:
 
         proportion = ExponentialCDF(total time of tree, rate)
 
-        Note that these naive estimates perform better when the tree is 
+        Note that these naive estimates perform better when the tree is
         ultrametric in depth or time.
+
+        If one of the heritable or stochastic missing rates are not provided
+        by the user, then they are inferred from the other provided rate using
+        the total proportion of dropout in the character matrix (this estimate
+        overrides `proportion_of_missing_as_stochastic`). We assume:
+
+        total_missing_proportion = heritable_proportion + stochastic_proportion
+        - heritable_proportion * stochastic proportion
+        
+        If neither rates are provided, then the user provides the proportion 
+        of the total missing data that believed to be due to stochastic missing
+        data events (specified by `proportion_of_missing_as_stochastic`), and 
+        the heritable missing data is then estimated using the remaining 
+        proportion of missing data that is then heritable. The default is 0.5.
 
         The user can choose to use the character states annotated at internal
         nodes. If these are not used, then the likelihood is marginalized over
         all possible internal state characters. If the actual internal states
         are not provided, then the root is assumed to have the unmutated state
         at each character. Additionally, it is assumed that there is a single
-        branch leading from the root that represents the roots' lifetime. If 
-        this branch does not exist and `use_internal_character_states` is set 
-        to False, then this branch is added with branch length equal to the 
+        branch leading from the root that represents the roots' lifetime. If
+        this branch does not exist and `use_internal_character_states` is set
+        to False, then this branch is added with branch length equal to the
         average branch length of this tree.
 
         Args:
@@ -2206,7 +2237,7 @@ class CassiopeiaTree:
             use_internal_character_states: Indicates if internal node
                 character states should be used in calculating the likelihood
             mutation_rate: The rate at which mutations occur
-            missing_rate: The rate at which missing data events occur
+            heritable_missing_rate: The rate at which missing data events occur
 
         Returns:
             The log likelihood of the tree given the observed character states.
@@ -2232,9 +2263,11 @@ class CassiopeiaTree:
                 if s == -1:
                     return 1.0
                 else:
-                    return missing_probability_function_of_time(missing_rate, t)
-            # "*" represents all non-missing states (including the uncut state). 
-            # The sum probability of transitioning from any non-missing state s 
+                    return missing_probability_function_of_time(
+                        heritable_missing_rate, t
+                    )
+            # "*" represents all non-missing states (including the uncut state).
+            # The sum probability of transitioning from any non-missing state s
             # to any non-missing state s' is 1 - P(missing event). This can be
             # shown through marginalization.
             if s_ == "*":
@@ -2242,26 +2275,33 @@ class CassiopeiaTree:
                     return 0.0
                 else:
                     return 1 - missing_probability_function_of_time(
-                        missing_rate, t
+                        heritable_missing_rate, t
                     )
             if s != 0:
                 if s != s_:
                     return 0.0
                 else:
                     return 1 - missing_probability_function_of_time(
-                        missing_rate, t
+                        heritable_missing_rate, t
                     )
             if s_ == 0:
                 return (
                     1 - mutation_probability_function_of_time(mutation_rate, t)
-                ) * (1 - missing_probability_function_of_time(missing_rate, t))
+                ) * (
+                    1
+                    - missing_probability_function_of_time(
+                        heritable_missing_rate, t
+                    )
+                )
             else:
                 return (
                     mutation_probability_function_of_time(mutation_rate, t)
                     * self.priors[character][s_]
                     * (
                         1
-                        - missing_probability_function_of_time(missing_rate, t)
+                        - missing_probability_function_of_time(
+                            heritable_missing_rate, t
+                        )
                     )
                 )
 
@@ -2290,58 +2330,166 @@ class CassiopeiaTree:
                     )
 
         # We estimate the mutation and missing rates from the character matrix
-        if (missing_rate is None or mutation_rate is None) and self.character_matrix is None:
+        if (
+            heritable_missing_rate is None or mutation_rate is None
+        ) and self.character_matrix is None:
             raise CassiopeiaTreeError(
                 "Character matrix must be specified for this tree if rates are"
                 " to be inferred. Please initialize the character matrix or"
                 " specify explicit mutation and missing data rates."
             )
 
-        if missing_rate is None or mutation_rate is None:
-            # Get the proportion of mutation or missing data in the character 
+        # Check for invalid parameter values
+        if mutation_rate is not None:
+            if mutation_rate < 0:
+                raise CassiopeiaTreeError(
+                    "Mutation rate must be > 0."
+                )
+            if not use_branch_lengths and mutation_rate > 1:
+                raise CassiopeiaTreeError(
+                    "Per-generation mutation rate must be < 1."
+                )
+
+        if heritable_missing_rate is not None:
+            if heritable_missing_rate < 0:
+                raise CassiopeiaTreeError(
+                    "Heritable missing data rate must be > 0."
+                )
+            if not use_branch_lengths and heritable_missing_rate > 1:
+                raise CassiopeiaTreeError(
+                    "Per-generation heritable missing data rate must be < 1."
+                )
+                
+        if stochastic_missing_rate is not None:
+            if stochastic_missing_rate < 0:
+                raise CassiopeiaTreeError(
+                    "Stochastic missing data rate must be > 0."
+                )
+            if stochastic_missing_rate > 1:
+                raise CassiopeiaTreeError(
+                    "Stochastic missing data rate must be < 1."
+                )
+
+        if proportion_of_missing_as_stochastic < 0:
+            raise CassiopeiaTreeError(
+                "Proportion of missing data that is stochastic must be > 0."
+            )
+        if proportion_of_missing_as_stochastic > 1:
+            raise CassiopeiaTreeError(
+                "Proportion of missing data that is stochastic must be < 1."
+            )
+
+        if (
+            heritable_missing_rate is None
+            or stochastic_missing_rate is None
+            or mutation_rate is None
+        ):
+            # Get the proportion of mutation or missing data in the character
             # matrix
-            num_dropped = (self.character_matrix.values == self.missing_state_indicator).sum()
-            dropout_prop = num_dropped/(self.character_matrix.shape[0] * self.character_matrix.shape[1])
+            num_dropped = (
+                self.character_matrix.values == self.missing_state_indicator
+            ).sum()
+            total_missing_proportion = num_dropped / (
+                self.character_matrix.shape[0] * self.character_matrix.shape[1]
+            )
             if mutation_rate is None:
-                num_mut = self.character_matrix.shape[0] * self.character_matrix.shape[1] - num_dropped - (self.character_matrix.values == 0).sum()
-                mutation_prop = num_mut/(self.character_matrix.shape[0] * self.character_matrix.shape[1] - num_dropped)
+                num_mut = (
+                    self.character_matrix.shape[0]
+                    * self.character_matrix.shape[1]
+                    - num_dropped
+                    - (self.character_matrix.values == 0).sum()
+                )
+                mutation_proportion = num_mut / (
+                    self.character_matrix.shape[0]
+                    * self.character_matrix.shape[1]
+                    - num_dropped
+                )
 
             if not use_branch_lengths:
                 mean_depth = self.get_mean_depth_of_tree()
-                # We account for the added depth of the implicit edge leading 
+                # We account for the added depth of the implicit branch leading
                 # from the root, if it is to be added
                 if (
                     not use_internal_character_states
                     and len(self.children(self.root)) != 1
                 ):
                     mean_depth += 1
-                if missing_rate is None:
-                    missing_rate = 1 - (1 - dropout_prop)**(1/mean_depth)
+                if stochastic_missing_rate is None:
+                    if heritable_missing_rate is None:
+                        stochastic_missing_rate = (
+                            proportion_of_missing_as_stochastic * total_missing_proportion
+                        )
+                    else:
+                        heritable_proportion = 1 - (
+                            1 - heritable_missing_rate
+                        ) ** (mean_depth)
+                        stochastic_missing_rate = (
+                            total_missing_proportion - heritable_proportion
+                        ) / (1 - heritable_proportion)
+                if heritable_missing_rate is None:
+                    heritable_missing_rate = 1 - (
+                        (1 - total_missing_proportion) / (1 - stochastic_missing_rate)
+                    ) ** (1 / mean_depth)
                 if mutation_rate is None:
-                    mutation_rate = 1 - (1 - mutation_prop)**(1/mean_depth)
-                
+                    mutation_rate = 1 - (1 - mutation_proportion) ** (1 / mean_depth)
+
             else:
                 times = self.get_times()
                 mean_time = np.mean([times[l] for l in self.leaves])
-                # We account for the length of the implicit edge leading from 
+                # We account for the length of the implicit branch leading from
                 # the root, if it is to be added
                 if (
                     not use_internal_character_states
                     and len(self.children(self.root)) != 1
                 ):
-                    mean_time += np.mean([self.get_branch_length(u, v) for u, v in self.edges])
-                if missing_rate is None:
-                    missing_rate = -1/mean_time * np.log(1 - dropout_prop)
+                    mean_time += np.mean(
+                        [self.get_branch_length(u, v) for u, v in self.edges]
+                    )
+                if stochastic_missing_rate is None:
+                    if heritable_missing_rate is None:
+                        stochastic_missing_rate = (
+                            proportion_of_missing_as_stochastic * total_missing_proportion
+                        )
+                    else:
+                        heritable_proportion = 1 - np.exp(
+                            -heritable_missing_rate * mean_time
+                        )
+                        stochastic_missing_rate = (
+                            total_missing_proportion - heritable_proportion
+                        ) / (1 - heritable_proportion)
+                if heritable_missing_rate is None:
+                    heritable_missing_rate = (
+                        -np.log(
+                            (1 - total_missing_proportion) / (1 - stochastic_missing_rate)
+                        ) / mean_time
+                    )
                 if mutation_rate is None:
-                    mutation_rate = -1/mean_time * np.log(1 - mutation_prop)
+                    mutation_rate = -np.log(1 - mutation_proportion) / mean_time
+                    
+            if heritable_missing_rate < 0:
+                raise CassiopeiaTreeWarning(
+                    "Estimate of the heritable missing rate using "
+                    "the stochastic rate resulted in a negative "
+                    "heritable missing rate."
+                )
+            if stochastic_missing_rate < 0:
+                raise CassiopeiaTreeWarning(
+                    "Estimate of the stochastic missing rate using "
+                    "the heritable rate resulted in a negative "
+                    "stochastic missing rate."
+                )
 
         if not use_branch_lengths:
             mutation_probability_function_of_time = lambda rate, t: rate
             missing_probability_function_of_time = lambda rate, t: rate
 
         else:
-            mutation_probability_function_of_time = lambda rate, t: 1 - np.exp(-rate * t)
-            missing_probability_function_of_time = lambda rate, t: 1 - np.exp(-rate * t)
+            mutation_probability_function_of_time = lambda rate, t: 1 - np.exp(
+                -rate * t
+            )
+            missing_probability_function_of_time = lambda rate, t: 1 - np.exp(
+                -rate * t
+            )
 
         # We track the likelihoods for each state, at each character,
         # at each node
@@ -2376,7 +2524,7 @@ class CassiopeiaTree:
                             child_possible_states.append(c)
                     # '*' represents all non-missing states (including 0), and
                     # is a possible state when all children are missing, as any
-                    # state could have occurred at the parent if all missing 
+                    # state could have occurred at the parent if all missing
                     # data events occurred independently.
                     if child_possible_states == []:
                         possible_states[char] = [
@@ -2400,7 +2548,7 @@ class CassiopeiaTree:
                     for child in self.children(n):
                         likelihood_for_child = 0
                         for s_ in likelihoods_at_nodes[child][char]:
-                            likelihood_for_child += (
+                            likelihood_at_state_for_child = (
                                 transition_probability(
                                     s,
                                     s_,
@@ -2408,6 +2556,24 @@ class CassiopeiaTree:
                                     char,
                                 )
                                 * likelihoods_at_nodes[child][char][s_]
+                            )
+                            # Here we take into account the probability of
+                            # stochastic missing data
+                            if self.is_leaf(child):
+                                if s_ == -1 and s != -1:
+                                    likelihood_at_state_for_child += (
+                                        1
+                                        - missing_probability_function_of_time(
+                                            heritable_missing_rate,
+                                            self.get_branch_length(n, child),
+                                        )
+                                    ) * stochastic_missing_rate
+                                if s_ != -1:
+                                    likelihood_at_state_for_child *= (
+                                        1 - stochastic_missing_rate
+                                    )
+                            likelihood_for_child += (
+                                likelihood_at_state_for_child
                             )
                         likelihood_s *= likelihood_for_child
                     likelihoods_at_n[char][s] = likelihood_s
@@ -2423,7 +2589,9 @@ class CassiopeiaTree:
             # If branch lengths are to be used, we calculate the length of the
             # implicit root edge as the average of all other edges
             if use_branch_lengths:
-                t = np.mean([self.get_branch_length(u, v) for u, v in self.edges])
+                t = np.mean(
+                    [self.get_branch_length(u, v) for u, v in self.edges]
+                )
             else:
                 t = 1
             likelihoods_at_implicit_root = [{} for i in range(self.n_character)]
@@ -2439,7 +2607,12 @@ class CassiopeiaTree:
             return np.sum([np.log(i[0]) for i in likelihoods_at_implicit_root])
 
         else:
-            return np.sum([np.log(list(i.values())[0]) for i in likelihoods_at_nodes[self.root]])
+            return np.sum(
+                [
+                    np.log(list(i.values())[0])
+                    for i in likelihoods_at_nodes[self.root]
+                ]
+            )
 
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
