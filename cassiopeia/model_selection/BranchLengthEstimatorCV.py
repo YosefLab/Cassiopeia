@@ -57,6 +57,7 @@ class IIDExponentialBayesianEmpiricalBayes(
         n_parallel_hyperparams: int = 6,
         random_seed: int = 0,
         verbose: bool = False,
+        space: Optional[Dict] = None
     ) -> None:
         super().__init__(
             n_hyperparams=n_hyperparams,
@@ -66,10 +67,15 @@ class IIDExponentialBayesianEmpiricalBayes(
             random_seed=random_seed,
             verbose=verbose,
         )
+        if space is None:
+            space = {}
+        self._space = space
 
-    @staticmethod
-    def _create_space(tree: CassiopeiaTree):
-        return _create_space_iid_exponential_bayesian(tree)
+    def _create_space(self, tree: CassiopeiaTree):
+        space = _create_space_iid_exponential_bayesian(tree)
+        for key, value in self._space.items():
+            space[key] = value
+        return space
 
     @staticmethod
     def _cv_metric(
@@ -147,10 +153,33 @@ class IIDExponentialBayesianCrossValidated(
 
     Uses the IIDExponentialMLE model log-likelihood as the metric.
     """
+    def __init__(
+        self,
+        n_hyperparams: int = 60,
+        n_parallel_hyperparams: int = 6,
+        n_folds: int = 6,
+        n_parallel_folds: int = 6,
+        random_seed: int = 0,
+        verbose: bool = False,
+        space: Optional[Dict] = None
+    ) -> None:
+        super().__init__(
+            n_hyperparams=n_hyperparams,
+            n_parallel_hyperparams=n_parallel_hyperparams,
+            n_folds=n_folds,
+            n_parallel_folds=n_parallel_folds,
+            random_seed=random_seed,
+            verbose=verbose,
+        )
+        if space is None:
+            space = {}
+        self._space = space
 
-    @staticmethod
-    def _create_space(tree: CassiopeiaTree):
-        return _create_space_iid_exponential_bayesian(tree)
+    def _create_space(self, tree: CassiopeiaTree):
+        space = _create_space_iid_exponential_bayesian(tree)
+        for key, value in self._space.items():
+            space[key] = value
+        return space
 
     @staticmethod
     def _cv_metric(
@@ -183,14 +212,36 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
 
     Uses the IIDExponentialMLE model log-likelihood as the metric.
     """
+    def __init__(
+        self,
+        n_hyperparams: int = 60,
+        n_parallel_hyperparams: int = 6,
+        n_folds: int = 6,
+        n_parallel_folds: int = 6,
+        random_seed: int = 0,
+        verbose: bool = False,
+        space: Optional[Dict] = None
+    ) -> None:
+        super().__init__(
+            n_hyperparams=n_hyperparams,
+            n_parallel_hyperparams=n_parallel_hyperparams,
+            n_folds=n_folds,
+            n_parallel_folds=n_parallel_folds,
+            random_seed=random_seed,
+            verbose=verbose,
+        )
+        if space is None:
+            space = {}
+        self._space = space
 
-    @staticmethod
-    def _create_space(tree: CassiopeiaTree):
+    def _create_space(self, tree: CassiopeiaTree):
         space = {
             "minimum_branch_length": tune.loguniform(
                 0.0000001, 1.0 / (tree.get_edge_depth() + 1e-8)
             )
         }
+        for key, value in self._space.items():
+            space[key] = value
         return space
 
     @staticmethod

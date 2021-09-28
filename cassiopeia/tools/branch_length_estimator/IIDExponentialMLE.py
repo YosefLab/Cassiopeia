@@ -215,7 +215,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
         log_likelihood = 0
         for (parent, child) in tree.edges:
             edge_length = tree.get_time(child) - tree.get_time(parent)
-            assert(edge_length >= 0)
+            if edge_length < 0:
+                raise ValueError(f"tree:\n{tree.get_newick(record_branch_lengths=True)}\nhas negative branch lengths!")
             num_unmutated = len(
                 tree.get_unmutated_characters_along_edge(parent, child)
             )
@@ -231,7 +232,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 log_likelihood += num_mutated * np.log(
                     1 - np.exp(-edge_length * mutation_rate)
                 )
-        assert not np.isnan(log_likelihood)
+        if np.isnan(log_likelihood):
+            raise ValueError(f"tree:\n{tree.get_newick(record_branch_lengths=True)}\nhas nan log-likelihood.")
         return log_likelihood
 
 

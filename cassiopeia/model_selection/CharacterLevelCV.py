@@ -217,9 +217,8 @@ class CharacterLevelCV(abc.ABC):
         tree_train.character_matrix = cm_train
         return tree_train, cm_valid
 
-    @staticmethod
     @abc.abstractmethod
-    def _create_space(tree: CassiopeiaTree) -> Dict:
+    def _create_space(self, tree: CassiopeiaTree) -> Dict:
         """
         Creates the Ray tune hyperparameter search space.
 
