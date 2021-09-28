@@ -24,7 +24,7 @@ def _create_space_iid_exponential_bayesian(tree: CassiopeiaTree) -> Dict:
         mle.mutation_rate / 2.0, mle.mutation_rate * 2.0
     )
     space["e_pop_size"] = tune.loguniform(
-        tree.n_cell / 10.0, tree.n_cell * 10.0
+        max(tree.n_cell / 10.0, 3.0), tree.n_cell * 10.0
     )
     space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
     return space
@@ -135,9 +135,16 @@ def _cv_metric_ble(
         tree_valid.set_character_states(
             tree_valid.root, [0] * tree_valid.n_character
         )
-        return IIDExponentialMLE.model_log_likelihood(
-            tree_valid, model.mutation_rate
-        )
+        try:
+            return IIDExponentialMLE.model_log_likelihood(
+                tree_valid, model.mutation_rate
+            )
+        except:
+            raise ValueError(
+                f"Failed to get model_log_likelihood."
+                f"\ntree_valid = {tree_valid.get_newick()}"
+                f"\nhyperparameters = {hyperparameters}"
+            )
     else:
         # No CV - training log-likelihood
         return IIDExponentialMLE.model_log_likelihood(
