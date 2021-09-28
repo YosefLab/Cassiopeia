@@ -216,9 +216,6 @@ def form_collapsed_clusters(
                 score. Initial sequence clusters are formed by selecting the
                 most probable at each position.
         n_threads: Number of threads to use.
-
-    None:
-        Saves the sorted bam to file
     """
 
     sorted_als = pysam.AlignmentFile(sorted_fn, check_sq=False)
@@ -244,8 +241,8 @@ def form_collapsed_clusters(
     cell_groups = utilities.group_by(sorted_als, cell_key)
 
     # Helper function so that we can use joblib to parallelize the computation
-    def cluster_group(cell_BC, UMI, UMI_group):
-        header = pysam.AlignmentHeader()
+    def cluster_group(cell_BC, UMI, UMI_group, header_text):
+        header = pysam.AlignmentHeader.from_text(header_text)
         UMI_group = [
             pysam.AlignedSegment.fromstring(s, header) for s in UMI_group
         ]
@@ -305,7 +302,10 @@ def form_collapsed_clusters(
         n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
     )(
         delayed(cluster_group)(
-            cell_BC, UMI, [aln.to_string() for aln in UMI_group]
+            cell_BC,
+            UMI,
+            [aln.to_string() for aln in UMI_group],
+            str(sorted_als.header)
         )
         for cell_BC, cell_group in cell_groups
         for UMI, UMI_group in utilities.group_by(cell_group, UMI_key)
@@ -343,7 +343,7 @@ def form_clusters(
 
     Returns:
         A list of annotated aligned segments representing the consensus of each
-        cluster.
+            cluster.
     """
 
     if len(als) == 0:
@@ -403,7 +403,7 @@ def form_clusters_likelihood(
 
     Returns:
         A list of annotated aligned segments representing the consensus of each
-        cluster.
+            cluster.
     """
     sequences = []
     qualities = []
@@ -445,7 +445,7 @@ def align_clusters(
 
     Returns:
         The number of differing indels and the number of high quality
-        mismatches.
+            mismatches.
     """
 
     al = sw.global_alignment(first.query_sequence, second.query_sequence)
@@ -479,8 +479,8 @@ def within_radius_of_seed(
 
     Returns:
         A list of aligned segments with sequences that are within radius of seed
-        and a list of aligned segments with sequences that are not within radius
-        of seed.
+            and a list of aligned segments with sequences that are not within
+            radius of seed.
     """
     seed_b = seed.encode()
     ds = [
@@ -643,7 +643,7 @@ def merge_annotated_clusters(
 
 def correct_umis_in_group(
     cell_group: pd.DataFrame, max_umi_distance: int = 2
-) -> Tuple[pd.DataFrame, int, int]:
+) -> Tuple[pd.DataFrame, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
 
@@ -659,61 +659,40 @@ def correct_umis_in_group(
     corrected and merged rather arbitrarily. We are looking into this.
 
     Args:
-        input_df: Input DataFrame of alignments.
+        cell_group: Input DataFrame of alignments.
         max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 
     Returns:
-        A DataFrame of error corrected UMIs within the grouping.
-    """
+        A DataFrame of error corrected UMIs within the grouping, and the
+            number of corrected UMIs
 
+    Raises:
+        PreprocessError if there are duplicate UMIs
+    """
     UMIs = list(cell_group["UMI"])
+    if len(UMIs) != len(set(UMIs)):
+        raise PreprocessError("Table contains duplicate UMIs.")
 
     ds = hamming_distance_matrix(UMIs)
-
     corrections = register_corrections(ds, max_umi_distance, UMIs)
 
-    num_corrections = 0
-    corrected_group = pd.DataFrame()
-    corrected_names = []
-
-    if len(corrections) == 0:
-        return cell_group, 0, cell_group.shape[0]
-
-    for _, al in cell_group.iterrows():
-        al_umi = al["UMI"]
-        for _, al2 in cell_group.iterrows():
-            al2_umi = al2["UMI"]
-            # Keys are 'from' and values are 'to', so correct al2 to al
-            if al2_umi in corrections.keys() and corrections[al2_umi] == al_umi:
-
-                bad_nr = al2["readCount"]
-                prev_nr = al["readCount"]
-                al["readCount"] = bad_nr + prev_nr
-
-                logger.debug(
-                    f"{bad_nr} reads merged from {al2_umi} to {al_umi}"
-                    + f"for a total of {bad_nr + prev_nr} reads."
-                )
-
-                # update alignment if already seen
-                if al["UMI"] in corrected_names:
-                    corrected_group = corrected_group[
-                        corrected_group["UMI"] != al_umi
-                    ]
-                corrected_group = corrected_group.append(al)
-
-                num_corrections += 1
-                corrected_names.append(al_umi)
-                corrected_names.append(al2_umi)
-
-    for _, al in cell_group.iterrows():
-
-        # Add alignments not touched during error correction back into the group
-        # to be written to file.
-        if al["UMI"] not in corrected_names:
-            corrected_group = corrected_group.append(al)
-
-    total = len(cell_group)
-
-    return corrected_group, num_corrections, total
+    # Perform correction by simple replacement
+    corrected_cell_group = cell_group.copy()
+    corrected_cell_group["UMI"] = corrected_cell_group["UMI"].replace(
+        corrections
+    )
+    reads_per_umi = (
+        corrected_cell_group.groupby("UMI", sort=False)["readCount"]
+        .sum()
+        .reset_index()
+    )
+    return (
+        pd.merge(
+            reads_per_umi,
+            cell_group.drop(columns=["readCount", "readName"]),
+            on="UMI",
+            how="left",
+        ),
+        len(corrections),
+    )
