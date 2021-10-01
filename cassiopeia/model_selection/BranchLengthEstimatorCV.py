@@ -211,6 +211,9 @@ class IIDExponentialBayesianCrossValidated(
         )
         model.estimate_branch_lengths(tree)
         self.mutation_rate = model.mutation_rate
+        self.birth_rate = model.birth_rate
+        self.sampling_probability = model.sampling_probability
+        self.discretization_level = model.discretization_level
 
 
 class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
