@@ -4,6 +4,7 @@ import numpy as np
 from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins.errors import CassiopeiaTreeError
 
 
 class CellSubsamplerError(Exception):
@@ -164,4 +165,10 @@ class UniformCellSubsampler(CellSubsampler):
         )
         # Copy times over
         res.set_times(dict([(node, tree.get_time(node)) for node in res.nodes]))
+        # Copy fitness over
+        try:
+            for node in tree.nodes:
+                res.set_attribute(node, "fitness", res.get_attribute(node, "fitness"))
+        except CassiopeiaTreeError:
+            pass
         return res
