@@ -264,7 +264,7 @@ def exponential_negative_hamming_distance(
         A dissimilarity score.
     """
 
-    return np.exp(-1 * weighted_hamming_distance(s1, s2, missing_state_indicator=missing_state_indicator))
+    return 2.718281828459045 ** (- weighted_hamming_distance(s1, s2, missing_state_indicator=missing_state_indicator))
 
 
 def cluster_dissimilarity(
