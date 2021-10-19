@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import re
 
+from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
@@ -373,3 +374,44 @@ def resolve_most_abundant(state: Tuple[int, ...]) -> int:
     return np.random.choice(
         [state for state, count in most_common if count == most_common[0][1]]
     )
+
+def compute_phylogenetic_weight_matrix(
+    tree: CassiopeiaTree,
+    inverse: bool = False,
+    inverse_fn: Callable[[Union[int, float]], float] = lambda x: 1 / x,
+) -> pd.DataFrame:
+    """Computes the phylogenetic weight matrix.
+
+    Computes the distances between all leaves in a tree. The user has the option
+    to return the inverse matrix, (i.e., transform distances to proximities) and
+    to normalize the distances such that
+
+        \sum(W_ij for all i,j) = 1
+
+    An NxN weight matrix is returned.
+
+    Args:
+        tree: CassiopeiaTree
+        inverse: Convert distances to proximities
+        inverse_fn: Inverse function (default = 1 / x)
+
+    Returns:
+        An NxN phylogenetic weight matrix
+    """
+    N = tree.n_cell
+    W = np.zeros((N , N ))
+
+    for i in range(len(tree.leaves)-1):
+        leaf1 = tree.leaves[i]
+        for j in range(i+1, len(tree.leaves)):
+            leaf2 = tree.leaves[j]
+            
+            _d = tree.get_distance(leaf1, leaf2)
+            if inverse:
+                _d = inverse_fn(_d)
+
+            W[i, j] = W[j, i] = _d
+
+    W = pd.DataFrame(W, index=tree.leaves, columns=tree.leaves)
+    
+    return W

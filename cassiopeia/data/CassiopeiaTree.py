@@ -184,7 +184,9 @@ class CassiopeiaTree:
 
         # instantiate branch lengths
         for u, v in self.edges:
-            self.__network[u][v]["length"] = 1
+            # only set branch lengths that have not already been set
+            if "length" not in self.__network[u][v].keys():
+                self.__network[u][v]["length"] = 1
 
         # instantiate node time
         self.__network.nodes[self.root]["time"] = 0

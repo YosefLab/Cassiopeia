@@ -1,3 +1,9 @@
+class AutocorrelatoinError(Exception):
+    """An Exception for the tools.autocorrelation methods.
+    """
+
+    pass
+
 class CassiopeiaError(Exception):
     """An general exception for the Cassiopeia software."""
 
