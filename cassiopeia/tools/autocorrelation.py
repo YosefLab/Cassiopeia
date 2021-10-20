@@ -25,7 +25,7 @@ def compute_morans_i(
 
     Generally, this statistic takes in a weight matrix (which can be computed
     directly from a phylogenetic tree) and a set of numerical observations that
-    are centered and standarized (i.e., mean 0 and population standard deviation
+    are centered and standardized (i.e., mean 0 and population standard deviation
     of 1). Then, the Moran's I statistic is:
 
     I = X' * Wn * X
