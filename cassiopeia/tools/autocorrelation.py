@@ -23,6 +23,16 @@ def compute_morans_i(
     the Moran's I statistic for each fo the data items specified. This will
     only work for numerical data, and will thrown an error otherwise.
 
+    Generally, this statistic takes in a weight matrix (which can be computed
+    directly from a phylogenetic tree) and a set of numerical observations that
+    are centered and standarized (i.e., mean 0 and population standard deviation
+    of 1). Then, the Moran's I statistic is:
+
+    I = X' * Wn * X
+
+    where X' denotes a tranpose, * denotes the matrix multiplier, and Wn is the
+    normalized weight matrix such that sum([w_i,j for all i,j]) = 1. 
+
     Inspired from the tools and code used in Chaligne et al, Nature Genetics
     2021.
 
