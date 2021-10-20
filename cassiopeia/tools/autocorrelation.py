@@ -26,9 +26,13 @@ def compute_morans_i(
     Inspired from the tools and code used in Chaligne et al, Nature Genetics
     2021.
 
+    The mathematical details of the statistic can be found in:
+        Wartenberg, "Multivariate Spatial Correlation: A Method for Exploratory
+        Geographical Analysis", Geographical Analysis (1985)
+
     Args:
         tree: CassiopeiaTree
-        meta_columns: Columns in the Cassioepia Tree :attr:cell_meta object
+        meta_columns: Columns in the Cassiopeia Tree :attr:cell_meta object
             for which to compute autocorrelations
         X: Extra data matrix for computing autocorrelations.
         W: Phylogenetic weight matrix. If this is not specified, then the
@@ -80,16 +84,18 @@ def compute_morans_i(
     _W = W / W.sum().sum()
 
     # center
-    _X = (_X - _X.mean())
+    _X = _X - _X.mean()
 
-    # compute covariance
-    R = _X.T.dot(_X) / N
-    
-    # compute total variance
-    total_variance = np.diag(R).dot(np.diag(R))
-    
-    I = _X.T.dot(_W).dot(_X) / np.sqrt(total_variance)
-     
+    # compute sds
+    sds = _X.apply(
+        lambda x: np.sqrt(1 / N * np.sum((x - x.mean()) ** 2)), axis=0
+    )
+
+    # standardize
+    _X = _X / sds
+
+    I = _X.T.dot(_W).dot(_X)
+
     # if we're only testing one variable, return a float
     if _X.shape[1] == 1:
         I = I.iloc[0, 0]
