@@ -46,7 +46,7 @@ def compute_morans_i(
 
     if X is None and meta_columns is None:
         raise AutocorrelationError(
-            "Specify data for computing" " autocorrelations."
+            "Specify data for computing autocorrelations."
         )
 
     _X = None
@@ -56,9 +56,8 @@ def compute_morans_i(
     if X is not None:
         if len(np.intersect1d(tree.leaves, X.index)) != tree.n_cell:
             raise AutocorrelationError(
-                "Specified argument X must be a"
-                " dataframe with identical indices to the leaves of"
-                " the CassiopeiaTree"
+                "Specified argument X must be a dataframe with identical"
+                " indices to the leaves of the CassiopeiaTree."
             )
 
         _X = pd.concat([_X, X], axis=0)
@@ -68,8 +67,7 @@ def compute_morans_i(
         _X.apply(lambda s: pd.to_numeric(s, errors="coerce").notnull().all())
     ):
         raise AutocorrelationError(
-            "There are some columns that are not numeric"
-            " in the specified data."
+            "There are some columns that are not numeric in the specified data."
         )
 
     # instantiate the weight matrix if None is specified
@@ -77,6 +75,14 @@ def compute_morans_i(
         W = utilities.compute_phylogenetic_weight_matrix(
             tree, inverse=True, inverse_fn=inverse_weight_fn
         )
+
+    # make sure that W has the correct indices
+    if len(np.intersect1d(tree.leaves, W.index)) != tree.n_cell:
+            raise AutocorrelationError(
+                "Weight matrix does not have the same leaves as the tree."
+            )
+
+
 
     N = tree.n_cell
 
