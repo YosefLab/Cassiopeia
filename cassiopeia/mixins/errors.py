@@ -1,4 +1,4 @@
-class AutocorrelatoinError(Exception):
+class AutocorrelationError(Exception):
     """An Exception for the tools.autocorrelation methods.
     """
 
