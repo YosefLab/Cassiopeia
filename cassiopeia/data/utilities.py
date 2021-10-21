@@ -399,10 +399,11 @@ def compute_phylogenetic_weight_matrix(
         An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
-    W = np.zeros((N , N ))
+    W = np.zeros((N , N))
 
     for i in range(len(tree.leaves)-1):
         leaf1 = tree.leaves[i]
+        
         for j in range(i+1, len(tree.leaves)):
             leaf2 = tree.leaves[j]
             

@@ -79,6 +79,9 @@ def compute_morans_i(
         raise AutocorrelationError(
             "There are some columns that are not numeric in the specified data."
         )
+    
+    # cast to numeric
+    _X = _X.apply(lambda s: pd.to_numeric(s, errors="coerce"))
 
     # instantiate the weight matrix if None is specified
     if W is None:
@@ -92,23 +95,13 @@ def compute_morans_i(
                 "Weight matrix does not have the same leaves as the tree."
             )
 
-
-
     N = tree.n_cell
 
     # normalize W to 1
     _W = W / W.sum().sum()
 
-    # center
-    _X = _X - _X.mean()
-
-    # compute sds
-    sds = _X.apply(
-        lambda x: np.sqrt(1 / N * np.sum((x - x.mean()) ** 2)), axis=0
-    )
-
-    # standardize
-    _X = _X / sds
+    # center and standardize _X
+    _X = (_X - _X.mean()) / _X.std(axis=0, ddof=0)
 
     I = _X.T.dot(_W).dot(_X)
 
