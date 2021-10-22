@@ -18,12 +18,12 @@ from cassiopeia.model_selection import (
 class TestIIDExponentialMLE(unittest.TestCase):
     @parameterized.expand(
         [
-            ("MLE_CV", IIDExponentialMLECrossValidated),
-            ("Bayesian_CV", IIDExponentialBayesianCrossValidated),
-            ("Bayesian_EmpiricalBayes", IIDExponentialBayesianEmpiricalBayes),
+            ("MLE_CV", "MLE_CV"),
+            ("Bayesian_CV", "Bayesian_CV"),
+            ("Bayesian_EmpiricalBayes", "Bayesian_EmpiricalBayes"),
         ]
     )
-    def test_smoke(self, name, ble_class):
+    def test_smoke(self, name, ble_name):
         """
         TODO
         """
@@ -42,18 +42,26 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 "3": [1, 1, 1, 1],
             }
         )
-        if name == "Bayesian_EmpiricalBayes":
-            model = ble_class(
-                n_hyperparams=1,
-                n_parallel_hyperparams=1,
+        if ble_name == "MLE_CV":
+            model = IIDExponentialMLECrossValidated(
+                n_parallel_hyperparams=2,
+                n_folds=2,
+                n_parallel_folds=2,
                 verbose=True,
+                grid=[0.01, 0.02],
             )
-        else:
-            model = ble_class(
+        elif ble_name == "Bayesian_CV":
+            model = IIDExponentialBayesianCrossValidated(
                 n_hyperparams=2,
                 n_parallel_hyperparams=2,
                 n_folds=2,
                 n_parallel_folds=2,
+                verbose=True,
+            )
+        elif ble_name == "Bayesian_EmpiricalBayes":
+            model = IIDExponentialBayesianEmpiricalBayes(
+                n_hyperparams=1,
+                n_parallel_hyperparams=1,
                 verbose=True,
             )
         model.estimate_branch_lengths(tree)

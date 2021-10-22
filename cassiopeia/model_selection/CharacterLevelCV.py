@@ -8,6 +8,7 @@ import pandas as pd
 import ray
 from ray import tune
 from ray.tune.suggest.hyperopt import HyperOptSearch
+from ray.tune.suggest import Searcher
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -96,11 +97,7 @@ class CharacterLevelCV(abc.ABC):
                 self._trainable,
                 config=self._create_space(tree),
                 num_samples=self._n_hyperparams,
-                search_alg=HyperOptSearch(
-                    metric="cv_metric",
-                    mode="max",
-                    random_state_seed=self._random_seed,
-                ),
+                search_alg=self._search_alg(),
                 metric="cv_metric",
                 mode="max",
                 verbose=0,
@@ -116,6 +113,9 @@ class CharacterLevelCV(abc.ABC):
         self.results_df = analysis.results_df
         self.best_cv_metric = analysis.best_result["cv_metric"]
         return analysis.best_config
+
+    def _search_alg(self) -> Searcher:
+        return HyperOptSearch(random_state_seed=self._random_seed)
 
     def _trainable(self, hyperparameters: Dict) -> None:
         """

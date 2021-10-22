@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,6 +12,7 @@ from cassiopeia.tools import (
     IIDExponentialBayesian,
     IIDExponentialMLE,
 )
+from ray.tune.suggest.basic_variant import BasicVariantGenerator
 
 from .CharacterLevelCV import CharacterLevelCV, CharacterLevelCVError
 
@@ -224,35 +225,52 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
     """
     def __init__(
         self,
-        n_hyperparams: int = 60,
         n_parallel_hyperparams: int = 6,
         n_folds: int = 6,
         n_parallel_folds: int = 6,
-        random_seed: int = 0,
         verbose: bool = False,
-        space: Optional[Dict] = None
+        grid: Optional[List[float]] = None
     ) -> None:
         super().__init__(
-            n_hyperparams=n_hyperparams,
+            n_hyperparams=1,  # Setting this to >1 repeats the grid, we don't want this.
             n_parallel_hyperparams=n_parallel_hyperparams,
             n_folds=n_folds,
             n_parallel_folds=n_parallel_folds,
-            random_seed=random_seed,
             verbose=verbose,
         )
-        if space is None:
-            space = {}
-        self._space = space
+        if grid is None:
+            grid = [
+                0.001,
+                0.002,
+                0.004,
+                0.008,
+                0.010,
+                0.020,
+                0.030,
+                0.040,
+                0.050,
+                0.060,
+                0.080,
+                0.100,
+            ]
+        self._grid = grid
 
     def _create_space(self, tree: CassiopeiaTree):
+        """
+        NOTE: Regarding tune.grid_search:
+        # Do a grid search over these values. Every value will be sampled
+        # `num_samples` times (`num_samples` is the parameter you pass to `tune.run()`)
+        "grid": tune.grid_search([32, 64, 128])
+        Thus n_hyperparams should be set to 1.
+        """
+        grid = [x for x in self._grid if x <= 1.0 / (tree.get_edge_depth() + 1e-8)]
         space = {
-            "minimum_branch_length": tune.loguniform(
-                0.0000001, 1.0 / (tree.get_edge_depth() + 1e-8)
-            )
+            "minimum_branch_length": tune.grid_search(grid),
         }
-        for key, value in self._space.items():
-            space[key] = value
         return space
+
+    def _search_alg(self) -> BasicVariantGenerator:
+        return BasicVariantGenerator()
 
     @staticmethod
     def _cv_metric(
