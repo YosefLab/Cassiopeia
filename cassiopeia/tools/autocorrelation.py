@@ -20,7 +20,7 @@ def compute_morans_i(
     """Computes Moran's I statistic.
 
     Using the cross-correlation between leaves as specified on the tree, compute
-    the Moran's I statistic for each fo the data items specified. This will
+    the Moran's I statistic for each of the data items specified. This will
     only work for numerical data, and will thrown an error otherwise.
 
     Generally, this statistic takes in a weight matrix (which can be computed
