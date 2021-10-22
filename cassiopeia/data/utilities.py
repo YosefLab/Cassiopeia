@@ -384,9 +384,9 @@ def compute_phylogenetic_weight_matrix(
 
     Computes the distances between all leaves in a tree. The user has the option
     to return the inverse matrix, (i.e., transform distances to proximities) and
-    to normalize the distances such that
+    specify an appropriate inverse function.
 
-        \sum(W_ij for all i,j) = 1
+    This function computes the phylogenetic weight matrix in O(n^2 logn) time.
 
     An NxN weight matrix is returned.
 
@@ -399,20 +399,18 @@ def compute_phylogenetic_weight_matrix(
         An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
-    W = np.zeros((N , N))
+    W = pd.DataFrame(np.zeros((N , N)), index=tree.leaves, columns=tree.leaves)
 
-    for i in range(len(tree.leaves)-1):
-        leaf1 = tree.leaves[i]
+    for leaf1 in tree.leaves:
         
-        for j in range(i+1, len(tree.leaves)):
-            leaf2 = tree.leaves[j]
-            
-            _d = tree.get_distance(leaf1, leaf2)
+        distances = tree.get_distances(leaf1, leaves_only=True)
+        for leaf2, _d in distances.items():
+
             if inverse:
-                _d = inverse_fn(_d)
+                _d = inverse_fn(_d) if _d > 0 else np.inf
 
-            W[i, j] = W[j, i] = _d
+            W.loc[leaf1, leaf2] = W.loc[leaf2, leaf1] = _d
 
-    W = pd.DataFrame(W, index=tree.leaves, columns=tree.leaves)
+    np.fill_diagonal(W.values, 0)
     
     return W
