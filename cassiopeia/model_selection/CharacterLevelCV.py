@@ -17,6 +17,43 @@ class CharacterLevelCVError(Exception):
     pass
 
 
+def _character_level_cv_split(
+    random_char_indices: List[int],
+    n_folds: int,
+):
+    """
+    Splits random_char_indices into n_folds by using modulo arithmetic.
+
+    If n_folds == 0, all indices go to training.
+
+    Args:
+        random_char_indices: The list of indices to split
+        n_folds: The number of folds
+
+    Returns:
+        The train and cv indices for each split, respectively.
+    """
+    if n_folds == 0:
+        indices_train = [random_char_indices[:]]
+        indices_cv = [None]
+        return indices_train, indices_cv
+    indices_train = []
+    indices_cv = []
+    n_characters = len(random_char_indices)
+    for split_id in range(n_folds):
+        indices_cv_ = [
+            random_char_indices[i]
+            for i in range(n_characters)
+            if i % n_folds == split_id
+        ]
+        indices_train_ = [
+            i for i in range(n_characters) if i not in indices_cv_
+        ]
+        indices_cv.append(indices_cv_[:])
+        indices_train.append(indices_train_[:])
+    return indices_train, indices_cv
+
+
 class CharacterLevelCV(abc.ABC):
     """
     Hyperparameter selection via character-level cross validation.
@@ -56,6 +93,8 @@ class CharacterLevelCV(abc.ABC):
         best_cv_metric: Best CV metric value found.
         results_df: Dataframe will all hyperparameter values explored and their
             CV metric value. (Note that best_cv_metric can be deduced from this)
+        indices_train: The training character indices for each split
+        indices_cv: The cv character indices for each split
     """
 
     def __init__(
@@ -90,7 +129,10 @@ class CharacterLevelCV(abc.ABC):
         self._tree = tree  # Temporary variable
         random_char_indices = list(range(tree.n_character))
         np.random.shuffle(random_char_indices)
-        self._random_char_indices = random_char_indices  # Temporary variable
+        self.indices_train, self.indices_cv = _character_level_cv_split(
+            random_char_indices=random_char_indices,
+            n_folds=self._n_folds,
+        )
         ray.init(num_cpus=self._n_parallel_hyperparams)
         try:
             analysis = tune.run(
@@ -106,10 +148,7 @@ class CharacterLevelCV(abc.ABC):
             ray.shutdown()
             raise CharacterLevelCVError("Ray tune failed")
         ray.shutdown()
-        del (
-            self._tree,
-            self._random_char_indices,
-        )
+        del self._tree
         self.results_df = analysis.results_df
         self.best_cv_metric = analysis.best_result["cv_metric"]
         return analysis.best_config
@@ -156,24 +195,12 @@ class CharacterLevelCV(abc.ABC):
                 f"Cross-validating hyperparameters:"
                 f"\nhyperparameters={hyperparameters}"
             )
-        n_characters = tree.n_character
         params = []
-        random_char_indices = self._random_char_indices
         for split_id in range(
             max(n_folds, 1)
         ):  # Want to loop exactly once if n_folds == 0
-            if n_folds == 0:
-                train_indices = random_char_indices[:]
-                cv_indices = None
-            else:
-                cv_indices = [
-                    random_char_indices[i]
-                    for i in range(n_characters)
-                    if i % n_folds == split_id
-                ]
-                train_indices = [
-                    i for i in range(n_characters) if i not in cv_indices
-                ]
+            train_indices = self.indices_train[split_id]
+            cv_indices = self.indices_cv[split_id]
             tree_train, cm_valid = self._cv_split(
                 tree=tree,
                 train_indices=train_indices,

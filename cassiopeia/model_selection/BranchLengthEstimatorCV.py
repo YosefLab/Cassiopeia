@@ -253,7 +253,6 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
                 0.050,
                 0.060,
                 0.080,
-                0.100,
             ]
         self._grid = grid
 
@@ -266,6 +265,7 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
         Thus n_hyperparams should be set to 1.
         """
         grid = [x for x in self._grid if x <= 1.0 / (tree.get_edge_depth() + 1e-8)]
+        grid.append(1.0 / (tree.get_edge_depth() + 1e-3))
         space = {
             "minimum_branch_length": tune.grid_search(grid),
         }
