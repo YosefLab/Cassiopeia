@@ -289,3 +289,4 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
         model.estimate_branch_lengths(tree)
         self.mutation_rate = model.mutation_rate
         self.log_likelihood = model.log_likelihood
+        self.minimum_branch_length = model.minimum_branch_length

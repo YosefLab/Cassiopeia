@@ -51,6 +51,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             the tree has depth exactly 1.
         log_likelihood: The log-likelihood of the training data under the
             estimated model.
+        minimum_branch_length: The minimum branch length.
     """
 
     def __init__(
@@ -205,6 +206,13 @@ class IIDExponentialMLE(BranchLengthEstimator):
         The estimated CRISPR/Cas9 mutation rate under the given model.
         """
         return self._mutation_rate
+
+    @property
+    def minimum_branch_length(self):
+        """
+        The minimum_branch_length.
+        """
+        return self._minimum_branch_length
 
     @staticmethod
     def model_log_likelihood(tree: CassiopeiaTree, mutation_rate: float) -> float:
