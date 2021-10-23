@@ -372,11 +372,25 @@ void _InferPosteriorTimes::populate_posterior_results(){
         }
 
         // Compute the posterior means.
-        posterior_means[v] = 0.0;
-        for(int t = 0; t <= T; t++){
-            posterior_means[v] += posteriors[v][t] * t;
+        if(posterior_median_instead_of_mean){
+            posterior_means[v] = 0.0;
+            float cumulative_density = 0.0;
+            for(int t = 0; t <= T; t++){
+                cumulative_density += posteriors[v][t];
+                if(cumulative_density >= 0.5){
+                    posterior_means[v] = t;
+                    break;
+                }
+            }
+            posterior_means[v] /= double(T);
         }
-        posterior_means[v] /= double(T);
+        else{
+            posterior_means[v] = 0.0;
+            for(int t = 0; t <= T; t++){
+                posterior_means[v] += posteriors[v][t] * t;
+            }
+            posterior_means[v] /= double(T);
+        }
     }
 
     // Write out the log_joints, posteriors, and posterior_means
@@ -424,7 +438,8 @@ void _InferPosteriorTimes::run(
     double r,
     double lam,
     double sampling_probability,
-    vector<int> is_leaf
+    vector<int> is_leaf,
+    int posterior_median_instead_of_mean
 ){
     this->N = N;
     this->children = children;
@@ -442,6 +457,7 @@ void _InferPosteriorTimes::run(
     this->sampling_probability = sampling_probability;
     this->is_leaf = is_leaf;
     this->dt = 1.0 / T;
+    this->posterior_median_instead_of_mean = posterior_median_instead_of_mean;
     allocate_memory();
 
     forn(v, N)

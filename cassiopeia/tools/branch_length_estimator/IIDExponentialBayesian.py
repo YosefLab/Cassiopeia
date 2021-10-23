@@ -56,6 +56,8 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         sampling_probability: The probability that a leaf in the ground truth
             tree was sampled. Must be in (0, 1]
         discretization_level: How many timesteps are used to discretize time.
+        posterior_median_instead_of_mean: If to use the posterior median instead
+            of the posterior mean to infer node times.
 
     Attributes:
         mutation_rate: The CRISPR/Cas9 mutation rate.
@@ -73,6 +75,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         birth_rate: float,
         sampling_probability: float,
         discretization_level: int = 600,
+        posterior_median_instead_of_mean: bool = False,
     ):
         if sampling_probability <= 0 or sampling_probability > 1:
             raise ValueError(
@@ -84,6 +87,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
         self._sampling_probability = sampling_probability
         self._discretization_level = discretization_level
         self._log_likelihood = None
+        self._posterior_median_instead_of_mean = posterior_median_instead_of_mean
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         """
@@ -271,6 +275,7 @@ class IIDExponentialBayesian(BranchLengthEstimator):
             lam=lam,
             sampling_probability=sampling_probability,
             is_leaf=is_leaf,
+            posterior_median_instead_of_mean=int(self._posterior_median_instead_of_mean),
         )
 
         self._log_likelihood = infer_posterior_times.get_log_likelihood_res()

@@ -24,7 +24,8 @@ class _InferPosteriorTimes{
             double r,
             double lam,
             double sampling_probability,
-            vector<int> is_leaf
+            vector<int> is_leaf,
+            int posterior_median_instead_of_mean,
         );
         // The following methods access the results of the run() method.
         vector<pair<int, double> > get_posterior_means_res();
@@ -49,6 +50,7 @@ class _InferPosteriorTimes{
             double lam;
             double sampling_probability;
             vector<int> is_leaf;
+            int posterior_median_instead_of_mean;
 
             // These are computed internally.
             double dt;
