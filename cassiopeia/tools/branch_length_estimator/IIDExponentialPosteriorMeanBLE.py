@@ -205,6 +205,8 @@ class IIDExponentialPosteriorMeanBLEAutotune(BranchLengthEstimator):
             ray.shutdown()
             raise BranchLengthEstimatorError(f"Ray tune failed")
         ray.shutdown()
+        self.results_df = analysis.results_df
+        self.best_cv_metric = analysis.best_result["cv_metric"]
         self.analysis = analysis
         best_config = analysis.best_config
         self.model = self._create_model_from_config(best_config)
