@@ -110,6 +110,7 @@ class IIDExponentialBayesianEmpiricalBayes(
         self.birth_rate = model.birth_rate
         self.sampling_probability = model.sampling_probability
         self.discretization_level = model.discretization_level
+        self.log_likelihood = model.log_likelihood
 
 
 def _cv_metric_ble(
@@ -215,6 +216,7 @@ class IIDExponentialBayesianCrossValidated(
         self.birth_rate = model.birth_rate
         self.sampling_probability = model.sampling_probability
         self.discretization_level = model.discretization_level
+        self.log_likelihood = model.log_likelihood
 
 
 class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
@@ -286,3 +288,4 @@ class IIDExponentialMLECrossValidated(BranchLengthEstimator, CharacterLevelCV):
         model = IIDExponentialMLE(**best_config)
         model.estimate_branch_lengths(tree)
         self.mutation_rate = model.mutation_rate
+        self.log_likelihood = model.log_likelihood
