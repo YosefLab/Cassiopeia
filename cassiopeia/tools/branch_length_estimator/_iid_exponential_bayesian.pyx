@@ -37,6 +37,7 @@ cdef class _PyInferPosteriorTimes:
         double lam,
         double sampling_probability,
         vector[int] is_leaf,
+        int posterior_median_instead_of_mean,
     ):
         """
         Infer posterior node time distribution.
@@ -61,6 +62,8 @@ cdef class _PyInferPosteriorTimes:
             sampling_probability: The probability that a leaf is subsampled from
                 the ground truth phylogeny.
             is_leaf: Binary indicator for whether a node is a leaf or not.
+            posterior_median_instead_of_mean: If to use the posterior median instead
+                of the posterior mean to infer node times.
 
         Raises:
             ValueError if the discretization level T is too small.
@@ -81,6 +84,7 @@ cdef class _PyInferPosteriorTimes:
             lam,
             sampling_probability,
             is_leaf,
+            posterior_median_instead_of_mean,
         )
 
     def get_posterior_means_res(self) -> List[Tuple[int, float]]:
@@ -88,7 +92,8 @@ cdef class _PyInferPosteriorTimes:
         Posterior mean node times.
 
         Returns a list of tuples (node, posterior_time), containing the posterior mean
-        time 'posterior_time' of node 'node'.
+        time 'posterior_time' of node 'node'. If posterior_median_instead_of_mean=True,
+        then this will contain the posterior medians instead.
         """
         return self.c_infer_posterior_times.get_posterior_means_res()
     
