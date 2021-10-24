@@ -1,6 +1,7 @@
 import abc
 import multiprocessing
 from copy import deepcopy
+import tempfile
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -134,24 +135,26 @@ class CharacterLevelCV(abc.ABC):
             n_folds=self._n_folds,
         )
         ray.init(num_cpus=self._n_parallel_hyperparams)
-        try:
-            analysis = tune.run(
-                self._trainable,
-                config=self._create_space(tree),
-                num_samples=self._n_hyperparams,
-                search_alg=self._search_alg(),
-                metric="cv_metric",
-                mode="max",
-                verbose=0,
-            )
-        except:
+        with tempfile.TemporaryDirectory() as ray_tune_local_dir:
+            try:
+                analysis = tune.run(
+                    self._trainable,
+                    config=self._create_space(tree),
+                    num_samples=self._n_hyperparams,
+                    search_alg=self._search_alg(),
+                    metric="cv_metric",
+                    mode="max",
+                    verbose=0,
+                    local_dir=ray_tune_local_dir,
+                )
+            except:
+                ray.shutdown()
+                raise CharacterLevelCVError("Ray tune failed")
             ray.shutdown()
-            raise CharacterLevelCVError("Ray tune failed")
-        ray.shutdown()
-        del self._tree
-        self.results_df = analysis.results_df
-        self.best_cv_metric = analysis.best_result["cv_metric"]
-        return analysis.best_config
+            del self._tree
+            self.results_df = analysis.results_df
+            self.best_cv_metric = analysis.best_result["cv_metric"]
+            return analysis.best_config
 
     def _search_alg(self) -> Searcher:
         return HyperOptSearch(random_state_seed=self._random_seed)
