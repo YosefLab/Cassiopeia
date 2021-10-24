@@ -216,7 +216,7 @@ class CharacterLevelCV(abc.ABC):
         if verbose:
             print(f"cv_metric_folds = {cv_metric_folds}")
             print(f"mean log likelihood = {np.mean(cv_metric_folds)}")
-        return np.mean(np.array(cv_metric_folds))
+        return sum(cv_metric_folds)
 
     @staticmethod
     def _cv_split(
