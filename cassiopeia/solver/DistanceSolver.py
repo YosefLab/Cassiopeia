@@ -75,6 +75,19 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
+    # @override
+    def get_dissimilarity_map(
+        self, 
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None
+    ) -> pd.DataFrame: #todo: docstring
+
+        self.setup_dissimilarity_map(cassiopeia_tree, layer)
+        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+
+        return dissimilarity_map
+
+
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
@@ -103,9 +116,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         node_name_generator = solver_utilities.node_name_generator()
 
-        self.setup_dissimilarity_map(cassiopeia_tree, layer)
-
-        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+        dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
 
         N = dissimilarity_map.shape[0]
 
