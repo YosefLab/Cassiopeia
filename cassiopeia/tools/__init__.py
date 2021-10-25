@@ -21,6 +21,7 @@ from .branch_length_estimator import (
     IIDExponentialPosteriorMeanBLEGridSearchCV,
     NumberOfMutationsBLE,
     BLEEnsemble,
+    ZeroOneBLE,
 )
 from .lineage_simulator import (
     BirthProcess,
