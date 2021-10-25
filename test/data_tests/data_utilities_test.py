@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
@@ -318,6 +319,91 @@ class TestDataUtilities(unittest.TestCase):
     def test_resolve_most_abundant(self):
         state = (1, 2, 3, 3)
         self.assertEqual(data_utilities.resolve_most_abundant(state), 3)
+
+    def test_simple_phylogenetic_weights_matrix(self):
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F", "A", length=0.1)
+        tree.add_edge("F", "B", length=0.2)
+        tree.add_edge("F", "E", length=0.5)
+        tree.add_edge("E", "C", length=0.3)
+        tree.add_edge("E", "D", length=0.4)
+
+        tree = CassiopeiaTree(tree=tree)
+
+        weight_matrix = data_utilities.compute_phylogenetic_weight_matrix(tree)
+
+        expected_weight_matrix = pd.DataFrame.from_dict(
+            {
+                "A": [0.0, 0.3, 0.9, 1.0],
+                "B": [0.3, 0.0, 1.0, 1.1],
+                "C": [0.9, 1.0, 0.0, 0.7],
+                "D": [1.0, 1.1, 0.7, 0.0],
+            },
+            orient="index",
+            columns=["A", "B", "C", "D"],
+        )
+
+        pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
+
+    def test_simple_phylogenetic_weights_matrix_inverse(self):
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F", "A", length=0.1)
+        tree.add_edge("F", "B", length=0.2)
+        tree.add_edge("F", "E", length=0.5)
+        tree.add_edge("E", "C", length=0.3)
+        tree.add_edge("E", "D", length=0.4)
+
+        tree = CassiopeiaTree(tree=tree)
+
+        weight_matrix = data_utilities.compute_phylogenetic_weight_matrix(
+            tree, inverse=True
+        )
+
+        expected_weight_matrix = pd.DataFrame.from_dict(
+            {
+                "A": [0.0, 1.0 / 0.3, 1.0 / 0.9, 1.0],
+                "B": [1.0 / 0.3, 0.0, 1.0, 1.0 / 1.1],
+                "C": [1.0 / 0.9, 1.0, 0.0, 1.0 / 0.7],
+                "D": [1.0, 1.0 / 1.1, 1.0 / 0.7, 0.0],
+            },
+            orient="index",
+            columns=["A", "B", "C", "D"],
+        )
+
+        pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
+
+    def test_phylogenetic_weights_matrix_inverse_fn(self):
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F", "A", length=0.1)
+        tree.add_edge("F", "B", length=0.2)
+        tree.add_edge("F", "E", length=0.5)
+        tree.add_edge("E", "C", length=0.3)
+        tree.add_edge("E", "D", length=0.4)
+
+        tree = CassiopeiaTree(tree=tree)
+
+        weight_matrix = data_utilities.compute_phylogenetic_weight_matrix(
+            tree, inverse=True, inverse_fn=lambda x: -np.log(x)
+        )
+
+        expected_weight_matrix = pd.DataFrame.from_dict(
+            {
+                "A": [0.0, -np.log(0.3), -np.log(0.9), 0],
+                "B": [-np.log(0.3), 0.0, 0, -np.log(1.1)],
+                "C": [-np.log(0.9), 0, 0.0, -np.log(0.7)],
+                "D": [0.0, -np.log(1.1), -np.log(0.7), 0.0],
+            },
+            orient="index",
+            columns=["A", "B", "C", "D"],
+        )
+
+        pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
 
 
 if __name__ == "__main__":

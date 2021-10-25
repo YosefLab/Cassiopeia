@@ -22,7 +22,8 @@ We also have several utilities that are useful for working with various data rel
 .. autosummary::
    :toctree: reference/
 
-   data.compute_dissimilarity_map   
+   data.compute_dissimilarity_map
+   data.compute_phylogenetic_weight_matrix
    data.get_lca_characters
    data.sample_bootstrap_allele_tables
    data.sample_bootstrap_character_matrices
