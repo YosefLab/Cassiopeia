@@ -22,6 +22,8 @@ def compute_expansion_probabilities(
 
     Uses the methodology described in Yang, Jones et al, BioRxiv (2021) to
     assess the expansion probability of a given subclade of a phylogeny.
+    Mathematical treatment of the coalescent probability is described in
+    Griffiths and Tavare, Stochastic Models (1998).
 
     The probability corresponds to the probability that a given subclade
     contains the number of cells as would be expected under a simple coalescent
