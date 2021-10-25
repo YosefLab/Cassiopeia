@@ -12,6 +12,7 @@ Import Cassiopeia as::
 
    preprocess
    data
+   critique
    solver
    simulator
    plotting
