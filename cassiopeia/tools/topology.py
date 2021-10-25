@@ -61,23 +61,25 @@ def compute_expansion_probabilities(
     for node in tree.depth_first_traverse_nodes(postorder=False):
 
         n = len(tree.leaves_in_subtree(node))
-        depth = tree.get_attribute(node, "depth")
-        if depth >= min_depth:
 
-            k = len(tree.children(node))
-            for c in tree.children(node):
+        k = len(tree.children(node))
+        for c in tree.children(node):
 
-                if len(tree.leaves_in_subtree(c)) < min_clade_size:
-                    continue
-
-                b = len(tree.leaves_in_subtree(c))
-                p = np.sum(
-                    [
-                        simple_coalescent_probability(n, b2, k)
-                        for b2 in range(b, n - k + 2)
-                    ]
-                )
-                tree.set_attribute(c, "expansion_probability", p)
+            if len(tree.leaves_in_subtree(c)) < min_clade_size:
+                continue
+            
+            depth = tree.get_attribute(c, "depth")
+            if depth < min_depth:
+                continue
+            
+            b = len(tree.leaves_in_subtree(c))
+            p = np.sum(
+                [
+                    simple_coalescent_probability(n, b2, k)
+                    for b2 in range(b, n - k + 2)
+                ]
+            )
+            tree.set_attribute(c, "expansion_probability", p)
 
     return tree if copy else None
 

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
-from cassiopeia.mixins import CassiopeiaError
+from cassiopeia.mixins import CassiopeiaError, CassiopeiaTreeError
 from cassiopeia.tools import topology
 
 
@@ -70,8 +70,8 @@ class TestTopology(unittest.TestCase):
         cas.tl.compute_expansion_probabilities(self.tree, min_clade_size=2)
         expected_probabilities = {
             "0": 1.0,
-            "1": 1.0,
-            "2": 1.0,
+            "1": 0.3,
+            "2": 0.8,
             "3": 0.047,
             "4": 1.0,
             "5": 1.0,
@@ -96,6 +96,83 @@ class TestTopology(unittest.TestCase):
                 expected,
                 self.tree.get_attribute(node, "expansion_probability"),
                 delta=0.01,
+            )
+
+    def test_expansion_probability_variable_depths(self):
+
+        cas.tl.compute_expansion_probabilities(self.tree, min_clade_size=2, min_depth=3)
+        expected_probabilities = {
+            "0": 1.0,
+            "1": 1.0,
+            "2": 1.0,
+            "3": 1.0,
+            "4": 1.0,
+            "5": 1.0,
+            "6": 1.0,
+            "7": 1.0,
+            "8": 0.6,
+            "9": 0.6,
+            "10": 1.0,
+            "11": 1.0,
+            "12": 1.0,
+            "13": 1.0,
+            "14": 1.0,
+            "15": 1.0,
+            "16": 0.6,
+            "17": 1.0,
+            "18": 1.0,
+        }
+
+        for node in self.tree.depth_first_traverse_nodes(postorder=False):
+            expected = expected_probabilities[node]
+            self.assertAlmostEqual(
+                expected,
+                self.tree.get_attribute(node, "expansion_probability"),
+                delta=0.01,
+            )
+
+    def test_expansion_probability_copy_tree(self):
+
+        tree = cas.tl.compute_expansion_probabilities(
+            self.tree, min_clade_size=2, min_depth=1, copy=True
+        )
+
+        expected_probabilities = {
+            "0": 1.0,
+            "1": 0.3,
+            "2": 0.8,
+            "3": 0.047,
+            "4": 1.0,
+            "5": 1.0,
+            "6": 1.0,
+            "7": 0.5,
+            "8": 0.6,
+            "9": 0.6,
+            "10": 1.0,
+            "11": 1.0,
+            "12": 1.0,
+            "13": 1.0,
+            "14": 1.0,
+            "15": 1.0,
+            "16": 0.6,
+            "17": 1.0,
+            "18": 1.0,
+        }
+
+        for node in self.tree.depth_first_traverse_nodes(postorder=False):
+            expected_copy = expected_probabilities[node]
+
+            self.assertAlmostEqual(
+                expected_copy,
+                tree.get_attribute(node, "expansion_probability"),
+                delta=0.01,
+            )
+
+            self.assertRaises(
+                CassiopeiaTreeError,
+                self.tree.get_attribute,
+                node,
+                "expansion_probability",
             )
 
 
