@@ -9,25 +9,34 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import CassiopeiaError
 
 
 def compute_expansion_probabilities(
     tree: CassiopeiaTree,
     min_clade_size: int = 10,
     min_depth: int = 1,
-    copy=True,
+    copy: bool = False,
 ) -> Union[CassiopeiaTree, None]:
-    """Call expansions on a tree.
+    """Call expansion probabilities on a tree.
 
     Uses the methodology described in Yang, Jones et al, BioRxiv (2021) to
     assess the expansion probability of a given subclade of a phylogeny.
 
-    This function will add an attribute "expansion_probability" to the tree.
+    The probability corresponds to the probability that a given subclade
+    contains the number of cells as would be expected under a simple coalescent
+    model. Often, if the probability is less than some threshold (e.g., 0.05),
+    this might indicate that there exists some subclade under this node that
+    to which this expansion probability can be attributed.  
+
+    This function will add an attribute "expansion_probability" to the tree, and
+    return None unless :param:`copy` is set to True.
 
     Args:
         tree: CassiopeiaTree
         min_clade_size: Minimum number of leaves in a subtree to be considered.
-        min_depth: Minimum depth of clade to be considered.
+        min_depth: Minimum depth of clade to be considered. Depth is measured
+            in number of nodes from the root, not branch lengths.
         copy: Return copy.
 
     Returns:
@@ -37,12 +46,15 @@ def compute_expansion_probabilities(
     tree = tree.copy() if copy else tree
 
     # instantiate attributes
-    tree.set_attribute(tree.root, "depth", 0)
     for node in tree.depth_first_traverse_nodes(postorder=False):
         tree.set_attribute(node, "expansion_probability", 1.0)
-        tree.set_attribute(
-            node, "depth", tree.get_attribute(tree.parent(node, "depth")) + 1
-        )
+
+        if tree.is_root(node):
+            tree.set_attribute(node, "depth", 0)
+        else:
+            tree.set_attribute(
+                node, "depth", tree.get_attribute(tree.parent(node), "depth") + 1
+            )
 
     for node in tree.depth_first_traverse_nodes(postorder=False):
 
@@ -83,10 +95,10 @@ def simple_coalescent_probability(n: int, b: int, k: int) -> float:
         Probability of observing b leaves on one lineage in a tree of n total 
             leaves
     """
-    return nCr(n - b - 1, k - 2) / nCr(n - 1, k - 1)
+    return nCk(n - b - 1, k - 2) / nCk(n - 1, k - 1)
 
 
-def nCr(n: int, k: int) -> float:
+def nCk(n: int, k: int) -> float:
     """Compute the quantity n choose k.
 
     Args:
@@ -96,5 +108,9 @@ def nCr(n: int, k: int) -> float:
     Returns:
         The number of ways to choose k items from n.
     """
+
+    if k > n:
+        raise CassiopeiaError("Argument k cannot be larger than n.")
+
     f = math.factorial
     return f(n) // f(k) // f(n - k)
