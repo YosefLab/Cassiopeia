@@ -15,6 +15,7 @@ Small-Parsimony
 .. autosummary::
    :toctree: reference/
    
+   tl.compute_expansion_probabilities
    tl.compute_morans_i
    tl.fitch_count
    tl.fitch_hartigan

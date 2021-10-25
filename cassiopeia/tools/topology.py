@@ -42,7 +42,8 @@ def compute_expansion_probabilities(
         copy: Return copy.
 
     Returns:
-        None. Adds attributes to the tree. 
+        If copy is set to False, returns the tree with attributes added
+            in place. Else, returns a new CassiopeiaTree.
     """
 
     tree = tree.copy() if copy else tree
@@ -71,7 +72,7 @@ def compute_expansion_probabilities(
             depth = tree.get_attribute(c, "depth")
             if depth < min_depth:
                 continue
-            
+
             b = len(tree.leaves_in_subtree(c))
             p = np.sum(
                 [
