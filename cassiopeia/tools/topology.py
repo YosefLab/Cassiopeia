@@ -95,7 +95,7 @@ def compute_expansion_pvalues(
 
 def compute_cophenetic_correlation(
     tree: CassiopeiaTree,
-    weights: Optional[pd.Dataframe] = None,
+    weights: Optional[pd.DataFrame] = None,
     dissimilarity_map: Optional[pd.DataFrame] = None,
     dissimilarity_function: Optional[
         Callable[[np.array, np.array, int, Dict[int, Dict[int, float]]], float]
@@ -127,6 +127,7 @@ def compute_cophenetic_correlation(
         The cophenetic correlation of the tree.
     """
 
+    # set phylogenetic weight matrix
     W = (
         compute_phylogenetic_weight_matrix(tree)
         if (weights is None)
