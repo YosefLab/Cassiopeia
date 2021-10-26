@@ -131,7 +131,7 @@ def triplets_correct(
 
 
 def robinson_foulds(
-    tree1: nx.DiGraph, tree2: nx.DiGraph
+    tree1: CassiopeiaTree, tree2: CassiopeiaTree
 ) -> Tuple[float, float]:
     """Compares two trees with Robinson-Foulds distance.
 
@@ -141,8 +141,8 @@ def robinson_foulds(
     around the `robinson_foulds` method from Ete3.
 
     Args:
-        tree1: A graph representing the first tree
-        tree2: A graph representing the second tree
+        tree1: A CassiopeiaTree representing the first tree
+        tree2: A CassiopeiaTree representing the second tree
 
     Returns:
         The Robinson-Foulds distance between the two trees and the maximum
