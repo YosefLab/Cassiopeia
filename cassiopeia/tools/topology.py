@@ -25,11 +25,13 @@ def compute_expansion_probabilities(
     Mathematical treatment of the coalescent probability is described in
     Griffiths and Tavare, Stochastic Models (1998).
 
-    The probability corresponds to the probability that a given subclade
-    contains the number of cells as would be expected under a simple coalescent
-    model. Often, if the probability is less than some threshold (e.g., 0.05),
-    this might indicate that there exists some subclade under this node that
-    to which this expansion probability can be attributed.  
+    The probability corresponds to the probability that, under a simple neutral
+    coalescent model, a given subclade contains the observed number of cells; in
+    other words, a one-sided p-value. Often, if the probability is less than
+    some threshold (e.g., 0.05), this might indicate that there exists some
+    subclade under this node that to which this expansion probability can be
+    attributed (i.e. the null hypothesis that the subclade is undergoing 
+    neutral drift can be rejected).
 
     This function will add an attribute "expansion_probability" to the tree, and
     return None unless :param:`copy` is set to True.
@@ -49,15 +51,14 @@ def compute_expansion_probabilities(
     tree = tree.copy() if copy else tree
 
     # instantiate attributes
+    _depths = {} 
     for node in tree.depth_first_traverse_nodes(postorder=False):
         tree.set_attribute(node, "expansion_probability", 1.0)
 
         if tree.is_root(node):
-            tree.set_attribute(node, "depth", 0)
+            _depths[node] = 0
         else:
-            tree.set_attribute(
-                node, "depth", tree.get_attribute(tree.parent(node), "depth") + 1
-            )
+            _depths[node] = (_depths[tree.parent(node)] + 1)
 
     for node in tree.depth_first_traverse_nodes(postorder=False):
 
@@ -69,17 +70,17 @@ def compute_expansion_probabilities(
             if len(tree.leaves_in_subtree(c)) < min_clade_size:
                 continue
             
-            depth = tree.get_attribute(c, "depth")
+            depth = _depths[c]
             if depth < min_depth:
                 continue
 
             b = len(tree.leaves_in_subtree(c))
-            p = np.sum(
-                [
-                    simple_coalescent_probability(n, b2, k)
-                    for b2 in range(b, n - k + 2)
-                ]
-            )
+
+            # this value below is a simplification of the quantity:
+            # sum[simple_coalescent_probability(n, b2, k) for \
+            #   b2 in range(b, n - k + 2)]
+            p = nCk(n-b, k-1) / nCk(n-1, k-1)
+
             tree.set_attribute(c, "expansion_probability", p)
 
     return tree if copy else None
