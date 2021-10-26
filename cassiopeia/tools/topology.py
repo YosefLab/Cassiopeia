@@ -8,7 +8,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
 
 
