@@ -36,6 +36,10 @@ def compute_expansion_pvalues(
     This function will add an attribute "expansion_pvalue" to the tree, and
     return None unless :param:`copy` is set to True.
 
+    On a typical balanced tree, this function will perform in O(n log n) time, 
+    but can be up to O(n^3) on highly unbalanced trees. A future endeavor may 
+    be to impelement the function in O(n) time.
+
     Args:
         tree: CassiopeiaTree
         min_clade_size: Minimum number of leaves in a subtree to be considered.
