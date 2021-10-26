@@ -141,15 +141,21 @@ def compute_cophenetic_correlation(
         else dissimilarity_map
     )
     if D is None:
-        D = tree.compute_dissimilarity_map(
+        tree.compute_dissimilarity_map(
             dissimilarity_function=dissimilarity_function
         )
+        D = tree.get_dissimilarity_map()
+
+    # align matrices
+    cells = tree.leaves
+    W = W.loc[cells, cells]
+    D = D.loc[cells, cells]
 
     # convert to condensed distance matrices
     Wp = spatial.distance.squareform(W)
     Dp = spatial.distance.squareform(D)
 
-    return stats.pearsonr(Wp, Dp)
+    return stats.pearsonr(Wp, Dp)[0]
 
 
 def simple_coalescent_probability(n: int, b: int, k: int) -> float:
