@@ -108,9 +108,9 @@ def compute_cophenetic_correlation(
     between characters.
 
     If neither weight matrix nor the dissimilarity map are precomputed, then 
-    this function will run in O(n^3 + n^2logn) time, as the dissimilarity map
-    will take O(n^3) time and the phylogenetic distance will take O(n^2 logn)
-    time.
+    this function will run in O(mn^2 + n^2logn) time, as the dissimilarity map
+    will take O(mn^2) time and the phylogenetic distance will take O(n^2 logn)
+    time (n = number of leaves; m = number of characters).
 
     Args:
         tree: CassiopeiaTree
