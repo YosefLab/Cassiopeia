@@ -18,8 +18,7 @@ from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 def get_lca_characters(
-    vecs: List[Union[List[int], List[Tuple[int, ...]]]],
-    missing_state_indicator: int,
+    vecs: List[Union[List[int], List[Tuple[int, ...]]]], missing_state_indicator: int
 ) -> List[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
@@ -122,9 +121,7 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
             if is_leaf
             else (
                 "("
-                + ",".join(
-                    _to_newick_str(g, child) for child in g.successors(node)
-                )
+                + ",".join(_to_newick_str(g, child) for child in g.successors(node))
                 + ")"
                 + weight_string
             )
@@ -163,16 +160,14 @@ def compute_dissimilarity_map(
     # in a partial, which raises a TypeError when trying to numbaize.
     except TypeError:
         warnings.warn(
-            "Failed to numbaize dissimilarity function. "
-            "Falling back to Python.",
+            "Failed to numbaize dissimilarity function. " "Falling back to Python.",
             CassiopeiaTreeWarning,
         )
         numbaize = False
         dissimilarity_func = dissimilarity_function
 
     nb_weights = numba.typed.Dict.empty(
-        numba.types.int64,
-        numba.types.DictType(numba.types.int64, numba.types.float64),
+        numba.types.int64, numba.types.DictType(numba.types.int64, numba.types.float64)
     )
     if weights:
 
@@ -193,9 +188,7 @@ def compute_dissimilarity_map(
 
                 s1 = cm[i, :]
                 s2 = cm[j, :]
-                dm[k] = dissimilarity_func(
-                    s1, s2, missing_state_indicator, nb_weights
-                )
+                dm[k] = dissimilarity_func(s1, s2, missing_state_indicator, nb_weights)
                 k += 1
 
         return dm
@@ -210,9 +203,7 @@ def compute_dissimilarity_map(
             _compute_dissimilarity_map, nopython=numbaize
         )
 
-        return _compute_dissimilarity_map(
-            cm, C, missing_state_indicator, nb_weights
-        )
+        return _compute_dissimilarity_map(cm, C, missing_state_indicator, nb_weights)
 
 
 def sample_bootstrap_character_matrices(
@@ -250,9 +241,7 @@ def sample_bootstrap_character_matrices(
         else:
             sampled_cut_sites = np.random.choice(M, M, replace=True)
 
-        bootstrapped_character_matrix = character_matrix.iloc[
-            :, sampled_cut_sites
-        ]
+        bootstrapped_character_matrix = character_matrix.iloc[:, sampled_cut_sites]
         bootstrapped_character_matrix.columns = [
             f"random_character{i}" for i in range(M)
         ]
@@ -275,10 +264,7 @@ def sample_bootstrap_allele_tables(
     cut_sites: Optional[List[str]] = None,
 ) -> List[
     Tuple[
-        pd.DataFrame,
-        Dict[int, Dict[int, float]],
-        Dict[int, Dict[int, str]],
-        List[str],
+        pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]], List[str]
     ]
 ]:
     """Generates bootstrap character matrices from an allele table.
@@ -305,14 +291,10 @@ def sample_bootstrap_allele_tables(
     """
 
     if cut_sites is None:
-        cut_sites = preprocessing_utilities.get_default_cut_site_columns(
-            allele_table
-        )
+        cut_sites = preprocessing_utilities.get_default_cut_site_columns(allele_table)
 
-    lineage_profile = (
-        preprocessing_utilities.convert_alleletable_to_lineage_profile(
-            allele_table, cut_sites
-        )
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table, cut_sites
     )
 
     intbcs = allele_table["intBC"].unique()
@@ -345,12 +327,7 @@ def sample_bootstrap_allele_tables(
         )
 
         bootstrap_samples.append(
-            (
-                bootstrapped_character_matrix,
-                priors,
-                state_to_indel,
-                bootstrap_intbcs,
-            )
+            (bootstrapped_character_matrix, priors, state_to_indel, bootstrap_intbcs)
         )
 
     return bootstrap_samples
@@ -374,6 +351,7 @@ def resolve_most_abundant(state: Tuple[int, ...]) -> int:
     return np.random.choice(
         [state for state, count in most_common if count == most_common[0][1]]
     )
+
 
 def compute_phylogenetic_weight_matrix(
     tree: CassiopeiaTree,
@@ -399,10 +377,10 @@ def compute_phylogenetic_weight_matrix(
         An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
-    W = pd.DataFrame(np.zeros((N , N)), index=tree.leaves, columns=tree.leaves)
+    W = pd.DataFrame(np.zeros((N, N)), index=tree.leaves, columns=tree.leaves)
 
     for leaf1 in tree.leaves:
-        
+
         distances = tree.get_distances(leaf1, leaves_only=True)
         for leaf2, _d in distances.items():
 
@@ -412,5 +390,5 @@ def compute_phylogenetic_weight_matrix(
             W.loc[leaf1, leaf2] = W.loc[leaf2, leaf1] = _d
 
     np.fill_diagonal(W.values, 0)
-    
+
     return W

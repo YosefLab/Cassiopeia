@@ -2,14 +2,17 @@
 Utilities to assess topological properties of a phylogeny, such as balance
 and expansion.
 """
-from typing import Union
+from typing import Callable, Dict, Union, Optional
 
 import math
 import numpy as np
 import pandas as pd
+from scipy import spatial, stats
 
-from cassiopeia.data import CassiopeiaTree
+
+from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
+from cassiopeia.solver import dissimilarity_functions
 
 
 def compute_expansion_pvalues(
@@ -55,14 +58,14 @@ def compute_expansion_pvalues(
     tree = tree.copy() if copy else tree
 
     # instantiate attributes
-    _depths = {} 
+    _depths = {}
     for node in tree.depth_first_traverse_nodes(postorder=False):
         tree.set_attribute(node, "expansion_pvalue", 1.0)
 
         if tree.is_root(node):
             _depths[node] = 0
         else:
-            _depths[node] = (_depths[tree.parent(node)] + 1)
+            _depths[node] = _depths[tree.parent(node)] + 1
 
     for node in tree.depth_first_traverse_nodes(postorder=False):
 
@@ -73,7 +76,7 @@ def compute_expansion_pvalues(
 
             if len(tree.leaves_in_subtree(c)) < min_clade_size:
                 continue
-            
+
             depth = _depths[c]
             if depth < min_depth:
                 continue
@@ -83,11 +86,69 @@ def compute_expansion_pvalues(
             # this value below is a simplification of the quantity:
             # sum[simple_coalescent_probability(n, b2, k) for \
             #   b2 in range(b, n - k + 2)]
-            p = nCk(n-b, k-1) / nCk(n-1, k-1)
+            p = nCk(n - b, k - 1) / nCk(n - 1, k - 1)
 
             tree.set_attribute(c, "expansion_pvalue", p)
 
     return tree if copy else None
+
+
+def compute_cophenetic_correlation(
+    tree: CassiopeiaTree,
+    weights: Optional[pd.Dataframe] = None,
+    dissimilarity_map: Optional[pd.DataFrame] = None,
+    dissimilarity_function: Optional[
+        Callable[[np.array, np.array, int, Dict[int, Dict[int, float]]], float]
+    ] = dissimilarity_functions.weighted_hamming_distance,
+) -> float:
+    """Computes the cophenetic correlation of a lineage.
+
+    Computes the cophenetic correlation of a lineage, which is defined as the
+    Pearson correlation between the phylogenetic distance and dissimilarity
+    between characters.
+
+    If neither weight matrix nor the dissimilarity map are precomputed, then 
+    this function will run in O(n^3 + n^2logn) time, as the dissimilarity map
+    will take O(n^3) time and the phylogenetic distance will take O(n^2 logn)
+    time.
+
+    Args:
+        tree: CassiopeiaTree
+        weights: Phylogenetic weights matrix. If this is not specified, invokes
+            `cas.data.compute_phylogenetic_weight_matrix`
+        dissimilarity_map: Dissimilarity matrix between samples. If this is not
+            specified, then `tree.compute_dissimilarity_map` will be called.
+        dissimilarity_function: Dissimilarity function to use. If dissimilarity
+            map is not passed in, and one does not already exist in the
+            CassiopeiaTree, then this function will be used to compute the
+            dissimilarities between samples.
+    
+    Returns:
+        The cophenetic correlation of the tree.
+    """
+
+    W = (
+        compute_phylogenetic_weight_matrix(tree)
+        if (weights is None)
+        else weights
+    )
+
+    # set dissimilarity map
+    D = (
+        tree.get_dissimilarity_map()
+        if (dissimilarity_map is None)
+        else dissimilarity_map
+    )
+    if D is None:
+        D = tree.compute_dissimilarity_map(
+            dissimilarity_function=dissimilarity_function
+        )
+
+    # convert to condensed distance matrices
+    Wp = spatial.distance.squareform(W)
+    Dp = spatial.distance.squareform(D)
+
+    return stats.pearsonr(Wp, Dp)
 
 
 def simple_coalescent_probability(n: int, b: int, k: int) -> float:
