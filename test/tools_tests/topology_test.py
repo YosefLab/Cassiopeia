@@ -198,30 +198,87 @@ class TestTopology(unittest.TestCase):
 
     def test_cophenetic_correlation_perfect(self):
 
-        custom_dissimilarity_map = pd.DataFrame.from_dict({
-            '12': [0, 2, 4, 4, 4, 4, 4, 4, 6, 7, 7],
-            '13': [2, 0, 4, 4, 4, 4, 4, 4, 6, 7, 7],
-            '14': [4, 4, 0, 2, 4, 4, 4, 4, 6, 7, 7],
-            '15': [4, 4, 2, 0, 4, 4, 4, 4, 6, 7, 7],
-            '17': [4, 4, 4, 4, 0, 2, 4, 4, 6, 7, 7],
-            '18': [4, 4, 4, 4, 2, 0, 4, 4, 6, 7, 7],
-            '4': [4, 4, 4, 4, 4, 4, 0, 2, 4, 5, 5],
-            '5': [4, 4, 4, 4, 4, 4, 2, 0, 4, 5, 5],
-            '6': [6, 6, 6, 6, 6, 6, 4, 4, 0, 3, 3],
-            '10': [7, 7, 7, 7, 7, 7, 5, 5, 3, 0, 2],
-            '11': [7, 7, 7, 7, 7, 7, 5, 5, 3, 2, 0]
-        }, orient='index', columns = ['12', '13', '14', '15', '17', '18', '4', '5', '6', '10', '11'])
+        custom_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "12": [0, 2, 4, 4, 4, 4, 4, 4, 6, 7, 7],
+                "13": [2, 0, 4, 4, 4, 4, 4, 4, 6, 7, 7],
+                "14": [4, 4, 0, 2, 4, 4, 4, 4, 6, 7, 7],
+                "15": [4, 4, 2, 0, 4, 4, 4, 4, 6, 7, 7],
+                "17": [4, 4, 4, 4, 0, 2, 4, 4, 6, 7, 7],
+                "18": [4, 4, 4, 4, 2, 0, 4, 4, 6, 7, 7],
+                "4": [4, 4, 4, 4, 4, 4, 0, 2, 4, 5, 5],
+                "5": [4, 4, 4, 4, 4, 4, 2, 0, 4, 5, 5],
+                "6": [6, 6, 6, 6, 6, 6, 4, 4, 0, 3, 3],
+                "10": [7, 7, 7, 7, 7, 7, 5, 5, 3, 0, 2],
+                "11": [7, 7, 7, 7, 7, 7, 5, 5, 3, 2, 0],
+            },
+            orient="index",
+            columns=[
+                "12",
+                "13",
+                "14",
+                "15",
+                "17",
+                "18",
+                "4",
+                "5",
+                "6",
+                "10",
+                "11",
+            ],
+        )
 
-        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(self.tree, dissimilarity_map=custom_dissimilarity_map)
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree, dissimilarity_map=custom_dissimilarity_map
+        )
         self.assertEquals(1.0, obs_cophenetic_correlation)
+
+        # make sure weight matrix can be specified
+        W = pd.DataFrame.from_dict(
+            {
+                "12": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "13": [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "14": [2, 2, 0, 3, 4, 5, 6, 7, 8, 9, 10],
+                "15": [3, 3, 3, 0, 4, 5, 6, 7, 8, 9, 10],
+                "17": [4, 4, 4, 4, 0, 5, 6, 7, 8, 9, 10],
+                "18": [5, 5, 5, 5, 5, 0, 6, 7, 8, 9, 10],
+                "4": [6, 6, 6, 6, 6, 6, 0, 7, 8, 9, 10],
+                "5": [7, 7, 7, 7, 7, 7, 7, 0, 8, 9, 10],
+                "6": [8, 8, 8, 8, 8, 8, 8, 8, 0, 9, 10],
+                "10": [9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 10],
+                "11": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0],
+            },
+            orient="index",
+            columns=[
+                "12",
+                "13",
+                "14",
+                "15",
+                "17",
+                "18",
+                "4",
+                "5",
+                "6",
+                "10",
+                "11",
+            ],
+        )
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree, weights=W, dissimilarity_map=W
+        )
+        self.assertAlmostEqual(1.0, obs_cophenetic_correlation, delta=1e-6)
 
     def test_cophenetic_correlation_no_input(self):
 
-        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(self.tree)
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree
+        )
 
         expected_correlation = 0.819
 
-        self.assertAlmostEqual(expected_correlation, obs_cophenetic_correlation, delta=0.001)
+        self.assertAlmostEqual(
+            expected_correlation, obs_cophenetic_correlation, delta=0.001
+        )
 
 
 if __name__ == "__main__":
