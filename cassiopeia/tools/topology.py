@@ -12,28 +12,28 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaError
 
 
-def compute_expansion_probabilities(
+def compute_expansion_pvalues(
     tree: CassiopeiaTree,
     min_clade_size: int = 10,
     min_depth: int = 1,
     copy: bool = False,
 ) -> Union[CassiopeiaTree, None]:
-    """Call expansion probabilities on a tree.
+    """Call expansion pvalues on a tree.
 
     Uses the methodology described in Yang, Jones et al, BioRxiv (2021) to
     assess the expansion probability of a given subclade of a phylogeny.
     Mathematical treatment of the coalescent probability is described in
     Griffiths and Tavare, Stochastic Models (1998).
 
-    The probability corresponds to the probability that, under a simple neutral
-    coalescent model, a given subclade contains the observed number of cells; in
-    other words, a one-sided p-value. Often, if the probability is less than
-    some threshold (e.g., 0.05), this might indicate that there exists some
-    subclade under this node that to which this expansion probability can be
-    attributed (i.e. the null hypothesis that the subclade is undergoing 
+    The probability computed corresponds to the probability that, under a simple
+    neutral coalescent model, a given subclade contains the observed number of
+    cells; in other words, a one-sided p-value. Often, if the probability is
+    less than some threshold (e.g., 0.05), this might indicate that there exists
+    some subclade under this node that to which this expansion probability can
+    be attributed (i.e. the null hypothesis that the subclade is undergoing 
     neutral drift can be rejected).
 
-    This function will add an attribute "expansion_probability" to the tree, and
+    This function will add an attribute "expansion_pvalue" to the tree, and
     return None unless :param:`copy` is set to True.
 
     Args:
@@ -53,7 +53,7 @@ def compute_expansion_probabilities(
     # instantiate attributes
     _depths = {} 
     for node in tree.depth_first_traverse_nodes(postorder=False):
-        tree.set_attribute(node, "expansion_probability", 1.0)
+        tree.set_attribute(node, "expansion_pvalue", 1.0)
 
         if tree.is_root(node):
             _depths[node] = 0
@@ -81,7 +81,7 @@ def compute_expansion_probabilities(
             #   b2 in range(b, n - k + 2)]
             p = nCk(n-b, k-1) / nCk(n-1, k-1)
 
-            tree.set_attribute(c, "expansion_probability", p)
+            tree.set_attribute(c, "expansion_pvalue", p)
 
     return tree if copy else None
 

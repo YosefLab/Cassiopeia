@@ -61,13 +61,13 @@ class TestTopology(unittest.TestCase):
     def test_expansion_probability(self):
 
         # make sure attributes are instantiated correctly
-        cas.tl.compute_expansion_probabilities(self.tree, min_clade_size=20)
+        cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=20)
         for node in self.tree.depth_first_traverse_nodes(postorder=False):
             self.assertEqual(
-                1.0, self.tree.get_attribute(node, "expansion_probability")
+                1.0, self.tree.get_attribute(node, "expansion_pvalue")
             )
 
-        cas.tl.compute_expansion_probabilities(self.tree, min_clade_size=2)
+        cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2)
         expected_probabilities = {
             "0": 1.0,
             "1": 0.3,
@@ -94,13 +94,13 @@ class TestTopology(unittest.TestCase):
             expected = expected_probabilities[node]
             self.assertAlmostEqual(
                 expected,
-                self.tree.get_attribute(node, "expansion_probability"),
+                self.tree.get_attribute(node, "expansion_pvalue"),
                 delta=0.01,
             )
 
     def test_expansion_probability_variable_depths(self):
 
-        cas.tl.compute_expansion_probabilities(self.tree, min_clade_size=2, min_depth=3)
+        cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2, min_depth=3)
         expected_probabilities = {
             "0": 1.0,
             "1": 1.0,
@@ -127,13 +127,13 @@ class TestTopology(unittest.TestCase):
             expected = expected_probabilities[node]
             self.assertAlmostEqual(
                 expected,
-                self.tree.get_attribute(node, "expansion_probability"),
+                self.tree.get_attribute(node, "expansion_pvalue"),
                 delta=0.01,
             )
 
     def test_expansion_probability_copy_tree(self):
 
-        tree = cas.tl.compute_expansion_probabilities(
+        tree = cas.tl.compute_expansion_pvalues(
             self.tree, min_clade_size=2, min_depth=1, copy=True
         )
 
@@ -164,7 +164,7 @@ class TestTopology(unittest.TestCase):
 
             self.assertAlmostEqual(
                 expected_copy,
-                tree.get_attribute(node, "expansion_probability"),
+                tree.get_attribute(node, "expansion_pvalue"),
                 delta=0.01,
             )
 
@@ -172,7 +172,7 @@ class TestTopology(unittest.TestCase):
                 CassiopeiaTreeError,
                 self.tree.get_attribute,
                 node,
-                "expansion_probability",
+                "expansion_pvalue",
             )
 
 
