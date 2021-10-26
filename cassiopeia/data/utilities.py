@@ -414,6 +414,33 @@ def compute_phylogenetic_weight_matrix(
     np.fill_diagonal(W.values, 0)
 
     return W
+    
+@numba.jit(nopython=True)
+def net_relatedness_index(
+    dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
+) -> float:
+    """Computes the net relatedness index between indices.
+
+    Using the dissimilarity map specified and the indices of samples, compute
+    the net relatedness index, defined as:
+
+    sum(distances over i,j in indices_1,indices_2) / (|indices_1| x |indices_2|)
+
+    Args:
+        dissimilarity_map: Dissimilarity map between all samples.
+        indices_1: Indices corresponding to the first group.
+        indices_2: Indices corresponding to the second group.
+
+    Returns:
+        The Net Relatedness Index (NRI)
+    """
+
+    nri = 0
+    for i in indices_1:
+        for j in indices_2:
+            nri += dissimilarity_map[i, j]
+
+    return nri / (len(indices_1) * len(indices_2))
 
 
 def compute_inter_cluster_distances(
@@ -476,31 +503,3 @@ def compute_inter_cluster_distances(
             inter_cluster_distances.loc[state1, state2] = distance
 
     return inter_cluster_distances
-
-
-@numba.jit(nopython=True)
-def net_relatedness_index(
-    dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
-) -> float:
-    """Computes the net relatedness index between indices.
-
-    Using the dissimilarity map specified and the indices of samples, compute
-    the net relatedness index, defined as:
-
-    sum(distances over i,j in indices_1,indices_2) / (|indices_1| x |indices_2|)
-
-    Args:
-        dissimilarity_map: Dissimilarity map between all samples.
-        indices_1: Indices corresponding to the first group.
-        indices_2: Indices corresponding to the second group.
-
-    Returns:
-        The Net Relatedness Index (NRI)
-    """
-
-    nri = 0
-    for i in indices_1:
-        for j in indices_2:
-            nri += dissimilarity_map[i, j]
-
-    return nri / (len(indices_1) * len(indices_2))

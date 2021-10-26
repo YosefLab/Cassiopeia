@@ -11,6 +11,7 @@ import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.mixins.errors import CassiopeiaError
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
@@ -404,6 +405,116 @@ class TestDataUtilities(unittest.TestCase):
         )
 
         pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
+
+    def test_net_relatedness_index(self):
+
+        distances = np.array(
+            [[0, 1, 2, 4], [1, 0, 3, 6], [2, 3, 0, 5], [4, 6, 5, 0]]
+        )
+        indices_1 = np.array([0, 1])
+        indices_2 = np.array([2, 3])
+
+        nri = data_utilities.net_relatedness_index(
+            distances, indices_1, indices_2
+        )
+        self.assertAlmostEqual(15.0 / 4.0, nri, delta=0.0001)
+
+    def test_inter_cluster_distance_basic(self):
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F", "A", length=0.1)
+        tree.add_edge("F", "B", length=0.2)
+        tree.add_edge("F", "E", length=0.5)
+        tree.add_edge("E", "C", length=0.3)
+        tree.add_edge("E", "D", length=0.4)
+
+        meta_data = pd.DataFrame.from_dict(
+            {
+                "A": ["TypeA", 10],
+                "B": ["TypeA", 5],
+                "C": ["TypeB", 3],
+                "D": ["TypeB", 22],
+            },
+            orient="index",
+            columns=["CellType", "nUMI"],
+        )
+
+        tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
+
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            tree, meta_item="CellType"
+        )
+
+        expected_distances = pd.DataFrame.from_dict(
+            {"TypeA": [0.15, 1.0], "TypeB": [1.0, 0.35]},
+            orient="index",
+            columns=["TypeA", "TypeB"],
+        )
+
+        pd.testing.assert_frame_equal(
+            expected_distances, inter_cluster_distances
+        )
+
+        self.assertRaises(
+            CassiopeiaError,
+            data_utilities.compute_inter_cluster_distances,
+            tree,
+            "nUMI",
+        )
+
+    def test_inter_cluster_distance_custom_input(self):
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
+        tree.add_edge("F", "A", length=0.1)
+        tree.add_edge("F", "B", length=0.2)
+        tree.add_edge("F", "E", length=0.5)
+        tree.add_edge("E", "C", length=0.3)
+        tree.add_edge("E", "D", length=0.4)
+
+        meta_data = pd.DataFrame.from_dict(
+            {
+                "A": ["TypeA", 10],
+                "B": ["TypeA", 5],
+                "C": ["TypeB", 3],
+                "D": ["TypeB", 22],
+            },
+            orient="index",
+            columns=["CellType", "nUMI"],
+        )
+
+        weight_matrix = pd.DataFrame.from_dict(
+            {
+                "A": [0.0, 0.5, 1.2, 0.4],
+                "B": [0.5, 0.0, 3.0, 1.1],
+                "C": [1.2, 3.0, 0.0, 0.8],
+                "D": [0.4, 1.1, 0.8, 0.0],
+            },
+            orient="index",
+            columns=["A", "B", "C", "D"],
+        )
+
+        tree = CassiopeiaTree(tree=tree)
+
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            tree,
+            meta_data=meta_data["CellType"],
+            dissimilarity_map=weight_matrix,
+        )
+
+        expected_distances = pd.DataFrame.from_dict(
+            {"TypeA": [0.25, 1.425], "TypeB": [1.425, 0.4]},
+            orient="index",
+            columns=["TypeA", "TypeB"],
+        )
+
+        pd.testing.assert_frame_equal(
+            expected_distances,
+            inter_cluster_distances,
+            check_exact=False,
+            atol=0.001,
+        )
 
 
 if __name__ == "__main__":
