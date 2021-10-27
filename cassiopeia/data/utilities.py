@@ -442,7 +442,6 @@ def net_relatedness_index(
 
     return nri / (len(indices_1) * len(indices_2))
 
-
 def compute_inter_cluster_distances(
     tree: CassiopeiaTree,
     meta_item: Optional[str] = None,
@@ -457,6 +456,9 @@ def compute_inter_cluster_distances(
     default, the phylogenetic weight matrix will be computed and used for this
     distance calculation, but a user can optionally provide a dissimilarity
     map instead.
+
+    This function performs the computation in O(K^2)*O(distance_function) time
+    for a variable with K categories.
 
     Args:
         tree: CassiopeiaTree

@@ -39,8 +39,9 @@ def compute_evolutionary_coupling(
     standard deviation of 0 lead to NaNs in the resulting evolutionary coupling
     matrix. 
 
-    The computational complexity of this function is O(n^2 log n + Bk^2) for a
-    tree with n leaves, a variable with k categories, and B random shuffles.
+    The computational complexity of this function is
+    O(n^2 log n + (B+1)(K^2 * O(distance_function)) for a tree with n leaves, a
+    variable with K categories, and B random shuffles.
 
     Args:
         tree: CassiopeiaTree
