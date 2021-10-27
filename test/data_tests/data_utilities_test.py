@@ -3,7 +3,6 @@ This file tests the utilities stored in cassiopeia/data/utilities.py
 """
 
 import unittest
-from typing import Dict, Optional
 
 import networkx as nx
 import numpy as np

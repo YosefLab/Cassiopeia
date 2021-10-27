@@ -492,6 +492,9 @@ def compute_inter_cluster_distances(
         np.zeros((K, K)), index=unique_states, columns=unique_states
     )
 
+    # align distance matrix and meta_data
+    D = D.loc[meta_data.index.values, meta_data.index.values]
+
     for state1 in unique_states:
         indices_1 = np.where(np.array(meta_data) == state1)[0]
         for state2 in unique_states:
