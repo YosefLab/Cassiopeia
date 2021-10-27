@@ -105,7 +105,7 @@ def compute_evolutionary_coupling(
             permuted_assignments,
             dissimilarity_map=W,
             distance_function=cluster_comparison_function,
-            **kwargs,
+            **comparison_kwargs,
         )
 
         for s1 in background_distances.index:
