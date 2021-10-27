@@ -418,7 +418,7 @@ def compute_phylogenetic_weight_matrix(
 @numba.jit(nopython=True)
 def net_relatedness_index(
     dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
-) -> float:
+) -> float: # pragma: no cover
     """Computes the net relatedness index between indices.
 
     Using the dissimilarity map specified and the indices of samples, compute
