@@ -23,6 +23,7 @@ We also have several utilities that are useful for working with various data rel
    :toctree: reference/
 
    data.compute_dissimilarity_map
+   data.compute_inter_cluster_distances
    data.compute_phylogenetic_weight_matrix
    data.get_lca_characters
    data.sample_bootstrap_allele_tables

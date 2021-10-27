@@ -14,9 +14,30 @@ Small-Parsimony
 
 .. autosummary::
    :toctree: reference/
-   
-   tl.compute_expansion_pvalues
-   tl.compute_morans_i
+      
    tl.fitch_count
    tl.fitch_hartigan
    tl.score_small_parsimony
+
+Autocorrelation
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   tl.compute_morans_i
+
+Coupling
+~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_evolutionary_coupling
+
+Topology
+~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_expansion_pvalues
