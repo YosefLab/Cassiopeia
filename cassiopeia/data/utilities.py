@@ -163,8 +163,7 @@ def compute_dissimilarity_map(
     # in a partial, which raises a TypeError when trying to numbaize.
     except TypeError:
         warnings.warn(
-            "Failed to numbaize dissimilarity function. "
-            "Falling back to Python.",
+            "Failed to numbaize dissimilarity function. Falling back to Python.",
             CassiopeiaTreeWarning,
         )
         numbaize = False
@@ -309,10 +308,8 @@ def sample_bootstrap_allele_tables(
             allele_table
         )
 
-    lineage_profile = (
-        preprocessing_utilities.convert_alleletable_to_lineage_profile(
-            allele_table, cut_sites
-        )
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table, cut_sites
     )
 
     intbcs = allele_table["intBC"].unique()
@@ -375,6 +372,7 @@ def resolve_most_abundant(state: Tuple[int, ...]) -> int:
         [state for state, count in most_common if count == most_common[0][1]]
     )
 
+
 def compute_phylogenetic_weight_matrix(
     tree: CassiopeiaTree,
     inverse: bool = False,
@@ -399,10 +397,10 @@ def compute_phylogenetic_weight_matrix(
         An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
-    W = pd.DataFrame(np.zeros((N , N)), index=tree.leaves, columns=tree.leaves)
+    W = pd.DataFrame(np.zeros((N, N)), index=tree.leaves, columns=tree.leaves)
 
     for leaf1 in tree.leaves:
-        
+
         distances = tree.get_distances(leaf1, leaves_only=True)
         for leaf2, _d in distances.items():
 
@@ -412,5 +410,5 @@ def compute_phylogenetic_weight_matrix(
             W.loc[leaf1, leaf2] = W.loc[leaf2, leaf1] = _d
 
     np.fill_diagonal(W.values, 0)
-    
+
     return W
