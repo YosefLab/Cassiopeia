@@ -2,7 +2,7 @@
 Utilities to assess topological properties of a phylogeny, such as balance
 and expansion.
 """
-from typing import Callable, Dict, Union, Optional
+from typing import Callable, Dict, Optional, Tuple, Union
 
 import math
 import numpy as np
@@ -100,7 +100,7 @@ def compute_cophenetic_correlation(
     dissimilarity_function: Optional[
         Callable[[np.array, np.array, int, Dict[int, Dict[int, float]]], float]
     ] = dissimilarity_functions.weighted_hamming_distance,
-) -> float:
+) -> Tuple[float, float]:
     """Computes the cophenetic correlation of a lineage.
 
     Computes the cophenetic correlation of a lineage, which is defined as the
@@ -108,9 +108,10 @@ def compute_cophenetic_correlation(
     between characters.
 
     If neither weight matrix nor the dissimilarity map are precomputed, then 
-    this function will run in O(mn^2 + n^2logn) time, as the dissimilarity map
-    will take O(mn^2) time and the phylogenetic distance will take O(n^2 logn)
-    time (n = number of leaves; m = number of characters).
+    this function will run in O(mn^2 + n^2logn + n^2) time, as the dissimilarity
+    map will take O(mn^2) time, the phylogenetic distance will take O(n^2 logn)
+    time, and the Pearson correlation will take O(n^2) time since it must
+    compare n^2 entries (n = number of leaves; m = number of characters).
 
     Args:
         tree: CassiopeiaTree
@@ -124,7 +125,7 @@ def compute_cophenetic_correlation(
             dissimilarities between samples.
     
     Returns:
-        The cophenetic correlation of the tree.
+        The cophenetic correlation value and significance for the tree.
     """
 
     # set phylogenetic weight matrix
@@ -155,7 +156,7 @@ def compute_cophenetic_correlation(
     Wp = spatial.distance.squareform(W)
     Dp = spatial.distance.squareform(D)
 
-    return stats.pearsonr(Wp, Dp)[0]
+    return stats.pearsonr(Wp, Dp)
 
 
 def simple_coalescent_probability(n: int, b: int, k: int) -> float:

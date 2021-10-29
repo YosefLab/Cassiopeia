@@ -230,7 +230,7 @@ class TestTopology(unittest.TestCase):
 
         obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
             self.tree, dissimilarity_map=custom_dissimilarity_map
-        )
+        )[0]
         self.assertEquals(1.0, obs_cophenetic_correlation)
 
         # make sure weight matrix can be specified
@@ -265,14 +265,14 @@ class TestTopology(unittest.TestCase):
         )
         obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
             self.tree, weights=W, dissimilarity_map=W
-        )
+        )[0]
         self.assertAlmostEqual(1.0, obs_cophenetic_correlation, delta=1e-6)
 
-    def test_cophenetic_correlation_no_input(self):
+    def test_cophenetic_correlation_default(self):
 
         obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
             self.tree
-        )
+        )[0]
 
         expected_correlation = 0.819
 
