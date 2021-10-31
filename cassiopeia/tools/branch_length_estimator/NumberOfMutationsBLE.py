@@ -14,6 +14,8 @@ class NumberOfMutationsBLE(BranchLengthEstimator):
         length_of_mutationless_edges: Useful to make them not collapse to 0.
         treat_missing_states_as_mutations: If True, missing states will be treated as
             their own CRISPR/Cas9 mutations.
+        make_ultrametric: If to extend branch lengths at the leaves to make the
+            tree ultrametric.
         verbose: Verbosity level.
     """
 
@@ -21,10 +23,12 @@ class NumberOfMutationsBLE(BranchLengthEstimator):
         self,
         length_of_mutationless_edges: float = 0,
         treat_missing_states_as_mutations: bool = True,
+        make_ultrametric: bool = True,
         verbose: bool = False,
     ):
         self.length_of_mutationless_edges = length_of_mutationless_edges
         self.treat_missing_states_as_mutations = treat_missing_states_as_mutations
+        self.make_ultrametric = make_ultrametric
         self.verbose = verbose
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
@@ -34,6 +38,7 @@ class NumberOfMutationsBLE(BranchLengthEstimator):
         # Extract parameters
         length_of_mutationless_edges = self.length_of_mutationless_edges
         treat_missing_states_as_mutations = self.treat_missing_states_as_mutations
+        make_ultrametric = self.make_ultrametric
         verbose = self.verbose
 
         estimated_edge_lengths = {}
@@ -69,9 +74,10 @@ class NumberOfMutationsBLE(BranchLengthEstimator):
         for (parent, child) in tree.depth_first_traverse_edges():
             times[child] = times[parent] + estimated_edge_lengths[(parent, child)]
 
-        max_time = max(times.values())
-        for leaf in tree.leaves:
-            times[leaf] = max_time
+        if make_ultrametric:
+            max_time = max(times.values())
+            for leaf in tree.leaves:
+                times[leaf] = max_time
 
         # We smooth out epsilons that might make a parent's time greater
         # than its child
