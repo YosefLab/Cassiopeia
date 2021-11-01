@@ -36,7 +36,26 @@ class TestTopology(unittest.TestCase):
         tree.add_edge("16", "17")
         tree.add_edge("16", "18")
 
-        self.tree = cas.data.CassiopeiaTree(tree=tree)
+        character_matrix = pd.DataFrame.from_dict(
+            {
+                "12": [1, 2, 1, 1],
+                "13": [1, 2, 1, 0],
+                "14": [1, 0, 1, 0],
+                "15": [1, 5, 1, 0],
+                "17": [1, 4, 1, 0],
+                "18": [1, 4, 1, 5],
+                "6": [2, 0, 0, 0],
+                "10": [2, 3, 0, 0],
+                "11": [2, 3, 1, 0],
+                "4": [1, 0, 0, 0],
+                "5": [1, 5, 0, 0],
+            },
+            orient="index",
+        )
+
+        self.tree = cas.data.CassiopeiaTree(
+            character_matrix=character_matrix, tree=tree
+        )
 
     def test_simple_choose_function(self):
 
@@ -100,7 +119,9 @@ class TestTopology(unittest.TestCase):
 
     def test_expansion_probability_variable_depths(self):
 
-        cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2, min_depth=3)
+        cas.tl.compute_expansion_pvalues(
+            self.tree, min_clade_size=2, min_depth=3
+        )
         expected_probabilities = {
             "0": 1.0,
             "1": 1.0,
@@ -174,6 +195,90 @@ class TestTopology(unittest.TestCase):
                 node,
                 "expansion_pvalue",
             )
+
+    def test_cophenetic_correlation_perfect(self):
+
+        custom_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "12": [0, 2, 4, 4, 4, 4, 4, 4, 6, 7, 7],
+                "13": [2, 0, 4, 4, 4, 4, 4, 4, 6, 7, 7],
+                "14": [4, 4, 0, 2, 4, 4, 4, 4, 6, 7, 7],
+                "15": [4, 4, 2, 0, 4, 4, 4, 4, 6, 7, 7],
+                "17": [4, 4, 4, 4, 0, 2, 4, 4, 6, 7, 7],
+                "18": [4, 4, 4, 4, 2, 0, 4, 4, 6, 7, 7],
+                "4": [4, 4, 4, 4, 4, 4, 0, 2, 4, 5, 5],
+                "5": [4, 4, 4, 4, 4, 4, 2, 0, 4, 5, 5],
+                "6": [6, 6, 6, 6, 6, 6, 4, 4, 0, 3, 3],
+                "10": [7, 7, 7, 7, 7, 7, 5, 5, 3, 0, 2],
+                "11": [7, 7, 7, 7, 7, 7, 5, 5, 3, 2, 0],
+            },
+            orient="index",
+            columns=[
+                "12",
+                "13",
+                "14",
+                "15",
+                "17",
+                "18",
+                "4",
+                "5",
+                "6",
+                "10",
+                "11",
+            ],
+        )
+
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree, dissimilarity_map=custom_dissimilarity_map
+        )[0]
+        self.assertEquals(1.0, obs_cophenetic_correlation)
+
+        # make sure weight matrix can be specified
+        W = pd.DataFrame.from_dict(
+            {
+                "12": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "13": [1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "14": [2, 2, 0, 3, 4, 5, 6, 7, 8, 9, 10],
+                "15": [3, 3, 3, 0, 4, 5, 6, 7, 8, 9, 10],
+                "17": [4, 4, 4, 4, 0, 5, 6, 7, 8, 9, 10],
+                "18": [5, 5, 5, 5, 5, 0, 6, 7, 8, 9, 10],
+                "4": [6, 6, 6, 6, 6, 6, 0, 7, 8, 9, 10],
+                "5": [7, 7, 7, 7, 7, 7, 7, 0, 8, 9, 10],
+                "6": [8, 8, 8, 8, 8, 8, 8, 8, 0, 9, 10],
+                "10": [9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 10],
+                "11": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0],
+            },
+            orient="index",
+            columns=[
+                "12",
+                "13",
+                "14",
+                "15",
+                "17",
+                "18",
+                "4",
+                "5",
+                "6",
+                "10",
+                "11",
+            ],
+        )
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree, weights=W, dissimilarity_map=W
+        )[0]
+        self.assertAlmostEqual(1.0, obs_cophenetic_correlation, delta=1e-6)
+
+    def test_cophenetic_correlation_default(self):
+
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
+            self.tree
+        )[0]
+
+        expected_correlation = 0.819
+
+        self.assertAlmostEqual(
+            expected_correlation, obs_cophenetic_correlation, delta=0.001
+        )
 
 
 if __name__ == "__main__":

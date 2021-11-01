@@ -1,0 +1,52 @@
+==========
+Tools
+==========
+
+.. module:: cassiopeia.tl
+.. currentmodule:: cassiopeia
+
+This library stores code for post-reconstruction analysis of trees. We are
+always in the process of developing new statistics and tools for helping us
+interpret trees, and adding them to this library.
+
+Small-Parsimony 
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+      
+   tl.fitch_count
+   tl.fitch_hartigan
+   tl.score_small_parsimony
+
+Branch Length Estimation (BLE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+      
+   tl.IIDExponentialBayesian
+   tl.IIDExponentialMLE
+
+Autocorrelation
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   tl.compute_morans_i
+
+Coupling
+~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_evolutionary_coupling
+
+Topology
+~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_expansion_pvalues

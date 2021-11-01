@@ -164,8 +164,7 @@ def compute_dissimilarity_map(
     # in a partial, which raises a TypeError when trying to numbaize.
     except TypeError:
         warnings.warn(
-            "Failed to numbaize dissimilarity function. "
-            "Falling back to Python.",
+            "Failed to numbaize dissimilarity function. Falling back to Python.",
             CassiopeiaTreeWarning,
         )
         numbaize = False
