@@ -94,6 +94,8 @@ class CassiopeiaTree:
             reconstruction. If the user already has a sample in the character
             matrix or dissimilarity map that they would like to use as the
             phylogenetic root, they can specify it here.
+        newick_format: If tree is provided as a newick string, the newick format
+            used to parse the newick string.
     """
 
     def __init__(
@@ -106,6 +108,7 @@ class CassiopeiaTree:
         tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
         root_sample_name: Optional[str] = None,
+        newick_format: Optional[int] = 1,
     ) -> None:
 
         self.missing_state_indicator = missing_state_indicator
@@ -123,7 +126,7 @@ class CassiopeiaTree:
 
         if tree is not None:
             tree = copy.deepcopy(tree)
-            self.populate_tree(tree)
+            self.populate_tree(tree, newick_format=newick_format)
 
         # these attributes are helpful for distance based solvers
         self.__dissimilarity_map = None
@@ -135,6 +138,7 @@ class CassiopeiaTree:
         self,
         tree: Union[str, ete3.Tree, nx.DiGraph],
         layer: Optional[str] = None,
+        newick_format: Optional[int] = 1,
     ) -> None:
         """Populates a tree object in CassiopeiaTree.
 
@@ -149,11 +153,13 @@ class CassiopeiaTree:
                 string, or an ete3 Tree.
             layer: Layer to use for character matrix. If this is None,
                 then the current `character_matrix` variable will be used.
+            newick_format: If tree is provided as a newick string, the newick format
+                used to parse the newick string.
         """
         if isinstance(tree, nx.DiGraph):
             self.__network = tree
         elif isinstance(tree, str):
-            self.__network = utilities.newick_to_networkx(tree)
+            self.__network = utilities.newick_to_networkx(tree, newick_format)
         elif isinstance(tree, ete3.Tree):
             self.__network = utilities.ete3_to_networkx(tree)
         else:

@@ -57,17 +57,18 @@ def get_lca_characters(
     return lca_vec
 
 
-def newick_to_networkx(newick_string: str) -> nx.DiGraph:
+def newick_to_networkx(newick_string: str, newick_format: Optional[int] = 1) -> nx.DiGraph:
     """Converts a newick string to a networkx DiGraph.
 
     Args:
         newick_string: A newick string.
+        newick_format: The newick format used to parse the newick string.
 
     Returns:
         A networkx DiGraph.
     """
 
-    tree = ete3.Tree(newick_string, 1)
+    tree = ete3.Tree(newick_string, newick_format)
     return ete3_to_networkx(tree)
 
 
