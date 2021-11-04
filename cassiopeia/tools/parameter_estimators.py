@@ -143,7 +143,7 @@ def estimate_mutation_rate(
         The estimated mutation rate
 
     Raises:
-        CassiopeiaTreeError if the mutation proportion parameter is not
+        CassiopeiaTreeError if the `mutation_proportion` parameter is not
         between 0 and 1
     """
     if "mutated_proportion" not in tree.parameters:
@@ -220,9 +220,9 @@ def estimate_stochastic_missing_data_probability(
         The stochastic missing probability.
 
     Raises:
-        CassiopeiaTreeError if the missing proportion parameter is not
-        between 0 and 1, CassiopeiaTreeWarning if the estimated rates
-        are negative
+        CassiopeiaTreeError if the `missing_proportion` parameter is not
+        between 0 and 1, CassiopeiaTreeWarning if the estimated rate is
+        negative
     """
     if (
         proportion_of_missing_as_stochastic < 0
@@ -361,9 +361,9 @@ def estimate_heritable_missing_data_rate(
         "stochastic_missing_probability" and "heritable_missing_rate"
 
     Raises:
-        CassiopeiaTreeError if the missing proportion parameter is not
-        between 0 and 1, CassiopeiaTreeWarning if the estimated rates
-        are negative
+        CassiopeiaTreeError if the `missing_proportion` parameter is not
+        between 0 and 1, CassiopeiaTreeWarning if the estimated rate is 
+        negative
     """
     if (
         proportion_of_missing_as_stochastic < 0

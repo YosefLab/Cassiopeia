@@ -162,9 +162,17 @@ def calculate_likelihood(
         proportion_of_missing_as_stochastic: The assumed proportion of
             missing data that is stochastic if neither missing data rates are
             explicitly provided
+        layer: Layer to use for the character matrix in estimating parameters.
+            If this is None, then the current `character_matrix` variable will
+            be used.
 
     Returns:
         The log likelihood of the tree given the observed character states.
+
+    Raises:
+        CassiopeiaError if the parameters consumed from the tree are invalid,
+            if the tree priors are not populated, or if character states 
+            annotations are missing at a node.
     """
 
     def log_transition_probability(
@@ -194,11 +202,11 @@ def calculate_likelihood(
                         heritable_missing_rate, t
                     )
                 )
-        # "*" represents all non-missing states (including the uncut state).
+        # "&" represents all non-missing states (including the uncut state).
         # The sum probability of transitioning from any non-missing state s
         # to any non-missing state s' is 1 - P(missing event). Used to avoid
         # marginalizing over the entire state space.
-        elif s_ == "*":
+        elif s_ == "&":
             if s == tree.missing_state_indicator:
                 return -1e16
             else:
@@ -221,6 +229,8 @@ def calculate_likelihood(
                     )
                 )
             else:
+                # In practice, the transition from "&" to the uncut state 
+                # does not occur
                 return np.log(
                     1
                     - missing_probability_function_of_time(
@@ -250,6 +260,10 @@ def calculate_likelihood(
                         heritable_missing_rate, t
                     )
                 )
+            else:
+                # In practice, the transition from "&" to a non-uncut state 
+                # does not occur
+                return -1e16
 
     def log_likelihood_of_character(ind: int) -> float:
         """Calculates the log likelihood of a given character on the tree.
@@ -285,7 +299,7 @@ def calculate_likelihood(
                     set(likelihoods_at_nodes[child])
                     for child in tree.children(n)
                 ]:
-                    if tree.missing_state_indicator not in c and "*" not in c:
+                    if tree.missing_state_indicator not in c and "&" not in c:
                         child_possible_states.append(c)
                 # '*' represents all non-missing states (including uncut), and
                 # is a possible state when all children are missing, as any
@@ -294,7 +308,7 @@ def calculate_likelihood(
                 # over the entire state space.
                 if child_possible_states == []:
                     possible_states = [
-                        "*",
+                        "&",
                         tree.missing_state_indicator,
                     ]
                 else:
