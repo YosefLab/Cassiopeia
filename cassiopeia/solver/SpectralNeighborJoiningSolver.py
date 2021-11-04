@@ -11,17 +11,21 @@ import pandas as pd
 from itertools import chain
 
 # Only for debugging purposes
-if True:
-    import sys
-    sys.path.insert(0, '../..')
+# if True:
+#     import sys
+#     sys.path.insert(0, '../..')
 
-from cassiopeia.solver.DistanceSolver import DistanceSolver
+from cassiopeia.solver.DistanceSolver import DistanceSolver, DistanceSolverError
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     dissimilarity_functions,
     solver_utilities,
 )
+
+from sklearn.decomposition import TruncatedSVD
+from scipy.sparse.linalg import svds, eigs
+from scipy.linalg import svd as scipy_svd
 
 
 class SpectralNeighborJoiningSolver(DistanceSolver):
@@ -45,29 +49,6 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         prior_transformation: str = "negative_log",
     ):
         super().__init__(dissimilarity_function, add_root=add_root, prior_transformation=prior_transformation) #type: ignore
-
-    def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
-    ) -> nx.DiGraph():
-        """Roots a tree produced by Neighbor-Joining at the specified root.
-
-        Uses the specified root to root the tree passed in
-
-        Args:
-            tree: Networkx object representing the tree topology
-            root_sample: Sample to treat as the root
-            remaining_samples: The last two unjoined nodes in the tree
-
-        Returns:
-            A rooted tree
-        """
-        tree.add_edge(remaining_samples[0], remaining_samples[1])
-
-        rooted_tree = nx.DiGraph()
-        for e in nx.dfs_edges(tree, source=root_sample):
-            rooted_tree.add_edge(e[0], e[1])
-
-        return rooted_tree
 
     def get_dissimilarity_map(
         self, 
@@ -93,7 +74,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         self.lambda_indices: List[List[int]] = [[i] for i in range(N)]
         node_names: np.ndarray = self.__similarity_map.index.values
 
-        lambda_matrix_arr = self.__compute_lambda(self.lambda_indices)
+        lambda_matrix_arr = self.compute_lambda(self.lambda_indices)
 
         lambda_matrix_df = pd.DataFrame(
             lambda_matrix_arr, 
@@ -117,10 +98,10 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
                 to join.
         """
 
-        return np.unravel_index(np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape) # type: ignore
+        return np.unravel_index(np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape)
 
 
-    def __compute_lambda(self, lambda_indices: List[List[int]]) -> np.ndarray:
+    def compute_lambda(self, lambda_indices: List[List[int]]) -> np.ndarray:
         """Computes the lambda matrix, whose entries consist of the second SVD of the R^A affinity matrix for every pair of nodes.
 
         Computes the lambda(i,j) = SVD # 2 for R^(Ai U Aj) where i and j are the susbet indices in lambda_indices.
@@ -149,10 +130,37 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
                 a_comp_flat = list(chain.from_iterable(a_comp))
 
                 # create RA matrix
-                RA_matrix = self.__similarity_map.values[np.ix_(a_subset, a_comp_flat)]
+                RA_matrix = self.__similarity_map.values[
+                    np.ix_(a_subset, a_comp_flat)
+                    ]
 
-                # Calculate SVD2
-                lambda_matrix_arr[i_count, j_count] = lambda_matrix_arr[j_count, i_count] = np.linalg.svd(RA_matrix)[1][1]
+                # Calculate SVD2 #todo: remove alternatives
+                svd_mode = 3
+
+                svd2_val = 0
+                if svd_mode == 0:
+                    svd2_val = np.linalg.svd(RA_matrix)[1][1] 
+                elif svd_mode == 1:
+                    svd = TruncatedSVD(n_components=2, n_iter=5, random_state=42)
+                    svd.fit(RA_matrix)
+                    svd2_val = svd.singular_values_[1] 
+                elif svd_mode == 2: 
+                    if RA_matrix.shape[0] <= 2:
+                        copy_RA = np.append(RA_matrix, [[0]*97], axis=0)
+                    else:
+                        copy_RA = RA_matrix
+                    s = svds(copy_RA, k=2)[1]
+                    svd2_val = s[0]
+                elif svd_mode == 3:
+                    s = scipy_svd(RA_matrix, compute_uv=False, check_finite=False)
+                    if len(s) > 1:
+                        svd2_val = s[1]
+                    else:
+                        svd2_val = s[0]
+                
+                    
+                lambda_matrix_arr[i_count, j_count] = lambda_matrix_arr[
+                    j_count, i_count] = svd2_val
 
         np.fill_diagonal(lambda_matrix_arr, np.inf)
 
@@ -186,17 +194,20 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
         # modify names
         node_names = dissimilarity_map.index.values
-        node_names = np.append(node_names, new_node) # type: ignore
+        node_names = np.append(node_names, new_node)
         node_names = np.delete(node_names, [i, j])
 
         # modify indices
-        lambda_indices_copy.append([*lambda_indices_copy[i], *lambda_indices_copy[j]])
+        lambda_indices_copy.append([
+            *lambda_indices_copy[i], 
+            *lambda_indices_copy[j]
+            ])
         lambda_indices_copy.pop(max(i, j))
         lambda_indices_copy.pop(min(i, j))
 
         if len(lambda_indices_copy) > 2:
             # compute new lambda matrix
-            lambda_matrix_arr = self.__compute_lambda(lambda_indices_copy)
+            lambda_matrix_arr = self.compute_lambda(lambda_indices_copy)
         else:
             n = len(lambda_indices_copy)
             lambda_matrix_arr = np.zeros((n, n))
@@ -210,14 +221,13 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
         # update lambda indices
         self.lambda_indices = lambda_indices_copy
-        
 
         return lambda_matrix_df
 
     def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
         """Defines the implicit rooting strategy for the NeighborJoiningSolver.
 
-        By default, the NeighborJoining algorithm returns an unrooted tree.
+        By default, the SpectralNeighborJoining algorithm returns an unrooted tree.
         To root this tree, an implicit root of all zeros is added to the
         character matrix. Then, the dissimilarity map is recalculated using
         the updated character matrix. If the tree already has a computed
@@ -235,7 +245,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         cassiopeia_tree.character_matrix = rooted_character_matrix
 
         if self.dissimilarity_function is None:
-            raise DistanceSolver.DistanceSolverError(
+            raise DistanceSolverError(
                 "Please specify a dissimilarity function to add an implicit "
                 "root, or specify an explicit root"
             )
@@ -262,3 +272,26 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
             cassiopeia_tree.set_dissimilarity("root", dissimilarity)
 
         cassiopeia_tree.character_matrix = character_matrix
+
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+    ) -> nx.DiGraph():
+        """Roots a tree produced by Neighbor-Joining at the specified root.
+
+        Uses the specified root to root the tree passed in
+
+        Args:
+            tree: Networkx object representing the tree topology
+            root_sample: Sample to treat as the root
+            remaining_samples: The last two unjoined nodes in the tree
+
+        Returns:
+            A rooted tree
+        """
+        tree.add_edge(remaining_samples[0], remaining_samples[1])
+
+        rooted_tree = nx.DiGraph()
+        for e in nx.dfs_edges(tree, source=root_sample):
+            rooted_tree.add_edge(e[0], e[1])
+
+        return rooted_tree
