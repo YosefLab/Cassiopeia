@@ -5,10 +5,6 @@ import unittest
 from functools import partial
 from typing import Dict, Optional
 
-<<<<<<< HEAD
-import itertools
-=======
->>>>>>> d13d3e72acbeabd807af01356acb7a9783346aca
 import networkx as nx
 import numpy as np
 import pandas as pd
