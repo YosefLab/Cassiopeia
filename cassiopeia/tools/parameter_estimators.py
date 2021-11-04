@@ -9,10 +9,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data.Layers import Layers
-from cassiopeia.mixins import (
-    CassiopeiaTreeError,
-    CassiopeiaTreeWarning
-)
+from cassiopeia.mixins import CassiopeiaTreeError, CassiopeiaTreeWarning
 
 
 def get_proportion_of_missing_data(tree, layer: Optional[str] = None) -> float:
@@ -51,6 +48,7 @@ def get_proportion_of_missing_data(tree, layer: Optional[str] = None) -> float:
         character_matrix.shape[0] * character_matrix.shape[1]
     )
     return missing_proportion
+
 
 def get_proportion_of_mutation(tree, layer: Optional[str] = None) -> float:
     """Calculates the proportion of mutated entries in the character matrix.
@@ -93,6 +91,7 @@ def get_proportion_of_mutation(tree, layer: Optional[str] = None) -> float:
     )
     return mutation_proportion
 
+
 def estimate_mutation_rate(
     tree,
     continuous: bool = True,
@@ -103,10 +102,10 @@ def estimate_mutation_rate(
 
     Infers the mutation rate using the proportion of the cell/character
     pairs in the leaves that have a non-uncut (non-0) state and the number of
-    generations/the total time of the tree. We treat each lineage as 
+    generations/the total time of the tree. We treat each lineage as
     independent and use the proportion as an estimate for the probability
-    that an event occurs on a lineage. 
-    
+    that an event occurs on a lineage.
+
     In the case where the rate is per-generation,
     it is estimated using:
 
@@ -117,19 +116,19 @@ def estimate_mutation_rate(
         mutated proportion = ExponentialCDF(total time of tree, mutation rate)
 
     Note that these naive estimates perform better when the tree is ultrametric
-    in depth or time. 
+    in depth or time.
 
-    This function attempts to consume the mutation rate as `mutation_rate` in 
-    `tree.parameters` in order to infer the mutated proportion. If this field 
+    This function attempts to consume the mutation rate as `mutation_rate` in
+    `tree.parameters` in order to infer the mutated proportion. If this field
     is not populated, it is inferred using `get_proportion_of_mutation`.
-    
-    In the inference, we need to consider whether to assume an implicit root, 
+
+    In the inference, we need to consider whether to assume an implicit root,
     specified by `assume_root_implicit_branch`. In the case where the tree does
-    not have a single leading edge from the root representing the progenitor 
-    cell before cell division begins, this additional edge is added to the 
-    total time in calculating the estimate if `assume_root_implicit_branch` is 
+    not have a single leading edge from the root representing the progenitor
+    cell before cell division begins, this additional edge is added to the
+    total time in calculating the estimate if `assume_root_implicit_branch` is
     True.
-    
+
     Args:
         tree: The CassioepiaTree specifying the tree and the character matrix
         continuous: Whether to calculate a continuous mutation rate,
@@ -159,24 +158,19 @@ def estimate_mutation_rate(
         mean_depth = tree.get_mean_depth_of_tree()
         # We account for the added depth of the implicit branch leading
         # from the root, if it is to be added
-        if (
-            assume_root_implicit_branch
-            and len(tree.children(tree.root)) != 1
-        ):
+        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
             mean_depth += 1
         mutation_rate = 1 - (1 - mutation_proportion) ** (1 / mean_depth)
     else:
         times = tree.get_times()
         mean_time = np.mean([times[l] for l in tree.leaves])
-        if (
-            assume_root_implicit_branch
-            and len(tree.children(tree.root)) != 1
-        ):
+        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
             mean_time += np.mean(
                 [tree.get_branch_length(u, v) for u, v in tree.edges]
             )
         mutation_rate = -np.log(1 - mutation_proportion) / mean_time
     return mutation_rate
+
 
 def estimate_stochastic_missing_data_probability(
     tree,
@@ -188,34 +182,34 @@ def estimate_stochastic_missing_data_probability(
     """Estimates the stochastic missing probability from a tree and a character
     matrix.
 
-    Infers the stochastic missing data probability using the proportion of the 
-    cell/character pairs in the leaves. We use the proportion as an estimate 
-    for the probability that a character at a leaf has stochastic missing data. 
-    
-    As missing data can be either heritable or stochastic, we assume both 
+    Infers the stochastic missing data probability using the proportion of the
+    cell/character pairs in the leaves. We use the proportion as an estimate
+    for the probability that a character at a leaf has stochastic missing data.
+
+    As missing data can be either heritable or stochastic, we assume both
     contribute to the total missing proportion as:
 
         total missing proportion = heritable proportion + stochastic proportion
             - heritable proportion * stochastic proportion
 
-    This function attempts to consume the missing proportion as 
-    `missing_proportion` in `tree.parameters`, inferring it using 
+    This function attempts to consume the missing proportion as
+    `missing_proportion` in `tree.parameters`, inferring it using
     `get_proportion_of_missing_data` if it is not populated. Additionally, it
     attempts to consume the heritable missing rate as `heritable_missing_rate`
     in `tree.parameters` in order to infer the stochastic proportion using the
     convolution above. If this field is not populated, then the stochastic
     proportion is assumed to be `proportion_of_missing_as_stochastic` * the
-    total missing proportion. 
-    
-    In calculating the heritable proportion from the heritable missing rate, 
+    total missing proportion.
+
+    In calculating the heritable proportion from the heritable missing rate,
     we need to consider whether to assume an implicit root. This is specified
     by `assume_root_implicit_branch`. In the case where the tree does not have
     a single leading edge from the root representing the progenitor cell before
-    cell division begins, this additional edge is added to the total time in 
+    cell division begins, this additional edge is added to the total time in
     calculating the estimate if `assume_root_implicit_branch` is True.
 
     Args:
-        tree: The CassiopeiaTree specifying the tree and the character matrix 
+        tree: The CassiopeiaTree specifying the tree and the character matrix
         continuous: Whether to calculate a continuous missing rate,
             accounting for branch lengths. Otherwise, calculates a
             discrete missing rate based on the number of generations
@@ -243,9 +237,7 @@ def estimate_stochastic_missing_data_probability(
     else:
         total_missing_proportion = tree.parameters["missing_proportion"]
     if total_missing_proportion < 0 or total_missing_proportion > 1:
-        raise CassiopeiaTreeError(
-            "Missing proportion must be between 0 and 1."
-        )
+        raise CassiopeiaTreeError("Missing proportion must be between 0 and 1.")
 
     heritable_missing_rate = None
     stochastic_missing_probability = None
@@ -307,6 +299,7 @@ def estimate_stochastic_missing_data_probability(
 
     return stochastic_missing_probability
 
+
 def estimate_heritable_missing_data_rate(
     tree,
     continuous: bool = True,
@@ -316,44 +309,44 @@ def estimate_heritable_missing_data_rate(
 ):
     """Estimates the heritable missing rate from a tree and a character matrix.
 
-    Infers the heritable mutation rate using the proportion of the 
-    cell/character pairs in the leaves that have missing data and the number 
-    of generations/the total time of the tree. We treat each lineage as 
+    Infers the heritable mutation rate using the proportion of the
+    cell/character pairs in the leaves that have missing data and the number
+    of generations/the total time of the tree. We treat each lineage as
     independent and use the proportion as an estimate for the probability
     that an event occurs on a lineage.
-    
-    As missing data can be either heritable or stochastic, we assume both 
+
+    As missing data can be either heritable or stochastic, we assume both
     contribute to the total missing proportion as:
 
         total missing proportion = heritable proportion + stochastic proportion
             - heritable proportion * stochastic proportion
-    
+
     In the case where the rate is per-generation, it is estimated using:
 
-        heritable missing proportion = 
+        heritable missing proportion =
             1 - (1 - heritable missing rate) ^ (average depth of tree)
 
     In the case where the rate is continuous, it is estimated using:
 
-        heritable_missing_proportion = 
+        heritable_missing_proportion =
             ExponentialCDF(total time of tree, heritable missing rate)
 
     Note that these naive estimates perform better when the tree is ultrametric
-    in depth or time. 
+    in depth or time.
 
-    This function attempts to consume the missing proportion as 
-    `missing_proportion` in `tree.parameters`, inferring it using 
+    This function attempts to consume the missing proportion as
+    `missing_proportion` in `tree.parameters`, inferring it using
     `get_proportion_of_missing_data` if it is not populated. Additionally,
     it attempts to consume the stochastic as proportion
     `stochastic_missing_probability` in `tree.parameters`. If this field is
-    not populated, then the stochastic proportion is assumed to be 
-    `proportion_of_missing_as_stochastic` * the total missing proportion. 
-    
-    In the inference, we need to consider whether to assume an implicit root, 
+    not populated, then the stochastic proportion is assumed to be
+    `proportion_of_missing_as_stochastic` * the total missing proportion.
+
+    In the inference, we need to consider whether to assume an implicit root,
     specified by `assume_root_implicit_branch`. In the case where the tree does
-    not have a single leading edge from the root representing the progenitor 
-    cell before cell division begins, this additional edge is added to the 
-    total time in calculating the estimate if `assume_root_implicit_branch` is 
+    not have a single leading edge from the root representing the progenitor
+    cell before cell division begins, this additional edge is added to the
+    total time in calculating the estimate if `assume_root_implicit_branch` is
     True.
 
     Args:
@@ -385,9 +378,7 @@ def estimate_heritable_missing_data_rate(
     else:
         total_missing_proportion = tree.parameters["missing_proportion"]
     if total_missing_proportion < 0 or total_missing_proportion > 1:
-        raise CassiopeiaTreeError(
-            "Missing proportion must be between 0 and 1."
-        )
+        raise CassiopeiaTreeError("Missing proportion must be between 0 and 1.")
 
     stochastic_missing_probability = None
     heritable_missing_rate = None
@@ -413,10 +404,7 @@ def estimate_heritable_missing_data_rate(
         mean_depth = tree.get_mean_depth_of_tree()
         # We account for the added depth of the implicit branch leading
         # from the root, if it is to be added
-        if (
-            assume_root_implicit_branch
-            and len(tree.children(tree.root)) != 1
-        ):
+        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
             mean_depth += 1
         heritable_missing_rate = 1 - (
             (1 - total_missing_proportion)
@@ -425,10 +413,7 @@ def estimate_heritable_missing_data_rate(
     else:
         times = tree.get_times()
         mean_time = np.mean([times[l] for l in tree.leaves])
-        if (
-            assume_root_implicit_branch
-            and len(tree.children(tree.root)) != 1
-        ):
+        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
             mean_time += np.mean(
                 [tree.get_branch_length(u, v) for u, v in tree.edges]
             )
