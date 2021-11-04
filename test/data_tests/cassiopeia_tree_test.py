@@ -112,20 +112,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.simple_complete_binary_tree = nx.relabel_nodes(
             complete_binary, str_names
         )
-        # A small network to test likelihood calculation
-        small_net = nx.DiGraph()
-        small_net.add_edges_from(
-            [
-                ("node5", "node0"),
-                ("node5", "node1"),
-                ("node6", "node2"),
-                ("node6", "node3"),
-                ("node6", "node4"),
-                ("node7", "node5"),
-                ("node7", "node6"),
-            ]
-        )
-        self.small_net = small_net
 
     def test_newick_to_networkx(self):
 
