@@ -15,6 +15,9 @@ Small-Parsimony
 .. autosummary::
    :toctree: reference/
    
+   tl.compute_cophenetic_correlation
+   tl.compute_expansion_pvalues
+   tl.compute_morans_i
    tl.fitch_count
    tl.fitch_hartigan
    tl.score_small_parsimony

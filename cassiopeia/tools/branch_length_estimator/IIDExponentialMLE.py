@@ -188,6 +188,6 @@ class IIDExponentialMLE(BranchLengthEstimator):
     @property
     def mutation_rate(self):
         """
-        The estimated mutation CRISPR/Cas9 mutation rate under the given model.
+        The estimated CRISPR/Cas9 mutation rate under the given model.
         """
         return self._mutation_rate

@@ -5,10 +5,12 @@ import unittest
 from functools import partial
 from typing import Dict, Optional
 
+<<<<<<< HEAD
 import itertools
+=======
+>>>>>>> d13d3e72acbeabd807af01356acb7a9783346aca
 import networkx as nx
 import numpy as np
-from numpy.testing._private.utils import assert_equal
 import pandas as pd
 
 import cassiopeia as cas
@@ -1888,6 +1890,34 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree.get_unmutated_characters_along_edge("node2", "node6"),
             [2, 3, 4, 5, 6, 7],
         )
+
+    def test_impute_deducible_missing_states(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = cas.data.CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {
+                "0": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "1": [0, 1, 0, 0, 0, 0, 1, -1, 0],
+                "2": [0, -1, 0, 1, 1, 0, 1, -1, -1],
+                "3": [0, -1, -1, 1, 0, 0, -1, -1, -1],
+            },
+        )
+        tree.impute_deducible_missing_states()
+        self.assertEqual(
+            tree.get_character_states("0"), [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        )
+        self.assertEqual(
+            tree.get_character_states("1"), [0, 1, 0, 0, 0, 0, 1, -1, 0]
+        )
+        self.assertEqual(
+            tree.get_character_states("2"), [0, 1, 0, 1, 1, 0, 1, -1, -1]
+        )
+        self.assertEqual(
+            tree.get_character_states("3"), [0, 1, -1, 1, 0, 0, 1, -1, -1]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
