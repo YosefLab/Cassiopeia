@@ -16,4 +16,3 @@ from .SpectralSolver import SpectralSolver
 from .UPGMASolver import UPGMASolver
 from .VanillaGreedySolver import VanillaGreedySolver
 from . import dissimilarity_functions as dissimilarity
-from . import stdr_similarities as stdr_similarity
