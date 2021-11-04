@@ -135,28 +135,12 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
                     ]
 
                 # Calculate SVD2 #todo: remove alternatives
-                svd_mode = 3
-
                 svd2_val = 0
-                if svd_mode == 0:
-                    svd2_val = np.linalg.svd(RA_matrix)[1][1] 
-                elif svd_mode == 1:
-                    svd = TruncatedSVD(n_components=2, n_iter=5, random_state=42)
-                    svd.fit(RA_matrix)
-                    svd2_val = svd.singular_values_[1] 
-                elif svd_mode == 2: 
-                    if RA_matrix.shape[0] <= 2:
-                        copy_RA = np.append(RA_matrix, [[0]*97], axis=0)
-                    else:
-                        copy_RA = RA_matrix
-                    s = svds(copy_RA, k=2)[1]
+                s = scipy_svd(RA_matrix, compute_uv=False, check_finite=False)
+                if len(s) > 1:
+                    svd2_val = s[1]
+                else:
                     svd2_val = s[0]
-                elif svd_mode == 3:
-                    s = scipy_svd(RA_matrix, compute_uv=False, check_finite=False)
-                    if len(s) > 1:
-                        svd2_val = s[1]
-                    else:
-                        svd2_val = s[0]
                 
                     
                 lambda_matrix_arr[i_count, j_count] = lambda_matrix_arr[
