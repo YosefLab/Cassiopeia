@@ -24,6 +24,9 @@ class TestZeroOneBLE(unittest.TestCase):
         ble = ZeroOneBLE()
         ble.estimate_branch_lengths(tree)
         self.assertEqual(tree.get_times(), {"0": 0, "1": 1, "2": 1, "3": 2})
+        ble = ZeroOneBLE(include_missing=False)
+        ble.estimate_branch_lengths(tree)
+        self.assertEqual(tree.get_times(), {"0": 0, "1": 1, "2": 1, "3": 1})
 
     def test_basic_2(self):
         """
