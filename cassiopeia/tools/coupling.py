@@ -20,9 +20,7 @@ def compute_evolutionary_coupling(
     number_of_shuffles: int = 500,
     random_state: Optional[np.random.RandomState] = None,
     dissimilarity_map: Optional[pd.DataFrame] = None,
-    cluster_comparison_function: Optional[
-        Callable
-    ] = data_utilities.net_relatedness_index,
+    cluster_comparison_function: Callable = data_utilities.net_relatedness_index,
     **comparison_kwargs,
 ) -> pd.DataFrame:
     """Computes Evolutionary Coupling of categorical variables.
@@ -91,7 +89,9 @@ def compute_evolutionary_coupling(
 
     # compute background for Z-scoring
     background = defaultdict(list)
-    for _ in tqdm(range(number_of_shuffles), desc="Creating empirical background"):
+    for _ in tqdm(
+        range(number_of_shuffles), desc="Creating empirical background"
+    ):
         permuted_assignments = meta_data.copy()
         if random_state:
             permuted_assignments.index = random_state.permutation(
