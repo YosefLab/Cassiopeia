@@ -14,6 +14,7 @@ import re
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
+from cassiopeia.mixins.errors import CassiopeiaError
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
@@ -412,3 +413,97 @@ def compute_phylogenetic_weight_matrix(
     np.fill_diagonal(W.values, 0)
 
     return W
+    
+@numba.jit(nopython=True)
+def net_relatedness_index(
+    dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
+) -> float:
+    """Computes the net relatedness index between indices.
+
+    Using the dissimilarity map specified and the indices of samples, compute
+    the net relatedness index, defined as:
+
+    sum(distances over i,j in indices_1,indices_2) / (|indices_1| x |indices_2|)
+
+    Args:
+        dissimilarity_map: Dissimilarity map between all samples.
+        indices_1: Indices corresponding to the first group.
+        indices_2: Indices corresponding to the second group.
+
+    Returns:
+        The Net Relatedness Index (NRI)
+    """
+
+    nri = 0
+    for i in indices_1:
+        for j in indices_2:
+            nri += dissimilarity_map[i, j]
+
+    return nri / (len(indices_1) * len(indices_2))
+
+def compute_inter_cluster_distances(
+    tree: CassiopeiaTree,
+    meta_item: Optional[str] = None,
+    meta_data: Optional[pd.DataFrame] = None,
+    dissimilarity_map: Optional[pd.DataFrame] = None,
+    distance_function: Callable = net_relatedness_index,
+    **kwargs,
+) -> pd.DataFrame:
+    """Computes mean distance between clusters.
+
+    Compute the mean distance between categories in a categorical variable. By
+    default, the phylogenetic weight matrix will be computed and used for this
+    distance calculation, but a user can optionally provide a dissimilarity
+    map instead.
+
+    This function performs the computation in O(K^2)*O(distance_function) time
+    for a variable with K categories.
+
+    Args:
+        tree: CassiopeiaTree
+        meta_item: Column in the cell meta data of the tree. If `meta_data` is
+            specified, this is ignored.
+        meta_data: Meta data to use for this calculation. This argument takes
+            priority over meta_item.
+        dissimilarity_map: Dissimilarity map to use for distances. If this is
+            specified, the phylogenetic weight matrix is not computed.
+        number_of_neighbors: Number of nearest neighbors to use for computing
+            the mean distances. If this is not specified, then all cells are
+            used.
+        **kwargs: Arguments to pass to the distance function.
+
+    Returns:
+        A K x K distance matrix.
+    """
+    meta_data = tree.cell_meta[meta_item] if (meta_data is None) else meta_data
+
+    # ensure that the meta data is categorical
+    if not pd.api.types.is_string_dtype(meta_data):
+        raise CassiopeiaError("Meta data must be categorical or a string.")
+
+    D = (
+        compute_phylogenetic_weight_matrix(tree)
+        if (dissimilarity_map is None)
+        else dissimilarity_map
+    )
+
+    unique_states = meta_data.unique()
+    K = len(unique_states)
+    inter_cluster_distances = pd.DataFrame(
+        np.zeros((K, K)), index=unique_states, columns=unique_states
+    )
+
+    # align distance matrix and meta_data
+    D = D.loc[meta_data.index.values, meta_data.index.values]
+
+    for state1 in unique_states:
+        indices_1 = np.where(np.array(meta_data) == state1)[0]
+        for state2 in unique_states:
+            indices_2 = np.where(np.array(meta_data) == state2)[0]
+
+            distance = distance_function(
+                D.values, indices_1, indices_2, **kwargs
+            )
+            inter_cluster_distances.loc[state1, state2] = distance
+
+    return inter_cluster_distances
