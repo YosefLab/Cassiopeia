@@ -20,7 +20,8 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import iTOLError
-from cassiopeia.preprocess import utilities
+from cassiopeia.plotting import utilities
+from cassiopeia.preprocess import utilities as preprocess_utilities
 
 
 def upload_and_export_itol(
@@ -415,8 +416,8 @@ def create_indel_heatmap(
 
     _leaves = tree.leaves
 
-    lineage_profile = utilities.convert_alleletable_to_lineage_profile(
-        alleletable
+    lineage_profile = (
+        preprocess_utilities.convert_alleletable_to_lineage_profile(alleletable)
     )
     clustered_linprof = lineage_profile.loc[_leaves[::-1]]
 
@@ -555,7 +556,7 @@ def get_random_indel_colors(
                 rgb_i = random_state.choice(range(len(colorlist)))
                 color_ranges = colorlist[rgb_i]
                 indel2color[indel] = rgb_to_hsv(
-                    generate_random_color(
+                    utilities.generate_random_color(
                         color_ranges[:2],
                         color_ranges[2:4],
                         color_ranges[4:6],
@@ -566,7 +567,7 @@ def get_random_indel_colors(
                 rgb_i = np.random.choice(range(len(colorlist)))
                 color_ranges = colorlist[rgb_i]
                 indel2color[indel] = rgb_to_hsv(
-                    generate_random_color(
+                    utilities.generate_random_color(
                         color_ranges[:2], color_ranges[2:4], color_ranges[4:6]
                     )
                 )
@@ -643,32 +644,3 @@ def rgb_to_hex(rgb) -> str:
 
     r, g, b = rgb[0], rgb[1], rgb[2]
     return "#{:02x}{:02x}{:02x}".format(r, g, b)
-
-
-def generate_random_color(
-    r_range: Tuple[float, float],
-    g_range: Tuple[float, float],
-    b_range: Tuple[float, float],
-    random_state: Optional[np.random.RandomState] = None,
-) -> Tuple[int, int, int]:
-    """Generates a random color from ranges of RGB.
-
-    Args:
-        r_range: Range of values for the R value
-        g_range: Range of value for the G value
-        b_range: Range of values for the B value
-        random_state: Random state for reproducibility
-
-    Returns:
-        An (R, G, B) tuple sampled from the ranges passed in.
-    """
-
-    if random_state:
-        red = random_state.uniform(r_range[0], r_range[1])
-        grn = random_state.uniform(g_range[0], g_range[1])
-        blu = random_state.uniform(b_range[0], b_range[1])
-    else:
-        red = np.random.uniform(r_range[0], r_range[1])
-        grn = np.random.uniform(g_range[0], g_range[1])
-        blu = np.random.uniform(b_range[0], b_range[1])
-    return (red, grn, blu)

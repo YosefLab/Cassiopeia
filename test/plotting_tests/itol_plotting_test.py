@@ -74,18 +74,6 @@ class TestITOLPlotting(unittest.TestCase):
 
     def test_color_converters(self):
 
-        color_itervals = [0.5, 1, 0, 0.5, 0, 1]
-
-        rgb = itol_utilities.generate_random_color(
-            color_itervals[:2],
-            color_itervals[2:4],
-            color_itervals[4:6],
-            random_state=self.random_state,
-        )
-        self.assertAlmostEqual(rgb[0], 0.87, delta=0.01)
-        self.assertAlmostEqual(rgb[1], 0.02, delta=0.01)
-        self.assertAlmostEqual(rgb[2], 0.69, delta=0.01)
-
         # convert hex to rgb
         _hex = "#000000"
         rgb = itol_utilities.hex_to_rgb(_hex)
