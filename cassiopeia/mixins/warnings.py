@@ -12,3 +12,9 @@ class SharedMutationJoiningSolverWarning(UserWarning):
     """A warning class for SharedMutationJoiningSolver."""
 
     pass
+
+
+class ParameterEstimateWarning(UserWarning):
+    """An warning class for the estimation and retrieval of tree parameters"""
+
+    pass

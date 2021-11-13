@@ -6,16 +6,12 @@ import unittest
 
 import networkx as nx
 import numpy as np
-from numpy.lib.function_base import select
 import pandas as pd
 
 import cassiopeia as cas
-import cassiopeia.tools.parameter_estimators as pe
-from cassiopeia.data.Layers import Layers
-from cassiopeia.mixins import (
-    CassiopeiaTreeError,
-    CassiopeiaTreeWarning
-)
+from cassiopeia.tools import parameter_estimators
+from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
+
 
 class TestCassiopeiaTree(unittest.TestCase):
     def setUp(self):
@@ -45,7 +41,9 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
         priors1 = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
-        self.discrete_tree = cas.data.CassiopeiaTree(tree = small_net, character_matrix = cm1, priors = priors1)
+        self.discrete_tree = cas.data.CassiopeiaTree(
+            tree=small_net, character_matrix=cm1, priors=priors1
+        )
 
         cm2 = pd.DataFrame.from_dict(
             {
@@ -57,81 +55,179 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
-        priors2 = {0: {1: 0.2, 2: 0.7, 3: 0.1}, 1: {1: 0.2, 2: 0.7, 3: 0.1}, 2: {1: 0.2, 2: 0.7, 3: 0.1}}
-        self.continuous_tree = cas.data.CassiopeiaTree(tree = small_net, character_matrix = cm2, priors = priors2)
+        priors2 = {
+            0: {1: 0.2, 2: 0.7, 3: 0.1},
+            1: {1: 0.2, 2: 0.7, 3: 0.1},
+            2: {1: 0.2, 2: 0.7, 3: 0.1},
+        }
+        self.continuous_tree = cas.data.CassiopeiaTree(
+            tree=small_net, character_matrix=cm2, priors=priors2
+        )
         self.continuous_tree.set_branch_length("node5", "node0", 1.5)
         self.continuous_tree.set_branch_length("node6", "node3", 2)
 
     def test_proportions(self):
-        prop_mut = pe.get_proportion_of_mutation(self.discrete_tree)
-        prop_missing = pe.get_proportion_of_missing_data(self.discrete_tree)
+        prop_mut = parameter_estimators.get_proportion_of_mutation(
+            self.discrete_tree
+        )
+        prop_missing = parameter_estimators.get_proportion_of_missing_data(
+            self.discrete_tree
+        )
 
-        self.assertEqual(prop_mut, 5/6)
+        self.assertEqual(prop_mut, 5 / 6)
         self.assertEqual(prop_missing, 0.6)
 
-        prop_mut = pe.get_proportion_of_mutation(self.continuous_tree)
-        prop_missing = pe.get_proportion_of_missing_data(self.continuous_tree)
+        prop_mut = parameter_estimators.get_proportion_of_mutation(
+            self.continuous_tree
+        )
+        prop_missing = parameter_estimators.get_proportion_of_missing_data(
+            self.continuous_tree
+        )
 
-        self.assertEqual(prop_mut, 7/8)
+        self.assertEqual(prop_mut, 7 / 8)
         self.assertEqual(prop_missing, 0.2)
 
-    def test_estimate_stochastic_missing_data_probability(self):
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.discrete_tree, continuous = False, proportion_of_missing_as_stochastic = 0.2)
-        self.assertEqual(s_missing_prob, 0.12)
+    def test_estimate_mutation_rate(self):
+        mut_rate = parameter_estimators.estimate_mutation_rate(
+            self.discrete_tree, continuous=False
+        )
+        self.assertTrue(np.isclose(mut_rate, 0.44967879185089554))
 
-        self.discrete_tree.parameters["heritable_missing_rate"] = 0.25
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.discrete_tree, continuous = False)
+        mut_rate = parameter_estimators.estimate_mutation_rate(
+            self.discrete_tree,
+            continuous=False,
+            assume_root_implicit_branch=False,
+        )
+        self.assertTrue(np.isclose(mut_rate, 0.5917517095361371))
+
+        mut_rate = parameter_estimators.estimate_mutation_rate(
+            self.continuous_tree, continuous=True
+        )
+        self.assertTrue(np.isclose(mut_rate, 0.5917110077950752))
+
+        mut_rate = parameter_estimators.estimate_mutation_rate(
+            self.continuous_tree,
+            continuous=True,
+            assume_root_implicit_branch=False,
+        )
+        self.assertTrue(np.isclose(mut_rate, 0.9041050181216678))
+
+    def test_estimate_missing_data_bad_cases(self):
+        with self.assertRaises(ParameterEstimateError):
+            temp = parameter_estimators.estimate_missing_data_rates(
+                self.discrete_tree, continuous=False
+            )
+
+        with self.assertRaises(ParameterEstimateError):
+            temp = parameter_estimators.estimate_missing_data_rates(
+                self.discrete_tree,
+                continuous=False,
+                heritable_missing_rate=0.25,
+                stochastic_missing_probability=0.2,
+            )
+
+        with self.assertRaises(ParameterEstimateError):
+            self.discrete_tree.parameters["heritable_missing_rate"] = 0.25
+            self.discrete_tree.parameters[
+                "stochastic_missing_probability"
+            ] = 0.2
+            temp = parameter_estimators.estimate_missing_data_rates(
+                self.discrete_tree, continuous=False
+            )
+
+        with self.assertRaises(ParameterEstimateWarning):
+            self.discrete_tree.reset_parameters()
+            self.discrete_tree.parameters["heritable_missing_rate"] = 0.5
+            temp = parameter_estimators.estimate_missing_data_rates(
+                self.discrete_tree, continuous=False
+            )
+
+        with self.assertRaises(ParameterEstimateWarning):
+            self.continuous_tree.parameters[
+                "stochastic_missing_probability"
+            ] = 0.9
+            temp = parameter_estimators.estimate_missing_data_rates(
+                self.continuous_tree, continuous=True
+            )
+
+    def test_estimate_stochastic_missing_data_probability(self):
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree, continuous=False, heritable_missing_rate=0.25
+        )[0]
         self.assertTrue(np.isclose(s_missing_prob, 0.0518518518518518))
 
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.discrete_tree, continuous = False, assume_root_implicit_branch = False)
-        self.assertTrue(np.isclose(s_missing_prob, 13/45))
+        self.discrete_tree.parameters["heritable_missing_rate"] = 0.25
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree, continuous=False
+        )[0]
+        self.assertTrue(np.isclose(s_missing_prob, 0.0518518518518518))
 
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.continuous_tree, continuous = True, proportion_of_missing_as_stochastic = 0.2)
-        self.assertTrue(np.isclose(s_missing_prob, 0.04))
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree,
+            continuous=False,
+            assume_root_implicit_branch=False,
+        )[0]
+        self.assertTrue(np.isclose(s_missing_prob, 13 / 45))
 
-        self.continuous_tree.parameters["heritable_missing_rate"] = 0.05
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.continuous_tree, continuous = True)
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree, continuous=True, heritable_missing_rate=0.05
+        )[0]
         self.assertTrue(np.isclose(s_missing_prob, 0.046322071416968195))
 
-        s_missing_prob = pe.estimate_stochastic_missing_data_probability(self.continuous_tree, continuous = True, assume_root_implicit_branch = False)
+        self.continuous_tree.parameters["heritable_missing_rate"] = 0.05
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree, continuous=True
+        )[0]
+        self.assertTrue(np.isclose(s_missing_prob, 0.046322071416968195))
+
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree,
+            continuous=True,
+            assume_root_implicit_branch=False,
+        )[0]
         self.assertTrue(np.isclose(s_missing_prob, 0.10250124994244929))
 
     def test_estimate_heritable_missing_data_rate(self):
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.discrete_tree, continuous = False, proportion_of_missing_as_stochastic = 0.2)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree,
+            continuous=False,
+            stochastic_missing_probability=0.12,
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.23111904017137075))
 
         self.discrete_tree.parameters["stochastic_missing_probability"] = 0.2
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.discrete_tree, continuous = False)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree, continuous=False
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.2062994740159002))
 
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.discrete_tree, continuous = False, assume_root_implicit_branch = False)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree,
+            continuous=False,
+            assume_root_implicit_branch=False,
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.2928932188134524))
 
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.continuous_tree, continuous = True, proportion_of_missing_as_stochastic = 0.2)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree,
+            continuous=True,
+            stochastic_missing_probability=0.04,
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.05188011778689765))
 
         self.continuous_tree.parameters["stochastic_missing_probability"] = 0.1
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.continuous_tree, continuous = True)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree, continuous=True
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.0335154979510034))
 
-        h_missing_rate = pe.estimate_heritable_missing_data_rate(self.continuous_tree, continuous = True, assume_root_implicit_branch = False)
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree,
+            continuous=True,
+            assume_root_implicit_branch=False,
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.05121001550277538))
-
-    def test_estimate_mutation_rate(self):
-        mut_rate = pe.estimate_mutation_rate(self.discrete_tree, continuous = False)
-        self.assertTrue(np.isclose(mut_rate, 0.44967879185089554))
-
-        mut_rate = pe.estimate_mutation_rate(self.discrete_tree, continuous = False, assume_root_implicit_branch=False)
-        self.assertTrue(np.isclose(mut_rate, 0.5917517095361371))
-
-        mut_rate = pe.estimate_mutation_rate(self.continuous_tree, continuous = True)
-        self.assertTrue(np.isclose(mut_rate, 0.5917110077950752))
-
-        mut_rate = pe.estimate_mutation_rate(self.continuous_tree, continuous = True, assume_root_implicit_branch=False)
-        self.assertTrue(np.isclose(mut_rate, 0.9041050181216678))
 
 
 if __name__ == "__main__":
     unittest.main()
-
-    

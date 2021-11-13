@@ -113,10 +113,6 @@ class CassiopeiaTree:
         self.cell_meta = cell_meta
         self.character_meta = character_meta
         self.priors = priors
-        if parameters is not None:
-            self.parameters = parameters
-        else:
-            self.parameters = {}
         self.__network = None
         self.__cache = {}
 
@@ -125,6 +121,10 @@ class CassiopeiaTree:
         self._character_matrix = None
         if character_matrix is not None:
             self.character_matrix = character_matrix
+
+        self._parameters = {}
+        if parameters is not None:
+            self.parameters = parameters
 
         if tree is not None:
             tree = copy.deepcopy(tree)
@@ -227,6 +227,21 @@ class CassiopeiaTree:
     @property
     def character_matrix(self) -> pd.DataFrame:
         return self._character_matrix
+
+    @character_matrix.setter
+    def character_matrix(self, character_matrix: pd.DataFrame):
+        """Initializes a character matrix in the object.
+
+        Args:
+            character_matrix: Character matrix of mutation observations.
+        """
+
+        if not all(type(i) == str for i in character_matrix.index):
+            raise CassiopeiaTreeError(
+                "Index of character matrix must consist" " of strings."
+            )
+
+        self._character_matrix = character_matrix.copy()
 
     @character_matrix.setter
     def character_matrix(self, character_matrix: pd.DataFrame):
@@ -366,6 +381,14 @@ class CassiopeiaTree:
             )
 
         self.layers[add_layer] = character_matrix.copy()
+
+    @property
+    def parameters(self) -> pd.DataFrame:
+        return self._parameters
+
+    def reset_parameters(self):
+        """Resets the parameters attribute on the tree."""
+        self._parameters = {}
 
     @property
     def n_cell(self) -> int:
