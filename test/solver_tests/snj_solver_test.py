@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 from numpy.testing._private.utils import assert_equal
 import pandas as pd
-
+import matplotlib.pyplot as plt
 
 # Only for debugging purposes
 # if True:
@@ -54,7 +54,6 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             orient="index",
             columns=["x1", "x2", "x3"],
         )
-
         sim_general = pd.DataFrame.from_dict(
             {
                 "a": [0.0, 1/3, 1.0, 1.0, 2/3],
@@ -73,8 +72,46 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             character_matrix=cm_general, dissimilarity_map=sim_general, root_sample_name="b"
         )
 
-        # ---------------- Lineage Tracing SNJ ----------------
+        # ---------------- SNJ Integration Test 1 ----------------
+        cm_i1 = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 1, 0], 
+                "b": [1, 1, 2, 1],
+                "c": [1, 1, 2, 2],
+                "d": [1, 2, 0, 0],
+                "e": [2, 3, 0, 0],
+                "f": [2, 4, 3, 0],
+                "g": [2, 4, 4, 0]
+            },
+            orient="index",
+            columns=["x1", "x2", "x3", "x4"],
+        )
+        
+        self.itree_a = cas.data.CassiopeiaTree(character_matrix=cm_i1)
 
+
+
+        # --------------- SNJ Integration Test 2 ----------------
+        cm_i2 = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 3, 3, 1],
+                "b": [1, 1, 3, 3, 2],
+                "c": [1, 1, 3, 4, 0],
+                "d": [1, 1, 4, 0, 0],
+                "e": [1, 2, 0, 0, 0],
+                "f": [2, 3, 2, 1, 0],
+                "g": [2, 3, 2, 2, 0],
+                "h": [2, 3, 1, 0, 0],
+                "i": [2, 4, 6, 0, 0],
+                "j": [2, 4, 5, 0, 0]
+            },
+            orient="index",
+            columns=["x1", "x2", "x3", "x4", "x5"]
+        )
+        
+        self.itree_b = cas.data.CassiopeiaTree(character_matrix=cm_i2)
+
+        # ---------------- Lineage Tracing SNJ ----------------
         cm_lineage = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0],
@@ -470,13 +507,107 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
     #         observed_triplet = find_triplet_structure(triplet, observed_tree)
     #         self.assertEqual(expected_triplet, observed_triplet)
 
+
+    def test_integration1(self):
+        self.snj_solver.solve(self.itree_a)
+        expected_tree1 = nx.DiGraph()
+        expected_tree1.add_nodes_from(["a", "b", "c", "d", "e", "f", "g", "i1", "i2", "i3", "i4", "i5", "i6"])
+        expected_tree1.add_edges_from (
+                [
+                    ("i4", "i2"),
+                    ("i2", "d"),
+                    ("i2", "i1"), 
+                    ("i1", "a"),
+                    ("i1", "i3"),
+                    ("i3", "b"),
+                    ("i3", "c"),
+                    ("i4", "i5"),
+                    ("i5", "e"),
+                    ("i5", "i6"),
+                    ("i6", "f"),
+                    ("i6", "g")
+                ]
+        )
+            
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g"], 3)
+        
+        observed_tree1 = self.itree_a.get_tree_topology()
+
+        nx.draw(observed_tree1, with_labels = True)
+        plt.savefig("test1_observed.pdf")
+        plt.clf()
+
+        nx.draw(observed_tree1, with_labels = False)
+        plt.savefig("test1_observed_nolabels.pdf")
+        plt.clf()
+
+        nx.draw(expected_tree1, with_labels = True)
+        plt.savefig("test1_expected.pdf")
+        plt.clf()
+
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree1)
+            observed_triplet = find_triplet_structure(triplet, observed_tree1)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+
+    def test_integration2(self):
+        self.snj_solver.solve(self.itree_b)
+        expected_tree2 = nx.DiGraph()
+        
+        expected_tree2.add_nodes_from(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "i9"])
+        expected_tree2.add_edges_from (
+            [
+                ("i1", "i2"), 
+                ("i2", "e"),
+                ("i2", "i3"),
+                ("i3", "d"),
+                ("i3", "i4"),
+                ("i4", "c"),
+                ("i4", "i5"),
+                ("i5", "a"),
+                ("i5", "b"),
+                ("i1", "i6"),
+                ("i6", "i7"),
+                ("i7", "j"),
+                ("i7", "i"),
+                ("i6", "i8"),
+                ("i8", "h"),
+                ("i8", "i9"),
+                ("i9", "f"),
+                ("i9", "g")
+            ]
+        )
+
+        
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], 3)
+        
+        observed_tree2 = self.itree_b.get_tree_topology()
+
+        nx.draw(observed_tree2, with_labels = True)
+        plt.savefig("test2_observed.pdf")
+        plt.clf()
+
+        nx.draw(observed_tree2, with_labels = False)
+        plt.savefig("test2_observed_nolabels.pdf")
+        plt.clf()
+
+        nx.draw(expected_tree2, with_labels = True)
+        plt.savefig("test2_expected.pdf")
+        plt.clf()
+
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree2)
+            observed_triplet = find_triplet_structure(triplet, observed_tree2)
+            self.assertEqual(expected_triplet, observed_triplet)
+
     def test_setup_root_finder_missing_dissimilarity_map(self):
         tree = cas.data.CassiopeiaTree(character_matrix=self.cm_general)
 
         self.snj_solver.setup_root_finder(tree)
 
         self.assertEqual(tree.root_sample_name, "root")
-
+        
     # def test_setup_root_finder_existing_dissimilarity_map(self):
     #     tree = cas.data.CassiopeiaTree(
     #         character_matrix=self.cm,

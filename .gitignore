@@ -10,3 +10,4 @@ build
 *.c
 stdout.log
 notebooks/.ipynb_checkpoints
+*.pdf
