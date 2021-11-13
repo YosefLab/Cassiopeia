@@ -227,6 +227,27 @@ def place_colorstrip(
     height: float,
     loc: Literal["left", "right", "up", "down", "polar"],
 ) -> Dict[str, Tuple[List[float], List[float]]]:
+    """Compute the coordinates of the boxes that represent a colorstrip.
+
+    This function computes the x and y coordinates (or the angles and radii)
+    of colored boxes, which together form a colorstrip used to annotate leaves
+    of a tree.
+
+    Args:
+        anchor_coords: Dictionary of nodes-to-coordinate tuples that contain
+            the "anchor" point to start the colorstrip. When `loc=left`, this
+            is the center right of each box, when `loc=right`, this is the
+            center left of each box, etc.
+        width: Width of the box. The width is defined as the length of the
+            box in the same direction as the leaves.
+        height: Height of the box. The height is defined as the length of the
+            box in the direction perpendicular to the leaves.
+        loc: Where to place each box relative to the anchors. Valid options are:
+            `left`, `right`, `up`, `down`, `polar`.
+
+    Returns:
+        A dictionary of node-to-coordinate tuples for each box.
+    """
     size_x, size_y = (
         (width, height) if loc in ("left", "right") else (height, width)
     )
