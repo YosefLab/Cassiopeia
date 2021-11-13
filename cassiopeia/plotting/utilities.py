@@ -7,9 +7,12 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 import numpy as np
+import pandas as pd
+from matplotlib.colors import rgb_to_hsv
 from typing_extensions import Literal
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.preprocess import utilities as preprocess_utilities
 
 
 def degrees_to_radians(degrees) -> float:
@@ -24,17 +27,39 @@ def degrees_to_radians(degrees) -> float:
     return degrees * np.pi / 180
 
 
-def polar_to_cartesian(theta: float, r: float) -> Tuple[float, float]:
+def polar_to_cartesian(degrees: float, r: float) -> Tuple[float, float]:
     """Convert polar coordinates to cartesian coordinates.
 
     Args:
-        theta: The angle (in radians)
+        degrees: The angle (in degrees)
         r: The radius
 
     Returns:
         A tuple of x and y coordinates
     """
+    theta = degrees_to_radians(degrees)
     return r * np.cos(theta), r * np.sin(theta)
+
+
+def polars_to_cartesians(
+    degrees: List[float], rs: List[float]
+) -> Tuple[List[float], List[float]]:
+    """Convert a list of polar coordinates to cartesian coordinates.
+
+    Args:
+        degrees: List of angles (in degrees)
+        rs: List of radii
+
+    Returns:
+        Two lists, corresponding to the x and y coordinates.
+    """
+    xs = []
+    ys = []
+    for d, r in zip(degrees, rs):
+        x, y = polar_to_cartesian(d, r)
+        xs.append(x)
+        ys.append(y)
+    return xs, ys
 
 
 def place_tree(
@@ -45,8 +70,9 @@ def place_tree(
     width_scale: float = 1.0,
     extend_branches: bool = True,
     angled_branches: bool = True,
-    polar_interpolation_threshold: float = 30.0,
-    polar_interpolation_step: float = 5.0,
+    polar_interpolation_threshold: float = 10.0,
+    polar_interpolation_step: float = 2.0,
+    add_root: bool = False,
 ) -> Tuple[
     Dict[str, Tuple[float, float]],
     Dict[Tuple[str, str], Tuple[List[float], List[float]]],
@@ -98,12 +124,16 @@ def place_tree(
             adds additional points that smoothly interpolate between the two
             endpoints.
         polar_interpolation_step: Interpolation step. See above.
+        add_root: Add a root node so that only one branch connects to the
+            start of the tree. This node will have the name `synthetic_root`.
 
     Returns:
         Two dictionaries, where the first contains the node coordinates and
         the second contains the branch coordinates.
     """
     root = tree.root
+    nodes = tree.nodes.copy()
+    edges = tree.edges.copy()
     depths = None
     if depth_key:
         depths = {
@@ -140,11 +170,18 @@ def place_tree(
         for child in tree.children(node):
             min_position = min(min_position, positions[child])
             max_position = max(max_position, positions[child])
-            min_depth = min(min_depth, placement_depths[child]) - 1
+            min_depth = min(min_depth, placement_depths[child])
         positions[node] = (min_position + max_position) / 2
         placement_depths[node] = (
-            min_depth if extend_branches and not depth_key else depths[node]
+            min_depth - 1 if extend_branches and not depth_key else depths[node]
         )
+    # Add synthetic root
+    if add_root:
+        root_name = "synthetic_root"
+        positions[root_name] = 0
+        placement_depths[root_name] = min(placement_depths.values()) - 1
+        nodes.append(root_name)
+        edges.append((root_name, root))
 
     polar = isinstance(orient, (float, int))
     polar_depth_offset = -min(placement_depths.values())
@@ -171,14 +208,14 @@ def place_tree(
         )
 
     node_coords = {}
-    for node in tree.nodes:
+    for node in nodes:
         pos = positions[node]
         depth = placement_depths[node]
         coords = polarize(pos, depth) if polar else reorient(pos, depth)
         node_coords[node] = coords
 
     branch_coords = {}
-    for parent, child in tree.edges:
+    for parent, child in edges:
         parent_pos, parent_depth = positions[parent], placement_depths[parent]
         child_pos, child_depth = positions[child], placement_depths[child]
 
@@ -225,8 +262,11 @@ def place_colorstrip(
     anchor_coords: Dict[str, Tuple[float, float]],
     width: float,
     height: float,
+    spacing: float,
     loc: Literal["left", "right", "up", "down", "polar"],
-) -> Dict[str, Tuple[List[float], List[float]]]:
+) -> Tuple[
+    Dict[str, Tuple[List[float], List[float]]], Dict[str, Tuple[float, float]]
+]:
     """Compute the coordinates of the boxes that represent a colorstrip.
 
     This function computes the x and y coordinates (or the angles and radii)
@@ -242,12 +282,16 @@ def place_colorstrip(
             box in the same direction as the leaves.
         height: Height of the box. The height is defined as the length of the
             box in the direction perpendicular to the leaves.
+        spacing: Space between consecutive colorstrips. This value is used as a
+            padding before placing the box.
         loc: Where to place each box relative to the anchors. Valid options are:
             `left`, `right`, `up`, `down`, `polar`.
 
     Returns:
-        A dictionary of node-to-coordinate tuples for each box.
+        A dictionary of node-to-coordinate tuples for each box, and a dictionary
+        of the next set of anchor coordinates (for placing more colorstrips).
     """
+    next_anchor_coords = {}
     size_x, size_y = (
         (width, height) if loc in ("left", "right") else (height, width)
     )
@@ -261,7 +305,14 @@ def place_colorstrip(
 
     boxes = {}
     for anchor, (x, y) in anchor_coords.items():
-        center_x, center_y = x + coef_x * size_x / 2, y + coef_y * size_y / 2
+        next_anchor_coords[anchor] = (
+            x + coef_x * (size_x + spacing),
+            y + coef_y * (size_y + spacing),
+        )
+        center_x, center_y = (
+            x + coef_x * ((size_x / 2) + spacing),
+            y + coef_y * ((size_y / 2) + spacing),
+        )
         xs = [
             center_x + size_x / 2,
             center_x - size_x / 2,
@@ -277,7 +328,7 @@ def place_colorstrip(
             center_y + size_y / 2,
         ]
         boxes[anchor] = (xs, ys)
-    return boxes
+    return boxes, next_anchor_coords
 
 
 def generate_random_color(
@@ -307,3 +358,168 @@ def generate_random_color(
         grn = np.random.uniform(g_range[0], g_range[1])
         blu = np.random.uniform(b_range[0], b_range[1])
     return (red, grn, blu)
+
+
+def get_random_indel_colors(
+    lineage_profile: pd.DataFrame,
+    random_state: Optional[np.random.RandomState] = None,
+) -> pd.DataFrame:
+    """Assigns random color to each unique indel.
+
+    Assigns a random HSV value to each indel observed in the specified
+    lineage profile.
+
+    Args:
+        lineage_profile: An NxM lineage profile reporting the indels observed
+            at each cut site in a cell.
+        random_state: A random state for reproducibility
+
+    Returns:
+        A mapping from indel to HSV color.
+    """
+
+    lineage_profile.fillna("missing", inplace=True)
+    unique_indels = np.unique(
+        np.hstack(lineage_profile.apply(lambda x: x.unique(), axis=0))
+    )
+
+    # color families
+    redmag = [0.5, 1, 0, 0.5, 0, 1]
+    grnyel = [0, 1, 0.5, 1, 0, 0.5]
+    cynblu = [0, 0.5, 0, 1, 0.5, 1]
+    colorlist = [redmag, grnyel, cynblu]
+
+    # construct dictionary of indels-to-RGBcolors
+    indel2color = {}
+    for indel in unique_indels:
+        if "none" in indel.lower():
+            indel2color[indel] = rgb_to_hsv((0.75, 0.75, 0.75))
+        elif indel == "NC":
+            indel2color[indel] = rgb_to_hsv((0, 0, 0))
+        elif indel == "missing":
+            indel2color[indel] = rgb_to_hsv((1, 1, 1))
+        else:
+            # randomly pick a color family and then draw random colors
+            # from that family
+            if random_state:
+                rgb_i = random_state.choice(range(len(colorlist)))
+                color_ranges = colorlist[rgb_i]
+                indel2color[indel] = rgb_to_hsv(
+                    generate_random_color(
+                        color_ranges[:2],
+                        color_ranges[2:4],
+                        color_ranges[4:6],
+                        random_state,
+                    )
+                )
+            else:
+                rgb_i = np.random.choice(range(len(colorlist)))
+                color_ranges = colorlist[rgb_i]
+                indel2color[indel] = rgb_to_hsv(
+                    generate_random_color(
+                        color_ranges[:2], color_ranges[2:4], color_ranges[4:6]
+                    )
+                )
+
+    indel_colors = pd.DataFrame(columns=["color"])
+    for indel in indel2color.keys():
+        indel_colors.loc[indel, "color"] = indel2color[indel]
+    return pd.DataFrame(indel_colors["color"])
+
+
+def get_indel_colors(
+    indel_priors: pd.DataFrame,
+    random_state: Optional[np.random.RandomState] = None,
+) -> pd.DataFrame:
+    """Map indel to HSV colors using prior probabilities.
+
+    Given prior probabilities of indels, map each indel to a color reflecting
+    its relative likelihood. Specifically, indels that are quite frequent will
+    have dull colors and indels that are rare will be bright.
+
+    Args:
+        indel_priors: DataFrame mapping indels to probabilities
+        random_state: Random state for reproducibility
+
+    Returns:
+        DataFrame mapping indel to color
+    """
+
+    def assign_color(prob, random_state):
+        """Samples a HSV color, with saturation proportional to probability."""
+        if random_state:
+            H = random_state.rand()
+        else:
+            H = np.random.rand()
+        S = prob
+        V = 0.5 + 0.5 * S
+        return (H, S, V)
+
+    indel_priors_copy = indel_priors.copy()
+    indel_priors_copy["NormFreq"] = indel_priors_copy["freq"]
+    indel_priors_copy["NormFreq"] = indel_priors_copy.apply(
+        lambda x: (indel_priors_copy["NormFreq"].max() - x.NormFreq), axis=1
+    )
+    indel_priors_copy["NormFreq"] /= indel_priors_copy["NormFreq"].max()
+    indel_priors_copy["color"] = indel_priors_copy.apply(
+        lambda x: assign_color(x.NormFreq, random_state), axis=1
+    )
+    return pd.DataFrame(indel_priors_copy["color"])
+
+
+def hex_to_rgb(value) -> Tuple[int, int, int]:
+    """Converts Hex color code to RGB.
+
+    Args:
+        values: hex values (beginning with "#")
+
+    Returns:
+        A tuple denoting (r, g, b)
+    """
+    value = value.lstrip("#")
+    lv = len(value)
+    return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+
+def rgb_to_hex(rgb) -> str:
+    """Converts (r, g, b) tuple to hex
+
+    Args:
+        rgb: A tuple denoting (R, G, B) values
+
+    Returns:
+        A hex string.
+    """
+
+    r, g, b = rgb[0], rgb[1], rgb[2]
+    return "#{:02x}{:02x}{:02x}".format(r, g, b)
+
+
+def prepare_alleletable(
+    allele_table: pd.DataFrame,
+    leaves: List[str],
+    indel_priors: Optional[pd.DataFrame] = None,
+    random_state: Optional[np.random.RandomState] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Prepare indel colors and a lineage profile from an allele table.
+
+    Args:
+        allele_table: The allele table containing indels.
+        leaves: Leaves of the tree.
+        indel_priors: Prior probabilities for each indel.
+        random_state: A random state for reproducibility
+
+    Returns:
+        The lineage profile and indel colors as two pandas dataframes.
+    """
+    lineage_profile = (
+        preprocess_utilities.convert_alleletable_to_lineage_profile(
+            allele_table
+        )
+    )
+    clustered_linprof = lineage_profile.loc[leaves[::-1]]
+    if indel_priors is None:
+        indel_colors = get_random_indel_colors(lineage_profile, random_state)
+    else:
+        indel_colors = get_indel_colors(indel_priors, random_state)
+    return clustered_linprof, indel_colors

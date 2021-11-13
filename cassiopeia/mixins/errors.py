@@ -95,3 +95,6 @@ class BranchLengthEstimatorError(Exception):
 
 class IIDExponentialMLEError(BranchLengthEstimatorError):
     pass
+
+class PlottingError(Exception):
+    pass

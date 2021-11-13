@@ -2,6 +2,7 @@ import unittest
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.plotting import utilities
@@ -10,6 +11,12 @@ from cassiopeia.plotting import utilities
 class TestPlottingUtilities(unittest.TestCase):
     def setUp(self):
         self.random_state = np.random.RandomState(123412334)
+
+        self.indel_priors = pd.DataFrame.from_dict(
+            {"i": 0.8, "j": 0.1, "k": 0.01, "m": 0.5, "n": 0.5},
+            orient="index",
+            columns=["freq"],
+        )
 
         tree = nx.DiGraph()
         tree.add_nodes_from(["B", "C", "D", "E", "F"])
@@ -33,7 +40,7 @@ class TestPlottingUtilities(unittest.TestCase):
         self.assertAlmostEqual(x, 1.0)
         self.assertAlmostEqual(y, 0.0)
 
-        x, y = utilities.polar_to_cartesian(np.pi / 2, 1)
+        x, y = utilities.polar_to_cartesian(90, 1)
         self.assertAlmostEqual(x, 0.0)
         self.assertAlmostEqual(y, 1.0)
 
@@ -155,42 +162,115 @@ class TestPlottingUtilities(unittest.TestCase):
             np.testing.assert_allclose(coords, expected_branch_coords[edge])
 
     def test_place_colorstrip(self):
-        expected = {"0": ([3, 0, 0, 3, 3], [1, 1, -1, -1, 1])}
+        expected = ({"0": ([4, 1, 1, 4, 4], [1, 1, -1, -1, 1])}, {"0": (4, 0)})
         self.assertEqual(
             utilities.place_colorstrip(
-                {"0": (0, 0)}, width=3, height=2, loc="right"
+                {"0": (0, 0)}, width=3, height=2, spacing=1, loc="right"
             ),
             expected,
         )
 
-        expected = {"0": ([0, -3, -3, 0, 0], [1, 1, -1, -1, 1])}
+        expected = (
+            {"0": ([-1, -4, -4, -1, -1], [1, 1, -1, -1, 1])},
+            {"0": (-4, 0)},
+        )
         self.assertEqual(
             utilities.place_colorstrip(
-                {"0": (0, 0)}, width=3, height=2, loc="left"
+                {"0": (0, 0)}, width=3, height=2, spacing=1, loc="left"
             ),
             expected,
         )
 
-        expected = {"0": ([1, -1, -1, 1, 1], [3, 3, 0, 0, 3])}
+        expected = ({"0": ([1, -1, -1, 1, 1], [4, 4, 1, 1, 4])}, {"0": (0, 4)})
         self.assertEqual(
             utilities.place_colorstrip(
-                {"0": (0, 0)}, width=3, height=2, loc="up"
+                {"0": (0, 0)}, width=3, height=2, spacing=1, loc="up"
             ),
             expected,
         )
 
-        expected = {"0": ([1, -1, -1, 1, 1], [0, 0, -3, -3, 0])}
+        expected = (
+            {"0": ([1, -1, -1, 1, 1], [-1, -1, -4, -4, -1])},
+            {"0": (0, -4)},
+        )
         self.assertEqual(
             utilities.place_colorstrip(
-                {"0": (0, 0)}, width=3, height=2, loc="down"
+                {"0": (0, 0)}, width=3, height=2, spacing=1, loc="down"
             ),
             expected,
         )
 
-        expected = {"0": ([1, -1, -1, 1, 1], [3, 3, 0, 0, 3])}
+        expected = ({"0": ([1, -1, -1, 1, 1], [4, 4, 1, 1, 4])}, {"0": (0, 4)})
         self.assertEqual(
             utilities.place_colorstrip(
-                {"0": (0, 0)}, width=3, height=2, loc="polar"
+                {"0": (0, 0)}, width=3, height=2, spacing=1, loc="polar"
             ),
             expected,
         )
+
+    def test_generate_indel_colors_from_priors(self):
+
+        indel_to_color = utilities.get_indel_colors(
+            self.indel_priors, self.random_state
+        )
+
+        expected_values = {
+            "i": [0.75, 0, 0.5],
+            "j": [0.05, 0.88, 0.94],
+            "k": [0.69, 1.0, 1.0],
+            "m": [0.798, 0.37, 0.68],
+            "n": [0.56, 0.37, 0.68],
+        }
+
+        for indel in indel_to_color.index:
+            self.assertIn(indel, expected_values.keys())
+
+            observed_color = indel_to_color.loc[indel, "color"]
+            for i in range(len(observed_color)):
+                self.assertAlmostEqual(
+                    observed_color[i], expected_values[indel][i], delta=0.01
+                )
+
+    def test_color_converters(self):
+
+        # convert hex to rgb
+        _hex = "#000000"
+        rgb = utilities.hex_to_rgb(_hex)
+        self.assertEqual(rgb, (0, 0, 0))
+
+        _hex = "#812dd3"
+        rgb = utilities.hex_to_rgb(_hex)
+        self.assertEqual(rgb, (129, 45, 211))
+
+        rgb = (129, 45, 211)
+        _hex = utilities.rgb_to_hex(rgb)
+        self.assertEqual(_hex, "#812dd3")
+
+    def test_generate_random_indel_colors(self):
+
+        lineage_profile = pd.DataFrame.from_dict(
+            {"cellA": ["i", "j", "k", "i"], "cellB": ["i", "m", "n", "none"]},
+            orient="index",
+            columns=["site1", "site2", "site3", "site4"],
+        )
+
+        indel_to_color = utilities.get_random_indel_colors(
+            lineage_profile, self.random_state
+        )
+
+        expected_values = {
+            "i": [0.53, 0.97, 0.89],
+            "j": [0.73, 0.74, 0.69],
+            "k": [0.26, 0.35, 0.56],
+            "m": [0.28, 0.55, 0.80],
+            "n": [0.9, 0.84, 0.76],
+            "none": [0, 0, 0.75],
+        }
+        for indel in indel_to_color.index:
+            self.assertIn(indel, expected_values.keys())
+
+            observed_color = indel_to_color.loc[indel, "color"]
+            for i in range(len(observed_color)):
+                self.assertAlmostEqual(
+                    observed_color[i], expected_values[indel][i], delta=0.01
+                )
