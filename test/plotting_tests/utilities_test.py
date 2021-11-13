@@ -132,3 +132,65 @@ class TestPlottingUtilities(unittest.TestCase):
             np.testing.assert_allclose(coords, expected_node_coords[node])
         for edge, coords in expected_branch_coords.items():
             np.testing.assert_allclose(coords, expected_branch_coords[edge])
+
+        expected_node_coords = {
+            "B": (90, 3),
+            "C": (180, 3),
+            "D": (270, 3),
+            "E": (225, 1),
+            "F": (157, 0),
+        }
+        expected_branch_coords = {
+            ("E", "C"): ([225, 180, 180], [1, 1, 3]),
+            ("E", "D"): ([225, 270, 270], [1, 1, 3]),
+            ("F", "B"): ([157.5, 90, 90], [0, 0, 3]),
+            ("F", "E"): ([157.5, 225, 225], [0, 0, 1]),
+        }
+        node_coords, branch_coords = utilities.place_tree(
+            self.basic_tree, orient=0, polar_interpolation_threshold=np.inf
+        )
+        for node, coords in expected_node_coords.items():
+            np.testing.assert_allclose(coords, expected_node_coords[node])
+        for edge, coords in expected_branch_coords.items():
+            np.testing.assert_allclose(coords, expected_branch_coords[edge])
+
+    def test_place_colorstrip(self):
+        expected = {"0": ([3, 0, 0, 3, 3], [1, 1, -1, -1, 1])}
+        self.assertEqual(
+            utilities.place_colorstrip(
+                {"0": (0, 0)}, width=3, height=2, loc="right"
+            ),
+            expected,
+        )
+
+        expected = {"0": ([0, -3, -3, 0, 0], [1, 1, -1, -1, 1])}
+        self.assertEqual(
+            utilities.place_colorstrip(
+                {"0": (0, 0)}, width=3, height=2, loc="left"
+            ),
+            expected,
+        )
+
+        expected = {"0": ([1, -1, -1, 1, 1], [3, 3, 0, 0, 3])}
+        self.assertEqual(
+            utilities.place_colorstrip(
+                {"0": (0, 0)}, width=3, height=2, loc="up"
+            ),
+            expected,
+        )
+
+        expected = {"0": ([1, -1, -1, 1, 1], [0, 0, -3, -3, 0])}
+        self.assertEqual(
+            utilities.place_colorstrip(
+                {"0": (0, 0)}, width=3, height=2, loc="down"
+            ),
+            expected,
+        )
+
+        expected = {"0": ([1, -1, -1, 1, 1], [3, 3, 0, 0, 3])}
+        self.assertEqual(
+            utilities.place_colorstrip(
+                {"0": (0, 0)}, width=3, height=2, loc="polar"
+            ),
+            expected,
+        )

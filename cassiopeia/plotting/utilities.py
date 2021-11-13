@@ -135,7 +135,7 @@ def place_tree(
 
         # Find all immediate children and place at center.
         min_position = np.inf
-        max_position = 0
+        max_position = -np.inf
         min_depth = np.inf
         for child in tree.children(node):
             min_position = min(min_position, positions[child])
@@ -219,6 +219,44 @@ def place_tree(
         branch_coords[(parent, child)] = (xs, ys)
 
     return node_coords, branch_coords
+
+
+def place_colorstrip(
+    anchor_coords: Dict[str, Tuple[float, float]],
+    width: float,
+    height: float,
+    loc: Literal["left", "right", "up", "down", "polar"],
+) -> Dict[str, Tuple[List[float], List[float]]]:
+    size_x, size_y = (
+        (width, height) if loc in ("left", "right") else (height, width)
+    )
+    coef_x, coef_y = 0, 1  # default: up / polar
+    if loc == "left":
+        coef_x, coef_y = -1, 0
+    elif loc == "right":
+        coef_x, coef_y = 1, 0
+    elif loc == "down":
+        coef_x, coef_y = 0, -1
+
+    boxes = {}
+    for anchor, (x, y) in anchor_coords.items():
+        center_x, center_y = x + coef_x * size_x / 2, y + coef_y * size_y / 2
+        xs = [
+            center_x + size_x / 2,
+            center_x - size_x / 2,
+            center_x - size_x / 2,
+            center_x + size_x / 2,
+            center_x + size_x / 2,
+        ]
+        ys = [
+            center_y + size_y / 2,
+            center_y + size_y / 2,
+            center_y - size_y / 2,
+            center_y - size_y / 2,
+            center_y + size_y / 2,
+        ]
+        boxes[anchor] = (xs, ys)
+    return boxes
 
 
 def generate_random_color(
