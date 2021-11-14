@@ -147,6 +147,11 @@ class TestLocalPlotting(unittest.TestCase):
         local.plot_matplotlib(self.tree, add_root=True)
         local.plot_matplotlib(self.tree, meta_data=["nUMI", "cluster"])
 
+    def test_plot_plotly(self):
+        local.plot_plotly(self.tree)
+        local.plot_plotly(self.tree, add_root=True)
+        local.plot_plotly(self.tree, meta_data=["nUMI", "cluster"])
+
     def test_create_clade_colors(self):
         expected_node_colors = {"4": "red", "5": "red", "6": "red"}
         expected_branch_colors = {("4", "5"): "red", ("4", "6"): "red"}

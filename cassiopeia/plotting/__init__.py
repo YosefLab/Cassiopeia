@@ -3,4 +3,4 @@
 """Top level for plotting."""
 
 from .itol_utilities import upload_and_export_itol
-from .local import plot_matplotlib
+from .local import plot_matplotlib, plot_plotly

@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from matplotlib.colors import hsv_to_rgb
 from typing_extensions import Literal
 from tqdm import tqdm
@@ -250,7 +251,7 @@ def create_clade_colors(
     return node_colors, branch_colors
 
 
-def plot_matplotlib(
+def place_tree_and_annotations(
     tree: CassiopeiaTree,
     depth_key: Optional[str] = None,
     meta_data: Optional[List[str]] = None,
@@ -261,20 +262,14 @@ def plot_matplotlib(
     extend_branches: bool = True,
     angled_branches: bool = True,
     add_root: bool = False,
-    figsize: Tuple[float, float] = (7.0, 7.0),
     colorstrip_width: Optional[float] = None,
     colorstrip_spacing: Optional[float] = None,
     clade_colors: Optional[Dict[str, Tuple[float, float, float]]] = None,
-    internal_node_kwargs: Optional[Dict] = None,
-    leaf_kwargs: Optional[Dict] = None,
-    branch_kwargs: Optional[Dict] = None,
-    colorstrip_kwargs: Optional[Dict] = None,
     continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
     categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
-    ax: Optional[plt.Axes] = None,
     random_state: Optional[np.random.RandomState] = None,
-) -> Tuple[plt.Figure, plt.Axes]:
-    """Generate a static plot of a tree using Matplotlib.
+) -> Tuple[Dict, Dict, Dict, Dict, List]:
+    """Helper function to place the tree and all requested annotations.
 
     Args:
         tree: The CassiopeiaTree to plot.
@@ -300,7 +295,6 @@ def plot_matplotlib(
             line from the parent to a child.
         add_root: Add a root node so that only one branch connects to the
             start of the tree. This node will have the name `synthetic_root`.
-        figsize: Size of the plot. Defaults to (7., 7.,)
         colorstrip_width: Width of the colorstrip. Width is defined as the
             length in the direction of the leaves. Defaults to 5% of the tree
             depth.
@@ -309,25 +303,15 @@ def plot_matplotlib(
         clade_colors: Dictionary containing internal node-color mappings. These
             colors will be used to color all the paths from this node to the
             leaves the provided color.
-        internal_node_kwargs: Keyword arguments to pass to `plt.scatter` when
-            plotting internal nodes.
-        leaf_kwargs: Keyword arguments to pass to `plt.scatter` when
-            plotting leaf nodes.
-        branch_kwargs: Keyword arguments to pass to `plt.plot` when plotting
-            branches.
-        colorstrip_kwargs: Keyword arguments to pass to `plt.fill` when plotting
-            colorstrips.
         continuous_cmap: Colormap to use for continuous variables. Defaults to
             `viridis`.
         categorical_cmap: Colormap to use for categorical variables. Defaults to
             `tab10`.
-        ax: Matplotlib axis to place the tree. If not provided, a new figure is
-            initialized.
         random_state: A random state for reproducibility
 
     Returns:
-        If `ax` is provided, `ax` is returned. Otherwise, a tuple of (fig, ax)
-        of the newly initialized figure and axis.
+        Four dictionaries (node coordinates, branch coordinates, node
+        colors, branch colors) and a list of colorstrips.
     """
     meta_data = meta_data or []
 
@@ -408,55 +392,159 @@ def plot_matplotlib(
     branch_colors = {}
     if clade_colors:
         node_colors, branch_colors = create_clade_colors(tree, clade_colors)
+    return node_coords, branch_coords, node_colors, branch_colors, colorstrips
 
-    # Plot
+
+def plot_matplotlib(
+    tree: CassiopeiaTree,
+    depth_key: Optional[str] = None,
+    meta_data: Optional[List[str]] = None,
+    allele_table: Optional[pd.DataFrame] = None,
+    indel_colors: Optional[pd.DataFrame] = None,
+    indel_priors: Optional[pd.DataFrame] = None,
+    orient: Union[Literal["up", "down", "left", "right"], float] = 90.0,
+    extend_branches: bool = True,
+    angled_branches: bool = True,
+    add_root: bool = False,
+    figsize: Tuple[float, float] = (7.0, 7.0),
+    colorstrip_width: Optional[float] = None,
+    colorstrip_spacing: Optional[float] = None,
+    clade_colors: Optional[Dict[str, Tuple[float, float, float]]] = None,
+    internal_node_kwargs: Optional[Dict] = None,
+    leaf_kwargs: Optional[Dict] = None,
+    branch_kwargs: Optional[Dict] = None,
+    colorstrip_kwargs: Optional[Dict] = None,
+    continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    ax: Optional[plt.Axes] = None,
+    random_state: Optional[np.random.RandomState] = None,
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Generate a static plot of a tree using Matplotlib.
+
+    Args:
+        tree: The CassiopeiaTree to plot.
+        depth_key: The node attribute to use as the depth of the nodes. If
+            not provided, the distances from the root is used by calling
+            `tree.get_distances`.
+        meta_data: Meta data to plot alongside the tree, which must be columns
+            in the CassiopeiaTree.cell_meta variable.
+        allele_table: Alleletable to plot alongside the tree.
+        indel_colors: Color mapping to use for plotting the alleles for each
+            cell. Only necessary if `allele_table` is specified.
+        indel_priors: Prior probabilities for each indel. Only useful if an
+            allele table is to be plotted and `indel_colors` is None.
+        orient: The orientation of the tree. Valid arguments are `left`, `right`,
+            `up`, `down` to display a rectangular plot (indicating the direction
+            of going from root -> leaves) or any number, in which case the
+            tree is placed in polar coordinates with the provided number used
+            as an angle offset. Defaults to 90.
+        extend_branches: Extend branch lengths such that the distance from the
+            root to every node is the same. If `depth_key` is also provided, then
+            only the leaf branches are extended to the deepest leaf.
+        angled_branches: Display branches as angled, instead of as just a
+            line from the parent to a child.
+        add_root: Add a root node so that only one branch connects to the
+            start of the tree. This node will have the name `synthetic_root`.
+        figsize: Size of the plot. Defaults to (7., 7.,)
+        colorstrip_width: Width of the colorstrip. Width is defined as the
+            length in the direction of the leaves. Defaults to 5% of the tree
+            depth.
+        colorstrip_spacing: Space between consecutive colorstrips. Defaults to
+            half of `colorstrip_width`.
+        clade_colors: Dictionary containing internal node-color mappings. These
+            colors will be used to color all the paths from this node to the
+            leaves the provided color.
+        internal_node_kwargs: Keyword arguments to pass to `plt.scatter` when
+            plotting internal nodes.
+        leaf_kwargs: Keyword arguments to pass to `plt.scatter` when
+            plotting leaf nodes.
+        branch_kwargs: Keyword arguments to pass to `plt.plot` when plotting
+            branches.
+        colorstrip_kwargs: Keyword arguments to pass to `plt.fill` when plotting
+            colorstrips.
+        continuous_cmap: Colormap to use for continuous variables. Defaults to
+            `viridis`.
+        categorical_cmap: Colormap to use for categorical variables. Defaults to
+            `tab10`.
+        ax: Matplotlib axis to place the tree. If not provided, a new figure is
+            initialized.
+        random_state: A random state for reproducibility
+
+    Returns:
+        If `ax` is provided, `ax` is returned. Otherwise, a tuple of (fig, ax)
+        of the newly initialized figure and axis.
+    """
+    is_polar = isinstance(orient, (float, int))
+    (
+        node_coords,
+        branch_coords,
+        node_colors,
+        branch_colors,
+        colorstrips,
+    ) = place_tree_and_annotations(
+        tree,
+        depth_key,
+        meta_data,
+        allele_table,
+        indel_colors,
+        indel_priors,
+        orient,
+        extend_branches,
+        angled_branches,
+        add_root,
+        colorstrip_width,
+        colorstrip_spacing,
+        clade_colors,
+        continuous_cmap,
+        categorical_cmap,
+        random_state,
+    )
+
     fig = None
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize, tight_layout=True)
     ax.set_axis_off()
 
     # Plot all nodes
-    _leaf_kwargs = dict(s=5, c="black")
-    _node_kwargs = dict(s=0, c="black")
+    _leaf_kwargs = dict(x=[], y=[], s=5, c="black")
+    _node_kwargs = dict(x=[], y=[], s=0, c="black")
     _leaf_kwargs.update(leaf_kwargs or {})
     _node_kwargs.update(internal_node_kwargs or {})
-    leaves = ([], [])
-    nodes = ([], [])
     for node, (x, y) in node_coords.items():
         if node in node_colors:
             continue
         if is_polar:
             x, y = utilities.polar_to_cartesian(x, y)
         if tree.is_leaf(node):
-            leaves[0].append(x)
-            leaves[1].append(y)
+            _leaf_kwargs["x"].append(x)
+            _leaf_kwargs["y"].append(y)
         else:
-            nodes[0].append(x)
-            nodes[1].append(y)
-    ax.scatter(*leaves, **_leaf_kwargs)
-    ax.scatter(*nodes, **_node_kwargs)
+            _node_kwargs["x"].append(x)
+            _node_kwargs["y"].append(y)
+    ax.scatter(**_leaf_kwargs)
+    ax.scatter(**_node_kwargs)
 
     _leaf_colors = []
     _node_colors = []
-    leaves = ([], [])
-    nodes = ([], [])
+    _leaf_kwargs.update({"x": [], "y": []})
+    _node_kwargs.update({"x": [], "y": []})
     for node, color in node_colors.items():
         x, y = node_coords[node]
         if is_polar:
             x, y = utilities.polar_to_cartesian(x, y)
         if tree.is_leaf(node):
-            leaves[0].append(x)
-            leaves[1].append(y)
+            _leaf_kwargs["x"].append(x)
+            _leaf_kwargs["y"].append(y)
             _leaf_colors.append(color)
         else:
-            nodes[0].append(x)
-            nodes[1].append(y)
+            _node_kwargs["x"].append(x)
+            _node_kwargs["y"].append(y)
             _node_colors.append(color)
 
     _leaf_kwargs["c"] = _leaf_colors
     _node_kwargs["c"] = _node_colors
-    ax.scatter(*leaves, **_leaf_kwargs)
-    ax.scatter(*nodes, **_node_kwargs)
+    ax.scatter(**_leaf_kwargs)
+    ax.scatter(**_node_kwargs)
 
     # Plot all branches
     _branch_kwargs = dict(linewidth=1, c="black")
@@ -466,7 +554,6 @@ def plot_matplotlib(
             continue
         if is_polar:
             xs, ys = utilities.polars_to_cartesians(xs, ys)
-
         ax.plot(xs, ys, **_branch_kwargs)
 
     for branch, color in branch_colors.items():
@@ -482,13 +569,255 @@ def plot_matplotlib(
     for colorstrip in colorstrips:
         # Last element is text, but this can not be shown in static plotting.
         for xs, ys, c, _ in colorstrip.values():
+            _colorstrip_kwargs["c"] = c
             if is_polar:
                 xs, ys = utilities.polars_to_cartesians(xs, ys)
-
-            ax.fill(xs, ys, color=c)
+            ax.fill(xs, ys, **_colorstrip_kwargs)
 
     return (fig, ax) if fig is not None else ax
 
 
-def plot_interactive():
-    pass
+def plot_plotly(
+    tree: CassiopeiaTree,
+    depth_key: Optional[str] = None,
+    meta_data: Optional[List[str]] = None,
+    allele_table: Optional[pd.DataFrame] = None,
+    indel_colors: Optional[pd.DataFrame] = None,
+    indel_priors: Optional[pd.DataFrame] = None,
+    orient: Union[Literal["up", "down", "left", "right"], float] = 90.0,
+    extend_branches: bool = True,
+    angled_branches: bool = True,
+    add_root: bool = False,
+    width: float = 500.0,
+    height: float = 500.0,
+    colorstrip_width: Optional[float] = None,
+    colorstrip_spacing: Optional[float] = None,
+    clade_colors: Optional[Dict[str, Tuple[float, float, float]]] = None,
+    internal_node_kwargs: Optional[Dict] = None,
+    leaf_kwargs: Optional[Dict] = None,
+    branch_kwargs: Optional[Dict] = None,
+    colorstrip_kwargs: Optional[Dict] = None,
+    continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    figure: Optional[go.Figure] = None,
+    random_state: Optional[np.random.RandomState] = None,
+) -> go.Figure:
+    """Generate a static plot of a tree using Matplotlib.
+
+    Args:
+        tree: The CassiopeiaTree to plot.
+        depth_key: The node attribute to use as the depth of the nodes. If
+            not provided, the distances from the root is used by calling
+            `tree.get_distances`.
+        meta_data: Meta data to plot alongside the tree, which must be columns
+            in the CassiopeiaTree.cell_meta variable.
+        allele_table: Alleletable to plot alongside the tree.
+        indel_colors: Color mapping to use for plotting the alleles for each
+            cell. Only necessary if `allele_table` is specified.
+        indel_priors: Prior probabilities for each indel. Only useful if an
+            allele table is to be plotted and `indel_colors` is None.
+        orient: The orientation of the tree. Valid arguments are `left`, `right`,
+            `up`, `down` to display a rectangular plot (indicating the direction
+            of going from root -> leaves) or any number, in which case the
+            tree is placed in polar coordinates with the provided number used
+            as an angle offset. Defaults to 90.
+        extend_branches: Extend branch lengths such that the distance from the
+            root to every node is the same. If `depth_key` is also provided, then
+            only the leaf branches are extended to the deepest leaf.
+        angled_branches: Display branches as angled, instead of as just a
+            line from the parent to a child.
+        add_root: Add a root node so that only one branch connects to the
+            start of the tree. This node will have the name `synthetic_root`.
+        width: Width of the figure.
+        height: Height of the figure.
+        colorstrip_width: Width of the colorstrip. Width is defined as the
+            length in the direction of the leaves. Defaults to 5% of the tree
+            depth.
+        colorstrip_spacing: Space between consecutive colorstrips. Defaults to
+            half of `colorstrip_width`.
+        clade_colors: Dictionary containing internal node-color mappings. These
+            colors will be used to color all the paths from this node to the
+            leaves the provided color.
+        internal_node_kwargs: Keyword arguments to pass to `plt.scatter` when
+            plotting internal nodes.
+        leaf_kwargs: Keyword arguments to pass to `plt.scatter` when
+            plotting leaf nodes.
+        branch_kwargs: Keyword arguments to pass to `plt.plot` when plotting
+            branches.
+        colorstrip_kwargs: Keyword arguments to pass to `plt.fill` when plotting
+            colorstrips.
+        continuous_cmap: Colormap to use for continuous variables. Defaults to
+            `viridis`.
+        categorical_cmap: Colormap to use for categorical variables. Defaults to
+            `tab10`.
+        figure: Plotly figure to plot the tree.
+        random_state: A random state for reproducibility
+
+    Returns:
+        The Plotly figure.
+    """
+    is_polar = isinstance(orient, (float, int))
+    (
+        node_coords,
+        branch_coords,
+        node_colors,
+        branch_colors,
+        colorstrips,
+    ) = place_tree_and_annotations(
+        tree,
+        depth_key,
+        meta_data,
+        allele_table,
+        indel_colors,
+        indel_priors,
+        orient,
+        extend_branches,
+        angled_branches,
+        add_root,
+        colorstrip_width,
+        colorstrip_spacing,
+        clade_colors,
+        continuous_cmap,
+        categorical_cmap,
+        random_state,
+    )
+    figure = figure if figure is not None else go.Figure()
+
+    # Plot all nodes
+    _leaf_kwargs = dict(
+        x=[],
+        y=[],
+        text=[],
+        marker_size=3,
+        marker_color="black",
+        mode="markers",
+        showlegend=False,
+        hoverinfo="text",
+    )
+    # NOTE: setting marker_size=0 has no effect for some reason?
+    _node_kwargs = dict(
+        x=[],
+        y=[],
+        text=[],
+        marker_size=0.1,
+        marker_color="black",
+        mode="markers",
+        showlegend=False,
+        hoverinfo="text",
+    )
+    _leaf_kwargs.update(leaf_kwargs or {})
+    _node_kwargs.update(internal_node_kwargs or {})
+    for node, (x, y) in node_coords.items():
+        if node in node_colors:
+            continue
+        text = f"<b>NODE</b><br>{node}"
+        if is_polar:
+            x, y = utilities.polar_to_cartesian(x, y)
+        if tree.is_leaf(node):
+            _leaf_kwargs["x"].append(x)
+            _leaf_kwargs["y"].append(y)
+            _leaf_kwargs["text"].append(text)
+        else:
+            _node_kwargs["x"].append(x)
+            _node_kwargs["y"].append(y)
+            _node_kwargs["text"].append(text)
+    figure.add_trace(go.Scatter(**_leaf_kwargs))
+    figure.add_trace(go.Scatter(**_node_kwargs))
+
+    _leaf_colors = []
+    _node_colors = []
+    _leaf_kwargs.update({"x": [], "y": [], "text": []})
+    _node_kwargs.update({"x": [], "y": [], "text": []})
+    for node, color in node_colors.items():
+        x, y = node_coords[node]
+        text = f"<b>NODE</b><br>{node}"
+        if is_polar:
+            x, y = utilities.polar_to_cartesian(x, y)
+        if tree.is_leaf(node):
+            _leaf_kwargs["x"].append(x)
+            _leaf_kwargs["y"].append(y)
+            _leaf_kwargs["text"].append(text)
+            _leaf_colors.append(color)
+        else:
+            _node_kwargs["x"].append(x)
+            _node_kwargs["y"].append(y)
+            _node_kwargs["text"].append(text)
+            _node_colors.append(color)
+
+    _leaf_kwargs["marker_color"] = _leaf_colors
+    _node_kwargs["marker_color"] = _node_colors
+    figure.add_trace(go.Scatter(**_leaf_kwargs))
+    figure.add_trace(go.Scatter(**_node_kwargs))
+
+    # Plot all branches
+    _branch_kwargs = dict(
+        x=[],
+        y=[],
+        text=[],
+        line_color="black",
+        line_width=1,
+        mode="lines",
+        showlegend=False,
+        hoverinfo="text",
+    )
+    _branch_kwargs.update(branch_kwargs or {})
+    for branch, (xs, ys) in branch_coords.items():
+        if branch in branch_colors:
+            continue
+        _branch_kwargs["x"], _branch_kwargs["y"] = xs, ys
+        text = f"<b>BRANCH</b><br>{branch[0]}<br>{branch[1]}"
+        if is_polar:
+            (
+                _branch_kwargs["x"],
+                _branch_kwargs["y"],
+            ) = utilities.polars_to_cartesians(xs, ys)
+        _branch_kwargs["text"] = [text] * len(xs)
+        figure.add_trace(go.Scatter(**_branch_kwargs))
+
+    for branch, color in branch_colors.items():
+        xs, ys = branch_coords[branch]
+        _branch_kwargs["x"], _branch_kwargs["y"] = xs, ys
+        _branch_kwargs["line_color"] = color
+        text = f"<b>BRANCH</b><br>{branch[0]}<br>{branch[1]}"
+        if is_polar:
+            (
+                _branch_kwargs["x"],
+                _branch_kwargs["y"],
+            ) = utilities.polars_to_cartesians(xs, ys)
+        _branch_kwargs["text"] = [text] * len(xs)
+        figure.add_trace(go.Scatter(**_branch_kwargs))
+
+    # Colorstrips
+    _colorstrip_kwargs = dict(
+        x=[],
+        y=[],
+        text=[],
+        line_width=0,
+        fill="toself",
+        mode="lines",
+        showlegend=False,
+        hoverinfo="text",
+        hoveron="fills",
+    )
+    _colorstrip_kwargs.update(colorstrip_kwargs or {})
+    for colorstrip in colorstrips:
+        # Last element is text, but this can not be shown in static plotting.
+        for xs, ys, c, text in colorstrip.values():
+            _colorstrip_kwargs["x"], _colorstrip_kwargs["y"] = xs, ys
+            _colorstrip_kwargs["fillcolor"] = mpl.colors.to_hex(c)
+            if is_polar:
+                (
+                    _colorstrip_kwargs["x"],
+                    _colorstrip_kwargs["y"],
+                ) = utilities.polars_to_cartesians(xs, ys)
+            _colorstrip_kwargs["text"] = text.replace("\n", "<br>")
+            figure.add_trace(go.Scatter(**_colorstrip_kwargs))
+
+    figure.update_layout(
+        width=width,
+        height=height,
+        xaxis=dict(showgrid=False, visible=False),
+        yaxis=dict(showgrid=False, visible=False),
+        margin=dict(l=0, r=0, t=0, b=0),
+    )
+    return figure
