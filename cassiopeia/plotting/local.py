@@ -656,6 +656,13 @@ def plot_plotly(
     Returns:
         The Plotly figure.
     """
+    # Warn user if there are many leaves
+    if len(tree.leaves) > 2000:
+        warnings.warn(
+            "Tree has greater than 2000 leaves. This may take a while.",
+            PlottingWarning,
+        )
+
     is_polar = isinstance(orient, (float, int))
     (
         node_coords,
