@@ -12,3 +12,6 @@ class SharedMutationJoiningSolverWarning(UserWarning):
     """A warning class for SharedMutationJoiningSolver."""
 
     pass
+
+class PlottingWarning(UserWarning):
+    pass

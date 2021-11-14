@@ -146,3 +146,12 @@ class TestLocalPlotting(unittest.TestCase):
         local.plot_matplotlib(self.tree)
         local.plot_matplotlib(self.tree, add_root=True)
         local.plot_matplotlib(self.tree, meta_data=["nUMI", "cluster"])
+
+    def test_create_clade_colors(self):
+        expected_node_colors = {"4": "red", "5": "red", "6": "red"}
+        expected_branch_colors = {("4", "5"): "red", ("4", "6"): "red"}
+        node_colors, branch_colors = local.create_clade_colors(
+            self.tree, {"4": "red"}
+        )
+        self.assertEqual(node_colors, expected_node_colors)
+        self.assertEqual(branch_colors, expected_branch_colors)

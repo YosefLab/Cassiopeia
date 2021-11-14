@@ -1,3 +1,5 @@
+import warnings
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib as mpl
@@ -9,7 +11,7 @@ from typing_extensions import Literal
 from tqdm import tqdm
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import PlottingError
+from cassiopeia.mixins import PlottingError, PlottingWarning
 from cassiopeia.plotting import utilities
 from cassiopeia.preprocess import utilities as preprocess_utilities
 
@@ -204,6 +206,50 @@ def create_indel_heatmap(
     return heatmap, anchor_coords
 
 
+def create_clade_colors(
+    tree: CassiopeiaTree, clade_colors: Dict[str, Tuple[float, float, float]]
+) -> Tuple[
+    Dict[str, Tuple[float, float, float]],
+    Dict[Tuple[str, str], Tuple[float, float, float]],
+]:
+    """Assign colors to nodes and branches by clade.
+
+    Args:
+        tree: The CassiopeiaTree.
+        clade_colors: Dictionary containing internal node-color mappings. These
+            colors will be used to color all the paths from this node to the
+            leaves the provided color.
+
+    Returns:
+        Two dictionaries. The first contains the node colors, and the second
+        contains the branch colors.
+    """
+    # Deal with clade colors.
+    descendants = {}
+    for node in clade_colors.keys():
+        descendants[node] = set(tree.depth_first_traverse_nodes(node))
+    if len(set.union(*list(descendants.values()))) != sum(
+        len(d) for d in descendants.values()
+    ):
+        warnings.warn(
+            "Some clades specified with `clade_colors` are overlapping. "
+            "Colors may be overridden.",
+            PlottingWarning,
+        )
+
+    # Color by largest clade first
+    node_colors = {}
+    branch_colors = {}
+    for node in sorted(
+        descendants, key=lambda x: len(descendants[x]), reverse=True
+    ):
+        color = clade_colors[node]
+        for n1, n2 in tree.depth_first_traverse_edges(node):
+            node_colors[n1] = node_colors[n2] = color
+            branch_colors[(n1, n2)] = color
+    return node_colors, branch_colors
+
+
 def plot_matplotlib(
     tree: CassiopeiaTree,
     depth_key: Optional[str] = None,
@@ -218,6 +264,7 @@ def plot_matplotlib(
     figsize: Tuple[float, float] = (7.0, 7.0),
     colorstrip_width: Optional[float] = None,
     colorstrip_spacing: Optional[float] = None,
+    clade_colors: Optional[Dict[str, Tuple[float, float, float]]] = None,
     internal_node_kwargs: Optional[Dict] = None,
     leaf_kwargs: Optional[Dict] = None,
     branch_kwargs: Optional[Dict] = None,
@@ -259,6 +306,9 @@ def plot_matplotlib(
             depth.
         colorstrip_spacing: Space between consecutive colorstrips. Defaults to
             half of `colorstrip_width`.
+        clade_colors: Dictionary containing internal node-color mappings. These
+            colors will be used to color all the paths from this node to the
+            leaves the provided color.
         internal_node_kwargs: Keyword arguments to pass to `plt.scatter` when
             plotting internal nodes.
         leaf_kwargs: Keyword arguments to pass to `plt.scatter` when
@@ -353,6 +403,12 @@ def plot_matplotlib(
             )
         colorstrips.append(colorstrip)
 
+    # Clade colors
+    node_colors = {}
+    branch_colors = {}
+    if clade_colors:
+        node_colors, branch_colors = create_clade_colors(tree, clade_colors)
+
     # Plot
     fig = None
     if ax is None:
@@ -367,6 +423,8 @@ def plot_matplotlib(
     leaves = ([], [])
     nodes = ([], [])
     for node, (x, y) in node_coords.items():
+        if node in node_colors:
+            continue
         if is_polar:
             x, y = utilities.polar_to_cartesian(x, y)
         if tree.is_leaf(node):
@@ -378,13 +436,44 @@ def plot_matplotlib(
     ax.scatter(*leaves, **_leaf_kwargs)
     ax.scatter(*nodes, **_node_kwargs)
 
+    _leaf_colors = []
+    _node_colors = []
+    leaves = ([], [])
+    nodes = ([], [])
+    for node, color in node_colors.items():
+        x, y = node_coords[node]
+        if is_polar:
+            x, y = utilities.polar_to_cartesian(x, y)
+        if tree.is_leaf(node):
+            leaves[0].append(x)
+            leaves[1].append(y)
+            _leaf_colors.append(color)
+        else:
+            nodes[0].append(x)
+            nodes[1].append(y)
+            _node_colors.append(color)
+
+    _leaf_kwargs["c"] = _leaf_colors
+    _node_kwargs["c"] = _node_colors
+    ax.scatter(*leaves, **_leaf_kwargs)
+    ax.scatter(*nodes, **_node_kwargs)
+
     # Plot all branches
     _branch_kwargs = dict(linewidth=1, c="black")
     _branch_kwargs.update(branch_kwargs or {})
-    for xs, ys in branch_coords.values():
+    for branch, (xs, ys) in branch_coords.items():
+        if branch in branch_colors:
+            continue
         if is_polar:
             xs, ys = utilities.polars_to_cartesians(xs, ys)
 
+        ax.plot(xs, ys, **_branch_kwargs)
+
+    for branch, color in branch_colors.items():
+        _branch_kwargs["c"] = color
+        xs, ys = branch_coords[branch]
+        if is_polar:
+            xs, ys = utilities.polars_to_cartesians(xs, ys)
         ax.plot(xs, ys, **_branch_kwargs)
 
     # Colorstrips
