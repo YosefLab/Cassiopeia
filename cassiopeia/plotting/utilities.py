@@ -70,8 +70,8 @@ def place_tree(
     width_scale: float = 1.0,
     extend_branches: bool = True,
     angled_branches: bool = True,
-    polar_interpolation_threshold: float = 10.0,
-    polar_interpolation_step: float = 2.0,
+    polar_interpolation_threshold: float = 5.0,
+    polar_interpolation_step: float = 1.0,
     add_root: bool = False,
 ) -> Tuple[
     Dict[str, Tuple[float, float]],
