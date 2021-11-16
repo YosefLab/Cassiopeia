@@ -6,7 +6,6 @@ function.
 from collections import defaultdict
 import copy
 import ete3
-import itertools
 import networkx as nx
 import numpy as np
 from typing import Dict, Tuple

@@ -4,7 +4,7 @@ CassiopeiaTree. This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
-associated with this clonal  population.
+associated with this clonal population.
 
 When a solver has been called on this object, a tree will be added to the data
 structure at which point basic properties can be queried like the average tree
@@ -105,6 +105,7 @@ class CassiopeiaTree:
         priors: Optional[Dict[int, Dict[int, float]]] = None,
         tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         root_sample_name: Optional[str] = None,
     ) -> None:
 
@@ -120,6 +121,10 @@ class CassiopeiaTree:
         self._character_matrix = None
         if character_matrix is not None:
             self.character_matrix = character_matrix
+
+        self._parameters = {}
+        if parameters is not None:
+            self.parameters = parameters
 
         if tree is not None:
             tree = copy.deepcopy(tree)
@@ -222,6 +227,21 @@ class CassiopeiaTree:
     @property
     def character_matrix(self) -> pd.DataFrame:
         return self._character_matrix
+
+    @character_matrix.setter
+    def character_matrix(self, character_matrix: pd.DataFrame):
+        """Initializes a character matrix in the object.
+
+        Args:
+            character_matrix: Character matrix of mutation observations.
+        """
+
+        if not all(type(i) == str for i in character_matrix.index):
+            raise CassiopeiaTreeError(
+                "Index of character matrix must consist" " of strings."
+            )
+
+        self._character_matrix = character_matrix.copy()
 
     @character_matrix.setter
     def character_matrix(self, character_matrix: pd.DataFrame):
@@ -361,6 +381,14 @@ class CassiopeiaTree:
             )
 
         self.layers[add_layer] = character_matrix.copy()
+
+    @property
+    def parameters(self) -> pd.DataFrame:
+        return self._parameters
+
+    def reset_parameters(self):
+        """Resets the parameters attribute on the tree."""
+        self._parameters = {}
 
     @property
     def n_cell(self) -> int:
@@ -688,6 +716,9 @@ class CassiopeiaTree:
 
         self.__network.remove_node(node)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_node(self, node) -> None:
         """Private method to add node to tree.
 
@@ -700,6 +731,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_node(node)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def __remove_edge(self, u, v) -> None:
         """Private method to remove edge from tree.
@@ -715,6 +749,9 @@ class CassiopeiaTree:
 
         self.__network.remove_edge(u, v)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_edge(self, u, v) -> None:
         """Private method to add edge to tree.
 
@@ -728,6 +765,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_edge(u, v)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def set_time(self, node: str, new_time: float) -> None:
         """Sets the time of a node.
@@ -1620,13 +1660,15 @@ class CassiopeiaTree:
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Infer the ancestral characters states
-                of the tree
+            infer_ancestral_characters: Whether to infer the ancestral characters
+                states of the tree
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized or if
                 a node does not have character states initialized
         """
+        self.__check_network_initialized()
+
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
@@ -1729,7 +1771,7 @@ class CassiopeiaTree:
 
         Raises:
             CassiopeiaTreeError if the dissimilarity map does not exist, if
-                the ``dissimilarity`` dictionary does not contain all other leaves,
+                the ``dissimilarity`` dictionary does not contain all other leaves
         """
         if self.__dissimilarity_map is None:
             raise CassiopeiaTreeError(
