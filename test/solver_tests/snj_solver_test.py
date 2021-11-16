@@ -10,12 +10,6 @@ from networkx.classes.digraph import DiGraph
 import numpy as np
 import pandas as pd
 
-# Only for debugging purposes
-if True:
-    import sys
-
-    sys.path.insert(0, "../..")
-
 import cassiopeia as cas
 
 
