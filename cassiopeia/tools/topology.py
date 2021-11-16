@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from scipy import spatial, stats
 
-
 from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
 from cassiopeia.solver import dissimilarity_functions

@@ -14,5 +14,3 @@ Currently, our plotting functionality is linked to the rich iTOL framework:
    :toctree: reference/
    
    pl.upload_and_export_itol
-
-   

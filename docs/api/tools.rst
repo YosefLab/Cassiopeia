@@ -14,10 +14,39 @@ Small-Parsimony
 
 .. autosummary::
    :toctree: reference/
-   
-   tl.compute_cophenetic_correlation
-   tl.compute_expansion_pvalues
-   tl.compute_morans_i
+      
    tl.fitch_count
    tl.fitch_hartigan
    tl.score_small_parsimony
+
+Branch Length Estimation (BLE)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+      
+   tl.IIDExponentialBayesian
+   tl.IIDExponentialMLE
+
+Autocorrelation
+~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   tl.compute_morans_i
+
+Coupling
+~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_evolutionary_coupling
+
+Topology
+~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: reference/
+   
+   tl.compute_expansion_pvalues

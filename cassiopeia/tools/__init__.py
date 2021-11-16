@@ -2,6 +2,7 @@
 
 from .autocorrelation import compute_morans_i
 from .branch_length_estimator import IIDExponentialBayesian, IIDExponentialMLE
+from .coupling import compute_evolutionary_coupling
 from .parameter_estimators import (
     estimate_missing_data_rates,
     estimate_mutation_rate,
