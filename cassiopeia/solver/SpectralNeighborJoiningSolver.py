@@ -1,19 +1,18 @@
 """
-This file stores a subclass of DistanceSolver, SpectralNeighborJoining. This algorithm is based on the one developed by Jaffe, et al. (2020) in their paper titled "Spectral neighbor joining for reconstruction of latent tree models. 
+This file stores a subclass of DistanceSolver, SpectralNeighborJoining. This 
+algorithm is based on the one developed by Jaffe, et al. (2020) in their paper 
+titled "Spectral neighbor joining for reconstruction of latent tree models. 
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, Union
+import itertools
+from typing import Callable, Dict, List, Optional, Tuple
 
-import abc
+from itertools import chain
 import networkx as nx
 import numpy as np
 import pandas as pd
-from itertools import chain
+from scipy.linalg import svd
 
-# Only for debugging purposes
-# if True:
-#     import sys
-#     sys.path.insert(0, '../..')
 
 from cassiopeia.solver.DistanceSolver import DistanceSolver, DistanceSolverError
 
@@ -22,10 +21,6 @@ from cassiopeia.solver import (
     dissimilarity_functions,
     solver_utilities,
 )
-
-from sklearn.decomposition import TruncatedSVD
-from scipy.sparse.linalg import svds, eigs
-from scipy.linalg import svd as scipy_svd
 
 
 class SpectralNeighborJoiningSolver(DistanceSolver):
@@ -42,19 +37,18 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         self,
         dissimilarity_function: Optional[
             Callable[
-                [np.ndarray, np.ndarray, int, Dict[int, Dict[int, float]]], float
+                [np.ndarray, np.ndarray, int, Dict[int, Dict[int, float]]],
+                float,
             ]
-        ] = dissimilarity_functions.weighted_hamming_distance,
+        ] = dissimilarity_functions.exponential_negative_hamming_distance, # type: ignore
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
-        super().__init__(dissimilarity_function, add_root=add_root, prior_transformation=prior_transformation) #type: ignore
+        super().__init__(dissimilarity_function, add_root=add_root, prior_transformation=prior_transformation)  # type: ignore
 
     def get_dissimilarity_map(
-        self, 
-        cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None
-    ) -> pd.DataFrame: 
+        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+    ) -> pd.DataFrame:
         """Outputs the first lambda matrix, where every subset is an individual node.
 
         Args:
@@ -67,28 +61,43 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         """
 
         # get similarity map and save it as private instance variable
-        self.__similarity_map = super().get_dissimilarity_map(cassiopeia_tree, layer)
+        self._similarity_map = super().get_dissimilarity_map(
+            cassiopeia_tree, layer
+        )
 
-        # generate first (pairwise) lambda matrix
-        N = self.__similarity_map.shape[0]
-        self.lambda_indices: List[List[int]] = [[i] for i in range(N)]
-        node_names: np.ndarray = self.__similarity_map.index.values
+        # prepare for first (pairwise) lambda matrix
+        N = self._similarity_map.shape[0]
+        node_names: np.ndarray = self._similarity_map.index.values
+        self.lambda_indices = [[i] for i in range(N)]
 
-        lambda_matrix_arr = self.compute_lambda(self.lambda_indices)
+        # generate the lambda matrix
+        lambda_matrix_arr = np.zeros([N, N])
+        for (j_idx, i_idx) in itertools.combinations(range(N), 2):
+            if j_idx >= i_idx:
+                continue
 
+            svd2_val = self._compute_svd2(
+                pair=(i_idx, j_idx),
+                lambda_indices=self.lambda_indices
+            )
+
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
+                j_idx, i_idx
+            ] = svd2_val
+
+        np.fill_diagonal(lambda_matrix_arr, np.inf)
+
+        # convert array to dataframe
         lambda_matrix_df = pd.DataFrame(
-            lambda_matrix_arr, 
-            index=node_names,
-            columns=node_names
-        )        
+            lambda_matrix_arr, index=node_names, columns=node_names
+        )
 
         return lambda_matrix_df
-
 
     def find_cherry(self, dissimilarity_map: np.ndarray) -> Tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
-        With dissimilarity_map being the lambda matrix, this method finds the argmin pair of subsets of the lambda matrix. 
+        With dissimilarity_map being the lambda matrix, this method finds the argmin pair of subsets of the lambda matrix.
 
         Args:
             dissimilarity_matrix: Lambda matrix
@@ -98,64 +107,52 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
                 to join.
         """
 
-        return np.unravel_index(np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape)
+        return np.unravel_index(
+            np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape
+        ) # type: ignore
 
-
-    def compute_lambda(self, lambda_indices: List[List[int]]) -> np.ndarray:
-        """Computes the lambda matrix, whose entries consist of the second SVD of the R^A affinity matrix for every pair of nodes.
-
-        Computes the lambda(i,j) = SVD # 2 for R^(Ai U Aj) where i and j are the susbet indices in lambda_indices.
+    def _compute_svd2(
+        self, pair: Tuple[int, int], lambda_indices: List[List[int]]
+    ) -> float:
+        """Computes the second largest SVD of a pair of subset's RA matrix.
 
         Args:
-            dissimilarity_map: A sample x sample dissimilarity map
+            pair (Tuple[int, int]): pair of indices i and j where i > j.
+            lambda_indices (List[List[int]]): the list of subsets for 
+                which 'pair' refers to. len(lambda_indices) >= 3
 
         Returns:
-            A matrix storing the Q-criterion for every pair of samples.
+            float: The second largest SVD of the pair's RA matrix.
         """
+        i_idx, j_idx = pair
+        i_sub, j_sub = lambda_indices[i_idx], lambda_indices[j_idx]
 
-        n = len(lambda_indices)
-        lambda_matrix_arr = np.zeros([n, n])
+        # get combined pair of subsets
+        a_subset = [*i_sub, *j_sub]
 
-        for i_count, i in enumerate(lambda_indices):
-            for j_count, j in enumerate(lambda_indices):
-                if j_count >= i_count:
-                    break
-                
-                a_subset = [*i, *j]
+        # get complement
+        a_comp = lambda_indices.copy()
+        a_comp.pop(i_idx)
+        a_comp.pop(j_idx)
+        a_comp_flat = list(chain.from_iterable(a_comp))
 
-                # get complement
-                a_comp = lambda_indices.copy()
-                a_comp.pop(max(i_count, j_count))
-                a_comp.pop(min(i_count, j_count))
-                a_comp_flat = list(chain.from_iterable(a_comp))
+        # reconstruct RA matrix
+        RA_matrix = self._similarity_map.values[
+            np.ix_(a_subset, a_comp_flat)
+        ]
 
-                # create RA matrix
-                RA_matrix = self.__similarity_map.values[
-                    np.ix_(a_subset, a_comp_flat)
-                    ]
+        # get second largest SVD if available, first if not.
+        s = svd(RA_matrix, compute_uv=False, check_finite=False)
+        svd2_val = s[:2][-1]
 
-                # Calculate SVD2 #todo: remove alternatives
-                svd2_val = 0
-                s = scipy_svd(RA_matrix, compute_uv=False, check_finite=False)
-                if len(s) > 1:
-                    svd2_val = s[1]
-                else:
-                    svd2_val = s[0]
-                
-                    
-                lambda_matrix_arr[i_count, j_count] = lambda_matrix_arr[
-                    j_count, i_count] = svd2_val
-
-        np.fill_diagonal(lambda_matrix_arr, np.inf)
-
-        return lambda_matrix_arr
+        return svd2_val
 
     def update_dissimilarity_map(
         self,
-        dissimilarity_map: pd.DataFrame, # lambda matrix
+        dissimilarity_map: pd.DataFrame,  # lambda matrix
         cherry: Tuple[str, str],
         new_node: str,
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
         """Updates the lambda matrix using the pair of subsets from find_cherry.
 
         Args:
@@ -167,9 +164,6 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         Returns:
             An updated lambda matrix.
         """
-
-        lambda_indices_copy = self.lambda_indices.copy()
-
         # get cherry nodes in index of lambda matrix
         i, j = (
             np.where(dissimilarity_map.index == cherry[0])[0][0],
@@ -182,29 +176,52 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         node_names = np.delete(node_names, [i, j])
 
         # modify indices
-        lambda_indices_copy.append([
-            *lambda_indices_copy[i], 
-            *lambda_indices_copy[j]
-            ])
-        lambda_indices_copy.pop(max(i, j))
-        lambda_indices_copy.pop(min(i, j))
+        self.lambda_indices.append(
+            [*self.lambda_indices[i], *self.lambda_indices[j]]
+        )
+        self.lambda_indices.pop(max(i, j))
+        self.lambda_indices.pop(min(i, j))
+    
+        # new lambda indiices
+        N = len(self.lambda_indices)
 
-        if len(lambda_indices_copy) > 2:
-            # compute new lambda matrix
-            lambda_matrix_arr = self.compute_lambda(lambda_indices_copy)
-        else:
-            n = len(lambda_indices_copy)
-            lambda_matrix_arr = np.zeros((n, n))
+        if N <= 2:
+            return pd.DataFrame(
+                np.zeros([N, N]), 
+                index=node_names, 
+                columns=node_names
+            )
+
+        # get the old lambda matrix 
+        lambda_matrix_arr = dissimilarity_map.drop(
+            index=[cherry[0], cherry[1]],
+            columns=[cherry[0], cherry[1]]
+        ).values
+
+        # add new col + row to lambda matrix
+        new_row = np.array([0.0] * (N - 1))
+        lambda_matrix_arr = np.vstack((lambda_matrix_arr, np.atleast_2d(new_row)))
+        new_col = np.array([0.0] * N)
+        lambda_matrix_arr = np.array(np.hstack((lambda_matrix_arr, np.atleast_2d(new_col).T))) # type: ignore
+        
+        # compute new SVDs
+        i_idx = N - 1
+        for j_idx in range(i_idx): 
+            svd2_val = self._compute_svd2(
+                pair=(i_idx, j_idx),
+                lambda_indices=self.lambda_indices
+            )
+
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
+                j_idx, i_idx
+            ] = svd2_val 
+
+        np.fill_diagonal(lambda_matrix_arr, np.inf)
 
         # regenerate lambda matrix
         lambda_matrix_df = pd.DataFrame(
-            lambda_matrix_arr,
-            index=node_names,
-            columns=node_names
+            lambda_matrix_arr, index=node_names, columns=node_names
         )
-
-        # update lambda indices
-        self.lambda_indices = lambda_indices_copy
 
         return lambda_matrix_df
 
@@ -259,7 +276,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
     def root_tree(
         self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
-    ) -> nx.DiGraph():
+    ) -> nx.DiGraph:
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
         Uses the specified root to root the tree passed in
