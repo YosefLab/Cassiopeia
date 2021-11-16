@@ -75,7 +75,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
-    # @override
     def get_dissimilarity_map(
         self, 
         cassiopeia_tree: CassiopeiaTree,
