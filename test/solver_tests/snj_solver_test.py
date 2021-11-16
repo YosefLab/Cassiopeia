@@ -224,7 +224,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
 
         svd2_vals = self.snj_solver.compute_lambda(self.lambda_pairwise)
 
-        expected_q = pd.DataFrame(
+        expected_lambda_matrix = pd.DataFrame(
             [
                 [
                     np.inf,
@@ -266,7 +266,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             columns=["state0", "state2", "state3", "state4", "state5"],
         )
 
-        self.assertTrue(np.allclose(svd2_vals, expected_q, atol=0.1))
+        self.assertTrue(np.allclose(svd2_vals, expected_lambda_matrix, atol=0.1))
 
     def test_compute_lambda_N3(self):
         """Test lamba matrix output for when there are 3 subsets left."""
@@ -277,7 +277,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
 
         svd2_vals = self.snj_solver.compute_lambda(self.lambda_pairwise)
 
-        expected_q = np.array(
+        expected_lambda_matrix = np.array(
             [
                 [np.inf, 4.51233062e-17, 4.51233062e-17],
                 [4.51233062e-17, np.inf, 7.77014257e-01],
@@ -285,7 +285,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
-        self.assertTrue(np.allclose(svd2_vals, expected_q, atol=0.1))
+        self.assertTrue(np.allclose(svd2_vals, expected_lambda_matrix, atol=0.1))
 
     def test_update_dissimilarity_map_base(self):
         """Test the update method's lambda matrix output."""
