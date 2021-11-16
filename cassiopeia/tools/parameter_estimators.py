@@ -2,11 +2,11 @@
 This file stores functions for estimating lineage tracing parameters.
 Currently, we'll support the estimation of mutation and missing data rates.
 """
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from typing import Optional, Tuple
 
 import numpy as np
 
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 
 
@@ -17,7 +17,7 @@ def get_proportion_of_missing_data(
 
     Calculates the proportion of cell/character entries in the character matrix
     that have a non-missing state, with the missing state being indicated by
-    `tree.missing_state_indicator`
+    `tree.missing_state_indicator`.
 
     Args:
         tree: The CassiopeiaTree specifying the tree and the character matrix
@@ -186,8 +186,8 @@ def estimate_missing_data_rates(
     tree: CassiopeiaTree,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
-    stochastic_missing_probability=None,
-    heritable_missing_rate=None,
+    stochastic_missing_probability: Optional[float] = None,
+    heritable_missing_rate: Optional[float] = None,
     layer: Optional[str] = None,
 ) -> Tuple[float, float]:
     """
@@ -195,8 +195,10 @@ def estimate_missing_data_rates(
 
     The stochastic missing probability is the probability that any given
     cell/character pair acquires stochastic missing data in the character
-    matrix. The heritable missing rate is either a continuous or per-generation
-    rate according to which lineages accumulate heritable missing data events.
+    matrix due to low-capture in single-cell RNA sequencing. The heritable
+    missing rate is either a continuous or per-generation rate according to
+    which lineages accumulate heritable missing data events, such as
+    transcriptional silencing or resection.
 
     In most instances, the two types of missing data are convolved and we
     determine whether any single occurrence of missing data is due to stochastic
@@ -265,7 +267,8 @@ def estimate_missing_data_rates(
         assume_root_implicit_branch: Whether to assume that there is an
             implicit branch leading from the root, if it doesn't exist
         stochastic_missing_probability: The stochastic missing probability.
-            Will override the value on the tree
+            Will override the value on the tree. Observed probabilites of
+            stochastic missing data range between 10-20%
         heritable_missing_rate: The heritable missing rate. Will override the
             value on the tree
         layer: Layer to use for character matrix. If this is None,
