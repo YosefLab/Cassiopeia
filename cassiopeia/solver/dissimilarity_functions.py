@@ -262,7 +262,7 @@ def cluster_dissimilarity(
     linkage function on the calculated dissimilarities. However, doing so has
     complexity O(\prod_{i=1}^N |a_i| x |b_i|) where N is the number of target sites,
     |a_i| is the number of ambiguous characters at target site i of string a,
-    and |b_i| is the number of amiguous characters at target site i of string b.
+    and |b_i| is the number of ambiguous characters at target site i of string b.
     As an example, if we have N=10 and all a_i=b_i=2, then we have to construct
     1,038,576 * 2 strings and compute over 4 trillion dissimilarities.
 
