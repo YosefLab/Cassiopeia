@@ -167,7 +167,7 @@ def create_indel_heatmap(
             (i.e. padding)
         loc: Location of the boxes relative to the anchors.
         indel_colors: Mapping of indels to colors.
-        indel_priors: Prior probabilities for each indel. Only `indel_colors`
+        indel_priors: Prior probabilities for each indel. Only if `indel_colors`
             are not provided, in which case a new indel color mapping is created
             by displaying low-probability indels with bright colors and
             high-probability ones with dull colors.
@@ -175,7 +175,7 @@ def create_indel_heatmap(
 
     Returns:
         List of colorstrips (where each colorstrip is a dictionary of
-        coordinates) and a dictionary of new anchor coordinates.
+            coordinates) and a dictionary of new anchor coordinates.
     """
     clustered_linprof, _indel_colors = utilities.prepare_alleletable(
         allele_table, list(anchor_coords.keys()), indel_priors, random_state
@@ -223,7 +223,7 @@ def create_clade_colors(
 
     Returns:
         Two dictionaries. The first contains the node colors, and the second
-        contains the branch colors.
+            contains the branch colors.
     """
     # Deal with clade colors.
     descendants = {}
@@ -311,7 +311,7 @@ def place_tree_and_annotations(
 
     Returns:
         Four dictionaries (node coordinates, branch coordinates, node
-        colors, branch colors) and a list of colorstrips.
+            colors, branch colors) and a list of colorstrips.
     """
     meta_data = meta_data or []
 
@@ -428,7 +428,7 @@ def plot_matplotlib(
             `tree.get_distances`.
         meta_data: Meta data to plot alongside the tree, which must be columns
             in the CassiopeiaTree.cell_meta variable.
-        allele_table: Alleletable to plot alongside the tree.
+        allele_table: Allele table to plot alongside the tree.
         indel_colors: Color mapping to use for plotting the alleles for each
             cell. Only necessary if `allele_table` is specified.
         indel_priors: Prior probabilities for each indel. Only useful if an
@@ -472,7 +472,7 @@ def plot_matplotlib(
 
     Returns:
         If `ax` is provided, `ax` is returned. Otherwise, a tuple of (fig, ax)
-        of the newly initialized figure and axis.
+            of the newly initialized figure and axis.
     """
     is_polar = isinstance(orient, (float, int))
     (
@@ -602,7 +602,7 @@ def plot_plotly(
     figure: Optional[go.Figure] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> go.Figure:
-    """Generate a static plot of a tree using Matplotlib.
+    """Generate a static plot of a tree using Plotly.
 
     Args:
         tree: The CassiopeiaTree to plot.
@@ -611,7 +611,7 @@ def plot_plotly(
             `tree.get_distances`.
         meta_data: Meta data to plot alongside the tree, which must be columns
             in the CassiopeiaTree.cell_meta variable.
-        allele_table: Alleletable to plot alongside the tree.
+        allele_table: Allele table to plot alongside the tree.
         indel_colors: Color mapping to use for plotting the alleles for each
             cell. Only necessary if `allele_table` is specified.
         indel_priors: Prior probabilities for each indel. Only useful if an
@@ -808,7 +808,6 @@ def plot_plotly(
     )
     _colorstrip_kwargs.update(colorstrip_kwargs or {})
     for colorstrip in colorstrips:
-        # Last element is text, but this can not be shown in static plotting.
         for xs, ys, c, text in colorstrip.values():
             _colorstrip_kwargs["x"], _colorstrip_kwargs["y"] = xs, ys
             _colorstrip_kwargs["fillcolor"] = mpl.colors.to_hex(c)

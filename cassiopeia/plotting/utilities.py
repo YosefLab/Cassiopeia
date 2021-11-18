@@ -129,7 +129,7 @@ def place_tree(
 
     Returns:
         Two dictionaries, where the first contains the node coordinates and
-        the second contains the branch coordinates.
+            the second contains the branch coordinates.
     """
     root = tree.root
     nodes = tree.nodes.copy()
@@ -289,7 +289,7 @@ def place_colorstrip(
 
     Returns:
         A dictionary of node-to-coordinate tuples for each box, and a dictionary
-        of the next set of anchor coordinates (for placing more colorstrips).
+            of the next set of anchor coordinates (for placing more colorstrips)
     """
     next_anchor_coords = {}
     size_x, size_y = (
