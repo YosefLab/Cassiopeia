@@ -238,6 +238,7 @@ def weighted_hamming_similarity(
 
     return d / num_present
 
+
 def exponential_negative_hamming_distance(
     s1: List[int],
     s2: List[int],
@@ -245,23 +246,27 @@ def exponential_negative_hamming_distance(
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
 
-
     """
-    Calculates the default affinity for SpectralNeighborJoiningSolver. This simply returns exp(-d(i,j)) where d is the weighted_hamming_distance function as above where no weights are passed in.
-    In other words, we increment dissimilarity score d by +2 if the states are different, +1 if one state is uncut and the other is an indel, and +0 if the two states are identical. Then, we take this total d and return exp(-d).
+    Calculates the default affinity for SpectralNeighborJoiningSolver. This
+    simply returns exp(-d(i,j)) where d is the weighted_hamming_distance function as
+    above where no weights are passed in.  In other words, we increment d by +2 if
+    the states are different, +1 if one state is uncut and the other is an indel,
+    and +0 if the two states are identical. Then, we take this total d and return
+    exp(-d). Note that since d is a metric, 'exponential_negative_hamming_distance'
+    is a multiplicative similarity score, i.e. s(i, j) = s(i, k) * s(k, j) for k on
+    the path between i and j.
 
     Args:
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-        weights: A dictionary storing the state weights for each character, derived
-            from the state priors. This should be a nested dictionary where each
-            key corresponds to character that then indexes another dictionary
-            storing the weight of each observed state.
-            (Character -> State -> Weight)
+        weights: A dictionary storing the state weights for each character, derived from
+            the state priors. This should be a nested dictionary where each key corresponds
+            to character that then indexes another dictionary storing the weight of each
+            observed state.  (Character -> State -> Weight)
 
     Returns:
-        A dissimilarity score.
+        A similarity score.
     """
 
     d = 0
@@ -293,7 +298,7 @@ def exponential_negative_hamming_distance(
 
     weighted_hamm_dist = d / num_present
 
-    return np.exp( - weighted_hamm_dist ) # 2.718281828459045
+    return np.exp(-weighted_hamm_dist)
 
 
 def cluster_dissimilarity(

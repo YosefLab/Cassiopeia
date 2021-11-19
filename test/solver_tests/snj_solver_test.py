@@ -44,7 +44,8 @@ def find_triplet_structure(triplet, T):
 def assertTripletCorrectness(
     self, nodes: List[str], expected_tree: DiGraph, observed_tree: DiGraph
 ):
-    """Checks whether two trees are identical regardless of internal node names.
+    """Checks whether two trees are identical regardless of internal node
+    names.
 
     Args:
         nodes (List[str]): List of leaf nodes to get triplets from.
@@ -181,7 +182,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         self.assertIsNotNone(self.tree_general.get_dissimilarity_map())
 
         nothing_solver = cas.solver.SpectralNeighborJoiningSolver(
-            dissimilarity_function=None, add_root=False
+            similarity_function=None, add_root=False
         )
 
         no_root_tree = cas.data.CassiopeiaTree(
@@ -193,7 +194,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             nothing_solver.solve(no_root_tree)
 
         no_root_solver = cas.solver.SpectralNeighborJoiningSolver(
-            dissimilarity_function=None, add_root=True
+            similarity_function=None, add_root=True
         )
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
@@ -502,7 +503,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         self.assertEqual(cherry2[1], 3)
 
     def test_basic_solver(self):
-        """Test the features of the output of the solver on a root-specified input tree."""
+        """Test the features of the output of the solver on a root-specified
+        input tree.
+        """
         self.snj_solver.solve(self.tree_general)
 
         # test leaves exist in tree
