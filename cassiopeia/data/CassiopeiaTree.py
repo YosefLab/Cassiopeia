@@ -4,7 +4,7 @@ CassiopeiaTree. This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
-associated with this clonal  population.
+associated with this clonal population.
 
 When a solver has been called on this object, a tree will be added to the data
 structure at which point basic properties can be queried like the average tree
@@ -13,11 +13,11 @@ depth or agreement between character states and phylogeny.
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
-import copy
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
-import warnings
-
 import collections
+import copy
+import warnings
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+
 import ete3
 import networkx as nx
 import numpy as np
@@ -105,6 +105,7 @@ class CassiopeiaTree:
         priors: Optional[Dict[int, Dict[int, float]]] = None,
         tree: Optional[Union[str, ete3.Tree, nx.DiGraph]] = None,
         dissimilarity_map: Optional[pd.DataFrame] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         root_sample_name: Optional[str] = None,
     ) -> None:
 
@@ -120,6 +121,10 @@ class CassiopeiaTree:
         self._character_matrix = None
         if character_matrix is not None:
             self.character_matrix = character_matrix
+
+        self._parameters = {}
+        if parameters is not None:
+            self.parameters = parameters
 
         if tree is not None:
             tree = copy.deepcopy(tree)
@@ -184,7 +189,9 @@ class CassiopeiaTree:
 
         # instantiate branch lengths
         for u, v in self.edges:
-            self.__network[u][v]["length"] = 1
+            # only set branch lengths that have not already been set
+            if "length" not in self.__network[u][v].keys():
+                self.__network[u][v]["length"] = 1
 
         # instantiate node time
         self.__network.nodes[self.root]["time"] = 0
@@ -220,6 +227,21 @@ class CassiopeiaTree:
     @property
     def character_matrix(self) -> pd.DataFrame:
         return self._character_matrix
+
+    @character_matrix.setter
+    def character_matrix(self, character_matrix: pd.DataFrame):
+        """Initializes a character matrix in the object.
+
+        Args:
+            character_matrix: Character matrix of mutation observations.
+        """
+
+        if not all(type(i) == str for i in character_matrix.index):
+            raise CassiopeiaTreeError(
+                "Index of character matrix must consist" " of strings."
+            )
+
+        self._character_matrix = character_matrix.copy()
 
     @character_matrix.setter
     def character_matrix(self, character_matrix: pd.DataFrame):
@@ -359,6 +381,14 @@ class CassiopeiaTree:
             )
 
         self.layers[add_layer] = character_matrix.copy()
+
+    @property
+    def parameters(self) -> pd.DataFrame:
+        return self._parameters
+
+    def reset_parameters(self):
+        """Resets the parameters attribute on the tree."""
+        self._parameters = {}
 
     @property
     def n_cell(self) -> int:
@@ -686,6 +716,9 @@ class CassiopeiaTree:
 
         self.__network.remove_node(node)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_node(self, node) -> None:
         """Private method to add node to tree.
 
@@ -698,6 +731,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_node(node)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def __remove_edge(self, u, v) -> None:
         """Private method to remove edge from tree.
@@ -713,6 +749,9 @@ class CassiopeiaTree:
 
         self.__network.remove_edge(u, v)
 
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
+
     def __add_edge(self, u, v) -> None:
         """Private method to add edge to tree.
 
@@ -726,6 +765,9 @@ class CassiopeiaTree:
         self.__check_network_initialized()
 
         self.__network.add_edge(u, v)
+
+        # this will change the topology of the tree, so reset the cache
+        self.__cache = {}
 
     def set_time(self, node: str, new_time: float) -> None:
         """Sets the time of a node.
@@ -1618,13 +1660,15 @@ class CassiopeiaTree:
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Infer the ancestral characters states
-                of the tree
+            infer_ancestral_characters: Whether to infer the ancestral characters
+                states of the tree
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized or if
                 a node does not have character states initialized
         """
+        self.__check_network_initialized()
+
         if infer_ancestral_characters:
             self.reconstruct_ancestral_characters()
 
@@ -1727,7 +1771,7 @@ class CassiopeiaTree:
 
         Raises:
             CassiopeiaTreeError if the dissimilarity map does not exist, if
-                the ``dissimilarity`` dictionary does not contain all other leaves,
+                the ``dissimilarity`` dictionary does not contain all other leaves
         """
         if self.__dissimilarity_map is None:
             raise CassiopeiaTreeError(
@@ -2049,3 +2093,38 @@ class CassiopeiaTree:
     def copy(self) -> "CassiopeiaTree":
         """Full copy of CassiopeiaTree"""
         return copy.deepcopy(self)
+
+    def impute_deducible_missing_states(self):
+        """
+        Impute deducible missing states.
+
+        If a state is missing in a node but present in its parent,
+        then it can be imputed as the parent's state.
+        We perform all these imputations.
+
+        Raises:
+            CassiopeiaTreeError if the character vectors do not all have
+            the same length, or if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+        for (parent, child) in self.depth_first_traverse_edges():
+            parent_states = self.get_character_states(parent)
+            child_states = self.get_character_states(child)
+            if not len(parent_states) == len(child_states):
+                raise CassiopeiaTreeError(
+                    "Parent and child node have different length character "
+                    "states."
+                )
+            new_child_states = []
+            for i, (parent_state, child_state) in enumerate(
+                zip(parent_states, child_states)
+            ):
+                if (
+                    parent_state != 0
+                    and parent_state != self.missing_state_indicator
+                    and child_state == self.missing_state_indicator
+                ):
+                    new_child_states.append(parent_state)
+                else:
+                    new_child_states.append(child_state)
+            self.set_character_states(child, new_child_states)
