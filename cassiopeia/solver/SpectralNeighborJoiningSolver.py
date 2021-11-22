@@ -296,9 +296,10 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
     def root_tree(
         self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
     ) -> nx.DiGraph:
-        """Roots a tree produced by Neighbor-Joining at the specified root.
+        """Assigns a node as the root of the solved tree.
 
-        Assigns a root to 'tree' based on a given 'root_sample'.
+        Finds a location on the tree to place a root and converts the general
+        graph to a directed graph with respect to that root.
 
         Args:
             tree: Networkx object representing the tree topology
