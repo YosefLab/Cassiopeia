@@ -17,27 +17,26 @@ def weighted_hamming_distance(
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
-    Evaluates the dissimilarity of two phylogenetic samples on the basis of
+        Evaluates the dissimilarity of two phylogenetic samples on the basis of
     their shared indel states and the probability of these indel states
     occurring. Specifically, for a given character, if two states are identical
     we decrement the dissimilarity by the probability of these two occurring
     independently; if the two states disagree, we increment the dissimilarity by
-    the probability of these states occurring. We normalize the dissimilarity
-    by the number of non-missing characters shared by the two samples.
+    the probability of these states occurring. We normalize the dissimilarity by
+    the number of non-missing characters shared by the two samples.
 
-    If weights are not given, then we increment dissimilarity by +2 if the states
-    are different, +1 if one state is uncut and the other is an indel, and +0 if
-    the two states are identical.
+    If weights are not given, then we increment dissimilarity by +2 if the
+    states are different, +1 if one state is uncut and the other is an indel,
+    and +0 if the two states are identical.
 
-    Args:
-        s1: Character states of the first sample
-        s2: Character states of the second sample
-        missing_state_indicator: The character representing missing values
-        weights: A dictionary storing the state weights for each character, derived
-            from the state priors. This should be a nested dictionary where each
-            key corresponds to character that then indexes another dictionary
-            storing the weight of each observed state.
-            (Character -> State -> Weight)
+    Args: s1: Character states of the first sample  
+    s2: Character states of the second sample
+    missing_state_indicator: The character representing missing values 
+    weights: A dictionary storing the state weights for each character,
+        derived from the state priors. This should be a nested dictionary where
+        each key corresponds to character that then indexes another dictionary
+        storing the weight of each observed state.  (Character -> State ->
+        Weight)
 
     Returns:
         A dissimilarity score.
@@ -86,9 +85,11 @@ def hamming_similarity_without_missing(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-        weights: A set of optional weights to weight the similarity of a mutation
-    Returns:
-        The number of shared mutations between two samples, weighted or unweighted
+            weights: A set of optional weights to weight the similarity of a
+            mutation
+     Returns:
+        The number of shared mutations between two samples, weighted or
+        unweighted 
     """
 
     # TODO Optimize this using masks
@@ -126,7 +127,8 @@ def hamming_similarity_normalized_over_missing(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-        weights: A set of optional weights to weight the similarity of a mutation
+        weights: A set of optional weights to weight the similarity of a
+        mutation
 
     Returns:
         The number of shared mutations between two samples normalized over the
@@ -172,7 +174,7 @@ def hamming_distance(
         s1: The first sample
         s2: The second sample
         ignore_missing_state: Ignore comparisons where one is the missing state
-            indicator
+        indicator
         missing_state_indicator: Indicator for missing data.
 
     Returns:
@@ -208,7 +210,8 @@ def weighted_hamming_similarity(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-        weights: A set of optional weights to weight the similarity of a mutation
+        weights: A set of optional weights to weight the similarity of a
+        mutation
 
     Returns:
         The weighted number of shared mutations between two samples
@@ -248,22 +251,23 @@ def exponential_negative_hamming_distance(
 
     """
     Calculates the default affinity for SpectralNeighborJoiningSolver. This
-    simply returns exp(-d(i,j)) where d is the weighted_hamming_distance function as
-    above where no weights are passed in.  In other words, we increment d by +2 if
-    the states are different, +1 if one state is uncut and the other is an indel,
-    and +0 if the two states are identical. Then, we take this total d and return
-    exp(-d). Note that since d is a metric, 'exponential_negative_hamming_distance'
-    is a multiplicative similarity score, i.e. s(i, j) = s(i, k) * s(k, j) for k on
-    the path between i and j.
+    simply returns exp(-d(i,j)) where d is the weighted_hamming_distance
+    function as above where no weights are passed in.  In other words, we
+    increment d by +2 if the states are different, +1 if one state is uncut and
+    the other is an indel, and +0 if the two states are identical. Then, we take
+    this total d and return exp(-d). Note that since d is a metric,
+    'exponential_negative_hamming_distance' is a multiplicative similarity
+    score, i.e. s(i, j) = s(i, k) * s(k, j) for k on the path between i and j.
 
     Args:
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-        weights: A dictionary storing the state weights for each character, derived from
-            the state priors. This should be a nested dictionary where each key corresponds
-            to character that then indexes another dictionary storing the weight of each
-            observed state.  (Character -> State -> Weight)
+        weights: A dictionary storing the state weights for each character,
+            derived from the state priors. This should be a nested
+            dictionary where each key corresponds to character that then indexes
+            another dictionary storing the weight of each observed state.
+            (Character -> State -> Weight)
 
     Returns:
         A similarity score.
@@ -318,15 +322,16 @@ def cluster_dissimilarity(
     which each character contains an tuple of possible states, and such a
     character string is represented as a list of tuples of integers.
 
-    A naive implementation is to first disambiguate each of the two ambiguous
-    character strings by generating all possible strings, then computing the
-    dissimilarity between all pairwise combinations, and finally applying the
-    linkage function on the calculated dissimilarities. However, doing so has
-    complexity O(\prod_{i=1}^N |a_i| x |b_i|) where N is the number of target sites,
-    |a_i| is the number of ambiguous characters at target site i of string a,
-    and |b_i| is the number of amiguous characters at target site i of string b.
-    As an example, if we have N=10 and all a_i=b_i=2, then we have to construct
-    1,038,576 * 2 strings and compute over 4 trillion dissimilarities.
+    A naive implementation is to first disambiguate each of the two
+    ambiguous character strings by generating all possible strings, then
+    computing the dissimilarity between all pairwise combinations, and finally
+    applying the linkage function on the calculated dissimilarities. However,
+    doing so has complexity O(\prod_{i=1}^N |a_i| x |b_i|) where N is the number
+    of target sites, |a_i| is the number of ambiguous characters at target site
+    i of string a, and |b_i| is the number of amiguous characters at target site
+    i of string b.  As an example, if we have N=10 and all a_i=b_i=2, then we
+    have to construct 1,038,576 * 2 strings and compute over 4 trillion
+    dissimilarities.
 
     By assuming each target site is independent, simply calculating the sum of
     the linkages of each target site separately is equivalent to the naive
@@ -340,11 +345,11 @@ def cluster_dissimilarity(
     ``np.min`` can be used for single linkage, ``np.max`` for complete linkage,
     and ``np.mean`` for average linkage (the default).
 
-    The reason the ``dissimilarity_function`` argument is defined as the first
-    argument is so that this function may be used as input to
+    The reason the ``dissimilarity_function`` argument is defined as the
+    first argument is so that this function may be used as input to
     :func:`cassiopeia.data.CassiopeiaTree.compute_dissimilarity_map`. This can
-    be done by partial application of this function with the desired dissimilarity
-    function.
+    be done by partial application of this function with the desired
+    dissimilarity function.
 
     Note:
         If neither character string is ambiguous, then calling this function is
@@ -354,11 +359,13 @@ def cluster_dissimilarity(
         s1: The first (possibly) ambiguous sample
         s2: The second (possibly) ambiguous sample
         missing_state_indicator: The character representing missing values
-        weights: A set of optional weights to weight the similarity of a mutation
-        dissimilarity_function: The dissimilarity function to use to calculate pairwise
-            dissimilarities.
-        linkage_function: The linkage function to use to aggregate dissimilarities
-            into a single number. Defaults to ``np.mean`` for average linkage.
+        weights: A set of optional weights to weight the similarity of a
+            mutation 
+        dissimilarity_function: The dissimilarity function to use to
+            calculate pairwise dissimilarities.
+        linkage_function: The linkage function to use to aggregate
+        dissimilarities into a single number. Defaults to ``np.mean`` for
+            average linkage.
         normalize: Whether to normalize to the proportion of sites present in
             both strings.
 

@@ -94,8 +94,6 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         # generate the lambda matrix
         lambda_matrix_arr = np.zeros([N, N])
         for (j_idx, i_idx) in itertools.combinations(range(N), 2):
-            if j_idx >= i_idx:
-                continue
 
             svd2_val = self._compute_svd2(
                 pair=(i_idx, j_idx), lambda_indices=self.lambda_indices
@@ -125,12 +123,12 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
         Returns:
             A tuple of integers representing rows in the
-            dissimilarity matrix to join.
+                dissimilarity matrix to join.
         """
 
         return np.unravel_index(
             np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape
-        )  # type: ignore
+        )
 
     def _compute_svd2(
         self, pair: Tuple[int, int], lambda_indices: List[List[int]]
@@ -139,12 +137,12 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         subset's RA matrix.
 
         Args:
-            pair (Tuple[int, int]): pair of indices i and j where i > j.
-            lambda_indices (List[List[int]]): the list of subsets for
-                which 'pair' refers to. len(lambda_indices) >= 3
+            pair: pair of indices i and j where i > j.
+            lambda_indices: the list of subsets for
+                which 'pair' refers to.
 
         Returns:
-            float: The second largest singular value of the pair's RA matrix.
+            The second largest singular value of the pair's RA matrix.
         """
         i_idx, j_idx = pair
         i_sub, j_sub = lambda_indices[i_idx], lambda_indices[j_idx]
@@ -169,7 +167,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
     def update_dissimilarity_map(
         self,
-        similarity_map: pd.DataFrame,  # lambda matrix
+        similarity_map: pd.DataFrame,
         cherry: Tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
@@ -202,7 +200,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         self.lambda_indices.pop(max(i, j))
         self.lambda_indices.pop(min(i, j))
 
-        # new lambda indiices
+        # new lambda indices
         N = len(self.lambda_indices)
 
         if N <= 2:
@@ -224,7 +222,6 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         lambda_matrix_arr = np.array(
             np.hstack((lambda_matrix_arr, np.atleast_2d(new_col).T))
         )
-        # type: ignore
 
         # compute new SVDs
         i_idx = N - 1
@@ -247,16 +244,14 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         return lambda_matrix_df
 
     def setup_root_finder(self, cassiopeia_tree: CassiopeiaTree) -> None:
-        """Defines the implicit rooting strategy for the
-        SpectralNeighborJoiningSolver.  See 'setup_root_finder' in
-        NeighborJoiningSolver.
+        """Gives the implicit rooting strategy for the SNJ Solver.
 
         By default, the SpectralNeighborJoining algorithm returns an
         unrooted tree.  To root this tree, an implicit root of all zeros is
         added to the character matrix. Then, the dissimilarity map is
         recalculated using the updated character matrix. If the tree already
         has a computed dissimilarity map, only the new similarities are
-        calculated.
+        calculated. See 'setup_root_finder' in NeighborJoiningSolver.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree to `solve`
@@ -303,7 +298,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
     ) -> nx.DiGraph:
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
-        Uses the specified root to root the tree passed in
+        Assigns a root to 'tree' based on a given 'root_sample'.
 
         Args:
             tree: Networkx object representing the tree topology

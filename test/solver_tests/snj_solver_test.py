@@ -17,11 +17,11 @@ def find_triplet_structure(triplet, T):
     """Identify the two nodes with the most similar ancestry.
 
     Args:
-        triplet (str): name of nodes to check
-        T (tree): tree in which the nodes are in
+        triplet: name of nodes to check
+        T: tree in which the nodes are in
 
     Returns:
-        str: the two nodes that have the most similar number of
+        The two nodes that have the most similar number of
             common ancestors.
     """
     a, b, c = triplet[0], triplet[1], triplet[2]
@@ -44,8 +44,7 @@ def find_triplet_structure(triplet, T):
 def assertTripletCorrectness(
     self, nodes: List[str], expected_tree: DiGraph, observed_tree: DiGraph
 ):
-    """Checks whether two trees are identical regardless of internal node
-    names.
+    """Checks if two trees are isomorphic.
 
     Args:
         nodes (List[str]): List of leaf nodes to get triplets from.
@@ -224,8 +223,6 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
         for (j_idx, i_idx) in itertools.combinations(range(N), 2):
-            if j_idx >= i_idx:
-                continue
 
             svd2_val = self.snj_solver._compute_svd2(
                 pair=(i_idx, j_idx), lambda_indices=lambda_indices
@@ -290,8 +287,6 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
         for (j_idx, i_idx) in itertools.combinations(range(N), 2):
-            if j_idx >= i_idx:
-                continue
 
             svd2_val = self.snj_solver._compute_svd2(
                 pair=(i_idx, j_idx), lambda_indices=lambda_indices
