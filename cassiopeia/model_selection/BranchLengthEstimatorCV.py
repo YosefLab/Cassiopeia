@@ -17,17 +17,24 @@ from ray.tune.suggest.basic_variant import BasicVariantGenerator
 from .CharacterLevelCV import CharacterLevelCV, CharacterLevelCVError
 
 
-def _create_space_iid_exponential_bayesian(tree: CassiopeiaTree) -> Dict:
-    mle = IIDExponentialMLE()
-    mle.estimate_branch_lengths(deepcopy(tree))
-    space = {}
-    space["mutation_rate"] = tune.loguniform(
-        mle.mutation_rate / 2.0, mle.mutation_rate * 2.0
-    )
-    space["e_pop_size"] = tune.loguniform(
-        max(tree.n_cell / 10.0, 3.0), tree.n_cell * 10.0
-    )
-    space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
+def _create_space_iid_exponential_bayesian(tree: CassiopeiaTree, space: Dict) -> Dict:
+    """
+    Args:
+        space: Pre-computed values to use for the space.
+    """
+    space = space.copy()
+    if "mutation_rate" not in space:
+        mle = IIDExponentialMLE()
+        mle.estimate_branch_lengths(deepcopy(tree))
+        space["mutation_rate"] = tune.loguniform(
+            mle.mutation_rate / 2.0, mle.mutation_rate * 2.0
+        )
+    if "e_pop_size" not in space:
+        space["e_pop_size"] = tune.loguniform(
+            max(tree.n_cell / 10.0, 3.0), tree.n_cell * 10.0
+        )
+    if "sampling_probability" not in space:
+        space["sampling_probability"] = tune.loguniform(0.0000001, 1.0)
     return space
 
 
@@ -73,9 +80,7 @@ class IIDExponentialBayesianEmpiricalBayes(
         self._space = space
 
     def _create_space(self, tree: CassiopeiaTree):
-        space = _create_space_iid_exponential_bayesian(tree)
-        for key, value in self._space.items():
-            space[key] = value
+        space = _create_space_iid_exponential_bayesian(tree, self._space)
         return space
 
     @staticmethod
@@ -185,9 +190,7 @@ class IIDExponentialBayesianCrossValidated(
         self._space = space
 
     def _create_space(self, tree: CassiopeiaTree):
-        space = _create_space_iid_exponential_bayesian(tree)
-        for key, value in self._space.items():
-            space[key] = value
+        space = _create_space_iid_exponential_bayesian(tree, self._space)
         return space
 
     @staticmethod
