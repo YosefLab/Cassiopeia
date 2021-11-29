@@ -201,7 +201,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         # modify names
         node_names = similarity_map.index.values
         node_names = np.concatenate((node_names, [new_node]))
-        boolmask = np.ones((10000,), bool)
+        boolmask = np.ones((len(node_names),), bool)
         boolmask[[i, j]] = False
         node_names = node_names[boolmask]
 
