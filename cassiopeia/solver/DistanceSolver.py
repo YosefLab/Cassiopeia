@@ -80,20 +80,21 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree: CassiopeiaTree,
         layer: Optional[str] = None
     ) -> pd.DataFrame: 
-        """Obtains or generates a matrix that is updated throughout the solve.
+        """Obtains or generates a matrix that is updated throughout the solver.
 
-        The highest-level method to obtain a dissimilarity map, which will be 
-        the matrix primarily used throughout the solve method. This matrix 
-        contains information for decisions related to clade formation, and 
-        will be updated at every iteration within the solve method. This method 
-        is not limited to outputting dissimilarity maps, but is instead 
-        deliberately designed to be overwritten to allow for similarity maps and
-        lambda matrices if needed.
+        The highest-level method to obtain a dissimilarity map, which
+        will be the matrix primarily used throughout the solve method. This
+        matrix contains the pairwise dissimilarity between samples which is used
+        for identifying sample pairs to merge, and will be updated at every
+        iteration within the solve method. This method is not limited to
+        outputting dissimilarity maps, but is instead deliberately designed to
+        be overwritten to allow for similarity maps and lambda matrices if
+        needed.
 
         Args:
-            cassiopeia_tree (CassiopeiaTree): Tree object from which the 
+            cassiopeia_tree: Tree object from which the 
                 dissimilarity map is generated from
-            layer (Optional[str], optional): Layer storing the character matrix 
+            layer: Layer storing the character matrix 
                 for solving. If None, the default character matrix is used in 
                 the CassiopeiaTree.
 

@@ -10,7 +10,7 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy.linalg import svd
+import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.solver.DistanceSolver import DistanceSolver, DistanceSolverError
@@ -40,7 +40,6 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
             the lineage tree. By default we will use exp(-d(i,j)) where d is the
             metric given by weighted_hamming_distance from
             dissimilarity_functions without weights given.
-
         add_root: Whether or not to add an implicit root to the tree, i.e. a
             root with unmutated characters.
         prior_transformation: Function to use when transforming
@@ -64,6 +63,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
             add_root=add_root,
             prior_transformation=prior_transformation,
         )  # type: ignore
+        
+        self._similarity_map = None
+        self.lambda_indices = None
 
     def get_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
@@ -116,7 +118,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         """Finds a pair of samples to join into a cherry.
 
         With dissimilarity_map being the lambda matrix, this method finds the
-            argmin pair of subsets of the lambda matrix.
+        argmin pair of subsets of the lambda matrix.
 
         Args:
             dissimilarity_matrix: Lambda matrix
@@ -133,8 +135,16 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
     def _compute_svd2(
         self, pair: Tuple[int, int], lambda_indices: List[List[int]]
     ) -> float:
-        """Computes the second largest singular value of a pair of
-        subset's RA matrix.
+        """Computes the second largest singular value for an RA matrix.
+        
+        From Jaffe et al., the RA matrix is the matrix given by taking
+        rows indexed by elements of A, and columns indexed by elements of the
+        complement of A. Entries are given by R(i, j), the similarity score
+        between i and j. Here, our subset A is given by unioning the
+        subsets given in 'pair'. The procedure takes O(n^3) time where n is the
+        number of leaves. On average it should be more efficient because we are
+        not computing the singular value decomposition of a whole nxn matrix, RA
+        is smaller than nxn. 
 
         Args:
             pair: pair of indices i and j where i > j.
@@ -160,7 +170,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         RA_matrix = self._similarity_map.values[np.ix_(a_subset, a_comp_flat)]
 
         # get second largest SVD if available, first if not.
-        s = svd(RA_matrix, compute_uv=False, check_finite=False)
+        s = scipy.linalg.svd(RA_matrix, compute_uv=False, check_finite=False)
         svd2_val = s[:2][-1]
 
         return svd2_val

@@ -29,9 +29,9 @@ def weighted_hamming_distance(
     states are different, +1 if one state is uncut and the other is an indel,
     and +0 if the two states are identical.
 
-    Args: s1: Character states of the first sample  
+    Args: s1: Character states of the first sample
     s2: Character states of the second sample
-    missing_state_indicator: The character representing missing values 
+    missing_state_indicator: The character representing missing values
     weights: A dictionary storing the state weights for each character,
         derived from the state priors. This should be a nested dictionary where
         each key corresponds to character that then indexes another dictionary
@@ -89,7 +89,7 @@ def hamming_similarity_without_missing(
             mutation
      Returns:
         The number of shared mutations between two samples, weighted or
-        unweighted 
+        unweighted
     """
 
     # TODO Optimize this using masks
@@ -187,8 +187,7 @@ def hamming_distance(
         if s1[i] != s2[i]:
 
             if (
-                s1[i] == missing_state_indicator
-                or s2[i] == missing_state_indicator
+                s1[i] == missing_state_indicator or s2[i] == missing_state_indicator
             ) and ignore_missing_state:
                 dist += 0
             else:
@@ -250,8 +249,9 @@ def exponential_negative_hamming_distance(
 ) -> float:
 
     """
-    Calculates the default affinity for SpectralNeighborJoiningSolver. This
-    simply returns exp(-d(i,j)) where d is the weighted_hamming_distance
+    Gives a similarity function from the inverse of weighted hamming distance.
+
+    This simply returns exp(-d(i,j)) where d is the weighted_hamming_distance
     function as above where no weights are passed in.  In other words, we
     increment d by +2 if the states are different, +1 if one state is uncut and
     the other is an indel, and +0 if the two states are identical. Then, we take
@@ -272,7 +272,7 @@ def exponential_negative_hamming_distance(
     Returns:
         A similarity score.
     """
-
+    
     d = 0
     num_present = 0
     for i in range(len(s1)):
@@ -302,6 +302,7 @@ def exponential_negative_hamming_distance(
 
     weighted_hamm_dist = d / num_present
 
+    
     return np.exp(-weighted_hamm_dist)
 
 
@@ -360,7 +361,7 @@ def cluster_dissimilarity(
         s2: The second (possibly) ambiguous sample
         missing_state_indicator: The character representing missing values
         weights: A set of optional weights to weight the similarity of a
-            mutation 
+            mutation
         dissimilarity_function: The dissimilarity function to use to
             calculate pairwise dissimilarities.
         linkage_function: The linkage function to use to aggregate
@@ -384,8 +385,7 @@ def cluster_dissimilarity(
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
             present.append(
-                _c1 != missing_state_indicator
-                and _c2 != missing_state_indicator
+                _c1 != missing_state_indicator and _c2 != missing_state_indicator
             )
             dissim.append(
                 dissimilarity_function(

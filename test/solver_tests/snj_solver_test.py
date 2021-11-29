@@ -1,14 +1,14 @@
 """
 Test SpectralNeighborJoiningSolver in Cassiopeia.solver.
 """
-import unittest
-from typing import List
-from unittest import mock
 import itertools
 import networkx as nx
 from networkx.classes.digraph import DiGraph
 import numpy as np
 import pandas as pd
+from typing import List
+import unittest
+from unittest import mock
 
 import cassiopeia as cas
 
