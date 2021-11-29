@@ -65,7 +65,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         )  # type: ignore
         
         self._similarity_map = None
-        self.lambda_indices = None
+        self._lambda_indices = None
 
     def get_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
@@ -91,14 +91,14 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         # prepare for first (pairwise) lambda matrix
         N = self._similarity_map.shape[0]
         node_names: np.ndarray = self._similarity_map.index.values
-        self.lambda_indices = [[i] for i in range(N)]
+        self._lambda_indices = [[i] for i in range(N)]
 
         # generate the lambda matrix
         lambda_matrix_arr = np.zeros([N, N])
         for (j_idx, i_idx) in itertools.combinations(range(N), 2):
 
             svd2_val = self._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=self.lambda_indices
+                pair=(i_idx, j_idx), lambda_indices=self._lambda_indices
             )
 
             lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
@@ -200,18 +200,20 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
         # modify names
         node_names = similarity_map.index.values
-        node_names = np.append(node_names, new_node)
-        node_names = np.delete(node_names, [i, j])
+        node_names = np.concatenate((node_names, [new_node]))
+        boolmask = np.ones((10000,), bool)
+        boolmask[[i, j]] = False
+        node_names = node_names[boolmask]
 
         # modify indices
-        self.lambda_indices.append(
-            [*self.lambda_indices[i], *self.lambda_indices[j]]
+        self._lambda_indices.append(
+            [*self._lambda_indices[i], *self._lambda_indices[j]]
         )
-        self.lambda_indices.pop(max(i, j))
-        self.lambda_indices.pop(min(i, j))
+        self._lambda_indices.pop(max(i, j))
+        self._lambda_indices.pop(min(i, j))
 
         # new lambda indices
-        N = len(self.lambda_indices)
+        N = len(self._lambda_indices)
 
         if N <= 2:
             return pd.DataFrame(
@@ -237,7 +239,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         i_idx = N - 1
         for j_idx in range(i_idx):
             svd2_val = self._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=self.lambda_indices
+                pair=(i_idx, j_idx), lambda_indices=self._lambda_indices
             )
 
             lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[

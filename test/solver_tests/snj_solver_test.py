@@ -372,13 +372,13 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             ["c", "d", "e", "root", "new_node"],
         )
 
-    def notest_update_dissimilarity_map_N3(self):
+    def test_update_dissimilarity_map_N3(self):
         """Test the update function when there are only 3 subsets left. It
         should return all zeros since the output is not used.
         """
         # run to generate similarity map
         self.snj_solver.get_dissimilarity_map(self.tree_pp)
-        self.snj_solver.lambda_indices = [[0], [1, 2], [3, 4]]
+        self.snj_solver._lambda_indices = [[0], [1, 2], [3, 4]]
         lambda_matrix_arr = None
 
         node_names = ["g1", "g2", "g3"]
@@ -408,7 +408,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         lambda_matrix = new_solver.get_dissimilarity_map(
             self.tree_general, None
         )
-        lambda_indices = new_solver.lambda_indices
+        lambda_indices = new_solver._lambda_indices
         expected_lambda_indices = [[0], [1], [2], [3], [4]]
 
         expected_lambda_matrix = np.array(
