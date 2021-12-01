@@ -171,7 +171,10 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
 
         # get second largest SVD if available, first if not.
         s = scipy.linalg.svd(RA_matrix, compute_uv=False, check_finite=False)
-        svd2_val = s[:2][-1]
+        if len(s) >= 2:
+            svd2_val = s[1]
+        else:
+            svd2_val = 0
 
         return svd2_val
 
