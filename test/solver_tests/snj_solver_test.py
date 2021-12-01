@@ -300,8 +300,8 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         expected_lambda_matrix = np.array(
             [
                 [np.inf, 4.51233062e-17, 4.51233062e-17],
-                [4.51233062e-17, np.inf, 7.77014257e-01],
-                [4.51233062e-17, 7.77014257e-01, np.inf],
+                [4.51233062e-17, np.inf, 0],
+                [4.51233062e-17, 0, np.inf],
             ]
         )
 
