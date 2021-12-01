@@ -1,3 +1,10 @@
+"""
+Functions for use when plotting trees locally. Unlike itol_utilities.py, which
+plots trees using iTOL, a cloud tree plotting service, this file implements
+functions that plot trees without requiring a subscription to iTOL. Currently,
+trees may be plotted either statically (using Matplotlib) or dynamically
+(using Plotly).
+"""
 import warnings
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
@@ -63,6 +70,7 @@ def create_categorical_colorstrip(
     spacing: float,
     loc: Literal["left", "right", "up", "down", "polar"],
     cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    value_mapping: Optional[Dict[str, int]] = None,
 ) -> Tuple[
     Dict[str, Tuple[List[float], List[float], Tuple[float, float, float], str]],
     Dict[str, Tuple[float, float]],
@@ -78,13 +86,20 @@ def create_categorical_colorstrip(
             (i.e. padding)
         loc: Location of the boxes relative to the anchors.
         cmap: Colormap. Defaults to the `tab10` colormap of Matplotlib.
+        value_mapping: An optional dictionary containing string values to their
+            integer mappings. These mappings are used to assign colors by
+            calling the `cmap` with the designated integer mapping. By default,
+            the values are assigned pseudo-randomly (whatever order the set()
+            operation returns).
 
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
     cm = plt.cm.get_cmap(cmap)
     unique_values = set(values.values())
-    value_mapping = {val: i for i, val in enumerate(unique_values)}
+    value_mapping = value_mapping or {
+        val: i for i, val in enumerate(unique_values)
+    }
 
     boxes, next_anchor_coords = utilities.place_colorstrip(
         anchor_coords, width, height, spacing, loc
@@ -104,6 +119,8 @@ def create_continuous_colorstrip(
     spacing: float,
     loc: Literal["left", "right", "up", "down", "polar"],
     cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
 ) -> Tuple[
     Dict[str, Tuple[List[float], List[float], Tuple[float, float, float], str]],
     Dict[str, Tuple[float, float]],
@@ -119,20 +136,27 @@ def create_continuous_colorstrip(
             (i.e. padding)
         loc: Location of the boxes relative to the anchors.
         cmap: Colormap. Defaults to the `viridis` colormap of Matplotlib.
+        vmin: Value representing the lower limit of the color scale.
+        vmax: Value representing the upper limit of the color scale.
 
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
     cm = plt.cm.get_cmap(cmap)
-    max_value = max(values.values())
-    min_value = min(values.values())
+    max_value = vmax if vmax is not None else max(values.values())
+    min_value = vmin if vmin is not None else min(values.values())
+    if min_value >= max_value:
+        warnings.warn(
+            f"Min value is {min_value} and max value is {max_value}.",
+            PlottingWarning,
+        )
 
     boxes, next_anchor_coords = utilities.place_colorstrip(
         anchor_coords, width, height, spacing, loc
     )
     colorstrip = {}
     for leaf, val in values.items():
-        v = (val - min_value) / (max_value - min_value)
+        v = np.clip((val - min_value) / (max_value - min_value), 0, 1)
         colorstrip[leaf] = boxes[leaf] + (cm(v)[:-1], f"{leaf}\n{val}")
     return colorstrip, next_anchor_coords
 
@@ -266,7 +290,10 @@ def place_tree_and_annotations(
     colorstrip_spacing: Optional[float] = None,
     clade_colors: Optional[Dict[str, Tuple[float, float, float]]] = None,
     continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
     categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    value_mapping: Optional[Dict[str, int]] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> Tuple[Dict, Dict, Dict, Dict, List]:
     """Helper function to place the tree and all requested annotations.
@@ -305,8 +332,17 @@ def place_tree_and_annotations(
             leaves the provided color.
         continuous_cmap: Colormap to use for continuous variables. Defaults to
             `viridis`.
+        vmin: Value representing the lower limit of the color scale. Only applied
+            to continuous variables.
+        vmax: Value representing the upper limit of the color scale. Only applied
+            to continuous variables.
         categorical_cmap: Colormap to use for categorical variables. Defaults to
             `tab10`.
+        value_mapping: An optional dictionary containing string values to their
+            integer mappings. These mappings are used to assign colors by
+            calling the `cmap` with the designated integer mapping. By default,
+            the values are assigned pseudo-randomly (whatever order the set()
+            operation returns). Only applied for categorical variables.
         random_state: A random state for reproducibility
 
     Returns:
@@ -373,6 +409,8 @@ def place_tree_and_annotations(
                 spacing,
                 loc,
                 continuous_cmap,
+                vmin,
+                vmax,
             )
 
         if pd.api.types.is_string_dtype(values):
@@ -384,6 +422,7 @@ def place_tree_and_annotations(
                 spacing,
                 loc,
                 categorical_cmap,
+                value_mapping,
             )
         colorstrips.append(colorstrip)
 
@@ -415,7 +454,10 @@ def plot_matplotlib(
     branch_kwargs: Optional[Dict] = None,
     colorstrip_kwargs: Optional[Dict] = None,
     continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
     categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    value_mapping: Optional[Dict[str, int]] = None,
     ax: Optional[plt.Axes] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> Tuple[plt.Figure, plt.Axes]:
@@ -464,8 +506,17 @@ def plot_matplotlib(
             colorstrips.
         continuous_cmap: Colormap to use for continuous variables. Defaults to
             `viridis`.
+        vmin: Value representing the lower limit of the color scale. Only applied
+            to continuous variables.
+        vmax: Value representing the upper limit of the color scale. Only applied
+            to continuous variables.
         categorical_cmap: Colormap to use for categorical variables. Defaults to
             `tab10`.
+        value_mapping: An optional dictionary containing string values to their
+            integer mappings. These mappings are used to assign colors by
+            calling the `cmap` with the designated integer mapping. By default,
+            the values are assigned pseudo-randomly (whatever order the set()
+            operation returns). Only applied for categorical variables.
         ax: Matplotlib axis to place the tree. If not provided, a new figure is
             initialized.
         random_state: A random state for reproducibility
@@ -496,7 +547,10 @@ def plot_matplotlib(
         colorstrip_spacing,
         clade_colors,
         continuous_cmap,
+        vmin,
+        vmax,
         categorical_cmap,
+        value_mapping,
         random_state,
     )
 
@@ -598,7 +652,10 @@ def plot_plotly(
     branch_kwargs: Optional[Dict] = None,
     colorstrip_kwargs: Optional[Dict] = None,
     continuous_cmap: Union[str, mpl.colors.Colormap] = "viridis",
+    vmin: Optional[float] = None,
+    vmax: Optional[float] = None,
     categorical_cmap: Union[str, mpl.colors.Colormap] = "tab10",
+    value_mapping: Optional[Dict[str, int]] = None,
     figure: Optional[go.Figure] = None,
     random_state: Optional[np.random.RandomState] = None,
 ) -> go.Figure:
@@ -648,8 +705,17 @@ def plot_plotly(
             colorstrips.
         continuous_cmap: Colormap to use for continuous variables. Defaults to
             `viridis`.
+        vmin: Value representing the lower limit of the color scale. Only applied
+            to continuous variables.
+        vmax: Value representing the upper limit of the color scale. Only applied
+            to continuous variables.
         categorical_cmap: Colormap to use for categorical variables. Defaults to
             `tab10`.
+        value_mapping: An optional dictionary containing string values to their
+            integer mappings. These mappings are used to assign colors by
+            calling the `cmap` with the designated integer mapping. By default,
+            the values are assigned pseudo-randomly (whatever order the set()
+            operation returns). Only applied for categorical variables.
         figure: Plotly figure to plot the tree.
         random_state: A random state for reproducibility
 
@@ -685,7 +751,10 @@ def plot_plotly(
         colorstrip_spacing,
         clade_colors,
         continuous_cmap,
+        vmin,
+        vmax,
         categorical_cmap,
+        value_mapping,
         random_state,
     )
     figure = figure if figure is not None else go.Figure()
