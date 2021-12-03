@@ -17,7 +17,7 @@ def weighted_hamming_distance(
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
-        Evaluates the dissimilarity of two phylogenetic samples on the basis of
+    Evaluates the dissimilarity of two phylogenetic samples on the basis of
     their shared indel states and the probability of these indel states
     occurring. Specifically, for a given character, if two states are identical
     we decrement the dissimilarity by the probability of these two occurring
@@ -29,14 +29,15 @@ def weighted_hamming_distance(
     states are different, +1 if one state is uncut and the other is an indel,
     and +0 if the two states are identical.
 
-    Args: s1: Character states of the first sample
-    s2: Character states of the second sample
-    missing_state_indicator: The character representing missing values
-    weights: A dictionary storing the state weights for each character,
-        derived from the state priors. This should be a nested dictionary where
-        each key corresponds to character that then indexes another dictionary
-        storing the weight of each observed state.  (Character -> State ->
-        Weight)
+    Args: 
+        s1: Character states of the first sample
+        s2: Character states of the second sample
+        missing_state_indicator: The character representing missing values
+        weights: A dictionary storing the state weights for each character,
+            derived from the state priors. This should be a nested
+            dictionary where each key corresponds to character that then indexes
+            another dictionary storing the weight of each observed state.
+            (Character -> State -> Weight)
 
     Returns:
         A dissimilarity score.
@@ -85,11 +86,11 @@ def hamming_similarity_without_missing(
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
-            weights: A set of optional weights to weight the similarity of a
+        weights: A set of optional weights to weight the similarity of a
             mutation
      Returns:
         The number of shared mutations between two samples, weighted or
-        unweighted
+            unweighted
     """
 
     # TODO Optimize this using masks
@@ -128,11 +129,11 @@ def hamming_similarity_normalized_over_missing(
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
         weights: A set of optional weights to weight the similarity of a
-        mutation
+            mutation
 
     Returns:
         The number of shared mutations between two samples normalized over the
-        number of missing data events, weighted or unweighted
+            number of missing data events, weighted or unweighted
     """
     # TODO Optimize this using masks
     similarity = 0
@@ -174,7 +175,7 @@ def hamming_distance(
         s1: The first sample
         s2: The second sample
         ignore_missing_state: Ignore comparisons where one is the missing state
-        indicator
+            indicator
         missing_state_indicator: Indicator for missing data.
 
     Returns:
@@ -210,7 +211,7 @@ def weighted_hamming_similarity(
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
         weights: A set of optional weights to weight the similarity of a
-        mutation
+            mutation
 
     Returns:
         The weighted number of shared mutations between two samples

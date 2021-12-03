@@ -5,7 +5,13 @@ titled "Spectral neighbor joining for reconstruction of latent tree models",
 published in the SIAM Journal for Math and Data Science. 
  
 """
-
+from cassiopeia.data import CassiopeiaTree
+from cassiopeia.solver import (
+    dissimilarity_functions,
+    DistanceSolver.DistanceSolver
+    DistanceSolver.DistanceSolverError
+    solver_utilities,
+)
 import itertools
 import networkx as nx
 import numpy as np
@@ -13,24 +19,30 @@ import pandas as pd
 import scipy
 from typing import Callable, Dict, List, Optional, Tuple
 
-from cassiopeia.solver.DistanceSolver import DistanceSolver, DistanceSolverError
-
-from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import (
-    dissimilarity_functions,
-    solver_utilities,
-)
 
 
-class SpectralNeighborJoiningSolver(DistanceSolver):
+class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
     """
     Spectral Neighbor-Joining class for Cassiopeia.
 
-    Implements a variation on the Spectral Neighbor-Joining
-    algorithm described by Jaffe et al. in their 2020 paper. This class
-    implements the abstract class DistanceSolver. This class inherits
-    the 'solve' method from DistanceSolver with the 'find_cherry' method
-    implemented using a spectral method as in Jaffe et al.  (2020).
+    Implements a variation on the Spectral Neighbor-Joining (abbrev SNJ) algorithm
+    described by Jaffe et al. in their 2020 paper. This class implements the
+    abstract class DistanceSolver, and inherits the 'solve' method from
+    DistanceSolver with the 'find_cherry' method implemented using a spectral
+    method as in Jaffe et al. (2020). In particular, we iteratively join subsets
+    of leaves into a cherry based on the second singular value of the RA matrix
+    of the pair. We start with all the subsets being singleton sets with each
+    leaf node, then compute the second singular values of the RA matrices where
+    A = S U T, S and T are distinct subsets of leaves, and RA is the matrix with
+    rows indexed by elements of A and columns indexed by elements of A 's
+    complement, and entries are R(i, j).  These values are stored in a lambda
+    matrix (rows and columns are subsets, entries are second singular values of
+    RA) to avoid recalculating values.  Finally we find the pair of (S, T) that
+    gives the smallest second singular value for RA and replace S and T with S U
+    T in the set of subsets, thereby joining S and T into a cherry. Repeat this
+    process until there are only two remaining subsets.
+    
+    TODO(kan): Runtime analysis for SNJ in the docs above.
 
     Args:
         similarity_function: A function by which to compute the similarity map,
@@ -118,7 +130,13 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         """Finds a pair of samples to join into a cherry.
 
         With dissimilarity_map being the lambda matrix, this method finds the
-        argmin pair of subsets of the lambda matrix.
+        argmin pair of subsets of the lambda matrix. The lambda matrix
+        consists of rows and columns indexed by subsets of leaves and with
+        entries a_ij given by the second singular value of RA where A = S U T, S
+        and T being the subsets of leaves corresponding to i and j respectively.
+        If i = j, a_ij is set to 'np.inf'. The pair of samples to be
+        joined into a cherry is given by the pair (i, j) with the smallest entry
+        in the lambda matrix.
 
         Args:
             dissimilarity_matrix: Lambda matrix
@@ -280,7 +298,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver):
         cassiopeia_tree.character_matrix = rooted_character_matrix
 
         if self.dissimilarity_function is None:
-            raise DistanceSolverError(
+            raise DistanceSolver.DistanceSolverError(
                 "Please specify a dissimilarity function to add an implicit "
                 "root, or specify an explicit root"
             )

@@ -7,14 +7,14 @@ There may be other subclasses of this.
 """
 import abc
 import cassiopeia
+from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 import networkx as nx
 import numpy as np
 import pandas as pd
 from typing import Callable, Dict, List, Optional, Tuple
 
-from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import DistanceSolverError
-from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
