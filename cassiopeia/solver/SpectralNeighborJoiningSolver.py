@@ -8,8 +8,8 @@ published in the SIAM Journal for Math and Data Science.
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     dissimilarity_functions,
-    DistanceSolver.DistanceSolver
-    DistanceSolver.DistanceSolverError
+    DistanceSolver,
+    DistanceSolver,
     solver_utilities,
 )
 import itertools
