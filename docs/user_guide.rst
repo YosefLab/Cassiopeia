@@ -13,6 +13,7 @@ Tutorials
    notebooks/preprocess
    notebooks/benchmark
    notebooks/reconstruct
+   notebooks/local_plotting
    
 Contributed tutorials
 ---------------------
