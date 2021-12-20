@@ -168,6 +168,7 @@ nbsphinx_thumbnails = {
     "notebooks/preprocess": "_static/tutorials/preprocess.png",
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
+    "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
 }
 
 

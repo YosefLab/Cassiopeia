@@ -18,3 +18,7 @@ class ParameterEstimateWarning(UserWarning):
     """An warning class for the estimation and retrieval of tree parameters"""
 
     pass
+
+
+class PlottingWarning(UserWarning):
+    pass
