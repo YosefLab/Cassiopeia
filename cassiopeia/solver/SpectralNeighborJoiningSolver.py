@@ -5,19 +5,20 @@ titled "Spectral neighbor joining for reconstruction of latent tree models",
 published in the SIAM Journal for Math and Data Science. 
  
 """
-from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import (
-    dissimilarity_functions,
-    DistanceSolver,
-    DistanceSolver,
-    solver_utilities,
-)
+from typing import Callable, Dict, List, Optional, Tuple
+
 import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
-from typing import Callable, Dict, List, Optional, Tuple
+
+from cassiopeia.data import CassiopeiaTree
+from cassiopeia.solver import (
+    dissimilarity_functions,
+    DistanceSolver,
+    solver_utilities,
+)
 
 
 
@@ -25,24 +26,24 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
     """
     Spectral Neighbor-Joining class for Cassiopeia.
 
-    Implements a variation on the Spectral Neighbor-Joining (abbrev SNJ) algorithm
-    described by Jaffe et al. in their 2020 paper. This class implements the
-    abstract class DistanceSolver, and inherits the 'solve' method from
-    DistanceSolver with the 'find_cherry' method implemented using a spectral
-    method as in Jaffe et al. (2020). In particular, we iteratively join subsets
-    of leaves into a cherry based on the second singular value of the RA matrix
-    of the pair. We start with all the subsets being singleton sets with each
-    leaf node, then compute the second singular values of the RA matrices where
-    A = S U T, S and T are distinct subsets of leaves, and RA is the matrix with
-    rows indexed by elements of A and columns indexed by elements of A 's
-    complement, and entries are R(i, j).  These values are stored in a lambda
-    matrix (rows and columns are subsets, entries are second singular values of
-    RA) to avoid recalculating values.  Finally we find the pair of (S, T) that
-    gives the smallest second singular value for RA and replace S and T with S U
-    T in the set of subsets, thereby joining S and T into a cherry. Repeat this
-    process until there are only two remaining subsets.
-    
-    TODO(kan): Runtime analysis for SNJ in the docs above.
+    Implements a variation on the Spectral Neighbor-Joining (abbrev SNJ)
+    algorithm described by Jaffe et al. in their 2020 paper. This class
+    implements the abstract class DistanceSolver, and inherits the 'solve'
+    method from DistanceSolver with the 'find_cherry' method implemented using a
+    spectral method as in Jaffe et al. (2020). In particular, we iteratively
+    join subsets of leaves into a cherry based on the second singular value of
+    the RA matrix of the pair. We start with all the subsets being singleton
+    sets with each leaf node, then compute the second singular values of the RA
+    matrices where A = S U T, S and T are distinct subsets of leaves, and RA is
+    the matrix with rows indexed by elements of A and columns indexed by
+    elements of A 's complement, and entries are R(i, j).  These values are
+    stored in a lambda matrix (rows and columns are subsets, entries are second
+    singular values of RA) to avoid recalculating values.  Finally we find the
+    pair of (S, T) that gives the smallest second singular value for RA and
+    replace S and T with S U T in the set of subsets, thereby joining S and T
+    into a cherry. Repeat this process until there are only two remaining
+    subsets. The runtime is O(n^4), but in reality will perform better than
+    this.
 
     Args:
         similarity_function: A function by which to compute the similarity map,
@@ -82,8 +83,15 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def get_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
     ) -> pd.DataFrame:
-        """Outputs the first lambda matrix, where every subset is an
-        individual node.
+        """Outputs the first lambda matrix.
+
+        The lambda matrix is a k x k matrix indexed by the k subsets
+        being considered at each step of the SNJ algorithm. The i, j th element
+        is given by taking the second singular value of the RA matrix with A
+        given by the union of the two sets indexed by i and j. This function
+        generates the initial lambda matrix, where every subset is a singleton
+        leaf node. This function has a runtime of O(n^3), with n the
+        number of leaf nodes.
 
         Args:
             cassiopeia_tree: the CassiopeiaTree object passed into solve()

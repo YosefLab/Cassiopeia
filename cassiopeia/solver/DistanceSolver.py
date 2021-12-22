@@ -6,15 +6,15 @@ that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this.
 """
 import abc
-import cassiopeia
-from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import DistanceSolverError
-from cassiopeia.solver import CassiopeiaSolver, solver_utilities
+from typing import Callable, Dict, List, Optional, Tuple
+
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple
 
+from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
@@ -87,9 +87,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         matrix contains the pairwise dissimilarity between samples which is used
         for identifying sample pairs to merge, and will be updated at every
         iteration within the solve method. This method is not limited to
-        outputting dissimilarity maps, but is instead deliberately designed to
-        be overwritten to allow for similarity maps and lambda matrices if
-        needed.
+        outputting dissimilarity maps, but is instead deliberately
+        designed to be overwritten to allow for use of similarity maps or other
+        algorithm-specific sample to sample comparison maps in derived classes.
 
         Args:
             cassiopeia_tree: Tree object from which the 
