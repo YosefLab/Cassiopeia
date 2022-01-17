@@ -239,11 +239,6 @@ def error_correct_intbc(
                     molecule_table.loc[
                         cellBC_intBC_allele_indices[key_to_correct], "intBC"
                     ] = intBC1
-
-                    logger.info(
-                        f"In cellBC {cellBC}, intBC {intBC2} corrected to "
-                        f"{intBC1}, correcting {UMI2} UMIs to {UMI1} UMIs."
-                    )
     return molecule_table
 
 
