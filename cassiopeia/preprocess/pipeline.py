@@ -297,6 +297,7 @@ def collapse_umis(
             al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
         ),
         filter_func=lambda al: al.has_tag(cell_bc_tag),
+        n_threads=n_threads,
     )
     logger.info("Sorted bam directory saved to " + str(sorted_file_name))
     logger.info("Max read length of " + str(max_read_length))
