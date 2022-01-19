@@ -78,7 +78,7 @@ setup(
     ext_modules=cythonize(
         to_cythonize + extension_modules_with_custom_compile_args,
         compiler_directives={"language_level": "3"}
-    )
+    ),
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
     entry_points={
