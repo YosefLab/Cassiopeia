@@ -17,12 +17,10 @@ clean_sdist:
 
 clean: clean_develop clean_pypi
 
-build:
-	$(python) setup.py build_ext --inplace
-	$(python) setup.py build
-
 install:
-	$(python) -m pip install --user .
+	- $(python) -m pip install --user .
+	- $(python) setup.py build
+	- $(python) setup.py build_ext --inplace
 
 check_build_reqs:
 	@$(python) -c 'import pytest' \
