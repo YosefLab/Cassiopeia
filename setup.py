@@ -25,6 +25,7 @@ requirements = [
     "numba>=0.51.0",
     "numpy>=1.19.5",
     "pandas>=1.1.4",
+    "plotly>=5.0.0",
     "pysam>=0.14.1",
     "pyseq-align>=1.0.2",
     "PyYAML>=3.12",
