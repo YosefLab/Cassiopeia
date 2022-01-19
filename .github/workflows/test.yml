@@ -34,8 +34,10 @@ jobs:
       run: |
         pip install pytest-cov
         pip install numpy
-        pip install --no-binary Cython
+        pip install Cython
         pip install codecov
+        pip uninstall Cython
+        pip install --no-binary Cython
         make install
     - name: Test with pytest
       run: |
