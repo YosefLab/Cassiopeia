@@ -36,6 +36,7 @@ jobs:
         pip install Cython
         pip install codecov
         make install
+        make build
     - name: Test with pytest
       run: |
         python -m pytest -vv test/ --cov-report=xml --cov=cassiopeia
