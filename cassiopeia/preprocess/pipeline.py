@@ -290,7 +290,7 @@ def collapse_umis(
     logger.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
     max_read_length, total_reads_out = UMI_utils.sort_bam(
-        bam_fp,
+        str(bam_fp),
         str(sorted_file_name),
         sort_key=lambda al: (
             al.get_tag(cell_bc_tag),

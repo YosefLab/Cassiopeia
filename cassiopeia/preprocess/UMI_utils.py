@@ -224,7 +224,7 @@ def form_collapsed_clusters(
     max_indels: int,
     cell_key: Callable[[pysam.AlignedSegment], str] = cell_key,
     UMI_key: Callable[[pysam.AlignedSegment], str] = UMI_key,
-    method: Literal["cutoff", "bayesian"] = "cutoff",
+    method: Literal["cutoff", "likelihood"] = "cutoff",
     n_threads: int = 1,
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
@@ -290,7 +290,12 @@ def form_collapsed_clusters(
         UMI_group = [
             pysam.AlignedSegment.fromstring(s, header) for s in UMI_group
         ]
-        if method == "cutoff":
+        # Very unlikely, but for very deeply sequenced libraries or libraries
+        # that requires many cycles of PCR amplification, some UMIs may have
+        # upwards of 10k+ reads. Likelihood-based consensus calling isn't
+        # meant to deal with such high read counts, so we will fall back to
+        # the cutoff method.
+        if method == "cutoff" or len(UMI_group) > 10000:
             clusters = form_clusters(
                 UMI_group, max_read_length, max_hq_mismatches
             )
