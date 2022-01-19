@@ -33,7 +33,6 @@ jobs:
     - name: Install dependencies
       run: |
         pip install pytest-cov
-        pip install "numpy>=1.19.5<1.22"
         pip install Cython
         pip install codecov
         make install

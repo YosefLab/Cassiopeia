@@ -18,9 +18,9 @@ clean_sdist:
 clean: clean_develop clean_pypi
 
 install:
+	- $(python) -m pip install --user .
 	- $(python) setup.py build
 	- $(python) setup.py build_ext --inplace
-	- $(python) -m pip install --user --no-build-isolation .
 
 check_build_reqs:
 	@$(python) -c 'import pytest' \
