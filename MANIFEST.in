@@ -1,3 +1,2 @@
-include cassiopeia/preprocess/*.pyx
-include cassiopeia/solver/*.pyx
-include *.toml
+include LICENSE
+recursive-include cassiopeia *

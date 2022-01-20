@@ -23,7 +23,7 @@ requirements = [
     "networkx>=2.5",
     "ngs-tools>=1.5.6",
     "numba>=0.51.0",
-    "numpy>=1.19.5",
+    "numpy>=1.19.5<1.22",
     "pandas>=1.1.4",
     "plotly>=5.0.0",
     "pysam>=0.14.1",
@@ -76,9 +76,9 @@ setup(
     name="cassiopeia-lineage",
     python_requires=">=3.6",
     ext_modules=cythonize(
-        to_cythonize, compiler_directives={"language_level": "3"}
-    )
-    + extension_modules_with_custom_compile_args,
+        to_cythonize + extension_modules_with_custom_compile_args,
+        compiler_directives={"language_level": "3"}
+    ),
     # ext_modules=to_cythonize,
     setup_requires=["cython", "numpy"],
     cmdclass=cmdclass,
