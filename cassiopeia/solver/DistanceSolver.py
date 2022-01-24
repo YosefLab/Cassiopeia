@@ -6,11 +6,11 @@ that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this.
 """
 import abc
-import cassiopeia
+from typing import Callable, Dict, List, Optional, Tuple
+
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import DistanceSolverError
@@ -75,6 +75,40 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
 
+    def get_dissimilarity_map(
+        self, 
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None
+    ) -> pd.DataFrame: 
+        """Obtains or generates a matrix that is updated throughout the solver.
+
+        The highest-level method to obtain a dissimilarity map, which
+        will be the matrix primarily used throughout the solve method. This
+        matrix contains the pairwise dissimilarity between samples which is used
+        for identifying sample pairs to merge, and will be updated at every
+        iteration within the solve method. This method is not limited to
+        outputting dissimilarity maps, but is instead deliberately
+        designed to be overwritten to allow for use of similarity maps or other
+        algorithm-specific sample to sample comparison maps in derived classes.
+
+        Args:
+            cassiopeia_tree: Tree object from which the 
+                dissimilarity map is generated from
+            layer: Layer storing the character matrix 
+                for solving. If None, the default character matrix is used in 
+                the CassiopeiaTree.
+
+        Returns:
+            pd.DataFrame: The matrix that will be used throughout the solve 
+                method.
+        """
+
+        self.setup_dissimilarity_map(cassiopeia_tree, layer)
+        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+
+        return dissimilarity_map
+
+
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
@@ -103,9 +137,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         node_name_generator = solver_utilities.node_name_generator()
 
-        self.setup_dissimilarity_map(cassiopeia_tree, layer)
-
-        dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
+        dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
 
         N = dissimilarity_map.shape[0]
 
