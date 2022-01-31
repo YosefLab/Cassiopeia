@@ -412,8 +412,9 @@ def place_tree_and_annotations(
                 vmin,
                 vmax,
             )
-
-        if pd.api.types.is_string_dtype(values):
+        elif pd.api.types.is_string_dtype(
+            values
+        ) or pd.api.types.is_categorical_dtype(values):
             colorstrip, anchor_coords = create_categorical_colorstrip(
                 values.to_dict(),
                 anchor_coords,
@@ -423,6 +424,11 @@ def place_tree_and_annotations(
                 loc,
                 categorical_cmap,
                 value_mapping,
+            )
+        else:
+            raise PlottingError(
+                f"Column {meta_item} has unrecognized dtype {pd.api.types.infer_dtype(values)}. "
+                "Only numeric, string, and categorical dtypes are supported."
             )
         colorstrips.append(colorstrip)
 
