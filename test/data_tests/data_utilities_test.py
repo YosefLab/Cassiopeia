@@ -54,8 +54,16 @@ class TestDataUtilities(unittest.TestCase):
             "r3": ["ATC", "TTT", "ATA", "ATA", "ATA"],
             "UMI": [5, 10, 1, 30, 30],
         }
+        ambiguous_at_dict = {
+            "cellBC": ["cellA", "cellA", "cellA"],
+            "intBC": ["A", "A", "A"],
+            "allele": ["None", "AAA", "GGG"],
+            "UMI": [5, 5, 1],
+            "readCount": [5, 10, 1],
+        }
 
         self.allele_table = pd.DataFrame.from_dict(at_dict)
+        self.ambiguous_allele_table = pd.DataFrame.from_dict(ambiguous_at_dict)
         self.indel_to_prior = pd.DataFrame.from_dict(
             {
                 "ATC": 0.5,
@@ -73,6 +81,14 @@ class TestDataUtilities(unittest.TestCase):
         self.non_cassiopeia_allele_table = self.allele_table.copy()
         self.non_cassiopeia_allele_table.rename(
             columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
+
+    def test_resolve_ambiguous_alleletable(self):
+        resolved = preprocessing_utilities.resolve_ambiguous_alleletable(
+            self.ambiguous_allele_table
+        )
+        pd.testing.assert_frame_equal(
+            resolved, self.ambiguous_allele_table.iloc[[1]]
         )
 
     def test_bootstrap_character_matrices_no_priors(self):
@@ -441,8 +457,10 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            tree, meta_item="CellType"
+        inter_cluster_distances = (
+            data_utilities.compute_inter_cluster_distances(
+                tree, meta_item="CellType"
+            )
         )
 
         expected_distances = pd.DataFrame.from_dict(
@@ -496,10 +514,12 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree)
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            tree,
-            meta_data=meta_data["CellType"],
-            dissimilarity_map=weight_matrix,
+        inter_cluster_distances = (
+            data_utilities.compute_inter_cluster_distances(
+                tree,
+                meta_data=meta_data["CellType"],
+                dissimilarity_map=weight_matrix,
+            )
         )
 
         expected_distances = pd.DataFrame.from_dict(

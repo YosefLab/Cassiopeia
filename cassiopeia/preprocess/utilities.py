@@ -310,6 +310,23 @@ def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
     )
 
 
+def resolve_ambiguous_alleletable(allele_table: pd.DataFrame) -> pd.DataFrame:
+    """Resolve ambigious cellBC-intBC pairs in an allele table.
+
+    Ambiguous cellBC-intBC pairs are resolved to a single allele by selecting
+    the one with the most UMIs. On ties, the one with more readCount is used.
+
+    Args:
+        allele_table: Allele table to resolve.
+
+    Returns:
+        Resolved allele table.
+    """
+    return allele_table.sort_values(
+        ["UMI", "readCount"], ascending=False
+    ).drop_duplicates(["cellBC", "intBC"])
+
+
 def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
     ignore_intbcs: List[str] = [],
