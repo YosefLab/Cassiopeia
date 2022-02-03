@@ -24,7 +24,7 @@ import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
-# sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 
 import cassiopeia  # noqa
@@ -94,9 +94,9 @@ intersphinx_mapping = dict(
 )
 
 # General information about the project.
-project = u"cassiopeia"
-copyright = u"2021, Yosef Lab, UC Berkeley"
-author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
+project = "cassiopeia"
+copyright = "2021, Yosef Lab, UC Berkeley"
+author = "Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -161,6 +161,16 @@ html_static_path = ["_static"]
 html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <style>
+        p {{
+            margin-bottom: 0.5rem;
+        }}
+    </style>
+"""
+
 nbsphinx_thumbnails = {
     "notebooks/preprocess": "_static/tutorials/preprocess.png",
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
@@ -213,9 +223,7 @@ latex_elements = {
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)
-]
+man_pages = [(master_doc, "Cassiopeia", "Cassiopeia Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------
@@ -227,11 +235,10 @@ texinfo_documents = [
     (
         master_doc,
         "cassiopeia",
-        u"Cassiopeia Documentation",
+        "Cassiopeia Documentation",
         author,
         "Cassiopeia",
         "One line description of project.",
         "Miscellaneous",
     )
 ]
-
