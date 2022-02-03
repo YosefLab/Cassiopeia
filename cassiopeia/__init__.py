@@ -5,7 +5,7 @@
 package_name = "cassiopeia"
 __author__ = "Matt Jones, Alex Khodaveridan, Richard Zhang, Sebastian Prillo"
 __email__ = "mattjones315@berkeley.edu"
-__version__ = "0.0.1"
+__version__ = "2.0.0"
 
 from . import pp
 from . import solver
