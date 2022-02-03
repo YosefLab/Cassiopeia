@@ -27,7 +27,7 @@ HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 
-# import cassiopeia  # noqa
+import cassiopeia  # noqa
 
 autodoc_mock_imports = ["gurobipy"]
 
