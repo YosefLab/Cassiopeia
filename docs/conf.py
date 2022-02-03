@@ -29,8 +29,6 @@ HERE = Path(__file__).parent
 
 import cassiopeia  # noqa
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-
 autodoc_mock_imports = ["gurobipy"]
 
 # -- General configuration ---------------------------------------------
@@ -169,10 +167,6 @@ nbsphinx_thumbnails = {
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
     "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
 }
-
-
-def setup(app):
-    app.warningiserror = on_rtd
 
 
 # -- Options for HTMLHelp output ---------------------------------------
