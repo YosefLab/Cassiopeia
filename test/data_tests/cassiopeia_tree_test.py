@@ -1117,7 +1117,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             set(cas_tree.cell_meta.index),
             set(["node3", "node4", "node5", "node6", "node7"]),
         )
-        self.assertEqual(list(cas_tree.cell_meta.loc["node7"]), [np.nan])
+        self.assertTrue(np.isnan(cas_tree.cell_meta.loc["node7"][0]))
 
     def test_remove_leaves_and_prune_lineages_all(self):
         """Tests the case where all lineages are removed and pruned."""
