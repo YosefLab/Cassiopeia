@@ -35,10 +35,10 @@ jobs:
         pip install pytest-cov
         pip install Cython
         pip install codecov
-        make install
+        pip install .
     - name: Test with pytest
       run: |
-        python -m pytest -vv test/ --cov-report=xml --cov=cassiopeia
+        pytest -vv test/ --cov-report=xml --cov=cassiopeia
     - name: After success
       run: |
         codecov
