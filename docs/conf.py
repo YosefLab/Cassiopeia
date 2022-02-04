@@ -161,16 +161,6 @@ html_static_path = ["_static"]
 html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
-nbsphinx_prolog = r"""
-.. raw:: html
-
-    <style>
-        p {{
-            margin-bottom: 0.5rem;
-        }}
-    </style>
-"""
-
 nbsphinx_thumbnails = {
     "notebooks/preprocess": "_static/tutorials/preprocess.png",
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
