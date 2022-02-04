@@ -1,6 +1,8 @@
 ===========
 Data
 ===========
+
+.. module:: cassiopeia.data
 .. currentmodule:: cassiopeia
 
 CassiopeiaTrees

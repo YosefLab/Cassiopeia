@@ -18,9 +18,7 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
-import os
 import sys
-import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -40,11 +38,10 @@ needs_sphinx = "3.4"  # Nicer param docs
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "nbsphinx",
     "nbsphinx_link",
-    "sphinx_gallery.load_style",
+    "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
     "sphinx.ext.autosummary",
@@ -52,6 +49,7 @@ extensions = [
     "scanpydoc.definition_list_typed_field",
     "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
+    "sphinx_gallery.load_style",
 ]
 
 # nbsphinx specific settings
@@ -73,7 +71,7 @@ source_suffix = ".rst"
 autosummary_generate = True
 autodoc_member_order = "bysource"
 napoleon_google_docstring = True  # for pytorch lightning
-napoleon_numpy_docstring = True
+napoleon_numpy_docstring = False
 napoleon_include_init_with_doc = False
 napoleon_use_rtype = True  # having a separate entry generally helps readability
 napoleon_use_param = True
@@ -95,7 +93,7 @@ intersphinx_mapping = dict(
 
 # General information about the project.
 project = "cassiopeia"
-copyright = "2021, Yosef Lab, UC Berkeley"
+copyright = "2022, Yosef Lab, UC Berkeley"
 author = "Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
@@ -184,51 +182,63 @@ mathjax_config = {
     },
 }
 
-# -- Options for LaTeX output ------------------------------------------
 
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
+from sphinx.ext.autosummary import Autosummary
+from sphinx.ext.autosummary import get_documenter
+from docutils.parsers.rst import directives
+from sphinx.util.inspect import safe_getattr
+import re
 
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, documentclass
-# [howto, manual, or own class]).
-# latex_documents = [
-#     (master_doc, "cassiopeia.tex", u"Cassiopeia Documentation", u"Matthew Jones", "manual")
-# ]
+# Code for creating autosummaries for class methods / attributes
+# Taken originally from Pandas documentation
+class AutoAutoSummary(Autosummary):
+
+    option_spec = {
+        "methods": directives.unchanged,
+        "attributes": directives.unchanged,
+    }
+
+    required_arguments = 1
+
+    @staticmethod
+    def get_members(obj, typ, include_public=None):
+        if not include_public:
+            include_public = []
+        items = []
+        for name in dir(obj):
+            try:
+                documenter = get_documenter(safe_getattr(obj, name), obj)
+            except AttributeError:
+                continue
+            if documenter.objtype == typ:
+                items.append(name)
+        public = [x for x in items if x in include_public or not x.startswith("_")]
+        return public, items
+
+    def run(self):
+        clazz = str(self.arguments[0])
+        try:
+            (module_name, class_name) = clazz.rsplit(".", 1)
+            m = __import__(module_name, globals(), locals(), [class_name])
+            c = getattr(m, class_name)
+            if "methods" in self.options:
+                _, methods = self.get_members(c, "method", ["__init__"])
+
+                self.content = [
+                    "~%s.%s" % (clazz, method)
+                    for method in methods
+                    if not method.startswith("_")
+                ]
+            if "attributes" in self.options:
+                _, attribs = self.get_members(c, "attribute")
+                self.content = [
+                    "~%s.%s" % (clazz, attrib)
+                    for attrib in attribs
+                    if not attrib.startswith("_")
+                ]
+        finally:
+            return super(AutoAutoSummary, self).run()
 
 
-# -- Options for manual page output ------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "Cassiopeia", "Cassiopeia Documentation", [author], 1)]
-
-
-# -- Options for Texinfo output ----------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "cassiopeia",
-        "Cassiopeia Documentation",
-        author,
-        "Cassiopeia",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
+def setup(app):
+    app.add_directive("autoautosummary", AutoAutoSummary)
