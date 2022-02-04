@@ -196,6 +196,7 @@ class AutoAutoSummary(Autosummary):
     option_spec = {
         "methods": directives.unchanged,
         "attributes": directives.unchanged,
+        "toctree": directives.unchanged,
     }
 
     required_arguments = 1
