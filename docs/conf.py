@@ -26,10 +26,8 @@ from pathlib import Path
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
-
 import cassiopeia  # noqa
 
-autodoc_mock_imports = ["gurobipy"]
 
 # -- General configuration ---------------------------------------------
 
@@ -59,6 +57,8 @@ extensions = [
 # nbsphinx specific settings
 exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 nbsphinx_execute = "never"
+
+autodoc_mock_imports = ["gurobipy"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

@@ -22,3 +22,5 @@ __version__ = importlib_metadata.version(package_name)
 import sys
 
 sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim"]})
+
+__all__ = ["pp", "solver", "pl", "data", "critique", "sim", "tl"]
