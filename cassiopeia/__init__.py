@@ -18,3 +18,7 @@ except ModuleNotFoundError:
     import importlib_metadata
 package_name = "cassiopeia"
 __version__ = importlib_metadata.version(package_name)
+
+import sys
+
+sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl"]})
