@@ -2,13 +2,13 @@
 
 """Top-level for Cassiopeia development."""
 
-from . import pp
+from . import preprocess as pp
 from . import solver
-from . import pl
+from . import plotting as pl
 from . import data
 from . import critique
-from . import sim
-from . import tl
+from . import simulator as sim
+from . import tools as tl
 
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
 # https://github.com/python-poetry/poetry/issues/144#issuecomment-623927302
