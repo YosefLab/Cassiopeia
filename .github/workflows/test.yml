@@ -33,7 +33,6 @@ jobs:
     - name: Install dependencies
       run: |
         pip install pytest-cov
-        pip install Cython
         pip install codecov
         pip install .
     - name: Test with pytest
