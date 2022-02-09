@@ -6,7 +6,6 @@ that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this.
 """
 import abc
-import cassiopeia
 import networkx as nx
 import numpy as np
 import pandas as pd
