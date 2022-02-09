@@ -31,7 +31,7 @@ Installation
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
-2. Ensure that you have python3.6 installed. You can install this via pip.
+2. Ensure you are using python>=3.7. (Python 3.6 may still work, but is not guaranteed.)
 
 3. Make sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
     * Run the command ``gurobi.sh`` from a terminal window
