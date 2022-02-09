@@ -31,7 +31,7 @@ Installation
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
-2. Ensure that you have Python >= 3.7 installed. We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+2. Ensure that you have Python >= 3.7 installed. (Python 3.6 may still work, but is not guaranteed.) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 3. [Optional] Make sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
     * Run the command ``gurobi.sh`` from a terminal window
