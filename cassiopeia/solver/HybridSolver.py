@@ -226,6 +226,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 [subtree-root, subtree-samples].
         """
 
+        if len(samples) == 1:
+            return samples[0], [samples], tree
+
         clades = list(
             self.top_solver.perform_split(
                 character_matrix, samples, weights, missing_state_indicator
@@ -233,41 +236,37 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         root = next(node_name_generator)
-
         tree.add_node(root)
+
+        for clade in clades:
+            if len(clade) == 0:
+                clades.remove(clade)
+
         if len(clades) == 1:
             for clade in clades[0]:
                 tree.add_edge(root, clade)
             return root, [], tree
 
-        new_clades = []
         subproblems = []
         for clade in clades:
-
-            if len(clade) == 0:
-                continue
 
             if self.assess_cutoff(
                 clade, character_matrix, missing_state_indicator
             ):
                 subproblems += [(root, clade)]
-                continue
+            else:
+                child, new_subproblems, tree = self.apply_top_solver(
+                    character_matrix,
+                    clade,
+                    tree,
+                    node_name_generator,
+                    weights,
+                    missing_state_indicator,
+                    root,
+                )
+                tree.add_edge(root, child)
 
-            new_clades.append(clade)
-
-        for clade in new_clades:
-            child, new_subproblems, tree = self.apply_top_solver(
-                character_matrix,
-                clade,
-                tree,
-                node_name_generator,
-                weights,
-                missing_state_indicator,
-                root,
-            )
-            tree.add_edge(root, child)
-
-            subproblems += new_subproblems
+                subproblems += new_subproblems            
 
         return root, subproblems, tree
 

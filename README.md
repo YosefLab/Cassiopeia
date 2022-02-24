@@ -31,20 +31,21 @@ Installation
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
-2. Ensure you are using python>=3.7. (Python 3.6 may still work, but is not guaranteed.)
+2. Ensure that you have Python >= 3.7 installed. (Python 3.6 may still work, but is not guaranteed.) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
-3. Make sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
+3. [Optional] Make sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
     * Run the command ``gurobi.sh`` from a terminal window
     * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
-    
-4. Install Cassiopeia by first making sure you have stable version of `Cython` and `pytest`. Then, you can install Cassiopeia by running `make install` from the directory where you have Cassiopeia downloaded.
-    
-To verify that it installed correctly, try running our tests with `make test`.
+
+4. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
+
+To verify that it installed correctly, try running our tests with `pytest`.
 
 Reference
 ----------------------
 
 If you've found Cassiopeia useful for your research, please consider citing our paper published in Genome Biology:
 
-
+```
 Matthew G Jones*, Alex Khodaverdian*, Jeffrey J Quinn*, Michelle M Chan, Jeffrey A Hussmann, Robert Wang, Chenling Xu, Jonathan S Weissman, Nir Yosef. (2020), [*Inference of single-cell phylogenies from lineage tracing data using Cassiopeia*](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8), Genome Biology
+```

@@ -1,7 +1,6 @@
 ===========
 Simulator
 ===========
-.. module:: cassiopeia.sim
 .. currentmodule:: cassiopeia
 
 
@@ -14,7 +13,7 @@ We have several frameworks available for simulating topologies:
 
 .. autosummary::
    :toctree: reference/
-   
+
    sim.BirthDeathFitnessSimulator
    sim.CompleteBinarySimulator
    sim.SimpleFitSubcloneSimulator
