@@ -16,7 +16,7 @@ try:
     import importlib.metadata as importlib_metadata
 except ModuleNotFoundError:
     import importlib_metadata
-package_name = "cassiopeia"
+package_name = "cassiopeia-lineage"
 __version__ = importlib_metadata.version(package_name)
 
 import sys
