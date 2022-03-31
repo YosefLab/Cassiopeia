@@ -169,7 +169,7 @@ def upload_and_export_itol(
 
         if pd.api.types.is_string_dtype(values):
             colors = palette[: len(values.unique())]
-            colors = [hex_to_rgb(color) for color in colors]
+            colors = [utilities.hex_to_rgb(color) for color in colors]
             colormap = dict(zip(np.unique(values), colors))
 
             files.append(
