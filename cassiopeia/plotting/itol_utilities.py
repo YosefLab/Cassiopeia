@@ -482,14 +482,9 @@ def create_indel_heatmap(
                 "",
             ]
 
-        if len(str(j)) == 1:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_0{j}.txt"
-            )
-        elif len(str(j)) == 2:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_{j}.txt"
-            )
+        alleleLabel_fileout = os.path.join(
+            output_directory, f"indelColors_0{str(j).zfill(4)}.txt")
+
         with open(alleleLabel_fileout, "w") as ALout:
             for line in header:
                 ALout.write(line + "\n")
