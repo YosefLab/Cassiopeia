@@ -163,6 +163,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 cassiopeia_tree.missing_state_indicator,
             )
         )
+
+        logger.info(f"Phylogenetic root: {root}")
+
         pid = hashlib.md5(
             "|".join([str(r) for r in root]).encode("utf-8")
         ).hexdigest()
