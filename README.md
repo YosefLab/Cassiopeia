@@ -29,6 +29,14 @@ Free Software: MIT License
 Installation
 --------------
 
+For users:
+
+```
+pip install git+https://github.com/YosefLab/Cassiopeia@master#egg=cassiopeia-lineage
+```
+
+For developers:
+
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
 2. Ensure that you have Python >= 3.7 installed. (Python 3.6 may still work, but is not guaranteed.) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
