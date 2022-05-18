@@ -18,20 +18,14 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
-import os
 import sys
-import warnings
 from pathlib import Path
 
 HERE = Path(__file__).parent
-# sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
-
+sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
 import cassiopeia  # noqa
 
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-
-autodoc_mock_imports = ["gurobipy"]
 
 # -- General configuration ---------------------------------------------
 
@@ -44,11 +38,10 @@ needs_sphinx = "3.4"  # Nicer param docs
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "nbsphinx",
     "nbsphinx_link",
-    "sphinx_gallery.load_style",
+    "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
     "sphinx.ext.autosummary",
@@ -56,12 +49,14 @@ extensions = [
     "scanpydoc.definition_list_typed_field",
     "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
-    *[p.stem for p in (HERE / "extensions").glob("*.pyx")],
+    "sphinx_gallery.load_style",
 ]
 
 # nbsphinx specific settings
 exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 nbsphinx_execute = "never"
+
+autodoc_mock_imports = ["gurobipy"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -76,7 +71,7 @@ source_suffix = ".rst"
 autosummary_generate = True
 autodoc_member_order = "bysource"
 napoleon_google_docstring = True  # for pytorch lightning
-napoleon_numpy_docstring = True
+napoleon_numpy_docstring = False
 napoleon_include_init_with_doc = False
 napoleon_use_rtype = True  # having a separate entry generally helps readability
 napoleon_use_param = True
@@ -97,9 +92,9 @@ intersphinx_mapping = dict(
 )
 
 # General information about the project.
-project = u"cassiopeia"
-copyright = u"2021, Yosef Lab, UC Berkeley"
-author = u"Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
+project = "cassiopeia"
+copyright = "2022, Yosef Lab, UC Berkeley"
+author = "Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -120,7 +115,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".pyx"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -172,10 +167,6 @@ nbsphinx_thumbnails = {
 }
 
 
-def setup(app):
-    app.warningiserror = on_rtd
-
-
 # -- Options for HTMLHelp output ---------------------------------------
 
 # Output file base name for HTML help builder.
@@ -191,56 +182,6 @@ mathjax_config = {
     },
 }
 
-# -- Options for LaTeX output ------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, documentclass
-# [howto, manual, or own class]).
-# latex_documents = [
-#     (master_doc, "cassiopeia.tex", u"Cassiopeia Documentation", u"Matthew Jones", "manual")
-# ]
-
-
-# -- Options for manual page output ------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, "Cassiopeia", u"Cassiopeia Documentation", [author], 1)
-]
-
-
-# -- Options for Texinfo output ----------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "cassiopeia",
-        u"Cassiopeia Documentation",
-        author,
-        "Cassiopeia",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
 
 from sphinx.ext.autosummary import Autosummary
 from sphinx.ext.autosummary import get_documenter
@@ -255,6 +196,7 @@ class AutoAutoSummary(Autosummary):
     option_spec = {
         "methods": directives.unchanged,
         "attributes": directives.unchanged,
+        "toctree": directives.unchanged,
     }
 
     required_arguments = 1
@@ -271,9 +213,7 @@ class AutoAutoSummary(Autosummary):
                 continue
             if documenter.objtype == typ:
                 items.append(name)
-        public = [
-            x for x in items if x in include_public or not x.startswith("_")
-        ]
+        public = [x for x in items if x in include_public or not x.startswith("_")]
         return public, items
 
     def run(self):

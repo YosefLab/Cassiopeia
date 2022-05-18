@@ -14,3 +14,19 @@ from .tree_metrics import (
     calculate_likelihood_discrete,
     calculate_parsimony,
 )
+
+
+__all__ = [
+    "calculate_likelihood_continuous",
+    "calculate_likelihood_discrete",
+    "calculate_parsimony",
+    "compute_morans_i",
+    "compute_evolutionary_coupling",
+    "estimate_missing_data_rates",
+    "estimate_mutation_rate",
+    "fitch_count",
+    "fitch_hartigan",
+    "score_small_parsimony",
+    "compute_cophenetic_correlation",
+    "compute_expansion_pvalues",
+]
