@@ -1862,23 +1862,26 @@ class CassiopeiaTree:
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
-        dissimilarity_map = pd.DataFrame(
-            dissimilarity_map,
-            index=dedup_character_matrix.index,
-            columns=dedup_character_matrix.index,
-        )
-
         # Expand deduplicated dissimilarity map back to all cells
-        for dedup_cell in dedup_character_matrix.index:
+        full_dissimilarity_map = np.pad(dissimilarity_map, (0, character_matrix.shape[0] - N))
+        dissimilarity_cells = list(dedup_character_matrix.index)
+        j = N
+        for i, dedup_cell in enumerate(dedup_character_matrix.index):
+            dissimilarities = full_dissimilarity_map[i]
             for cell in state_to_cells[cell_to_state[dedup_cell]]:
                 if dedup_cell == cell:
                     continue
-                dissimilarities = dissimilarity_map.loc[dedup_cell]
-                dissimilarity_map.loc[cell] = dissimilarities.copy()
-                col_dissimilarities = dissimilarities.copy()
-                col_dissimilarities[cell] = dissimilarities[dedup_cell]
-                dissimilarity_map[cell] = col_dissimilarities
+                full_dissimilarity_map[j] = dissimilarities
+                full_dissimilarity_map[:, j] = dissimilarities
+                full_dissimilarity_map[j, j] = dissimilarities[i]
+                dissimilarity_cells.append(cell)
+                j += 1
 
+        dissimilarity_map = pd.DataFrame(
+            full_dissimilarity_map,
+            index=dissimilarity_cells,
+            columns=dissimilarity_cells,
+        )
         self.set_dissimilarity_map(dissimilarity_map)
 
     def set_attribute(self, node: str, attribute_name: str, value: Any) -> None:
