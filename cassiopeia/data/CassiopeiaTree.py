@@ -1867,10 +1867,10 @@ class CassiopeiaTree:
         dissimilarity_cells = list(dedup_character_matrix.index)
         j = N
         for i, dedup_cell in enumerate(dedup_character_matrix.index):
-            dissimilarities = full_dissimilarity_map[i]
             for cell in state_to_cells[cell_to_state[dedup_cell]]:
                 if dedup_cell == cell:
                     continue
+                dissimilarities = full_dissimilarity_map[i]
                 full_dissimilarity_map[j] = dissimilarities
                 full_dissimilarity_map[:, j] = dissimilarities
                 full_dissimilarity_map[j, j] = dissimilarities[i]
