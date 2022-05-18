@@ -1846,9 +1846,14 @@ class CassiopeiaTree:
                 self.priors, prior_transformation
             )
 
-        N = character_matrix.shape[0]
+        # Only compute dissimilarities between *unique* states to save runtime!
+        cell_to_state = character_matrix.astype(str).apply('|'.join, axis=1)
+        state_to_cells = character_matrix.index.groupby(cell_to_state)
+        dedup_character_matrix = character_matrix.drop_duplicates()
+
+        N = dedup_character_matrix.shape[0]
         dissimilarity_map = utilities.compute_dissimilarity_map(
-            character_matrix.to_numpy(),
+            dedup_character_matrix.to_numpy(),
             N,
             dissimilarity_function,
             weights,
@@ -1859,9 +1864,20 @@ class CassiopeiaTree:
 
         dissimilarity_map = pd.DataFrame(
             dissimilarity_map,
-            index=character_matrix.index,
-            columns=character_matrix.index,
+            index=dedup_character_matrix.index,
+            columns=dedup_character_matrix.index,
         )
+
+        # Expand deduplicated dissimilarity map back to all cells
+        for dedup_cell in dedup_character_matrix.index:
+            for cell in state_to_cells[cell_to_state[dedup_cell]]:
+                if dedup_cell == cell:
+                    continue
+                dissimilarities = dissimilarity_map.loc[dedup_cell]
+                dissimilarity_map.loc[cell] = dissimilarities.copy()
+                col_dissimilarities = dissimilarities.copy()
+                col_dissimilarities[cell] = dissimilarities[dedup_cell]
+                dissimilarity_map[cell] = col_dissimilarities
 
         self.set_dissimilarity_map(dissimilarity_map)
 
