@@ -959,22 +959,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         tree.compute_dissimilarity_map(delta_fn)
         observed_dissimilarity_map = tree.get_dissimilarity_map()
 
-        # self.duplicated_character_matrix = pd.DataFrame.from_dict(
-        #     {
-        #         "node3": [1, 0, 0, 0, 0, 0, 0, 0],
-        #         "node7": [1, 0, 0, 0, 0, 0, 0, 0],
-        #         "node9": [1, 1, 1, 0, 0, 0, 0, 0],
-        #         "node11": [1, 1, 1, 1, 0, 0, 0, 0],
-        #         "node13": [1, 1, 1, 1, 1, 0, 0, 0],
-        #         "node15": [1, 1, 1, 1, 1, 1, 0, 0],
-        #         "node17": [1, 1, 1, 1, 1, 1, 1, 0],
-        #         "node18": [1, 1, 1, 1, 1, 1, 1, 1],
-        #         "node5": [2, 0, 0, 0, 0, 0, 0, 0],
-        #         "node6": [2, 2, 0, 0, 0, 0, 0, 0],
-        #     },
-        #     orient="index",
-        # )
-
         expected_dissimilarity_map = pd.DataFrame.from_dict(
             {
                 "node3": [0, 0, 2, 3, 4, 5, 6, 7, 1, 2],
