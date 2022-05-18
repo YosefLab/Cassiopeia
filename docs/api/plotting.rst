@@ -2,7 +2,6 @@
 Plotting
 ==========
 
-.. module:: cassiopeia.pl
 .. currentmodule:: cassiopeia
 
 Plotting

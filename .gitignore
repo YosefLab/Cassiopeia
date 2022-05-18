@@ -164,3 +164,4 @@ build
 stdout.log
 notebooks/.ipynb_checkpoints
 cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.cpp
+docs/api/reference/**

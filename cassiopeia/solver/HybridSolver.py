@@ -141,6 +141,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
 
+        logfile_names = iter([i for i in range(1, len(subproblems) + 1)])
+
         # multi-threaded bottom solver approach
         with multiprocessing.Pool(processes=self.threads) as pool:
 
@@ -153,7 +155,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                 cassiopeia_tree,
                                 subproblem[0],
                                 subproblem[1],
-                                logfile,
+                                f"{logfile.split('.log')[0]}-"
+                                        f"{next(logfile_names)}.log",
                                 layer,
                             )
                             for subproblem in subproblems
@@ -226,6 +229,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 [subtree-root, subtree-samples].
         """
 
+        if len(samples) == 1:
+            return samples[0], [samples], tree
+
         clades = list(
             self.top_solver.perform_split(
                 character_matrix, samples, weights, missing_state_indicator
@@ -233,41 +239,37 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         root = next(node_name_generator)
-
         tree.add_node(root)
+
+        for clade in clades:
+            if len(clade) == 0:
+                clades.remove(clade)
+
         if len(clades) == 1:
             for clade in clades[0]:
                 tree.add_edge(root, clade)
             return root, [], tree
 
-        new_clades = []
         subproblems = []
         for clade in clades:
-
-            if len(clade) == 0:
-                continue
 
             if self.assess_cutoff(
                 clade, character_matrix, missing_state_indicator
             ):
                 subproblems += [(root, clade)]
-                continue
+            else:
+                child, new_subproblems, tree = self.apply_top_solver(
+                    character_matrix,
+                    clade,
+                    tree,
+                    node_name_generator,
+                    weights,
+                    missing_state_indicator,
+                    root,
+                )
+                tree.add_edge(root, child)
 
-            new_clades.append(clade)
-
-        for clade in new_clades:
-            child, new_subproblems, tree = self.apply_top_solver(
-                character_matrix,
-                clade,
-                tree,
-                node_name_generator,
-                weights,
-                missing_state_indicator,
-                root,
-            )
-            tree.add_edge(root, child)
-
-            subproblems += new_subproblems
+                subproblems += new_subproblems
 
         return root, subproblems, tree
 
@@ -322,15 +324,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.missing_state_indicator,
         )
 
-        base_logfile = logfile.split(".log")[0]
-        subtree_root_string = "-".join([str(s) for s in subtree_root])
-        logfile = f"{base_logfile}_{subtree_root_string}.log"
-
         subtree = CassiopeiaTree(
             subproblem_character_matrix,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
             priors=cassiopeia_tree.priors,
         )
+
         self.bottom_solver.solve(subtree, logfile=logfile)
 
         subproblem_tree = subtree.get_tree_topology()
