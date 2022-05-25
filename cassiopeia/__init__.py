@@ -2,15 +2,26 @@
 
 """Top-level for Cassiopeia development."""
 
-package_name = "cassiopeia"
-__author__ = "Matt Jones, Alex Khodaveridan, Richard Zhang, Sebastian Prillo"
-__email__ = "mattjones315@berkeley.edu"
-__version__ = "0.0.1"
-
-from . import pp
+from . import preprocess as pp
 from . import solver
-from . import pl
+from . import plotting as pl
 from . import data
 from . import critique
-from . import sim
-from . import tl
+from . import simulator as sim
+from . import tools as tl
+
+# https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
+# https://github.com/python-poetry/poetry/issues/144#issuecomment-623927302
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
+package_name = "cassiopeia-lineage"
+__version__ = importlib_metadata.version(package_name)
+
+import sys
+
+sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim"]})
+del sys
+
+__all__ = ["pp", "solver", "pl", "data", "critique", "sim", "tl"]

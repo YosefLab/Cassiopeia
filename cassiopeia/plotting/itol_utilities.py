@@ -13,14 +13,14 @@ from typing import Dict, List, Tuple, Optional
 
 from bokeh import palettes
 from itolapi import Itol, ItolExport
-from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
+from matplotlib.colors import hsv_to_rgb
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import iTOLError
-from cassiopeia.preprocess import utilities
+from cassiopeia.plotting import utilities
 
 
 def upload_and_export_itol(
@@ -169,7 +169,7 @@ def upload_and_export_itol(
 
         if pd.api.types.is_string_dtype(values):
             colors = palette[: len(values.unique())]
-            colors = [hex_to_rgb(color) for color in colors]
+            colors = [utilities.hex_to_rgb(color) for color in colors]
             colormap = dict(zip(np.unique(values), colors))
 
             files.append(
@@ -364,7 +364,7 @@ def create_colorbar(
 
             SIDout.write("\nLEGEND_COLORS")
             for col in colormap.values():
-                SIDout.write(f"\t{rgb_to_hex(col)}")
+                SIDout.write(f"\t{utilities.rgb_to_hex(col)}")
 
             SIDout.write("\nLEGEND_LABELS")
             for key in colormap.keys():
@@ -415,18 +415,11 @@ def create_indel_heatmap(
 
     _leaves = tree.leaves
 
-    lineage_profile = utilities.convert_alleletable_to_lineage_profile(
-        alleletable
+    clustered_linprof, _indel_colors = utilities.prepare_alleletable(
+        alleletable, _leaves, indel_priors, random_state
     )
-    clustered_linprof = lineage_profile.loc[_leaves[::-1]]
-
     if indel_colors is None:
-        if indel_priors is None:
-            indel_colors = get_random_indel_colors(
-                lineage_profile, random_state
-            )
-        else:
-            indel_colors = get_indel_colors(indel_priors, random_state)
+        indel_colors = _indel_colors
 
     # Convert colors and make colored alleleTable (rgb_heatmap)
     r, g, b = (
@@ -489,14 +482,9 @@ def create_indel_heatmap(
                 "",
             ]
 
-        if len(str(j)) == 1:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_0{j}.txt"
-            )
-        elif len(str(j)) == 2:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_{j}.txt"
-            )
+        alleleLabel_fileout = os.path.join(
+            output_directory, f"indelColors_0{str(j).zfill(4)}.txt")
+
         with open(alleleLabel_fileout, "w") as ALout:
             for line in header:
                 ALout.write(line + "\n")
@@ -508,167 +496,3 @@ def create_indel_heatmap(
         allele_files.append(alleleLabel_fileout)
 
     return allele_files
-
-
-def get_random_indel_colors(
-    lineage_profile: pd.DataFrame,
-    random_state: Optional[np.random.RandomState] = None,
-) -> pd.DataFrame:
-    """Assigns random color to each unique indel.
-
-    Assigns a random HSV value to each indel observed in the specified
-    lineage profile.
-
-    Args:
-        lineage_profile: An NxM lineage profile reporting the indels observed
-            at each cut site in a cell.
-        random_state: A random state for reproducibility
-
-    Returns:
-        A mapping from indel to HSV color.
-    """
-
-    lineage_profile.fillna("missing", inplace=True)
-    unique_indels = np.unique(
-        np.hstack(lineage_profile.apply(lambda x: x.unique(), axis=0))
-    )
-
-    # color families
-    redmag = [0.5, 1, 0, 0.5, 0, 1]
-    grnyel = [0, 1, 0.5, 1, 0, 0.5]
-    cynblu = [0, 0.5, 0, 1, 0.5, 1]
-    colorlist = [redmag, grnyel, cynblu]
-
-    # construct dictionary of indels-to-RGBcolors
-    indel2color = {}
-    for indel in unique_indels:
-        if "none" in indel.lower():
-            indel2color[indel] = rgb_to_hsv((0.75, 0.75, 0.75))
-        elif indel == "NC":
-            indel2color[indel] = rgb_to_hsv((0, 0, 0))
-        elif indel == "missing":
-            indel2color[indel] = rgb_to_hsv((1, 1, 1))
-        else:
-            # randomly pick a color family and then draw random colors
-            # from that family
-            if random_state:
-                rgb_i = random_state.choice(range(len(colorlist)))
-                color_ranges = colorlist[rgb_i]
-                indel2color[indel] = rgb_to_hsv(
-                    generate_random_color(
-                        color_ranges[:2],
-                        color_ranges[2:4],
-                        color_ranges[4:6],
-                        random_state,
-                    )
-                )
-            else:
-                rgb_i = np.random.choice(range(len(colorlist)))
-                color_ranges = colorlist[rgb_i]
-                indel2color[indel] = rgb_to_hsv(
-                    generate_random_color(
-                        color_ranges[:2], color_ranges[2:4], color_ranges[4:6]
-                    )
-                )
-
-    indel_colors = pd.DataFrame(columns=["color"])
-    for indel in indel2color.keys():
-        indel_colors.loc[indel, "color"] = indel2color[indel]
-    return pd.DataFrame(indel_colors["color"])
-
-
-def get_indel_colors(
-    indel_priors: pd.DataFrame,
-    random_state: Optional[np.random.RandomState] = None,
-) -> pd.DataFrame:
-    """Map indel to HSV colors using prior probabilities.
-
-    Given prior probabilities of indels, map each indel to a color reflecting
-    its relative likelihood. Specifically, indels that are quite frequent will
-    have dull colors and indels that are rare will be bright.
-
-    Args:
-        indel_priors: DataFrame mapping indels to probabilities
-        random_state: Random state for reproducibility
-
-    Returns:
-        DataFrame mapping indel to color
-    """
-
-    def assign_color(prob, random_state):
-        """Samples a HSV color, with saturation proportional to probability."""
-        if random_state:
-            H = random_state.rand()
-        else:
-            H = np.random.rand()
-        S = prob
-        V = 0.5 + 0.5 * S
-        return (H, S, V)
-
-    indel_priors_copy = indel_priors.copy()
-    indel_priors_copy["NormFreq"] = indel_priors_copy["freq"]
-    indel_priors_copy["NormFreq"] = indel_priors_copy.apply(
-        lambda x: (indel_priors_copy["NormFreq"].max() - x.NormFreq), axis=1
-    )
-    indel_priors_copy["NormFreq"] /= indel_priors_copy["NormFreq"].max()
-    indel_priors_copy["color"] = indel_priors_copy.apply(
-        lambda x: assign_color(x.NormFreq, random_state), axis=1
-    )
-    return pd.DataFrame(indel_priors_copy["color"])
-
-
-def hex_to_rgb(value) -> Tuple[int, int, int]:
-    """Converts Hex color code to RGB.
-
-    Args:
-        values: hex values (beginning with "#")
-
-    Returns:
-        A tuple denoting (r, g, b)
-    """
-    value = value.lstrip("#")
-    lv = len(value)
-    return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-
-def rgb_to_hex(rgb) -> str:
-    """Converts (r, g, b) tuple to hex
-
-    Args:
-        rgb: A tuple denoting (R, G, B) values
-
-    Returns:
-        A hex string.
-    """
-
-    r, g, b = rgb[0], rgb[1], rgb[2]
-    return "#{:02x}{:02x}{:02x}".format(r, g, b)
-
-
-def generate_random_color(
-    r_range: Tuple[float, float],
-    g_range: Tuple[float, float],
-    b_range: Tuple[float, float],
-    random_state: Optional[np.random.RandomState] = None,
-) -> Tuple[int, int, int]:
-    """Generates a random color from ranges of RGB.
-
-    Args:
-        r_range: Range of values for the R value
-        g_range: Range of value for the G value
-        b_range: Range of values for the B value
-        random_state: Random state for reproducibility
-
-    Returns:
-        An (R, G, B) tuple sampled from the ranges passed in.
-    """
-
-    if random_state:
-        red = random_state.uniform(r_range[0], r_range[1])
-        grn = random_state.uniform(g_range[0], g_range[1])
-        blu = random_state.uniform(b_range[0], b_range[1])
-    else:
-        red = np.random.uniform(r_range[0], r_range[1])
-        grn = np.random.uniform(g_range[0], g_range[1])
-        blu = np.random.uniform(b_range[0], b_range[1])
-    return (red, grn, blu)
