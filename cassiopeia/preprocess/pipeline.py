@@ -764,7 +764,7 @@ def error_correct_umis(
         return sorted_df
 
     num_corrected = 0
-    total = 0
+    total = sorted_df.shape[0]
 
     alignment_df = pd.DataFrame()
 
@@ -781,7 +781,6 @@ def error_correct_umis(
         for _, allele_group in allele_groups
     ):
         num_corrected += num_corr
-        total += allele_group.shape[0]
 
         alignment_dfs.append(allele_group)
     alignment_df = pd.concat(alignment_dfs, sort=True)
