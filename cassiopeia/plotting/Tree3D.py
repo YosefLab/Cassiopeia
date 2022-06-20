@@ -191,6 +191,13 @@ class Tree3D:
         tree: The Cassiopeia tree to plot. The leaf names must be string-casted integers.
         labels: A Numpy array containing cell labels on a 2D surface. This array must contain all the
             cells in the `tree`, but as integers.
+        offset: Offset to give to tree and subclone shading. This option exists because in some cases
+            if the tree and subclone shading is placed at the same height as the image, weird clipping
+            happens.
+        downscale: Downscale all images by this amount. This option is recommended for more responsive
+            visualization.
+        cmap: Colormap to use. Defaults to the Godsnot color palette, as defined at
+            https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
     """
     def __init__(
         self,
