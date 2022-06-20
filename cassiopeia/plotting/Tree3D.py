@@ -941,7 +941,7 @@ class Tree3D:
         self.add_image_checkboxes()
         self.add_node_picking()
 
-    def plot(self, plot_tree=True, add_widgets=True):
+    def plot(self, plot_tree: bool = True, add_widgets: bool = True):
         """Display 3D render.
 
         Args:
