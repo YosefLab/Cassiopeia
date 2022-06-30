@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv, to_rgb, to_rgba, to_rgba_array
 
 from ..data import CassiopeiaTree
-from ..mixins import PlottingError, PlottingWarning, try_import
+from ..mixins import PlottingError, try_import
 
 # Optional dependencies that are required for 3D plotting
 cv2 = try_import('cv2')

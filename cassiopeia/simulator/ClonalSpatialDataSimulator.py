@@ -4,9 +4,7 @@ the SpatialDataSimulator. The ClonalSpatialDataSimulator simulates spatial
 coordinates with a spatial constraints that clonal populations (i.e. subclones)
 are spatially localized together.
 """
-import warnings
-from typing import Dict, List, Optional, Tuple
-from datasets import Dataset
+from typing import List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -14,7 +12,7 @@ import pandas as pd
 from scipy import spatial
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import DataSimulatorError, DataSimulatorWarning, try_import
+from cassiopeia.mixins import DataSimulatorError, try_import
 from cassiopeia.simulator.SpatialDataSimulator import SpatialDataSimulator
 
 cv2 = try_import('cv2')
@@ -50,8 +48,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         random_seed: A seed for reproducibility
 
     Raises:
-        DataSimulatorError if neither `shape` nor `space` are provided, or if `shape` contains
-            contains a zero size in any dimension.
+        DataSimulatorError if neither `shape` nor `space` are provided
     """
     def __init__(
         self,
