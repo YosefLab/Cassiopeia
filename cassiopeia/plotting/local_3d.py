@@ -142,7 +142,7 @@ def interpolate_branch(parent: Tuple[float, float, float], child: Tuple[float, f
         (x2, y2, z2),
     ])
 
-def polyline_from_points(points: np.ndarray) -> pv.PolyData:
+def polyline_from_points(points: np.ndarray) -> "pv.PolyData":
     """Helper function to create a Pyvista object connected a set of points.
 
     Args:
@@ -163,7 +163,7 @@ def average_mixing(*c):
     """
     return tuple(to_rgba_array(c)[:,:3].mean(axis=0))
 
-def highlight(c):
+def highlight(c) -> Tuple[float, float, float]:
     """Helper function to highlight a certain color.
     """
     hsv = rgb_to_hsv(c)
@@ -171,7 +171,7 @@ def highlight(c):
     hsv[2] = min(hsv[2] + 0.5, 1)
     return hsv_to_rgb(hsv)
 
-def lowlight(c):
+def lowlight(c) -> Tuple[float, float, float]:
     """Helper function to dim out a certain color.
     """
     hsv = rgb_to_hsv(c)
@@ -435,7 +435,7 @@ class Tree3D:
 
         return mask
 
-    def create_grid(self) -> pv.UniformGrid:
+    def create_grid(self) -> "pv.UniformGrid":
         """Helper function to create a Pyvista UniformGrid object with the appropriate
         shape.
         """
@@ -565,7 +565,7 @@ class Tree3D:
             branches[(n1, n2)] = branch_coords
         return branches
 
-    def render_node(self, coords: np.ndarray, radius: float) -> pv.Sphere:
+    def render_node(self, coords: np.ndarray, radius: float) -> "pv.Sphere":
         """Helper function to create a Pyvista object representing a node.
 
         Args:
@@ -582,7 +582,7 @@ class Tree3D:
         coords[2] += self.offset
         return pv.Sphere(center=coords, radius=radius)
 
-    def render_branch(self, branch_coords: np.ndarray, radius: float) -> pv.Tube:
+    def render_branch(self, branch_coords: np.ndarray, radius: float) -> "pv.Tube":
         """Helper function to create a Pyvista object representing a branch.
 
         Args:
