@@ -1,22 +1,19 @@
 from collections import deque
 from functools import partial
 from hashlib import sha256
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv, to_rgb, to_rgba, to_rgba_array
-# Optional dependencies that are required for 3D plotting
-try:
-    import cv2
-    import pyvista as pv
-    from skimage import measure
-except ModuleNotFoundError:
-    cv2 = None
-    pv = None
-    measure = None
 
 from ..data import CassiopeiaTree
-from ..mixins import PlottingError, PlottingWarning
+from ..mixins import PlottingError, PlottingWarning, try_import
+
+# Optional dependencies that are required for 3D plotting
+cv2 = try_import('cv2')
+pv = try_import('pyvista')
+measure = try_import('skimage.measure')
+neighbors = try_import('sklearn.neighbors')
 
 # Don't want to have to set scanpy as a dependency just to use its color palette.
 # https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
@@ -182,10 +179,111 @@ def lowlight(c):
     hsv[2] = max(hsv[2] - 0.5, 0)
     return hsv_to_rgb(hsv)
 
+def labels_from_coordinates(
+    tree: CassiopeiaTree,
+    attribute_key: str = "spatial",
+    angle_distribution: Callable[[], float] = lambda: 0,
+    long_axis_distribution: Callable[[], float] = lambda: 1,
+    short_axis_distribution: Optional[Callable[[], float]] = None,
+    absolute: bool = False
+) -> np.ndarray:
+    """Helper function to create a (synthetic) labels Numpy array for use with 3D plotting.
+
+    This function is useful when your spatial data only provides XY coordinates and
+    not an actual labels array. There are various options to control what each leaf
+    will look like.
+
+    Internally, each cell is represented as an ellipse. An ellipse is parameterized with
+    three values: angle, long axis and short axis. The distribution arguments to this function
+    control how each cell will look. By default, all cells are perfect circles.
+
+    Args:
+        tree: CassiopieaTree to generate labels for
+        attribute_key: Attribute name in the `cell_meta` of the tree containing coordinates.
+            All columns of the form `{attribute_key}_i` where `i` is an integer `0...` will be used.
+        angle_distribution: Callable that takes no arguments and returns a float between 0 and 360,
+            which is the angle of the ellipse.
+        long_axis_distribution: Callable that generates the of the long axis length. If `absolute=True`,
+            the values generated from this function are scaled to half of the minimum nearest-neighbor
+            distance between any two coordinates. Otherwise, the values returned are used as literal
+            lengths.
+        short_axis_distribution: Similar to `long_axis_distribution`, but for the short axis. If this
+            argument is not provided, `long_axis_distribution` is used for this purpose.
+        absolute: Whether or not the lengths sampled from `long_axis_distribution` and
+            `short_axis_distribution` should be considered as absolute lenghts, or should be scaled
+            such that no two cells should overlap when all axes are 1.
+
+    Returns:
+        A synthetic labels array that can be used for 3D plotting.
+
+    Raises:
+        PlottingError if there are not exactly two spatial coordinates.
+    """
+    if short_axis_distribution is None:
+        short_axis_distribution = long_axis_distribution
+
+    meta = tree.cell_meta
+    if meta is None:
+        raise PlottingError("CassiopeiaTree must contain cell meta.")
+    columns = []
+    i = 0
+    while True:
+        column = f'{attribute_key}_{i}'
+        if column in meta.columns:
+            columns.append(column)
+            i += 1
+        else:
+            break
+    if len(columns) != 2:
+        raise PlottingError(f"Only 2-dimensional data is supported, but found {len(columns)} dimensions.")
+
+    coordinates = meta[columns].values
+
+    # Compute scale if not absolute
+    scale = 1
+    if not absolute:
+        nn = neighbors.NearestNeighbors(n_neighbors=1)
+        nn.fit(coordinates)
+        distances = nn.kneighbors(return_distance=True)[0].flatten()
+        scale = max(1, distances.min() / 2)
+
+    shape = tuple(coordinates.astype(int).max(axis=0) + 1)
+    labels = np.zeros(shape, dtype=int)
+    for leaf, coord in zip(meta.index, coordinates):
+        angle = angle_distribution()
+        long_axis = max(int(long_axis_distribution() * scale), 1)
+        short_axis = max(int(short_axis_distribution() * scale), 1)
+        center = tuple(coord.astype(int))
+        ellipse = cv2.ellipse(
+            np.zeros(shape, dtype=np.uint8), center, (long_axis, short_axis), angle, 0, 360, 1, -1
+        ).astype(bool)
+        ellipse[center] = True
+        labels[ellipse] = int(leaf)
+    return labels
+
 class Tree3D:
     """Create a 3D projection of a tree onto a 2D surface.
 
     This class provides various wrappers around Pyvista, which is used for 3D rendering.
+
+    Example:
+        # When labels aren't available, they can be synthetically created by using
+        # `labels_from_coordinates`, as so. The tree must contain spatial coordinates
+        # in the cell meta.
+        labels = cas.pl.labels_from_coordinates(tree)
+
+        tree3d = cas.pl.Tree3D(tree, labels)
+        tree3d.add_image(img)  # img is a Numpy array with the same shape as labels
+        tree3d.plot()
+
+    Hotkeys:
+        1-9: Cut the tree to this many branches.
+        p: Select a subclone and highlight it. Branches and cells not in this subclone
+            are dimmed out. Only available when "Enable node selection" is checked.
+        r: Reset root of the displayed tree to be the root of the actual tree, and reset the view.
+        h: Unselect selected node (which was selected using p).
+        s: Set the root of the displayed tree as the selected node (which was selected using p).
+
 
     Args:
         tree: The Cassiopeia tree to plot. The leaf names must be string-casted integers.
@@ -207,16 +305,16 @@ class Tree3D:
         downscale: float = 1.,
         cmap: Optional[List[str]] = None
     ):
-        # Check labels
-        if not np.isin([int(leaf) for leaf in tree.leaves], labels).all():
-            raise PlottingError("Label array must contain all leaves in the tree.")
-
         # Check optional dependencies.
         if None in (cv2, pv, measure):
             raise PlottingError(
                 "Some required modules were not found. Make sure you installed Cassiopeia with "
                 "the `spatial` extras, or run `pip install cassiopeia-lineage[spatial]`."
             )
+
+        # Check labels
+        if not np.isin([int(leaf) for leaf in tree.leaves], labels).all():
+            raise PlottingError("Label array must contain all leaves in the tree.")
 
         # Caches. These come first because initialization may cache stuff.
         self.cut_tree_cache = {}
@@ -971,6 +1069,7 @@ class Tree3D:
         self.plotter.add_axes(viewport=(0, 0.75, 0.2, 0.95))
         self.plotter.enable_lightkit()
         self.plotter.enable_anti_aliasing()
+        self.plotter.show()
 
     def reset(self):
         """Helper function to reset everything."""
