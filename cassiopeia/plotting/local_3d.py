@@ -259,6 +259,10 @@ def labels_from_coordinates(
         ).astype(bool)
         ellipse[center] = True
         labels[ellipse] = int(leaf)
+
+    # Make sure centers of each leaf is always that leaf
+    for leaf, coord in zip(meta.index, coordinates):
+        labels[tuple(coord.astype(int))] = int(leaf)
     return labels
 
 class Tree3D:
@@ -1046,13 +1050,14 @@ class Tree3D:
         self.add_image_checkboxes()
         self.add_node_picking()
 
-    def plot(self, plot_tree: bool = True, add_widgets: bool = True):
+    def plot(self, plot_tree: bool = True, add_widgets: bool = True, show: bool = True):
         """Display 3D render.
 
         Args:
             plot_tree: Immediately render the tree.
                 If False, the initial plot will not have any tree rendered.
             add_widgets: Add widgets to scene.
+            show: Whether to show the plot immmediately.
         """
         self.update_images()
 
@@ -1069,7 +1074,8 @@ class Tree3D:
         self.plotter.add_axes(viewport=(0, 0.75, 0.2, 0.95))
         self.plotter.enable_lightkit()
         self.plotter.enable_anti_aliasing()
-        self.plotter.show()
+        if show:
+            self.plotter.show()
 
     def reset(self):
         """Helper function to reset everything."""
