@@ -226,9 +226,9 @@ def labels_from_coordinates(
     if short_axis_distribution is None:
         short_axis_distribution = long_axis_distribution
 
-    meta = tree.cell_meta.copy()
-    if meta is None:
+    if tree.cell_meta is None:
         raise PlottingError("CassiopeiaTree must contain cell meta.")
+    meta = tree.cell_meta.copy()
     columns = []
     i = 0
     while True:
