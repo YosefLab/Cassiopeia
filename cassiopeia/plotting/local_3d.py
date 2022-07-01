@@ -1,13 +1,15 @@
+import warnings
 from collections import deque
 from functools import partial
 from hashlib import sha256
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv, to_rgb, to_rgba, to_rgba_array
 
 from ..data import CassiopeiaTree
-from ..mixins import PlottingError, try_import
+from ..mixins import PlottingError, PlottingWarning, try_import
 
 # Optional dependencies that are required for 3D plotting
 cv2 = try_import('cv2')
@@ -191,7 +193,9 @@ def labels_from_coordinates(
 
     This function is useful when your spatial data only provides XY coordinates and
     not an actual labels array. There are various options to control what each leaf
-    will look like.
+    will look like. An additional column in the cell meta will be added in the form
+    `{attribute_key}_label`, indicating what label in the returned array corresponds
+    to each cell.
 
     Internally, each cell is represented as an ellipse. An ellipse is parameterized with
     three values: angle, long axis and short axis. The distribution arguments to this function
@@ -222,7 +226,7 @@ def labels_from_coordinates(
     if short_axis_distribution is None:
         short_axis_distribution = long_axis_distribution
 
-    meta = tree.cell_meta
+    meta = tree.cell_meta.copy()
     if meta is None:
         raise PlottingError("CassiopeiaTree must contain cell meta.")
     columns = []
@@ -249,6 +253,7 @@ def labels_from_coordinates(
 
     shape = tuple(coordinates.astype(int).max(axis=0) + 1)
     labels = np.zeros(shape, dtype=int)
+    leaf_to_label = {}
     for leaf, coord in zip(meta.index, coordinates):
         angle = angle_distribution()
         long_axis = max(int(long_axis_distribution() * scale), 1)
@@ -258,11 +263,19 @@ def labels_from_coordinates(
             np.zeros(shape, dtype=np.uint8), center, (long_axis, short_axis), angle, 0, 360, 1, -1
         ).astype(bool)
         ellipse[center] = True
-        labels[ellipse] = int(leaf)
+
+        label = len(leaf_to_label) + 1
+        labels[ellipse] = label
+        leaf_to_label[leaf] = label
 
     # Make sure centers of each leaf is always that leaf
     for leaf, coord in zip(meta.index, coordinates):
-        labels[tuple(coord.astype(int))] = int(leaf)
+        labels[tuple(coord.astype(int))] = leaf_to_label[leaf]
+
+    # Add label column
+    meta[f'{attribute_key}_label'] = meta.index.map(leaf_to_label)
+    tree.cell_meta = meta
+
     return labels
 
 class Tree3D:
@@ -300,6 +313,8 @@ class Tree3D:
             visualization.
         cmap: Colormap to use. Defaults to the Godsnot color palette, as defined at
             https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
+        attribute_key: Attribute key to use as the integer labels for each leaf node.
+            A column with the name `{attribute_key}_label` will be looked up in the cell meta.
     """
     def __init__(
         self,
@@ -307,7 +322,8 @@ class Tree3D:
         labels: np.ndarray,
         offset: float = 1.,
         downscale: float = 1.,
-        cmap: Optional[List[str]] = None
+        cmap: Optional[List[str]] = None,
+        attribute_key: str = "spatial",
     ):
         # Check optional dependencies.
         if None in (cv2, pv, measure):
@@ -316,22 +332,18 @@ class Tree3D:
                 "the `spatial` extras, or run `pip install cassiopeia-lineage[spatial]`."
             )
 
-        # Check labels
-        if not np.isin([int(leaf) for leaf in tree.leaves], labels).all():
-            raise PlottingError("Label array must contain all leaves in the tree.")
-
         # Caches. These come first because initialization may cache stuff.
         self.cut_tree_cache = {}
         self.place_nodes_cache = {}
-
-        self.plotter = pv.Plotter()
         self.tree = tree
         self.labels = labels  # cell labels image
         self.offset = offset
         self.downscale = downscale
         self.scale = max(*labels.shape) * downscale
-        self.regionprops = {prop.label: prop for prop in measure.regionprops(labels)}
 
+        self.init_label_mapping(f'{attribute_key}_label')
+
+        self.plotter = pv.Plotter()
         self.node_actors = {}
         self.branch_actors = {}
         self.subclone_actor = None
@@ -364,6 +376,27 @@ class Tree3D:
         # Colormap to use. Colors are cycled through when more are needed.
         self.cmap = cmap or godsnot_102
 
+    def init_label_mapping(self, key):
+        """Initialize label mappings."""
+        # Construct leaf-to-label mapping
+        self.leaf_to_label = {}
+        if self.tree.cell_meta is None or key not in self.tree.cell_meta:
+            warnings.warn(
+                f"Failed to locate {key} column in cell meta. "
+                "Leaf names casted as integers will be used as the labels.", PlottingWarning
+            )
+            self.leaf_to_label = {leaf: int(leaf) for leaf in self.tree.leaves}
+        else:
+            self.leaf_to_label = dict(self.tree.cell_meta[key])
+        self.label_to_leaf = {label: leaf for leaf, label in self.leaf_to_label.items()}
+
+        # Check labels
+        if not np.isin([self.leaf_to_label[leaf] for leaf in self.tree.leaves], self.labels).all():
+            raise PlottingError("Label array must contain all leaves in the tree.")
+
+        self.regionprops = {prop.label: prop for prop in measure.regionprops(self.labels)}
+
+
     def init_nodes(self):
         """Initialize node information.
         """
@@ -372,10 +405,9 @@ class Tree3D:
         self.node_index = {node: i for i, node in enumerate(self.nodes)}
         self.node_coordinates = np.full((len(self.tree.nodes), 3), np.nan)
 
-        regionprops = measure.regionprops(self.labels)
         areas = np.zeros(self.node_coordinates.shape[0], dtype=int)
-        for props in regionprops:
-            leaf = str(props.label)
+        for label, props in self.regionprops.items():
+            leaf = self.label_to_leaf[label]
             if leaf in self.tree.leaves:
                 i = self.node_index[leaf]
                 areas[i] = props.area
@@ -421,10 +453,10 @@ class Tree3D:
         """
         regionprops = []
         if self.tree.is_leaf(node):
-            regionprops.append(self.regionprops[int(node)])
+            regionprops.append(self.regionprops[self.leaf_to_label[node]])
         else:
             for leaf in self.tree.leaves_in_subtree(node):
-                regionprops.append(self.regionprops[int(leaf)])
+                regionprops.append(self.regionprops[self.leaf_to_label[leaf]])
 
         mask = np.zeros(self.labels.shape, dtype=bool)
         for props in regionprops:
@@ -722,12 +754,12 @@ class Tree3D:
         """Helper function to set the selected node as the root."""
         mesh = self.plotter.picked_mesh
         if mesh is not None:
-            node = self.nodes[int(mesh.field_data['node'][0])]
+            node = self.nodes[self.leaf_to_label[mesh.field_data['node'][0]]]
             self.set_root(node)
 
     def select_node_mesh(self, mesh):
         """Helper function remember the selected node."""
-        node = self.nodes[int(mesh.field_data['node'][0])]
+        node = self.nodes[self.leaf_to_label[mesh.field_data['node'][0]]]
         self.select_node(node)
 
     def select_node(self, node: str):

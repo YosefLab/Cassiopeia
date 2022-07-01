@@ -53,7 +53,7 @@ class TestLocal3DPlotting(unittest.TestCase):
     def test_labels_from_coordinates(self):
         for leaf in self.tree.leaves:
             x, y = self.tree.get_attribute(leaf, 'spatial')
-            self.assertEqual(self.labels[int(x), int(y)], int(leaf))
+            self.assertEqual(self.labels[int(x), int(y)], self.tree.cell_meta['spatial_label'][leaf])
 
     def test_Tree3D(self):
         # There isn't a good way to test this, other than making sure there
