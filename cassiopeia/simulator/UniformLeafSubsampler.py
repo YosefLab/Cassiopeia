@@ -21,6 +21,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         self,
         ratio: Optional[float] = None,
         number_of_leaves: Optional[int] = None,
+        random_seed: Optional[int] = None,
     ):
         """
         Uniformly subsample leaf samples of a CassiopeiaTree.
@@ -34,6 +35,10 @@ class UniformLeafSubsampler(LeafSubsampler):
             ratio: Specifies the number of leaves to be sampled as a ratio of
                 the total number of leaves
             number_of_leaves: Explicitly specifies the number of leaves to be sampled
+            random_seed: Numpy random seed to use for deterministic subsampling.
+                Note that the numpy random seed gets set during every call to
+                `overlay_data`, thereby producing deterministic simulations every
+                time this function is called.
         """
         if ratio is None and number_of_leaves is None:
             raise LeafSubsamplerError(
@@ -47,6 +52,7 @@ class UniformLeafSubsampler(LeafSubsampler):
             )
         self.__ratio = ratio
         self.__number_of_leaves = number_of_leaves
+        self.__random_seed = random_seed
 
     def subsample_leaves(
         self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True
@@ -81,6 +87,12 @@ class UniformLeafSubsampler(LeafSubsampler):
         """
         ratio = self.__ratio
         number_of_leaves = self.__number_of_leaves
+        random_seed = self.__random_seed
+
+        # Set the seed
+        if random_seed is not None:
+            np.random.seed(random_seed)
+
         n_subsample = (
             number_of_leaves
             if number_of_leaves is not None
