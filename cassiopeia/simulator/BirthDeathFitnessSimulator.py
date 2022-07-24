@@ -179,7 +179,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         names = node_name_generator()
 
         # Set the seed
-        if self.random_seed:
+        if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
         # Instantiate the implicit root
