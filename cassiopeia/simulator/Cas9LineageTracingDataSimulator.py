@@ -251,6 +251,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 character_array,
                 silencing_probability,
                 self.heritable_missing_data_state,
+                self.heritable_missing_data_state,
             )
 
             character_matrix[node] = character_array
@@ -261,6 +262,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 character_matrix[leaf],
                 self.stochastic_silencing_rate,
                 self.stochastic_missing_data_state,
+                self.heritable_missing_data_state,
             )
 
         tree.set_all_character_states(character_matrix)
@@ -337,6 +339,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         character_array: List[int],
         silencing_rate: float,
         missing_state: int = -1,
+        heritable_missing_data_state: int = -1,
     ) -> List[int]:
         """Silences cassettes.
 
@@ -347,6 +350,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             character_array: Character array
             silencing_rate: Silencing rate.
             missing_state: State to use for encoding missing data.
+            heritable_missing_data_state: Heritable states, which should not be
+                overwritten.
 
         Returns:
             An updated character array.
@@ -365,7 +370,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 indices = np.where(cut_site_by_cassette == cassette)
                 left, right = np.min(indices), np.max(indices)
                 for site in range(left, right + 1):
-                    updated_character_array[site] = missing_state
+                    if updated_character_array[site] != heritable_missing_data_state:
+                        updated_character_array[site] = missing_state
 
         return updated_character_array
 
