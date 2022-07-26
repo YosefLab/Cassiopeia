@@ -3,6 +3,7 @@ This file stores a subclass of BranchLengthEstimator, the IIDExponentialMLE.
 Briefly, this model assumes that CRISPR/Cas9 mutates each site independently
 and identically, with an exponential waiting time.
 """
+from collections import defaultdict
 import cvxpy as cp
 import numpy as np
 
@@ -47,6 +48,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             the tree has depth exactly 1.
         log_likelihood: The log-likelihood of the training data under the
             estimated model.
+        minimum_branch_length: The minimum branch length.
     """
 
     def __init__(
@@ -98,6 +100,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 "exist. Please check your data."
             )
 
+        # # # # # Check that the minimum_branch_length makes sense # # # # #
+        if tree.get_edge_depth() * minimum_branch_length >= 1.0:
+            raise ValueError(
+                "The minimum_branch_length is too large. Please reduce it."
+            )
+
         # # # # # Create variables of the optimization problem # # # # #
         r_X_t_variables = dict(
             [
@@ -127,7 +135,40 @@ class IIDExponentialMLE(BranchLengthEstimator):
             + ultrametric_constraints
         )
 
-        # # # # # Compute the log-likelihood # # # # #
+        # # # # # Deal with 'long-edge' mutations # # # # #
+        long_edge_mutations = defaultdict(float)
+        # We pre-compute all states since we will need repeated access
+        character_states_dict = {
+            node: tree.get_character_states(node)
+            for node in tree.nodes
+        }
+        k = tree.character_matrix.shape[1]
+        for node in tree.nodes:
+            if tree.is_root(node):
+                continue
+            parent = tree.parent(node)
+            character_states = character_states_dict[node]
+            parent_states = character_states_dict[parent]
+            for i in range(k):
+                if character_states[i] > 0 and parent_states[i] == tree.missing_state_indicator:
+                    # Need to go up the tree and determine if we have a long
+                    # edge mutation.
+                    u = parent
+                    while character_states_dict[u][i] == tree.missing_state_indicator:
+                        u = tree.parent(u)
+                    if character_states_dict[u][i] == 0:
+                        # We have identified a 'long-edge' mutation
+                        long_edge_mutations[(u, node)] += 1
+                    else:
+                        if character_states_dict[u][i] != character_states[i]:
+                            raise Exception(
+                                "Ancestral state reconstruction seems invalid: "
+                                f" character {character_states[i]} descends "
+                                f"from {character_states_dict[u][i]}."
+                            )
+        del character_states_dict
+
+        # # # # # Compute the log-likelihood for edges # # # # #
         log_likelihood = 0
         for (parent, child) in tree.edges:
             edge_length = r_X_t_variables[child] - r_X_t_variables[parent]
@@ -140,6 +181,13 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 )
             )
             log_likelihood += num_unmutated * (-edge_length)
+            log_likelihood += num_mutated * cp.log(
+                1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
+            )
+
+        # # # # # Add in log-likelihood of long-edge mutations # # # # #
+        for ((parent, child), num_mutated) in long_edge_mutations.items():
+            edge_length = r_X_t_variables[child] - r_X_t_variables[parent]
             log_likelihood += num_mutated * cp.log(
                 1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
             )
@@ -176,6 +224,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         # than its child (which can happen if minimum_branch_length=0)
         for (parent, child) in tree.depth_first_traverse_edges():
             times[child] = max(times[parent], times[child])
+        # Make sure all leaves have the same time.
+        tree_depth = max([times[leaf] for leaf in tree.leaves])
+        for leaf in tree.leaves:
+            times[leaf] = tree_depth
         tree.set_times(times)
 
     @property
@@ -191,3 +243,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         The estimated CRISPR/Cas9 mutation rate under the given model.
         """
         return self._mutation_rate
+
+    @property
+    def minimum_branch_length(self):
+        """
+        The minimum_branch_length.
+        """
+        return self._minimum_branch_length
