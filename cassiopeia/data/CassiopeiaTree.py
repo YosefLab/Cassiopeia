@@ -2137,6 +2137,23 @@ class CassiopeiaTree:
             self.get_tree_topology())
         self.populate_tree(binary_topology)
 
+    def get_edge_depth(self) -> int:
+        """
+        Maximum number of edges from root to leaf in the tree.
+
+        Raises:
+            CassiopeiaTreeError if the tree has not been initialized.
+        """
+        self.__check_network_initialized()
+
+        def dfs(v):
+            res = 0
+            for u in self.children(v):
+                res = max(res, 1 + dfs(u))
+            return res
+
+        return dfs(self.root)
+
 
 def resolve_multifurcations(tree: CassiopeiaTree) -> None:
         """
