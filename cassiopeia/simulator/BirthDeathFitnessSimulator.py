@@ -255,6 +255,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 "All lineages died before stopping condition"
             )
 
+        for node in cassiopeia_tree.nodes:
+            fitness = 1.0 / cassiopeia_tree.get_attribute(node, "birth_scale")
+            cassiopeia_tree.set_attribute(node, "fitness", fitness)
+
         return cassiopeia_tree
 
     def sample_lineage_event(
