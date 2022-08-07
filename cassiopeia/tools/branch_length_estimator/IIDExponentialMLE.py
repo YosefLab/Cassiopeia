@@ -39,6 +39,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
         minimum_branch_length: Estimated branch lengths will be constrained to
             have length at least this value. By default it is set to 0.01,
             since the MLE tends to collapse mutationless edges to length 0.
+        l1_regularization: Consecutive branches will be regularized to have
+            similar length via an L1 penalty whose weight is given by
+            l1_regularization.
+        l2_regularization: Consecutive branches will be regularized to have
+            similar length via an L2 penalty whose weight is given by
+            l2_regularization.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
         verbose: Verbosity level.
@@ -54,8 +60,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
     def __init__(
         self,
         minimum_branch_length: float = 0.01,
-        pseudo_mutations_per_edge: float = 0.01,
-        pseudo_non_mutations_per_edge: float = 0.01,
+        l1_regularization: float = 0.0,
+        l2_regularization: float = 0.0,
+        pseudo_mutations_per_edge: float = 0.0,
+        pseudo_non_mutations_per_edge: float = 0.0,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -66,6 +74,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 f"Allowed solvers: {allowed_solvers}"
             )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
+        self._l1_regularization = l1_regularization
+        self._l2_regularization = l2_regularization
         self._pseudo_mutations_per_edge = pseudo_mutations_per_edge
         self._pseudo_non_mutations_per_edge = pseudo_non_mutations_per_edge
         self._verbose = verbose
@@ -88,6 +98,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
         """
         # Extract parameters
         minimum_branch_length = self._minimum_branch_length
+        l1_regularization = self._l1_regularization
+        l2_regularization = self._l2_regularization
         pseudo_mutations_per_edge = self._pseudo_mutations_per_edge
         pseudo_non_mutations_per_edge = self._pseudo_non_mutations_per_edge
         solver = self._solver
@@ -198,8 +210,39 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
             )
 
+        # # # # # Add L1 regularization # # # # #
+
+        l1_penalty = 0
+        if l1_regularization > 0:
+            for (parent, child) in tree.edges:
+                for child_of_child in tree.children(child):
+                    edge_length_above = (
+                        r_X_t_variables[child] - r_X_t_variables[parent]
+                    )
+                    edge_length_below = (
+                        r_X_t_variables[child_of_child] - r_X_t_variables[child]
+                    )
+                    l1_penalty += cp.abs(edge_length_above - edge_length_below)
+            l1_penalty *= l1_regularization
+
+        # # # # # Add L2 regularization # # # # #
+
+        l2_penalty = 0
+        if l2_regularization > 0:
+            for (parent, child) in tree.edges:
+                for child_of_child in tree.children(child):
+                    edge_length_above = (
+                        r_X_t_variables[child] - r_X_t_variables[parent]
+                    )
+                    edge_length_below = (
+                        r_X_t_variables[child_of_child] - r_X_t_variables[child]
+                    )
+                    l2_penalty += (edge_length_above - edge_length_below) ** 2
+            l2_penalty *= l2_regularization
+
         # # # # # Solve the problem # # # # #
-        obj = cp.Maximize(log_likelihood)
+
+        obj = cp.Maximize(log_likelihood - l1_penalty - l2_penalty)
         prob = cp.Problem(obj, all_constraints)
         try:
             prob.solve(solver=solver, verbose=verbose)
