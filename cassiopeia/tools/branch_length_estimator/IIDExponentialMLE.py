@@ -54,6 +54,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
     def __init__(
         self,
         minimum_branch_length: float = 0.01,
+        pseudo_mutations_per_edge: float = 0.01,
+        pseudo_non_mutations_per_edge: float = 0.01,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -64,6 +66,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 f"Allowed solvers: {allowed_solvers}"
             )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
+        self._pseudo_mutations_per_edge = pseudo_mutations_per_edge
+        self._pseudo_non_mutations_per_edge = pseudo_non_mutations_per_edge
         self._verbose = verbose
         self._solver = solver
         self._mutation_rate = None
@@ -84,6 +88,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
         """
         # Extract parameters
         minimum_branch_length = self._minimum_branch_length
+        pseudo_mutations_per_edge = self._pseudo_mutations_per_edge
+        pseudo_non_mutations_per_edge = self._pseudo_non_mutations_per_edge
         solver = self._solver
         verbose = self._verbose
 
@@ -174,12 +180,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
             edge_length = r_X_t_variables[child] - r_X_t_variables[parent]
             num_unmutated = len(
                 tree.get_unmutated_characters_along_edge(parent, child)
-            )
+            ) + pseudo_non_mutations_per_edge
             num_mutated = len(
                 tree.get_mutations_along_edge(
                     parent, child, treat_missing_as_mutations=False
                 )
-            )
+            ) + pseudo_mutations_per_edge
             log_likelihood += num_unmutated * (-edge_length)
             log_likelihood += num_mutated * cp.log(
                 1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
