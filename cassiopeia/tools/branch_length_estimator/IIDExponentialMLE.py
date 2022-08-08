@@ -210,6 +210,11 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
             )
 
+        # # # # # Normalize log_likelihood by the number of sites # # # # #
+        # This is just to keep the log-likelihood on a similar scale
+        # regardless of the number of characters.
+        log_likelihood /= tree.character_matrix.shape[1]
+
         # # # # # Add L1 regularization # # # # #
 
         l1_penalty = 0
@@ -257,7 +262,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )
 
         # # # # # Extract the log-likelihood # # # # #
-        log_likelihood = float(log_likelihood.value)
+        # Need to re-scale by the number of characters
+        log_likelihood = float(log_likelihood.value) \
+            * tree.character_matrix.shape[1]
         if np.isnan(log_likelihood):
             log_likelihood = -np.inf
         self._log_likelihood = log_likelihood
