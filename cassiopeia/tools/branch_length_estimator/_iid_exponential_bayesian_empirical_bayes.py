@@ -8,9 +8,9 @@ from ray import tune
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins.errors import BranchLengthEstimatorError
 from cassiopeia.model_selection import CharacterLevelCV, CharacterLevelCVError
-from cassiopeia.tools.branch_length_estimator import (BranchLengthEstimator,
-                                                      IIDExponentialBayesian,
-                                                      IIDExponentialMLE)
+
+from ._iid_exponential_bayesian_py import IIDExponentialBayesian
+from ._iid_exponential_mle import IIDExponentialMLE
 
 
 def _create_space_iid_exponential_bayesian(

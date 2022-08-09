@@ -10,7 +10,7 @@ import numpy as np
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import IIDExponentialMLEError
 
-from .BranchLengthEstimator import BranchLengthEstimator
+from ._branch_length_estimator import BranchLengthEstimator
 
 
 class IIDExponentialMLE(BranchLengthEstimator):

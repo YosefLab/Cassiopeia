@@ -14,7 +14,7 @@ import numpy as np
 from cassiopeia.data import CassiopeiaTree
 
 from ._iid_exponential_bayesian import _PyInferPosteriorTimes
-from .BranchLengthEstimator import BranchLengthEstimator
+from ._branch_length_estimator import BranchLengthEstimator
 
 
 def _get_number_of_mutated_characters_in_node(tree: CassiopeiaTree, v: str):
