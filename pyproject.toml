@@ -62,12 +62,13 @@ pandas = ">=1.1.4"
 parameterized = "*"
 plotly = ">=5.0.0"
 pre-commit = {version = ">=2.7.1", optional = true}
+prometheus-client = "=0.11.0"
 pydata-sphinx-theme = {version = ">=0.4.3", optional = true}
 pysam = ">=0.14.1"
 pyseq-align = ">=1.0.2"
 pytest = {version = ">=4.4", optional = true}
 python = ">=3.7,<4.0"
-ray = "*"
+ray = ">=0.14.0"
 scanpydoc = {version = ">=0.5", optional = true}
 scipy = ">=1.2.0"
 sphinx = {version = ">=3.4", optional = true}
