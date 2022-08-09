@@ -48,9 +48,7 @@ def _transform_hyperparameters_iid_exponential_bayesian(
     }
 
 
-class IIDExponentialBayesianEmpiricalBayes(
-    BranchLengthEstimator, CharacterLevelCV
-):
+class IIDExponentialBayesianEmpiricalBayes(CharacterLevelCV):
     """
     Empirical Bayes for IIDExponentialBayesian.
 
