@@ -32,9 +32,9 @@ class TestIIDExponentialMLECrossValidated(unittest.TestCase):
             }
         )
         model = IIDExponentialMLECrossValidated(
-            n_hyperparams=1,
             n_parallel_hyperparams=1,
-            random_seed=0,
+            n_folds=2,
+            n_parallel_folds=2,
             verbose=True,
         )
         model.estimate_branch_lengths(tree)

@@ -79,20 +79,17 @@ class IIDExponentialMLECrossValidated(CharacterLevelCV):
 
     def __init__(
         self,
-        n_hyperparams: int = 6,
         n_parallel_hyperparams: int = 6,
         n_folds: int = 6,
         n_parallel_folds: int = 6,
-        random_seed: int = 0,
         verbose: bool = False,
         space: Optional[Dict] = None,
     ) -> None:
         super().__init__(
-            n_hyperparams=n_hyperparams,
+            n_hyperparams=1,  # >1 repeats the grid, we don't want this.
             n_parallel_hyperparams=n_parallel_hyperparams,
             n_folds=n_folds,
             n_parallel_folds=n_parallel_folds,
-            random_seed=random_seed,
             verbose=verbose,
         )
         if space is None:
