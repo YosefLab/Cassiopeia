@@ -83,6 +83,35 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(tree.get_time("1"), 1, places=3)
         self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
         self.assertAlmostEqual(log_likelihood, -1.386, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
+
+    @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
+    def test_hand_solvable_problem_1_with_pseudomutations(self, name, solver):
+        """
+        Same as test_hand_solvable_problem_1 but we use pseudomutations.
+        """
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1"])
+        tree.add_edge("0", "1")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0], "1": [0, 1]})
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4,
+            pseudo_mutations_per_edge=1,
+            pseudo_non_mutations_per_edge=1,
+            solver=solver,
+        )
+        model.estimate_branch_lengths(tree)
+        self.assertAlmostEqual(model.mutation_rate, np.log(2), places=3)
+        self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
+        self.assertAlmostEqual(tree.get_time("1"), 1, places=3)
+        self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(
+            model.penalized_log_likelihood, -1.386 * 2, places=2
+        )
+        self.assertAlmostEqual(model.log_likelihood, -1.386, places=3)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_hand_solvable_problem_2(self, name, solver):
@@ -111,6 +140,32 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
         self.assertAlmostEqual(model.mutation_rate, np.log(3), places=3)
         self.assertAlmostEqual(model.log_likelihood, -1.910, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
+
+    @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
+    def test_hand_solvable_problem_2_pseudomutations(self, name, solver):
+        """
+        Same as test_hand_solvable_problem_2 but with pseudomutations.
+        """
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1"])
+        tree.add_edge("0", "1")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0], "1": [0, 1]})
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4,
+            solver=solver,
+            pseudo_mutations_per_edge=1,
+            pseudo_non_mutations_per_edge=0,
+        )
+        model.estimate_branch_lengths(tree)
+        self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
+        self.assertAlmostEqual(tree.get_time("1"), 1.0, places=3)
+        self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(model.mutation_rate, np.log(3), places=3)
+        self.assertAlmostEqual(model.penalized_log_likelihood, -1.910, places=3)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_hand_solvable_problem_3(self, name, solver):
@@ -139,6 +194,9 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(model.log_likelihood, -1.910, places=3)
         self.assertAlmostEqual(tree.get_time("1"), 1.0, places=3)
         self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_small_tree_with_one_mutation(self, name, solver):
@@ -187,6 +245,9 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(tree.get_branch_length("2", "6"), 1.0, places=3)
         self.assertAlmostEqual(model.log_likelihood, -1.910, places=3)
         self.assertAlmostEqual(model.mutation_rate, np.log(1.5), places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_small_tree_regression(self, name, solver):
@@ -242,6 +303,9 @@ class TestIIDExponentialMLE(unittest.TestCase):
             tree.get_branch_length("2", "6"), 0.781, places=3
         )
         self.assertAlmostEqual(model.log_likelihood, -22.689, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_on_simulated_data(self, name, solver):
@@ -281,6 +345,12 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertTrue(0.9 < tree.get_time("6") < 1.1)
         self.assertTrue(1.4 < model.mutation_rate < 1.6)
         self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=2
+        )
+        # Regression test (cannot really be verified by hand that this is the
+        # optima):
+        self.assertAlmostEqual(model.log_likelihood, -459.797, places=2)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_subtree_collapses_when_no_mutations(self, name, solver):
@@ -303,6 +373,9 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(tree.get_branch_length("1", "3"), 0.0, places=3)
         self.assertAlmostEqual(tree.get_branch_length("0", "4"), 1.0, places=3)
         self.assertAlmostEqual(model.mutation_rate, np.log(2), places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_minimum_branch_length(self, name, solver):
@@ -359,3 +432,6 @@ class TestIIDExponentialMLE(unittest.TestCase):
         )
         self.assertAlmostEqual(model.log_likelihood, -1.922, places=3)
         self.assertAlmostEqual(model.mutation_rate, 0.405, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
