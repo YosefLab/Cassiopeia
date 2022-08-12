@@ -16,7 +16,6 @@ from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
 class BirthDeathFitnessSimulator(TreeSimulator):
     """Simulator class for a general forward birth-death process with fitness.
-
     Implements a flexible phylogenetic tree simulator using a forward birth-
     death process. In this process starting from an initial root lineage,
     births represent the branching of a new lineage and death represents the
@@ -24,7 +23,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
     with internal nodes representing division events, branch lengths
     representing the lifetimes of individuals, and leaves representing samples
     observed at the end of the experiment.
-
     Allows any distribution on birth and death waiting times to
     be specified, including constant, exponential, weibull, etc. If no death
     waiting time distribution is provided, the process reduces to a Yule birth
@@ -36,25 +34,21 @@ class BirthDeathFitnessSimulator(TreeSimulator):
     mutations. Different fitness regimes can be specified based on user
     provided distributions on how often fitness mutations occur and their
     respective strengths.
-
     There are two stopping conditions for the simulation. The first is "number
     of extant nodes", which specifies the simulation to run until the first
     moment a number of extant nodes exist. The second is "experiment time",
     which specifies the time at which lineages are sampled. At least one of
     these two stopping criteria must be provided. Both can be provided in which
     case the simulation is run until one of the stopping conditions is reached.
-
     Example use snippet:
         # note that numpy uses a different parameterization of the
         # exponential distribution with the scale parameter, which is 1/rate
-
         birth_waiting_distribution = lambda scale: np.random.exponential(scale)
         death_waiting_distribution = np.random.exponential(1.5)
         initial_birth_scale = 0.5
         mutation_distribution = lambda: 1 if np.random.uniform() > 0.5 else 0
         fitness_distribution = lambda: np.random.uniform(-1,1)
         fitness_base = 2
-
         bd_sim = BirthDeathFitnessSimulator(
             birth_waiting_distribution,
             initial_birth_scale,
@@ -65,7 +59,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             num_extant=8
         )
         tree = bd_sim.simulate_tree()
-
     Args:
         birth_waiting_distribution: A function that samples waiting times
             from the birth distribution. Determines how often births occur.
@@ -94,7 +87,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         collapse_unifurcations: Specifies whether to collapse unifurcations in
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
-
     Raises:
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
@@ -146,43 +138,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.experiment_time = experiment_time
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
-    
-    def initialize_tree(
-        self, 
-        names
-    ) -> nx.DiGraph:
-        ''' initializes a tree (nx.DiGraph() object with one node). Auxiliary data for each node is grabbed from self (initial conditions / params) or hardcoded
-            
-            Args: names is a generator (function object that stores internal state) that will be used to generate names for the tree nodes          
-            Output: tree (DiGraph object with one node, the root) 
-                    root (name of root node in tree)
-        '''
-        tree = nx.DiGraph()
-        root = next(names)
-        tree.add_node(root)
-        tree.nodes[root]["birth_scale"] = self.initial_birth_scale
-        tree.nodes[root]["time"] = 0
-        
-        return tree, root
 
-    def make_initial_lineage_dict(
-        self,
-        id_value
-    ):
-        """ 
-        uses self initial-conditions and hardcoded default parameters to create an initial lineage dict
-        Args: id_value: name of new lineage 
-
-        Output: a lineage dict
-        """
-        lineage = self.make_lineage_dict(id_value, self.initial_birth_scale, 0, True)
-        return lineage
-    
     def simulate_tree(
         self,
     ) -> CassiopeiaTree:
         """Simulates trees from a general birth/death process with fitness.
-
         A forward-time birth/death process is simulated by tracking a series of
         lineages and sampling event waiting times for each lineage. Each
         lineage draws death waiting times from the same distribution, but
@@ -191,11 +151,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         mutation events are sampled, and the birth scale parameter is scaled by
         their multiplicative coefficients. This updated birth scale passed
         onto successors.
-
         Returns:
             A CassiopeiaTree with the tree topology initialized with the
             simulated tree
-
         Raises:
             TreeSimulatorError if all lineages die before a stopping condition
         """
@@ -213,25 +171,22 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         if self.random_seed:
             np.random.seed(self.random_seed)
 
-        tree, root = self.initialize_tree(names)
-        
+        # Instantiate the implicit root
+        tree = nx.DiGraph()
+        root = next(names)
+        tree.add_node(root)
+        tree.nodes[root]["birth_scale"] = self.initial_birth_scale
+        tree.nodes[root]["time"] = 0
         current_lineages = PriorityQueue()
         # Records the nodes that are observed at the end of the experiment
-
-        # TO DO: update to accept arbitrary fields in the dict. 
         observed_nodes = []
-        
-        """ 
         starting_lineage = {
             "id": root,
             "birth_scale": self.initial_birth_scale,
             "total_time": 0,
             "active": True,
         }
-        """
 
-        starting_lineage = self.make_initial_lineage_dict(root)
-        
         # Sample the waiting time until the first division
         self.sample_lineage_event(
             starting_lineage, current_lineages, tree, names, observed_nodes
@@ -253,8 +208,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     min_total_time = remaining_lineages[0]["total_time"]
                     for lineage in remaining_lineages:
                         parent = list(tree.predecessors(lineage["id"]))[0]
-                        
-                        # I don't think this is make_daughter_node; is this some kind of a node update? 
                         tree.nodes[lineage["id"]]["time"] += (
                             min_total_time - lineage["total_time"]
                         )
@@ -268,9 +221,17 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             # If the lineage is no longer active, just remove it from the queue.
             # This represents the time at which the lineage dies.
             if lineage["active"]:
-                for i in range(2):
+                # grab parental copy number from lineage 
+                
+                # perform binomial sampling on each element in the array 
+                
+                # sample lineage event 1  
+
+                # sample lineage event 2
+                
+                for _ in range(2):
                     self.sample_lineage_event(
-                        lineage, current_lineages, tree, names, observed_nodes, i
+                        lineage, current_lineages, tree, names, observed_nodes
                     )
 
         cassiopeia_tree = CassiopeiaTree(tree=tree)
@@ -299,11 +260,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         current_lineages: PriorityQueue,
         tree: nx.DiGraph,
         names: Generator,
-        observed_nodes: List[str],
-        daughter_ind: int,  
+        observed_nodes: List[str], 
+        daughter_cn,
     ) -> None:
         """A helper function that samples an event for a lineage.
-
         Takes a lineage and determines the next event in that lineage's
         future. Simulates the lifespan of a new descendant. Birth and
         death waiting times are sampled, representing how long the
@@ -322,7 +282,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         the lifespan is cut off at the experiment time and a final observed
         sample is added to the tree. In this case the lineage is marked as
         inactive as well.
-
         Args:
             unique_id: The unique ID number to be used to name a new node
                 added to the tree
@@ -337,7 +296,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             names: A generator providing unique names for tree nodes
             observed_nodes: A list of nodes that are observed at the end of
                 the experiment
-
         Raises:
             TreeSimulatorError if a negative waiting time is sampled or a
             non-active lineage is passed in
@@ -349,6 +307,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         unique_id = next(names)
 
+        # @JP: update to use daughter_CN too. 
         birth_waiting_time = self.birth_waiting_distribution(
             lineage["birth_scale"]
         )
@@ -358,14 +317,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         # If birth and death would happen after the total experiment time,
         # just cut off the living branch length at the experiment time
-        """
-        JP: what is the desired behaviour if  
-        (lineage["total_time"] + birth_waiting_time
-            >= self.experiment_time) 
-            and 
-            (lineage["total_time"] + death_waiting_time
-            < self.experiment_time) ?
-        """
         if (
             self.experiment_time
             and lineage["total_time"] + birth_waiting_time
@@ -373,14 +324,22 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             and lineage["total_time"] + death_waiting_time
             >= self.experiment_time
         ):
+            tree.add_node(unique_id)
+            tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+            tree.add_edge(lineage["id"], unique_id)
+            tree.nodes[unique_id]["time"] = self.experiment_time
 
-            self.make_daughter(unique_id, 
-                lineage["birth_scale"],
-                self.experiment_time, 
-                False, # active = False 
-                lineage,
-                current_lineages,
-                tree
+            current_lineages.put(
+                (
+                    self.experiment_time,
+                    unique_id,
+                    {
+                        "id": unique_id,
+                        "birth_scale": lineage["birth_scale"],
+                        "total_time": self.experiment_time,
+                        "active": False,
+                    },
+                )
             )
 
             # Indicate this node is observed at the end of experiment
@@ -388,89 +347,56 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         else:
             if birth_waiting_time < death_waiting_time:
-
                 # Update birth rate
                 updated_birth_scale = self.update_fitness(
                     lineage["birth_scale"]
                 )
 
                 # Annotate parameters for a given node in the tree
-                self.make_daughter(unique_id, 
-                    updated_birth_scale,
-                    birth_waiting_time + lineage["total_time"], 
-                    True, # active = True
-                    lineage,
-                    current_lineages,
-                    tree
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = updated_birth_scale
+                tree.add_edge(lineage["id"], unique_id)
+                tree.nodes[unique_id]["time"] = (
+                    birth_waiting_time + lineage["total_time"]
+                )
+                # Add the newly generated cell to the list of living lineages
+                current_lineages.put(
+                    (
+                        birth_waiting_time + lineage["total_time"],
+                        unique_id,
+                        {
+                            "id": unique_id,
+                            "birth_scale": updated_birth_scale,
+                            "total_time": birth_waiting_time
+                            + lineage["total_time"],
+                            "active": True,
+                        },
+                    )
                 )
 
             else:
-                # replace with call to make_daughter_node 
-
-                self.make_daughter(unique_id, 
-                    lineage["birth_scale"],
-                    death_waiting_time + lineage["total_time"], 
-                    False,
-                    lineage,
-                    current_lineages,
-                    tree
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+                tree.add_edge(lineage["id"], unique_id)
+                tree.nodes[unique_id]["time"] = (
+                    death_waiting_time + lineage["total_time"]
                 )
-
-    # here, this could be a static method, but for ecDNA, we may want to access instance values to do the segregation, hence I'm writing this one an instance method (so that debugging will be the same)
-    def make_daughter(
-        self,
-        unique_id, 
-        birth_scale,
-        updated_time, 
-        active_flag,
-        lineage: Dict[str, Union[int, float]],
-        current_lineages: PriorityQueue,
-        tree: nx.DiGraph,
-    ):
-        """Updates the tree and current_lineages with a new daughter node / new lineage.
-            
-            Behavior: 
-            1. adds a new node unique_id to the tree with a directed edge from lineage["id"] to unique_id
-            2. adds a new lineage with id unique_id to the current_lineages queue with appropriate data. 
-            
-            Args: unique_id: id of new cell (lineage), will be used to name daughter node on tree and new lineage. 
-                  birth_scale: birth_scale parameter of new cell/lineage 
-                  updated_time: age of new node/lineage (JP: at time it divides?)
-                  active_flag: bool to indicate whether lineage is active
-                  lineage: the parent of the new lineage being created
-
-                  Modified args: 
-                  current_lineages: PriorityQueue of current lineages
-                  tree: 
-        
-        """
-        # 1. compute any values to be updated by grabbing current values from the lineage Dict and performing operations on them as needed. (Grab my own CN array from the lineage)
-
-        # 2. add daughter node to tree with appropriate parameters (my own CN array will go here into the new node)
-        tree.add_node(unique_id)
-        tree.nodes[unique_id]["birth_scale"] = birth_scale
-        tree.add_edge(lineage["id"], unique_id)
-        tree.nodes[unique_id]["time"] = (
-            updated_time
-        )
-
-        # 3. put new lineage into current_lineages (CNs of my daughters will go here as cn_array_daughter_1 and cn_array_daughter_2) 
-        current_lineages.put(
-            (
-                updated_time,
-                unique_id,
-                self.make_lineage_dict(
-                unique_id, 
-                birth_scale,
-                updated_time,
-                active_flag,
-                ),
-            )
-        )
+                current_lineages.put(
+                    (
+                        death_waiting_time + lineage["total_time"],
+                        unique_id,
+                        {
+                            "id": unique_id,
+                            "birth_scale": lineage["birth_scale"],
+                            "total_time": death_waiting_time
+                            + lineage["total_time"],
+                            "active": False,
+                        },
+                    )
+                )
 
     def update_fitness(self, birth_scale: float) -> float:
         """Updates a lineage birth scale, which represents its fitness.
-
         At each division event, the fitness is updated by sampling from a
         distribution determining the number of mutations. The birth scale
         parameter of the lineage is then scaled by the total multiplicative
@@ -482,13 +408,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         The base determines the base strength of the mutations in either
         direction and the fitness distribution determines how the mutations
         are distributed.
-
         Args:
             birth_scale: The birth_scale to be updated
-
         Returns:
             The updated birth_scale
-
         Raises:
             TreeSimulatorError if a negative number of mutations is sampled
         """
@@ -504,29 +427,3 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     self.fitness_base ** self.fitness_distribution()
                 )
         return birth_scale * base_selection_coefficient
-         
-    #  should this be a static method?
-    @staticmethod
-    def make_lineage_dict(
-        id_value, 
-        birth_scale,
-        total_time,
-        active_flag,
-    ):
-        """makes a dict (lineage) from the given parameters. keys are hardcoded. 
-            
-            Args: id_value: id of new lineage
-                  birth_scale: birth_scale parameter of new lineage 
-                  total_time: age of lineage 
-                  active_flag: bool to indicate whether lineage is active
-            
-            Returns: a dict (lineage) with the parameter values under the hard-coded keys
-        
-        """
-        lineage = {
-            "id": id_value,
-            "birth_scale": birth_scale,
-            "total_time": total_time,
-            "active": active_flag,
-        }
-        return lineage
