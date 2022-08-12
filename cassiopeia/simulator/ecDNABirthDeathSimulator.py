@@ -9,14 +9,15 @@ import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import TreeSimulatorError
-# from cassiopeia.simulator.TreeSimulator import TreeSimulator
-from cassiopeia.simulator.BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
+from cassiopeia.mixins import ecDNABirthDeathSimulatorError
+from cassiopeia.simulator.BirthDeathFitnessSimulator import (
+    BirthDeathFitnessSimulator,
+)
+
 
 class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
-    """Simulator class for a forward birth-death process with fitness in a population with ecDNA. 
-    
+    """Simulator class for a forward birth-death process with fitness in a population with ecDNA.
+
         "Implements a flexible phylogenetic tree simulator using a forward birth-
         death process. In this process starting from an initial root lineage,
         births represent the branching of a new lineage and death represents the
@@ -44,9 +45,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         these two stopping criteria must be provided. Both can be provided in which
         case the simulation is run until one of the stopping conditions is reached."
 
-    -(excerpted from from BirthDeathFitnessSimulator, update / check for accuracy) 
+    -(excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
 
-    Example use snippet: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy) 
+    Example use snippet: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         # note that numpy uses a different parameterization of the
         # exponential distribution with the scale parameter, which is 1/rate
 
@@ -68,7 +69,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         )
         tree = bd_sim.simulate_tree()
 
-    Args: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy) 
+    Args: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         birth_waiting_distribution: A function that samples waiting times
             from the birth distribution. Determines how often births occur.
             Must take a scale parameter as the input
@@ -96,13 +97,14 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         collapse_unifurcations: Specifies whether to collapse unifurcations in
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
+        initial_copy_number: Initial copy number for parental lineage.
 
-    Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy) 
+    Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
 
-    # update for ecDNA-specific initial conditions / simulation parameters. 
+    # update for ecDNA-specific initial conditions / simulation parameters.
     def __init__(
         self,
         birth_waiting_distribution: Callable[[float], float],
@@ -117,7 +119,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         experiment_time: Optional[float] = None,
         collapse_unifurcations: bool = True,
         random_seed: int = None,
-        initial_CN: np.array = np.array([1]),
+        initial_copy_number: np.array = np.array([1]),
+        splitting_function: Callable[int, int] = lambda x: np.random.binomial(
+            x, p=0.5
+        ),
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError(
@@ -150,34 +155,22 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.experiment_time = experiment_time
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
-        self.initial_CN = initial_CN
+        self.initial_copy_number = initial_copy_number
+        self.splitting_function = splitting_function
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
-    def initialize_tree(
-            self, 
-            names
-        ) -> nx.DiGraph:
-            ''' initializes a tree (nx.DiGraph() object with one node)
-            '''
-            tree = nx.DiGraph()
-            root = next(names)
-            tree.add_node(root)
-            tree.nodes[root]["birth_scale"] = self.initial_birth_scale
-            tree.nodes[root]["time"] = 0
-            tree.nodes[root]["cn_array"] = self.initial_CN
-            
-            return tree, root
+    def initialize_tree(self, names) -> nx.DiGraph:
+        """initializes a tree (nx.DiGraph() object with one node)"""
+        tree = nx.DiGraph()
+        root = next(names)
+        tree.add_node(root)
+        tree.nodes[root]["birth_scale"] = self.initial_birth_scale
+        tree.nodes[root]["time"] = 0
+        tree.nodes[root]["ecdna_array"] = self.initial_copy_number
 
-    # update to include self.initial_CN_array 
-    def make_initial_lineage_dict(
-        self,
-        id_value
-    ):
-        lineage = self.make_lineage_dict(id_value, self.initial_birth_scale, 0, True, self.initial_CN)
-        return lineage
-    
+        return tree, root
 
-    # update to compute fitness using lineage cn_array 
+    # update to compute fitness using lineage cn_array
     def update_fitness(self, birth_scale: float) -> float:
         """Updates a lineage birth scale, which represents its fitness.
 
@@ -206,7 +199,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if self.mutation_distribution:
             num_mutations = int(self.mutation_distribution())
             if num_mutations < 0:
-                raise TreeSimulatorError(
+                raise ecDNABirthDeathSimulatorError(
                     "Negative number of mutations detected"
                 )
             for _ in range(num_mutations):
@@ -215,65 +208,187 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 )
         return birth_scale * base_selection_coefficient
 
-    # update to handle CN_array of self (in lineage and tree) and daughters (in lineage only) (see comments within function)
-    def make_daughter(
+    def sample_lineage_event(
         self,
-        unique_id, 
-        birth_scale,
-        updated_time, 
-        active_flag,
         lineage: Dict[str, Union[int, float]],
         current_lineages: PriorityQueue,
         tree: nx.DiGraph,
-        daughter_ind: int 
-    ):
-        """Updates the tree and current_lineages with a new daughter.
-
-        Tree has a new  node unique_id, with data  
+        names: Generator,
+        observed_nodes: List[str],
+    ) -> None:
+        """A helper function that samples an event for a lineage.
+        Takes a lineage and determines the next event in that lineage's
+        future. Simulates the lifespan of a new descendant. Birth and
+        death waiting times are sampled, representing how long the
+        descendant lived. If a death event occurs first, then the lineage
+        with the new descendant is added to the queue of currently alive,
+        but its status is marked as inactive and will be removed at the
+        time the lineage dies. If a birth event occurs first, then the
+        lineage with the new descendant is added to the queue, but with its
+        status marked as active, and further events will be sampled at the
+        time the lineage divides. Additionally, its fitness will be updated
+        by altering its birth rate. The descendant node is added to the
+        tree object, with the edge weight between the current node and the
+        descendant representing the lifespan of the descendant. In the
+        case the descendant would live past the end of the experiment (both
+        birth and death times exceed past the end of the experiment), then
+        the lifespan is cut off at the experiment time and a final observed
+        sample is added to the tree. In this case the lineage is marked as
+        inactive as well.
+        Args:
+            unique_id: The unique ID number to be used to name a new node
+                added to the tree
+            lineage: The current extant lineage to extend. Contains the ID
+                of the internal node to attach the descendant to, the
+                current birth scale parameter of the lineage, the current
+                total lived time of the lineage, and the status of whether
+                the lineage is still dividing
+            current_lineages: The queue containing currently alive lineages
+            tree: The tree object being constructed by the simulator
+                representing the birth death process
+            names: A generator providing unique names for tree nodes
+            observed_nodes: A list of nodes that are observed at the end of
+                the experiment
+        Raises:
+            TreeSimulatorError if a negative waiting time is sampled or a
+            non-active lineage is passed in
         """
-        # 1. compute any values to be updated by grabbing current values from the lineage Dict and performing operations on them as needed. 
-        # (Grab my own CN array from the lineage)
-
-
-        # 2. add daughter node to tree with appropriate parameters (my own CN array will go here into the new node)
-        tree.add_node(unique_id)
-        tree.nodes[unique_id]["birth_scale"] = birth_scale
-        tree.add_edge(lineage["id"], unique_id)
-        tree.nodes[unique_id]["time"] = (
-            updated_time
-        )
-
-        # 3. put new lineage into current_lineages (CNs of my daughters will go here as cn_array_daughter_1 and cn_array_daughter_2) 
-        current_lineages.put(
-            (
-                updated_time,
-                unique_id,
-                self.make_lineage_dict(
-                unique_id, 
-                birth_scale,
-                updated_time,
-                active_flag,
-                ),
+        if not lineage["active"]:
+            raise TreeSimulatorError(
+                "Cannot sample event for non-active lineage"
             )
+
+        unique_id = next(names)
+
+        birth_waiting_time = self.birth_waiting_distribution(
+            lineage["birth_scale"]
         )
+        death_waiting_time = self.death_waiting_distribution()
+        if birth_waiting_time <= 0 or death_waiting_time <= 0:
+            raise TreeSimulatorError("0 or negative waiting time detected")
 
+        # If birth and death would happen after the total experiment time,
+        # just cut off the living branch length at the experiment time
+        if (
+            self.experiment_time
+            and lineage["total_time"] + birth_waiting_time
+            >= self.experiment_time
+            and lineage["total_time"] + death_waiting_time
+            >= self.experiment_time
+        ):
 
-    #  should this be a static method?
-    # update to include ecDNA copy number 
-    @staticmethod
-    def make_lineage_dict(
-        id_value, 
-        birth_scale,
-        total_time,
-        active_flag,
-        cn_array,
-    ):
-        lineage = {
-            "id": id_value,
-            "birth_scale": birth_scale,
-            "total_time": total_time,
-            "active": active_flag,
-            "cn_array":cn_array,
-        }
-        return lineage
-    
+            tree.add_node(unique_id)
+            tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+            tree.add_edge(lineage["id"], unique_id)
+            tree.nodes[unique_id]["time"] = self.experiment_time
+            tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]][
+                "ecdna_array"
+            ]
+
+            current_lineages.put(
+                (
+                    self.experiment_time,
+                    unique_id,
+                    {
+                        "id": unique_id,
+                        "birth_scale": lineage["birth_scale"],
+                        "total_time": self.experiment_time,
+                        "active": False,
+                    },
+                )
+            )
+
+            # Indicate this node is observed at the end of experiment
+            observed_nodes.append(unique_id)
+
+        else:
+            if birth_waiting_time < death_waiting_time:
+                # Update birth rate
+                updated_birth_scale = self.update_fitness(
+                    lineage["birth_scale"]
+                )
+
+                child_ecdna_array = self.get_ecdna_array(lineage["id"])
+
+                # Annotate parameters for a given node in the tree
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = updated_birth_scale
+                tree.add_edge(lineage["id"], unique_id)
+                tree.nodes[unique_id]["time"] = (
+                    birth_waiting_time + lineage["total_time"]
+                )
+                tree.nodes[unique_id]["ecdna_array"] = child_ecdna_array
+                # Add the newly generated cell to the list of living lineages
+                current_lineages.put(
+                    (
+                        birth_waiting_time + lineage["total_time"],
+                        unique_id,
+                        {
+                            "id": unique_id,
+                            "birth_scale": updated_birth_scale,
+                            "total_time": birth_waiting_time
+                            + lineage["total_time"],
+                            "active": True,
+                        },
+                    )
+                )
+
+            else:
+                tree.add_node(unique_id)
+                tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+                tree.add_edge(lineage["id"], unique_id)
+                tree.nodes[unique_id]["time"] = (
+                    death_waiting_time + lineage["total_time"]
+                )
+                tree.nodes[unique_id]["ecdna_array"] = tree.nodes[
+                    lineage["id"]
+                ]["ecdna_array"]
+                current_lineages.put(
+                    (
+                        death_waiting_time + lineage["total_time"],
+                        unique_id,
+                        {
+                            "id": unique_id,
+                            "birth_scale": lineage["birth_scale"],
+                            "total_time": death_waiting_time
+                            + lineage["total_time"],
+                            "active": False,
+                        },
+                    )
+                )
+
+    def get_ecdna_array(self, parent_id: str, tree: nx.DiGraph) -> np.array:
+        """Generates an ecDNA array for a child given its parent and sister information.
+
+        Args:
+            parent_id: ID of parent in the generated tree.
+            tree: The in-progress tree.
+
+        Returns:
+            Numpy array corresponding to the ecDNA copy numbers for the new child.
+        """
+
+        parental_ecdna_array = 2*tree.nodes[parent_id]["ecdna_array"]
+
+        has_child = tree.out_degree(parent_id) > 0
+
+        new_ecdna_array = parental_ecdna_array.copy()
+
+        if has_child:
+            child_id = [n for n in tree.successors(parent_id)][0]
+            child_ecdna_array = tree.nodes[child_id]["ecdna_array"]
+
+            new_ecdna_array = parental_ecdna_array - child_ecdna_array
+        else:
+
+            new_ecdna_array = [
+                self.splitting_function(n) for n in parental_ecdna_array
+            ]
+
+        # check that new ecdnay array entries do not exceed parental entries
+        if np.any(new_ecdna_array > parental_ecdna_array):
+            raise ecDNABirthDeathSimulatorError(
+                "Child ecDNA entries exceed parental entries."
+            )
+
+        return new_ecdna_array

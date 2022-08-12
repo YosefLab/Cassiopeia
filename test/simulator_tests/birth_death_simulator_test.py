@@ -1,3 +1,7 @@
+"""
+Tests the functionality of cassiopeia.simulator.BirthDeathFitnessSimulator.
+"""
+
 import unittest
 
 import networkx as nx

@@ -5,6 +5,7 @@ from .BrownianSpatialDataSimulator import BrownianSpatialDataSimulator
 from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
 from .CompleteBinarySimulator import CompleteBinarySimulator
 from .DataSimulator import DataSimulator
+from .ecDNABirthDeathSimulator import ecDNABirthDeathSimulator
 from .LeafSubsampler import LeafSubsampler
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
@@ -19,6 +20,7 @@ __all__ = [
     "Cas9LineageTracingDataSimulator",
     "CompleteBinarySimulator",
     "DataSimulator",
+    "ecDNABirthDeathSimulator",
     "LeafSubsampler",
     "LineageTracingDataSimulator",
     "SimpleFitSubcloneSimulator",
