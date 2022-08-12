@@ -204,12 +204,12 @@ class CharacterLevelCV(abc.ABC):
         ):  # Want to loop exactly once if n_folds == 0
             train_indices = self.indices_train[split_id]
             cv_indices = self.indices_cv[split_id]
-            tree_train, cm_valid = self._cv_split(
+            tree_train, tree_valid = self._cv_split(
                 tree=tree,
                 train_indices=train_indices,
                 cv_indices=cv_indices,
             )
-            params.append((hyperparameters, tree_train, cm_valid))
+            params.append((hyperparameters, tree_train, tree_valid))
         with multiprocessing.Pool(processes=processes) as pool:
             map_fn = pool.map if processes > 1 else map
             cv_metric_folds = list(map_fn(self._cv_metric, params))
@@ -234,18 +234,38 @@ class CharacterLevelCV(abc.ABC):
                 will be held out.
 
         Returns:
-            The training tree, and the cross validation character matrix if it
-            will be used (i.e. if n_folds != 0)
+            The training and CV tree. The CV tree will be None if cv_indices is
+            None (e.g. for optimizing training set likelihood with Ray as
+            in Empirical Bayes).
         """
-        cm_valid = (
-            tree.character_matrix.iloc[:, cv_indices]
-            if cv_indices is not None
-            else None
-        )
-        cm_train = tree.character_matrix.iloc[:, train_indices]
-        tree_train = deepcopy(tree)
-        tree_train.character_matrix = cm_train
-        return tree_train, cm_valid
+
+        def subset_tree_at_indices(
+            a_tree: CassiopeiaTree, indices: List[int]
+        ) -> CassiopeiaTree:
+            """
+            Return the CassiopeiaTree with states only at the given indices.
+            """
+
+            def subset_states(states: List[int]) -> List[str]:
+                return [states[i] for i in indices]
+
+            res_tree = deepcopy(a_tree)
+            new_cm = a_tree.character_matrix.iloc[:, indices]
+            new_states = {
+                node: subset_states(a_tree.get_character_states(node))
+                for node in tree.nodes
+            }
+            res_tree.character_matrix = new_cm
+            res_tree.set_all_character_states(new_states)
+            return res_tree
+
+        tree_train = subset_tree_at_indices(tree, train_indices)
+        if cv_indices:
+            tree_valid = subset_tree_at_indices(tree, cv_indices)
+        else:
+            tree_valid = None
+
+        return tree_train, tree_valid
 
     @abc.abstractmethod
     def _create_space(self, tree: CassiopeiaTree) -> Dict:
