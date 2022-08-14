@@ -56,7 +56,7 @@ def _create_space_iid_exponential_mle(
     space = space.copy()
     if "pseudomutations" not in space:
         space["pseudomutations"] = tune.grid_search(
-            [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625]
+            [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
         )
     return space
 
