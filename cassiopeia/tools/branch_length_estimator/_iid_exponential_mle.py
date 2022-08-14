@@ -160,10 +160,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 )
                 + pseudo_mutations_per_edge
             )
-            penalized_log_likelihood += num_unmutated * (-edge_length)
-            penalized_log_likelihood += num_mutated * cp.log(
-                1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
-            )
+            if num_unmutated > 0:
+                penalized_log_likelihood += num_unmutated * (-edge_length)
+            if num_mutated > 0:
+                penalized_log_likelihood += num_mutated * cp.log(
+                    1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
+                )
 
         # # # # # Add in log-likelihood of long-edge mutations # # # # #
         long_edge_mutations = self._get_long_edge_mutations(tree)
