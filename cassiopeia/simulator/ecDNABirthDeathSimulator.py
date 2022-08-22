@@ -98,7 +98,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
         initial_copy_number: Initial copy number for parental lineage.
-
+        splitting_function: As implemented, the function that describes segregation of each species at cell division. TO DO: fix this implementation to allow for non-independent segregation. 
+        
     Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
@@ -267,6 +268,41 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
 
+        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time. Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0 (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators. 
+        if lineage["total_time"] == 0:
+            print("current_lineages is empty")
+            print("\n")
+            # Update birth rate
+            updated_birth_scale = self.update_fitness(
+                lineage["birth_scale"]
+            )
+
+            #child_ecdna_array = self.get_ecdna_array(lineage["id"],tree)
+
+            # Annotate parameters for a given node in the tree
+            tree.add_node(unique_id)
+            tree.nodes[unique_id]["birth_scale"] = updated_birth_scale
+            tree.add_edge(lineage["id"], unique_id)
+            tree.nodes[unique_id]["time"] = (
+                birth_waiting_time + lineage["total_time"]
+            )
+            tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]]["ecdna_array"]  # child_ecdna_array
+            # Add the newly generated cell to the list of living lineages
+            current_lineages.put(
+                (
+                   birth_waiting_time + lineage["total_time"],
+                    unique_id,
+                    {
+                        "id": unique_id,
+                        "birth_scale": updated_birth_scale,
+                        "total_time": birth_waiting_time
+                        + lineage["total_time"],
+                        "active": True,
+                    },
+                )
+            )
+            return
+
         # If birth and death would happen after the total experiment time,
         # just cut off the living branch length at the experiment time
         if (
@@ -308,7 +344,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                     lineage["birth_scale"]
                 )
 
-                child_ecdna_array = self.get_ecdna_array(lineage["id"])
+                child_ecdna_array = self.get_ecdna_array(lineage["id"],tree)
 
                 # Annotate parameters for a given node in the tree
                 tree.add_node(unique_id)
@@ -381,9 +417,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             new_ecdna_array = parental_ecdna_array - child_ecdna_array
         else:
 
-            new_ecdna_array = [
+            new_ecdna_array = np.array([
                 self.splitting_function(n) for n in parental_ecdna_array
-            ]
+            ])
 
         # check that new ecdnay array entries do not exceed parental entries
         if np.any(new_ecdna_array > parental_ecdna_array):
