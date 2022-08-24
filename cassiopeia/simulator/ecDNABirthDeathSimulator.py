@@ -76,7 +76,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         initial_birth_scale: The initial scale parameter that is used at the
             start of the experiment
         death_waiting_distribution: A function that samples waiting times
-            from the death distribution. Determines how often deaths occur
+            from the death distribution. Determines how often deaths occur. Default is no-death.
         mutation_distribution: A function that samples the number of
             mutations that occur at a division event. If None, then no
             mutations are sampled
@@ -254,8 +254,6 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time. Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0 (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
         if lineage["total_time"] == 0:
-            print("current_lineages is empty")
-            print("\n")
             # Update birth rate
             updated_birth_scale = self.update_fitness(lineage["birth_scale"])
 
