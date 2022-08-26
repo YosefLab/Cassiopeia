@@ -120,6 +120,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
         splitting_function: Callable[int, int] = lambda x: np.random.binomial(x, p=0.5),
+        fitness_array: np.array = np.array([0,1]),
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError("Please specify at least one stopping condition")
@@ -146,6 +147,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.random_seed = random_seed
         self.initial_copy_number = initial_copy_number
         self.splitting_function = splitting_function
+        self.fitness_array = fitness_array 
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
@@ -160,23 +162,13 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         return tree, root
 
     # update to compute fitness using lineage cn_array
-    def update_fitness(self, birth_scale: float) -> float:
-        """Updates a lineage birth scale, which represents its fitness.
+    def update_fitness(self, ecdna_array: np.array) -> float:
+        """Updates a lineage birth scale, which represents its (Malthusian) fitness.
 
-        At each division event, the fitness is updated by sampling from a
-        distribution determining the number of mutations. The birth scale
-        parameter of the lineage is then scaled by the total multiplicative
-        coefficient across all mutations and passed on to the descendant
-        nodes. The multiplicative factor of each mutation is determined by
-        exponentiating a base parameter by a value drawn from another
-        'fitness' distribution. Therefore, negative values from the fitness
-        distribution are valid and down-scale the birth scale parameter.
-        The base determines the base strength of the mutations in either
-        direction and the fitness distribution determines how the mutations
-        are distributed.
+        Fitness is computed as a function of copy number, using the fitness_array (which defines fitness for CN=0 or CN >0 for each species, with epistasis). 
 
         Args:
-            birth_scale: The birth_scale to be updated
+            ecdna_array: The birth_scale to be updated
 
         Returns:
             The updated birth_scale
@@ -184,18 +176,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         Raises:
             TreeSimulatorError if a negative number of mutations is sampled
         """
-        base_selection_coefficient = 1
-        if self.mutation_distribution:
-            num_mutations = int(self.mutation_distribution())
-            if num_mutations < 0:
-                raise ecDNABirthDeathSimulatorError(
-                    "Negative number of mutations detected"
-                )
-            for _ in range(num_mutations):
-                base_selection_coefficient *= (
-                    self.fitness_base ** self.fitness_distribution()
-                )
-        return birth_scale * base_selection_coefficient
+
+        return self.initial_birth_scale * (1.0  + self.fitness_array[tuple((ecdna_array > 0).astype(int))])
 
     def sample_lineage_event(
         self,
@@ -255,7 +237,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time. Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0 (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
         if lineage["total_time"] == 0:
             # Update birth rate
-            updated_birth_scale = self.update_fitness(lineage["birth_scale"])
+            updated_birth_scale = self.update_fitness(tree.nodes[lineage["id"]][
+                "ecdna_array"
+            ])
 
             # child_ecdna_array = self.get_ecdna_array(lineage["id"],tree)
 
@@ -317,7 +301,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         else:
             if birth_waiting_time < death_waiting_time:
                 # Update birth rate
-                updated_birth_scale = self.update_fitness(lineage["birth_scale"])
+                updated_birth_scale = self.update_fitness(tree.nodes[lineage["id"]][
+                "ecdna_array"
+            ])
 
                 child_ecdna_array = self.get_ecdna_array(lineage["id"], tree)
 
