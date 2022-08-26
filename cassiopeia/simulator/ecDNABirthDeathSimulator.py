@@ -119,7 +119,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         collapse_unifurcations: bool = True,
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
-        splitting_function: Callable[int, int] = lambda x: np.random.binomial(x, p=0.5),
+        splitting_function: Callable[[int], int] = lambda x: np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0,1]),
     ):
         if num_extant is None and experiment_time is None:
@@ -387,3 +387,12 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             )
 
         return new_ecdna_array
+
+    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
+        """Populates tree with appropriate meta data"""
+
+        cas_tree = CassiopeiaTree(tree=tree)
+
+        # add ecDNA (and optionally fitness of nodes) to tree as attributes
+        # make sure you add ecDNA as a pandas dataframe and pass it as cell_meta.
+        return cas_tree

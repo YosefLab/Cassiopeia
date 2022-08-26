@@ -82,6 +82,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
+            fitness_array = np.array([[[0,0.1], [0.1,0.2]],[[0.1,0.5],[0.2,0.6]]]),
         )
 
         def node_name_generator() -> Generator[str, None, None]:
