@@ -273,24 +273,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         lineage, current_lineages, tree, names, observed_nodes
                     )
 
-        cassiopeia_tree = self.populate_tree_from_simulation(tree)
-
-        time_dictionary = {}
-        for i in tree.nodes:
-            time_dictionary[i] = tree.nodes[i]["time"]
-        cassiopeia_tree.set_times(time_dictionary)
-
-        # Prune dead lineages and collapse resulting unifurcations
-        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
-        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
-        if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
-            cassiopeia_tree.collapse_unifurcations(source="1")
-
-        # If only implicit root remains after pruning dead lineages, error
-        if len(cassiopeia_tree.nodes) == 1:
-            raise TreeSimulatorError(
-                "All lineages died before stopping condition"
-            )
+        cassiopeia_tree = self.populate_tree_from_simulation(tree, observed_nodes)
 
         return cassiopeia_tree
 
@@ -495,15 +478,34 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         }
         return lineage
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
+    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: List[str]) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
         
         Args:
             tree: The tree simulated with ecDNA and fitness values populated as attributes.
+            observed_nodes: The observed leaves of the tree.
         
         Returns:
-            A CassiopeiaTree with node attributes filled in.
+            A CassiopeiaTree with relevant node attributes filled in.
         """
 
-        cas_tree = CassiopeiaTree(tree=tree)
-        return cas_tree
+        cassiopeia_tree = CassiopeiaTree(tree=tree)
+
+        time_dictionary = {}
+        for i in tree.nodes:
+            time_dictionary[i] = tree.nodes[i]["time"]
+        cassiopeia_tree.set_times(time_dictionary)
+
+        # Prune dead lineages and collapse resulting unifurcations
+        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
+        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
+        if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
+            cassiopeia_tree.collapse_unifurcations(source="1")
+
+        # If only implicit root remains after pruning dead lineages, error
+        if len(cassiopeia_tree.nodes) == 1:
+            raise TreeSimulatorError(
+                "All lineages died before stopping condition"
+            )
+
+        return cassiopeia_tree

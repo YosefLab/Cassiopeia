@@ -7,10 +7,11 @@ from typing import Callable, Dict, Generator, List, Optional, Union
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import ecDNABirthDeathSimulatorError
+from cassiopeia.mixins import ecDNABirthDeathSimulatorError, TreeSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
@@ -391,27 +392,46 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         return new_ecdna_array
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
+    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: List[str]) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
         
         Args:
             tree: The tree simulated with ecDNA and fitness values populated as attributes.
+            observed_nodes: The observed leaves of the tree.
         
         Returns:
-            A CassiopeiaTree with node attributes filled in.
+            A CassiopeiaTree with relevant node attributes filled in.
         """
 
-        cas_tree = CassiopeiaTree(tree=tree)
+        cassiopeia_tree = CassiopeiaTree(tree=tree)
 
-        for node in cas_tree.depth_first_traverse_nodes():
+        time_dictionary = {}
+        for i in tree.nodes:
+            time_dictionary[i] = tree.nodes[i]["time"]
+        cassiopeia_tree.set_times(time_dictionary)
+
+        # Prune dead lineages and collapse resulting unifurcations
+        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
+        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
+        if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
+            cassiopeia_tree.collapse_unifurcations(source="1")
+
+        # If only implicit root remains after pruning dead lineages, error
+        if len(cassiopeia_tree.nodes) == 1:
+            raise ecDNABirthDeathSimulatorError(
+                "All lineages died before stopping condition"
+            )        
+
+        for node in cassiopeia_tree.depth_first_traverse_nodes():
             
-            cas_tree.set_attribute(node, 'ecdna_array', tree.nodes[node]['ecdna_array'])
-            cas_tree.set_attribute(node, 'fitness', tree.nodes[node]['birth_scale'])
+            cassiopeia_tree.set_attribute(node, 'ecdna_array', tree.nodes[node]['ecdna_array'])
+            cassiopeia_tree.set_attribute(node, 'fitness', tree.nodes[node]['birth_scale'])
 
-        cell_metadata = pd.DataFrame(columns = ['ecDNA{i}' for i in len(self.initial_copy_number)])
-        for leaf in cas_tree.leaves:
-            cell_metadata.loc[leaf] = cas_tree.get_attribute(leaf, 'ecdna_array')
+        cell_metadata = pd.DataFrame(columns = [f'ecDNA_{i}' for i in range(len(self.initial_copy_number))])
+        
+        for leaf in cassiopeia_tree.leaves:
+            cell_metadata.loc[leaf] = cassiopeia_tree.get_attribute(leaf, 'ecdna_array')
 
-        cas_tree.cell_meta = cell_metadata.copy()
+        cassiopeia_tree.cell_meta = cell_metadata.astype(int).copy()
 
-        return cas_tree
+        return cassiopeia_tree
