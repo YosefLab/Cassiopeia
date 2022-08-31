@@ -273,7 +273,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         lineage, current_lineages, tree, names, observed_nodes
                     )
 
-        cassiopeia_tree = CassiopeiaTree(tree=tree)
+        cassiopeia_tree = self.populate_tree_from_simulation(tree)
+
         time_dictionary = {}
         for i in tree.nodes:
             time_dictionary[i] = tree.nodes[i]["time"]
@@ -468,10 +469,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     self.fitness_base ** self.fitness_distribution()
                 )
         return birth_scale * base_selection_coefficient
-         
-    #  should this be a static method?
-    @staticmethod
+    
     def make_lineage_dict(
+        self,
         id_value, 
         birth_scale,
         total_time,
@@ -494,3 +494,16 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             "active": active_flag,
         }
         return lineage
+
+    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
+        """Populates tree with appropriate meta data.
+        
+        Args:
+            tree: The tree simulated with ecDNA and fitness values populated as attributes.
+        
+        Returns:
+            A CassiopeiaTree with node attributes filled in.
+        """
+
+        cas_tree = CassiopeiaTree(tree=tree)
+        return cas_tree

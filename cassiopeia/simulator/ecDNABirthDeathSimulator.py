@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ecDNABirthDeathSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
@@ -234,7 +235,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
 
-        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time. Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0 (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
+        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time.
+        # Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0
+        # (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
         if lineage["total_time"] == 0:
             # Update birth rate
             updated_birth_scale = self.update_fitness(tree.nodes[lineage["id"]][
@@ -389,10 +392,26 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         return new_ecdna_array
 
     def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
-        """Populates tree with appropriate meta data"""
+        """Populates tree with appropriate meta data.
+        
+        Args:
+            tree: The tree simulated with ecDNA and fitness values populated as attributes.
+        
+        Returns:
+            A CassiopeiaTree with node attributes filled in.
+        """
 
         cas_tree = CassiopeiaTree(tree=tree)
 
-        # add ecDNA (and optionally fitness of nodes) to tree as attributes
-        # make sure you add ecDNA as a pandas dataframe and pass it as cell_meta.
+        for node in cas_tree.depth_first_traverse_nodes():
+            
+            cas_tree.set_attribute(node, 'ecdna_array', tree.nodes[node]['ecdna_array'])
+            cas_tree.set_attribute(node, 'fitness', tree.nodes[node]['birth_scale'])
+
+        cell_metadata = pd.DataFrame(columns = ['ecDNA{i}' for i in len(self.initial_copy_number)])
+        for leaf in cas_tree.leaves:
+            cell_metadata.loc[leaf] = cas_tree.get_attribute(leaf, 'ecdna_array')
+
+        cas_tree.cell_meta = cell_metadata.copy()
+
         return cas_tree
