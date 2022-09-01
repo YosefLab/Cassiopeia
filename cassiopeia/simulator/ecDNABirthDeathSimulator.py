@@ -7,10 +7,11 @@ from typing import Callable, Dict, Generator, List, Optional, Union
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import ecDNABirthDeathSimulatorError
+from cassiopeia.mixins import ecDNABirthDeathSimulatorError, TreeSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
@@ -235,7 +236,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
 
-        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time. Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0 (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
+        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether the first birth_waiting_time exceeds self.experiment_time.
+        # Also, it just assumes the first event is a birth.  we could also WOLOG that the first birth_waiting_time of the experiment is 0
+        # (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
         if lineage["total_time"] == 0:
             # Update birth rate
             updated_birth_scale = self.update_fitness(tree.nodes[lineage["id"]][
@@ -389,16 +392,46 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         return new_ecdna_array
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
-        """Populates tree with appropriate meta data"""
+    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: List[str]) -> CassiopeiaTree:
+        """Populates tree with appropriate meta data.
+        
+        Args:
+            tree: The tree simulated with ecDNA and fitness values populated as attributes.
+            observed_nodes: The observed leaves of the tree.
+        
+        Returns:
+            A CassiopeiaTree with relevant node attributes filled in.
+        """
 
-        cas_tree = CassiopeiaTree(tree=tree)
+        cassiopeia_tree = CassiopeiaTree(tree=tree)
 
-        # add ecDNA (and optionally fitness of nodes) to tree as attributes
-        for node in tree.nodes:
-            cas_tree.set_attribute(node, attribute_name = "fitness", value=((tree.nodes[node]["birth_scale"] / self.initial_birth_scale) - 1) )
-            cas_tree.set_attribute(node, attribute_name = "ecdna_array", value=tree.nodes[node]["ecdna_array"])
+        time_dictionary = {}
+        for i in tree.nodes:
+            time_dictionary[i] = tree.nodes[i]["time"]
+        cassiopeia_tree.set_times(time_dictionary)
 
-        # make sure you add ecDNA as a pandas dataframe and pass it as cell_meta.
+        # Prune dead lineages and collapse resulting unifurcations
+        to_remove = list(set(cassiopeia_tree.leaves) - set(observed_nodes))
+        cassiopeia_tree.remove_leaves_and_prune_lineages(to_remove)
+        if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
+            cassiopeia_tree.collapse_unifurcations(source="1")
 
-        return cas_tree
+        # If only implicit root remains after pruning dead lineages, error
+        if len(cassiopeia_tree.nodes) == 1:
+            raise ecDNABirthDeathSimulatorError(
+                "All lineages died before stopping condition"
+            )        
+
+        for node in cassiopeia_tree.depth_first_traverse_nodes():
+            
+            cassiopeia_tree.set_attribute(node, 'ecdna_array', tree.nodes[node]['ecdna_array'])
+            cassiopeia_tree.set_attribute(node, 'fitness', tree.nodes[node]['birth_scale'])
+
+        cell_metadata = pd.DataFrame(columns = [f'ecDNA_{i}' for i in range(len(self.initial_copy_number))])
+        
+        for leaf in cassiopeia_tree.leaves:
+            cell_metadata.loc[leaf] = cassiopeia_tree.get_attribute(leaf, 'ecdna_array')
+
+        cassiopeia_tree.cell_meta = cell_metadata.astype(int).copy()
+
+        return cassiopeia_tree
