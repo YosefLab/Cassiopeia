@@ -273,7 +273,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         lineage, current_lineages, tree, names, observed_nodes
                     )
 
-        cassiopeia_tree = CassiopeiaTree(tree=tree)
+        cassiopeia_tree = self.populate_tree_from_simulation(tree=tree)
         time_dictionary = {}
         for i in tree.nodes:
             time_dictionary[i] = tree.nodes[i]["time"]
@@ -494,3 +494,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             "active": active_flag,
         }
         return lineage
+
+    def populate_tree_from_simulation(self, tree: nx.DiGraph) -> CassiopeiaTree:
+        """Populates tree with appropriate meta data"""
+
+        cas_tree = CassiopeiaTree(tree=tree)
+
+        # add ecDNA (and optionally fitness of nodes) to tree as attributes
+        # make sure you add ecDNA as a pandas dataframe and pass it as cell_meta.
+        return cas_tree

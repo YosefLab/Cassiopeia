@@ -9,6 +9,7 @@ import networkx as nx
 import numpy as np
 from queue import PriorityQueue
 
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ecDNABirthDeathSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
@@ -394,5 +395,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         cas_tree = CassiopeiaTree(tree=tree)
 
         # add ecDNA (and optionally fitness of nodes) to tree as attributes
+        for node in tree.nodes:
+            cas_tree.set_attribute(node, attribute_name = "fitness", value=((tree.nodes[node]["birth_scale"] / self.initial_birth_scale) - 1) )
+            cas_tree.set_attribute(node, attribute_name = "ecdna_array", value=tree.nodes[node]["ecdna_array"])
+
         # make sure you add ecDNA as a pandas dataframe and pass it as cell_meta.
+
         return cas_tree
