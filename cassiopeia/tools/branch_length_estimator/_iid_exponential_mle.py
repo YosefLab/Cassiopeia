@@ -149,13 +149,13 @@ class IIDExponentialMLE(BranchLengthEstimator):
             for (parent, child) in tree.edges
         ]
         if relative_leaf_depth is None:
-            relative_leaf_depth = [
-                (leaf, 1.0) for leaf in tree.leaves
-            ]
+            relative_leaf_depth = [(leaf, 1.0) for leaf in tree.leaves]
         relative_leaf_depth = dict(relative_leaf_depth)
         ultrametric_constraints = [
-            r_X_t_variables[leaf] == r_X_t_variables[a_leaf]
-            * relative_leaf_depth[leaf] / relative_leaf_depth[a_leaf]
+            r_X_t_variables[leaf]
+            == r_X_t_variables[a_leaf]
+            * relative_leaf_depth[leaf]
+            / relative_leaf_depth[a_leaf]
             for leaf in tree.leaves
             if leaf != a_leaf
         ]
