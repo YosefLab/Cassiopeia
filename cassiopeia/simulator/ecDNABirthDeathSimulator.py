@@ -100,7 +100,13 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
         initial_copy_number: Initial copy number for parental lineage.
-        splitting_function: As implemented, the function that describes segregation of each species at cell division. TO DO: fix this implementation to allow for non-independent segregation.
+        coopoerativity_coefficient: A coefficient describing how likely it is for one species to be co-inherited
+            with one specific species (currently modeled as the first in the array).
+            TODO: how do we make this generalizable to multiple species each with different pairwise covariances?
+        splitting_function: As implemented, the function that describes segregation of each species at cell division.
+            TO DO: fix this implementation to allow for non-independent segregation.
+        fitness_array: Fitnesses with respect to copy number of each species in a cell. This should be a matrix in
+            R^e (where e is the number of ecDNA species being modelled).
 
     Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         TreeSimulatorError if invalid stopping conditions are provided or if a
@@ -121,7 +127,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         collapse_unifurcations: bool = True,
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
-        splitting_function: Callable[[int], int] = lambda x: np.random.binomial(x, p=0.5),
+        cooperativity_coefficient: float = 0.0,
+        splitting_function: Callable[[int], int] = lambda c, x: c + np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0,1]),
     ):
         if num_extant is None and experiment_time is None:
@@ -148,6 +155,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
         self.initial_copy_number = initial_copy_number
+        self.cooperativity_coefficient = cooperativity_coefficient
         self.splitting_function = splitting_function
         self.fitness_array = fitness_array 
 
@@ -167,7 +175,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
     def update_fitness(self, ecdna_array: np.array) -> float:
         """Updates a lineage birth scale, which represents its (Malthusian) fitness.
 
-        Fitness is computed as a function of copy number, using the fitness_array (which defines fitness for CN=0 or CN >0 for each species, with epistasis). 
+        Fitness is computed as a function of copy number, using the fitness_array
+        (which defines fitness for CN=0 or CN >0 for each species, with epistasis). 
 
         Args:
             ecdna_array: The birth_scale to be updated
@@ -241,11 +250,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         # (but that requires shifting times elsewhere in order to permit correct model comparison to non-ecDNA simulators.
         if lineage["total_time"] == 0:
             # Update birth rate
-            updated_birth_scale = self.update_fitness(tree.nodes[lineage["id"]][
-                "ecdna_array"
-            ])
-
-            # child_ecdna_array = self.get_ecdna_array(lineage["id"],tree)
+            updated_birth_scale = self.update_fitness(
+                tree.nodes[lineage["id"]]["ecdna_array"]
+            )
 
             # Annotate parameters for a given node in the tree
             tree.add_node(unique_id)
@@ -380,9 +387,15 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             new_ecdna_array = parental_ecdna_array - child_ecdna_array
         else:
 
-            new_ecdna_array = np.array(
-                [self.splitting_function(n) for n in parental_ecdna_array]
-            )
+            new_ecdna_array = np.array([0] * len(parental_ecdna_array))
+
+            new_ecdna_array[0]= self.splitting_function(0, parental_ecdna_array[0])
+
+            for species in range(1, len(parental_ecdna_array)):
+                new_ecdna_array[species] =  self.splitting_function(
+                    self.cooperativity_coefficient*(new_ecdna_array[0] / parental_ecdna_array[0]),
+                    (1 - self.cooperativity_coefficient)*(parental_ecdna_array[species])
+                )
 
         # check that new ecdnay array entries do not exceed parental entries
         if np.any(new_ecdna_array > parental_ecdna_array):
