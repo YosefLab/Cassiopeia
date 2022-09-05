@@ -101,6 +101,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             minimum_branch_length=1e-4,
             pseudo_mutations_per_edge=1,
             pseudo_non_mutations_per_edge=1,
+            relative_leaf_depth=[("0", 2.0)],
             solver=solver,
         )
         model.estimate_branch_lengths(tree)
@@ -159,6 +160,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             solver=solver,
             pseudo_mutations_per_edge=1,
             pseudo_non_mutations_per_edge=0,
+            relative_leaf_depth=[("0", 0.5)],
         )
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
@@ -351,6 +353,61 @@ class TestIIDExponentialMLE(unittest.TestCase):
         # Regression test (cannot really be verified by hand that this is the
         # optima):
         self.assertAlmostEqual(model.log_likelihood, -459.797, places=2)
+
+    @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
+    def test_on_simulated_data_with_relative_leaf_depths(self, name, solver):
+        """
+        We run the estimator on data simulated under the correct model,
+        this time using a non-ultrametric tree. The estimator should be close
+        to the ground truth.
+        """
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5", "6"]),
+        tree.add_edges_from(
+            [
+                ("0", "1"),
+                ("0", "2"),
+                ("1", "3"),
+                ("1", "4"),
+                ("2", "5"),
+                ("2", "6"),
+            ]
+        )
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_times(
+            {"0": 0, "1": 0.1, "2": 0.5, "3": 0.2, "4": 0.4, "5": 0.7, "6": 1.0}
+        )
+        np.random.seed(1)
+        Cas9LineageTracingDataSimulator(
+            number_of_cassettes=300,
+            size_of_cassette=1,
+            mutation_rate=1.5,
+        ).overlay_data(tree)
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4,
+            relative_leaf_depth=[
+                ("3", 2),
+                ("4", 4),
+                ("5", 7),
+                ("6", 10),
+            ],
+            solver=solver
+        )
+        model.estimate_branch_lengths(tree)
+        self.assertTrue(0.05 < tree.get_time("1") < 0.15)
+        self.assertTrue(0.4 < tree.get_time("2") < 0.6)
+        self.assertTrue(0.1 < tree.get_time("3") < 0.3)
+        self.assertTrue(0.3 < tree.get_time("4") < 0.5)
+        self.assertTrue(0.6 < tree.get_time("5") < 0.8)
+        self.assertTrue(0.9 < tree.get_time("6") < 1.1)
+        self.assertTrue(1.4 < model.mutation_rate < 1.6)
+        self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=1
+        )
+        # Regression test (cannot really be verified by hand that this is the
+        # optima):
+        self.assertAlmostEqual(model.log_likelihood, -758.032, places=2)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_subtree_collapses_when_no_mutations(self, name, solver):
