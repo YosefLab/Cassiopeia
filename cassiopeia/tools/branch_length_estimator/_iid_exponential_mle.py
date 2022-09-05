@@ -23,10 +23,11 @@ class IIDExponentialMLE(BranchLengthEstimator):
     independently and identically, with an exponential waiting time. The
     tree is assumed to have depth exactly 1, and the user can provide a
     minimum branch length. Pseudocounts in the form of fictitious mutations and
-    non-mutations can be added to regularize the MLE. The MLE under this set of
-    assumptions can be solved with a special kind of convex optimization
-    problem known as an exponential cone program, which can be readily solved
-    with off-the-shelf (open source) solvers.
+    non-mutations can be added to regularize the MLE. Also, the relative depth
+    of each leaf can be specified to relax the ultrametric constraint. The MLE
+    under this set of assumptions can be solved with a special kind of convex
+    optimization problem known as an exponential cone program, which can be
+    readily solved with off-the-shelf (open source) solvers.
 
     This estimator requires that the ancestral characters be provided (these
     can be imputed with CassiopeiaTree's reconstruct_ancestral_characters
@@ -212,7 +213,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError("Third-party solver failed")
 
         # # # # # Extract the mutation rate # # # # #
-        self._mutation_rate = float(r_X_t_variables[a_leaf].value)
+        max_r_X_t_value = max(
+            [float(r_X_t_variables[leaf].value) for leaf in tree.leaves]
+        )
+        self._mutation_rate = max_r_X_t_value
         if self._mutation_rate < 1e-8 or self._mutation_rate > 15.0:
             raise IIDExponentialMLEError(
                 "The solver failed when it shouldn't have."
