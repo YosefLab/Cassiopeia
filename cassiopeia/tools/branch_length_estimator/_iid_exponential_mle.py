@@ -4,7 +4,7 @@ Briefly, this model assumes that CRISPR/Cas9 mutates each site independently
 and identically, with an exponential waiting time.
 """
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cvxpy as cp
 import numpy as np
@@ -41,6 +41,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
         minimum_branch_length: Estimated branch lengths will be constrained to
             have length at least this value. By default it is set to 0.01,
             since the MLE tends to collapse mutationless edges to length 0.
+        pseudo_mutations_per_edge: Regularization whereby we add this number of
+            fictitious mutations to each edge in the tree.
+        pseudo_non_mutations_per_edge: Regularization whereby we add this number
+            of fictitious non-mutations to each edge in the tree.
+        relative_leaf_depth: If provided, the relative depth of each leaf in the
+            tree. This allows relaxing the ultrametric assumption to deal with
+            the case where the tree is not ultrametric but the relative leaf
+            depths are known.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
         verbose: Verbosity level.
@@ -51,6 +59,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         log_likelihood: The log-likelihood of the training data under the
             estimated model.
         minimum_branch_length: The minimum branch length.
+        pseudo_mutations_per_edge: The number of fictitious mutations added to
+            each edge to regularize the MLE.
+        pseudo_non_mutations_per_edge: The number of fictitious non-mutations
+            added to each edge to regularize the MLE.
     """
 
     def __init__(
@@ -58,6 +70,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         minimum_branch_length: float = 0.01,
         pseudo_mutations_per_edge: float = 0.0,
         pseudo_non_mutations_per_edge: float = 0.0,
+        relative_leaf_depth: Optional[List[Tuple[str, float]]] = None,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -70,6 +83,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self._minimum_branch_length = minimum_branch_length
         self._pseudo_mutations_per_edge = pseudo_mutations_per_edge
         self._pseudo_non_mutations_per_edge = pseudo_non_mutations_per_edge
+        self._relative_leaf_depth = relative_leaf_depth
         self._verbose = verbose
         self._solver = solver
         self._mutation_rate = None
@@ -93,6 +107,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         minimum_branch_length = self._minimum_branch_length
         pseudo_mutations_per_edge = self._pseudo_mutations_per_edge
         pseudo_non_mutations_per_edge = self._pseudo_non_mutations_per_edge
+        relative_leaf_depth = self._relative_leaf_depth
         solver = self._solver
         verbose = self._verbose
 
@@ -133,8 +148,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
             + minimum_branch_length * r_X_t_variables[a_leaf]
             for (parent, child) in tree.edges
         ]
+        if relative_leaf_depth is None:
+            relative_leaf_depth = [
+                (leaf, 1.0) for leaf in tree.leaves
+            ]
+        relative_leaf_depth = dict(relative_leaf_depth)
         ultrametric_constraints = [
             r_X_t_variables[leaf] == r_X_t_variables[a_leaf]
+            * relative_leaf_depth[leaf] / relative_leaf_depth[a_leaf]
             for leaf in tree.leaves
             if leaf != a_leaf
         ]
@@ -264,7 +285,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     @property
     def pseudo_non_mutations_per_edge(self):
         """
-        The pseudo_mutations_per_edge.
+        The pseudo_non_mutations_per_edge.
         """
         return self._pseudo_non_mutations_per_edge
 
