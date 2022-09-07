@@ -101,7 +101,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
         initial_copy_number: Initial copy number for parental lineage.
-        coopoerativity_coefficient: A coefficient describing how likely it is for one species to be co-inherited
+        cosegregation_coefficient: A coefficient describing how likely it is for one species to be co-inherited
             with one specific species (currently modeled as the first in the array).
             TODO: how do we make this generalizable to multiple species each with different pairwise covariances?
         splitting_function: As implemented, the function that describes segregation of each species at cell division.
@@ -128,7 +128,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         collapse_unifurcations: bool = True,
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
-        cooperativity_coefficient: float = 0.0,
+        cosegregation_coefficient: float = 0.0,
         splitting_function: Callable[[int], int] = lambda c, x: c + np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0,1]),
     ):
@@ -156,7 +156,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
         self.initial_copy_number = initial_copy_number
-        self.cooperativity_coefficient = cooperativity_coefficient
+        self.cosegregation_coefficient = cosegregation_coefficient
         self.splitting_function = splitting_function
         self.fitness_array = fitness_array 
 
@@ -394,8 +394,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
             for species in range(1, len(parental_ecdna_array)):
 
-                cosegregating_compartment = int(self.cooperativity_coefficient*(new_ecdna_array[0] / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
-                sister_cell_cosegregating = int(self.cooperativity_coefficient*( (parental_ecdna_array[0]-new_ecdna_array[0]) / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
+                cosegregating_compartment = int(self.cosegregation_coefficient*(new_ecdna_array[0] / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
+                sister_cell_cosegregating = int(self.cosegregation_coefficient*( (parental_ecdna_array[0]-new_ecdna_array[0]) / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
 
                 random_compartment = parental_ecdna_array[species] - cosegregating_compartment - sister_cell_cosegregating
 
