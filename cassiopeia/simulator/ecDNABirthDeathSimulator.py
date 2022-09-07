@@ -3,6 +3,7 @@ This file stores a general phylogenetic tree simulator using forward birth-death
 process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
+from random import random
 from typing import Callable, Dict, Generator, List, Optional, Union
 
 import networkx as nx
@@ -392,10 +393,18 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             new_ecdna_array[0]= self.splitting_function(0, parental_ecdna_array[0])
 
             for species in range(1, len(parental_ecdna_array)):
-                new_ecdna_array[species] =  self.splitting_function(
-                    self.cooperativity_coefficient*(new_ecdna_array[0] / parental_ecdna_array[0]),
-                    (1 - self.cooperativity_coefficient)*(parental_ecdna_array[species])
+
+                cosegregating_compartment = int(self.cooperativity_coefficient*(new_ecdna_array[0] / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
+                sister_cell_cosegregating = int(self.cooperativity_coefficient*( (parental_ecdna_array[0]-new_ecdna_array[0]) / max(1, parental_ecdna_array[0])) * parental_ecdna_array[species])
+
+                random_compartment = parental_ecdna_array[species] - cosegregating_compartment - sister_cell_cosegregating
+
+                inherited_fraction = self.splitting_function(
+                    cosegregating_compartment, 
+                    random_compartment,
                 )
+
+                new_ecdna_array[species] = inherited_fraction
 
         # check that new ecdnay array entries do not exceed parental entries
         if np.any(new_ecdna_array > parental_ecdna_array):
