@@ -1,6 +1,7 @@
 """
 Test IIDExponentialMLE in cassiopeia.tools.
 """
+import math
 import unittest
 
 import networkx as nx
@@ -359,3 +360,68 @@ class TestIIDExponentialMLE(unittest.TestCase):
         )
         self.assertAlmostEqual(model.log_likelihood, -1.922, places=3)
         self.assertAlmostEqual(model.mutation_rate, 0.405, places=3)
+
+    @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
+    def test_hand_solvable_problem_1_with_site_rate(self, name, solver):
+        """
+        Tree topology is 0->1->2.
+        The structure:
+            root [state = '000']
+            |
+            x
+            child [state = '100']
+            |
+            y
+            child [state = '110']
+        Given the site rates as alpha (a), beta (b), and gamma (g) respectively 
+        we solve for the two branch lengths by hand. Prior to rescaling, the first 
+        branch is of length Ln[(a+b+g)/(b+g)]/a and the other is Ln[(b+g)/g]/b.
+        """
+        a, b, g = 1.5, 2, 2.5
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2"])
+        tree.add_edge("0", "1")
+        tree.add_edge("1", "2")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0, 0], "1": [1, 0, 0], "2": [1, 1, 0]})
+        site_rates = [a, b, g]
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, site_rates=site_rates, solver=solver)
+        model.estimate_branch_lengths(tree)
+
+        branch1 = math.log((a+b+g)/(b+g))/a
+        branch2 = math.log((b+g)/g)/b
+        total = branch1 + branch2
+        branch1, branch2 = branch1/total, branch2/total
+        self.assertAlmostEqual(tree.get_branch_length("0", "1"), branch1, places=3)
+        self.assertAlmostEqual(tree.get_branch_length("1", "2"), branch2, places=3)
+        self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+        self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+
+    @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
+    def test_hand_solvable_problem_with_missing_site_rate(self, name, solver):
+        """
+        See above docstring. 
+        """
+        a, b, g = 1.5, 1, 2.5
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2"])
+        tree.add_edge("0", "1")
+        tree.add_edge("1", "2")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states({"0": [0, 0, 0], "1": [1, 0, 0], "2": [1, 1, 0]})
+        site_rates = [a, None, g] # Pass in None since b=1 
+        model = IIDExponentialMLE(minimum_branch_length=1e-4, site_rates=site_rates, solver=solver)
+        model.estimate_branch_lengths(tree)
+
+        branch1 = math.log((a+b+g)/(b+g))/a
+        branch2 = math.log((b+g)/g)/b
+        total = branch1 + branch2
+        branch1, branch2 = branch1/total, branch2/total
+        self.assertAlmostEqual(tree.get_branch_length("0", "1"), branch1, places=3)
+        self.assertAlmostEqual(tree.get_branch_length("1", "2"), branch2, places=3)
+        self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+        self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+        self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
