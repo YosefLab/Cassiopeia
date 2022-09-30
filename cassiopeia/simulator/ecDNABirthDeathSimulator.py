@@ -108,6 +108,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             TO DO: fix this implementation to allow for non-independent segregation.
         fitness_array: Fitnesses with respect to copy number of each species in a cell. This should be a matrix in
             R^e (where e is the number of ecDNA species being modelled).
+        capture_efficiency: Probability of observing an ecDNA species. Used as the the probability of a binomial process.
 
     Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
         TreeSimulatorError if invalid stopping conditions are provided or if a
@@ -131,6 +132,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         cosegregation_coefficient: float = 0.0,
         splitting_function: Callable[[int], int] = lambda c, x: c + np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0,1]),
+        capture_efficiency: float = 1.0,
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError("Please specify at least one stopping condition")
@@ -158,7 +160,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.initial_copy_number = initial_copy_number
         self.cosegregation_coefficient = cosegregation_coefficient
         self.splitting_function = splitting_function
-        self.fitness_array = fitness_array 
+        self.fitness_array = fitness_array
+        self.capture_efficiency = capture_efficiency
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
@@ -453,6 +456,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         
         for leaf in cassiopeia_tree.leaves:
             cell_metadata.loc[leaf] = cassiopeia_tree.get_attribute(leaf, 'ecdna_array')
+
+        # apply noise model
+        for i in range(len(self.initial_copy_number)):
+            cell_metadata[f'Observed_ecDNA_{i}'] = cell_metadata.apply(lambda x: np.random.binomial(x[f'ecDNA_{i}'], self.capture_efficiency), axis=1)
 
         cassiopeia_tree.cell_meta = cell_metadata.astype(int).copy()
 
