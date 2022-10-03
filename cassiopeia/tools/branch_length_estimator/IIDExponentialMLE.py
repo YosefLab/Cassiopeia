@@ -6,7 +6,7 @@ and identically, with an exponential waiting time.
 import cvxpy as cp
 import numpy as np
 
-from typing import Optional, List
+from typing import List, Optional
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import IIDExponentialMLEError
 
@@ -30,7 +30,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     method if they are not known, which is usually the case for real data).
 
     The estimated mutation rate under will be stored as an attribute called
-    `mutation_rate`. The log-likelihood will be stored in an attribute
+    `mutation_rate`. The log-likelihood will be stored in anl attribute
     called `log_likelihood`.
 
     Missing states are treated as missing at random by the model.
@@ -39,9 +39,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         minimum_branch_length: Estimated branch lengths will be constrained to
             have length at least this value. By default it is set to 0.01,
             since the MLE tends to collapse mutationless edges to length 0.
-        site_rates: List of floats of length equal to the number of character
-            sites. Number at each character site indicates the mutation rate
-            at that site. If 1 or None, that rate is unspecified.
+        relative_mutation_rates: List of positive floats of length equal to the
+            number of character sites. Number at each character site indicates 
+            the relative mutation rate at that site. Must be fully specified or 
+            not at all.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
         verbose: Verbosity level.
@@ -56,7 +57,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     def __init__(
         self,
         minimum_branch_length: float = 0.01,
-        site_rates: Optional[List[float]] = None,
+        relative_mutation_rates: Optional[List[float]] = None,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -67,7 +68,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 f"Allowed solvers: {allowed_solvers}"
             )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
-        self._site_rates = site_rates
+        self._relative_mutation_rates = relative_mutation_rates
         self._verbose = verbose
         self._solver = solver
         self._mutation_rate = None
@@ -88,7 +89,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         """
         # Extract parameters
         minimum_branch_length = self._minimum_branch_length
-        site_rates = self._site_rates
+        relative_mutation_rates = self._relative_mutation_rates
         solver = self._solver
         verbose = self._verbose
 
@@ -106,13 +107,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )
 
         # # # # # Check that the site_rates list is valid # # # # #
-        if site_rates is not None:
-            if tree.character_matrix.shape[1] != len(site_rates):
+        if relative_mutation_rates is not None:
+            if tree.character_matrix.shape[1] != len(relative_mutation_rates):
                 raise ValueError(
                     "The number of character sites does not match the length of the "
                     "provided site_rates list. Please check your data."
                 )
-            site_rates = [x if x is not None else 1 for x in site_rates]
+            for x in relative_mutation_rates:
+                if x <= 0:
+                    raise ValueError("Relative mutation rates must be strictly positive.")
+        else:
+            relative_mutation_rates = [1 for x in range(tree.character_matrix.shape[1])]
 
         # # # # # Create variables of the optimization problem # # # # #
         t_variables = dict(
@@ -145,7 +150,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
 
         # # # # # Compute the log-likelihood # # # # #
         log_likelihood = 0
-        if site_rates is None:
+        if relative_mutation_rates is None:
             for (parent, child) in tree.edges:
                 edge_length = t_variables[child] - t_variables[parent]
                 num_unmutated = len(
@@ -164,10 +169,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
             for (parent, child) in tree.edges:
                 edge_length = t_variables[child] - t_variables[parent]
                 for site in tree.get_unmutated_characters_along_edge(parent, child):
-                    log_likelihood += -edge_length*site_rates[site]
+                    log_likelihood += -edge_length*relative_mutation_rates[site]
                 for site, _ in tree.get_mutations_along_edge(parent, child):
                     log_likelihood +=  cp.log(
-                        1 - cp.exp(-edge_length*site_rates[site] - 1e-5)
+                        1 - cp.exp(-edge_length*relative_mutation_rates[site] - 1e-5)
                 )
 
         # # # # # Solve the problem # # # # #
