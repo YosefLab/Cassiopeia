@@ -12,6 +12,7 @@ from cassiopeia.mixins import IIDExponentialMLEError
 
 from .BranchLengthEstimator import BranchLengthEstimator
 
+# TODO: modify all mentions of mutation rate (1 if no site rates, o/w list)
 
 class IIDExponentialMLE(BranchLengthEstimator):
     """
@@ -29,7 +30,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     can be imputed with CassiopeiaTree's reconstruct_ancestral_characters
     method if they are not known, which is usually the case for real data).
 
-    The estimated mutation rate under will be stored as an attribute called
+    The estimated mutation rate(s) will be stored as an attribute called
     `mutation_rate`. The log-likelihood will be stored in anl attribute
     called `log_likelihood`.
 
@@ -58,6 +59,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self,
         minimum_branch_length: float = 0.01,
         relative_mutation_rates: Optional[List[float]] = None,
+        treat_missing_as_mutations: Optional[bool] = False,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -69,6 +71,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
         self._relative_mutation_rates = relative_mutation_rates
+        self._treat_missing_as_mutations = treat_missing_as_mutations
         self._verbose = verbose
         self._solver = solver
         self._mutation_rate = None
@@ -107,7 +110,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )
 
         # # # # # Check that the site_rates list is valid # # # # #
+        is_rates_specified = False
         if relative_mutation_rates is not None:
+            is_rates_specified = True
             if tree.character_matrix.shape[1] != len(relative_mutation_rates):
                 raise ValueError(
                     "The number of character sites does not match the length of the "
@@ -118,6 +123,15 @@ class IIDExponentialMLE(BranchLengthEstimator):
                     raise ValueError("Relative mutation rates must be strictly positive.")
         else:
             relative_mutation_rates = [1 for x in range(tree.character_matrix.shape[1])]
+            
+        # Group together sites having the same rate
+        sites_by_rate = dict()
+        for i in range(len(relative_mutation_rates)):
+            rate = relative_mutation_rates[i]
+            if rate not in sites_by_rate:
+                sites_by_rate[rate] = [i]
+            else:
+                sites_by_rate[rate].append(i)
 
         # # # # # Create variables of the optimization problem # # # # #
         t_variables = dict(
@@ -149,31 +163,28 @@ class IIDExponentialMLE(BranchLengthEstimator):
         )
 
         # # # # # Compute the log-likelihood # # # # #
+
         log_likelihood = 0
-        if relative_mutation_rates is None:
-            for (parent, child) in tree.edges:
+        for (parent, child) in tree.edges:
                 edge_length = t_variables[child] - t_variables[parent]
-                num_unmutated = len(
-                    tree.get_unmutated_characters_along_edge(parent, child)
-                )
-                num_mutated = len(
-                    tree.get_mutations_along_edge(
-                        parent, child, treat_missing_as_mutations=False
-                    )
-                )
-                log_likelihood += num_unmutated * (-edge_length)
-                log_likelihood += num_mutated * cp.log(
-                    1 - cp.exp(-edge_length - 1e-5)  # We add eps for stability.
-                )
-        else: 
-            for (parent, child) in tree.edges:
-                edge_length = t_variables[child] - t_variables[parent]
-                for site in tree.get_unmutated_characters_along_edge(parent, child):
-                    log_likelihood += -edge_length*relative_mutation_rates[site]
-                for site, _ in tree.get_mutations_along_edge(parent, child):
-                    log_likelihood +=  cp.log(
-                        1 - cp.exp(-edge_length*relative_mutation_rates[site] - 1e-5)
-                )
+                parent_states = tree.get_character_states(parent)
+                child_states = tree.get_character_states(child)
+                for rate in sites_by_rate.keys():
+                    num_mutated = 0
+                    num_unmutated = 0
+                    for site in sites_by_rate[rate]:
+                        if parent_states[site] == 0 and child_states[site] == 0:
+                            num_unmutated += 1
+                        elif parent_states[site] != child_states[site]:
+                            if self._treat_missing_as_mutations:
+                                num_mutated += 1
+                            elif parent_states[site] != -1 and child_states[site] != -1:
+                                num_mutated += 1
+                    if num_unmutated > 0:
+                        log_likelihood += num_unmutated*(-edge_length*rate)
+                    if num_mutated > 0:
+                        log_likelihood +=  num_mutated*cp.log(
+                            1 - cp.exp(-edge_length*rate - 1e-5))
 
         # # # # # Solve the problem # # # # #
         obj = cp.Maximize(log_likelihood)
@@ -184,11 +195,15 @@ class IIDExponentialMLE(BranchLengthEstimator):
             raise IIDExponentialMLEError("Third-party solver failed")
 
         # # # # # Extract the mutation rate # # # # #
-        self._mutation_rate = float(t_variables[a_leaf].value)
-        if self._mutation_rate < 1e-8 or self._mutation_rate > 15.0:
+        scaling_factor = float(t_variables[a_leaf].value)
+        if scaling_factor < 1e-8 or scaling_factor > 15.0:
             raise IIDExponentialMLEError(
                 "The solver failed when it shouldn't have."
             )
+        if is_rates_specified:
+            self._mutation_rate = tuple([rate*scaling_factor for rate in relative_mutation_rates])
+        else:
+            self._mutation_rate = scaling_factor
 
         # # # # # Extract the log-likelihood # # # # #
         log_likelihood = float(log_likelihood.value)
@@ -198,7 +213,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
 
         # # # # # Populate the tree with the estimated branch lengths # # # # #
         times = {
-            node: float(t_variables[node].value) / self._mutation_rate
+            node: float(t_variables[node].value) / scaling_factor
             for node in tree.nodes
         }
         # Make sure that the root has time 0 (avoid epsilons)
@@ -219,6 +234,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
     @property
     def mutation_rate(self):
         """
-        The estimated CRISPR/Cas9 mutation rate under the given model.
+        The estimated CRISPR/Cas9 mutation rate(s) under the given model. If 
+        relative_mutation_rates is specified, we return a list of rates (one per
+        site). Otherwise all sites have the same rate and we return that rate.
         """
         return self._mutation_rate
