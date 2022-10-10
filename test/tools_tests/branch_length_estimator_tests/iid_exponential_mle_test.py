@@ -361,13 +361,19 @@ class TestIIDExponentialMLE(unittest.TestCase):
         self.assertAlmostEqual(model.log_likelihood, -1.922, places=3)
         self.assertAlmostEqual(model.mutation_rate, 0.405, places=3)
 
-    @parameterized.expand([("should_pass", [1.5, 2, 2.5], [1.5, 2, 2.5]), 
-    ("should_pass", [0.05, 0.08, 0.09], [0.05, 0.08, 0.09]),
-    ("should_pass", [150, 200, 250], [150, 200, 250]),
-    ("should_not_pass", [1.5, 2, 2.5], [1.47, 2, 2.5]),
-    ("should_not_pass", [1.5, 2, 2.5], [1.5, 1.97, 2.5]),
-    ("should_not_pass", [1.5, 2, 2.5], [1.5, 2, 2.52])])
-    def test_hand_solvable_problem_with_site_rates(self, name, solver_rates, math_rates):
+    @parameterized.expand(
+        [
+            ("should_pass", [1.5, 2, 2.5], [1.5, 2, 2.5]),
+            ("should_pass", [0.05, 0.08, 0.09], [0.05, 0.08, 0.09]),
+            ("should_pass", [150, 200, 250], [150, 200, 250]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.47, 2, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 1.97, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 2, 2.52]),
+        ]
+    )
+    def test_hand_solvable_problem_with_site_rates(
+        self, name, solver_rates, math_rates
+    ):
         """
         Tree topology is 0->1->2.
         The structure:
@@ -397,15 +403,20 @@ class TestIIDExponentialMLE(unittest.TestCase):
         )
         relative_rates = [rate_1, rate_2, rate_3]
         model = IIDExponentialMLE(
-            minimum_branch_length=1e-4,
-            relative_mutation_rates=relative_rates
+            minimum_branch_length=1e-4, relative_mutation_rates=relative_rates
         )
         model.estimate_branch_lengths(tree)
 
         branch1 = (
-            math.log((math_rate_1 + math_rate_2 + math_rate_3) / (math_rate_2 + math_rate_3)) / math_rate_1
+            math.log(
+                (math_rate_1 + math_rate_2 + math_rate_3)
+                / (math_rate_2 + math_rate_3)
+            )
+            / math_rate_1
         )
-        branch2 = math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        branch2 = (
+            math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        )
         total = branch1 + branch2
         branch1, branch2 = branch1 / total, branch2 / total
         mutation_rates = [x * total for x in relative_rates]
@@ -447,8 +458,8 @@ class TestIIDExponentialMLE(unittest.TestCase):
 
     def test_invalid_site_rates(self):
         """
-        Tree topology is the same as test_hand_solvable_problem_with_site_rate but
-        rates are misspecified so we should error out.
+        Tree topology is the same as test_hand_solvable_problem_with_site_rate
+        but rates are misspecified so we should error out.
         """
         rate_1, rate_2, rate_3 = 1.5, -1, 2.5
 
@@ -468,13 +479,29 @@ class TestIIDExponentialMLE(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.estimate_branch_lengths(tree)
 
-    @parameterized.expand([("should_pass", [1.5, 2, 2.5, 1.5, 2, 2.5], [1.5, 2, 2.5, 1.5, 2, 2.5]), 
-    ("should_not_pass", [1.5, 2, 2.5, 1.5, 2, 2.5], [1.52, 1.98, 2.48, 1.52, 2.01, 2.49])])
-    def test_larger_hand_solvable_problem_with_site_rates(self, name, solver_rates, math_rates):
+    @parameterized.expand(
+        [
+            (
+                "should_pass",
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+            ),
+            (
+                "should_not_pass",
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+                [1.52, 1.98, 2.48, 1.52, 2.01, 2.49],
+            ),
+        ]
+    )
+    def test_larger_hand_solvable_problem_with_site_rates(
+        self, name, solver_rates, math_rates
+    ):
         """
-        Tree topology is a duplicated version of test_hand_solvable_problem_with_site_rates. That is,
-        we double the number of characters (while using the same site rates for each pair) and decouple each using missing 
-        characters as shown below. The expected result is the same as the aforementioned test.
+        Tree topology is a duplicated version of
+        test_hand_solvable_problem_with_site_rates. That is, we double the
+        number of characters (while using the same site rates for each pair)
+        and decouple each using missing characters as shown below. The expected
+        result is the same as the aforementioned test.
 
         The structure:
                    root [state = '0000000']
@@ -488,7 +515,14 @@ class TestIIDExponentialMLE(unittest.TestCase):
          XXX110]            110XXX]
         """
         rate_1, rate_2, rate_3, rate_4, rate_5, rate_6 = solver_rates
-        math_rate_1, math_rate_2, math_rate_3, math_rate_4, math_rate_5, math_rate_6 = math_rates
+        (
+            math_rate_1,
+            math_rate_2,
+            math_rate_3,
+            math_rate_4,
+            math_rate_5,
+            math_rate_6,
+        ) = math_rates
 
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2", "3"])
@@ -496,15 +530,30 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.add_edge("1", "2")
         tree.add_edge("1", "3")
         tree = CassiopeiaTree(tree=tree)
-        tree.set_all_character_states({"0": [0, 0, 0, 0, 0, 0], "1": [1, 0, 0, 1, 0, 0], "2": [-1, -1, -1, 1, 1, 0], "3": [1, 1, 0, -1, -1, -1]})
+        tree.set_all_character_states(
+            {
+                "0": [0, 0, 0, 0, 0, 0],
+                "1": [1, 0, 0, 1, 0, 0],
+                "2": [-1, -1, -1, 1, 1, 0],
+                "3": [1, 1, 0, -1, -1, -1],
+            }
+        )
         relative_rates = [rate_1, rate_2, rate_3, rate_4, rate_5, rate_6]
-        model = IIDExponentialMLE(minimum_branch_length=1e-4, relative_mutation_rates=relative_rates)
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4, relative_mutation_rates=relative_rates
+        )
         model.estimate_branch_lengths(tree)
 
         branch1 = (
-            math.log((math_rate_1 + math_rate_2 + math_rate_3) / (math_rate_2 + math_rate_3)) / math_rate_1
+            math.log(
+                (math_rate_1 + math_rate_2 + math_rate_3)
+                / (math_rate_2 + math_rate_3)
+            )
+            / math_rate_1
         )
-        branch2 = math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        branch2 = (
+            math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        )
         total = branch1 + branch2
         branch1, branch2 = branch1 / total, branch2 / total
         mutation_rates = [x * total for x in relative_rates]
