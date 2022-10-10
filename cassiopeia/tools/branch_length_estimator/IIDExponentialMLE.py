@@ -3,16 +3,16 @@ This file stores a subclass of BranchLengthEstimator, the IIDExponentialMLE.
 Briefly, this model assumes that CRISPR/Cas9 mutates each site independently
 and identically, with an exponential waiting time.
 """
+from typing import List, Optional
+
 import cvxpy as cp
 import numpy as np
 
-from typing import List, Optional
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import IIDExponentialMLEError
 
 from .BranchLengthEstimator import BranchLengthEstimator
 
-# TODO: modify all mentions of mutation rate (1 if no site rates, o/w list)
 
 class IIDExponentialMLE(BranchLengthEstimator):
     """
@@ -41,8 +41,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
             have length at least this value. By default it is set to 0.01,
             since the MLE tends to collapse mutationless edges to length 0.
         relative_mutation_rates: List of positive floats of length equal to the
-            number of character sites. Number at each character site indicates 
-            the relative mutation rate at that site. Must be fully specified or 
+            number of character sites. Number at each character site indicates
+            the relative mutation rate at that site. Must be fully specified or
             not at all.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
@@ -59,7 +59,6 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self,
         minimum_branch_length: float = 0.01,
         relative_mutation_rates: Optional[List[float]] = None,
-        treat_missing_as_mutations: Optional[bool] = False,
         verbose: bool = False,
         solver: str = "SCS",
     ):
@@ -71,7 +70,6 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )  # pragma: no cover
         self._minimum_branch_length = minimum_branch_length
         self._relative_mutation_rates = relative_mutation_rates
-        self._treat_missing_as_mutations = treat_missing_as_mutations
         self._verbose = verbose
         self._solver = solver
         self._mutation_rate = None
@@ -120,10 +118,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 )
             for x in relative_mutation_rates:
                 if x <= 0:
-                    raise ValueError("Relative mutation rates must be strictly positive.")
+                    raise ValueError(
+                        "Relative mutation rates must be strictly positive."
+                    )
         else:
-            relative_mutation_rates = [1 for x in range(tree.character_matrix.shape[1])]
-            
+            relative_mutation_rates = [
+                1 for x in range(tree.character_matrix.shape[1])
+            ]
+
         # Group together sites having the same rate
         sites_by_rate = dict()
         for i in range(len(relative_mutation_rates)):
@@ -147,8 +149,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         root_has_time_0_constraint = [t_variables[root] == 0]
         minimum_branch_length_constraints = [
             t_variables[child]
-            >= t_variables[parent]
-            + minimum_branch_length * t_variables[a_leaf]
+            >= t_variables[parent] + minimum_branch_length * t_variables[a_leaf]
             for (parent, child) in tree.edges
         ]
         ultrametric_constraints = [
@@ -166,25 +167,27 @@ class IIDExponentialMLE(BranchLengthEstimator):
 
         log_likelihood = 0
         for (parent, child) in tree.edges:
-                edge_length = t_variables[child] - t_variables[parent]
-                parent_states = tree.get_character_states(parent)
-                child_states = tree.get_character_states(child)
-                for rate in sites_by_rate.keys():
-                    num_mutated = 0
-                    num_unmutated = 0
-                    for site in sites_by_rate[rate]:
-                        if parent_states[site] == 0 and child_states[site] == 0:
-                            num_unmutated += 1
-                        elif parent_states[site] != child_states[site]:
-                            if self._treat_missing_as_mutations:
-                                num_mutated += 1
-                            elif parent_states[site] != -1 and child_states[site] != -1:
-                                num_mutated += 1
-                    if num_unmutated > 0:
-                        log_likelihood += num_unmutated*(-edge_length*rate)
-                    if num_mutated > 0:
-                        log_likelihood +=  num_mutated*cp.log(
-                            1 - cp.exp(-edge_length*rate - 1e-5))
+            edge_length = t_variables[child] - t_variables[parent]
+            parent_states = tree.get_character_states(parent)
+            child_states = tree.get_character_states(child)
+            for rate in sites_by_rate.keys():
+                num_mutated = 0
+                num_unmutated = 0
+                for site in sites_by_rate[rate]:
+                    if parent_states[site] == 0 and child_states[site] == 0:
+                        num_unmutated += 1
+                    elif parent_states[site] != child_states[site]:
+                        if (
+                            parent_states[site] != -1
+                            and child_states[site] != -1
+                        ):
+                            num_mutated += 1
+                if num_unmutated > 0:
+                    log_likelihood += num_unmutated * (-edge_length * rate)
+                if num_mutated > 0:
+                    log_likelihood += num_mutated * cp.log(
+                        1 - cp.exp(-edge_length * rate - 1e-5)
+                    )
 
         # # # # # Solve the problem # # # # #
         obj = cp.Maximize(log_likelihood)
@@ -201,7 +204,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 "The solver failed when it shouldn't have."
             )
         if is_rates_specified:
-            self._mutation_rate = tuple([rate*scaling_factor for rate in relative_mutation_rates])
+            self._mutation_rate = tuple(
+                [rate * scaling_factor for rate in relative_mutation_rates]
+            )
         else:
             self._mutation_rate = scaling_factor
 
@@ -234,7 +239,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     @property
     def mutation_rate(self):
         """
-        The estimated CRISPR/Cas9 mutation rate(s) under the given model. If 
+        The estimated CRISPR/Cas9 mutation rate(s) under the given model. If
         relative_mutation_rates is specified, we return a list of rates (one per
         site). Otherwise all sites have the same rate and we return that rate.
         """
