@@ -107,14 +107,15 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 "exist. Please check your data."
             )
 
-        # # # # # Check that the site_rates list is valid # # # # #
+        # # # # # Check that the relative_mutation_rates list is valid # # # # #
         is_rates_specified = False
         if relative_mutation_rates is not None:
             is_rates_specified = True
             if tree.character_matrix.shape[1] != len(relative_mutation_rates):
                 raise ValueError(
                     "The number of character sites does not match the length of\
-                    the provided site_rates list. Please check your data."
+                    the provided relative_mutation_rates list. Please check \
+                    your data."
                 )
             for x in relative_mutation_rates:
                 if x <= 0:
@@ -164,7 +165,6 @@ class IIDExponentialMLE(BranchLengthEstimator):
         )
 
         # # # # # Compute the log-likelihood # # # # #
-
         log_likelihood = 0
         for (parent, child) in tree.edges:
             edge_length = t_variables[child] - t_variables[parent]
