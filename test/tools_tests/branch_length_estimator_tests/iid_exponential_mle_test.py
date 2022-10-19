@@ -456,12 +456,20 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.assertAlmostEqual(x, y, places=3)
 
-    def test_invalid_site_rates(self):
+    @parameterized.expand(
+        [
+            ("negative_rate", [1.5, -1, 2.5]),
+            ("zero_rate", [1, 3, 0]),
+            ("too_many_rates", [1, 1, 1, 1]),
+            ("too_few_rates", [2, 2]),
+            ("empty_list", []),
+        ]
+    )
+    def test_invalid_site_rates(self, name, rates):
         """
         Tree topology is the same as test_hand_solvable_problem_with_site_rate
         but rates are misspecified so we should error out.
         """
-        rate_1, rate_2, rate_3 = 1.5, -1, 2.5
 
         tree = nx.DiGraph()
         tree.add_nodes_from(["0", "1", "2"])
@@ -471,7 +479,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         tree.set_all_character_states(
             {"0": [0, 0, 0], "1": [1, 0, 0], "2": [1, 1, 0]}
         )
-        relative_rates = [rate_1, rate_2, rate_3]
+        relative_rates = rates
         model = IIDExponentialMLE(
             minimum_branch_length=1e-4,
             relative_mutation_rates=relative_rates,
@@ -503,7 +511,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         and decouple each using missing characters as shown below. The expected
         result is the same as the aforementioned test.
 
-        The structure:
+        The structure: ('X' indicates missing data)
                    root [state = '0000000']
                     |
                     x
@@ -519,9 +527,9 @@ class TestIIDExponentialMLE(unittest.TestCase):
             math_rate_1,
             math_rate_2,
             math_rate_3,
-            math_rate_4,
-            math_rate_5,
-            math_rate_6,
+            _,
+            _,
+            _,
         ) = math_rates
 
         tree = nx.DiGraph()
