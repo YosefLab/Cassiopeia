@@ -1,6 +1,7 @@
 """
 Test IIDExponentialMLE in cassiopeia.tools.
 """
+import math
 import unittest
 
 import networkx as nx
@@ -101,7 +102,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             minimum_branch_length=1e-4,
             pseudo_mutations_per_edge=1,
             pseudo_non_mutations_per_edge=1,
-            relative_leaf_depth=[("0", 2.0)],
+            relative_leaf_depth=[("1", 2.0)],
             solver=solver,
         )
         model.estimate_branch_lengths(tree)
@@ -160,7 +161,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
             solver=solver,
             pseudo_mutations_per_edge=1,
             pseudo_non_mutations_per_edge=0,
-            relative_leaf_depth=[("0", 0.5)],
+            relative_leaf_depth=[("1", 0.5)],
         )
         model.estimate_branch_lengths(tree)
         self.assertAlmostEqual(tree.get_branch_length("0", "1"), 1.0, places=3)
@@ -391,7 +392,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
                 ("5", 7),
                 ("6", 10),
             ],
-            solver=solver
+            solver=solver,
         )
         model.estimate_branch_lengths(tree)
         self.assertTrue(0.05 < tree.get_time("1") < 0.15)
@@ -407,7 +408,7 @@ class TestIIDExponentialMLE(unittest.TestCase):
         )
         # Regression test (cannot really be verified by hand that this is the
         # optima):
-        self.assertAlmostEqual(model.log_likelihood, -758.032, places=2)
+        self.assertAlmostEqual(model.log_likelihood, -758.032, places=1)
 
     @parameterized.expand([("ECOS", "ECOS"), ("SCS", "SCS")])
     def test_subtree_collapses_when_no_mutations(self, name, solver):
@@ -489,6 +490,392 @@ class TestIIDExponentialMLE(unittest.TestCase):
         )
         self.assertAlmostEqual(model.log_likelihood, -1.922, places=3)
         self.assertAlmostEqual(model.mutation_rate, 0.405, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
+
+    @parameterized.expand(
+        [
+            ("should_pass", [1.5, 2, 2.5], [1.5, 2, 2.5]),
+            ("should_pass", [0.05, 0.08, 0.09], [0.05, 0.08, 0.09]),
+            ("should_pass", [150, 200, 250], [150, 200, 250]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.47, 2, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 1.97, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 2, 2.52]),
+        ]
+    )
+    def test_hand_solvable_problem_with_site_rates(
+        self, name, solver_rates, math_rates
+    ):
+        """
+        Tree topology is 0->1->2.
+        The structure:
+            root [state = '000']
+            |
+            x
+            child [state = '100']
+            |
+            y
+            child [state = '110']
+        Given the site rates as rate_1, rate_2, and rate_3 respectively
+        we find the two branch lengths by solving the MLE expression by hand.
+        Prior to rescaling, the first branch is of length
+        Ln[(rate_1+rate_2+rate_3)/(rate_2+rate_3)]/rate_1 and the other is
+        of length equal to Ln[(rate_2+rate_3)/rate_3]/rate_2.
+        """
+        rate_1, rate_2, rate_3 = solver_rates
+        math_rate_1, math_rate_2, math_rate_3 = math_rates
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2"])
+        tree.add_edge("0", "1")
+        tree.add_edge("1", "2")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {"0": [0, 0, 0], "1": [1, 0, 0], "2": [1, 1, 0]}
+        )
+        relative_rates = [rate_1, rate_2, rate_3]
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4, relative_mutation_rates=relative_rates
+        )
+        model.estimate_branch_lengths(tree)
+
+        branch1 = (
+            math.log(
+                (math_rate_1 + math_rate_2 + math_rate_3)
+                / (math_rate_2 + math_rate_3)
+            )
+            / math_rate_1
+        )
+        branch2 = (
+            math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        )
+        total = branch1 + branch2
+        branch1, branch2 = branch1 / total, branch2 / total
+        mutation_rates = [x * total for x in relative_rates]
+
+        should_be_equal = True
+        for r1, r2 in zip(solver_rates, math_rates):
+            if r1 != r2:
+                should_be_equal = False
+                break
+
+        if should_be_equal:
+            self.assertAlmostEqual(
+                tree.get_branch_length("0", "1"), branch1, places=3
+            )
+            self.assertAlmostEqual(
+                tree.get_branch_length("1", "2"), branch2, places=3
+            )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                self.assertAlmostEqual(x, y, places=3)
+        else:
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    tree.get_branch_length("0", "1"), branch1, places=3
+                )
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    tree.get_branch_length("1", "2"), branch2, places=3
+                )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                with self.assertRaises(AssertionError):
+                    self.assertAlmostEqual(x, y, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
+
+    @parameterized.expand(
+        [
+            ("negative_rate", [1.5, -1, 2.5]),
+            ("zero_rate", [1, 3, 0]),
+            ("too_many_rates", [1, 1, 1, 1]),
+            ("too_few_rates", [2, 2]),
+            ("empty_list", []),
+        ]
+    )
+    def test_invalid_site_rates(self, name, rates):
+        """
+        Tree topology is the same as test_hand_solvable_problem_with_site_rate
+        but rates are misspecified so we should error out.
+        """
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2"])
+        tree.add_edge("0", "1")
+        tree.add_edge("1", "2")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {"0": [0, 0, 0], "1": [1, 0, 0], "2": [1, 1, 0]}
+        )
+        relative_rates = rates
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4,
+            relative_mutation_rates=relative_rates,
+        )
+        with self.assertRaises(ValueError):
+            model.estimate_branch_lengths(tree)
+
+    @parameterized.expand(
+        [
+            (
+                "should_pass",
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+            ),
+            (
+                "should_not_pass",
+                [1.5, 2, 2.5, 1.5, 2, 2.5],
+                [1.52, 1.98, 2.48, 1.52, 2.01, 2.49],
+            ),
+        ]
+    )
+    def test_larger_hand_solvable_problem_with_site_rates(
+        self, name, solver_rates, math_rates
+    ):
+        """
+        Tree topology is a duplicated version of
+        test_hand_solvable_problem_with_site_rates. That is, we double the
+        number of characters (while using the same site rates for each pair)
+        and decouple each using missing characters as shown below. The expected
+        result is the same as the aforementioned test.
+
+        The structure: ('X' indicates missing data)
+                   root [state = '0000000']
+                    |
+                    x
+                  child [state = '100100']
+                    |
+           |------------------|
+           y                  z
+        [state=            [state=
+         XXX110]            110XXX]
+        """
+        rate_1, rate_2, rate_3, rate_4, rate_5, rate_6 = solver_rates
+        (
+            math_rate_1,
+            math_rate_2,
+            math_rate_3,
+            _,
+            _,
+            _,
+        ) = math_rates
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edge("0", "1")
+        tree.add_edge("1", "2")
+        tree.add_edge("1", "3")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {
+                "0": [0, 0, 0, 0, 0, 0],
+                "1": [1, 0, 0, 1, 0, 0],
+                "2": [-1, -1, -1, 1, 1, 0],
+                "3": [1, 1, 0, -1, -1, -1],
+            }
+        )
+        relative_rates = [rate_1, rate_2, rate_3, rate_4, rate_5, rate_6]
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4, relative_mutation_rates=relative_rates
+        )
+        model.estimate_branch_lengths(tree)
+
+        branch1 = (
+            math.log(
+                (math_rate_1 + math_rate_2 + math_rate_3)
+                / (math_rate_2 + math_rate_3)
+            )
+            / math_rate_1
+        )
+        branch2 = (
+            math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        )
+        total = branch1 + branch2
+        branch1, branch2 = branch1 / total, branch2 / total
+        mutation_rates = [x * total for x in relative_rates]
+
+        should_be_equal = True
+        for r1, r2 in zip(solver_rates, math_rates):
+            if r1 != r2:
+                should_be_equal = False
+                break
+
+        if should_be_equal:
+            self.assertAlmostEqual(
+                tree.get_branch_length("0", "1"), branch1, places=3
+            )
+            self.assertAlmostEqual(
+                tree.get_branch_length("1", "2"), branch2, places=3
+            )
+            self.assertAlmostEqual(
+                tree.get_branch_length("1", "3"), branch2, places=3
+            )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                self.assertAlmostEqual(x, y, places=3)
+        else:
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    tree.get_branch_length("0", "1"), branch1, places=3
+                )
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    tree.get_branch_length("1", "2"), branch2, places=3
+                )
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    tree.get_branch_length("1", "3"), branch2, places=3
+                )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                with self.assertRaises(AssertionError):
+                    self.assertAlmostEqual(x, y, places=3)
+        self.assertAlmostEqual(
+            model.log_likelihood, model.penalized_log_likelihood, places=3
+        )
+
+    @parameterized.expand(
+        [
+            ("should_pass", [1.5, 2, 2.5], [1.5, 2, 2.5]),
+            ("should_pass", [0.05, 0.08, 0.09], [0.05, 0.08, 0.09]),
+            ("should_pass", [150, 200, 250], [150, 200, 250]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.47, 2, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 1.97, 2.5]),
+            ("should_not_pass", [1.5, 2, 2.5], [1.5, 2, 2.52]),
+        ]
+    )
+    def test_hand_solvable_problem_with_site_rates_and_long_edge_mutations(
+        self, name, solver_rates, math_rates
+    ):
+        """
+        Same as test_hand_solvable_problem_with_site_rates but we create "fake"
+        internal nodes that provide no information.
+        The structure:
+            root [state = '000']
+            |
+            fake_internal_01 [state = 'X00'] ------ fake_leaf_01 [state = 'XXX']
+            |
+            child [state = '100']
+            |
+            fake_internal_12 [state = '1X0'] ------ fake_leaf_12 [state = '1XX']
+            |
+            child [state = '110']
+        Given the site rates as rate_1, rate_2, and rate_3 respectively
+        we find the two branch lengths by solving the MLE expression by hand.
+        Prior to rescaling, the first branch is of length
+        Ln[(rate_1+rate_2+rate_3)/(rate_2+rate_3)]/rate_1 and the other is
+        of length equal to Ln[(rate_2+rate_3)/rate_3]/rate_2.
+        """
+        rate_1, rate_2, rate_3 = solver_rates
+        math_rate_1, math_rate_2, math_rate_3 = math_rates
+
+        tree = nx.DiGraph()
+        tree.add_nodes_from(
+            [
+                "0",
+                "1",
+                "2",
+                "fake_internal_01",
+                "fake_internal_12",
+                "fake_leaf_01",
+                "fake_leaf_12",
+            ]
+        )
+        tree.add_edge("0", "fake_internal_01")
+        tree.add_edge("fake_internal_01", "1")
+        tree.add_edge("fake_internal_01", "fake_leaf_01")
+        tree.add_edge("1", "fake_internal_12")
+        tree.add_edge("fake_internal_12", "2")
+        tree.add_edge("fake_internal_12", "fake_leaf_12")
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_all_character_states(
+            {
+                "0": [0, 0, 0],
+                "fake_internal_01": [-1, 0, 0],
+                "fake_leaf_01": [-1, -1, -1],
+                "1": [1, 0, 0],
+                "fake_internal_12": [1, -1, 0],
+                "fake_leaf_12": [1, -1, -1],
+                "2": [1, 1, 0],
+            }
+        )
+        relative_rates = [rate_1, rate_2, rate_3]
+        model = IIDExponentialMLE(
+            minimum_branch_length=1e-4,
+            relative_mutation_rates=relative_rates,
+            relative_leaf_depth=[
+                ("2", 10.0),
+                ("fake_leaf_12", 9.0),
+                ("fake_leaf_01", 8.0),
+            ],
+        )
+        model.estimate_branch_lengths(tree)
+
+        branch1 = (
+            math.log(
+                (math_rate_1 + math_rate_2 + math_rate_3)
+                / (math_rate_2 + math_rate_3)
+            )
+            / math_rate_1
+        )
+        branch2 = (
+            math.log((math_rate_2 + math_rate_3) / math_rate_3) / math_rate_2
+        )
+        total = branch1 + branch2
+        branch1, branch2 = branch1 / total, branch2 / total
+        mutation_rates = [x * total for x in relative_rates]
+
+        should_be_equal = True
+        for r1, r2 in zip(solver_rates, math_rates):
+            if r1 != r2:
+                should_be_equal = False
+                break
+
+        if should_be_equal:
+            self.assertAlmostEqual(
+                -tree.get_time("0") + tree.get_time("1"), branch1, places=3
+            )
+            self.assertAlmostEqual(
+                -tree.get_time("1") + tree.get_time("2"), branch2, places=3
+            )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+            self.assertAlmostEqual(tree.get_time("fake_leaf_12"), 0.9, places=3)
+            self.assertAlmostEqual(tree.get_time("fake_leaf_01"), 0.8, places=3)
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                self.assertAlmostEqual(x, y, places=3)
+        else:
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    -tree.get_time("0") + tree.get_time("1"), branch1, places=3
+                )
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(
+                    -tree.get_time("1") + tree.get_time("2"), branch2, places=3
+                )
+            self.assertAlmostEqual(tree.get_time("0"), 0.0, places=3)
+            with self.assertRaises(AssertionError):
+                self.assertAlmostEqual(tree.get_time("1"), branch1, places=3)
+            self.assertAlmostEqual(tree.get_time("2"), 1.0, places=3)
+            for x, y in zip(model.mutation_rate, mutation_rates):
+                with self.assertRaises(AssertionError):
+                    self.assertAlmostEqual(x, y, places=3)
         self.assertAlmostEqual(
             model.log_likelihood, model.penalized_log_likelihood, places=3
         )

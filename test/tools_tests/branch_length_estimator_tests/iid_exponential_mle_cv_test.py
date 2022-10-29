@@ -7,8 +7,9 @@ import networkx as nx
 import pytest
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.tools.branch_length_estimator import \
-    IIDExponentialMLECrossValidated
+from cassiopeia.tools.branch_length_estimator import (
+    IIDExponentialMLECrossValidated,
+)
 
 
 class TestIIDExponentialMLECrossValidated(unittest.TestCase):
@@ -43,4 +44,4 @@ class TestIIDExponentialMLECrossValidated(unittest.TestCase):
         # the CV metric is train log-likelihood, which is maximized when the
         # train penalized_log_likelihood is as similar to the log-likelihood,
         # which is when there is least regularization.
-        self.assertAlmostEqual(model.pseudo_mutations_per_edge, 0.015625)
+        self.assertAlmostEqual(model.pseudo_mutations_per_edge, 0.0)
