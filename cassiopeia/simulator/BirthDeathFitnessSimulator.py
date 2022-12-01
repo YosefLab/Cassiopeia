@@ -3,11 +3,13 @@ This file stores a general phylogenetic tree simulator using forward birth-death
 process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
-from typing import Callable, Dict, Generator, List, Optional, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import networkx as nx
 import numpy as np
-from queue import PriorityQueue
+
+# from queue import PriorityQueue
+import heapq
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import TreeSimulatorError
@@ -146,38 +148,34 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.experiment_time = experiment_time
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
-    
-    def initialize_tree(
-        self, 
-        names
-    ) -> nx.DiGraph:
-        ''' initializes a tree (nx.DiGraph() object with one node). Auxiliary data for each node is grabbed from self (initial conditions / params) or hardcoded
-            
-            Args: names is a generator (function object that stores internal state) that will be used to generate names for the tree nodes          
-            Output: tree (DiGraph object with one node, the root) 
-                    root (name of root node in tree)
-        '''
+
+    def initialize_tree(self, names) -> nx.DiGraph:
+        """initializes a tree (nx.DiGraph() object with one node). Auxiliary data for each node is grabbed from self (initial conditions / params) or hardcoded
+
+        Args: names is a generator (function object that stores internal state) that will be used to generate names for the tree nodes
+        Output: tree (DiGraph object with one node, the root)
+                root (name of root node in tree)
+        """
         tree = nx.DiGraph()
         root = next(names)
         tree.add_node(root)
         tree.nodes[root]["birth_scale"] = self.initial_birth_scale
         tree.nodes[root]["time"] = 0
-        
+
         return tree, root
 
-    def make_initial_lineage_dict(
-        self,
-        id_value
-    ):
-        """ 
+    def make_initial_lineage_dict(self, id_value):
+        """
         uses self initial-conditions and hardcoded default parameters to create an initial lineage dict
-        Args: id_value: name of new lineage 
+        Args: id_value: name of new lineage
 
         Output: a lineage dict
         """
-        lineage = self.make_lineage_dict(id_value, self.initial_birth_scale, 0, True)
+        lineage = self.make_lineage_dict(
+            id_value, self.initial_birth_scale, 0, True
+        )
         return lineage
-    
+
     def simulate_tree(
         self,
     ) -> CassiopeiaTree:
@@ -214,13 +212,14 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             np.random.seed(self.random_seed)
 
         tree, root = self.initialize_tree(names)
-        
-        current_lineages = PriorityQueue()
+
+        # current_lineages = PriorityQueue()
+        current_lineages = []  # instantiate heap
         # Records the nodes that are observed at the end of the experiment
 
-        # TO DO: update to accept arbitrary fields in the dict. 
+        # TO DO: update to accept arbitrary fields in the dict.
         observed_nodes = []
-        
+
         """ 
         starting_lineage = {
             "id": root,
@@ -231,30 +230,65 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         """
 
         starting_lineage = self.make_initial_lineage_dict(root)
-        
+
         # Sample the waiting time until the first division
         self.sample_lineage_event(
             starting_lineage, current_lineages, tree, names, observed_nodes
         )
 
         # Perform the process until there are no active extant lineages left
-        while not current_lineages.empty():
+        # while not current_lineages.empty():
+        #     # If number of extant lineages is the stopping criterion, at the
+        #     # first instance of having n extant tips, stop the experiment
+        #     # and set the total lineage time for each lineage to be equal to
+        #     # the minimum, to produce ultrametric trees. Also, the birth_scale
+        #     # parameter of each leaf is rolled back to equal its parent's.
+        #     if self.num_extant:
+        #         if current_lineages.qsize() == self.num_extant:
+        #             remaining_lineages = []
+        #             while not current_lineages.empty():
+        #                 _, _, lineage = current_lineages.get()
+        #                 remaining_lineages.append(lineage)
+        #             min_total_time = remaining_lineages[0]["total_time"]
+        #             for lineage in remaining_lineages:
+        #                 parent = list(tree.predecessors(lineage["id"]))[0]
+
+        #                 # I don't think this is make_daughter_node; is this some kind of a node update?
+        #                 tree.nodes[lineage["id"]]["time"] += (
+        #                     min_total_time - lineage["total_time"]
+        #                 )
+        #                 tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[
+        #                     parent
+        #                 ]["birth_scale"]
+        #                 observed_nodes.append(lineage["id"])
+        #             break
+        #     # Pop the minimum age lineage to simulate forward time
+        #     _, _, lineage = current_lineages.get()
+        #     # If the lineage is no longer active, just remove it from the queue.
+        #     # This represents the time at which the lineage dies.
+        #     if lineage["active"]:
+        #         for i in range(2):
+        #             self.sample_lineage_event(
+        #                 lineage, current_lineages, tree, names, observed_nodes
+        #             )
+
+        while len(current_lineages) > 0:
             # If number of extant lineages is the stopping criterion, at the
             # first instance of having n extant tips, stop the experiment
             # and set the total lineage time for each lineage to be equal to
             # the minimum, to produce ultrametric trees. Also, the birth_scale
             # parameter of each leaf is rolled back to equal its parent's.
             if self.num_extant:
-                if current_lineages.qsize() == self.num_extant:
+                if len(current_lineages) == self.num_extant:
                     remaining_lineages = []
-                    while not current_lineages.empty():
-                        _, _, lineage = current_lineages.get()
+                    while len(current_lineages) > 0:
+                        _, _, lineage = heapq.heappop(current_lineages)
                         remaining_lineages.append(lineage)
                     min_total_time = remaining_lineages[0]["total_time"]
                     for lineage in remaining_lineages:
                         parent = list(tree.predecessors(lineage["id"]))[0]
-                        
-                        # I don't think this is make_daughter_node; is this some kind of a node update? 
+
+                        # I don't think this is make_daughter_node; is this some kind of a node update?
                         tree.nodes[lineage["id"]]["time"] += (
                             min_total_time - lineage["total_time"]
                         )
@@ -264,7 +298,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         observed_nodes.append(lineage["id"])
                     break
             # Pop the minimum age lineage to simulate forward time
-            _, _, lineage = current_lineages.get()
+            _, _, lineage = heapq.heappop(current_lineages)
             # If the lineage is no longer active, just remove it from the queue.
             # This represents the time at which the lineage dies.
             if lineage["active"]:
@@ -273,14 +307,17 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         lineage, current_lineages, tree, names, observed_nodes
                     )
 
-        cassiopeia_tree = self.populate_tree_from_simulation(tree, observed_nodes)
+        cassiopeia_tree = self.populate_tree_from_simulation(
+            tree, observed_nodes
+        )
 
         return cassiopeia_tree
 
     def sample_lineage_event(
         self,
         lineage: Dict[str, Union[int, float]],
-        current_lineages: PriorityQueue,
+        current_lineages: List[Tuple[int, Any]],
+        # current_lineages: PriorityQueue,
         tree: nx.DiGraph,
         names: Generator,
         observed_nodes: List[str],
@@ -350,7 +387,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             tree.add_edge(lineage["id"], unique_id)
             tree.nodes[unique_id]["time"] = self.experiment_time
 
-            current_lineages.put(
+            heapq.heappush(
+                current_lineages,
                 (
                     self.experiment_time,
                     unique_id,
@@ -360,8 +398,20 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         "total_time": self.experiment_time,
                         "active": False,
                     },
-                )
+                ),
             )
+            # current_lineages.put(
+            #     (
+            #         self.experiment_time,
+            #         unique_id,
+            #         {
+            #             "id": unique_id,
+            #             "birth_scale": lineage["birth_scale"],
+            #             "total_time": self.experiment_time,
+            #             "active": False,
+            #         },
+            #     )
+            # )
 
             # Indicate this node is observed at the end of experiment
             observed_nodes.append(unique_id)
@@ -381,7 +431,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     birth_waiting_time + lineage["total_time"]
                 )
                 # Add the newly generated cell to the list of living lineages
-                current_lineages.put(
+                heapq.heappush(
+                    current_lineages,
                     (
                         birth_waiting_time + lineage["total_time"],
                         unique_id,
@@ -392,8 +443,22 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                             + lineage["total_time"],
                             "active": True,
                         },
-                    )
+                    ),
                 )
+
+                # current_lineages.put(
+                #     (
+                #         birth_waiting_time + lineage["total_time"],
+                #         unique_id,
+                #         {
+                #             "id": unique_id,
+                #             "birth_scale": updated_birth_scale,
+                #             "total_time": birth_waiting_time
+                #             + lineage["total_time"],
+                #             "active": True,
+                #         },
+                #     )
+                # )
 
             else:
                 tree.add_node(unique_id)
@@ -402,7 +467,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 tree.nodes[unique_id]["time"] = (
                     death_waiting_time + lineage["total_time"]
                 )
-                current_lineages.put(
+                heapq.heappush(
+                    current_lineages,
                     (
                         death_waiting_time + lineage["total_time"],
                         unique_id,
@@ -413,8 +479,22 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                             + lineage["total_time"],
                             "active": False,
                         },
-                    )
+                    ),
                 )
+
+                # current_lineages.put(
+                #     (
+                #         death_waiting_time + lineage["total_time"],
+                #         unique_id,
+                #         {
+                #             "id": unique_id,
+                #             "birth_scale": lineage["birth_scale"],
+                #             "total_time": death_waiting_time
+                #             + lineage["total_time"],
+                #             "active": False,
+                #         },
+                #     )
+                # )
 
     def update_fitness(self, birth_scale: float) -> float:
         """Updates a lineage birth scale, which represents its fitness.
@@ -452,23 +532,23 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     self.fitness_base ** self.fitness_distribution()
                 )
         return birth_scale * base_selection_coefficient
-    
+
     def make_lineage_dict(
         self,
-        id_value, 
+        id_value,
         birth_scale,
         total_time,
         active_flag,
     ):
-        """makes a dict (lineage) from the given parameters. keys are hardcoded. 
-            
-            Args: id_value: id of new lineage
-                  birth_scale: birth_scale parameter of new lineage 
-                  total_time: age of lineage 
-                  active_flag: bool to indicate whether lineage is active
-            
-            Returns: a dict (lineage) with the parameter values under the hard-coded keys
-        
+        """makes a dict (lineage) from the given parameters. keys are hardcoded.
+
+        Args: id_value: id of new lineage
+              birth_scale: birth_scale parameter of new lineage
+              total_time: age of lineage
+              active_flag: bool to indicate whether lineage is active
+
+        Returns: a dict (lineage) with the parameter values under the hard-coded keys
+
         """
         lineage = {
             "id": id_value,
@@ -478,13 +558,15 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         }
         return lineage
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: List[str]) -> CassiopeiaTree:
+    def populate_tree_from_simulation(
+        self, tree: nx.DiGraph, observed_nodes: List[str]
+    ) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
-        
+
         Args:
             tree: The tree simulated with ecDNA and fitness values populated as attributes.
             observed_nodes: The observed leaves of the tree.
-        
+
         Returns:
             A CassiopeiaTree with relevant node attributes filled in.
         """
