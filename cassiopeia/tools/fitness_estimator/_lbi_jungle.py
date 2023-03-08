@@ -87,9 +87,18 @@ class LBIJungle(FitnessEstimator):
         Will raise a FitnessEstimatorError if the CassiopeiaTree cannot be
         serialized to networkx.
 
+        Also, due to the underlying implementation in the Jungle package that we
+        wrap, leaf names cannot start with an underscore. A
+        FitnessEstimatorError will also be raised in this case.
+
         Raises:
             FitnessEstimatorError
         """
+        if any([leaf.startswith("_") for leaf in tree.leaves]):
+            raise FitnessEstimatorError(
+                "Leaf names must NOT start with '_'. Please rename your leaves"
+                " to use LBIJungle."
+            )
         with tempfile.NamedTemporaryFile("w") as outfile:
             outfilename = outfile.name
             tree_newick = _to_newick(
