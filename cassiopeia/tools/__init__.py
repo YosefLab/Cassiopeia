@@ -5,6 +5,7 @@ from .branch_length_estimator import IIDExponentialBayesian, IIDExponentialMLE
 from .coupling import compute_evolutionary_coupling
 from .fitness_estimator import (
     FitnessEstimator,
+    FitnessEstimatorError,
     LBIJungle,
 )
 from .parameter_estimators import (

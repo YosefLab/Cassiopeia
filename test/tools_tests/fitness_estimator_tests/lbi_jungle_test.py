@@ -6,7 +6,7 @@ import unittest
 import networkx as nx
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.tools import LBIJungle
+from cassiopeia.tools import FitnessEstimatorError, LBIJungle
 
 
 class TestLBIJungle(unittest.TestCase):
@@ -87,3 +87,25 @@ class TestLBIJungle(unittest.TestCase):
         self.assertGreater(
             fitness_estimates["internal-3"], fitness_estimates["leaf-4"]
         )
+
+    def test_raises_error_if_leaf_name_startswith_underscore(self):
+        """
+        Leaf names cannot start with an underscore.
+
+        (This is due to the underlying Jungle implementation we wrap.)
+        """
+        tree = nx.DiGraph()
+        nodes = [
+            "root",
+            "_leaf",
+        ]
+        tree.add_nodes_from(nodes)
+        tree.add_edges_from(
+            [
+                ("root", "_leaf"),
+            ]
+        )
+        tree = CassiopeiaTree(tree=tree)
+        fitness_estimator = LBIJungle()
+        with self.assertRaises(FitnessEstimatorError):
+            fitness_estimator.estimate_fitness(tree)
