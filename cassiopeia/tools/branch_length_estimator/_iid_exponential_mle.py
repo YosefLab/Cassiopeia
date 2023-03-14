@@ -64,6 +64,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
             None is the default value for this argument.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
+            We recommend "ECOS" (which is the default).
+        backup_solver: In case the main solver fails, this backup solver will
+            be tried instead. Useful for applying a faster but less
+            sophisticated solver first, and only falling back to a very
+            reliable but slower solver if needed. We recommend "SCS" (which is
+            the default). (If `backup_solver=None` is provided, no retry will be
+            attempted and an error will be raised immediately if the main solver
+            fails.)
         _use_vectorized_implementation: Toggles between vectorized and
             non-vectorized implementations. Only used for profiling purposes.
         verbose: Verbosity level.
@@ -94,6 +102,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_mutation_rates: Optional[List[float]] = None,
         verbose: bool = False,
         solver: str = "ECOS",
+        backup_solver: Optional[str] = "SCS",
         _use_vectorized_implementation: bool = True,
     ):
         allowed_solvers = ["ECOS", "SCS", "MOSEK"]
@@ -109,10 +118,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self._relative_mutation_rates = relative_mutation_rates
         self._verbose = verbose
         self._solver = solver
+        self._backup_solver = backup_solver
         self._use_vectorized_implementation = _use_vectorized_implementation
         self._mutation_rate = None
         self._penalized_log_likelihood = None
         self._log_likelihood = None
+        self._backup_solver_was_needed = None
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
@@ -134,6 +145,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_leaf_depth = self._relative_leaf_depth
         relative_mutation_rates = self._relative_mutation_rates
         solver = self._solver
+        backup_solver = self._backup_solver
         _use_vectorized_implementation = self._use_vectorized_implementation
         verbose = self._verbose
 
@@ -353,8 +365,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
         prob = cp.Problem(obj, all_constraints)
         try:
             prob.solve(solver=solver, verbose=verbose)
-        except cp.SolverError:  # pragma: no cover
-            raise IIDExponentialMLEError("Third-party solver failed")
+            self._backup_solver_was_needed = False
+        except cp.SolverError as err:  # pragma: no cover
+            # We try the backup_solver
+            try:
+                if backup_solver is None:
+                    # We don't retry; just raise the original error
+                    raise err
+                prob.solve(solver=backup_solver, verbose=verbose)
+                self._backup_solver_was_needed = True
+            except cp.SolverError:  # pragma: no cover
+                raise IIDExponentialMLEError("Third-party solver failed")
 
         # # # # # Extract the mutation rate # # # # #
         scaling_factor = float(t_variables[deepest_leaf].value)
