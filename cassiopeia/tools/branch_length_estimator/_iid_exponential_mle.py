@@ -93,7 +93,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_leaf_depth: Optional[List[Tuple[str, float]]] = None,
         relative_mutation_rates: Optional[List[float]] = None,
         verbose: bool = False,
-        solver: str = "SCS",
+        solver: str = "ECOS",
         _use_vectorized_implementation: bool = True,
     ):
         allowed_solvers = ["ECOS", "SCS", "MOSEK"]
