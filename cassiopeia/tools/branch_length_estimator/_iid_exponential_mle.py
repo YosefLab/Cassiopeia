@@ -375,7 +375,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 prob.solve(solver=backup_solver, verbose=verbose)
                 self._backup_solver_was_needed = True
             except cp.SolverError:  # pragma: no cover
-                raise IIDExponentialMLEError("Third-party solver failed")
+                raise IIDExponentialMLEError("Third-party solver(s) failed")
 
         # # # # # Extract the mutation rate # # # # #
         scaling_factor = float(t_variables[deepest_leaf].value)
