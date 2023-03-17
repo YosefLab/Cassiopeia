@@ -64,6 +64,16 @@ class IIDExponentialMLE(BranchLengthEstimator):
             None is the default value for this argument.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
+            We recommend "ECOS" (which is the default).
+        backup_solver: In case the main solver fails, this backup solver will
+            be tried instead. Useful for applying a faster but less
+            sophisticated solver first, and only falling back to a very
+            reliable but slower solver if needed. We recommend "SCS" (which is
+            the default). (If `backup_solver=None` is provided, no retry will be
+            attempted and an error will be raised immediately if the main solver
+            fails.)
+        _use_vectorized_implementation: Toggles between vectorized and
+            non-vectorized implementations. Only used for profiling purposes.
         verbose: Verbosity level.
 
     Attributes:
@@ -91,7 +101,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_leaf_depth: Optional[List[Tuple[str, float]]] = None,
         relative_mutation_rates: Optional[List[float]] = None,
         verbose: bool = False,
-        solver: str = "SCS",
+        solver: str = "ECOS",
+        backup_solver: Optional[str] = "SCS",
+        _use_vectorized_implementation: bool = True,
     ):
         allowed_solvers = ["ECOS", "SCS", "MOSEK"]
         if solver not in allowed_solvers:
@@ -106,9 +118,12 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self._relative_mutation_rates = relative_mutation_rates
         self._verbose = verbose
         self._solver = solver
+        self._backup_solver = backup_solver
+        self._use_vectorized_implementation = _use_vectorized_implementation
         self._mutation_rate = None
         self._penalized_log_likelihood = None
         self._log_likelihood = None
+        self._backup_solver_was_needed = None
 
     def estimate_branch_lengths(self, tree: CassiopeiaTree) -> None:
         r"""
@@ -130,6 +145,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_leaf_depth = self._relative_leaf_depth
         relative_mutation_rates = self._relative_mutation_rates
         solver = self._solver
+        backup_solver = self._backup_solver
+        _use_vectorized_implementation = self._use_vectorized_implementation
         verbose = self._verbose
 
         # # # # # Check that the character has at least one mutation # # # # #
@@ -234,6 +251,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
             sum([len(sites_by_rate[rate]) for rate in sites_by_rate.keys()])
             == num_sites
         )
+
+        # The following lists are used for vectorizing the log-likelihood
+        # computation, which speeds up cvxpy.
+        edge_length_mutated_vector = []
+        num_mutated_vector = []
+        negative_rate_mutated_vector = []
+        edge_length_unmutated_vector = []
+        negative_num_unmutated_times_rate_vector = []
         for (parent, child) in tree.edges:
             edge_length = t_variables[child] - t_variables[parent]
             parent_states = tree.get_character_states(parent)
@@ -260,13 +285,30 @@ class IIDExponentialMLE(BranchLengthEstimator):
                         ):
                             num_mutated += 1
                 if num_unmutated > 0:
-                    penalized_log_likelihood += num_unmutated * (
-                        -edge_length * rate
-                    )
+                    if not _use_vectorized_implementation:
+                        # This is the term of the log-likelihood we want to
+                        # add. In the vectorized implementation, it will be
+                        # added later.
+                        penalized_log_likelihood += num_unmutated * (
+                            -edge_length * rate
+                        )
+                    else:
+                        edge_length_unmutated_vector.append(edge_length)
+                        negative_num_unmutated_times_rate_vector.append(
+                            -num_unmutated * rate
+                        )
                 if num_mutated > 0:
-                    penalized_log_likelihood += num_mutated * cp.log(
-                        1 - cp.exp(-edge_length * rate - 1e-5)
-                    )
+                    if not _use_vectorized_implementation:
+                        # This is the term of the log-likelihood we want to
+                        # add. In the vectorized implementation, it will be
+                        # added later.
+                        penalized_log_likelihood += num_mutated * cp.log(
+                            1 - cp.exp(-edge_length * rate - 1e-5)
+                        )
+                    else:
+                        edge_length_mutated_vector.append(edge_length)
+                        num_mutated_vector.append(num_mutated)
+                        negative_rate_mutated_vector.append(-rate)
 
         # # # # # Add in log-likelihood of long-edge mutations # # # #
         long_edge_mutations = self._get_long_edge_mutations(tree, sites_by_rate)
@@ -275,11 +317,42 @@ class IIDExponentialMLE(BranchLengthEstimator):
                 rate
             ].items():
                 edge_length = t_variables[child] - t_variables[parent]
-                penalized_log_likelihood += num_mutated * cp.log(
-                    1
-                    - cp.exp(
-                        -edge_length * rate - 1e-5
-                    )  # We add eps for stability.
+                # This is the term of the log-likelihood we want to add. In the
+                # vectorized implementation, it will be added later.
+                if not _use_vectorized_implementation:
+                    penalized_log_likelihood += num_mutated * cp.log(
+                        1
+                        - cp.exp(
+                            -edge_length * rate - 1e-5
+                        )  # We add eps for stability.
+                    )
+                else:
+                    edge_length_mutated_vector.append(edge_length)
+                    num_mutated_vector.append(num_mutated)
+                    negative_rate_mutated_vector.append(-rate)
+
+        # Now yes, vectorized log-likelihood computation!
+        if _use_vectorized_implementation:
+            if len(edge_length_unmutated_vector) > 0:
+                penalized_log_likelihood += cp.sum(
+                    cp.multiply(
+                        negative_num_unmutated_times_rate_vector,
+                        cp.hstack(edge_length_unmutated_vector)
+                    )
+                )
+            if len(edge_length_mutated_vector) > 0:
+                penalized_log_likelihood += cp.sum(
+                    cp.multiply(
+                        num_mutated_vector,
+                        cp.log(
+                            1.0 - cp.exp(
+                                cp.multiply(
+                                    cp.hstack(edge_length_mutated_vector),
+                                    negative_rate_mutated_vector
+                                ) - 1e-5
+                            )
+                        )
+                    )
                 )
 
         # # # Normalize penalized_log_likelihood by the number of sites # # #
@@ -292,8 +365,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
         prob = cp.Problem(obj, all_constraints)
         try:
             prob.solve(solver=solver, verbose=verbose)
-        except cp.SolverError:  # pragma: no cover
-            raise IIDExponentialMLEError("Third-party solver failed")
+            self._backup_solver_was_needed = False
+        except cp.SolverError as err:  # pragma: no cover
+            # We try the backup_solver
+            try:
+                if backup_solver is None:
+                    # We don't retry; just raise the original error
+                    raise err
+                prob.solve(solver=backup_solver, verbose=verbose)
+                self._backup_solver_was_needed = True
+            except cp.SolverError:  # pragma: no cover
+                raise IIDExponentialMLEError("Third-party solver(s) failed")
 
         # # # # # Extract the mutation rate # # # # #
         scaling_factor = float(t_variables[deepest_leaf].value)
