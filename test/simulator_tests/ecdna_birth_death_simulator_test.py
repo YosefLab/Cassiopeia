@@ -112,10 +112,8 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             starting_lineage, current_lineages, tree, names, observed_nodes
         )
         self.assertTrue(len(current_lineages) == 1)
-        # self.assertTrue(current_lineages.qsize() == 1)
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
         self.assertTrue(
             np.all(
                 tree.nodes[root]["ecdna_array"]
@@ -143,7 +141,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[root]["birth_scale"] = 1
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = np.array([3, 2, 5])
-        # current_lineages = PriorityQueue()
         current_lineages = []
         observed_nodes = []
         starting_lineage = {
@@ -158,7 +155,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
         # now, let's do one normal division
         sim.sample_lineage_event(
             new_lineage, current_lineages, tree, names, observed_nodes
@@ -170,11 +166,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
         total_time_d1 = new_lineage["total_time"]
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
         total_time_d2 = new_lineage["total_time"]
 
         # This need not be true in general, it's just b/c our birth_waiting_distribution is constant.
@@ -192,7 +186,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
         self.assertTrue(observed_nodes[0] == new_lineage["id"])
         self.assertTrue(new_lineage["total_time"] == 5)
         self.assertTrue(not (new_lineage["active"]))
@@ -260,7 +253,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[root]["birth_scale"] = 1
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = np.array([5, 5])
-        # current_lineages = PriorityQueue()
         current_lineages = []
         observed_nodes = []
         starting_lineage = {
@@ -276,7 +268,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
         _, _, new_lineage = heapq.heappop(current_lineages)
-        # _, _, new_lineage = current_lineages.get()
 
         # now, let's do one normal division
         sim.sample_lineage_event(
@@ -289,8 +280,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         # get out the children
         _, _, child_lineage_1 = heapq.heappop(current_lineages)
         _, _, child_lineage_2 = heapq.heappop(current_lineages)
-        # _, _, child_lineage_1 = current_lineages.get()
-        # _, _, child_lineage_2 = current_lineages.get()
         
         # expected arrays derivation (with random seed 41):
         # ecdna1 segregates as (4, 6):
@@ -331,7 +320,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[root]["birth_scale"] = 1
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = np.array([5, 5])
-        # current_lineages = PriorityQueue()
         current_lineages = []
         observed_nodes = []
         starting_lineage = {
@@ -346,7 +334,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             starting_lineage, current_lineages, tree, names, observed_nodes
         )
 
-        # _, _, new_lineage = current_lineages.get()
         _, _, new_lineage = heapq.heappop(current_lineages)
 
         # now, let's do one normal division
@@ -360,8 +347,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
 
         _, _, child_lineage_1 = heapq.heappop(current_lineages)
         _, _, child_lineage_2 = heapq.heappop(current_lineages)
-        # _, _, child_lineage_1 = current_lineages.get()
-        # _, _, child_lineage_2 = current_lineages.get()
 
         self.assertEqual(tree.nodes[child_lineage_1["id"]]["ecdna_array"][0], tree.nodes[child_lineage_1["id"]]["ecdna_array"][1])
         self.assertEqual(tree.nodes[child_lineage_2["id"]]["ecdna_array"][0], tree.nodes[child_lineage_2["id"]]["ecdna_array"][1])

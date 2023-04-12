@@ -23,6 +23,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
+import tqdm
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
@@ -1580,7 +1581,7 @@ class CassiopeiaTree:
             if not self.is_leaf(n):
                 raise CassiopeiaTreeError("A specified node is not a leaf.")
 
-        for n in nodes:
+        for n in tqdm.tqdm(nodes):
             if len(self.nodes) == 1:
                 self.__remove_node(n)
             else:

@@ -171,6 +171,7 @@ def create_indel_heatmap(
     indel_colors: Optional[pd.DataFrame] = None,
     indel_priors: Optional[pd.DataFrame] = None,
     random_state: Optional[np.random.RandomState] = None,
+    clustered_linprof: Optional[pd.DataFrame] = None,
 ) -> Tuple[
     List[
         Dict[
