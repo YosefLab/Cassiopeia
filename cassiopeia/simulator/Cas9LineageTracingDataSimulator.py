@@ -104,7 +104,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         create_allele_when_collapsing_sites_on_cassette: Whether or not to
             create a new allele for the collapsed sites. If False, the default
             behavior of using heritable missing data is employed. Otherwise,
-            the new alleles are encoded as (1e8 + 2**starting_site +
+            the new allele is encoded as (1e8 + 2**starting_site +
             2**ending_site) where starting_site and ending_site are the first
             and last site involved in the resection. This allows inferring the
             endpoints of the resection event, as one would from real reads.
