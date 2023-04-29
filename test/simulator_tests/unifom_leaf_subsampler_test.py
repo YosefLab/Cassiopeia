@@ -143,7 +143,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
 
     def test_subsample_custom_tree_retain_unifurcations(self):
         """
-        Same as `test_subsample_custom_tree` but we retain unifurcations
+        Same as `test_subsample_custom_tree` but we retain unifurcations.
         """
         custom_tree = nx.DiGraph()
         custom_tree.add_nodes_from(["node" + str(i) for i in range(17)])
