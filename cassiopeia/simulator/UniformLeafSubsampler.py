@@ -22,6 +22,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         ratio: Optional[float] = None,
         number_of_leaves: Optional[int] = None,
         random_seed: Optional[int] = None,
+        collapse_unifurcations: bool = True,
     ):
         """
         Uniformly subsample leaf samples of a CassiopeiaTree.
@@ -31,6 +32,11 @@ class UniformLeafSubsampler(LeafSubsampler):
         'number_of_leaves' of the leaves are sampled uniformly at random. Only
         one of the two criteria can be provided.
 
+        After subsampling the leaves, one may still want to retain the internal
+        nodes corresponding to birth events. This can be achieved by setting
+        `collapse_unifurcations` to False. Otherwise, by default, the subsampled
+        tree will have no unifurcations.
+
         Args:
             ratio: Specifies the number of leaves to be sampled as a ratio of
                 the total number of leaves
@@ -39,6 +45,8 @@ class UniformLeafSubsampler(LeafSubsampler):
                 Note that the numpy random seed gets set during every call to
                 `overlay_data`, thereby producing deterministic simulations every
                 time this function is called.
+            collapse_unifurcations: Whether to collapse unifurcations after
+                subsampling leaves.
         """
         if ratio is None and number_of_leaves is None:
             raise LeafSubsamplerError(
@@ -53,6 +61,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         self.__ratio = ratio
         self.__number_of_leaves = number_of_leaves
         self.__random_seed = random_seed
+        self.__collapse_unifurcations = collapse_unifurcations
 
     def subsample_leaves(
         self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True
@@ -88,6 +97,7 @@ class UniformLeafSubsampler(LeafSubsampler):
         ratio = self.__ratio
         number_of_leaves = self.__number_of_leaves
         random_seed = self.__random_seed
+        collapse_unifurcations = self.__collapse_unifurcations
 
         # Set the seed
         if random_seed is not None:
@@ -124,7 +134,8 @@ class UniformLeafSubsampler(LeafSubsampler):
             collapse_source = subsampled_tree.children(subsampled_tree.root)[0]
         else:
             collapse_source = None
-        subsampled_tree.collapse_unifurcations(source=collapse_source)
+        if collapse_unifurcations:
+            subsampled_tree.collapse_unifurcations(source=collapse_source)
 
         # Copy and annotate branch lengths and times
         subsampled_tree.set_times(

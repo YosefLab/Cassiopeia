@@ -141,6 +141,96 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         ]
         self.assertEqual(set(res.edges), set(expected_edges))
 
+    def test_subsample_custom_tree_retain_unifurcations(self):
+        """
+        Same as `test_subsample_custom_tree` but we retain unifurcations
+        """
+        custom_tree = nx.DiGraph()
+        custom_tree.add_nodes_from(["node" + str(i) for i in range(17)])
+        custom_tree.add_edges_from(
+            [
+                ("node16", "node0"),
+                ("node0", "node1"),
+                ("node0", "node2"),
+                ("node1", "node3"),
+                ("node1", "node4"),
+                ("node2", "node5"),
+                ("node2", "node6"),
+                ("node4", "node7"),
+                ("node4", "node8"),
+                ("node6", "node9"),
+                ("node6", "node10"),
+                ("node7", "node11"),
+                ("node11", "node12"),
+                ("node11", "node13"),
+                ("node9", "node14"),
+                ("node9", "node15"),
+            ]
+        )
+        tree = CassiopeiaTree(tree=custom_tree)
+        for u, v in tree.edges:
+            tree.set_branch_length(u, v, 1.5)
+
+        np.random.seed(10)
+        uni = UniformLeafSubsampler(ratio=0.5, collapse_unifurcations=False)
+        res = uni.subsample_leaves(tree=tree)
+
+        expected_edges = {
+            ("node16", "node0"): 1.5,
+            ("node0", "node1"): 1.5,
+            ("node0", "node2"): 1.5,
+            ("node2", "node5"): 1.5,
+            ("node1", "node3"): 1.5,
+            ("node1", "node4"): 1.5,
+            ("node4", "node7"): 1.5,
+            ("node7", "node11"): 1.5,
+            ("node11", "node12"): 1.5,
+            ("node11", "node13"): 1.5,
+        }
+        self.assertEqual(set(res.edges), set(expected_edges.keys()))
+        for u, v in res.edges:
+            self.assertEqual(
+                res.get_branch_length(u, v), expected_edges[(u, v)]
+            )
+
+        expected_times = {
+            "node16": 0.0,
+            "node0": 1.5,
+            "node1": 3.0,
+            "node2": 3.0,
+            "node3": 4.5,
+            "node4": 4.5,
+            "node5": 4.5,
+            "node7": 6.0,
+            "node11": 7.5,
+            "node12": 9.0,
+            "node13": 9.0,
+        }
+        for u in res.nodes:
+            self.assertEqual(res.get_time(u), expected_times[u])
+
+        np.random.seed(11)
+        uni = UniformLeafSubsampler(number_of_leaves=6, collapse_unifurcations=False)
+        res = uni.subsample_leaves(tree=tree, keep_singular_root_edge=True)
+
+        expected_edges = [
+            ("node16", "node0"),
+            ("node0", "node1"),
+            ("node0", "node2"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+            ("node4", "node7"),
+            ("node7", "node11"),
+            ("node11", "node12"),
+            ("node11", "node13"),
+            ("node2", "node5"),
+            ("node2", "node6"),
+            ("node6", "node10"),
+            ("node6", "node9"),
+            ("node9", "node15"),
+        ]
+        self.assertEqual(set(res.edges), set(expected_edges))
+
 
 if __name__ == "__main__":
     unittest.main()
