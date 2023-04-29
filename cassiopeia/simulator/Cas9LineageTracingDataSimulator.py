@@ -317,10 +317,18 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     np.min(sites_to_collapse),
                     np.max(sites_to_collapse),
                 )
+                casette_start_idx = (
+                    int(left / self.size_of_cassette)
+                    * self.size_of_cassette
+                )
                 state_to_use = (
                     self.heritable_missing_data_state
                     if not self.create_allele_when_collapsing_sites_on_cassette
-                    else self.number_of_states + 2**left + 2**right
+                    else (
+                        _MAX_NUMBER_OF_STATES
+                        + 2**(left - casette_start_idx)
+                        + 2**(right - casette_start_idx)
+                    )
                 )
                 for site in range(left, right + 1):
                     updated_character_array[
