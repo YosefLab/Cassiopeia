@@ -69,6 +69,18 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 random_seed=123412232,
             )
         )
+        self.basic_lineage_tracing_data_simulator_w_resection_alleles = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=1e-5,
+                stochastic_silencing_rate=1e-2,
+                random_seed=123412232,
+                create_allele_when_collapsing_sites_on_cassette=True,
+            )
+        )
 
         self.basic_lineage_tracing_data_simulator_no_collapse = (
             cas.sim.Cas9LineageTracingDataSimulator(
@@ -310,6 +322,70 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
         self.assertCountEqual([], remaining_cuts)
         expected_character_array = [-2, -2, 0, 0, 0, 0, 0, 0, 0]
+        for i in range(len(expected_character_array)):
+            self.assertEqual(
+                expected_character_array[i], updated_character_array[i]
+            )
+
+    def test_collapse_sites_with_alleles(self):
+        """
+        Same as `test_collapse_sites` but with resection alleles.
+        """
+
+        character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        (
+            updated_character_array,
+            remaining_cuts,
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
+            character_array, [0, 1]
+        )
+        self.assertCountEqual([], remaining_cuts)
+        expected_character_array = [100000003, 100000003, 0, 0, 0, 0, 0, 0, 0]
+        for i in range(len(expected_character_array)):
+            self.assertEqual(
+                expected_character_array[i], updated_character_array[i]
+            )
+
+        (
+            updated_character_array,
+            remaining_cuts,
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
+            character_array, [0, 1, 2, 3, 4]
+        )
+        self.assertCountEqual([], remaining_cuts)
+        expected_character_array = [
+            100000005, 100000005, 100000005, 100000003, 100000003, 0, 0, 0, 0
+        ]
+        for i in range(len(expected_character_array)):
+            self.assertEqual(
+                expected_character_array[i], updated_character_array[i]
+            )
+
+        (
+            updated_character_array,
+            remaining_cuts,
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
+            character_array, [0, 2, 3, 4, 7, 8]
+        )
+        self.assertCountEqual([], remaining_cuts)
+        expected_character_array = [
+            100000005, 100000005, 100000005, 100000003, 100000003, 0, 0,
+            100000006, 100000006
+        ]
+        for i in range(len(expected_character_array)):
+            self.assertEqual(
+                expected_character_array[i], updated_character_array[i]
+            )
+
+        (
+            updated_character_array,
+            remaining_cuts,
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
+            character_array, [0, 5, 9]
+        )
+        self.assertCountEqual([0, 5, 9], remaining_cuts)
+        expected_character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         for i in range(len(expected_character_array)):
             self.assertEqual(
                 expected_character_array[i], updated_character_array[i]
