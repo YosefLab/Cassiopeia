@@ -32,10 +32,11 @@ class UniformLeafSubsampler(LeafSubsampler):
         'number_of_leaves' of the leaves are sampled uniformly at random. Only
         one of the two criteria can be provided.
 
-        After subsampling the leaves, one may still want to retain the internal
-        nodes corresponding to birth events. This can be achieved by setting
-        `collapse_unifurcations` to False. Otherwise, by default, the subsampled
-        tree will have no unifurcations.
+        After subsampling the leaves, one may want to retain the internal nodes
+        corresponding to birth events. This is fundamental, for example, when
+        later simulating lineage tracing data with double-resection events.
+        To preserve unifurcations, one can thus set `collapse_unifurcations`
+        to False.
 
         Args:
             ratio: Specifies the number of leaves to be sampled as a ratio of
