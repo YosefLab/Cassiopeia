@@ -69,7 +69,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 random_seed=123412232,
             )
         )
-        self.basic_lineage_tracing_data_simulator_w_alleles = (
+        self.basic_lineage_tracing_data_simulator_w_resection_alleles = (
             cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=3,
                 size_of_cassette=3,
@@ -337,7 +337,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         (
             updated_character_array,
             remaining_cuts,
-        ) = self.basic_lineage_tracing_data_simulator_w_alleles.collapse_sites(
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
             character_array, [0, 1]
         )
         self.assertCountEqual([], remaining_cuts)
@@ -350,7 +350,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         (
             updated_character_array,
             remaining_cuts,
-        ) = self.basic_lineage_tracing_data_simulator_w_alleles.collapse_sites(
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
             character_array, [0, 1, 2, 3, 4]
         )
         self.assertCountEqual([], remaining_cuts)
@@ -365,7 +365,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         (
             updated_character_array,
             remaining_cuts,
-        ) = self.basic_lineage_tracing_data_simulator_w_alleles.collapse_sites(
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
             character_array, [0, 2, 3, 4, 7, 8]
         )
         self.assertCountEqual([], remaining_cuts)
@@ -381,7 +381,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         (
             updated_character_array,
             remaining_cuts,
-        ) = self.basic_lineage_tracing_data_simulator_w_alleles.collapse_sites(
+        ) = self.basic_lineage_tracing_data_simulator_w_resection_alleles.collapse_sites(
             character_array, [0, 5, 9]
         )
         self.assertCountEqual([0, 5, 9], remaining_cuts)
