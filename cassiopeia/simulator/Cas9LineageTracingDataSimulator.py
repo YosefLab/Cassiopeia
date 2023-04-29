@@ -17,6 +17,8 @@ from cassiopeia.simulator.LineageTracingDataSimulator import (
     LineageTracingDataSimulator,
 )
 
+_MAX_NUMBER_OF_STATES = 100000000
+
 
 class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     """Simulates Cas9-based lineage tracing data.
@@ -78,7 +80,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         state_generating_distribution: Distribution from which to simulate state
             likelihoods. This is only used if mutation priors are not
             specified to the simulator.
-        number_of_states: Number of states to simulate
+        number_of_states: Number of states to simulate. Must be at most 1e8.
         mutation_priors: A mapping from state to probability that a user
             can specify. If this argument is not None, states will not be
             pulled from the state distribution.
@@ -99,6 +101,14 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         collapse_sites_on_cassette: Whether or not to collapse cuts that occur
             in the same cassette in a single iteration. This option only takes
             effect when `size_of_cassette` is greater than 1. Defaults to True.
+        create_allele_when_collapsing_sites_on_cassette: Whether or not to
+            create a new allele for the collapsed sites. If False, the default
+            behavior of using heritable missing data is employed. Otherwise,
+            the new alleles are encoded as (1e8 + 2**starting_site +
+            2**ending_site) where starting_site and ending_site are the first
+            and last site involved in the resection. This allows inferring the
+            endpoints of the resection event, as one would from real reads.
+            Defaults to False.
 
     Raises:
         DataSimulatorError if assumptions about the system are broken.
@@ -120,6 +130,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         stochastic_missing_data_state: int = -1,
         random_seed: Optional[int] = None,
         collapse_sites_on_cassette: bool = True,
+        create_allele_when_collapsing_sites_on_cassette: bool = False,
     ):
 
         if number_of_cassettes <= 0 or not isinstance(number_of_cassettes, int):
@@ -132,6 +143,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         self.size_of_cassette = size_of_cassette
         self.number_of_cassettes = number_of_cassettes
         self.collapse_sites_on_cassette = collapse_sites_on_cassette
+        self.create_allele_when_collapsing_sites_on_cassette = (
+            create_allele_when_collapsing_sites_on_cassette
+        )
 
         if isinstance(mutation_rate, float):
             if mutation_rate < 0:
@@ -166,6 +180,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 raise DataSimulatorError("Mutation priors do not sum to 1.")
             self.number_of_states = len(state_priors)
             self.state_generating_distribution = None
+        if self.number_of_states > _MAX_NUMBER_OF_STATES:
+            raise ValueError(
+                f"`number_of_states` should be at most {_MAX_NUMBER_OF_STATES},"
+                f" but you provided {self.number_of_states}."
+            )
 
         self.mutation_priors = state_priors
 
@@ -298,10 +317,15 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     np.min(sites_to_collapse),
                     np.max(sites_to_collapse),
                 )
+                state_to_use = (
+                    self.heritable_missing_data_state
+                    if not self.create_allele_when_collapsing_sites_on_cassette
+                    else self.number_of_states + 2**left + 2**right
+                )
                 for site in range(left, right + 1):
                     updated_character_array[
                         site
-                    ] = self.heritable_missing_data_state
+                    ] = state_to_use
             else:
                 cuts_remaining.append(np.array(cuts)[cut_indices[0]])
 
