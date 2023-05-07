@@ -2040,12 +2040,16 @@ class CassiopeiaTree:
             for _node in (self.leaves if leaves_only else self.nodes)
         }
 
-    def scale_to_unit_length(self) -> None:
+    def scale_to_unit_length(self, depth: float = 1.0) -> None:
         """
         Scales the tree to have unit length.
 
         The longest path from root to leaf will have length 1 after the
-        scaling.
+        scaling. Alternatively, for a depth distinct from 1, one may
+        provide this through the `depth` argument.
+
+        Arguments:
+            depth: The depth of the tree after the scaling. (Default: 1.0)
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
@@ -2059,7 +2063,7 @@ class CassiopeiaTree:
         for node in self.nodes:
             new_times[node] = (self.get_time(node) - min_time) / (
                 max_time - min_time
-            )
+            ) * depth
         self.set_times(new_times)
 
     def get_unmutated_characters_along_edge(
