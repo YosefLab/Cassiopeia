@@ -2048,7 +2048,7 @@ class CassiopeiaTree:
         scaling. Alternatively, for a depth distinct from 1, one may
         provide this through the `depth` argument.
 
-        Arguments:
+        Args:
             depth: The depth of the tree after the scaling. (Default: 1.0)
 
         Raises:
