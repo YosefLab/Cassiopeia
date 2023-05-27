@@ -61,7 +61,7 @@ def assign_lineage_groups(
         )
 
         # append returned objects to output variable
-        piv_assigned = piv_assigned.append(piv_lg, sort=True)
+        piv_assigned = pd.concat([piv_assigned, piv_lg], sort=True)
 
         # update pivot_in by removing assigned alignments
         pivot_in = piv_nolg
@@ -231,7 +231,7 @@ def score_lineage_kinships(
         LGi = master_LGs[i]
         intBCsi = master_intBCs[LGi]
         dfi = pd.DataFrame(index=[LGi], columns=intBCsi, data=1)
-        dfLG2intBC = dfLG2intBC.append(dfi, sort=True)
+        dfLG2intBC = pd.concat([dfLG2intBC, dfi], sort=True)
 
     dfLG2intBC = dfLG2intBC.fillna(0)
 
