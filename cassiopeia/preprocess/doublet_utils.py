@@ -110,7 +110,6 @@ def compute_lg_membership(
 
     # Get the intBC set for the cell
     intBCs = set(cell["intBC"].unique())
-
     for lg_key in intbc_sets:
         lg_do = lg_dropouts[lg_key]
         # Calculate the intersect
@@ -151,8 +150,9 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
         A filtered allele table
     """
     ibc_sets = {}
+
     dropouts = {}
-    for lg_name, at_lg in at.groupby(["lineageGrp"]):
+    for lg_name, at_lg in at.groupby("lineageGrp"):
         ibc_sets[lg_name], dropouts[lg_name] = get_intbc_set(at_lg)
 
     # Calculate kinship for each lineage group for each cell
