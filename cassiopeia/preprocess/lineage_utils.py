@@ -255,7 +255,7 @@ def score_lineage_kinships(
     dfCellBC2LG = subPIVOT.dot(dfLG2intBC.T)
     max_kinship = dfCellBC2LG.max(axis=1)
 
-    max_kinship_ind = dfCellBC2LG.idxmax(axis=1).apply(lambda x: x[0])
+    max_kinship_ind = dfCellBC2LG.apply(lambda x: np.argmax(x), axis=1)
     max_kinship_frame = max_kinship.to_frame()
 
     max_kinship_LG = pd.concat(
