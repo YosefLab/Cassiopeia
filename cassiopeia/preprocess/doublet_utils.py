@@ -110,7 +110,6 @@ def compute_lg_membership(
 
     # Get the intBC set for the cell
     intBCs = set(cell["intBC"].unique())
-
     for lg_key in intbc_sets:
         lg_do = lg_dropouts[lg_key]
         # Calculate the intersect

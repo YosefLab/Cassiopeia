@@ -260,7 +260,7 @@ def score_lineage_kinships(
 
     max_kinship_LG = pd.concat(
         [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    )
+    ) 
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     return max_kinship_LG
@@ -306,7 +306,6 @@ def annotate_lineage_groups(
             lg_sizes[n] = len(g["cellBC"].unique())
 
     sorted_by_value = sorted(lg_sizes.items(), key=lambda kv: kv[1])[::-1]
-
     for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
         rename_lg[tup[0]] = float(i)
 
