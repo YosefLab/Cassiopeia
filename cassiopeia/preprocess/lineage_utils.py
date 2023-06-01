@@ -310,7 +310,7 @@ def annotate_lineage_groups(
     for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
         rename_lg[tup[0]] = float(i)
 
-    rename_lg[0] = 0.0  
+    rename_lg[0] = 0.0 
 
     dfMT["lineageGrp"] = dfMT.apply(lambda x: rename_lg[x.lineageGrp], axis=1)
 
