@@ -150,7 +150,6 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
         A filtered allele table
     """
     ibc_sets = {}
-
     dropouts = {}
     for lg_name, at_lg in at.groupby("lineageGrp"):
         ibc_sets[lg_name], dropouts[lg_name] = get_intbc_set(at_lg)
