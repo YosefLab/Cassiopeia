@@ -13,4 +13,6 @@ from .UPGMASolver import UPGMASolver
 from .VanillaGreedySolver import VanillaGreedySolver
 from .SpectralNeighborJoiningSolver import SpectralNeighborJoiningSolver
 from .CCPhyloSolver import CCPhyloSolver
+from .DynamicNeighborJoiningSolver import DynamicNeighborJoiningSolver
+from .HeuristicNeighborJoiningSolver import HeuristicNeighborJoiningSolver
 from . import dissimilarity_functions as dissimilarity

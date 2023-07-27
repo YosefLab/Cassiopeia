@@ -45,7 +45,9 @@ For developers:
     * Run the command ``gurobi.sh`` from a terminal window
     * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
 
-4. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
+4. [Optional] To use fast versions of Neighbor-Joining and UPGMA, install [CCPhylo](https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) then set ccphylo_path in the config.ini file in the cassiopeia directory.
+
+5. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
 
 To verify that it installed correctly, try running our tests with `pytest`.
 
