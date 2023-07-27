@@ -1,5 +1,5 @@
 """
-This file stores a subclass of DistanceSolver, NeighborJoining. The
+This file stores a subclass of CCPhyloSolver, NeighborJoiningSolver. The
 inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
@@ -15,19 +15,21 @@ import pandas as pd
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     DistanceSolver,
+    CCPhyloSolver,
     dissimilarity_functions,
     solver_utilities,
 )
 
 
-class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
+class NeighborJoiningSolver(CCPhyloSolver.CCPhyloSolver):
     """
     Neighbor-Joining class for Cassiopeia.
 
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
     `solve` method, but implements its own procedure for finding cherries by
-    minimizing the Q-criterion between samples.
+    minimizing the Q-criterion between samples. If fast is set to True, then
+    the fast Neighbor-Joining implementation from CCPhylo of is used.
 
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -43,6 +45,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        fast: Whether to use the fast CCPhylo implementation of Neighbor-Joining.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -62,12 +65,15 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         ] = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
+        fast: bool = False,
     ):
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=add_root,
             prior_transformation=prior_transformation,
+            fast = fast,
+            method = "nj"
         )
 
     def root_tree(
