@@ -1,5 +1,6 @@
 """Top level for Tree Solver development."""
 
+from ._corrected_hamming_distance import CorrectedHammingDistanceSolver
 from .HybridSolver import HybridSolver
 from .ILPSolver import ILPSolver
 from .MaxCutGreedySolver import MaxCutGreedySolver
