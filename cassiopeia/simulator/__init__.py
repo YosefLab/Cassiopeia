@@ -11,6 +11,7 @@ from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
 from .SupercellularSampler import SupercellularSampler
 from .TreeSimulator import TreeSimulator
 from .UniformLeafSubsampler import UniformLeafSubsampler
+from .PELineageTracingDataSimulator import PELineageTracingDataSimulator
 
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "SupercellularSampler",
     "TreeSimulator",
     "UniformLeafSubsampler",
+    "PELineageTracingDataSimulator"
 ]
