@@ -305,7 +305,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         potential_graph_edges = (
             ilp_solver_utilities.infer_potential_graph_cython(
-                character_matrix.values.astype(str),
+                character_matrix.astype(str).values,
                 pid,
                 lca_height,
                 self.maximum_potential_graph_layer_size,
