@@ -190,13 +190,16 @@ class CorrectedHammingDistanceSolver:
         if self.mut_prop is None:
             self.mut_prop = num_positive / nun_non_negative
         if self.collision_probability is None:
-            num_states = cm.max().max()
-            self.collision_probability = sum(
-                [
-                    ((cm == state).sum().sum() / num_positive) ** 2
-                    for state in range(1, num_states + 1)
-                ]
-            )  # TODO: Is O(num_states * num_characters * num_cells) ...
+            state_count_dict = dict(
+                cm[cm > 0].stack().reset_index(drop=True).value_counts()
+            )
+            state_counts = np.array(list(state_count_dict.values()))
+            if state_counts.sum() == 0:
+                self.collision_probability = 0.0
+            else:
+                self.collision_probability = sum(
+                    (state_counts / state_counts.sum()) ** 2
+                )
 
         if self.weighting is None:
             distance_function = _CorrectedHD(
