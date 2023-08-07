@@ -3,6 +3,7 @@
 from .BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
 from .BrownianSpatialDataSimulator import BrownianSpatialDataSimulator
 from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
+from .ClonalSpatialDataSimulator import ClonalSpatialDataSimulator
 from .CompleteBinarySimulator import CompleteBinarySimulator
 from .DataSimulator import DataSimulator
 from .LeafSubsampler import LeafSubsampler
