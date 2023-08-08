@@ -13,10 +13,10 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import DistanceSolver, dissimilarity_functions
+from cassiopeia.solver import DistanceSolver, dissimilarity_functions, CCPhyloSolver
 
 
-class UPGMASolver(DistanceSolver.DistanceSolver):
+class UPGMASolver(CCPhyloSolver.CCPhyloSolver):
     """
     UPGMA CassiopeiaSolver.
 
@@ -26,7 +26,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     dissimilarity between samples. After joining nodes, the dissimilarities
     are updated by averaging the distances of elements in the new cluster
     with each existing node. Produces a rooted tree that is assumed to be
-    ultrametric.
+    ultrametric. If fast is set to True, then
+    the fast UPGMA implementation from CCPhylo is used.
 
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -38,6 +39,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        fast: Whether to use the fast CCPhylo implementation of UPGMA.
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
@@ -54,12 +56,15 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             ]
         ] = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
+        fast: bool = False,
     ):
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=True,
             prior_transformation=prior_transformation,
+            fast = fast,
+            method = "upgma"
         )
 
         self.__cluster_to_cluster_size = defaultdict(int)
