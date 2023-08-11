@@ -54,8 +54,8 @@ def triplets_correct(
     proportion_unresolvable = defaultdict(int)
 
     # create copies of the trees and collapse process
-    T1 = copy.copy(tree1)
-    T2 = copy.copy(tree2)
+    T1 = copy.deepcopy(tree1)
+    T2 = copy.deepcopy(tree2)
 
     T1.collapse_unifurcations()
     T2.collapse_unifurcations()
@@ -148,8 +148,8 @@ def robinson_foulds(
             Robinson-Foulds distance for downstream normalization
     """
     # create copies of the trees and collapse process
-    T1 = copy.copy(tree1)
-    T2 = copy.copy(tree2)
+    T1 = copy.deepcopy(tree1)
+    T2 = copy.deepcopy(tree2)
 
     # convert to Ete3 trees and collapse unifurcations
     T1.collapse_unifurcations()

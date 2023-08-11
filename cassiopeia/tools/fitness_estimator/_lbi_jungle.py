@@ -6,7 +6,6 @@ from typing import Optional
 import networkx as nx
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-print(f"dir_path = {dir_path}")
 sys.path.append(os.path.join(dir_path, "_jungle"))
 import jungle as jg
 import numpy as np
