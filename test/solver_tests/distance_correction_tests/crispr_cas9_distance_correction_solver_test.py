@@ -10,7 +10,13 @@ from cassiopeia.solver.distance_correction import (
 class Test_crispr_cas9_default_collision_probability_estimator(
     unittest.TestCase
 ):
+    """
+    Tests for crispr_cas9_default_collision_probability_estimator.
+    """
     def test_1(self):
+        """
+        Compares result against manual computation.
+        """
         cm = pd.DataFrame(
             [
                 [-1, 1, 0, 2, 2],
@@ -29,6 +35,9 @@ class Test_crispr_cas9_default_collision_probability_estimator(
         )
 
     def test_2(self):
+        """
+        Border case.
+        """
         cm = pd.DataFrame(
             [
                 [1000000000],
@@ -43,6 +52,9 @@ class Test_crispr_cas9_default_collision_probability_estimator(
         )
 
     def test_3(self):
+        """
+        Border case.
+        """
         cm = pd.DataFrame(
             [
                 [0],
@@ -57,6 +69,9 @@ class Test_crispr_cas9_default_collision_probability_estimator(
         )
 
     def test_4(self):
+        """
+        Border case.
+        """
         cm = pd.DataFrame(
             [
                 [-1],
