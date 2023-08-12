@@ -248,7 +248,7 @@ class Test_ternary_hamming_distance(unittest.TestCase):
 class Test_hamming_distance_correction(unittest.TestCase):
     """
     Tests both `crispr_cas9_expected_hamming_distance` and
-    `crispr_cas9_corrected_hamming_distance`
+    `crispr_cas9_corrected_hamming_distance` using simulated data.
     """
 
     @parameterized.expand(
@@ -364,7 +364,7 @@ class Test_hamming_distance_correction(unittest.TestCase):
 class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
     """
     Tests both `crispr_cas9_expected_ternary_hamming_distance` and
-    `crispr_cas9_corrected_ternary_hamming_distance`
+    `crispr_cas9_corrected_ternary_hamming_distance` using simulated data.
     """
 
     @parameterized.expand(
