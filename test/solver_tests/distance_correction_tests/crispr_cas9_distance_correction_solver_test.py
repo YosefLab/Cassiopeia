@@ -3,6 +3,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
 from parameterized import parameterized
 
 from cassiopeia.data import CassiopeiaTree
@@ -265,6 +266,7 @@ class Test_hamming_distance_correction(unittest.TestCase):
             (0.7, 0.4, 0.7, 0.7, 0.5, 0.5, False),
         ]
     )
+    @pytest.mark.slow
     def test_1(
         self,
         ground_truth_height,
@@ -380,6 +382,7 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
             (0.7, 0.4, 0.7, 0.7, 0.5, 0.5, False),
         ]
     )
+    @pytest.mark.slow
     def test_1(
         self,
         ground_truth_height,
