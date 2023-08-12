@@ -448,7 +448,9 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
         collision_probability_estimator: The collision probability estimator.
         distance_corrector_name: The name of the function that computes
             corrected distances given the mutation rate, collision probability,
-            and character states of the two leaves.
+            and character states of the two leaves. Allowed options:
+            `crispr_cas9_corrected_ternary_hamming_distance` (default) and
+            `crispr_cas9_corrected_hamming_distance`.
         distance_solver: The distance solver used to reconstruct the tree
             topology using the corrected distances.
     """
