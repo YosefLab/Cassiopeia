@@ -125,7 +125,7 @@ def crispr_cas9_expected_hamming_distance(
     exp_minus_r = 1.0 - mutation_proportion
     q = collision_probability
     if exp_minus_r < 1e-8:
-        # To avoid division by 0 later on.
+        # To avoid doing log(0) later on.
         return 0.0
     else:
         r = -np.log(exp_minus_r)  # The estimate of the mutation rate.
@@ -240,7 +240,7 @@ def crispr_cas9_expected_ternary_hamming_distance(
     exp_minus_r = 1.0 - mutation_proportion
     q = collision_probability
     if exp_minus_r < 1e-8:
-        # To avoid division by 0 later on.
+        # To avoid doing log(0) later on.
         return 0.0
     else:
         r = -np.log(exp_minus_r)  # The estimate of the mutation rate.
