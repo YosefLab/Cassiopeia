@@ -185,7 +185,7 @@ def ternary_hamming_distance(
     (Scaled) ternary Hamming distance, ignoring missing data.
 
     Here, by `scaled` we mean that the Hamming distance is divided by the total
-    number of characters considered, thus bringing it into the range [0, 1].
+    number of characters considered, thus bringing it into the range [0, 2].
 
     Here, `ternary` means that we score two mutated states that are different
     as 2 rather then 1.
@@ -307,7 +307,11 @@ def crispr_cas9_default_mutation_proportion_estimator(
     """
     num_positive = (character_matrix > 0).sum().sum()
     num_non_negative = (character_matrix >= 0).sum().sum()
-    mutation_proportion = num_positive / num_non_negative
+    if num_non_negative == 0:
+        # Everything is missing, avoid division by zero.
+        mutation_proportion = 0.0
+    else:
+        mutation_proportion = num_positive / num_non_negative
     return mutation_proportion
 
 
