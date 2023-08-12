@@ -11,6 +11,7 @@ from cassiopeia.simulator.Cas9LineageTracingDataSimulator import (
     Cas9LineageTracingDataSimulator,
 )
 from cassiopeia.solver.distance_correction._crispr_cas9_distance_correction_solver import (
+    CRISPRCas9DistanceCorrectionSolver,
     crispr_cas9_corrected_hamming_distance,
     crispr_cas9_corrected_ternary_hamming_distance,
     crispr_cas9_default_collision_probability_estimator,
@@ -295,14 +296,12 @@ class Test_hamming_distance_correction(unittest.TestCase):
             sim = Cas9LineageTracingDataSimulator(
                 number_of_cassettes=10000,
                 size_of_cassette=1,
-                mutation_rate=-np.log(
-                    1.0 - mutation_proportion
-                ),  # To match mutation_proportion=0.7
+                mutation_rate=-np.log(1.0 - mutation_proportion),
                 number_of_states=2,
                 state_priors={
                     1: q_1,
                     2: 1.0 - q_1,
-                },  # To match collision_probability
+                },
                 heritable_silencing_rate=0.1,
                 stochastic_silencing_rate=0.1,
                 random_seed=42,
@@ -313,9 +312,7 @@ class Test_hamming_distance_correction(unittest.TestCase):
             tree.add_nodes_from(["0", "1", "2", "3"])
             tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
             tree = CassiopeiaTree(tree=tree)
-            tree.set_times(
-                {"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0}
-            )  # To match height=0.4
+            tree.set_times({"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0})
             sim.overlay_data(tree)
             empirical_expected_hamming_distance = hamming_distance(
                 tree.get_character_states("2"),
@@ -411,14 +408,12 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
             sim = Cas9LineageTracingDataSimulator(
                 number_of_cassettes=10000,
                 size_of_cassette=1,
-                mutation_rate=-np.log(
-                    1.0 - mutation_proportion
-                ),  # To match mutation_proportion=0.7
+                mutation_rate=-np.log(1.0 - mutation_proportion),
                 number_of_states=2,
                 state_priors={
                     1: q_1,
                     2: 1.0 - q_1,
-                },  # To match collision_probability
+                },
                 heritable_silencing_rate=0.1,
                 stochastic_silencing_rate=0.1,
                 random_seed=42,
@@ -429,9 +424,7 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
             tree.add_nodes_from(["0", "1", "2", "3"])
             tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
             tree = CassiopeiaTree(tree=tree)
-            tree.set_times(
-                {"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0}
-            )  # To match height=0.4
+            tree.set_times({"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0})
             sim.overlay_data(tree)
             empirical_expected_hamming_distance = ternary_hamming_distance(
                 tree.get_character_states("2"),
@@ -474,3 +467,49 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
                 )
                 > 0.02
             )
+
+
+class Test_CRISPRCas9DistanceCorrectionSolver(unittest.TestCase):
+    @pytest.mark.slow
+    @parameterized.expand(
+        [
+            ("crispr_cas9_corrected_hamming_distance",),
+            ("crispr_cas9_corrected_ternary_hamming_distance",),
+        ]
+    )
+    @pytest.mark.slow
+    def test_smoke(self, distance_corrector_name):
+        """
+        Just tests that `CRISPRCas9DistanceCorrectionSolver` works on a simple
+        tree with just 3 leaves.
+        """
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3", "4", "5"])
+        tree.add_edges_from(
+            [("0", "1"), ("1", "2"), ("1", "3"), ("2", "4"), ("2", "5")]
+        )
+        tree = CassiopeiaTree(tree=tree)
+        tree.set_times(
+            {"0": 0.0, "1": 0.3, "2": 0.6, "3": 1.0, "4": 1.0, "5": 1.0}
+        )
+        sim = Cas9LineageTracingDataSimulator(
+            number_of_cassettes=10000,
+            size_of_cassette=1,
+            mutation_rate=-np.log(0.3),  # 70% mutation proportion.
+            number_of_states=2,
+            state_priors={
+                1: 0.5,
+                2: 0.5,
+            },
+            heritable_silencing_rate=0.1,
+            stochastic_silencing_rate=0.1,
+            random_seed=42,
+            heritable_missing_data_state=-1,
+            stochastic_missing_data_state=-1,
+        )
+        solver = CRISPRCas9DistanceCorrectionSolver(
+            distance_corrector_name=distance_corrector_name
+        )
+        sim.overlay_data(tree)
+        solver.solve(tree)
+        self.assertEqual(tree.get_newick(), "(3,(4,5));")

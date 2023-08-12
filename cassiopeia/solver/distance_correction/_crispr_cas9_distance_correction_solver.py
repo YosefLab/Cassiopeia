@@ -353,6 +353,77 @@ def crispr_cas9_default_collision_probability_estimator(
     return collision_probability
 
 
+class Crispr_cas9_corrected_hamming_distance_wrapper:
+    """
+    Dissimilarity function to inject into the distance solver.
+
+    This is just a wrapper around `crispr_cas9_corrected_hamming_distance`
+    that makes it conform to the DistanceSolver API.
+
+    E.g. the `weights` parameter is required by the DistanceSolver API,
+    which is why it is part of the argument list, but it is not used at all.
+    """
+
+    def __init__(
+        self,
+        mutation_proportion: float,
+        collision_probability: float,
+    ):
+        self._mutation_proportion = mutation_proportion
+        self._collision_probability = collision_probability
+
+    def __call__(
+        self,
+        s1: List[int],
+        s2: List[int],
+        missing_state_indicator: int,
+        weights: Optional[Dict[int, Dict[int, float]]],
+    ) -> float:
+        return crispr_cas9_corrected_hamming_distance(
+            mutation_proportion=self._mutation_proportion,
+            collision_probability=self._collision_probability,
+            s1=s1,
+            s2=s2,
+            missing_state_indicator=missing_state_indicator,
+        )
+
+
+class Crispr_cas9_corrected_ternary_hamming_distance_wrapper:
+    """
+    Dissimilarity function to inject into the distance solver.
+
+    This is just a wrapper around
+    `_crispr_cas9_corrected_ternary_hamming_distance_wrapper` that makes it
+    conform to the DistanceSolver API.
+
+    E.g. the `weights` parameter is required by the DistanceSolver API,
+    which is why it is part of the argument list, but it is not used at all.
+    """
+
+    def __init__(
+        self,
+        mutation_proportion: float,
+        collision_probability: float,
+    ):
+        self._mutation_proportion = mutation_proportion
+        self._collision_probability = collision_probability
+
+    def __call__(
+        self,
+        s1: List[int],
+        s2: List[int],
+        missing_state_indicator: int,
+        weights: Optional[Dict[int, Dict[int, float]]],
+    ) -> float:
+        return crispr_cas9_corrected_ternary_hamming_distance(
+            mutation_proportion=self._mutation_proportion,
+            collision_probability=self._collision_probability,
+            s1=s1,
+            s2=s2,
+            missing_state_indicator=missing_state_indicator,
+        )
+
+
 class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
     """
     Apply a distance solver to corrected CRISPR-Cas9 distances.
@@ -368,30 +439,34 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
     Assumes that the missing data indicator is negative, and that all mutated
     states are positive, for simplicity.
 
+    Technical note: The reason why we use a "distance_corrector_name" instead
+    of just injecting the distance_corrector_function directly is because the
+    latter approach fails due to Numba compilation issues.
+
     Args:
         mutation_proportion_estimator: The mutation proportion estimator.
         collision_probability_estimator: The collision probability estimator.
-        distance_corrector: The function that computes corrected distances
-            given the mutation rate, collision probability, and character
-            states of the two leaves.
+        distance_corrector_name: The name of the function that computes
+            corrected distances given the mutation rate, collision probability,
+            and character states of the two leaves.
         distance_solver: The distance solver used to reconstruct the tree
-            topology given the estimated distance matrix.
+            topology using the corrected distances.
     """
 
     def __init__(
         self,
-        mutation_proportion_estimator: MutationProportionEstimatorType = crispr_cas9_default_mutation_proportion_estimator,
-        collision_probability_estimator: CollisionProbabilityEstimatorType = crispr_cas9_default_collision_probability_estimator,
-        distance_corrector: CRISPRCas9DistanceCorrectorType = crispr_cas9_corrected_ternary_hamming_distance,
+        mutation_proportion_estimator: MutationProportionEstimatorType = crispr_cas9_default_mutation_proportion_estimator,  # noqa
+        collision_probability_estimator: CollisionProbabilityEstimatorType = crispr_cas9_default_collision_probability_estimator,  # noqa
+        distance_corrector_name: str = "crispr_cas9_corrected_ternary_hamming_distance",  # noqa
         distance_solver: DistanceSolver = NeighborJoiningSolver(add_root=True),
     ):
         self._mutation_proportion_estimator = mutation_proportion_estimator
         self._collision_probability_estimator = collision_probability_estimator
-        self._distance_corrector = distance_corrector
+        self._distance_corrector_name = distance_corrector_name
         self._distance_solver = distance_solver
 
     def solve(self, tree: CassiopeiaTree):
-        if tree.character_matrix.missing_state_indicator >= 0:
+        if tree.missing_state_indicator >= 0:
             raise ValueError(
                 "For simplicity, it is required that the missing state "
                 "indicator is negative. For your data, it is: "
@@ -404,29 +479,30 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
             character_matrix=tree.character_matrix,
         )
 
-        def corrected_distance_function(
-            s1: List[int],
-            s2: List[int],
-            missing_state_indicator: int,
-            weights: Optional[Dict[int, Dict[int, float]]],
-        ) -> float:
-            """
-            Corrected distance to inject into the distance solver.
-
-            This is just a wrapper around `_crispr_cas9_distance_corrector`
-            that makes it conform to the DistanceSolver API.
-
-            E.g. the `weights` parameter is required by the DistanceSolver API,
-            which is why it is part of the argument list, but it is not used
-            since the `_crispr_cas9_distance_corrector` known what it needs to
-            do.
-            """
-            return self._distance_corrector(
-                mutation_proportion=mutation_proportion,
-                collision_probability=collision_probability,
-                s1=s1,
-                s2=s2,
-                missing_state_indicator=missing_state_indicator,
+        if (
+            self._distance_corrector_name
+            == "crispr_cas9_corrected_ternary_hamming_distance"
+        ):
+            corrected_distance_function = (
+                Crispr_cas9_corrected_ternary_hamming_distance_wrapper(
+                    mutation_proportion=mutation_proportion,
+                    collision_probability=collision_probability,
+                )
+            )
+        elif (
+            self._distance_corrector_name
+            == "crispr_cas9_corrected_hamming_distance"
+        ):
+            corrected_distance_function = (
+                Crispr_cas9_corrected_hamming_distance_wrapper(
+                    mutation_proportion=mutation_proportion,
+                    collision_probability=collision_probability,
+                )
+            )
+        else:
+            raise ValueError(
+                "Unknown distance_corrector_name: "
+                f"'{self._distance_corrector_name}'"
             )
 
         distance_solver = self._distance_solver
