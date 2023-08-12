@@ -196,7 +196,8 @@ def ternary_hamming_distance(
         missing_state_indicator: Missing data indicator.
 
     Returns:
-        (Scaled) Hamming distance between s1 and s2, ignoring missing data.
+        (Scaled) ternary Hamming distance between s1 and s2, ignoring missing
+        data.
     """
     dist = 0
     num_present = 0
