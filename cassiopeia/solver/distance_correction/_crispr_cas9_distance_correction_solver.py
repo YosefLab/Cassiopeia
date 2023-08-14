@@ -296,7 +296,7 @@ def crispr_cas9_default_mutation_proportion_estimator(
     character_matrix: pd.DataFrame,
 ) -> float:
     """
-    Estimate mutation proportion as [number mutated]/[number not mutated].
+    Estimate mutation proportion as #alleles>0/#alleles>=0.
 
     Assumes that the missing data indicator is negative, and that all mutated
     states are positive, for simplicity.
@@ -316,6 +316,22 @@ def crispr_cas9_default_mutation_proportion_estimator(
     return mutation_proportion
 
 
+def crispr_cas9_hardcoded_mutation_proportion_estimator(
+    character_matrix: pd.DataFrame,
+    mutation_proportion: float,
+) -> float:
+    """
+    Hardcode the mutation proportion.
+
+    Args:
+        character_matrix: The character matrix (which will be ignored).
+        mutation_proportion: The mutation proportion to hardcode.
+    Returns:
+        The hardcoded `mutation_proportion`.
+    """
+    return mutation_proportion
+
+
 def crispr_cas9_default_collision_probability_estimator(
     character_matrix: pd.DataFrame,
 ) -> float:
@@ -324,9 +340,9 @@ def crispr_cas9_default_collision_probability_estimator(
 
     The estimated collision probability is:
     q = sum q_i^2
-    where q_i is the estimated collision probability for state i, which is
-    simply the number of times state i appears in the character matrix, divided
-    by the total number of mutations.
+    where q_i is the estimated collision probability for state i using
+    #alleles=i / #alleles>0 (i.e. the number of times state i appears
+    in the character matrix, divided by the total number of mutations).
 
     Assumes that the missing data indicator is negative, and that all mutated
     states are positive, for simplicity.
@@ -351,6 +367,22 @@ def crispr_cas9_default_collision_probability_estimator(
         collision_probability = 0.0
     else:
         collision_probability = sum((state_counts / state_counts.sum()) ** 2)
+    return collision_probability
+
+
+def crispr_cas9_hardcoded_collision_probability_estimator(
+    character_matrix: pd.DataFrame,
+    collision_probability: float,
+) -> float:
+    """
+    Hardcode the collision probability.
+
+    Args:
+        character_matrix: The character matrix (which will be ignored).
+        collision_probability: The collision probability to hardcode.
+    Returns:
+        The hardcoded `collision_probability`.
+    """
     return collision_probability
 
 
@@ -446,14 +478,25 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
 
     Args:
         mutation_proportion_estimator: The mutation proportion estimator.
+            Default is `crispr_cas9_default_mutation_proportion_estimator`,
+            which uses the simple estimate #alleles>0 / #alleles>=0.
+            The mutation proportion can be set up front (i.e. hardcoded)
+            with the `crispr_cas9_hardcoded_mutation_proportion_estimator`.
         collision_probability_estimator: The collision probability estimator.
+            Default is `crispr_cas9_default_collision_probability_estimator`,
+            which uses the simple estimate sum q_i^2, where each q_i is
+            estimated as q_i = #alleles=i / #alleles>0. The collision
+            probability can be set up front (i.e. hardcoded) with the
+            `crispr_cas9_hardcoded_collision_probability_estimator`.
         distance_corrector_name: The name of the function that computes
             corrected distances given the mutation rate, collision probability,
             and character states of the two leaves. Allowed options:
             `crispr_cas9_corrected_ternary_hamming_distance` (default) and
-            `crispr_cas9_corrected_hamming_distance`.
+            `crispr_cas9_corrected_hamming_distance`. Generally, the ternary
+            Hamming distance tends to perform better.
         distance_solver: The distance solver used to reconstruct the tree
-            topology using the corrected distances.
+            topology using the corrected distances. By default, NJ with rooting
+            is used, but other distance solvers such as UPGMA can be used too.
     """
 
     def __init__(

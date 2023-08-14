@@ -1,4 +1,5 @@
 import unittest
+from functools import partial
 
 import networkx as nx
 import numpy as np
@@ -10,12 +11,16 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.simulator.Cas9LineageTracingDataSimulator import (
     Cas9LineageTracingDataSimulator,
 )
-from cassiopeia.solver.distance_correction._crispr_cas9_distance_correction_solver import (
+from cassiopeia.solver.distance_correction import (
     CRISPRCas9DistanceCorrectionSolver,
-    crispr_cas9_corrected_hamming_distance,
-    crispr_cas9_corrected_ternary_hamming_distance,
     crispr_cas9_default_collision_probability_estimator,
     crispr_cas9_default_mutation_proportion_estimator,
+    crispr_cas9_hardcoded_collision_probability_estimator,
+    crispr_cas9_hardcoded_mutation_proportion_estimator,
+)
+from cassiopeia.solver.distance_correction._crispr_cas9_distance_correction_solver import (
+    crispr_cas9_corrected_hamming_distance,
+    crispr_cas9_corrected_ternary_hamming_distance,
     crispr_cas9_expected_hamming_distance,
     crispr_cas9_expected_ternary_hamming_distance,
     hamming_distance,
@@ -96,6 +101,28 @@ class Test_crispr_cas9_default_mutation_proportion_estimator(unittest.TestCase):
         )
 
 
+class Test_crispr_cas9_hardcoded_mutation_proportion_estimator(
+    unittest.TestCase
+):
+    def test_1(self):
+        cm = pd.DataFrame(
+            [
+                [-1, 1, 0, 2, 2],
+                [1, 0, -1, 100000000, 100000000],
+                [-1, -1, 1, 3, 100000000],
+            ]
+        )
+        mutation_proportion_estimator = partial(
+            crispr_cas9_hardcoded_mutation_proportion_estimator,
+            mutation_proportion=0.1,
+        )
+        mutation_proportion = mutation_proportion_estimator(cm)
+        expected_mutation_proportion = 0.1
+        self.assertAlmostEqual(
+            mutation_proportion, expected_mutation_proportion
+        )
+
+
 class Test_crispr_cas9_default_collision_probability_estimator(
     unittest.TestCase
 ):
@@ -167,6 +194,28 @@ class Test_crispr_cas9_default_collision_probability_estimator(
             crispr_cas9_default_collision_probability_estimator(cm)
         )
         expected_collision_probability = 0.0
+        self.assertAlmostEqual(
+            collision_probability, expected_collision_probability
+        )
+
+
+class Test_crispr_cas9_hardcoded_collision_probability_estimator(
+    unittest.TestCase
+):
+    def test_1(self):
+        cm = pd.DataFrame(
+            [
+                [-1, 1, 0, 2, 2],
+                [1, 0, -1, 100000000, 100000000],
+                [-1, -1, 1, 3, 100000000],
+            ]
+        )
+        collision_probability_estimator = partial(
+            crispr_cas9_hardcoded_collision_probability_estimator,
+            collision_probability=0.1,
+        )
+        collision_probability = collision_probability_estimator(cm)
+        expected_collision_probability = 0.1
         self.assertAlmostEqual(
             collision_probability, expected_collision_probability
         )
