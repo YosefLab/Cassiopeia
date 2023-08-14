@@ -13,19 +13,19 @@ from cassiopeia.simulator.Cas9LineageTracingDataSimulator import (
 )
 from cassiopeia.solver.distance_correction import (
     CRISPRCas9DistanceCorrectionSolver,
+    crispr_cas9_corrected_hamming_distance,
+    crispr_cas9_corrected_ternary_hamming_distance,
     crispr_cas9_default_collision_probability_estimator,
     crispr_cas9_default_mutation_proportion_estimator,
     crispr_cas9_hardcoded_collision_probability_estimator,
     crispr_cas9_hardcoded_mutation_proportion_estimator,
 )
 from cassiopeia.solver.distance_correction._crispr_cas9_distance_correction_solver import (
-    crispr_cas9_corrected_hamming_distance,
-    crispr_cas9_corrected_ternary_hamming_distance,
-    crispr_cas9_expected_hamming_distance,
-    crispr_cas9_expected_ternary_hamming_distance,
-    hamming_distance,
-    inverse,
-    ternary_hamming_distance,
+    _crispr_cas9_expected_hamming_distance,
+    _crispr_cas9_expected_ternary_hamming_distance,
+    _hamming_distance,
+    _inverse,
+    _ternary_hamming_distance,
 )
 
 
@@ -221,12 +221,12 @@ class Test_crispr_cas9_hardcoded_collision_probability_estimator(
         )
 
 
-class Test_inverse(unittest.TestCase):
+class Test__inverse(unittest.TestCase):
     def test_within_interval(self):
         def f(x):
             return x**2
 
-        res = inverse(
+        res = _inverse(
             f=f,
             y=4,
             lower=0,
@@ -238,7 +238,7 @@ class Test_inverse(unittest.TestCase):
         def f(x):
             return x**2
 
-        res = inverse(
+        res = _inverse(
             f=f,
             y=4,
             lower=2.5,
@@ -250,7 +250,7 @@ class Test_inverse(unittest.TestCase):
         def f(x):
             return x**2
 
-        res = inverse(
+        res = _inverse(
             f=f,
             y=4,
             lower=0,
@@ -259,9 +259,9 @@ class Test_inverse(unittest.TestCase):
         self.assertAlmostEqual(res, 1.5)
 
 
-class Test_hamming_distance(unittest.TestCase):
+class Test__hamming_distance(unittest.TestCase):
     def test_1(self):
-        res = hamming_distance(
+        res = _hamming_distance(
             s1=[-1, 0, 1, 2, 3],
             s2=[0, 1, 1, 1, -1],
             missing_state_indicator=-1,
@@ -269,7 +269,7 @@ class Test_hamming_distance(unittest.TestCase):
         self.assertAlmostEqual(res, 2 / 3)
 
     def test_2(self):
-        res = hamming_distance(
+        res = _hamming_distance(
             s1=[-1, 0, 1, 2, 3],
             s2=[0, 1, 1, 1, -1],
             missing_state_indicator=-2,
@@ -277,9 +277,9 @@ class Test_hamming_distance(unittest.TestCase):
         self.assertAlmostEqual(res, 4 / 5)
 
 
-class Test_ternary_hamming_distance(unittest.TestCase):
+class Test__ternary_hamming_distance(unittest.TestCase):
     def test_1(self):
-        res = ternary_hamming_distance(
+        res = _ternary_hamming_distance(
             s1=[-1, 0, 1, 2, 3],
             s2=[0, 1, 1, 1, -1],
             missing_state_indicator=-1,
@@ -287,7 +287,7 @@ class Test_ternary_hamming_distance(unittest.TestCase):
         self.assertAlmostEqual(res, (1 + 2) / 3)
 
     def test_2(self):
-        res = ternary_hamming_distance(
+        res = _ternary_hamming_distance(
             s1=[-1, 0, 1, 2, 3],
             s2=[0, 1, 1, 1, -1],
             missing_state_indicator=-2,
@@ -295,9 +295,9 @@ class Test_ternary_hamming_distance(unittest.TestCase):
         self.assertAlmostEqual(res, 5 / 5)
 
 
-class Test_hamming_distance_correction(unittest.TestCase):
+class Test__crispr_cas9_expected_hamming_distance(unittest.TestCase):
     """
-    Tests both `crispr_cas9_expected_hamming_distance` and
+    Tests both `_crispr_cas9_expected_hamming_distance` and
     `crispr_cas9_corrected_hamming_distance` using simulated data.
     """
 
@@ -328,7 +328,7 @@ class Test_hamming_distance_correction(unittest.TestCase):
         should_pass,
     ):
         theoretical_expected_hamming_distance = (
-            crispr_cas9_expected_hamming_distance(
+            _crispr_cas9_expected_hamming_distance(
                 height=ground_truth_height,
                 mutation_proportion=ground_truth_mutation_proportion,
                 collision_probability=ground_truth_collision_probability,
@@ -363,7 +363,7 @@ class Test_hamming_distance_correction(unittest.TestCase):
             tree = CassiopeiaTree(tree=tree)
             tree.set_times({"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0})
             sim.overlay_data(tree)
-            empirical_expected_hamming_distance = hamming_distance(
+            empirical_expected_hamming_distance = _hamming_distance(
                 tree.get_character_states("2"),
                 tree.get_character_states("3"),
                 missing_state_indicator=-1,
@@ -407,9 +407,9 @@ class Test_hamming_distance_correction(unittest.TestCase):
             )
 
 
-class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
+class Test__crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
     """
-    Tests both `crispr_cas9_expected_ternary_hamming_distance` and
+    Tests both `_crispr_cas9_expected_ternary_hamming_distance` and
     `crispr_cas9_corrected_ternary_hamming_distance` using simulated data.
     """
 
@@ -440,7 +440,7 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
         should_pass,
     ):
         theoretical_expected_hamming_distance = (
-            crispr_cas9_expected_ternary_hamming_distance(
+            _crispr_cas9_expected_ternary_hamming_distance(
                 height=ground_truth_height,
                 mutation_proportion=ground_truth_mutation_proportion,
                 collision_probability=ground_truth_collision_probability,
@@ -475,7 +475,7 @@ class Test_crispr_cas9_expected_ternary_hamming_distance(unittest.TestCase):
             tree = CassiopeiaTree(tree=tree)
             tree.set_times({"0": 0.0, "1": 1.0 - height, "2": 1.0, "3": 1.0})
             sim.overlay_data(tree)
-            empirical_expected_hamming_distance = ternary_hamming_distance(
+            empirical_expected_hamming_distance = _ternary_hamming_distance(
                 tree.get_character_states("2"),
                 tree.get_character_states("3"),
                 missing_state_indicator=-1,

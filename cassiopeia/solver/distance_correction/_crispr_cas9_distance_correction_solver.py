@@ -38,7 +38,7 @@ CRISPRCas9DistanceCorrectorType = Callable[
 ]
 
 
-def inverse(
+def _inverse(
     f: Callable[[float], float],
     y: float,
     lower: float,
@@ -68,7 +68,7 @@ def inverse(
     return (upper + lower) / 2.0
 
 
-def hamming_distance(
+def _hamming_distance(
     s1: List[int],
     s2: List[int],
     missing_state_indicator: int = -1,
@@ -102,7 +102,7 @@ def hamming_distance(
     return dist / num_present
 
 
-def crispr_cas9_expected_hamming_distance(
+def _crispr_cas9_expected_hamming_distance(
     height: float,
     mutation_proportion: float,
     collision_probability: float,
@@ -159,14 +159,14 @@ def crispr_cas9_corrected_hamming_distance(
         The corrected distance.
     """
     expected_hamming_distance_given_height = partial(
-        crispr_cas9_expected_hamming_distance,
+        _crispr_cas9_expected_hamming_distance,
         mutation_proportion=mutation_proportion,
         collision_probability=collision_probability,
     )
-    observed_hamming_distance = hamming_distance(
+    observed_hamming_distance = _hamming_distance(
         s1=s1, s2=s2, missing_state_indicator=missing_state_indicator
     )
-    height = inverse(
+    height = _inverse(
         f=expected_hamming_distance_given_height,
         y=observed_hamming_distance,
         lower=0,
@@ -176,7 +176,7 @@ def crispr_cas9_corrected_hamming_distance(
     return estimated_tree_distance
 
 
-def ternary_hamming_distance(
+def _ternary_hamming_distance(
     s1: List[int],
     s2: List[int],
     missing_state_indicator: int = -1,
@@ -217,7 +217,7 @@ def ternary_hamming_distance(
     return dist / num_present
 
 
-def crispr_cas9_expected_ternary_hamming_distance(
+def _crispr_cas9_expected_ternary_hamming_distance(
     height: float,
     mutation_proportion: float,
     collision_probability: float,
@@ -275,14 +275,14 @@ def crispr_cas9_corrected_ternary_hamming_distance(
         The corrected distance.
     """
     expected_ternary_hamming_distance_given_height = partial(
-        crispr_cas9_expected_ternary_hamming_distance,
+        _crispr_cas9_expected_ternary_hamming_distance,
         mutation_proportion=mutation_proportion,
         collision_probability=collision_probability,
     )
-    observed_ternary_hamming_distance = ternary_hamming_distance(
+    observed_ternary_hamming_distance = _ternary_hamming_distance(
         s1=s1, s2=s2, missing_state_indicator=missing_state_indicator
     )
-    height = inverse(
+    height = _inverse(
         f=expected_ternary_hamming_distance_given_height,
         y=observed_ternary_hamming_distance,
         lower=0,
@@ -386,7 +386,7 @@ def crispr_cas9_hardcoded_collision_probability_estimator(
     return collision_probability
 
 
-class Crispr_cas9_corrected_hamming_distance_wrapper:
+class _Crispr_cas9_corrected_hamming_distance_wrapper:
     """
     Dissimilarity function to inject into the distance solver.
 
@@ -421,13 +421,13 @@ class Crispr_cas9_corrected_hamming_distance_wrapper:
         )
 
 
-class Crispr_cas9_corrected_ternary_hamming_distance_wrapper:
+class _Crispr_cas9_corrected_ternary_hamming_distance_wrapper:
     """
     Dissimilarity function to inject into the distance solver.
 
     This is just a wrapper around
-    `_crispr_cas9_corrected_ternary_hamming_distance_wrapper` that makes it
-    conform to the DistanceSolver API.
+    `crispr_cas9_corrected_ternary_hamming_distance` that makes it conform to
+    the DistanceSolver API.
 
     E.g. the `weights` parameter is required by the DistanceSolver API,
     which is why it is part of the argument list, but it is not used at all.
@@ -530,7 +530,7 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
             == "crispr_cas9_corrected_ternary_hamming_distance"
         ):
             corrected_distance_function = (
-                Crispr_cas9_corrected_ternary_hamming_distance_wrapper(
+                _Crispr_cas9_corrected_ternary_hamming_distance_wrapper(
                     mutation_proportion=mutation_proportion,
                     collision_probability=collision_probability,
                 )
@@ -540,7 +540,7 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
             == "crispr_cas9_corrected_hamming_distance"
         ):
             corrected_distance_function = (
-                Crispr_cas9_corrected_hamming_distance_wrapper(
+                _Crispr_cas9_corrected_hamming_distance_wrapper(
                     mutation_proportion=mutation_proportion,
                     collision_probability=collision_probability,
                 )
