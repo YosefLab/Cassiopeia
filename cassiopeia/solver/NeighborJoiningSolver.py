@@ -15,13 +15,11 @@ import pandas as pd
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
     DistanceSolver,
-    CCPhyloSolver,
     dissimilarity_functions,
     solver_utilities,
 )
 
-
-class NeighborJoiningSolver(CCPhyloSolver.CCPhyloSolver):
+class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     """
     Neighbor-Joining class for Cassiopeia.
 
@@ -68,12 +66,16 @@ class NeighborJoiningSolver(CCPhyloSolver.CCPhyloSolver):
         fast: bool = False,
     ):
 
+        # setup fast solver
+        if fast:
+            self.fast_solver = "ccphylo"
+            self.fast_method = "nj"
+
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=add_root,
             prior_transformation=prior_transformation,
             fast = fast,
-            method = "nj"
         )
 
     def root_tree(

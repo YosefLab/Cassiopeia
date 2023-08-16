@@ -56,6 +56,9 @@ class HeuristicNeighborJoiningSolver(NeighborJoiningSolver):
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
+        # setup fast solver
+        self.fast_solver = "ccphylo"
+        self.fast_method = "dnj"
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
@@ -63,5 +66,3 @@ class HeuristicNeighborJoiningSolver(NeighborJoiningSolver):
             prior_transformation=prior_transformation,
             fast = True,
         )
-
-        self.method = "hnj"
