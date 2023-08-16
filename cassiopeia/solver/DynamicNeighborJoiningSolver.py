@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
 from cassiopeia.solver import (
     NeighborJoiningSolver,
     dissimilarity_functions,
@@ -55,6 +55,9 @@ class DynamicNeighborJoiningSolver(NeighborJoiningSolver):
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
+        # setup fast solver
+        self.fast_solver = "ccphylo"
+        self.fast_method = "dnj"
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
@@ -62,5 +65,3 @@ class DynamicNeighborJoiningSolver(NeighborJoiningSolver):
             prior_transformation=prior_transformation,
             fast = True,
         )
-
-        self.method = "dnj"

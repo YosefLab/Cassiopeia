@@ -13,10 +13,10 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.solver import DistanceSolver, dissimilarity_functions, CCPhyloSolver
+from cassiopeia.solver import DistanceSolver, dissimilarity_functions
 
 
-class UPGMASolver(CCPhyloSolver.CCPhyloSolver):
+class UPGMASolver(DistanceSolver.DistanceSolver):
     """
     UPGMA CassiopeiaSolver.
 
@@ -59,12 +59,16 @@ class UPGMASolver(CCPhyloSolver.CCPhyloSolver):
         fast: bool = False,
     ):
 
+        # setup fast solver
+        if fast:
+            self.fast_solver = "ccphylo"
+            self.fast_method = "upgma"
+
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=True,
             prior_transformation=prior_transformation,
             fast = fast,
-            method = "upgma"
         )
 
         self.__cluster_to_cluster_size = defaultdict(int)
