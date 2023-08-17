@@ -43,23 +43,27 @@ def _inverse(
     y: float,
     lower: float,
     upper: float,
+    num_binary_search_iters: int = 30,
 ) -> float:
     """
     Invert an increasing function.
 
     Finds x s.t. f(x) = y. Search for x is limited to the range [lower, upper].
-    Uses 30 fixed iterations of binary search.
+    Uses `num_binary_search_iters` iterations of binary search.
 
     Args:
         f: Function to invert.
         y: Value to invert.
         lower: Lower bound on the inverse.
         upper: Upper bound on the inverse.
+        num_binary_search_iters: Number of iterations of binary search used.
+            The solution is thus guaranteed to have error at most
+            (upper - lower) / 2**(num_binary_search_iters + 1)
 
     Returns:
         f^{-1}(y) restricted to the range [lower, upper].
     """
-    for iteration in range(30):
+    for iteration in range(num_binary_search_iters):
         mid = (upper + lower) / 2.0
         if f(mid) < y:
             lower, upper = mid, upper
@@ -140,6 +144,7 @@ def crispr_cas9_corrected_hamming_distance(
     s1: List[int],
     s2: List[int],
     missing_state_indicator: int,
+    num_binary_search_iters: int = 30,
 ) -> float:
     """
     Corrected Hamming distance.
@@ -154,6 +159,9 @@ def crispr_cas9_corrected_hamming_distance(
         s1: Character states of the first leaf.
         s2: Character states of the second leaf.
         missing_state_indicator: Missing state indicator.
+        num_binary_search_iters: Number of iterations of binary search used to
+            correct the Hamming distance. The error in the correction procedure
+            will be at most 1/2**(num_binary_search_iters + 1).
 
     Returns:
         The corrected distance.
@@ -171,6 +179,7 @@ def crispr_cas9_corrected_hamming_distance(
         y=observed_hamming_distance,
         lower=0,
         upper=1,
+        num_binary_search_iters=num_binary_search_iters,
     )
     estimated_tree_distance = 2 * height
     return estimated_tree_distance
@@ -256,9 +265,14 @@ def crispr_cas9_corrected_ternary_hamming_distance(
     s1: List[int],
     s2: List[int],
     missing_state_indicator: int,
+    num_binary_search_iters: int = 30,
 ) -> float:
     """
     Corrected ternary Hamming distance.
+
+    The "ternary Hamming distance" is just like the vanilla Hamming distance
+    except that the distance between two different positive states is 2 (i.e.
+    penalized more heavily).
 
     The "corrected" distance is an estimate of true tree distance.
 
@@ -270,6 +284,9 @@ def crispr_cas9_corrected_ternary_hamming_distance(
         s1: Character states of the first leaf.
         s2: Character states of the second leaf.
         missing_state_indicator: Missing state indicator.
+        num_binary_search_iters: Number of iterations of binary search used to
+            correct the ternary Hamming distance. The error in the correction
+            procedure will be at most 1/2**(num_binary_search_iters + 1).
 
     Returns:
         The corrected distance.
@@ -287,6 +304,7 @@ def crispr_cas9_corrected_ternary_hamming_distance(
         y=observed_ternary_hamming_distance,
         lower=0,
         upper=1,
+        num_binary_search_iters=num_binary_search_iters,
     )
     estimated_tree_distance = 2 * height
     return estimated_tree_distance
@@ -500,11 +518,18 @@ class CRISPRCas9DistanceCorrectionSolver(CassiopeiaSolver):
     """
 
     def __init__(
+        # fmt: off
         self,
-        mutation_proportion_estimator: MutationProportionEstimatorType = crispr_cas9_default_mutation_proportion_estimator,  # noqa
-        collision_probability_estimator: CollisionProbabilityEstimatorType = crispr_cas9_default_collision_probability_estimator,  # noqa
-        distance_corrector_name: str = "crispr_cas9_corrected_ternary_hamming_distance",  # noqa
+        mutation_proportion_estimator:
+            MutationProportionEstimatorType
+            = crispr_cas9_default_mutation_proportion_estimator,
+        collision_probability_estimator:
+            CollisionProbabilityEstimatorType
+            = crispr_cas9_default_collision_probability_estimator,
+        distance_corrector_name: str
+            = "crispr_cas9_corrected_ternary_hamming_distance",
         distance_solver: DistanceSolver = NeighborJoiningSolver(add_root=True),
+        # fmt: on
     ):
         self._mutation_proportion_estimator = mutation_proportion_estimator
         self._collision_probability_estimator = collision_probability_estimator
