@@ -12,6 +12,4 @@ from .SpectralSolver import SpectralSolver
 from .UPGMASolver import UPGMASolver
 from .VanillaGreedySolver import VanillaGreedySolver
 from .SpectralNeighborJoiningSolver import SpectralNeighborJoiningSolver
-from .DynamicNeighborJoiningSolver import DynamicNeighborJoiningSolver
-from .HeuristicNeighborJoiningSolver import HeuristicNeighborJoiningSolver
 from . import dissimilarity_functions as dissimilarity

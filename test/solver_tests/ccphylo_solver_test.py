@@ -1,12 +1,13 @@
 """
-Test CCPhyloSolver in Cassiopeia.solver.
+Test the ccphylo solver implementations against the standard NJ and UPGMA
 """
 import unittest
 from typing import Dict, Optional
 from unittest import mock
 
-import configparser
 import os
+
+import configparser
 import itertools
 import networkx as nx
 import numpy as np
@@ -47,179 +48,210 @@ def delta_fn(
 
 # only run test if ccphylo_path is specified in config.ini
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__),"..","..","cassiopeia","config.ini"))
-path_set = config.get("Paths","ccphylo_path") != "/path/to/ccphylo/ccphylo"
+config.read(os.path.join(os.path.dirname(__file__),
+                         "..","..","cassiopeia","config.ini"))
+CCPHYLO_CONFIGURED = (config.get("Paths","ccphylo_path") != 
+                      "/path/to/ccphylo/ccphylo")
+print(CCPHYLO_CONFIGURED)
 
 
 class TestCCPhyloSolver(unittest.TestCase):
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
     def setUp(self):
-        if path_set:
 
-            # --------------------- General NJ ---------------------
-            cm = pd.DataFrame.from_dict(
-                {
-                    "a": [0, 1, 2, 1, 0, 0, 2, 0, 0, 0],
-                    "b": [1, 1, 2, 1, 0, 0, 2, 0, 0, 0],
-                    "c": [2, 2, 2, 1, 0, 0, 2, 0, 0, 0],
-                    "d": [1, 1, 1, 1, 0, 0, 2, 0, 0, 0],
-                    "e": [0, 0, 0, 0, 1, 2, 1, 0, 2, 0],
-                    "f": [0, 0, 0, 0, 2, 2, 1, 0, 2, 0],
-                    "g": [0, 2, 0, 0, 1, 1, 1, 0, 2, 0],
-                    "h": [0, 2, 0, 0, 1, 0, 0, 1, 2, 1],
-                    "i": [1, 2, 0, 0, 1, 0, 0, 2, 2, 1],
-                    "j": [1, 2, 0, 0, 1, 0, 0, 1, 1, 1],
-                },
-                orient="index",
-                columns=["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10"],
-            )
+        # --------------------- General NJ ---------------------
+        cm = pd.DataFrame.from_dict(
+            {
+                "a": [0, 1, 2, 1, 0, 0, 2, 0, 0, 0],
+                "b": [1, 1, 2, 1, 0, 0, 2, 0, 0, 0],
+                "c": [2, 2, 2, 1, 0, 0, 2, 0, 0, 0],
+                "d": [1, 1, 1, 1, 0, 0, 2, 0, 0, 0],
+                "e": [0, 0, 0, 0, 1, 2, 1, 0, 2, 0],
+                "f": [0, 0, 0, 0, 2, 2, 1, 0, 2, 0],
+                "g": [0, 2, 0, 0, 1, 1, 1, 0, 2, 0],
+                "h": [0, 2, 0, 0, 1, 0, 0, 1, 2, 1],
+                "i": [1, 2, 0, 0, 1, 0, 0, 2, 2, 1],
+                "j": [1, 2, 0, 0, 1, 0, 0, 1, 1, 1],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", 
+                        "x9", "x10"],
+        )
 
-            self.cm = cm
-            self.basic_tree = cas.data.CassiopeiaTree(
-                character_matrix=cm
-            )
+        self.cm = cm
+        self.basic_tree = cas.data.CassiopeiaTree(
+            character_matrix=cm
+        )
 
-            self.fast_nj_solver = cas.solver.NeighborJoiningSolver(add_root=True,fast=True)
-            self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True,fast=False)
-            self.fast_upgma_solver = cas.solver.UPGMASolver(fast=True)
-            self.upgma_solver = cas.solver.UPGMASolver(fast=False)
-            self.dnj_solver = cas.solver.DynamicNeighborJoiningSolver(add_root=True)
-            self.hnj_solver = cas.solver.HeuristicNeighborJoiningSolver(add_root=True)
+        self.nj_solver = cas.solver.NeighborJoiningSolver(
+            add_root=True,fast=False)
+        self.ccphylo_nj_solver = cas.solver.NeighborJoiningSolver(
+            add_root=True,fast=True,implementation="ccphylo_nj")
+        self.ccphylo_dnj_solver = cas.solver.NeighborJoiningSolver(
+            add_root=True,fast = True, implementation="ccphylo_dnj")
+        self.ccphylo_hnj_solver = cas.solver.NeighborJoiningSolver(
+            add_root=True, fast = True, implementation="ccphylo_hnj")
+        
+        self.ccphylo_upgma_solver = cas.solver.UPGMASolver(fast=True)
+        self.upgma_solver = cas.solver.UPGMASolver(fast=False)
+        
 
-            # ------------- CM with Duplictes -----------------------
-            duplicates_cm = pd.DataFrame.from_dict(
-                {
-                    "a": [1, 1, 0],
-                    "b": [1, 2, 0],
-                    "c": [1, 2, 1],
-                    "d": [2, 0, 0],
-                    "e": [2, 0, 2],
-                    "f": [2, 0, 2],
-                },
-                orient="index",
-                columns=["x1", "x2", "x3"],
-            )
+        # ------------- CM with Duplictes -----------------------
+        duplicates_cm = pd.DataFrame.from_dict(
+            {
+                "a": [1, 1, 0],
+                "b": [1, 2, 0],
+                "c": [1, 2, 1],
+                "d": [2, 0, 0],
+                "e": [2, 0, 2],
+                "f": [2, 0, 2],
+            },
+            orient="index",
+            columns=["x1", "x2", "x3"],
+        )
 
-            self.duplicate_tree = cas.data.CassiopeiaTree(
-                character_matrix=duplicates_cm
-            )
+        self.duplicate_tree = cas.data.CassiopeiaTree(
+            character_matrix=duplicates_cm
+        )
 
-    def test_fast_nj_solver(self):
-        if path_set:
-            # NJ Solver
-            nj_tree = self.basic_tree.copy()
-            self.nj_solver.solve(nj_tree)
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
+    def test_ccphylo_invalid_input(self):
+        with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
+            nothing_solver = cas.solver.NeighborJoiningSolver(fast = True,
+                implementation="invalid")
+       
+        with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
+            nothing_solver = cas.solver.UPGMASolver(fast = True,
+                implementation="invalid")
 
-            # CCPhylo Fast NJ Solver
-            fast_nj_tree = self.basic_tree.copy()
-            self.fast_nj_solver.solve(fast_nj_tree)
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
+    def test_ccphylo_nj_solver(self):
+        # NJ Solver
+        nj_tree = self.basic_tree.copy()
+        self.nj_solver.solve(nj_tree)
 
-            # test for expected number of edges
-            self.assertEqual(len(nj_tree.edges), len(fast_nj_tree.edges))
+        # CCPhylo Fast NJ Solver
+        ccphylo_nj_tree = self.basic_tree.copy()
+        self.ccphylo_nj_solver.solve(ccphylo_nj_tree)
 
-            triplets = itertools.combinations(["a", "c", "d", "e"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, nj_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, fast_nj_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
+        # test for expected number of edges
+        self.assertEqual(len(nj_tree.edges), len(ccphylo_nj_tree.edges))
 
-    def test_dnj_solver(self):
-        if path_set:
-            # NJ Solver
-            nj_tree = self.basic_tree.copy()
-            self.nj_solver.solve(nj_tree)
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    nj_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    ccphylo_nj_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
 
-            # CCPhylo DNJ Solver
-            dnj_tree = self.basic_tree.copy()
-            self.dnj_solver.solve(dnj_tree)
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
+    def test_ccphylo_dnj_solver(self):
+        # NJ Solver
+        nj_tree = self.basic_tree.copy()
+        self.nj_solver.solve(nj_tree)
 
-            # test for expected number of edges
-            self.assertEqual(len(nj_tree.edges), len(dnj_tree.edges))
+        # CCPhylo DNJ Solver
+        dnj_tree = self.basic_tree.copy()
+        self.ccphylo_dnj_solver.solve(dnj_tree)
 
-            triplets = itertools.combinations(["a", "c", "d", "e"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, nj_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, dnj_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
+        # test for expected number of edges
+        self.assertEqual(len(nj_tree.edges), len(dnj_tree.edges))
 
-    def test_hnj_solver(self):
-        if path_set:
-            # NJ Solver
-            nj_tree = self.basic_tree.copy()
-            self.nj_solver.solve(nj_tree)
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    nj_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    dnj_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
 
-            # CCPhylo HNJ Solver
-            hnj_tree = self.basic_tree.copy()
-            self.hnj_solver.solve(hnj_tree)
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
+    def test_ccphylo_hnj_solver(self):
+        # NJ Solver
+        nj_tree = self.basic_tree.copy()
+        self.nj_solver.solve(nj_tree)
 
-            # test for expected number of edges
-            self.assertEqual(len(nj_tree.edges), len(hnj_tree.edges))
+        # CCPhylo HNJ Solver
+        hnj_tree = self.basic_tree.copy()
+        self.ccphylo_hnj_solver.solve(hnj_tree)
 
-
-            triplets = itertools.combinations(["a", "c", "d", "e"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, nj_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, hnj_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_fast_upgma_solver(self):
-        if path_set:
-            # UPGMA Solver
-            upgma_tree = self.basic_tree.copy()
-            self.upgma_solver.solve(upgma_tree)
-
-            # CCPhylo Fast UPGMA Solver
-            fast_upgma_tree = self.basic_tree.copy()
-            self.fast_upgma_solver.solve(fast_upgma_tree)
-
-            # test for expected number of edges
-            self.assertEqual(len(upgma_tree.edges), len(fast_upgma_tree.edges))
+        # test for expected number of edges
+        self.assertEqual(len(nj_tree.edges), len(hnj_tree.edges))
 
 
-            triplets = itertools.combinations(["a", "c", "d", "e"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, upgma_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, fast_upgma_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    nj_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    hnj_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
 
-    #test collapse mutationless edges working
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
+    def test_ccphylo_upgma_solver(self):
+        # UPGMA Solver
+        upgma_tree = self.basic_tree.copy()
+        self.upgma_solver.solve(upgma_tree)
+
+        # CCPhylo Fast UPGMA Solver
+        ccphylo_upgma_tree = self.basic_tree.copy()
+        self.ccphylo_upgma_solver.solve(ccphylo_upgma_tree)
+
+        # test for expected number of edges
+        self.assertEqual(len(upgma_tree.edges), len(ccphylo_upgma_tree.edges))
+
+
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    upgma_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    ccphylo_upgma_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
     def test_collapse_mutationless_edges_ccphylo(self):
-        if path_set:
-            # NJ Solver
-            nj_tree = self.basic_tree.copy()
-            self.nj_solver.solve(nj_tree, collapse_mutationless_edges=True)
+        # NJ Solver
+        nj_tree = self.basic_tree.copy()
+        self.nj_solver.solve(nj_tree, collapse_mutationless_edges=True)
 
-            # Fast NJ Solver
-            fast_nj_tree = self.basic_tree.copy()
-            self.fast_nj_solver.solve(fast_nj_tree, collapse_mutationless_edges=True)
+        # Fast NJ Solver
+        ccphylo_nj_tree = self.basic_tree.copy()
+        self.ccphylo_nj_solver.solve(ccphylo_nj_tree, 
+                                        collapse_mutationless_edges=True)
 
-            # test for expected number of edges
-            self.assertEqual(len(nj_tree.edges), len(fast_nj_tree.edges))
+        # test for expected number of edges
+        self.assertEqual(len(nj_tree.edges), len(ccphylo_nj_tree.edges))
 
-            triplets = itertools.combinations(["a", "c", "d", "e"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, nj_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, fast_nj_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
+        triplets = itertools.combinations(["a", "c", "d", "e"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    nj_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    ccphylo_nj_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
 
-    # test duplicate samples
+    @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
     def test_duplicate_sample_ccphylo(self):
-        if path_set:
-            # NJ Solver
-            nj_tree = self.duplicate_tree.copy()
-            self.nj_solver.solve(nj_tree)
+        # NJ Solver
+        nj_tree = self.duplicate_tree.copy()
+        self.nj_solver.solve(nj_tree)
 
-            # Fast NJ Solver
-            fast_nj_tree = self.duplicate_tree.copy()
-            self.fast_nj_solver.solve(fast_nj_tree)
+        # Fast NJ Solver
+        ccphylo_nj_tree = self.duplicate_tree.copy()
+        self.ccphylo_nj_solver.solve(ccphylo_nj_tree)
 
-            # test for expected number of edges
-            self.assertEqual(len(nj_tree.edges), len(fast_nj_tree.edges))
+        # test for expected number of edges
+        self.assertEqual(len(nj_tree.edges), len(ccphylo_nj_tree.edges))
 
-            triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
-            for triplet in triplets:
-                expected_triplet = find_triplet_structure(triplet, nj_tree.get_tree_topology())
-                observed_triplet = find_triplet_structure(triplet, fast_nj_tree.get_tree_topology())
-                self.assertEqual(expected_triplet, observed_triplet)
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, 
+                                    nj_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(triplet, 
+                                    ccphylo_nj_tree.get_tree_topology())
+            self.assertEqual(expected_triplet, observed_triplet)
 
 if __name__ == "__main__":
     unittest.main()
