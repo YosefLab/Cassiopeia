@@ -7,13 +7,12 @@ There may be other subclasses of this. Currently also implements a method for
 solving trees with CCPhylo but this will be moved with switch to compositional
 framework.
 """
-import abc
-from typing import Callable, Dict, List, Optional, Tuple
-
 import os
 
+import abc
 import subprocess
 import tempfile
+from typing import Callable, Dict, List, Optional, Tuple
 
 import configparser
 import ete3
