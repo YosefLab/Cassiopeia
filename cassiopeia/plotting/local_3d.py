@@ -6,125 +6,28 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from matplotlib.colors import hsv_to_rgb, rgb_to_hsv, to_rgb, to_rgba, to_rgba_array
+from matplotlib.colors import (
+    hsv_to_rgb,
+    rgb_to_hsv,
+    to_rgb,
+    to_rgba,
+    to_rgba_array,
+)
 
+from . import palettes
 from ..data import CassiopeiaTree
 from ..mixins import PlottingError, PlottingWarning, try_import
 
 # Optional dependencies that are required for 3D plotting
-cv2 = try_import('cv2')
-pv = try_import('pyvista')
-measure = try_import('skimage.measure')
-neighbors = try_import('sklearn.neighbors')
+cv2 = try_import("cv2")
+pv = try_import("pyvista")
+measure = try_import("skimage.measure")
+neighbors = try_import("sklearn.neighbors")
 
-# Don't want to have to set scanpy as a dependency just to use its color palette.
-# https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
-godsnot_102 = [
-    "#FFFF00",
-    "#1CE6FF",
-    "#FF34FF",
-    "#FF4A46",
-    "#008941",
-    "#006FA6",
-    "#A30059",
-    "#FFDBE5",
-    "#7A4900",
-    "#0000A6",
-    "#63FFAC",
-    "#B79762",
-    "#004D43",
-    "#8FB0FF",
-    "#997D87",
-    "#5A0007",
-    "#809693",
-    "#6A3A4C",
-    "#1B4400",
-    "#4FC601",
-    "#3B5DFF",
-    "#4A3B53",
-    "#FF2F80",
-    "#61615A",
-    "#BA0900",
-    "#6B7900",
-    "#00C2A0",
-    "#FFAA92",
-    "#FF90C9",
-    "#B903AA",
-    "#D16100",
-    "#DDEFFF",
-    "#000035",
-    "#7B4F4B",
-    "#A1C299",
-    "#300018",
-    "#0AA6D8",
-    "#013349",
-    "#00846F",
-    "#372101",
-    "#FFB500",
-    "#C2FFED",
-    "#A079BF",
-    "#CC0744",
-    "#C0B9B2",
-    "#C2FF99",
-    "#001E09",
-    "#00489C",
-    "#6F0062",
-    "#0CBD66",
-    "#EEC3FF",
-    "#456D75",
-    "#B77B68",
-    "#7A87A1",
-    "#788D66",
-    "#885578",
-    "#FAD09F",
-    "#FF8A9A",
-    "#D157A0",
-    "#BEC459",
-    "#456648",
-    "#0086ED",
-    "#886F4C",
-    "#34362D",
-    "#B4A8BD",
-    "#00A6AA",
-    "#452C2C",
-    "#636375",
-    "#A3C8C9",
-    "#FF913F",
-    "#938A81",
-    "#575329",
-    "#00FECF",
-    "#B05B6F",
-    "#8CD0FF",
-    "#3B9700",
-    "#04F757",
-    "#C8A1A1",
-    "#1E6E00",
-    "#7900D7",
-    "#A77500",
-    "#6367A9",
-    "#A05837",
-    "#6B002C",
-    "#772600",
-    "#D790FF",
-    "#9B9700",
-    "#549E79",
-    "#FFF69F",
-    "#201625",
-    "#72418F",
-    "#BC23FF",
-    "#99ADC0",
-    "#3A2465",
-    "#922329",
-    "#5B4534",
-    "#FDE8DC",
-    "#404E55",
-    "#0089A3",
-    "#CB7E98",
-    "#A4E804",
-    "#324E72",
-]
 
-def interpolate_branch(parent: Tuple[float, float, float], child: Tuple[float, float, float]) -> np.ndarray:
+def interpolate_branch(
+    parent: Tuple[float, float, float], child: Tuple[float, float, float]
+) -> np.ndarray:
     """Helper function to interpolate the branch between a parent and child.
 
     The branch is interpolated in such a way that there is a 90 degree angle.
@@ -138,11 +41,14 @@ def interpolate_branch(parent: Tuple[float, float, float], child: Tuple[float, f
     """
     x1, y1, z1 = parent
     x2, y2, z2 = child
-    return np.array([
-        (x1, y1, z1),
-        (x2, y2, z1),
-        (x2, y2, z2),
-    ])
+    return np.array(
+        [
+            (x1, y1, z1),
+            (x2, y2, z1),
+            (x2, y2, z2),
+        ]
+    )
+
 
 def polyline_from_points(points: np.ndarray) -> "pv.PolyData":
     """Helper function to create a Pyvista object connected a set of points.
@@ -160,26 +66,27 @@ def polyline_from_points(points: np.ndarray) -> "pv.PolyData":
     poly.lines = the_cell
     return poly
 
+
 def average_mixing(*c):
-    """Helper function to mix a set of colors by taking the average of each channel.
-    """
-    return tuple(to_rgba_array(c)[:,:3].mean(axis=0))
+    """Helper function to mix a set of colors by taking the average of each channel."""
+    return tuple(to_rgba_array(c)[:, :3].mean(axis=0))
+
 
 def highlight(c) -> Tuple[float, float, float]:
-    """Helper function to highlight a certain color.
-    """
+    """Helper function to highlight a certain color."""
     hsv = rgb_to_hsv(c)
     # hsv[1] = min(hsv[1] + 0.2, 1)
     hsv[2] = min(hsv[2] + 0.5, 1)
     return hsv_to_rgb(hsv)
 
+
 def lowlight(c) -> Tuple[float, float, float]:
-    """Helper function to dim out a certain color.
-    """
+    """Helper function to dim out a certain color."""
     hsv = rgb_to_hsv(c)
     # hsv[1] = max(hsv[1] - 0.2, 0)
     hsv[2] = max(hsv[2] - 0.5, 0)
     return hsv_to_rgb(hsv)
+
 
 def labels_from_coordinates(
     tree: CassiopeiaTree,
@@ -187,7 +94,7 @@ def labels_from_coordinates(
     angle_distribution: Callable[[], float] = lambda: 0,
     long_axis_distribution: Callable[[], float] = lambda: 1,
     short_axis_distribution: Optional[Callable[[], float]] = None,
-    absolute: bool = False
+    absolute: bool = False,
 ) -> np.ndarray:
     """Helper function to create a (synthetic) labels Numpy array for use with 3D plotting.
 
@@ -232,14 +139,16 @@ def labels_from_coordinates(
     columns = []
     i = 0
     while True:
-        column = f'{attribute_key}_{i}'
+        column = f"{attribute_key}_{i}"
         if column in meta.columns:
             columns.append(column)
             i += 1
         else:
             break
     if len(columns) != 2:
-        raise PlottingError(f"Only 2-dimensional data is supported, but found {len(columns)} dimensions.")
+        raise PlottingError(
+            f"Only 2-dimensional data is supported, but found {len(columns)} dimensions."
+        )
 
     coordinates = meta[columns].values
 
@@ -260,7 +169,14 @@ def labels_from_coordinates(
         short_axis = max(int(short_axis_distribution() * scale), 1)
         center = tuple(coord.astype(int))
         ellipse = cv2.ellipse(
-            np.zeros(shape, dtype=np.uint8), center, (long_axis, short_axis), angle, 0, 360, 1, -1
+            np.zeros(shape, dtype=np.uint8),
+            center,
+            (long_axis, short_axis),
+            angle,
+            0,
+            360,
+            1,
+            -1,
         ).astype(bool)
         ellipse[center] = True
 
@@ -273,10 +189,11 @@ def labels_from_coordinates(
         labels[tuple(coord.astype(int))] = leaf_to_label[leaf]
 
     # Add label column
-    meta[f'{attribute_key}_label'] = meta.index.map(leaf_to_label)
+    meta[f"{attribute_key}_label"] = meta.index.map(leaf_to_label)
     tree.cell_meta = meta
 
     return labels
+
 
 class Tree3D:
     """Create a 3D projection of a tree onto a 2D surface.
@@ -316,12 +233,13 @@ class Tree3D:
         attribute_key: Attribute key to use as the integer labels for each leaf node.
             A column with the name `{attribute_key}_label` will be looked up in the cell meta.
     """
+
     def __init__(
         self,
         tree: CassiopeiaTree,
         labels: np.ndarray,
-        offset: float = 1.,
-        downscale: float = 1.,
+        offset: float = 1.0,
+        downscale: float = 1.0,
         cmap: Optional[List[str]] = None,
         attribute_key: str = "spatial",
     ):
@@ -341,7 +259,7 @@ class Tree3D:
         self.downscale = downscale
         self.scale = max(*labels.shape) * downscale
 
-        self.init_label_mapping(f'{attribute_key}_label')
+        self.init_label_mapping(f"{attribute_key}_label")
 
         self.plotter = pv.Plotter()
         self.node_actors = {}
@@ -351,7 +269,13 @@ class Tree3D:
 
         self.node_colors = {}
 
-        resized_labels = cv2.resize(labels, None, fx=downscale, fy=downscale, interpolation=cv2.INTER_NEAREST)
+        resized_labels = cv2.resize(
+            labels,
+            None,
+            fx=downscale,
+            fy=downscale,
+            interpolation=cv2.INTER_NEAREST,
+        )
         self.images = {}
         self.image_dims = resized_labels.shape + (1,)
         self.image_actors = {}
@@ -383,23 +307,30 @@ class Tree3D:
         if self.tree.cell_meta is None or key not in self.tree.cell_meta:
             warnings.warn(
                 f"Failed to locate {key} column in cell meta. "
-                "Leaf names casted as integers will be used as the labels.", PlottingWarning
+                "Leaf names casted as integers will be used as the labels.",
+                PlottingWarning,
             )
             self.leaf_to_label = {leaf: int(leaf) for leaf in self.tree.leaves}
         else:
             self.leaf_to_label = dict(self.tree.cell_meta[key])
-        self.label_to_leaf = {label: leaf for leaf, label in self.leaf_to_label.items()}
+        self.label_to_leaf = {
+            label: leaf for leaf, label in self.leaf_to_label.items()
+        }
 
         # Check labels
-        if not np.isin([self.leaf_to_label[leaf] for leaf in self.tree.leaves], self.labels).all():
-            raise PlottingError("Label array must contain all leaves in the tree.")
+        if not np.isin(
+            [self.leaf_to_label[leaf] for leaf in self.tree.leaves], self.labels
+        ).all():
+            raise PlottingError(
+                "Label array must contain all leaves in the tree."
+            )
 
-        self.regionprops = {prop.label: prop for prop in measure.regionprops(self.labels)}
-
+        self.regionprops = {
+            prop.label: prop for prop in measure.regionprops(self.labels)
+        }
 
     def init_nodes(self):
-        """Initialize node information.
-        """
+        """Initialize node information."""
         self.nodes = self.tree.nodes
         self.times = self.tree.get_times()
         self.node_index = {node: i for i, node in enumerate(self.nodes)}
@@ -428,7 +359,9 @@ class Tree3D:
             children_indices = [self.node_index[child] for child in children]
             child_coordinates = self.node_coordinates[children_indices]
             child_areas = areas[children_indices]
-            self.node_coordinates[i] = (child_coordinates * child_areas.reshape(-1, 1)).sum(axis=0) / child_areas.sum()
+            self.node_coordinates[i] = (
+                child_coordinates * child_areas.reshape(-1, 1)
+            ).sum(axis=0) / child_areas.sum()
             areas[i] = child_areas.sum()
 
             processed.add(node)
@@ -437,8 +370,7 @@ class Tree3D:
         assert not np.isnan(self.node_coordinates).any()
 
     def init_subclones(self):
-        """Initialize subclone grid.
-        """
+        """Initialize subclone grid."""
         self.subclones = self.create_grid()
         self.subclones.origin = (0, 0, 1)
 
@@ -481,17 +413,23 @@ class Tree3D:
             img: Image as a Numpy array
         """
         if img.ndim not in (2, 3):
-            raise PlottingError("Only 2- and 3-dimensional images are supported.")
+            raise PlottingError(
+                "Only 2- and 3-dimensional images are supported."
+            )
         if img.shape[:2] != self.labels.shape:
             raise PlottingError(
                 f"The first two dimensions of the image must have shape {self.labels.shape}."
             )
 
-        img = (cv2.resize(img, None, fx=self.downscale, fy=self.downscale) * 255).astype(np.uint8)
+        img = (
+            cv2.resize(img, None, fx=self.downscale, fy=self.downscale) * 255
+        ).astype(np.uint8)
 
         # Immediately convert to mesh
         grid = self.create_grid()
-        grid.point_data['values'] = img.reshape(np.prod(self.image_dims), -1, order='F')
+        grid.point_data["values"] = img.reshape(
+            np.prod(self.image_dims), -1, order="F"
+        )
         self.images[key] = grid
 
         # Always show the first one
@@ -519,7 +457,9 @@ class Tree3D:
             time1 = self.tree.get_time(n1) - root_time
             time2 = self.tree.get_time(n2) - root_time
 
-            if (time1 <= time and time2 > time) or (self.tree.is_leaf(n2) and time2 <= time):
+            if (time1 <= time and time2 > time) or (
+                self.tree.is_leaf(n2) and time2 <= time
+            ):
                 leaves.append(n2)
         self.cut_tree_cache[key] = leaves
         return leaves
@@ -538,8 +478,12 @@ class Tree3D:
             Nodes that were not placed will have `np.nan` as its three coordinates.
             Each row is indexed to each node according to `self.node_index`.
         """
-        if not all(root in self.tree.get_all_ancestors(leaf) for leaf in leaves):
-            raise PlottingError(f"The desired root {root} is not an ancestor of all the leaves {leaves}.")
+        if not all(
+            root in self.tree.get_all_ancestors(leaf) for leaf in leaves
+        ):
+            raise PlottingError(
+                f"The desired root {root} is not an ancestor of all the leaves {leaves}."
+            )
 
         key = (root, frozenset(leaves))
         if key in self.place_nodes_cache:
@@ -567,12 +511,14 @@ class Tree3D:
             children_indices = [self.node_index[child] for child in children]
             child_coordinates = coordinates[children_indices]
             coordinates[i] = child_coordinates.mean(axis=0)
-            coordinates[i,2] = child_coordinates[:,2].min() - 1
+            coordinates[i, 2] = child_coordinates[:, 2].min() - 1
             processed.add(node)
         self.place_nodes_cache[key] = coordinates
         return coordinates
 
-    def place_branches(self, root: str, coordinates: np.ndarray) -> Dict[Tuple[str, str], np.ndarray]:
+    def place_branches(
+        self, root: str, coordinates: np.ndarray
+    ) -> Dict[Tuple[str, str], np.ndarray]:
         """Place a subset of branches in xyz coordinates.
 
         Only nodes in the path between `root` and each node that have valid coordinates
@@ -590,7 +536,10 @@ class Tree3D:
         for n1, n2 in self.tree.breadth_first_traverse_edges(root):
             i1 = self.node_index[n1]
             i2 = self.node_index[n2]
-            if np.isnan(coordinates[i1]).any() or np.isnan(coordinates[i2]).any():
+            if (
+                np.isnan(coordinates[i1]).any()
+                or np.isnan(coordinates[i2]).any()
+            ):
                 continue
 
             branch_coords = interpolate_branch(coordinates[i1], coordinates[i2])
@@ -614,7 +563,9 @@ class Tree3D:
         coords[2] += self.offset
         return pv.Sphere(center=coords, radius=radius)
 
-    def render_branch(self, branch_coords: np.ndarray, radius: float) -> "pv.Tube":
+    def render_branch(
+        self, branch_coords: np.ndarray, radius: float
+    ) -> "pv.Tube":
         """Helper function to create a Pyvista object representing a branch.
 
         Args:
@@ -625,10 +576,10 @@ class Tree3D:
             Pyvista object representing a branch.
         """
         coords = branch_coords.copy()
-        coords[:,0] *= self.downscale
-        coords[:,1] *= self.downscale
-        coords[:,2] *= -self.scale * 0.1
-        coords[:,2] += self.offset
+        coords[:, 0] *= self.downscale
+        coords[:, 1] *= self.downscale
+        coords[:, 2] *= -self.scale * 0.1
+        coords[:, 2] += self.offset
         branch = polyline_from_points(coords)
         return branch.tube(radius=radius)
 
@@ -675,9 +626,14 @@ class Tree3D:
         Args:
             height: Cutoff height as an integer
         """
-        times = sorted(set(
-            self.times[node] for node in self.tree.depth_first_traverse_nodes(source=self.root)
-        ))
+        times = sorted(
+            set(
+                self.times[node]
+                for node in self.tree.depth_first_traverse_nodes(
+                    source=self.root
+                )
+            )
+        )
         if height <= len(times):
             self.set_time(times[height])
         else:
@@ -697,7 +653,7 @@ class Tree3D:
             self.leaves = leaves
             self.update_branches()
             self.update_subclones()
-            if f'node:{self.selected_node}' in self.node_actors:
+            if f"node:{self.selected_node}" in self.node_actors:
                 self.select_node(self.selected_node)
                 self.clear_picked_mesh()
             else:
@@ -714,7 +670,7 @@ class Tree3D:
         for actor in self.node_actors.values():
             actor.SetVisibility(flag)
         if not flag:
-            self.plotter.remove_actor('_mesh_picking_selection')
+            self.plotter.remove_actor("_mesh_picking_selection")
 
     def set_shown_image(self, key: str, show: bool):
         """Helper function to show an image.
@@ -754,12 +710,12 @@ class Tree3D:
         """Helper function to set the selected node as the root."""
         mesh = self.plotter.picked_mesh
         if mesh is not None:
-            node = self.nodes[self.leaf_to_label[mesh.field_data['node'][0]]]
+            node = self.nodes[self.leaf_to_label[mesh.field_data["node"][0]]]
             self.set_root(node)
 
     def select_node_mesh(self, mesh):
         """Helper function remember the selected node."""
-        node = self.nodes[self.leaf_to_label[mesh.field_data['node'][0]]]
+        node = self.nodes[self.leaf_to_label[mesh.field_data["node"][0]]]
         self.select_node(node)
 
     def select_node(self, node: str):
@@ -775,49 +731,67 @@ class Tree3D:
         self.update_texts()
 
         reset = node is None
-        selected = set(self.tree.depth_first_traverse_nodes(
-            source=node if not reset else self.root
-        ))
+        selected = set(
+            self.tree.depth_first_traverse_nodes(
+                source=node if not reset else self.root
+            )
+        )
         for name, actor in self.node_actors.items():
-            node = name[len('node:'):]
+            node = name[len("node:") :]
             func = highlight if node in selected else lowlight
-            color = func(self.node_colors[node]) if not reset else self.node_colors[node]
+            color = (
+                func(self.node_colors[node])
+                if not reset
+                else self.node_colors[node]
+            )
             actor.GetProperty().SetColor(color)
 
             if node == self.root:
-                branch_name = 'branch:synthetic_root'
+                branch_name = "branch:synthetic_root"
                 branch_actor = self.branch_actors[branch_name]
                 branch_actor.GetProperty().SetColor(color)
             elif node != self.tree.root:
-                branch_name = f'branch:{self.tree.parent(node)}-{node}'
+                branch_name = f"branch:{self.tree.parent(node)}-{node}"
                 if branch_name in self.branch_actors:
                     branch_actor = self.branch_actors[branch_name]
                     branch_actor.GetProperty().SetColor(color)
 
-        key = sha256(';'.join(self.leaves).encode('utf-8')).hexdigest()
-        labels_key = f'labels:{key}'
-        leaf_labels = np.array(self.subclones.point_data[labels_key]).reshape(*self.image_dims[:2], order='F')
+        key = sha256(";".join(self.leaves).encode("utf-8")).hexdigest()
+        labels_key = f"labels:{key}"
+        leaf_labels = np.array(self.subclones.point_data[labels_key]).reshape(
+            *self.image_dims[:2], order="F"
+        )
         colors = [(1, 1, 1)]
         for i, leaf in enumerate(self.leaves):
             func = highlight if leaf in selected else lowlight
-            colors.append(func(to_rgb(self.cmap[i % len(self.cmap)])) if not reset else to_rgb(self.cmap[i % len(self.cmap)]))
+            colors.append(
+                func(to_rgb(self.cmap[i % len(self.cmap)]))
+                if not reset
+                else to_rgb(self.cmap[i % len(self.cmap)])
+            )
         colors = np.pad(np.array(colors), ((0, 0), (0, 1)))
-        colors[1:,3] = 1
+        colors[1:, 3] = 1
 
         leaf_colors = colors[leaf_labels]
-        mask = leaf_colors[:,:,3] > 0
+        mask = leaf_colors[:, :, 3] > 0
         blur = cv2.GaussianBlur(leaf_colors, (0, 0), sigmaX=self.subclone_sigma)
-        alpha = cv2.GaussianBlur(mask.astype(float), (0, 0), sigmaX=self.subclone_sigma)
+        alpha = cv2.GaussianBlur(
+            mask.astype(float), (0, 0), sigmaX=self.subclone_sigma
+        )
         alpha -= alpha.min()
         alpha /= alpha.max()
-        blur[:,:,3] = alpha
-        self.subclones.point_data['values'] = blur.reshape(np.prod(self.image_dims), -1, order='F')
-        self.subclones.set_active_scalars('values')
-        self.subclone_actor = self.plotter.add_mesh(self.subclones, rgba=True, name='subclones', pickable=False)
+        blur[:, :, 3] = alpha
+        self.subclones.point_data["values"] = blur.reshape(
+            np.prod(self.image_dims), -1, order="F"
+        )
+        self.subclones.set_active_scalars("values")
+        self.subclone_actor = self.plotter.add_mesh(
+            self.subclones, rgba=True, name="subclones", pickable=False
+        )
 
     def clear_picked_mesh(self):
         """Helper function to clear the selected mesh."""
-        self.plotter.remove_actor('_mesh_picking_selection')
+        self.plotter.remove_actor("_mesh_picking_selection")
         self.plotter._picked_mesh = None
 
     def reset_selected_node(self):
@@ -826,7 +800,11 @@ class Tree3D:
         self.select_node(None)
         self.update_texts()
 
-    def update_actors(self, actors: Dict[str, 'vtk.vtkActor'], new_actors: Dict[str, 'vtk.vtkActor']):
+    def update_actors(
+        self,
+        actors: Dict[str, "vtk.vtkActor"],
+        new_actors: Dict[str, "vtk.vtkActor"],
+    ):
         """Helper function to update a set of actors.
 
         Args:
@@ -850,53 +828,55 @@ class Tree3D:
         new_actors = {}
 
         # Root
-        name = 'root'
+        name = "root"
         actor = self.plotter.add_text(
-            f'Root: {self.root}',
+            f"Root: {self.root}",
             position=(0.2, 0.9),
             viewport=True,
-            color='black',
+            color="black",
             font_size=self.checkbox_size * (1 / 4),
-            name=name
+            name=name,
         )
         actor.SetVisibility(self.show_text)
         new_actors[name] = actor
 
         # Times
-        name = 'times'
+        name = "times"
         actor = self.plotter.add_text(
-            f'Time range: {self.tree.get_time(self.root)} - {min(self.tree.get_time(leaf) for leaf in self.leaves)}',
+            f"Time range: {self.tree.get_time(self.root)} - {min(self.tree.get_time(leaf) for leaf in self.leaves)}",
             position=(0.2, 0.87),
             viewport=True,
-            color='black',
+            color="black",
             font_size=self.checkbox_size * (1 / 4),
-            name=name
+            name=name,
         )
         actor.SetVisibility(self.show_text)
         new_actors[name] = actor
 
         # Selected node
         if self.selected_node is not None:
-            name = 'node'
+            name = "node"
             actor = self.plotter.add_text(
-                f'Selected: {self.selected_node}',
+                f"Selected: {self.selected_node}",
                 position=(0.2, 0.84),
                 viewport=True,
-                color='black',
+                color="black",
                 font_size=self.checkbox_size * (1 / 4),
-                name=name
+                name=name,
             )
             actor.SetVisibility(self.show_text)
             new_actors[name] = actor
         self.update_actors(self.text_actors, new_actors)
 
     def update_images(self):
-        """update displayed image(s). """
+        """update displayed image(s)."""
         new_actors = {}
         for i, key in enumerate(self.shown_images):
             self.images[key].origin = (0, 0, -i * self.scale * 0.25)
-            name = f'image:{key}'
-            actor = self.plotter.add_mesh(self.images[key], rgba=True, name=name, pickable=False)
+            name = f"image:{key}"
+            actor = self.plotter.add_mesh(
+                self.images[key], rgba=True, name=name, pickable=False
+            )
             new_actors[name] = actor
         self.update_actors(self.image_actors, new_actors)
 
@@ -923,19 +903,29 @@ class Tree3D:
                 if not all(child in self.node_colors for child in children):
                     queue.append(node)
                     continue
-                color = average_mixing(*[self.node_colors[child] for child in children])
+                color = average_mixing(
+                    *[self.node_colors[child] for child in children]
+                )
                 self.node_colors[node] = color
             else:
                 color = self.node_colors[node]
 
-            name = f'node:{node}'
+            name = f"node:{node}"
             i = self.node_index[node]
             sphere = self.render_node(
                 coordinates[i],
-                self.scale * 0.00175 * np.log2(max(len(self.tree.leaves_in_subtree(node)), 2))
+                self.scale
+                * 0.00175
+                * np.log2(max(len(self.tree.leaves_in_subtree(node)), 2)),
             )
-            sphere.add_field_data(i, 'node')
-            actor = self.plotter.add_mesh(sphere, color=color, smooth_shading=True, name=name, pickable=True)
+            sphere.add_field_data(i, "node")
+            actor = self.plotter.add_mesh(
+                sphere,
+                color=color,
+                smooth_shading=True,
+                name=name,
+                pickable=True,
+            )
             actor.SetVisibility(self.show_nodes)
             new_actors[name] = actor
 
@@ -948,25 +938,41 @@ class Tree3D:
         for (n1, n2), branch_coords in branches.items():
             branch = self.render_branch(
                 branch_coords,
-                self.scale * 0.001 * np.log2(max(len(self.tree.leaves_in_subtree(n2)), 2))
+                self.scale
+                * 0.001
+                * np.log2(max(len(self.tree.leaves_in_subtree(n2)), 2)),
             )
 
-            name = f'branch:{n1}-{n2}'
-            actor = self.plotter.add_mesh(branch, color=self.node_colors[n2], smooth_shading=True, name=name, pickable=False)
+            name = f"branch:{n1}-{n2}"
+            actor = self.plotter.add_mesh(
+                branch,
+                color=self.node_colors[n2],
+                smooth_shading=True,
+                name=name,
+                pickable=False,
+            )
             new_actors[name] = actor
 
         # Synthetic root
         root_coords = coordinates[self.node_index[root]]
-        branch_coords = np.array([
-            (root_coords[0], root_coords[1], root_coords[2] - 1), root_coords
-        ])
+        branch_coords = np.array(
+            [(root_coords[0], root_coords[1], root_coords[2] - 1), root_coords]
+        )
         branch = self.render_branch(
             branch_coords,
-            self.scale * 0.001 * np.log2(max(len(self.tree.leaves_in_subtree(root)), 2))
+            self.scale
+            * 0.001
+            * np.log2(max(len(self.tree.leaves_in_subtree(root)), 2)),
         )
 
-        name = 'branch:synthetic_root'
-        actor = self.plotter.add_mesh(branch, color=self.node_colors[root], smooth_shading=True, name=name, pickable=False)
+        name = "branch:synthetic_root"
+        actor = self.plotter.add_mesh(
+            branch,
+            color=self.node_colors[root],
+            smooth_shading=True,
+            name=name,
+            pickable=False,
+        )
         new_actors[name] = actor
         self.update_actors(self.branch_actors, new_actors)
 
@@ -975,32 +981,52 @@ class Tree3D:
         leaves = self.leaves
         cmap = self.cmap
 
-        key = sha256(';'.join(leaves).encode('utf-8')).hexdigest()
-        labels_key = f'labels:{key}'
-        colors_key = f'colors:{key}'
+        key = sha256(";".join(leaves).encode("utf-8")).hexdigest()
+        labels_key = f"labels:{key}"
+        colors_key = f"colors:{key}"
         if colors_key not in self.subclones.point_data:
-            colors = np.array([to_rgba(cmap[i % len(cmap)]) for i in range(len(leaves))])
+            colors = np.array(
+                [to_rgba(cmap[i % len(cmap)]) for i in range(len(leaves))]
+            )
             colors = np.insert(colors, 0, [1, 1, 1, 0], axis=0)
             leaf_labels = np.zeros(self.labels.shape, dtype=int)
             for i, leaf in enumerate(leaves):
                 mask = self.get_mask(leaf)
-                leaf_labels[mask] = i+1
-            leaf_labels = cv2.resize(leaf_labels, None, fx=self.downscale, fy=self.downscale, interpolation=cv2.INTER_NEAREST)
-            self.subclones.point_data[labels_key] = leaf_labels.flatten(order='F')
+                leaf_labels[mask] = i + 1
+            leaf_labels = cv2.resize(
+                leaf_labels,
+                None,
+                fx=self.downscale,
+                fy=self.downscale,
+                interpolation=cv2.INTER_NEAREST,
+            )
+            self.subclones.point_data[labels_key] = leaf_labels.flatten(
+                order="F"
+            )
             leaf_colors = colors[leaf_labels]
-            self.subclones.point_data[colors_key] = leaf_colors.reshape(np.prod(self.image_dims), -1, order='F')
+            self.subclones.point_data[colors_key] = leaf_colors.reshape(
+                np.prod(self.image_dims), -1, order="F"
+            )
 
-        leaf_colors = np.array(self.subclones.point_data[colors_key]).reshape(self.image_dims[0], self.image_dims[1], -1, order='F')
-        mask = leaf_colors[:,:,3] > 0
+        leaf_colors = np.array(self.subclones.point_data[colors_key]).reshape(
+            self.image_dims[0], self.image_dims[1], -1, order="F"
+        )
+        mask = leaf_colors[:, :, 3] > 0
 
         blur = cv2.GaussianBlur(leaf_colors, (0, 0), sigmaX=self.subclone_sigma)
-        alpha = cv2.GaussianBlur(mask.astype(float), (0, 0), sigmaX=self.subclone_sigma)
+        alpha = cv2.GaussianBlur(
+            mask.astype(float), (0, 0), sigmaX=self.subclone_sigma
+        )
         alpha -= alpha.min()
         alpha /= alpha.max()
-        blur[:,:,3] = alpha
-        self.subclones.point_data['values'] = blur.reshape(np.prod(self.image_dims), -1, order='F')
-        self.subclones.set_active_scalars('values')
-        self.subclone_actor = self.plotter.add_mesh(self.subclones, rgba=True, name='subclones', pickable=False)
+        blur[:, :, 3] = alpha
+        self.subclones.point_data["values"] = blur.reshape(
+            np.prod(self.image_dims), -1, order="F"
+        )
+        self.subclones.set_active_scalars("values")
+        self.subclone_actor = self.plotter.add_mesh(
+            self.subclones, rgba=True, name="subclones", pickable=False
+        )
 
     def add_blur_slider(self):
         """Add slider to control subclone blur strength."""
@@ -1008,71 +1034,87 @@ class Tree3D:
             self.set_subclone_sigma,
             (1, self.scale / 20),
             self.subclone_sigma,
-            title='Blur',
-            color='black',
+            title="Blur",
+            color="black",
             pointa=(0.7, 0.9),
-            pointb=(0.9, 0.9)
+            pointb=(0.9, 0.9),
         )
 
     def add_time_slider(self):
         """Add slider to control current time."""
         self.plotter.add_slider_widget(
             self.set_time,
-            (self.tree.get_time(self.root), min(self.tree.get_max_depth_of_tree() - self.tree.get_time(self.root), 5)),
+            (
+                self.tree.get_time(self.root),
+                min(
+                    self.tree.get_max_depth_of_tree()
+                    - self.tree.get_time(self.root),
+                    5,
+                ),
+            ),
             self.time,
-            title='Time',
-            color='black',
+            title="Time",
+            color="black",
             pointa=(0.85, 0.6),
-            pointb=(0.85, 1.0)
+            pointb=(0.85, 1.0),
         )
 
     def add_height_key_events(self):
         """Add key events such that pressing numbers from 1 through 9 controls the tree height."""
         for i in range(1, 10):
-            self.plotter.add_key_event(str(i), partial(self.set_height, i-1))
+            self.plotter.add_key_event(str(i), partial(self.set_height, i - 1))
 
     def add_image_checkboxes(self):
         for i, key in enumerate(self.images):
             self.plotter.add_checkbox_button_widget(
                 partial(self.set_shown_image, key),
                 value=key in self.shown_images,
-                position=(10., 10. + (i+1) * self.checkbox_size * 1.1),
+                position=(10.0, 10.0 + (i + 1) * self.checkbox_size * 1.1),
                 size=self.checkbox_size,
                 border_size=self.checkbox_border_size,
-                color_on='black',
-                color_off='lightgrey',
-                background_color='grey',
+                color_on="black",
+                color_off="lightgrey",
+                background_color="grey",
             )
             self.plotter.add_text(
-                f'Show {key}', position=(10 + self.checkbox_size * 1.1, 10. + (i+1) * self.checkbox_size * 1.1),
-                color='black', font_size=self.checkbox_size * (2 / 5)
+                f"Show {key}",
+                position=(
+                    10 + self.checkbox_size * 1.1,
+                    10.0 + (i + 1) * self.checkbox_size * 1.1,
+                ),
+                color="black",
+                font_size=self.checkbox_size * (2 / 5),
             )
 
     def add_node_picking(self):
         """Enable node selection."""
         self.plotter.enable_mesh_picking(
             self.select_node_mesh,
-            show=True, show_message=False, style='surface'
+            show=True,
+            show_message=False,
+            style="surface",
         )
-        self.plotter.add_key_event('h', self.reset_selected_node)
-        self.plotter.add_key_event('r', partial(self.set_root, self.tree.root))
+        self.plotter.add_key_event("h", self.reset_selected_node)
+        self.plotter.add_key_event("r", partial(self.set_root, self.tree.root))
 
         self.plotter.add_checkbox_button_widget(
             self.set_node_picking,
             value=self.show_nodes,
-            position=(10., 10.),
+            position=(10.0, 10.0),
             size=self.checkbox_size,
             border_size=self.checkbox_border_size,
-            color_on='black',
-            color_off='lightgrey',
-            background_color='grey',
+            color_on="black",
+            color_off="lightgrey",
+            background_color="grey",
         )
         self.plotter.add_text(
-            'Enable node selection', position=(10 + self.checkbox_size * 1.1, 10.),
-            color='black', font_size=self.checkbox_size * (2 / 5)
+            "Enable node selection",
+            position=(10 + self.checkbox_size * 1.1, 10.0),
+            color="black",
+            font_size=self.checkbox_size * (2 / 5),
         )
 
-        self.plotter.add_key_event('s', self.set_selected_node_as_root)
+        self.plotter.add_key_event("s", self.set_selected_node_as_root)
 
     def add_widgets(self):
         """Add widgets."""
@@ -1082,7 +1124,12 @@ class Tree3D:
         self.add_image_checkboxes()
         self.add_node_picking()
 
-    def plot(self, plot_tree: bool = True, add_widgets: bool = True, show: bool = True):
+    def plot(
+        self,
+        plot_tree: bool = True,
+        add_widgets: bool = True,
+        show: bool = True,
+    ):
         """Display 3D render.
 
         Args:
@@ -1102,7 +1149,7 @@ class Tree3D:
             self.update_branches()
             self.update_texts()
 
-        self.plotter.set_background('white')
+        self.plotter.set_background("white")
         self.plotter.add_axes(viewport=(0, 0.75, 0.2, 0.95))
         self.plotter.enable_lightkit()
         self.plotter.enable_anti_aliasing()
