@@ -61,7 +61,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         if None in (cv2, disc, neighbors):
             raise DataSimulatorError(
                 "Some required modules were not found. Make sure you installed "
-                "Cassiopeia with the `spatial` extras, or run `pip install 
+                "Cassiopeia with the `spatial` extras, or run `pip install "
                 "cassiopeia-lineage[spatial]`."
             )
 

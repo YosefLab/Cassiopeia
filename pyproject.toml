@@ -54,10 +54,10 @@ nbconvert = ">=5.4.0"
 nbformat = ">=4.4.0"
 nbsphinx = {version = "*", optional = true}
 nbsphinx-link = {version = "*", optional = true}
-networkx = ">=2.5"
+networkx = ">=3.0"
 ngs-tools = ">=1.5.6"
 numba = ">=0.51.0"
-numpy = ">=1.19.5,<1.22"
+numpy = ">=1.22"
 opencv-python = {version = ">=4.5.4.60", optional = true}
 pandas = ">=1.1.4"
 parameterized = "*"
