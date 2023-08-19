@@ -19,32 +19,33 @@ cv2 = try_import('cv2')
 disc = try_import('poisson_disc')
 neighbors = try_import('sklearn.neighbors')
 
+
 class ClonalSpatialDataSimulator(SpatialDataSimulator):
     """
     Simulate spatial data with a clonal spatial autocorrelation constraint.
 
     This subclass of `SpatialDataSimulator` simulates the spatial coordinates of
-    each cell in the provided `CassiopeiaTree` with spatial constraints such that
-    subclones are more likely to be spatially autocorrelated.
+    each cell in the provided `CassiopeiaTree` with spatial constraints such
+    that subclones are more likely to be spatially autocorrelated.
 
     The simulation procedure is as follows.
-    1. N coordinates are randomly sampled in space, where N is the number of leaves.
-        Note that there is no mapping between leaves and coordinates (yet).
-        All N coordinates are assigned to the root of the tree.
-    2. The tree is traversed from the root to the leaves. At each node, the coordinates
-        assigned to that node are split according to the number of leaves in each
-        child. A spatial constraint is applied to this step by iteratively assigning
-        each coordinate to the spatially closest child.
+    1. N coordinates are randomly sampled in space, where N is the number of
+        leaves. Note that there is no mapping between leaves and coordinates
+        (yet). All N coordinates are assigned to the root of the tree.
+    2. The tree is traversed from the root to the leaves. At each node, the
+        coordinates assigned to that node are split according to the number of
+        leaves in each child. A spatial constraint is applied to this step by
+        iteratively assigning each coordinate to the spatially closest child.
 
     Args:
-        shape: Shape of the space to place cells on. For instance, (100, 100) means a
-            2D surface of 100x100 pixels. By default in two dimensions (length is 2),
-            an elliptical surface is used. In higher dimensions, the entire (hyper)cuboid
-            is used.
+        shape: Shape of the space to place cells on. For instance, (100, 100)
+            means a 2D surface of 100x100 pixels. By default in two dimensions
+            (length is 2), an elliptical surface is used. In higher dimensions,
+            the entire (hyper)cuboid is used.
         space: Numpy array mask representing the space that cells may be placed.
             For example, to place cells on a 2D circlular surface, this argument
-            will be a boolean Numpy array where the circular surface is indicated
-            with True.
+            will be a boolean Numpy array where the circular surface is
+            indicated with True.
         random_seed: A seed for reproducibility
 
     Raises:
@@ -58,8 +59,9 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
     ):
         if None in (cv2, disc, neighbors):
             raise DataSimulatorError(
-                "Some required modules were not found. Make sure you installed Cassiopeia with "
-                "the `spatial` extras, or run `pip install cassiopeia-lineage[spatial]`."
+                "Some required modules were not found. Make sure you installed "
+                "Cassiopeia with the `spatial` extras, or run `pip install 
+                "cassiopeia-lineage[spatial]`."
             )
 
         if (shape is None) == (space is None):

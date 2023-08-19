@@ -3,6 +3,7 @@ This file stores a subclass of BranchLengthEstimator, the IIDExponentialMLE.
 Briefly, this model assumes that CRISPR/Cas9 mutates each site independently
 and identically, with an exponential waiting time.
 """
+from collections import defaultdict
 from typing import List, Optional
 
 import cvxpy as cp
@@ -31,7 +32,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
     method if they are not known, which is usually the case for real data).
 
     The estimated mutation rate(s) will be stored as an attribute called
-    `mutation_rate`. The log-likelihood will be stored in anl attribute
+    `mutation_rate`. The log-likelihood will be stored in an attribute
     called `log_likelihood`.
 
     Missing states are treated as missing at random by the model.
@@ -43,7 +44,8 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_mutation_rates: List of positive floats of length equal to the
             number of character sites. Number at each character site indicates
             the relative mutation rate at that site. Must be fully specified or
-            not at all.
+            None in which case all sites are assumed to evolve at the same rate.
+            None is the default value for this argument.
         solver: Convex optimization solver to use. Can be "SCS", "ECOS", or
             "MOSEK". Note that "MOSEK" solver should be installed separately.
         verbose: Verbosity level.
@@ -120,21 +122,17 @@ class IIDExponentialMLE(BranchLengthEstimator):
             for x in relative_mutation_rates:
                 if x <= 0:
                     raise ValueError(
-                        "Relative mutation rates must be strictly positive."
+                        f"Relative mutation rates must be strictly positive, \
+                        but you provided: {relative_mutation_rates}"
                     )
         else:
-            relative_mutation_rates = [
-                1 for x in range(tree.character_matrix.shape[1])
-            ]
+            relative_mutation_rates = [1.0] * tree.character_matrix.shape[1]
 
         # Group together sites having the same rate
-        sites_by_rate = dict()
+        sites_by_rate = defaultdict(list)
         for i in range(len(relative_mutation_rates)):
             rate = relative_mutation_rates[i]
-            if rate not in sites_by_rate:
-                sites_by_rate[rate] = [i]
-            else:
-                sites_by_rate[rate].append(i)
+            sites_by_rate[rate].append(i)
 
         # # # # # Create variables of the optimization problem # # # # #
         t_variables = dict(
@@ -178,8 +176,9 @@ class IIDExponentialMLE(BranchLengthEstimator):
                         num_unmutated += 1
                     elif parent_states[site] != child_states[site]:
                         if (
-                            parent_states[site] != -1
-                            and child_states[site] != -1
+                            parent_states[site] != tree.missing_state_indicator
+                            and child_states[site]
+                            != tree.missing_state_indicator
                         ):
                             num_mutated += 1
                 if num_unmutated > 0:
@@ -241,6 +240,6 @@ class IIDExponentialMLE(BranchLengthEstimator):
         """
         The estimated CRISPR/Cas9 mutation rate(s) under the given model. If
         relative_mutation_rates is specified, we return a list of rates (one per
-        site). Otherwise all sites have the same rate and we return that rate.
+        site). Otherwise all sites have the same rate and that rate is returned.
         """
         return self._mutation_rate
