@@ -68,14 +68,13 @@ def polyline_from_points(points: np.ndarray) -> "pv.PolyData":
 
 
 def average_mixing(*c):
-    """Helper function to mix a set of colors by taking the average of each channel."""
+    """Helper function to mix a set of colors by averaging each channel."""
     return tuple(to_rgba_array(c)[:, :3].mean(axis=0))
 
 
 def highlight(c) -> Tuple[float, float, float]:
     """Helper function to highlight a certain color."""
     hsv = rgb_to_hsv(c)
-    # hsv[1] = min(hsv[1] + 0.2, 1)
     hsv[2] = min(hsv[2] + 0.5, 1)
     return hsv_to_rgb(hsv)
 
@@ -83,7 +82,6 @@ def highlight(c) -> Tuple[float, float, float]:
 def lowlight(c) -> Tuple[float, float, float]:
     """Helper function to dim out a certain color."""
     hsv = rgb_to_hsv(c)
-    # hsv[1] = max(hsv[1] - 0.2, 0)
     hsv[2] = max(hsv[2] - 0.5, 0)
     return hsv_to_rgb(hsv)
 
@@ -96,33 +94,38 @@ def labels_from_coordinates(
     short_axis_distribution: Optional[Callable[[], float]] = None,
     absolute: bool = False,
 ) -> np.ndarray:
-    """Helper function to create a (synthetic) labels Numpy array for use with 3D plotting.
+    """Create a (synthetic) labels Numpy array for use with 3D plotting.
 
-    This function is useful when your spatial data only provides XY coordinates and
-    not an actual labels array. There are various options to control what each leaf
-    will look like. An additional column in the cell meta will be added in the form
-    `{attribute_key}_label`, indicating what label in the returned array corresponds
-    to each cell.
+    This function is useful when your spatial data only provides XY coordinates
+    and not an actual labels array. There are various options to control what
+    each leaf will look like. An additional column in the cell meta will be
+    added in the form `{attribute_key}_label`, indicating what label in the
+    returned array corresponds to each cell.
 
-    Internally, each cell is represented as an ellipse. An ellipse is parameterized with
-    three values: angle, long axis and short axis. The distribution arguments to this function
-    control how each cell will look. By default, all cells are perfect circles.
+    Internally, each cell is represented as an ellipse. An ellipse is
+    parameterized with three values: angle, long axis and short axis. The
+    distribution arguments to this function control how each cell will look.
+    By default, all cells are perfect circles.
 
     Args:
         tree: CassiopieaTree to generate labels for
-        attribute_key: Attribute name in the `cell_meta` of the tree containing coordinates.
-            All columns of the form `{attribute_key}_i` where `i` is an integer `0...` will be used.
-        angle_distribution: Callable that takes no arguments and returns a float between 0 and 360,
-            which is the angle of the ellipse.
-        long_axis_distribution: Callable that generates the of the long axis length. If `absolute=True`,
-            the values generated from this function are scaled to half of the minimum nearest-neighbor
-            distance between any two coordinates. Otherwise, the values returned are used as literal
-            lengths.
-        short_axis_distribution: Similar to `long_axis_distribution`, but for the short axis. If this
-            argument is not provided, `long_axis_distribution` is used for this purpose.
-        absolute: Whether or not the lengths sampled from `long_axis_distribution` and
-            `short_axis_distribution` should be considered as absolute lenghts, or should be scaled
-            such that no two cells should overlap when all axes are 1.
+        attribute_key: Attribute name in the `cell_meta` of the tree containing
+            coordinates. All columns of the form `{attribute_key}_i` where `i`
+            is an integer `0...` will be used.
+        angle_distribution: Callable that takes no arguments and returns a float
+            between 0 and 360, which is the angle of the ellipse.
+        long_axis_distribution: Callable that generates the of the long axis
+            length. If `absolute=True`, the values generated from this function
+            are scaled to half of the minimum nearest-neighbor distance between
+            any two coordinates. Otherwise, the values returned are used as
+            literal lengths.
+        short_axis_distribution: Similar to `long_axis_distribution`, but for
+            the short axis. If this argument is not provided,
+            `long_axis_distribution` is used for this purpose.
+        absolute: Whether or not the lengths sampled from
+            `long_axis_distribution` and `short_axis_distribution` should be
+            considered as absolute lenghts, or should be scaled such that no two
+            cells should overlap when all axes are 1.
 
     Returns:
         A synthetic labels array that can be used for 3D plotting.
@@ -147,7 +150,8 @@ def labels_from_coordinates(
             break
     if len(columns) != 2:
         raise PlottingError(
-            f"Only 2-dimensional data is supported, but found {len(columns)} dimensions."
+            f"Only 2-dimensional data is supported, but found {len(columns)} "
+            "dimensions."
         )
 
     coordinates = meta[columns].values
@@ -198,40 +202,46 @@ def labels_from_coordinates(
 class Tree3D:
     """Create a 3D projection of a tree onto a 2D surface.
 
-    This class provides various wrappers around Pyvista, which is used for 3D rendering.
+    This class provides various wrappers around Pyvista, which is used for 3D
+    rendering.
 
     Example:
-        # When labels aren't available, they can be synthetically created by using
-        # `labels_from_coordinates`, as so. The tree must contain spatial coordinates
-        # in the cell meta.
+        # When labels aren't available, they can be synthetically created by
+        # using `labels_from_coordinates`, as so. The tree must contain spatial
+        # coordinates in the cell meta.
         labels = cas.pl.labels_from_coordinates(tree)
 
         tree3d = cas.pl.Tree3D(tree, labels)
-        tree3d.add_image(img)  # img is a Numpy array with the same shape as labels
+        tree3d.add_image(img) # img is a np.array with the same shape as labels
         tree3d.plot()
 
     Hotkeys:
         1-9: Cut the tree to this many branches.
-        p: Select a subclone and highlight it. Branches and cells not in this subclone
-            are dimmed out. Only available when "Enable node selection" is checked.
-        r: Reset root of the displayed tree to be the root of the actual tree, and reset the view.
+        p: Select a subclone and highlight it. Branches and cells not in this
+            subclone are dimmed out. Only available when "Enable node selection"
+            is checked.
+        r: Reset root of the displayed tree to be the root of the actual tree,
+            and reset the view.
         h: Unselect selected node (which was selected using p).
-        s: Set the root of the displayed tree as the selected node (which was selected using p).
+        s: Set the root of the displayed tree as the selected node (which was
+            selected using p).
 
 
     Args:
-        tree: The Cassiopeia tree to plot. The leaf names must be string-casted integers.
-        labels: A Numpy array containing cell labels on a 2D surface. This array must contain all the
-            cells in the `tree`, but as integers.
-        offset: Offset to give to tree and subclone shading. This option exists because in some cases
-            if the tree and subclone shading is placed at the same height as the image, weird clipping
-            happens.
-        downscale: Downscale all images by this amount. This option is recommended for more responsive
-            visualization.
-        cmap: Colormap to use. Defaults to the Godsnot color palette, as defined at
-            https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
-        attribute_key: Attribute key to use as the integer labels for each leaf node.
-            A column with the name `{attribute_key}_label` will be looked up in the cell meta.
+        tree: The Cassiopeia tree to plot. The leaf names must be string-casted
+            integers.
+        labels: A Numpy array containing cell labels on a 2D surface. This array
+            must contain all the cells in the `tree`, but as integers.
+        offset: Offset to give to tree and subclone shading. This option exists
+            because in some cases if the tree and subclone shading is placed at
+            the same height as the image, weird clipping happens.
+        downscale: Downscale all images by this amount. This option is
+            recommended for more responsive visualization.
+        cmap: Colormap to use. Defaults to the Godsnot color palette, as defined
+            at https://github.com/scverse/scanpy/blob/master/scanpy/plotting/palettes.py
+        attribute_key: Attribute key to use as the integer labels for each leaf
+            node. A column with the name `{attribute_key}_label` will be looked
+            up in the cell meta.
     """
 
     def __init__(
@@ -246,8 +256,9 @@ class Tree3D:
         # Check optional dependencies.
         if None in (cv2, pv, measure):
             raise PlottingError(
-                "Some required modules were not found. Make sure you installed Cassiopeia with "
-                "the `spatial` extras, or run `pip install cassiopeia-lineage[spatial]`."
+                "Some required modules were not found. Make sure you installed "
+                "Cassiopeia with the `spatial` extras, or run `pip install "
+                "cassiopeia-lineage[spatial]`."
             )
 
         # Caches. These come first because initialization may cache stuff.
@@ -298,7 +309,7 @@ class Tree3D:
         self.checkbox_border_size = 2
 
         # Colormap to use. Colors are cycled through when more are needed.
-        self.cmap = cmap or godsnot_102
+        self.cmap = cmap or palettes.godsnot_102
 
     def init_label_mapping(self, key):
         """Initialize label mappings."""
@@ -381,7 +392,8 @@ class Tree3D:
             node: Node name to select cells
 
         Returns:
-            Boolean mask where True indicates cells in the subclade marked by `node`
+            Boolean mask where True indicates cells in the subclade marked by
+                `node`
         """
         regionprops = []
         if self.tree.is_leaf(node):
@@ -400,8 +412,8 @@ class Tree3D:
         return mask
 
     def create_grid(self) -> "pv.UniformGrid":
-        """Helper function to create a Pyvista UniformGrid object with the appropriate
-        shape.
+        """Helper function to create a Pyvista UniformGrid object with the
+        appropriate shape.
         """
         return pv.UniformGrid(dims=self.image_dims)
 
@@ -418,7 +430,8 @@ class Tree3D:
             )
         if img.shape[:2] != self.labels.shape:
             raise PlottingError(
-                f"The first two dimensions of the image must have shape {self.labels.shape}."
+                f"The first two dimensions of the image must have shape "
+                "{self.labels.shape}."
             )
 
         img = (
@@ -444,7 +457,8 @@ class Tree3D:
             time: Time from root to cut the tree at.
 
         Returns:
-            A list of leaf nodes for the cut tree. These nodes may be internal nodes.
+            A list of leaf nodes for the cut tree. These nodes may be internal
+                nodes.
         """
         key = (root, time)
         if key in self.cut_tree_cache:
@@ -467,22 +481,27 @@ class Tree3D:
     def place_nodes(self, root: str, leaves: List[str]) -> np.ndarray:
         """Place a subset of nodes in xyz coordinates.
 
-        Only nodes in the path between `root` and each node in `leaves` are placed.
+        Only nodes in the path between `root` and each node in `leaves` are
+            placed.
 
         Args:
-            root: Root node of the tree. Does not have to be the actual root of the tree.
-            leaves: List of nodes at the bottom of the tree. May be internal nodes.
+            root: Root node of the tree. Does not have to be the actual root of
+                the tree.
+            leaves: List of nodes at the bottom of the tree. May be internal
+                nodes.
 
         Returns:
-            A Numpy array of N x 3, where N is the total number of nodes in the tree.
-            Nodes that were not placed will have `np.nan` as its three coordinates.
-            Each row is indexed to each node according to `self.node_index`.
+            A Numpy array of N x 3, where N is the total number of nodes in the
+                tree. Nodes that were not placed will have `np.nan` as its three
+                coordinates. Each row is indexed to each node according to
+                `self.node_index`.
         """
         if not all(
             root in self.tree.get_all_ancestors(leaf) for leaf in leaves
         ):
             raise PlottingError(
-                f"The desired root {root} is not an ancestor of all the leaves {leaves}."
+                f"The desired root {root} is not an ancestor of all the leaves "
+                "{leaves}."
             )
 
         key = (root, frozenset(leaves))
@@ -521,16 +540,17 @@ class Tree3D:
     ) -> Dict[Tuple[str, str], np.ndarray]:
         """Place a subset of branches in xyz coordinates.
 
-        Only nodes in the path between `root` and each node that have valid coordinates
-        in `coordinates` are placed.
+        Only nodes in the path between `root` and each node that have valid
+        coordinates in `coordinates` are placed.
 
         Args:
-            root: Root node of the tree. Does not have to be the actual root of the tree.
+            root: Root node of the tree. Does not have to be the actual root of
+                the tree.
             coordinates: Coordinates of nodes as produced by `self.place_nodes`.
 
         Returns:
-            Dictionary of branch tuples (node1, node2) as keys and branch coordinates as
-            a Numpy arrays as values.
+            Dictionary of branch tuples (node1, node2) as keys and branch
+                coordinates as a Numpy arrays as values.
         """
         branches = {}
         for n1, n2 in self.tree.breadth_first_traverse_edges(root):
@@ -721,8 +741,9 @@ class Tree3D:
     def select_node(self, node: str):
         """Helper function to select a node.
 
-        When a node is selected, its children nodes and branches are highlighted,
-        including subclone shading. All other elements are dimmed out.
+        When a node is selected, its children nodes and branches are
+        highlighted, including subclone shading. All other elements are
+        dimmed out.
 
         Args:
             node: Selected node
@@ -809,7 +830,8 @@ class Tree3D:
 
         Args:
             actors: Dictionary of actors that are currently displayed.
-            new_actors: Dictionary of actors to replace the existing actors with.
+            new_actors: Dictionary of actors to replace the existing actors
+                with.
         """
         for name, actor in actors.items():
             if name not in new_actors:
@@ -843,7 +865,8 @@ class Tree3D:
         # Times
         name = "times"
         actor = self.plotter.add_text(
-            f"Time range: {self.tree.get_time(self.root)} - {min(self.tree.get_time(leaf) for leaf in self.leaves)}",
+            f"Time range: {self.tree.get_time(self.root)} - "
+            f"{min(self.tree.get_time(leaf) for leaf in self.leaves)}",
             position=(0.2, 0.87),
             viewport=True,
             color="black",
@@ -918,7 +941,7 @@ class Tree3D:
                 * 0.00175
                 * np.log2(max(len(self.tree.leaves_in_subtree(node)), 2)),
             )
-            sphere.add_field_data(i, "node")
+            sphere.add_field_data(np.array([i,]), "node")
             actor = self.plotter.add_mesh(
                 sphere,
                 color=color,
@@ -1060,7 +1083,8 @@ class Tree3D:
         )
 
     def add_height_key_events(self):
-        """Add key events such that pressing numbers from 1 through 9 controls the tree height."""
+        """Add key events such that pressing numbers from 1 through 9 controls
+        the tree height."""
         for i in range(1, 10):
             self.plotter.add_key_event(str(i), partial(self.set_height, i - 1))
 
