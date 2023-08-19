@@ -109,6 +109,3 @@ class TestLBIJungle(unittest.TestCase):
         fitness_estimator = LBIJungle()
         with self.assertRaises(FitnessEstimatorError):
             fitness_estimator.estimate_fitness(tree)
-
-if __name__ == "__main__":
-    unittest.main()
