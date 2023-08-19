@@ -4,7 +4,6 @@ the SpatialDataSimulator. The ClonalSpatialDataSimulator simulates spatial
 coordinates with a spatial constraints that clonal populations (i.e. subclones)
 are spatially localized together.
 """
-<<<<<<< HEAD
 from typing import List, Optional, Tuple
 
 import networkx as nx
@@ -16,27 +15,16 @@ from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import DataSimulatorError, try_import
 from cassiopeia.simulator.SpatialDataSimulator import SpatialDataSimulator
 
-cv2 = try_import('cv2')
-disc = try_import('poisson_disc')
-neighbors = try_import('sklearn.neighbors')
+cv2 = try_import("cv2")
+disc = try_import("poisson_disc")
+neighbors = try_import("sklearn.neighbors")
 
-=======
-
-import numpy as np
-import pandas as pd
-
-from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import DataSimulatorError
-from cassiopeia.simulator.SpatialDataSimulator import SpatialDataSimulator
-
->>>>>>> 8ab2bcc (updated .gitignore)
 
 class ClonalSpatialDataSimulator(SpatialDataSimulator):
     """
     Simulate spatial data with a clonal spatial autocorrelation constraint.
 
     This subclass of `SpatialDataSimulator` simulates the spatial coordinates of
-<<<<<<< HEAD
     each cell in the provided `CassiopeiaTree` with spatial constraints such
     that subclones are more likely to be spatially autocorrelated.
 
@@ -63,6 +51,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
     Raises:
         DataSimulatorError if neither `shape` nor `space` are provided
     """
+
     def __init__(
         self,
         shape: Optional[Tuple[int, ...]] = None,
@@ -88,8 +77,14 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
                 center_x = shape[1] // 2
                 center_y = shape[0] // 2
                 self.space = cv2.ellipse(
-                    np.zeros(shape, dtype=np.uint8), (center_x, center_y), (center_x, center_y),
-                    0, 0, 360, 1, -1
+                    np.zeros(shape, dtype=np.uint8),
+                    (center_x, center_y),
+                    (center_x, center_y),
+                    0,
+                    0,
+                    360,
+                    1,
+                    -1,
                 ).astype(bool)
             else:
                 self.space = np.ones(shape, dtype=bool)
@@ -114,7 +109,9 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             nx.add_path(G, path)
 
         for n1, n2 in G.edges:
-            G[n1][n2]['weight'] = spatial.distance.euclidean(points[n1], points[n2])
+            G[n1][n2]["weight"] = spatial.distance.euclidean(
+                points[n1], points[n2]
+            )
         return G
 
     @staticmethod
@@ -128,20 +125,21 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         Returns:
             Networkx graph
         """
-        distances = neighbors.kneighbors_graph(points, k, mode='distance')
-        G = nx.from_scipy_sparse_matrix(distances)
+        distances = neighbors.kneighbors_graph(points, k, mode="distance")
+        G = nx.from_scipy_sparse_array(distances)
         return G
 
     @classmethod
     def __points_to_graph(cls, points: np.ndarray) -> nx.Graph:
         """Construct a connected graph from a set of points.
 
-        This function uses Delauney triangulation if the number of points is greater than
-        five by calling `__triangulation_graph`. Otherwise, a nearest-neighbors graph is
-        constructed with `__nearest_neighbors_graph`.
+        This function uses Delauney triangulation if the number of points is
+        greater than five by calling `__triangulation_graph`. Otherwise, a
+        nearest-neighbors graph is constructed with `__nearest_neighbors_graph`.
 
-        Delauney triangulation is much faster than nearest neighbors for many nodes,
-        but Delaunay triangulation only works with more than a certain number of nodes.
+        Delauney triangulation is much faster than nearest neighbors for many
+        nodes, but Delaunay triangulation only works with more than a certain
+        number of nodes.
 
         Args:
             points: Points
@@ -152,17 +150,19 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         return (
             cls.__triangulation_graph(points)
             if len(points) > 5
-            else cls.__nearest_neighbors_graph(points, min(5, len(points)-1))
+            else cls.__nearest_neighbors_graph(points, min(5, len(points) - 1))
         )
 
     @staticmethod
-    def __split_graph(G: nx.Graph, sizes: Tuple[int, ...]) -> Tuple[List[int], ...]:
+    def __split_graph(
+        G: nx.Graph, sizes: Tuple[int, ...]
+    ) -> Tuple[List[int], ...]:
         """Generate a node partition of exact sizes.
 
-        A set of seed nodes, the same size as the number of elements in `sizes`, is
-        randomly selected among all nodes. Using these seed nodes, each non-seed node
-        is assigned to a partition one at a time by iterating through a sorted list of
-        all distances of the form seed->non-seed.
+        A set of seed nodes, the same size as the number of elements in `sizes`,
+        is randomly selected among all nodes. Using these seed nodes, each
+        non-seed node is assigned to a partition one at a time by iterating
+        through a sorted list of all distances of the form seed->non-seed.
 
         Args:
             G: Graph to partition
@@ -175,18 +175,25 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             raise DataSimulatorError("Graph is not connected.")
         if sum(sizes) != len(G.nodes):
             raise DataSimulatorError(
-                f"Can not obtain node partition {sizes} for graph of {len(G.nodes)} nodes."
+                f"Can not obtain node partition {sizes} for graph of "
+                "{len(G.nodes)} nodes."
             )
 
         # Find seeds
-        seeds = dict(zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes))
+        seeds = dict(
+            zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes)
+        )
 
         # Find minimum weighted paths from each seed to every node
-        seed_distances = {seed: nx.single_source_dijkstra_path_length(G, seed) for seed in seeds}
+        seed_distances = {
+            seed: nx.single_source_dijkstra_path_length(G, seed)
+            for seed in seeds
+        }
 
         # Assign each non-seed point.
-        # We assign exactly the desired number of nodes to each seed by iterating through
-        # a sorted list of all distances and assigning each node one at a time.
+        # We assign exactly the desired number of nodes to each seed by
+        # iterating through a sorted list of all distances and assigning each
+        # node one at a time.
         distance_seed_nodes = sorted(
             (distance, seed, node)
             for seed, distances in seed_distances.items()
@@ -195,7 +202,10 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         assigned = set()
         assignments = {}
         for _, seed, node in distance_seed_nodes:
-            if node in assigned or len(assignments.get(seed, [])) == seeds[seed]:
+            if (
+                node in assigned
+                or len(assignments.get(seed, [])) == seeds[seed]
+            ):
                 continue
 
             assignments.setdefault(seed, []).append(node)
@@ -203,10 +213,11 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         return tuple(assignments[seed] for seed in seeds)
 
     def sample_points(self, n: int) -> np.ndarray:
-        """Sample the given number of points within the `shape` stored in this object.
+        """Sample the given number of points within the `shape` of this object.
 
-        Points are sampled using Poisson-Disc sampling to generate approximately equally-spaced
-        points. The Bridson algorithm is used, which is implemented in the poisson_disc package.
+        Points are sampled using Poisson-Disc sampling to generate approximately
+        equally-spaced points. The Bridson algorithm is used, which is
+        implemented in the poisson_disc package. 
         https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
 
         Args:
@@ -218,9 +229,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         shape = self.space.shape
         radius = (min(shape) / (n ** (1 / self.dim))) / 2
         while True:
-            points = disc.Bridson_sampling(
-                dims=np.array(shape), radius=radius
-            )
+            points = disc.Bridson_sampling(dims=np.array(shape), radius=radius)
             radius /= 2
 
             points = points[self.space[tuple(points.T.astype(int))]]
@@ -261,29 +270,33 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
             children = tree.children(node)
 
-            node_idx = np.array([
-                i for i, assign in enumerate(point_assignments) if assign == node
-            ])
+            node_idx = np.array(
+                [
+                    i
+                    for i, assign in enumerate(point_assignments)
+                    if assign == node
+                ]
+            )
             node_points = points[node_idx]
             locations[node] = node_points.mean(axis=0)
             # The only requirement for this graph is that it must be connected.
             G = self.__points_to_graph(node_points)
 
             assignments = self.__split_graph(
-                G, tuple(len(tree.leaves_in_subtree(child)) for child in children)
+                G,
+                tuple(len(tree.leaves_in_subtree(child)) for child in children),
             )
             for child, nodes in zip(children, assignments):
                 for i in node_idx[nodes]:
                     point_assignments[i] = child
         # Add leaf locations
-        locations.update({
-            leaf: points[i] for i, leaf in enumerate(point_assignments)
-        })
+        locations.update(
+            {leaf: points[i] for i, leaf in enumerate(point_assignments)}
+        )
 
         # Set node attributes
         for node, loc in locations.items():
-            tree.set_attribute(node, attribute_key, tuple(loc))\
-
+            tree.set_attribute(node, attribute_key, tuple(loc))
         # Set cell meta
         cell_meta = (
             tree.cell_meta.copy()
@@ -295,37 +308,3 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         for leaf in tree.leaves:
             cell_meta.loc[leaf, columns] = locations[leaf]
         tree.cell_meta = cell_meta
-=======
-    each cell in the provided `CassiopeiaTree` with spatial constraints such that
-    subclones are more likely to be spatially autocorrelated.
-
-    The simulation procedure is as follows.
-    1. N coordinates are randomly sampled in space, where N is the number of leaves.
-        Note that there is no mapping between leaves and coordinates (yet).
-        All N coordinates are assigned to the root of the tree.
-    2. The tree is traversed from the root to the leaves. At each node, the coordinates
-        assigned to that node are split according to the number of leaves in each
-        child. A spatial constraint is applied to this step by iteratively assigning
-        each coordinate to the spatially closest child.
-
-    Args:
-        dim: Number of spatial dimensions. For instance, a value of 2 indicates
-            a 2D slice. Only `2` is currently supported.
-        space: Numpy array mask representing the space that cells may be placed.
-            For example, to place cells on a 2D circlular surface, this argument
-            will be a boolean Numpy array where the circular surface is indicated
-            with True. The `dim` argument is ignored if this is provided. Otherwise,
-            a circular.
-
-
-        diffusion_coeficient: The diffusion coefficient to use in the Brownian
-            motion process. Specifically, 2 * `diffusion_coefficient` * (branch
-            length) is the variance of the Normal distribution.
-        scale_unit_area: Whether or not the space should be scaled to
-            have unit length in all dimensions. Defaults to `True`.
-
-    Raises:
-        DataSimulatorError if `dim` is less than equal to zero, or the diffusion
-            coefficient is negative.
-    """
->>>>>>> 8ab2bcc (updated .gitignore)
