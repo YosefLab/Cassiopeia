@@ -156,10 +156,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
             )
 
         # # # # # Check that the character is not saturated # # # # #
-        if (tree.character_matrix != 0).all().all():
+        if (tree.character_matrix != 0).all().all() and pseudo_non_mutations_per_edge == 0.0:
             raise ValueError(
                 "The character matrix is fully mutated. The MLE does not "
-                "exist. Please check your data."
+                "exist unless pseudo_non_mutations_per_edge > 0."
             )
 
         # # # # # Check that the minimum_branch_length makes sense # # # # #
