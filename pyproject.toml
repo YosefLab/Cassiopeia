@@ -105,4 +105,5 @@ docs = [
   "sphinx-autodoc-typehints",
   "sphinx_gallery",
 ]
-spatial = ["opencv-python", "poisson-disc", "pyvista", "scikit-image", "scikit-learn"]
+spatial = ["opencv-python", "poisson-disc", "pyvista", "scikit-image", 
+          "scikit-learn", "tram", "trame-vuetify", "trame-vtk", "cchardet"]
