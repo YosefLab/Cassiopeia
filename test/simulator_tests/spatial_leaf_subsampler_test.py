@@ -51,6 +51,13 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         with self.assertRaises(LeafSubsamplerError):
             sampler = SpatialLeafSubsampler(space=self.space_2d, 
                 bounding_box=self.bounding_box_2d)
+        # negative number of leaves
+        with self.assertRaises(LeafSubsamplerError):
+            sampler = SpatialLeafSubsampler(number_of_leaves=-1, 
+                space=self.space_2d)
+        # ratio > 1
+        with self.assertRaises(LeafSubsamplerError):
+            sampler = SpatialLeafSubsampler(ratio=2, space=self.space_2d)
         
     def test_bad_subsample_parameters(self):
         # tree without spatial attributes
@@ -79,13 +86,14 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         with self.assertRaises(LeafSubsamplerError):
             sampler = SpatialLeafSubsampler(number_of_leaves=100, 
                 space=self.space_3d)
-            sampler.subsample_leaves(self.tree_2d)
+            sampler.subsample_leaves(self.tree_3d)
 
     def test_subsample_3d_tree(self):
         # test subsampling using bounding box
         np.random.seed(10)
         sampler = SpatialLeafSubsampler(bounding_box=self.bounding_box_3d)
-        res = sampler.subsample_leaves(self.tree_3d)
+        res = sampler.subsample_leaves(self.tree_3d,
+                                       keep_singular_root_edge = False)
         expected_edges = [
             ("node0", "node1"),
             ("node0", "node5"),
