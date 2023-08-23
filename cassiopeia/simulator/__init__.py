@@ -11,6 +11,7 @@ from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
 from .SupercellularSampler import SupercellularSampler
 from .TreeSimulator import TreeSimulator
 from .UniformLeafSubsampler import UniformLeafSubsampler
+from .SpatialLeafSubsampler import SpatialLeafSubsampler
 
 
 __all__ = [
