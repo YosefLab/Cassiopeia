@@ -147,7 +147,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            4, len(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character[0])
+            4, len(self.basic_lineage_tracing_data_simulator.mutation_priors)
         )
 
         self.assertEqual(
@@ -224,6 +224,13 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 state_priors={1: 0.5, 2: 0.6},
+            )
+
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                state_priors=[{1: 0.5, 2: 0.6, 3: 0.1}] * 3,
             )
 
     def test_get_cassettes(self):

@@ -192,7 +192,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     raise DataSimulatorError("Mutation priors do not sum to 1.")
                 
             self.state_generating_distribution = None
-
+            # Ensures backward compatibility
+            self.mutation_priors = self.mutation_priors_per_character[0]
 
         self.heritable_silencing_rate = heritable_silencing_rate
         self.stochastic_silencing_rate = stochastic_silencing_rate
@@ -218,16 +219,16 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         # This will set the instance's variable for mutation priors and will
         # use this for all future simulations.
         if self.mutation_priors_per_character is None:
-            mutation_priors = {}
+            self.mutation_priors = {}
             probabilites = [
                 self.state_generating_distribution()
                 for _ in range(self.number_of_states)
             ]
             Z = np.sum(probabilites)
             for i in range(self.number_of_states):
-                mutation_priors[i + 1] = probabilites[i] / Z
+                self.mutation_priors[i + 1] = probabilites[i] / Z
             self.mutation_priors_per_character = (
-                [mutation_priors] * number_of_characters)
+                [self.mutation_priors] * number_of_characters)
 
         # initialize character states
         character_matrix = {}
