@@ -143,7 +143,11 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            4, len(self.basic_lineage_tracing_data_simulator.mutation_priors)
+            9, len(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character)
+        )
+
+        self.assertEqual(
+            4, len(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character[0])
         )
 
         self.assertEqual(
@@ -151,15 +155,15 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             self.basic_lineage_tracing_data_simulator.mutation_rate_per_character,
         )
 
-        self.assertAlmostEqual(
-            1.0,
-            np.sum(
-                [
-                    v
-                    for v in self.basic_lineage_tracing_data_simulator.mutation_priors.values()
-                ]
-            ),
-        )
+        for i in range(number_of_characters):
+            self.assertAlmostEqual(
+                1.0,
+                np.sum(
+                    [v for v in 
+                    self.basic_lineage_tracing_data_simulator.mutation_priors_per_character[i]
+                    .values()]
+                ),
+            )
 
     def test_setup_errors(self):
 
@@ -450,7 +454,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         self.assertEqual(
             10,
             len(
-                self.lineage_tracing_data_simulator_state_distribution.mutation_priors
+                self.lineage_tracing_data_simulator_state_distribution.mutation_priors_per_character[0]
             ),
         )
 
@@ -479,6 +483,76 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
                 if parent_array[i] != 0:
                     self.assertNotEqual(0, child_array[i])
+
+    def test_simulator_with_per_character_priors(self):
+
+        sim_from_dictionary = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                state_priors={i: 0.25 for i in range(4)}
+            )
+        )
+
+        sim_from_array_len_3 = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                state_priors=[{i: 0.25 for i in range(4)}] * 3
+            )
+        )
+
+        sim_from_array_len_6 = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                state_priors=[{i: 0.25 for i in range(4)}] * 6
+            )
+        )
+        
+        self.assertEqual(sim_from_dictionary.mutation_priors_per_character,
+                            sim_from_array_len_3.mutation_priors_per_character)
+        
+        self.assertEqual(sim_from_array_len_3.mutation_priors_per_character,
+                            sim_from_array_len_6.mutation_priors_per_character)
+        
+    def test_simulator_with_per_character_rates(self):
+
+        sim_from_float = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                mutation_rate = .1
+            )
+        )
+
+        sim_from_array_len_3 = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                mutation_rate = [.1] * 3
+            )
+        )
+
+        sim_from_array_len_6 = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=3,
+                number_of_states=4,
+                mutation_rate = [.1] * 6
+            )
+        )
+        
+        self.assertEqual(sim_from_float.mutation_rate_per_character ,
+                            sim_from_array_len_3.mutation_rate_per_character)
+        
+        self.assertEqual(sim_from_array_len_3.mutation_rate_per_character ,
+                            sim_from_array_len_6.mutation_rate_per_character)
 
 
 if __name__ == "__main__":
