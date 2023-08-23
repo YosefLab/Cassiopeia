@@ -22,8 +22,6 @@ from ..mixins import PlottingError, PlottingWarning, try_import
 cv2 = try_import("cv2")
 pv = try_import("pyvista")
 measure = try_import("skimage.measure")
-neighbors = try_import("sklearn.neighbors")
-
 
 def interpolate_branch(
     parent: Tuple[float, float, float], child: Tuple[float, float, float]
@@ -89,43 +87,21 @@ def lowlight(c) -> Tuple[float, float, float]:
 def labels_from_coordinates(
     tree: CassiopeiaTree,
     attribute_key: str = "spatial",
-    angle_distribution: Callable[[], float] = lambda: 0,
-    long_axis_distribution: Callable[[], float] = lambda: 1,
-    short_axis_distribution: Optional[Callable[[], float]] = None,
-    absolute: bool = False,
+    shape: tuple = (1000,1000)
 ) -> np.ndarray:
-    """Create a (synthetic) labels Numpy array for use with 3D plotting.
+    """Create a (synthetic) labels Numpy array for use with 3D plotting. 
 
-    This function is useful when your spatial data only provides XY coordinates
-    and not an actual labels array. There are various options to control what
-    each leaf will look like. An additional column in the cell meta will be
-    added in the form `{attribute_key}_label`, indicating what label in the
-    returned array corresponds to each cell.
-
-    Internally, each cell is represented as an ellipse. An ellipse is
-    parameterized with three values: angle, long axis and short axis. The
-    distribution arguments to this function control how each cell will look.
-    By default, all cells are perfect circles.
+    Cells are represented as circles with a radius scaled by the square
+    root of the number of cells. The center of each circle is the cell's
+    spatial coordinates.
 
     Args:
         tree: CassiopieaTree to generate labels for
         attribute_key: Attribute name in the `cell_meta` of the tree containing
             coordinates. All columns of the form `{attribute_key}_i` where `i`
             is an integer `0...` will be used.
-        angle_distribution: Callable that takes no arguments and returns a float
-            between 0 and 360, which is the angle of the ellipse.
-        long_axis_distribution: Callable that generates the of the long axis
-            length. If `absolute=True`, the values generated from this function
-            are scaled to half of the minimum nearest-neighbor distance between
-            any two coordinates. Otherwise, the values returned are used as
-            literal lengths.
-        short_axis_distribution: Similar to `long_axis_distribution`, but for
-            the short axis. If this argument is not provided,
-            `long_axis_distribution` is used for this purpose.
-        absolute: Whether or not the lengths sampled from
-            `long_axis_distribution` and `short_axis_distribution` should be
-            considered as absolute lenghts, or should be scaled such that no two
-            cells should overlap when all axes are 1.
+        shape: Shape of the array to generate. This should be a tuple of two
+            integers, representing the height and width of the array.
 
     Returns:
         A synthetic labels array that can be used for 3D plotting.
@@ -133,11 +109,9 @@ def labels_from_coordinates(
     Raises:
         PlottingError if there are not exactly two spatial coordinates.
     """
-    if short_axis_distribution is None:
-        short_axis_distribution = long_axis_distribution
 
     if tree.cell_meta is None:
-        raise PlottingError("CassiopeiaTree must contain cell meta.")
+        raise ValueError("CassiopeiaTree must contain cell meta.")
     meta = tree.cell_meta.copy()
     columns = []
     i = 0
@@ -149,34 +123,33 @@ def labels_from_coordinates(
         else:
             break
     if len(columns) != 2:
-        raise PlottingError(
+        raise ValueError(
             f"Only 2-dimensional data is supported, but found {len(columns)} "
             "dimensions."
         )
 
+    # Normalize coordinates to [.05,.95]
     coordinates = meta[columns].values
+    min_val = coordinates.min(axis=0)
+    max_val = coordinates.max(axis=0)
+    normalized_coordinates = .05 + ((coordinates - min_val)/
+                (max_val - min_val)) * .9
 
-    # Compute scale if not absolute
-    scale = 1
-    if not absolute:
-        nn = neighbors.NearestNeighbors(n_neighbors=1)
-        nn.fit(coordinates)
-        distances = nn.kneighbors(return_distance=True)[0].flatten()
-        scale = max(1, distances.min() / 2)
+    # Compute scale based on number of points
+    scale = int(np.min(shape)/(np.sqrt(coordinates.shape[0])*5))
+    scale = min(scale, 100)
+    scale = max(scale, 1)
 
-    shape = tuple(coordinates.astype(int).max(axis=0) + 1)
+    # Generate labels array by drawing circles
     labels = np.zeros(shape, dtype=int)
     leaf_to_label = {}
-    for leaf, coord in zip(meta.index, coordinates):
-        angle = angle_distribution()
-        long_axis = max(int(long_axis_distribution() * scale), 1)
-        short_axis = max(int(short_axis_distribution() * scale), 1)
-        center = tuple(coord.astype(int))
+    for leaf, coord in zip(meta.index, normalized_coordinates):
+        center = tuple((coord * np.max(shape)).astype(int))
         ellipse = cv2.ellipse(
             np.zeros(shape, dtype=np.uint8),
             center,
-            (long_axis, short_axis),
-            angle,
+            (scale,scale),
+            0,
             0,
             360,
             1,
@@ -230,8 +203,9 @@ class Tree3D:
     Args:
         tree: The Cassiopeia tree to plot. The leaf names must be string-casted
             integers.
-        labels: A Numpy array containing cell labels on a 2D surface. This array
-            must contain all the cells in the `tree`, but as integers.
+        labels: Optional numpy array containing cell labels on a 2D surface. 
+            This array must contain all the cells in the `tree`, but as 
+            integers.
         offset: Offset to give to tree and subclone shading. This option exists
             because in some cases if the tree and subclone shading is placed at
             the same height as the image, weird clipping happens.
@@ -247,14 +221,14 @@ class Tree3D:
     def __init__(
         self,
         tree: CassiopeiaTree,
-        labels: np.ndarray,
+        labels: np.ndarray = None,
         offset: float = 1.0,
         downscale: float = 1.0,
         cmap: Optional[List[str]] = None,
         attribute_key: str = "spatial",
     ):
         # Check optional dependencies.
-        if None in (cv2, pv, measure):
+        if None in (cv2, pv):
             raise PlottingError(
                 "Some required modules were not found. Make sure you installed "
                 "Cassiopeia with the `spatial` extras, or run `pip install "
@@ -264,11 +238,15 @@ class Tree3D:
         # Caches. These come first because initialization may cache stuff.
         self.cut_tree_cache = {}
         self.place_nodes_cache = {}
-        self.tree = tree
-        self.labels = labels  # cell labels image
+        self.tree = tree.copy()
         self.offset = offset
         self.downscale = downscale
-        self.scale = max(*labels.shape) * downscale
+
+        if labels is None:
+            self.labels = labels_from_coordinates(self.tree, attribute_key)
+        else:
+            self.labels = labels
+        self.scale = max(*self.labels.shape) * downscale
 
         self.init_label_mapping(f"{attribute_key}_label")
 
@@ -281,7 +259,7 @@ class Tree3D:
         self.node_colors = {}
 
         resized_labels = cv2.resize(
-            labels,
+            self.labels,
             None,
             fx=downscale,
             fy=downscale,
@@ -411,11 +389,11 @@ class Tree3D:
 
         return mask
 
-    def create_grid(self) -> "pv.UniformGrid":
-        """Helper function to create a Pyvista UniformGrid object with the
+    def create_grid(self) -> "pv.ImageData":
+        """Helper function to create a Pyvista ImageData object with the
         appropriate shape.
         """
-        return pv.UniformGrid(dims=self.image_dims)
+        return pv.ImageData(dimensions=self.image_dims)
 
     def add_image(self, key: str, img: np.ndarray):
         """Add an image so that it may be displayed with the tree.

@@ -68,3 +68,6 @@ class TestLocal3DPlotting(unittest.TestCase):
         # are no errors on initialization.
         tree3d = local_3d.Tree3D(self.tree, self.labels)
         tree3d.plot(show=False)
+
+if __name__ == "__main__":
+    unittest.main()
