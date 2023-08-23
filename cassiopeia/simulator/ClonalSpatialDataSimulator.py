@@ -95,7 +95,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
     @staticmethod
     def __triangulation_graph(points: np.ndarray) -> nx.Graph:
-        """Compute a fully-connected Delaunay triangulation graph from a set of points.
+        """Compute a fully-connected Delaunay triangulation graph from a set of 
+        points.
 
         Args:
             points: Points to triangulate

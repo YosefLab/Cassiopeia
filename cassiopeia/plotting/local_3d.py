@@ -110,8 +110,15 @@ def labels_from_coordinates(
         PlottingError if there are not exactly two spatial coordinates.
     """
 
+    # check that tree contains cell meta
     if tree.cell_meta is None:
         raise ValueError("CassiopeiaTree must contain cell meta.")
+    if f"{attribute_key}_0" not in tree.cell_meta.columns:
+        raise ValueError(
+            f"Attribute key {attribute_key} not found in cell meta."
+        )
+    
+    # parse meta columns
     meta = tree.cell_meta.copy()
     columns = []
     i = 0
@@ -126,6 +133,28 @@ def labels_from_coordinates(
         raise ValueError(
             f"Only 2-dimensional data is supported, but found {len(columns)} "
             "dimensions."
+        )
+    
+    # check that shape is length 2
+    if len(shape) != 2:
+        raise ValueError(
+            f"Shape must be a tuple of length 2, "
+            f"but found {len(shape)}."
+        )
+    
+    # check that shape is int
+    if not isinstance(shape[0], int) or not isinstance(shape[1], int):
+        raise ValueError(
+            f"Shape must be an integer tuple, "
+            f"but found {shape[0]} x {shape[1]}."
+        )
+
+    # check that shape is at least 10 x 10
+    if shape[0] < 10 or shape[1] < 10:
+        raise ValueError(
+            f"Shape must be at least 10 x 10," 
+            f"but found {shape[0]} x {shape[1]}."
+            f"When shape is too small, cells will overlap."
         )
 
     # Normalize coordinates to [.05,.95]
@@ -144,7 +173,7 @@ def labels_from_coordinates(
     labels = np.zeros(shape, dtype=int)
     leaf_to_label = {}
     for leaf, coord in zip(meta.index, normalized_coordinates):
-        center = tuple((coord * np.max(shape)).astype(int))
+        center = tuple((coord * np.array(shape)).astype(int))
         ellipse = cv2.ellipse(
             np.zeros(shape, dtype=np.uint8),
             center,
@@ -188,24 +217,13 @@ class Tree3D:
         tree3d.add_image(img) # img is a np.array with the same shape as labels
         tree3d.plot()
 
-    Hotkeys:
-        1-9: Cut the tree to this many branches.
-        p: Select a subclone and highlight it. Branches and cells not in this
-            subclone are dimmed out. Only available when "Enable node selection"
-            is checked.
-        r: Reset root of the displayed tree to be the root of the actual tree,
-            and reset the view.
-        h: Unselect selected node (which was selected using p).
-        s: Set the root of the displayed tree as the selected node (which was
-            selected using p).
-
-
     Args:
         tree: The Cassiopeia tree to plot. The leaf names must be string-casted
             integers.
         labels: Optional numpy array containing cell labels on a 2D surface. 
             This array must contain all the cells in the `tree`, but as 
-            integers.
+            integers. In None, the labels will be generated synthetically using
+            `labels_from_coordinates`.
         offset: Offset to give to tree and subclone shading. This option exists
             because in some cases if the tree and subclone shading is placed at
             the same height as the image, weird clipping happens.
