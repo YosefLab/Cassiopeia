@@ -136,7 +136,7 @@ def labels_from_coordinates(
                 (max_val - min_val)) * .9
 
     # Compute scale based on number of points
-    scale = int(np.min(shape)/(np.sqrt(coordinates.shape[0])*5))
+    scale = int(np.min(shape)/(np.sqrt(coordinates.shape[0])*3))
     scale = min(scale, 100)
     scale = max(scale, 1)
 
@@ -616,7 +616,7 @@ class Tree3D:
         self.subclone_sigma = sigma
         self.update_subclones()
 
-    def set_height(self, height: int):
+    def set_height(self, height):
         """Set the height of the tree.
 
         The height is defined as the number of branches from the root.
@@ -624,6 +624,7 @@ class Tree3D:
         Args:
             height: Cutoff height as an integer
         """
+        height = int(height) 
         times = sorted(
             set(
                 self.times[node]
@@ -656,7 +657,7 @@ class Tree3D:
                 self.clear_picked_mesh()
             else:
                 self.reset_selected_node()
-            self.update_texts()
+            #self.update_texts()
 
     def set_node_picking(self, flag: bool):
         """Helper function to setup node selection.
@@ -696,7 +697,7 @@ class Tree3D:
             root: Desired root node
         """
         self.reset_selected_node()
-        self.update_texts()
+        #self.update_texts()
         if root == self.root:
             return
         self.root = root
@@ -727,7 +728,7 @@ class Tree3D:
             node: Selected node
         """
         self.selected_node = node
-        self.update_texts()
+        #self.update_texts()
 
         reset = node is None
         selected = set(
@@ -797,7 +798,7 @@ class Tree3D:
         """Helper function to clear the selected node."""
         self.clear_picked_mesh()
         self.select_node(None)
-        self.update_texts()
+        #self.update_texts()
 
     def update_actors(
         self,
@@ -1034,11 +1035,22 @@ class Tree3D:
         self.plotter.add_slider_widget(
             self.set_subclone_sigma,
             (1, self.scale / 20),
-            self.subclone_sigma,
+            1,
             title="Blur",
             color="black",
             pointa=(0.7, 0.9),
             pointb=(0.9, 0.9),
+        )
+
+    def add_height_slider(self):
+        """Add slider to control tree height."""
+        self.plotter.add_text_slider_widget(
+            self.set_height,
+            ["1","2","3","4","5","6","7","8","9"],
+            2,
+            color="black",
+            pointa=(0.45, 0.9),
+            pointb=(0.65, 0.9),
         )
 
     def add_time_slider(self):
@@ -1121,10 +1133,11 @@ class Tree3D:
     def add_widgets(self):
         """Add widgets."""
         self.add_blur_slider()
-        self.add_height_key_events()
-        # self.add_time_slider()
-        self.add_image_checkboxes()
-        self.add_node_picking()
+        #self.add_height_key_events()
+        #self.add_time_slider()
+        #self.add_image_checkboxes()
+        #self.add_node_picking()
+        self.add_height_slider()
 
     def plot(
         self,
@@ -1149,7 +1162,7 @@ class Tree3D:
         if plot_tree:
             self.update_subclones()
             self.update_branches()
-            self.update_texts()
+            #self.update_texts()
 
         self.plotter.set_background("white")
         self.plotter.add_axes(viewport=(0, 0.75, 0.2, 0.95))
