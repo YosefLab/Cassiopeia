@@ -82,7 +82,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         mutation_priors: An optional dictionary mapping states to their prior 
             probabilities. Can also be a list of dictionaries of length 
             `size_of_cassette` or `number_of_cassettes * size_of_cassette`.
-            If this argument is not None, states will not be pulled from 
+            If this argument is None, states will not be pulled from 
             the state distribution.
         heritable_silencing_rate: Silencing rate for the cassettes, per node,
             simulating heritable missing data events.
