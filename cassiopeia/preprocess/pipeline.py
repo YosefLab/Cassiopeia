@@ -390,8 +390,8 @@ def resolve_umi_sequence(
         if group.shape[0] == 1:
             good_readName = group["readName"].iloc[0]
             mt_filter[good_readName] = False
-            total_numReads[good_readName] = group["readCount"]
-            top_reads[good_readName] = group["readCount"]
+            total_numReads[good_readName] = group["readCount"].values[0]
+            top_reads[good_readName] = group["readCount"].values[0]
 
         # more commonly - many sequences for a given UMI
         else:

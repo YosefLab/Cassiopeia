@@ -102,6 +102,8 @@ class TestResolveUMISequence(unittest.TestCase):
         expected_cells = ["cell3"]
         expected_removed_cells = ["cell1", "cell2"]
 
+        # print(expected_cells)
+
         for cell in expected_cells:
             self.assertIn(cell, resolved_mt["cellBC"].unique())
 
