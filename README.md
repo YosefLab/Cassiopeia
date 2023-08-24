@@ -39,7 +39,7 @@ For developers:
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
-2. Ensure that you have Python >= 3.7 installed. (Python 3.6 may still work, but is not guaranteed.) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+2. Ensure that you have Python >= 3.8 installed. (Due to dependencies no longer supporting Python 3.7, we have now stopped supporting Python <= 3.7) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 3. [Optional] Make sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
     * Run the command ``gurobi.sh`` from a terminal window
@@ -48,6 +48,8 @@ For developers:
 4. [Optional] To use fast versions of Neighbor-Joining and UPGMA, install [CCPhylo](https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) then set ccphylo_path in the config.ini file in the cassiopeia directory.
 
 5. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
+
+6. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. In order to do s
 
 To verify that it installed correctly, try running our tests with `pytest`.
 
