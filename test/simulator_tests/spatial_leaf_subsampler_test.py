@@ -64,7 +64,8 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
             sampler = SpatialLeafSubsampler(ratio=2, space=self.space_2d)
         # merge cells without space
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(merge_cells=True,ratio = 1)
+            sampler = SpatialLeafSubsampler(merge_cells=True,
+                            ratio = 1,bounding_box=self.bounding_box_2d)
         
     def test_bad_subsample_parameters(self):
         # tree without spatial attributes
