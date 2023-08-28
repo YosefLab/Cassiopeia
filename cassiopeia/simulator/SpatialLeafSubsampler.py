@@ -14,7 +14,7 @@ import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import (
-    CassiopeiaTreeError, LeafSubsamplerError
+    CassiopeiaTreeError, LeafSubsamplerError, LeafSubsamplerWarning
 )
 from cassiopeia.simulator.LeafSubsampler import (
     LeafSubsampler,

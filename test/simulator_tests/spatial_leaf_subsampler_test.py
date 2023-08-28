@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import LeafSubsamplerError
+from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
 from cassiopeia.simulator.SpatialLeafSubsampler import SpatialLeafSubsampler
 
 
