@@ -56,9 +56,7 @@ extensions = [
 exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 nbsphinx_execute = "never"
 
-autodoc_mock_imports = ["gurobipy", "vtk", "opencv-python", "poisson-disc",
-                        "scikit-image", 'scikit-learn', 'trame',
-                        'trame-vuetify', 'trame-vtk', 'cchardet', 'pyvista']
+autodoc_mock_imports = ["gurobipy"]
 
 
 # Add any paths that contain templates here, relative to this directory.
