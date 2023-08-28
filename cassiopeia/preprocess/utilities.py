@@ -10,8 +10,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 import warnings
 
 from collections import defaultdict, OrderedDict
-import matplotlib
-import matplotlib.pyplot as plt
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd

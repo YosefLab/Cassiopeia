@@ -17,10 +17,8 @@ clean_sdist:
 
 clean: clean_develop clean_pypi
 
-install: 
-	- $(python) setup.py build
-	- $(python) setup.py build_ext --inplace
-	- $(python) -m pip install --user .
+install:
+	- $(python) -m pip install .
 
 check_build_reqs:
 	@$(python) -c 'import pytest' \
@@ -28,13 +26,3 @@ check_build_reqs:
 
 test: check_build_reqs
 	$(python) -m pytest -vv $(tests)
-
-
-pypi: clean clean_sdist
-	set -x \
-	&& $(python) setup.py sdist bdist_wheel \
-	&& twine check dist/* \
-	&& twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-
-clean_pypi:
-	- rm -rf build/

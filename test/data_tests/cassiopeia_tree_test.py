@@ -1117,7 +1117,8 @@ class TestCassiopeiaTree(unittest.TestCase):
             set(cas_tree.cell_meta.index),
             set(["node3", "node4", "node5", "node6", "node7"]),
         )
-        self.assertEqual(list(cas_tree.cell_meta.loc["node7"]), [np.nan])
+        self.assertEqual(len(cas_tree.cell_meta.loc["node7"]), 1)
+        self.assertTrue(np.isnan(list(cas_tree.cell_meta.loc["node7"])).all())
 
     def test_remove_leaves_and_prune_lineages_all(self):
         """Tests the case where all lineages are removed and pruned."""
@@ -1899,6 +1900,22 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(
             tree.get_character_states("3"), [0, 1, -1, 1, 0, 0, 1, -1, -1]
         )
+
+    def test_reorder_children(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = cas.data.CassiopeiaTree(tree=tree)
+        self.assertEqual(list(tree.children("1")), ["2", "3"])
+        # Test reorder leaf
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("3", [])
+        # test with invalid children
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("1", ["4"])
+        # test with valid children
+        tree.reorder_children("1", ["3", "2"])
+        self.assertEqual(list(tree.children("1")), ["3", "2"])
 
 
 if __name__ == "__main__":

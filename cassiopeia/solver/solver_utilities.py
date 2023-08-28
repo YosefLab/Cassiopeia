@@ -7,6 +7,7 @@ from typing import Dict, Generator, List, Optional
 import ete3
 from hashlib import blake2b
 import numpy as np
+import pandas as pd
 import time
 
 from cassiopeia.mixins import PriorTransformationError
@@ -122,3 +123,24 @@ def convert_sample_names_to_indices(
     name_to_index = dict(zip(names, range(len(names))))
 
     return list(map(lambda x: name_to_index[x], samples))
+
+def save_dissimilarity_as_phylip(
+        dissimilarity_map: pd.DataFrame, path: str
+    ) -> None:
+    """Saves a dissimilarity map as a phylip file.
+
+    Args:
+        dissimilarity_map: A dissimilarity map
+        path: The path to save the phylip file
+
+    Returns:
+        None
+    """
+    dissimilarity_np = dissimilarity_map.to_numpy()
+    n = dissimilarity_np.shape[0]
+    with open(path, "w") as f:
+        f.write("{}\n".format(n))
+        for i in range(n):
+            row = dissimilarity_np[i, :i+1]
+            formatted_values = '\t'.join(map('{:.4f}'.format, row))
+            f.write("{}\t{}\n".format(dissimilarity_map.index[i], formatted_values))

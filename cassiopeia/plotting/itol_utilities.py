@@ -7,6 +7,7 @@ on the iTOL software and how to create an account.
 import os
 
 import configparser
+from pathlib import Path
 import shutil
 import tempfile
 from typing import Dict, List, Tuple, Optional
@@ -136,7 +137,7 @@ def upload_and_export_itol(
 
     itol_uploader = Itol()
     itol_uploader.add_file(
-        os.path.join(temporary_directory, "tree_to_plot.tree")
+        Path(os.path.join(temporary_directory, "tree_to_plot.tree"))
     )
 
     files = user_dataset_files.copy() if user_dataset_files else []
@@ -169,7 +170,7 @@ def upload_and_export_itol(
 
         if pd.api.types.is_string_dtype(values):
             colors = palette[: len(values.unique())]
-            colors = [hex_to_rgb(color) for color in colors]
+            colors = [utilities.hex_to_rgb(color) for color in colors]
             colormap = dict(zip(np.unique(values), colors))
 
             files.append(
@@ -184,7 +185,7 @@ def upload_and_export_itol(
             )
 
     for _file in files:
-        itol_uploader.add_file(_file)
+        itol_uploader.add_file(Path(_file))
 
     itol_uploader.params["treeName"] = tree_name
     itol_uploader.params["APIkey"] = api_key
@@ -482,14 +483,9 @@ def create_indel_heatmap(
                 "",
             ]
 
-        if len(str(j)) == 1:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_0{j}.txt"
-            )
-        elif len(str(j)) == 2:
-            alleleLabel_fileout = os.path.join(
-                output_directory, f"indelColors_{j}.txt"
-            )
+        alleleLabel_fileout = os.path.join(
+            output_directory, f"indelColors_0{str(j).zfill(4)}.txt")
+
         with open(alleleLabel_fileout, "w") as ALout:
             for line in header:
                 ALout.write(line + "\n")

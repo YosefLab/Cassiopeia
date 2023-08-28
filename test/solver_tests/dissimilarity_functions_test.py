@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 
 import numpy as np
+import pandas as pd
 
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver import solver_utilities
@@ -297,6 +298,27 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
 
         self.assertEqual(distance, 0)
+
+    def test_save_dissimilarity_as_phylip(self):
+        # Create a sample dissimilarity map
+        data = [[0.0, 0.5, 0.7], [0.5, 0.0, 0.3], [0.7, 0.3, 0.0]]
+        index = ['A', 'B', 'C']
+        dissimilarity_map = pd.DataFrame(data, index=index)
+
+        # Expected content in the mock file
+        expected_content = ("3\n"
+                            "A\t0.0000\n"
+                            "B\t0.5000\t0.0000\n"
+                            "C\t0.7000\t0.3000\t0.0000\n")
+
+        # Mock the open function to use a mock file object
+        with mock.patch("builtins.open", mock.mock_open()) as mock_file:
+            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map, 
+                                                          "dummy_path")
+            mock_file.assert_called_once_with("dummy_path", "w")
+            mock_file().write.assert_called()
+            self.assertIn(expected_content, "".join(call[0][0] for 
+                          call in mock_file().write.call_args_list))
 
 
 if __name__ == "__main__":

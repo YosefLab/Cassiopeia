@@ -376,28 +376,33 @@ class TestCassiopeiaTree(unittest.TestCase):
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=False, assume_root_implicit_branch=True
         )
-        self.assertEqual(
-            params, (0.44967879185089554, 0.17017346663375654, 0.3)
-        )
+        true_params = (0.44967879185089554, 0.17017346663375654, 0.3)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=False, assume_root_implicit_branch=False
         )
-        self.assertEqual(params, (0.5917517095361371, 0.2440710539815455, 0.3))
+        true_params = (0.5917517095361371, 0.2440710539815455, 0.3)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
 
         small_tree.reset_parameters()
         small_tree.parameters["heritable_missing_rate"] = 0.25
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=False, assume_root_implicit_branch=True
         )
-        self.assertEqual(
-            params, (0.44967879185089554, 0.25, 0.0518518518518518)
-        )
+        true_params = (0.44967879185089554, 0.25, 0.0518518518518518)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=False, assume_root_implicit_branch=False
         )
-        self.assertEqual(
-            params, (0.5917517095361371, 0.25, 0.28888888888888886)
-        )
+        true_params = (0.5917517095361371, 0.25, 0.28888888888888886)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+
 
         small_tree.reset_parameters()
         small_tree.parameters["stochastic_missing_probability"] = 0.3
@@ -405,7 +410,10 @@ class TestCassiopeiaTree(unittest.TestCase):
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=False, assume_root_implicit_branch=True
         )
-        self.assertEqual(params, (0.44967879185089554, 0.25, 0.3))
+        true_params = (0.44967879185089554, 0.25, 0.3)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+        
 
         small_tree.parameters["mutation_rate"] = 0.25
         params = tree_metrics.get_lineage_tracing_parameters(
@@ -438,30 +446,32 @@ class TestCassiopeiaTree(unittest.TestCase):
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=True, assume_root_implicit_branch=True
         )
-        self.assertEqual(
-            params, (0.5917110077950752, 0.033515497951003406, 0.1)
-        )
+        true_params = (0.5917110077950752, 0.033515497951003406, 0.1)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=True, assume_root_implicit_branch=False
         )
-        self.assertEqual(
-            params, (0.90410501812166781, 0.05121001550277539, 0.1)
-        )
+        true_params = (0.90410501812166781, 0.05121001550277539, 0.1)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
 
         small_tree.reset_parameters()
         small_tree.parameters["heritable_missing_rate"] = 0.05
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=True, assume_root_implicit_branch=True
         )
-        self.assertEqual(
-            params, (0.5917110077950752, 0.05, 0.046322071416968195)
-        )
+        true_params = (0.5917110077950752, 0.05, 0.046322071416968195)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
+
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=True, assume_root_implicit_branch=False
         )
-        self.assertEqual(
-            params, (0.9041050181216678, 0.05, 0.10250124994244929)
-        )
+        true_params = (0.9041050181216678, 0.05, 0.10250124994244929)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
 
         small_tree.reset_parameters()
         small_tree.parameters["stochastic_missing_probability"] = 0.3
@@ -469,7 +479,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         params = tree_metrics.get_lineage_tracing_parameters(
             small_tree, continuous=True, assume_root_implicit_branch=True
         )
-        self.assertEqual(params, (0.5917110077950752, 0.25, 0.3))
+        true_params = (0.5917110077950752, 0.25, 0.3)
+        for i in range(len(params)):
+            self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
 
         small_tree.parameters["mutation_rate"] = 0.25
         params = tree_metrics.get_lineage_tracing_parameters(

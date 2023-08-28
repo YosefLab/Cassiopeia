@@ -1,7 +1,6 @@
 ===========
 Solver
 ===========
-.. module:: cassiopeia.solver
 .. currentmodule:: cassiopeia
 
 CassiopeiaSolvers
@@ -11,7 +10,7 @@ We have several algorithms available for solving phylogenies:
 
 .. autosummary::
    :toctree: reference/
-   
+
    solver.HybridSolver
    solver.ILPSolver
    solver.MaxCutSolver
@@ -32,7 +31,7 @@ For use in our distance-based solver and for comparing character states, we also
 
 .. autosummary::
    :toctree: reference/
-   
+
    solver.dissimilarity_functions.cluster_dissimilarity
    solver.dissimilarity_functions.hamming_distance
    solver.dissimilarity_functions.hamming_similarity_normalized_over_missing

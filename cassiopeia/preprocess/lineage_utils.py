@@ -61,7 +61,7 @@ def assign_lineage_groups(
         )
 
         # append returned objects to output variable
-        piv_assigned = piv_assigned.append(piv_lg, sort=True)
+        piv_assigned = pd.concat([piv_assigned, piv_lg], sort=True)
 
         # update pivot_in by removing assigned alignments
         pivot_in = piv_nolg
@@ -231,7 +231,7 @@ def score_lineage_kinships(
         LGi = master_LGs[i]
         intBCsi = master_intBCs[LGi]
         dfi = pd.DataFrame(index=[LGi], columns=intBCsi, data=1)
-        dfLG2intBC = dfLG2intBC.append(dfi, sort=True)
+        dfLG2intBC = pd.concat([dfLG2intBC, dfi], sort=True)
 
     dfLG2intBC = dfLG2intBC.fillna(0)
 
@@ -255,12 +255,12 @@ def score_lineage_kinships(
     dfCellBC2LG = subPIVOT.dot(dfLG2intBC.T)
     max_kinship = dfCellBC2LG.max(axis=1)
 
-    max_kinship_ind = dfCellBC2LG.idxmax(axis=1).to_frame()
+    max_kinship_ind = dfCellBC2LG.apply(lambda x: np.argmax(x), axis=1)
     max_kinship_frame = max_kinship.to_frame()
 
     max_kinship_LG = pd.concat(
         [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    )
+    ) 
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     return max_kinship_LG
@@ -301,12 +301,11 @@ def annotate_lineage_groups(
     lg_sizes = {}
     rename_lg = {}
 
-    for n, g in dfMT.groupby(["lineageGrp"]):
+    for n, g in dfMT.groupby("lineageGrp"):
         if n != 0:
             lg_sizes[n] = len(g["cellBC"].unique())
 
     sorted_by_value = sorted(lg_sizes.items(), key=lambda kv: kv[1])[::-1]
-
     for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
         rename_lg[tup[0]] = float(i)
 

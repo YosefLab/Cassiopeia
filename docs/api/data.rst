@@ -1,6 +1,7 @@
 ===========
 Data
 ===========
+
 .. module:: cassiopeia.data
 .. currentmodule:: cassiopeia
 
@@ -11,7 +12,7 @@ The main data structure that Cassiopeia uses for all tree-based analyses is the 
 
 .. autosummary::
    :toctree: reference/
-   
+
    data.CassiopeiaTree
 
 Utilities
