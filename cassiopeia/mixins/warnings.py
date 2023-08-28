@@ -22,3 +22,7 @@ class ParameterEstimateWarning(UserWarning):
 
 class PlottingWarning(UserWarning):
     pass
+
+class LeafSubsamplerWarning(UserWarning):
+
+    pass
