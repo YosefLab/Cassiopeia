@@ -81,6 +81,12 @@ class SpatialLeafSubsampler(LeafSubsampler):
             if ratio <= 0 or ratio > 1:
                 raise LeafSubsamplerError(
                     "Specified ratio is <= 0 or > 1."
+                ) 
+        if merge_cells:
+            # Check that space is provided
+            if space is None:
+                raise LeafSubsamplerError(
+                    "Can not merge cells without space provided."
                 )
         self.__bounding_box = bounding_box
         self.__space = space
@@ -225,10 +231,6 @@ class SpatialLeafSubsampler(LeafSubsampler):
 
         # Merge cells
         if merge_cells:
-            if space is None:
-                raise LeafSubsamplerError(
-                    "Can not merge cells without space provided."
-                )
             
             # Get the coordinates of the leaves
             coordinate_leaves = defaultdict(list)
