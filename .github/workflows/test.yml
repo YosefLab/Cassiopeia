@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -34,7 +34,7 @@ jobs:
       run: |
         pip install pytest-cov
         pip install codecov
-        pip install .
+        pip install ".[spatial]"
     - name: Test with pytest
       run: |
         pytest -vv test/ --cov-report=xml --cov=cassiopeia
