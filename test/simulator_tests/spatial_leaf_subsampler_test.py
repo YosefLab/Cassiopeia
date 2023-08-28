@@ -1,3 +1,6 @@
+"""
+Tests the functionality of cassiopeia.simulator.SpatialLeafSubsampler.
+"""
 import unittest
 
 import networkx as nx
@@ -5,11 +8,9 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import (
-    LeafSubsamplerError, 
-    LeafSubsamplerWarning
-)
+from cassiopeia.mixins import LeafSubsamplerError
 from cassiopeia.simulator.SpatialLeafSubsampler import SpatialLeafSubsampler
+
 
 class SpatialLeafSubsamplerTest(unittest.TestCase):
     def setUp(self) -> None:

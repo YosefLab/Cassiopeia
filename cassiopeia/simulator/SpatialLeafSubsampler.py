@@ -14,13 +14,12 @@ import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import (
-    CassiopeiaTreeError,
+    CassiopeiaTreeError, LeafSubsamplerError
 )
 from cassiopeia.simulator.LeafSubsampler import (
     LeafSubsampler,
-    LeafSubsamplerError,
-    LeafSubsamplerWarning,
 )
+
 
 class SpatialLeafSubsampler(LeafSubsampler):
     def __init__(
