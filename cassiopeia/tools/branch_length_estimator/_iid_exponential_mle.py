@@ -150,9 +150,10 @@ class IIDExponentialMLE(BranchLengthEstimator):
         verbose = self._verbose
 
         # # # # # Check that the character has at least one mutation # # # # #
-        if (tree.character_matrix == 0).all().all():
+        if (tree.character_matrix == 0).all().all() and pseudo_mutations_per_edge == 0.0:
             raise ValueError(
-                "The character matrix has no mutations. Please check your data."
+                "The character matrix has no mutations. Please check your data, or use "
+                "pseudo_mutations_per_edge > 0."
             )
 
         # # # # # Check that the character is not saturated # # # # #
