@@ -22,6 +22,8 @@ from ..mixins import PlottingError, PlottingWarning, try_import
 cv2 = try_import("cv2")
 pv = try_import("pyvista")
 measure = try_import("skimage.measure")
+vtk = try_import("vtk")
+
 
 def interpolate_branch(
     parent: Tuple[float, float, float], child: Tuple[float, float, float]
