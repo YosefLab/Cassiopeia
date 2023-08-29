@@ -8,6 +8,7 @@ sphinx:
 python:
   install:
     - method: pip
-      path: .[spatial]
+      path: .
       extra_requirements:
       - docs
+      - spatial
