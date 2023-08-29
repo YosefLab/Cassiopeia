@@ -95,7 +95,7 @@ def create_categorical_colorstrip(
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
-    cm = plt.cm.get_cmap(cmap)
+    cm = plt.colormaps[cmap]
     unique_values = set(values.values())
     value_mapping = value_mapping or {
         val: i for i, val in enumerate(unique_values)
@@ -142,7 +142,7 @@ def create_continuous_colorstrip(
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
-    cm = plt.cm.get_cmap(cmap)
+    cm = plt.colormaps[cmap]
     max_value = vmax if vmax is not None else max(values.values())
     min_value = vmin if vmin is not None else min(values.values())
     if min_value >= max_value:
@@ -412,8 +412,9 @@ def place_tree_and_annotations(
                 vmin,
                 vmax,
             )
-
-        if pd.api.types.is_string_dtype(values):
+        elif pd.api.types.is_string_dtype(
+            values
+        ) or pd.api.types.is_categorical_dtype(values):
             colorstrip, anchor_coords = create_categorical_colorstrip(
                 values.to_dict(),
                 anchor_coords,
@@ -423,6 +424,11 @@ def place_tree_and_annotations(
                 loc,
                 categorical_cmap,
                 value_mapping,
+            )
+        else:
+            raise PlottingError(
+                f"Column {meta_item} has unrecognized dtype {pd.api.types.infer_dtype(values)}. "
+                "Only numeric, string, and categorical dtypes are supported."
             )
         colorstrips.append(colorstrip)
 
