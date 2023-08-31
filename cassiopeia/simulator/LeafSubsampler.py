@@ -12,7 +12,10 @@ import numpy as np
 from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import LeafSubsamplerError
+from cassiopeia.mixins import (
+    LeafSubsamplerError,
+    LeafSubsamplerWarning,
+)
 
 
 class LeafSubsampler(abc.ABC):

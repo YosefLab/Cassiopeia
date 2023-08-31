@@ -35,7 +35,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     solver proceeds by constructing a tree over a network of possible
     evolutionary states known as the potential graph. The procedure for
     constructing this tree is done by solving for a Steiner Tree with an
-    integer linear programming (ILP) optimization approach.
+    integer linear programming (ILP) optimization approach. The ILP
+    optimization is performed using Gurobi.
 
     Args:
         convergence_time_limit: Amount of time allotted to the ILP for
@@ -102,7 +103,11 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         """Infers a tree with Cassiopeia-ILP.
 
         Solves a tree using the Cassiopeia-ILP algorithm and populates a tree
-        in the provided CassiopeiaTree.
+        in the provided CassiopeiaTree. Specifically, a potential graph of
+        theoretical evolutionary intermediates is estimated from the input data
+        and Gurobi is used to optimize and ILP searching for a maximum parsimony
+        subgraph of the potential graph, resulting in a proposed maximum
+        parsimony phylogeny.
 
         Args:
             cassiopeia_tree: Input CassiopeiaTree
@@ -131,10 +136,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             f"Convergence iteration limit: {self.convergence_iteration_limit}"
         )
         logger.info(
-            f"Max potential graph layer size: {self.maximum_potential_graph_layer_size}"
+            "Max potential graph layer size: "
+            f"{self.maximum_potential_graph_layer_size}"
         )
         logger.info(
-            f"Max potential graph lca distance: {self.maximum_potential_graph_lca_distance}"
+            "Max potential graph lca distance: "
+            f"{self.maximum_potential_graph_lca_distance}"
         )
         logger.info(f"MIP gap: {self.mip_gap}")
 

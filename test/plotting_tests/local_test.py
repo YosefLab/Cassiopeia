@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 import cassiopeia as cas
+from cassiopeia.mixins import PlottingError, PlottingWarning
 from cassiopeia.plotting import local
 
 
@@ -101,6 +102,12 @@ class TestLocalPlotting(unittest.TestCase):
         )
         self.assertEqual(colorstrip, expected_colorstrip)
         self.assertEqual(next_anchor_coords, expected_next_anchor_coords)
+        # test warning
+        with self.assertWarns(PlottingWarning):
+            _ = local.create_continuous_colorstrip(
+            {"1": -10, "2": 10}, {"1": (0, 0), "2": (1, 0)}, 1, 2, 1, "up",
+            vmin = 10, vmax = 0
+        )
 
     def test_create_indel_heatmap(self):
         indel_colors = {
@@ -146,11 +153,21 @@ class TestLocalPlotting(unittest.TestCase):
         local.plot_matplotlib(self.tree)
         local.plot_matplotlib(self.tree, add_root=True)
         local.plot_matplotlib(self.tree, meta_data=["nUMI", "cluster"])
-
+        local.plot_matplotlib(self.tree, allele_table=self.allele_table,
+                              clade_colors={"4": "red"})
+        #test invalid meta_data
+        with self.assertRaises(PlottingError):
+            local.plot_matplotlib(self.tree, meta_data=["invalid"])
+        self.tree.cell_meta["invalid_tuple"] = [(1,1), (1,1), (1,1), (1,1)]
+        with self.assertRaises(PlottingError):
+            local.plot_matplotlib(self.tree, meta_data=["invalid_tuple"])
+        
     def test_plot_plotly(self):
         local.plot_plotly(self.tree)
         local.plot_plotly(self.tree, add_root=True)
         local.plot_plotly(self.tree, meta_data=["nUMI", "cluster"])
+        local.plot_matplotlib(self.tree, allele_table=self.allele_table,
+                              clade_colors={"4": "red"})
 
     def test_create_clade_colors(self):
         expected_node_colors = {"4": "red", "5": "red", "6": "red"}
@@ -160,3 +177,11 @@ class TestLocalPlotting(unittest.TestCase):
         )
         self.assertEqual(node_colors, expected_node_colors)
         self.assertEqual(branch_colors, expected_branch_colors)
+        # test warning
+        with self.assertWarns(PlottingWarning):
+            _, _ = local.create_clade_colors(
+                self.tree, {"root": "red", "4": "blue"}
+            )
+
+if __name__ == "__main__":
+    unittest.main()

@@ -3,6 +3,7 @@ This file defines the BrownianSpatialDataSimulator, which is a subclass of
 the SpatialDataSimulator. The BrownianSpatialDataSimulator simulates spatial
 coordinates by simulating Brownian motion of each cell.
 """
+from typing import Optional
 import numpy as np
 import pandas as pd
 
@@ -36,6 +37,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             length) is the variance of the Normal distribution.
         scale_unit_area: Whether or not the space should be scaled to
             have unit length in all dimensions. Defaults to `True`.
+        random_seed: A seed for reproducibility
 
     Raises:
         DataSimulatorError if `dim` is less than equal to zero, or the diffusion
@@ -47,6 +49,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
         dim: int,
         diffusion_coefficient: float,
         scale_unit_area: bool = True,
+        random_seed: Optional[int] = None,
     ):
         if dim <= 0:
             raise DataSimulatorError("Number of dimensions must be positive.")
@@ -58,6 +61,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
         self.dim = dim
         self.diffusion_coefficient = diffusion_coefficient
         self.scale_unit_area = scale_unit_area
+        self.random_seed = random_seed
 
     def overlay_data(
         self,
@@ -73,6 +77,9 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
                 the `cell_meta` attribute as `{attribute_key}_i` where i is
                 an integer from 0...`dim-1`.
         """
+        if self.random_seed:
+            np.random.seed(self.random_seed)
+
         # Using numpy arrays instead of tuples for easy vector operations
         locations = {tree.root: np.zeros(self.dim)}
         for parent, child in tree.depth_first_traverse_edges(source=tree.root):
