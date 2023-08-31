@@ -71,17 +71,27 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     Args:
         number_of_cassettes: Number of cassettes (i.e., arrays of target sites)
         size_of_cassette: Number of editable target sites per cassette
-        mutation_rate: Exponential parameter for the Cas9 cutting rate. The user
-            can either pass in a float, in which every site will mutate at
-            the same rate, or a list a list of floats of length 
-            `size_of_cassette` or `number_of_cassettes * size_of_cassette`.
+        mutation_rate: Exponential parameter for the Cas9 cutting rate. Can be
+            a float, or a list of floats of length `size_of_cassette` or 
+            `number_of_cassettes * size_of_cassette`:
+                float - all sites mutate at the specified rate.
+                list of length `size_of_cassette` - each site will mutate at 
+                    the specified rate across all cassettes.
+                list of length `number_of_cassettes * size_of_cassette` - each
+                    site and cassettes will mutate at the specified rate.
         state_generating_distribution: Distribution from which to simulate state
             likelihoods. This is only used if mutation priors are not
             specified to the simulator.
         number_of_states: Number of states to simulate
         mutation_priors: An optional dictionary mapping states to their prior 
             probabilities. Can also be a list of dictionaries of length 
-            `size_of_cassette` or `number_of_cassettes * size_of_cassette`.
+            `size_of_cassette` or `number_of_cassettes * size_of_cassette`:
+                dict - all sites will have the same prior probabilities.
+                list of length `size_of_cassette` - each site will have the
+                    specified prior probabilities across all cassettes.
+                list of length `number_of_cassettes * size_of_cassette` - each
+                    site and cassette will have the specified prior 
+                    probabilities.
             If this argument is None, states will not be pulled from 
             the state distribution.
         heritable_silencing_rate: Silencing rate for the cassettes, per node,
@@ -144,7 +154,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             self.mutation_rate_per_character = [
                 mutation_rate
             ] * number_of_characters
-        else:
+        elif isinstance(mutation_rate, list):
             if len(mutation_rate) == number_of_characters:
                 self.mutation_rate_per_character = mutation_rate
             elif len(mutation_rate) == self.size_of_cassette:
@@ -162,6 +172,10 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 raise DataSimulatorError(
                     "Mutation rate needs to be" " non-negative."
                 )
+        else:
+            raise DataSimulatorError(
+                "Mutation rate needs to be a float or a list."
+            )
             
 
         if state_priors is None:

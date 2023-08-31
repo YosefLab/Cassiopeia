@@ -195,12 +195,28 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2, size_of_cassette=2, mutation_rate=-0.2
             )
 
-        # test for correct number of mutation rates (one per character)
+        # test mutation rates list too sort
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 mutation_rate=[0.1, 0.1, 0.2],
+            )
+
+        # test mutation rate is np array
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_rate=np.array([0.1, 0.1, 0.2]),
+            )
+
+        # test mutation rates list too long
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                mutation_rate=[0.1, 0.1, 0.2, 0.1, 0.1],
             )
 
         # check for positive mutation rates in a specified array
@@ -219,6 +235,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 state_priors={1: 0.5, 2: 0.2},
             )
 
+        # test that state distribution adds up to 1
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
@@ -226,6 +243,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 state_priors={1: 0.5, 2: 0.6},
             )
 
+        # test incorrect state prior length
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
                 number_of_cassettes=2,
