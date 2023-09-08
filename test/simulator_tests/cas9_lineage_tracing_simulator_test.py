@@ -189,6 +189,14 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2, size_of_cassette=0.1
             )
 
+        # test for invalid mutation rate type
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2, 
+                mutation_rate="invalid"
+            )
+
         # test for positive mutation rates
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
