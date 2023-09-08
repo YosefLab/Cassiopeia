@@ -203,14 +203,6 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 mutation_rate=[0.1, 0.1, 0.2],
             )
 
-        # test mutation rate is np array
-        with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
-                number_of_cassettes=2,
-                size_of_cassette=2,
-                mutation_rate=np.array([0.1, 0.1, 0.2]),
-            )
-
         # test mutation rates list too long
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.Cas9LineageTracingDataSimulator(
@@ -249,6 +241,22 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 state_priors=[{1: 0.5, 2: 0.6, 3: 0.1}] * 3,
+            )
+
+        # incorrect state prior type
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                state_priors="invalid",
+            )
+
+        # incorrect state prior type
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, 
+                size_of_cassette=2,
+                state_priors=[1,1,1]
             )
 
     def test_get_cassettes(self):
@@ -534,7 +542,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2,
                 size_of_cassette=3,
                 number_of_states=4,
-                state_priors=[{i: 0.25 for i in range(4)}] * 6
+                state_priors=np.array([{i: 0.25 for i in range(4)}] * 6)
             )
         )
         
@@ -569,7 +577,7 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
                 number_of_cassettes=2,
                 size_of_cassette=3,
                 number_of_states=4,
-                mutation_rate = [.1] * 6
+                mutation_rate = np.array([.1] * 6)
             )
         )
         

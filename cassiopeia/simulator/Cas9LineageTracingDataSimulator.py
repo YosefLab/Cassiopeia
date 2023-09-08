@@ -83,7 +83,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             likelihoods. This is only used if mutation priors are not
             specified to the simulator.
         number_of_states: Number of states to simulate
-        mutation_priors: An optional dictionary mapping states to their prior 
+        state_priors: An optional dictionary mapping states to their prior 
             probabilities. Can also be a list of dictionaries of length 
             `size_of_cassette` or `number_of_cassettes * size_of_cassette`:
                 dict - all sites will have the same prior probabilities.
@@ -146,6 +146,10 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         self.collapse_sites_on_cassette = collapse_sites_on_cassette
         number_of_characters = size_of_cassette * number_of_cassettes
 
+        # covert mutation_rate to list if numpy array
+        if isinstance(mutation_rate, np.ndarray):
+            mutation_rate = mutation_rate.tolist()
+
         if isinstance(mutation_rate, float):
             if mutation_rate < 0:
                 raise DataSimulatorError(
@@ -177,6 +181,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 "Mutation rate needs to be a float or a list."
             )
             
+        # convert state_priors to list if numpy array
+        if isinstance(state_priors, np.ndarray):
+            state_priors = state_priors.tolist()
 
         if state_priors is None:
             self.number_of_states = number_of_states
@@ -187,7 +194,13 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 self.mutation_priors_per_character = [
                     state_priors
                 ] * number_of_characters
-            else:
+            elif isinstance(state_priors, list):
+                # check that all elements are dictionaries
+                if not all(isinstance(item, dict) for item in state_priors):
+                    raise DataSimulatorError(
+                        "State priors needs to be a dictionary or a list of"
+                        " dictionaries."
+                    )
                 if len(state_priors) == number_of_characters:
                     self.mutation_priors_per_character = state_priors
                 elif len(state_priors) ==  self.size_of_cassette:
@@ -200,6 +213,12 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                         " the same as the number of characters"
                         " or the number of cassettes."
                 )
+            else:
+                raise DataSimulatorError(
+                    "State priors needs to be a dictionary or a list of"
+                    " dictionaries."
+                )
+            
             for prior in self.mutation_priors_per_character:
                 Z = np.sum([v for v in prior.values()])
                 if not math.isclose(Z, 1.0):
