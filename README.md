@@ -49,7 +49,7 @@ For developers:
 
 5. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
 
-6. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these anlayses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
+6. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these analyses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
 
 To verify that it installed correctly, install `pytest` (`pip install pytest`) and try running our tests with `make test`.
 
