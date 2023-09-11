@@ -1953,6 +1953,22 @@ class TestCassiopeiaTree(unittest.TestCase):
             tree.get_character_states("3"), [0, 1, -1, 1, 0, 0, 1, -1, -1]
         )
 
+    def test_reorder_children(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = cas.data.CassiopeiaTree(tree=tree)
+        self.assertEqual(list(tree.children("1")), ["2", "3"])
+        # Test reorder leaf
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("3", [])
+        # test with invalid children
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("1", ["4"])
+        # test with valid children
+        tree.reorder_children("1", ["3", "2"])
+        self.assertEqual(list(tree.children("1")), ["3", "2"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,7 @@ on the iTOL software and how to create an account.
 import os
 
 import configparser
+from pathlib import Path
 import shutil
 import tempfile
 from typing import Dict, List, Tuple, Optional
@@ -136,7 +137,7 @@ def upload_and_export_itol(
 
     itol_uploader = Itol()
     itol_uploader.add_file(
-        os.path.join(temporary_directory, "tree_to_plot.tree")
+        Path(os.path.join(temporary_directory, "tree_to_plot.tree"))
     )
 
     files = user_dataset_files.copy() if user_dataset_files else []
@@ -184,7 +185,7 @@ def upload_and_export_itol(
             )
 
     for _file in files:
-        itol_uploader.add_file(_file)
+        itol_uploader.add_file(Path(_file))
 
     itol_uploader.params["treeName"] = tree_name
     itol_uploader.params["APIkey"] = api_key

@@ -702,6 +702,32 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         return [v for v in self.__network.successors(node)]
+    
+    def reorder_children(self, node: str, child_order: List[str]) -> None:
+        """Reorders the children of a particular node.
+
+        Args:
+            node: Node in the tree
+            child_order: A list with the new order of children for the node.
+
+        Raises:
+            CassiopeiaTreeError if the node of interest is a leaf that has not 
+                been instantiated, or if the new order of children is not a 
+                permutation of the original children.
+        """
+        self.__check_network_initialized()
+
+        if self.is_leaf(node):
+            raise CassiopeiaTreeError("Cannot reorder children of a leaf node.")
+
+        if set(child_order) != set(self.children(node)):
+            raise CassiopeiaTreeError("New order of children is not a" 
+                                        "permutation of the original children.")
+
+        self.__network.remove_edges_from(
+            [(node, child) for child in self.children(node)])
+        self.__network.add_edges_from(
+            [(node, child) for child in child_order])
 
     def __remove_node(self, node) -> None:
         """Private method to remove node from tree.

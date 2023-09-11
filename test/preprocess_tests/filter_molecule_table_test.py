@@ -1,5 +1,8 @@
 import unittest
 
+import shutil
+import tempfile
+
 import numpy as np
 import pandas as pd
 
@@ -112,10 +115,13 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
         )
 
+        # set up temporary directory
+        self.temporary_directory = tempfile.mkdtemp()
+
     def test_format(self):
 
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, ".", min_umi_per_cell=2
+            self.base_filter_case, self.temporary_directory, min_umi_per_cell=2, plot=True
         )
 
         expected_columns = [
@@ -139,7 +145,7 @@ class TestFilterMolculeTable(unittest.TestCase):
     def test_umi_and_cellbc_filter(self):
 
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, ".", min_umi_per_cell=3, min_reads_per_umi=11
+            self.base_filter_case, self.temporary_directory, min_umi_per_cell=3, min_reads_per_umi=11, plot=True,
         )
 
         expected_alignments = {
@@ -163,10 +169,11 @@ class TestFilterMolculeTable(unittest.TestCase):
 
         aln_df = pipeline.filter_molecule_table(
             self.doublets_case,
-            ".",
+            self.temporary_directory,
             min_umi_per_cell=1,
             min_reads_per_umi=0,
             doublet_threshold=0.4,
+            plot=True,
         )
 
         expected_alignments = {
@@ -188,10 +195,11 @@ class TestFilterMolculeTable(unittest.TestCase):
 
         aln_df = pipeline.filter_molecule_table(
             self.intBC_case,
-            ".",
+            self.temporary_directory,
             min_umi_per_cell=1,
             min_reads_per_umi=0,
             doublet_threshold=None,
+            plot=True,
         )
 
         expected_alignments = {
@@ -217,11 +225,12 @@ class TestFilterMolculeTable(unittest.TestCase):
     def test_filter_allow_conflicts(self):
         aln_df = pipeline.filter_molecule_table(
             self.doublets_case,
-            ".",
+            self.temporary_directory,
             min_umi_per_cell=1,
             min_reads_per_umi=0,
             doublet_threshold=0.4,
             allow_allele_conflicts=True,
+            plot=True,
         )
 
         expected_alignments = {
@@ -244,6 +253,9 @@ class TestFilterMolculeTable(unittest.TestCase):
                 expected_intbc,
             )
 
+    def tearDown(self):
+
+        shutil.rmtree(self.temporary_directory)
 
 if __name__ == "__main__":
     unittest.main()
