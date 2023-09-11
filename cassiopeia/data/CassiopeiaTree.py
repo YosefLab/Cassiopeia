@@ -1872,9 +1872,14 @@ class CassiopeiaTree:
                 self.priors, prior_transformation
             )
 
-        N = character_matrix.shape[0]
+        # Only compute dissimilarities between *unique* states to save runtime!
+        cell_to_state = character_matrix.astype(str).apply('|'.join, axis=1)
+        state_to_cells = character_matrix.index.groupby(cell_to_state)
+        dedup_character_matrix = character_matrix.drop_duplicates()
+
+        N = dedup_character_matrix.shape[0]
         dissimilarity_map = utilities.compute_dissimilarity_map(
-            character_matrix.to_numpy(),
+            dedup_character_matrix.to_numpy(),
             N,
             dissimilarity_function,
             weights,
@@ -1883,12 +1888,25 @@ class CassiopeiaTree:
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
-        dissimilarity_map = pd.DataFrame(
-            dissimilarity_map,
-            index=character_matrix.index,
-            columns=character_matrix.index,
-        )
+        # Expand deduplicated dissimilarity map back to all cells
+        full_dissimilarity_map = np.pad(dissimilarity_map, (0, character_matrix.shape[0] - N))
+        dissimilarity_cells = list(dedup_character_matrix.index)
+        j = N
+        for i, dedup_cell in enumerate(dedup_character_matrix.index):
+            for cell in state_to_cells[cell_to_state[dedup_cell]]:
+                if dedup_cell == cell:
+                    continue
+                dissimilarities = full_dissimilarity_map[i, :]
+                full_dissimilarity_map[j, :] = dissimilarities
+                full_dissimilarity_map[:, j] = dissimilarities
+                dissimilarity_cells.append(cell)
+                j += 1
 
+        dissimilarity_map = pd.DataFrame(
+            full_dissimilarity_map,
+            index=dissimilarity_cells,
+            columns=dissimilarity_cells,
+        )
         self.set_dissimilarity_map(dissimilarity_map)
 
     def set_attribute(self, node: str, attribute_name: str, value: Any) -> None:
