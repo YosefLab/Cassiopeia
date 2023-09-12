@@ -296,8 +296,8 @@ class TestHybridSolver(unittest.TestCase):
         tree = self.pp_tree.get_tree_topology()
 
         # make sure log files are created correctly
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-2.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -360,8 +360,8 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
 
         # make sure log files are created correctly
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-2.log"))
 
         tree = self.pp_tree.get_tree_topology()
 
@@ -418,10 +418,10 @@ class TestHybridSolver(unittest.TestCase):
 
         # make sure log files are created correctly
         self.assertIsFile(
-            os.path.join(self.dir_path, "test_1-1-1-1-1-1-0-0.log")
+            os.path.join(self.dir_path, "test-1.log")
         )
         self.assertIsFile(
-            os.path.join(self.dir_path, "test_2-0-0-0-0-0-0-0.log")
+            os.path.join(self.dir_path, "test-7.log")
         )
 
         # make sure there's one root
@@ -489,9 +489,9 @@ class TestHybridSolver(unittest.TestCase):
         tree = self.missing_tree.get_tree_topology()
 
         # make sure log files are created correctly
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-2.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-3.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -557,9 +557,9 @@ class TestHybridSolver(unittest.TestCase):
         tree = self.missing_tree.get_tree_topology()
 
         # make sure log files are created correctly
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-0-1-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_1-1-0-0.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test_2-0-0-0.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-2.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-3.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]

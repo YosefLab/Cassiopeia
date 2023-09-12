@@ -702,6 +702,32 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         return [v for v in self.__network.successors(node)]
+    
+    def reorder_children(self, node: str, child_order: List[str]) -> None:
+        """Reorders the children of a particular node.
+
+        Args:
+            node: Node in the tree
+            child_order: A list with the new order of children for the node.
+
+        Raises:
+            CassiopeiaTreeError if the node of interest is a leaf that has not 
+                been instantiated, or if the new order of children is not a 
+                permutation of the original children.
+        """
+        self.__check_network_initialized()
+
+        if self.is_leaf(node):
+            raise CassiopeiaTreeError("Cannot reorder children of a leaf node.")
+
+        if set(child_order) != set(self.children(node)):
+            raise CassiopeiaTreeError("New order of children is not a" 
+                                        "permutation of the original children.")
+
+        self.__network.remove_edges_from(
+            [(node, child) for child in self.children(node)])
+        self.__network.add_edges_from(
+            [(node, child) for child in child_order])
 
     def __remove_node(self, node) -> None:
         """Private method to remove node from tree.
@@ -1846,9 +1872,14 @@ class CassiopeiaTree:
                 self.priors, prior_transformation
             )
 
-        N = character_matrix.shape[0]
+        # Only compute dissimilarities between *unique* states to save runtime!
+        cell_to_state = character_matrix.astype(str).apply('|'.join, axis=1)
+        state_to_cells = character_matrix.index.groupby(cell_to_state)
+        dedup_character_matrix = character_matrix.drop_duplicates()
+
+        N = dedup_character_matrix.shape[0]
         dissimilarity_map = utilities.compute_dissimilarity_map(
-            character_matrix.to_numpy(),
+            dedup_character_matrix.to_numpy(),
             N,
             dissimilarity_function,
             weights,
@@ -1857,12 +1888,25 @@ class CassiopeiaTree:
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
-        dissimilarity_map = pd.DataFrame(
-            dissimilarity_map,
-            index=character_matrix.index,
-            columns=character_matrix.index,
-        )
+        # Expand deduplicated dissimilarity map back to all cells
+        full_dissimilarity_map = np.pad(dissimilarity_map, (0, character_matrix.shape[0] - N))
+        dissimilarity_cells = list(dedup_character_matrix.index)
+        j = N
+        for i, dedup_cell in enumerate(dedup_character_matrix.index):
+            for cell in state_to_cells[cell_to_state[dedup_cell]]:
+                if dedup_cell == cell:
+                    continue
+                dissimilarities = full_dissimilarity_map[i, :]
+                full_dissimilarity_map[j, :] = dissimilarities
+                full_dissimilarity_map[:, j] = dissimilarities
+                dissimilarity_cells.append(cell)
+                j += 1
 
+        dissimilarity_map = pd.DataFrame(
+            full_dissimilarity_map,
+            index=dissimilarity_cells,
+            columns=dissimilarity_cells,
+        )
         self.set_dissimilarity_map(dissimilarity_map)
 
     def set_attribute(self, node: str, attribute_name: str, value: Any) -> None:

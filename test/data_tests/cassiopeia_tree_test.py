@@ -76,6 +76,21 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
+        self.duplicated_character_matrix = pd.DataFrame.from_dict(
+            {
+                "node3": [1, 0, 0, 0, 0, 0, 0, 0],
+                "node7": [1, 0, 0, 0, 0, 0, 0, 0],
+                "node9": [1, 0, 0, 0, 0, 0, 0, 0],
+                "node11": [1, 1, 1, 1, 0, 0, 0, 0],
+                "node13": [1, 1, 1, 1, 1, 0, 0, 0],
+                "node15": [1, 1, 1, 1, 1, 1, 0, 0],
+                "node17": [1, 1, 1, 1, 1, 1, 1, 0],
+                "node18": [1, 1, 1, 1, 1, 1, 1, 1],
+                "node5": [2, 0, 0, 0, 0, 0, 0, 0],
+                "node6": [2, 2, 0, 0, 0, 0, 0, 0],
+            },
+            orient="index",
+        )
         self.ambiguous_character_matrix = pd.DataFrame.from_dict(
             {
                 "node3": [1, 0, 0, 0, 0, 0, 0, 0],
@@ -935,6 +950,43 @@ class TestCassiopeiaTree(unittest.TestCase):
             dtype=np.float64,
         )
 
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, expected_dissimilarity_map
+        )
+
+    def test_compute_dissimilarity_map_dedup(self):
+        tree = cas.data.CassiopeiaTree(self.duplicated_character_matrix)
+        tree.compute_dissimilarity_map(delta_fn)
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+
+        expected_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 0, 0, 3, 4, 5, 6, 7, 1, 2],
+                "node7": [0, 0, 0, 3, 4, 5, 6, 7, 1, 2],
+                "node9": [0, 0, 0, 3, 4, 5, 6, 7, 1, 2],
+                "node11": [3, 3, 3, 0, 1, 2, 3, 4, 4, 4],
+                "node13": [4, 4, 4, 1, 0, 1, 2, 3, 5, 5],
+                "node15": [5, 5, 5, 2, 1, 0, 1, 2, 6, 6],
+                "node17": [6, 6, 6, 3, 2, 1, 0, 1, 7, 7],
+                "node18": [7, 7, 7, 4, 3, 2, 1, 0, 8, 8],
+                "node5": [1, 1, 1, 4, 5, 6, 7, 8, 0, 1],
+                "node6": [2, 2, 2, 4, 5, 6, 7, 8, 1, 0],
+            },
+            orient="index",
+            columns=[
+                "node3",
+                "node7",
+                "node9",
+                "node11",
+                "node13",
+                "node15",
+                "node17",
+                "node18",
+                "node5",
+                "node6",
+            ],
+            dtype=np.float64,
+        ).loc[observed_dissimilarity_map.index, observed_dissimilarity_map.columns]
         pd.testing.assert_frame_equal(
             observed_dissimilarity_map, expected_dissimilarity_map
         )
@@ -1900,6 +1952,22 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(
             tree.get_character_states("3"), [0, 1, -1, 1, 0, 0, 1, -1, -1]
         )
+
+    def test_reorder_children(self):
+        tree = nx.DiGraph()
+        tree.add_nodes_from(["0", "1", "2", "3"])
+        tree.add_edges_from([("0", "1"), ("1", "2"), ("1", "3")])
+        tree = cas.data.CassiopeiaTree(tree=tree)
+        self.assertEqual(list(tree.children("1")), ["2", "3"])
+        # Test reorder leaf
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("3", [])
+        # test with invalid children
+        with self.assertRaises(CassiopeiaTreeError):
+            tree.reorder_children("1", ["4"])
+        # test with valid children
+        tree.reorder_children("1", ["3", "2"])
+        self.assertEqual(list(tree.children("1")), ["3", "2"])
 
 
 if __name__ == "__main__":
