@@ -27,6 +27,9 @@ Fix Bugs
 Look through the GitHub issues for bugs. Anything tagged with "bug" and "help
 wanted" is open to whoever wants to implement it.
 
+Ideally, when you are fixing a bug, please first provide a test that breaks
+due to the bug. Your contributed code should then fix this test.
+
 Implement Features
 ~~~~~~~~~~~~~~~~~~
 
@@ -50,7 +53,7 @@ If you are proposing a feature:
 * Explain in detail how it would work.
 * Keep the scope as narrow as possible, to make it easier to implement.
 * Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
+  are welcome
 
 Get Started!
 ------------
@@ -66,7 +69,7 @@ Ready to contribute? Here's how to set up `cassiopeia` for local development.
 
     $ mkvirtualenv cassiopeia
     $ cd cassiopeia/
-    $ python setup.py develop
+    $ make install
 
 4. Create a branch for local development::
 
@@ -78,10 +81,9 @@ Ready to contribute? Here's how to set up `cassiopeia` for local development.
    tests, including testing other Python versions with tox::
 
     $ flake8 cassiopeia tests
-    $ python setup.py test or py.test
-    $ tox
+    $ make test
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   To get flake8, just pip install them into your virtualenv.
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -110,7 +112,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.6. Check
+3. The pull request should work for Python >= 3.8. Check
    https://travis-ci.org/YosefLab/Cassiopeia/pull_requests
    and make sure that the tests pass for all supported Python versions.
 

@@ -30,8 +30,8 @@ class SpatialDataSimulator(DataSimulator):
 
         This sets the spatial coordinates of all nodes in the tree. These
         coordinates are stored as the `spatial` node attribute. For leaves,
-        these exact coordinates are saved as columns in the `cell_meta` attribute
-        of the CassiopeiaTree.
+        these exact coordinates are saved as columns in the `cell_meta`
+        attribute of the CassiopeiaTree.
 
         Args:
             tree: the CassiopeiaTree to overlay the lineage tracing data on.
