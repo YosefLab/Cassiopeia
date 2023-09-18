@@ -1012,6 +1012,7 @@ def call_lineage_groups(
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
+    min_umi_per_intbc: int = 1,
     min_cluster_prop: float = 0.005,
     min_intbc_thresh: float = 0.05,
     inter_doublet_threshold: float = 0.35,
@@ -1046,6 +1047,8 @@ def call_lineage_groups(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed in order for that
             cell not to be filtered during filtering
+        min_umi_per_intbc: The threshold specifying the minimum number of UMIs
+            an intBC needs to have in order to be retained during filtering
         min_cluster_prop: The minimum cluster size in the putative lineage
             assignment step, as a proportion of the number of cells
         min_intbc_thresh: The threshold specifying the minimum proportion of
@@ -1074,6 +1077,10 @@ def call_lineage_groups(
     piv = pd.pivot_table(
         input_df, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
     )
+    # Filter out intBCs with fewer than min_umi_per_intbc UMIs
+    piv[piv < min_umi_per_intbc] = np.nan
+
+    # Normalize by total UMIs per cell
     piv = piv.div(piv.sum(axis=1), axis=0)
 
     # Reorder piv columns by binarized intBC frequency
