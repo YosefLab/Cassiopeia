@@ -8,6 +8,7 @@ import time
 
 from typing import Dict, List, Tuple
 
+from collections import Counter
 from matplotlib import colors, colorbar
 import matplotlib.pyplot as plt
 import numpy as np
@@ -209,14 +210,14 @@ def filter_intbcs_lg_sets(
 def score_lineage_kinships(
     PIV: pd.DataFrame,
     master_LGs: List[int],
-    master_intBCs: Dict[int, pd.DataFrame],
+    master_intBCs: Dict[int, List[str]],
 ) -> pd.DataFrame:
-    """Identifies which lineage group each cell should belong to.
+    """Calculates lineage group kinship for each cell.
 
     Given a set of cells and a set of lineage groups with their intBCs sets,
-    identifies which lineage group each cell has the most kinship with. Kinship
-    is defined as the total UMI count of intBCs shared between the cell and the
-    intBC set of a lineage group.
+    calculates lineage group kinship for each cell. Kinship is defined as the 
+    UMI count of intBCs shared between the cell and the intBC set of a lineage 
+    group normalized by the total UMI count of the cell.
 
     Args:
         PIV: A pivot table of cells labled with lineage group assignments
@@ -226,8 +227,7 @@ def score_lineage_kinships(
 
 
     Returns:
-        A DataFrame that contains the lineage group for each cell with the
-            greatest kinship
+        A DataFrame that contains the lineage group kinship for each cell.
     """
 
     dfLG2intBC = pd.DataFrame()
@@ -259,67 +259,85 @@ def score_lineage_kinships(
 
     # Matrix math
     dfCellBC2LG = subPIVOT.dot(dfLG2intBC.T)
-    max_kinship = dfCellBC2LG.max(axis=1)
 
-    max_kinship_ind = dfCellBC2LG.apply(lambda x: np.argmax(x), axis=1)
-    max_kinship_frame = max_kinship.to_frame()
-
-    max_kinship_LG = pd.concat(
-        [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    ) 
-    max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
-
-    return max_kinship_LG
+    return dfCellBC2LG
 
 
 def annotate_lineage_groups(
-    dfMT: pd.DataFrame,
-    max_kinship_LG: pd.DataFrame,
-    master_intBCs: Dict[int, pd.DataFrame],
+    at: pd.DataFrame,
+    kinship_scores: pd.DataFrame,
+    doublet_kinship_thresh: float = 0.8,
 ) -> pd.DataFrame:
     """
     Assign cells in the allele table to a lineage group.
 
-    Takes in an allele table and a DataFrame identifying the chosen
-    lineage group for each cell and annotates the lineage groups in the
-    original DataFrame.
+    Takes in an allele table and a DataFrame of kinship scores for each cell
+    which is used to assign cells to lineage groups. If a cell has a kinship
+    score above doublet_kinship_thresh, it is assigned to the lineage group
+    with the highest kinship score. If a cell has a kinship score below
+    doublet_kinship_thresh, it is assigned to the two lineage groups with the
+    highest kinship scores. Returns the original allele table with an
+    additional lineageGrp column.
 
     Args:
-        dfMT: An allele table of cellBC-UMI-allele groups
-        max_kinship_LG: A DataFrame with the max kinship lineage group for each
+        at: An allele table of cellBC-UMI-allele groups
+        kinship_scores: A DataFrame with lineage kinship scores for each
             cell, see documentation of score_lineage_kinships
-        master_intBCs: A dictionary relating lineage group to its set of intBCs
+        doublet_kinship_thresh: A float between 0 and 1 specifying the
+            the minimum kinship score a cell needs to be assigned to a single
+            lineage group.
 
     Returns:
         Original allele table with annotated lineage group assignments for cells
     """
 
-    dfMT["lineageGrp"] = 0
+    if doublet_kinship_thresh:
+        logger.info("Identifying inter-lineage group doublets with"
+                    f" kinship threshold {doublet_kinship_thresh}...")
 
+    # Assign cells to lineage groups using kinship scores
     cellBC2LG = {}
-    for n in max_kinship_LG.index:
-        cellBC2LG[n] = max_kinship_LG.loc[n, "lineageGrp"]
+    n_doublets = 0
+    for cellBC, scores in kinship_scores.iterrows():
+        sorted_scores = scores.sort_values(ascending=False)
+        if doublet_kinship_thresh:
+            if sorted_scores[0] < doublet_kinship_thresh:
+                cellBC2LG[cellBC] = [sorted_scores.index[0],
+                                     sorted_scores.index[1]]
+                n_doublets += 1
+            else:
+                cellBC2LG[cellBC] = [sorted_scores.index[0]]
+        else:
+            cellBC2LG[cellBC] = [sorted_scores.index[0]]
 
-    dfMT["lineageGrp"] = dfMT["cellBC"].map(cellBC2LG)
+    if doublet_kinship_thresh:
+        n_cells = len(cellBC2LG)
+        logger.debug(f"Identified {n_doublets} inter-group doublets"
+                    f" out of {n_cells} cells")
 
-    dfMT["lineageGrp"] = dfMT["lineageGrp"].fillna(value=0)
-
-    lg_sizes = {}
+    # Rename lineage groups based on size
+    lg_counts = Counter([item for sublist in cellBC2LG.values() for item in sublist])
     rename_lg = {}
+    i = 1
+    for lg, count in lg_counts.most_common():
+        rename_lg[lg] = i
+        i += 1
 
-    for n, g in dfMT.groupby("lineageGrp"):
-        if n != 0:
-            lg_sizes[n] = len(g["cellBC"].unique())
+    # Rename lineage groups in cellBC2LG
+    for cellBC, lgs in cellBC2LG.items():
+        if len(lgs) == 1:
+            cellBC2LG[cellBC] = rename_lg[lgs[0]]
+        else:
+            if rename_lg[lgs[0]] < rename_lg[lgs[1]]:
+                cellBC2LG[cellBC] = (rename_lg[lgs[0]], rename_lg[lgs[1]])
+            else:
+                cellBC2LG[cellBC] = (rename_lg[lgs[1]], rename_lg[lgs[0]])
 
-    sorted_by_value = sorted(lg_sizes.items(), key=lambda kv: kv[1])[::-1]
-    for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
-        rename_lg[tup[0]] = float(i)
+    # Add lineageGrp column to allele table
+    at["lineageGrp"] = at["cellBC"].map(cellBC2LG)
+    at["lineageGrp"] = at["lineageGrp"].fillna(value=0).astype(str)
 
-    rename_lg[0] = 0.0
-
-    dfMT["lineageGrp"] = dfMT.apply(lambda x: rename_lg[x.lineageGrp], axis=1)
-
-    return dfMT
+    return at
 
 
 def filter_intbcs_final_lineages(
