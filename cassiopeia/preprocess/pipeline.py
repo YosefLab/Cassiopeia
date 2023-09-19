@@ -1029,11 +1029,12 @@ def call_lineage_groups(
         many intBCs they share with each intBC group (kinship).
 
         2. Refines these putative groups by removing non-informative intBCs
-        and reassigning cells through kinship.
+        and doublet lineage groups and reassigning cells through kinship.
 
-        3. Removes all inter-lineage doublets, defined as cells that have
-        relatively equal kinship scores across multiple lineages and whose
-        assignments are therefore ambigious.
+        3. Identifies all inter-lineage doublets, defined as cells that have
+        max kinship scores below a threshold. If `keep_doublets` is True,
+        these doublets will be retained in the final allele table with a
+        lineage group of (lg1, lg2).
 
         4. Finally, performs one more round of filtering non-informative intBCs
         and cellBCs with low UMI counts before returning a final table of
@@ -1173,13 +1174,13 @@ def call_lineage_groups(
     logger.info(
         "Filtering out low proportion intBCs in finalized lineage groups..."
     )
-    #filtered_lgs = lineage_utils.filter_intbcs_final_lineages(
-    #    allele_table, min_intbc_thresh=min_intbc_thresh
-    #)
+    filtered_lgs = lineage_utils.filter_intbcs_final_lineages(
+        allele_table, min_intbc_thresh=min_intbc_thresh
+    )
 
-    #allele_table = lineage_utils.filtered_lineage_group_to_allele_table(
-    #    filtered_lgs
-    #)
+    allele_table = lineage_utils.filtered_lineage_group_to_allele_table(
+        filtered_lgs
+    )
 
     logger.debug("Final lineage group assignments:")
     for n, g in allele_table.groupby(["lineageGrp"]):
