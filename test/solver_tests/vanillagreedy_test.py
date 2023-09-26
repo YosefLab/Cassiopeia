@@ -166,7 +166,17 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
-        keep_rows = cm.apply(lambda x: [set(s) if type(s) == tuple else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
+        keep_rows = (
+            cm.apply(
+                lambda x: [
+                    set(s) if type(s) == tuple else set([s]) for s in x.values
+                ],
+                axis=0,
+            )
+            .apply(tuple, axis=1)
+            .drop_duplicates()
+            .index.values
+        )
         unique_character_matrix = cm.loc[keep_rows].copy()
 
         freq_dict = vgsolver.compute_mutation_frequencies(
