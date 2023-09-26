@@ -3,6 +3,8 @@ This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
 represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
+from collections import defaultdict
+import functools
 from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import networkx as nx
@@ -203,11 +205,15 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             pair
         """
 
+        unravel_ambiguous = lambda x: [x] if type(x) != tuple else list(x)
+
         subset_cm = unique_character_matrix.loc[samples, :].to_numpy()
         freq_dict = {}
         for char in range(subset_cm.shape[1]):
             char_dict = {}
-            state_counts = np.unique(subset_cm[:, char], return_counts=True)
+            all_states = functools.reduce(lambda a, b: a + b, [unravel_ambiguous(s) for s in subset_cm[:, char]])
+            state_counts = np.unique(all_states, return_counts=True)
+
             for i in range(len(state_counts[0])):
                 state = state_counts[0][i]
                 count = state_counts[1][i]
