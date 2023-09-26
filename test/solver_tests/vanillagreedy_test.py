@@ -30,23 +30,7 @@ def find_triplet_structure(triplet, T):
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
-    def test_raises_error_on_ambiguous(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, (0, 1), 1, 2, -1],
-                "c2": [0, 0, 3, 2, -1],
-                "c3": [-1, 4, 0, 2, 2],
-                "c4": [4, 4, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        with self.assertRaises(GreedySolverError):
-            solver = VanillaGreedySolver()
-            solver.solve(tree)
-
+    
     def test_basic_freq_dict(self):
         cm = pd.DataFrame.from_dict(
             {
@@ -541,6 +525,111 @@ class VanillaGreedySolverTest(unittest.TestCase):
                 (9, "c4"),
                 (10, 9),
                 (10, 7),
+            ]
+        )
+        observed_tree = vg_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_ambiguous_no_missing(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [(5, 0), 0, 1, 2, 0],
+                "c2": [5, 0, 0, 2, 0],
+                "c3": [4, 0, 3, 2, (2, 1)],
+                "c4": [0, (4, 0), 0, 2, 2],
+                "c5": [0, 4, 1, 2, 2],
+                "c6": [4, 0, 0, 2, 2],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        vgsolver = VanillaGreedySolver()
+
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
+
+        left, right = vgsolver.perform_split(
+            unique_character_matrix, unique_character_matrix.index
+        )
+
+        self.assertEqual(set(left), set(["c4", "c5", "c6", "c3"]))
+        self.assertEqual(set(right), set(["c1", "c2"]))
+
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
+
+        vgsolver.solve(vg_tree)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (6, "c1"),
+                (6, "c2"),
+                (7, "c4"),
+                (7, "c5"),
+                (8, "c3"),
+                (8, "c6"),
+                (9, 7),
+                (9, 8),
+                (10, 6),
+                (10, 9),
+            ]
+        )
+        observed_tree = vg_tree.get_tree_topology()
+        for triplet in triplets:
+            expected_triplet = find_triplet_structure(triplet, expected_tree)
+            observed_triplet = find_triplet_structure(triplet, observed_tree)
+            self.assertEqual(expected_triplet, observed_triplet)
+
+    def test_ambiguous_with_missing(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [(5, 1), 0, 1, 2, 0],
+                "c2": [5, 0, 0, 2, -1],
+                "c3": [4, 0, 3, 2, -1],
+                "c4": [-1, 4, 0, 2, 2],
+                "c5": [0, 4, 1, 2, 2],
+                "c6": [4, 0, 0, 2, (2, 1)],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+        vgsolver = VanillaGreedySolver()
+
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
+
+        left, right = vgsolver.perform_split(
+            unique_character_matrix, unique_character_matrix.index
+        )
+
+        self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
+        self.assertListEqual(right, ["c1", "c2"])
+
+        triplets = itertools.combinations(
+            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
+        )
+
+
+        vgsolver.solve(vg_tree)
+        expected_tree = nx.DiGraph()
+        expected_tree.add_edges_from(
+            [
+                (6, "c1"),
+                (6, "c2"),
+                (7, "c4"),
+                (7, "c5"),
+                (8, "c3"),
+                (8, "c6"),
+                (9, 7),
+                (9, 8),
+                (10, 6),
+                (10, 9),
             ]
         )
         observed_tree = vg_tree.get_tree_topology()

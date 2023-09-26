@@ -43,6 +43,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     def __init__(self, prior_transformation: str = "negative_log"):
 
         super().__init__(prior_transformation)
+        self.allow_ambiguous = False
 
     def perform_split(
         self,
@@ -157,10 +158,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         if any(
             is_ambiguous_state(state)
             for state in character_matrix.values.flatten()
-        ):
+        ) and not self.allow_ambiguous:
             raise GreedySolverError("Solver does not support ambiguous states.")
 
-        keep_rows = character_matrix.apply(lambda x: [set(s) if type(s) == tuple else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
+        keep_rows = character_matrix.apply(lambda x: [set(s) if is_ambiguous_state(s) else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
         unique_character_matrix = character_matrix.loc[keep_rows].copy()
 
         tree = nx.DiGraph()
