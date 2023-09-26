@@ -115,6 +115,78 @@ class VanillaGreedySolverTest(unittest.TestCase):
         self.assertEqual(freq_dict[2][-1], 0)
         self.assertNotIn(3, freq_dict[1].keys())
 
+    def test_ambiguous_freq_dict(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, (2, 3), 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        vgsolver = VanillaGreedySolver()
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
+        freq_dict = vgsolver.compute_mutation_frequencies(
+            ["c1", "c2", "c3", "c4"],
+            unique_character_matrix,
+            vg_tree.missing_state_indicator,
+        )
+
+        self.assertEqual(len(freq_dict), 5)
+        self.assertEqual(len(freq_dict[0]), 4)
+        self.assertEqual(len(freq_dict[1]), 4)
+        self.assertEqual(len(freq_dict[2]), 4)
+        self.assertEqual(len(freq_dict[3]), 3)
+        self.assertEqual(len(freq_dict[4]), 3)
+        self.assertEqual(freq_dict[0][5], 1)
+        self.assertEqual(freq_dict[1][0], 2)
+        self.assertEqual(freq_dict[1][1], 1)
+        self.assertEqual(freq_dict[3][3], 1)
+        self.assertEqual(freq_dict[2][-1], 0)
+        self.assertNotIn(3, freq_dict[1].keys())
+
+    def test_ambiguous_duplicate_freq_dict(self):
+        cm = pd.DataFrame.from_dict(
+            {
+                "c1": [5, (0, 1), 1, 2, -1],
+                "c1_dup": [5, (0, 1), 1, 2, -1],
+                "c2": [0, 0, 3, 2, -1],
+                "c3": [-1, 4, 0, (2, 3), 2],
+                "c4": [4, 4, 1, 2, 0],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
+
+        vgsolver = VanillaGreedySolver()
+        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
+
+        freq_dict = vgsolver.compute_mutation_frequencies(
+            unique_character_matrix.index,
+            unique_character_matrix,
+            vg_tree.missing_state_indicator,
+        )
+
+        self.assertEqual(len(freq_dict), 5)
+        self.assertEqual(len(freq_dict[0]), 4)
+        self.assertEqual(len(freq_dict[1]), 4)
+        self.assertEqual(len(freq_dict[2]), 4)
+        self.assertEqual(len(freq_dict[3]), 3)
+        self.assertEqual(len(freq_dict[4]), 3)
+        self.assertEqual(freq_dict[0][5], 1)
+        self.assertEqual(freq_dict[1][0], 2)
+        self.assertEqual(freq_dict[1][1], 1)
+        self.assertEqual(freq_dict[3][3], 1)
+        self.assertEqual(freq_dict[2][-1], 0)
+        self.assertNotIn(3, freq_dict[1].keys())
+
     def test_average_missing_data(self):
         cm = pd.DataFrame.from_dict(
             {
