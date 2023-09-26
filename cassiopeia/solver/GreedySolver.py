@@ -160,7 +160,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         ):
             raise GreedySolverError("Solver does not support ambiguous states.")
 
-        unique_character_matrix = character_matrix.drop_duplicates()
+        keep_rows = character_matrix.apply(lambda x: [set(s) if type(s) == tuple else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
+        unique_character_matrix = character_matrix.loc[keep_rows].copy()
 
         tree = nx.DiGraph()
         tree.add_nodes_from(list(unique_character_matrix.index))

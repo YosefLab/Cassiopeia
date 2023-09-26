@@ -154,7 +154,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         cm = pd.DataFrame.from_dict(
             {
                 "c1": [5, (0, 1), 1, 2, -1],
-                "c1_dup": [5, (0, 1), 1, 2, -1],
+                "c1_dup": [5, (1, 0), 1, 2, -1],
                 "c2": [0, 0, 3, 2, -1],
                 "c3": [-1, 4, 0, (2, 3), 2],
                 "c4": [4, 4, 1, 2, 0],
@@ -166,7 +166,8 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
 
         vgsolver = VanillaGreedySolver()
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
+        keep_rows = cm.apply(lambda x: [set(s) if type(s) == tuple else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
+        unique_character_matrix = cm.loc[keep_rows].copy()
 
         freq_dict = vgsolver.compute_mutation_frequencies(
             unique_character_matrix.index,
