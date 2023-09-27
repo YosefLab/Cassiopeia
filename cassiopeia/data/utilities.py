@@ -29,6 +29,12 @@ def get_lca_characters(
     character if only one of the constituent vectors has a missing value at that
     index, and imputes missing value if all have a missing value at that index.
 
+    Importantly, this method will infer ancestral characters for an ambiguous
+    state. If the intersection between two states (even ambiguous) is non-zero
+    and not the missing state, and has length exactly 1, we assign the ancestral
+    state this value. Else, if the intersection length is greater than 1, the
+    value '0' is assigned.  
+
     Args:
         vecs: A list of character vectors to generate an LCA for
         missing_state_indicator: The character representing missing values
@@ -42,19 +48,13 @@ def get_lca_characters(
         assert len(i) == k
     lca_vec = [0] * len(vecs[0])
     for i in range(k):
-        chars = set()
-        for vec in vecs:
-            if is_ambiguous_state(vec[i]):
-                chars = chars.union(vec[i])
-            else:
-                chars.add(vec[i])
-        if len(chars) == 1:
-            lca_vec[i] = list(chars)[0]
+        if np.all(np.array([vec[i] for vec in vecs], dtype=object) == missing_state_indicator):
+            lca_vec[i] = missing_state_indicator
         else:
-            if missing_state_indicator in chars:
-                chars.remove(missing_state_indicator)
-                if len(chars) == 1:
-                    lca_vec[i] = list(chars)[0]
+            all_states = [vec[i] for vec in vecs if vec[i] != missing_state_indicator]
+            chars = set.intersection(*map(set, [state if is_ambiguous_state(state) else [state] for state in all_states]))        
+            if len(chars) == 1:
+                lca_vec[i] = list(chars)[0]
     return lca_vec
 
 
