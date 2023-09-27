@@ -12,7 +12,11 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import GreedySolverError, is_ambiguous_state, unravel_ambiguous_states
+from cassiopeia.mixins import (
+    GreedySolverError,
+    is_ambiguous_state,
+    unravel_ambiguous_states,
+)
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
@@ -41,7 +45,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     """
 
     def __init__(self, prior_transformation: str = "negative_log"):
-
         super().__init__(prior_transformation)
         self.allow_ambiguous = False
 
@@ -155,13 +158,29 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
         # Raise exception if the character matrix has ambiguous states.
-        if any(
-            is_ambiguous_state(state)
-            for state in character_matrix.values.flatten()
-        ) and not self.allow_ambiguous:
-            raise GreedySolverError("Ambiguous states are not currently supported with this solver.")
+        if (
+            any(
+                is_ambiguous_state(state)
+                for state in character_matrix.values.flatten()
+            )
+            and not self.allow_ambiguous
+        ):
+            raise GreedySolverError(
+                "Ambiguous states are not currently supported with this solver."
+            )
 
-        keep_rows = character_matrix.apply(lambda x: [set(s) if is_ambiguous_state(s) else set([s]) for s in x.values], axis=0).apply(tuple, axis=1).drop_duplicates().index.values
+        keep_rows = (
+            character_matrix.apply(
+                lambda x: [
+                    set(s) if is_ambiguous_state(s) else set([s])
+                    for s in x.values
+                ],
+                axis=0,
+            )
+            .apply(tuple, axis=1)
+            .drop_duplicates()
+            .index.values
+        )
         unique_character_matrix = character_matrix.loc[keep_rows].copy()
 
         tree = nx.DiGraph()
@@ -198,9 +217,14 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Generates a dictionary that maps each character to a dictionary of state/
         sample frequency pairs, allowing quick lookup. Subsets the character matrix
         to only include the samples in the sample set.
+
+        This currently supports ambiguous states, for the GreedySolvers that
+        support ambiguous states during inference.
+
         Args:
             samples: The set of relevant samples in calculating frequencies
-            unique_character_matrix: The character matrix from which to calculate frequencies
+            unique_character_matrix: The character matrix from which to
+                calculate frequencies
             missing_state_indicator: The character representing missing values
         Returns:
             A dictionary containing frequency information for each character/state
@@ -210,7 +234,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         freq_dict = {}
         for char in range(subset_cm.shape[1]):
             char_dict = {}
-            all_states = unravel_ambiguous_states(subset_cm[:,char])
+            all_states = unravel_ambiguous_states(subset_cm[:, char])
             state_counts = np.unique(all_states, return_counts=True)
 
             for i in range(len(state_counts[0])):
