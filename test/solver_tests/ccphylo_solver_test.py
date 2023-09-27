@@ -1,11 +1,11 @@
 """
 Test the ccphylo solver implementations against the standard NJ and UPGMA
 """
-import unittest
-from typing import Dict, Optional
-from unittest import mock
-
 import os
+
+import unittest
+from unittest import mock
+from typing import Dict, Optional
 
 import configparser
 import itertools
@@ -50,8 +50,7 @@ def delta_fn(
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__),
                          "..","..","cassiopeia","config.ini"))
-CCPHYLO_CONFIGURED = (config.get("Paths","ccphylo_path") != 
-                      "/path/to/ccphylo/ccphylo")
+CCPHYLO_CONFIGURED = (os.path.exists(config.get("Paths","ccphylo_path")))
 print(CCPHYLO_CONFIGURED)
 
 
