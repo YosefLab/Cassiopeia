@@ -121,6 +121,17 @@ def main():
             )
             continue
 
+        # If intBC correction was performed, don't correct in the
+        # filter_molecule_table step
+        if stage == "filter_molecule_table" and pipeline_parameters[stage].get(
+            "whitelist"
+        ):
+            logger.warning(
+                "intBC whitelist was provided. "
+                "Turning off intBC correction in `filter_molecule_table` stage."
+            )
+            pipeline_parameters[stage]["intbc_dist_thresh"] = -1
+
         procedure = STAGES[stage]
         data = procedure(data, **pipeline_parameters[stage])
 
