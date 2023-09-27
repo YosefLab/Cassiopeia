@@ -1583,6 +1583,63 @@ class TestCassiopeiaTree(unittest.TestCase):
         for u in cas_tree.nodes:
             self.assertEqual(cas_tree.get_time(u), expected_times[u])
 
+    def test_mutationless_edge_collapse_ambiguous(self):
+        tree = nx.DiGraph()
+        for i in range(7):
+            tree.add_node(str(i))
+        tree.add_edge("4", "0")
+        tree.add_edge("4", "1")
+        tree.add_edge("5", "2")
+        tree.add_edge("5", "3")
+        tree.add_edge("6", "4")
+        tree.add_edge("6", "5")
+        character_matrix = pd.DataFrame.from_dict(
+            {
+                "0": [1, 0, 3, (4,3), 5],
+                "1": [1, 0, 3, 6, (5, 3)],
+                "2": [(1, (2, 0), 3, 4, -1)],
+                "3": [1, 0, 3, 4, 5],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+        cas_tree = cas.data.CassiopeiaTree(
+            character_matrix=character_matrix, tree=tree
+        )
+        cas_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
+
+        new_map = {}
+        for i in cas_tree.nodes:
+            new_map[i] = (
+                "|".join([str(c) for c in cas_tree.get_character_states(i)])
+                + f",{i}"
+            )
+        cas_tree.relabel_nodes(new_map)
+
+        expected_nodes = set(
+            [
+                "1|0|3|(4,3)|5,0",
+                "1|0|3|6|(5,3),1",
+                "1|(2,0)|3|4|-1,2",
+                "1|0|3|4|5,3",
+                "1|2|3|0|5,5",
+                "1|0|3|0|5,6",
+            ]
+        )
+
+        expected_edges = set(
+            [
+                ("1|0|3|0|5,6", "1|0|3|(4,3)|5,0"),
+                ("1|0|3|0|5,6", "1|0|3|6|(5,3),1"),
+                ("1|2|3|0|5,5", "1|0|3|4|5,3"),
+                ("1|2|3|0|5,5", "1|(2,0)|3|4|-1,2"),
+                ("1|0|3|0|5,6", "1|2|3|0|5,5")
+            ]
+        )
+
+        self.assertEqual(set(cas_tree.nodes), expected_nodes)
+        self.assertEqual(set(cas_tree.edges), expected_edges)
+
     def test_set_and_add_attribute(self):
 
         tree = cas.data.CassiopeiaTree(
