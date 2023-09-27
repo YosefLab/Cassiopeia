@@ -61,18 +61,20 @@ def assign_missing_average(
         for char in range(character_matrix.shape[1]):
             state = character_array[missing_sample, char]
             if state != missing_state_indicator and state != 0:
-                all_states = (
-                    unravel_ambiguous_states(subset_character_matrix[:, char])
+                all_states = unravel_ambiguous_states(
+                    subset_character_matrix[:, char]
                 )
                 state_counts = np.unique(all_states, return_counts=True)
 
                 if is_ambiguous_state(state):
-                    for ambig_state in state: 
-                        ind = np.where(state_counts[0] == ambig_state)
+                    ambiguous_states = [s for s in state if s != 0]
+                    for ambiguous_state in ambiguous_states:
+                        ind = np.where(state_counts[0] == ambiguous_state)
                         if len(ind[0]) > 0:
                             if weights:
                                 score += (
-                                    weights[char][ambig_state] * state_counts[1][ind[0][0]]
+                                    weights[char][ambiguous_state]
+                                    * state_counts[1][ind[0][0]]
                                 )
                             else:
                                 score += state_counts[1][ind[0][0]]
@@ -82,11 +84,12 @@ def assign_missing_average(
                     if len(ind[0]) > 0:
                         if weights:
                             score += (
-                                weights[char][state] * state_counts[1][ind[0][0]]
+                                weights[char][state]
+                                * state_counts[1][ind[0][0]]
                             )
                         else:
                             score += state_counts[1][ind[0][0]]
-                            
+
         return score
 
     subset_character_array_left = character_array[left_indices, :]
