@@ -14,6 +14,7 @@ import pandas as pd
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import (
     GreedySolverError,
+    find_duplicate_groups,
     is_ambiguous_state,
     unravel_ambiguous_states,
 )
@@ -266,20 +267,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             The tree with duplicates added
         """
 
-        character_matrix.index.name = "index"
-        duplicate_groups = (
-            character_matrix[character_matrix.duplicated(keep=False) == True]
-            .reset_index()
-            .groupby(character_matrix.columns.tolist())["index"]
-            .agg(["first", tuple])
-            .set_index("first")["tuple"]
-            .to_dict()
-        )
+        
+        duplicate_mappings = find_duplicate_groups(character_matrix)
 
-        for i in duplicate_groups:
+        for i in duplicate_mappings:
             new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
-            for duplicate in duplicate_groups[i]:
+            for duplicate in duplicate_mappings[i]:
                 tree.add_edge(new_internal_node, duplicate)
 
         return tree

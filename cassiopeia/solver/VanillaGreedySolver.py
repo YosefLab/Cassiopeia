@@ -10,6 +10,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from cassiopeia.mixins.utilities import is_ambiguous_state
 from cassiopeia.solver import (
     GreedySolver,
     missing_data_methods,
@@ -143,7 +144,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         unique_character_array = character_matrix.to_numpy()
         sample_names = list(character_matrix.index)
 
-        ambiguous_contains = lambda query, _s: _s in query if type(query) == tuple else _s == query
+        ambiguous_contains = lambda query, _s: _s in query if is_ambiguous_state(query) else _s == query
 
         for i in sample_indices:
             observed_state = unique_character_array[i, chosen_character]
