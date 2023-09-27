@@ -1401,7 +1401,11 @@ class CassiopeiaTree:
 
         mutations = []
         for i in range(self.n_character):
-            if parent_states[i] != child_states[i]:
+            
+            parent_state = (list(parent_states[i]) if is_ambiguous_state(parent_states[i]) else [parent_states[i]])
+            child_state = (list(child_states[i]) if is_ambiguous_state(child_states[i]) else [child_states[i]])
+
+            if len(np.intersect1d(parent_state, child_state)) < 1:
                 if treat_missing_as_mutations:
                     mutations.append((i, child_states[i]))
                 elif (
