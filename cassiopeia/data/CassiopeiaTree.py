@@ -1832,6 +1832,7 @@ class CassiopeiaTree:
         ] = None,
         prior_transformation: str = "negative_log",
         layer: Optional[str] = None,
+        threads: int = 1
     ) -> None:
         """Computes a dissimilarity map.
 
@@ -1858,6 +1859,7 @@ class CassiopeiaTree:
                         the square root of 1/p
             layer: Character matrix layer to use. If not specified, use the
                 default :attr:`character_matrix`.
+            threads: Number of threads to use for dissimilarity map computation.
         """
 
         if layer is not None:
@@ -1888,6 +1890,7 @@ class CassiopeiaTree:
             dissimilarity_function,
             weights,
             self.missing_state_indicator,
+            threads=threads,
         )
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
