@@ -266,7 +266,6 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             The tree with duplicates added
         """
-
         
         duplicate_mappings = find_duplicate_groups(character_matrix)
 

@@ -53,6 +53,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 Neighbor-Joining algorithm described by Clausen (2023). 
                 Solution is not guaranteed to be exact.
             "ccphylo_nj": CCPhylo implementation of the Neighbor-Joining.
+        threads: Number of threads to use for dissimilarity map computation.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -60,6 +61,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use for dissimilarity map computation.
 
     """
 
@@ -74,6 +76,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         prior_transformation: str = "negative_log",
         fast: bool = False,
         implementation: str = "ccphylo_dnj",
+        threads: int = 1,
     ):
 
         if fast:
@@ -91,6 +94,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             dissimilarity_function=dissimilarity_function,
             add_root=add_root,
             prior_transformation=prior_transformation,
+            threads=threads,
         )
 
     def root_tree(
@@ -284,7 +288,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
         if dissimilarity_map is None:
             cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation
+                self.dissimilarity_function, self.prior_transformation, threads=self.threads
             )
         else:
             dissimilarity = {"root": 0}

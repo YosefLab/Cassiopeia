@@ -207,34 +207,37 @@ def compute_dissimilarity_map(
         numbaize = False
         dissimilarity_func = dissimilarity_function
 
-    dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
-    k, m = divmod(len(dm), threads)
-    batches = [
-        np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)]
-        for i in range(threads)
-    ]
+    if threads > 1:
+        dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
+        k, m = divmod(len(dm), threads)
+        batches = [
+            np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)]
+            for i in range(threads)
+        ]
 
-    with multiprocessing.Pool(processes=threads) as pool:
-        results = list(
-            pool.starmap(
-                __compute_dissimilarity_map_wrapper,
-                [
-                    (
-                        dissimilarity_func,
-                        cm,
-                        batch,
-                        weights,
-                        missing_state_indicator,
-                        numbaize,
-                        ambiguous_present,
-                    )
-                    for batch in batches
-                ],
-            ),
-        )
+        with multiprocessing.Pool(processes=threads) as pool:
+            results = list(
+                pool.starmap(
+                    __compute_dissimilarity_map_wrapper,
+                    [
+                        (
+                            dissimilarity_func,
+                            cm,
+                            batch,
+                            weights,
+                            missing_state_indicator,
+                            numbaize,
+                            ambiguous_present,
+                        )
+                        for batch in batches
+                    ],
+                ),
+            )
 
-    for batch_indices, batch_results in results:
-        dm[batch_indices] = batch_results
+        for batch_indices, batch_results in results:
+            dm[batch_indices] = batch_results
+    else:
+        _, dm = __compute_dissimilarity_map_wrapper(dissimilarity_func, cm, np.arange(C*(C-1) // 2), weights, missing_state_indicator, numbaize, ambiguous_present)
 
     return dm
 
