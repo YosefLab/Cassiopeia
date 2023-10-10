@@ -59,7 +59,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
-        threads: Number of threads to use for dissimilarity map computation.
+        threads: Number of threads to use for solver.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -67,7 +67,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
-        threads: Number of threads to use for dissimilarity map computation.
+        threads: Number of threads to use.
     """
 
     def __init__(
