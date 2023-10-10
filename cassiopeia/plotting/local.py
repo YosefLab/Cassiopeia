@@ -95,7 +95,14 @@ def create_categorical_colorstrip(
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
-    cm = plt.colormaps[cmap]
+    if type(cmap) == str:
+        cm = plt.colormaps[cmap]
+    elif isinstance(cmap, mpl.colors.Colormap):
+        cm = cmap
+    else:
+        raise PlottingError(
+            "Colormap must be a string or a matplotlib colormap."
+        )
     unique_values = set(values.values())
     value_mapping = value_mapping or {
         val: i for i, val in enumerate(unique_values)
@@ -142,7 +149,14 @@ def create_continuous_colorstrip(
     Returns:
         Dictionary of box coordinates and a dictionary of new anchor coordinates.
     """
-    cm = plt.colormaps[cmap]
+    if type(cmap) == str:
+        cm = plt.colormaps[cmap]
+    elif isinstance(cmap, mpl.colors.Colormap):
+        cm = cmap
+    else:
+        raise PlottingError(
+            "Colormap must be a string or a matplotlib colormap."
+        )
     max_value = vmax if vmax is not None else max(values.values())
     min_value = vmin if vmin is not None else min(values.values())
     if min_value >= max_value:
