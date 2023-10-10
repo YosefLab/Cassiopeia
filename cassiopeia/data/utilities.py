@@ -4,6 +4,7 @@ General utilities for the datasets encountered in Cassiopeia.
 import collections
 from joblib import delayed
 import multiprocessing
+from multiprocessing import shared_memory
 from typing import Callable, Dict, List, Optional, Tuple, Union
 import warnings
 
@@ -164,6 +165,8 @@ def compute_dissimilarity_map(
     An optimized function for computing pairwise dissimilarities between
     samples in a character matrix according to the dissimilarity function.
 
+
+    TODO: Implement parallelization with a shared memory buffer.
     Args:
         cm: Character matrix
         C: Number of samples
@@ -215,6 +218,13 @@ def compute_dissimilarity_map(
             for i in range(threads)
         ]
 
+        # load character matrix into shared memory
+        shm = shared_memory.SharedMemory(
+            create=True, size=cm.nbytes
+        )
+        shared_cm = np.ndarray(cm.shape, dtype=cm.dtype, buffer=shm.buf)
+        shared_cm[:] = cm[:]
+
         with multiprocessing.Pool(processes=threads) as pool:
             results = list(
                 pool.starmap(
@@ -222,7 +232,7 @@ def compute_dissimilarity_map(
                     [
                         (
                             dissimilarity_func,
-                            cm,
+                            shared_cm,
                             batch,
                             weights,
                             missing_state_indicator,
@@ -236,8 +246,21 @@ def compute_dissimilarity_map(
 
         for batch_indices, batch_results in results:
             dm[batch_indices] = batch_results
+
+        # Clean up shared memory buffer
+        del shared_cm
+        shm.close()
+        shm.unlink()
     else:
-        _, dm = __compute_dissimilarity_map_wrapper(dissimilarity_func, cm, np.arange(C*(C-1) // 2), weights, missing_state_indicator, numbaize, ambiguous_present)
+        (_, dm) = __compute_dissimilarity_map_wrapper(
+            dissimilarity_func,
+            cm,
+            np.arange(C * (C - 1) // 2),
+            weights,
+            missing_state_indicator,
+            numbaize,
+            ambiguous_present,
+        )
 
     return dm
 
