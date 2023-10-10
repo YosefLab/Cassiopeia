@@ -1377,6 +1377,11 @@ class CassiopeiaTree:
         Returns a list of tuples (character, state) of mutations that occur
         along an edge. Characters are 0-indexed.
 
+        Note that parent states can be ambiguous if all child states have the
+        same ambiguous state. If this is the case, there will not be a mutation
+        detected along an edge, but we handle this case so as to not throw
+        an error handling ambiguous states.
+
         Args:
             parent: parent in tree
             child: child in tree

@@ -165,8 +165,6 @@ def compute_dissimilarity_map(
     An optimized function for computing pairwise dissimilarities between
     samples in a character matrix according to the dissimilarity function.
 
-
-    TODO: Implement parallelization with a shared memory buffer.
     Args:
         cm: Character matrix
         C: Number of samples
