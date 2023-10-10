@@ -389,7 +389,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         ) as compute_dissimilarity_map:
             self.nj_solver_delta.setup_root_finder(tree)
             compute_dissimilarity_map.assert_called_once_with(
-                delta_fn, "negative_log"
+                delta_fn, "negative_log", threads=1
             )
         self.assertEqual(tree.root_sample_name, "root")
 
