@@ -322,8 +322,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # get ccphylo path
         config = configparser.ConfigParser()
-        config.read(os.path.join(os.path.dirname(__file__),"..","config.ini"))
-        self._ccphylo_path = config.get("Paths","ccphylo_path")
+        config_file = os.path.join(os.path.dirname(__file__),"..","config.ini")
+        self._ccphylo_path = ""
+        if os.path.exists(config_file):
+            config.read(config_file)
+            self._ccphylo_path = config.get("Paths","ccphylo_path")
 
         #check that ccphylo_path is valid
         if not os.path.exists(self._ccphylo_path):
