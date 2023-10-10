@@ -53,7 +53,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 Neighbor-Joining algorithm described by Clausen (2023). 
                 Solution is not guaranteed to be exact.
             "ccphylo_nj": CCPhylo implementation of the Neighbor-Joining.
-        threads: Number of threads to use for dissimilarity map computation.
+        threads: Number of threads to use for solver.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -61,7 +61,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
-        threads: Number of threads to use for dissimilarity map computation.
+        threads: Number of threads to use for solver.
 
     """
 
