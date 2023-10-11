@@ -898,6 +898,45 @@ class TestCassiopeiaTree(unittest.TestCase):
             CassiopeiaTreeWarning, tree.set_dissimilarity_map, dissimilarity_map
         )
 
+    def test_set_dissimilarity_map_parallel(self):
+
+        tree = cas.data.CassiopeiaTree(self.character_matrix)
+        tree.compute_dissimilarity_map(delta_fn, threads=2)
+        observed_dissimilarity_map = tree.get_dissimilarity_map()
+
+        expected_dissimilarity_map = pd.DataFrame.from_dict(
+            {
+                "node3": [0, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+                "node7": [1, 0, 1, 2, 3, 4, 5, 6, 2, 2],
+                "node9": [2, 1, 0, 1, 2, 3, 4, 5, 3, 3],
+                "node11": [3, 2, 1, 0, 1, 2, 3, 4, 4, 4],
+                "node13": [4, 3, 2, 1, 0, 1, 2, 3, 5, 5],
+                "node15": [5, 4, 3, 2, 1, 0, 1, 2, 6, 6],
+                "node17": [6, 5, 4, 3, 2, 1, 0, 1, 7, 7],
+                "node18": [7, 6, 5, 4, 3, 2, 1, 0, 8, 8],
+                "node5": [1, 2, 3, 4, 5, 6, 7, 8, 0, 1],
+                "node6": [2, 2, 3, 4, 5, 6, 7, 8, 1, 0],
+            },
+            orient="index",
+            columns=[
+                "node3",
+                "node7",
+                "node9",
+                "node11",
+                "node13",
+                "node15",
+                "node17",
+                "node18",
+                "node5",
+                "node6",
+            ],
+            dtype=np.float64,
+        )
+
+        pd.testing.assert_frame_equal(
+            observed_dissimilarity_map, expected_dissimilarity_map
+        )
+
     def test_compute_dissimilarity_map_cluster_dissimilarity(self):
         tree = cas.data.CassiopeiaTree(self.ambiguous_character_matrix)
         with self.assertWarns(data_utilities.CassiopeiaTreeWarning):
@@ -1582,6 +1621,63 @@ class TestCassiopeiaTree(unittest.TestCase):
         }
         for u in cas_tree.nodes:
             self.assertEqual(cas_tree.get_time(u), expected_times[u])
+
+    def test_mutationless_edge_collapse_ambiguous(self):
+        tree = nx.DiGraph()
+        for i in range(7):
+            tree.add_node(str(i))
+        tree.add_edge("4", "0")
+        tree.add_edge("4", "1")
+        tree.add_edge("5", "2")
+        tree.add_edge("5", "3")
+        tree.add_edge("6", "4")
+        tree.add_edge("6", "5")
+        character_matrix = pd.DataFrame.from_dict(
+            {
+                "0": [1, 0, 3, (4, 3), 5],
+                "1": [1, 0, 3, 6, (5, 3)],
+                "2": [1, (2, 0), 3, 4, -1],
+                "3": [1, 0, 3, 4, 5],
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+        cas_tree = cas.data.CassiopeiaTree(
+            character_matrix=character_matrix, tree=tree
+        )
+        cas_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
+
+        new_map = {}
+        for i in cas_tree.nodes:
+            new_map[i] = (
+                "|".join([str(c) for c in cas_tree.get_character_states(i)])
+                + f",{i}"
+            )
+        cas_tree.relabel_nodes(new_map)
+
+        expected_nodes = set(
+            [
+                "1|0|3|(4, 3)|5,0",
+                "1|0|3|6|(5, 3),1",
+                "1|(2, 0)|3|4|-1,2",
+                "1|0|3|4|5,3",
+                "1|0|3|4|5,5",
+                "1|0|3|0|5,6",
+            ]
+        )
+
+        expected_edges = set(
+            [
+                ("1|0|3|0|5,6", "1|0|3|(4, 3)|5,0"),
+                ("1|0|3|0|5,6", "1|0|3|6|(5, 3),1"),
+                ("1|0|3|4|5,5", "1|0|3|4|5,3"),
+                ("1|0|3|4|5,5", "1|(2, 0)|3|4|-1,2"),
+                ("1|0|3|0|5,6", "1|0|3|4|5,5")
+            ]
+        )
+
+        self.assertEqual(set(cas_tree.nodes), expected_nodes)
+        self.assertEqual(set(cas_tree.edges), expected_edges)
 
     def test_set_and_add_attribute(self):
 

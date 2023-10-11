@@ -20,6 +20,7 @@ We also have provided tutorials for three modules:
 - [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
 - [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
 - [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
+- [plotting trees with our local library](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/local_plotting.ipynb)
 
 
 You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8).
@@ -45,9 +46,9 @@ For developers:
     * Run the command ``gurobi.sh`` from a terminal window
     * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
 
-4. [Optional] To use fast versions of Neighbor-Joining and UPGMA, install [CCPhylo](https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) then set ccphylo_path in the config.ini file in the cassiopeia directory.
+4. [Optional] To use fast versions of Neighbor-Joining and UPGMA, install [CCPhylo](https://bitbucket.org/genomicepidemiology/ccphylo/src/master/). Then copy the file `./data/ccphylo_config.ini` to your `./cassiopeia` directory, rename it `config.ini` and set the Path variable to point to your CCPhylo installation.
 
-5. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
+5. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .` or `make install`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
 
 6. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these analyses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
 
