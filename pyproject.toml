@@ -122,3 +122,6 @@ spatial = [
   "cchardet",
   "pyvista"
 ]
+
+[package.include] 
+"config.ini" = "cassiopeia/config.ini"
