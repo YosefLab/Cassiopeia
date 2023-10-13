@@ -59,6 +59,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        threads: Number of threads to use for solver.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -66,6 +67,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use.
     """
 
     def __init__(
@@ -77,12 +79,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         ] = None,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
+        threads: int = 1,
     ):
 
         super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
+        self.threads = threads
         
         if "ccphylo" in self._implementation:
             self._setup_ccphylo()
@@ -318,8 +322,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # get ccphylo path
         config = configparser.ConfigParser()
-        config.read(os.path.join(os.path.dirname(__file__),"..","config.ini"))
-        self._ccphylo_path = config.get("Paths","ccphylo_path")
+        config_file = os.path.join(os.path.dirname(__file__),"..","config.ini")
+        self._ccphylo_path = ""
+        if os.path.exists(config_file):
+            config.read(config_file)
+            self._ccphylo_path = config.get("Paths","ccphylo_path")
 
         #check that ccphylo_path is valid
         if not os.path.exists(self._ccphylo_path):
@@ -384,7 +391,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
 
             cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation, layer
+                self.dissimilarity_function, self.prior_transformation, layer, threads=self.threads
             )
 
     @abc.abstractmethod

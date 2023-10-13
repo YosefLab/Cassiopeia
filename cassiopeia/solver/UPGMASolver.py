@@ -42,12 +42,15 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         fast: Whether to use a fast implementation of UPGMA.
         implementation: Which fast implementation to use. Options are:
             "ccphylo_upgma": Uses the fast UPGMA implementation from CCPhylo.
+        threads: Number of threads to use for dissimilarity map computation.
+
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use for dissimilarity map computation.
     """
 
     def __init__(
@@ -60,6 +63,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         prior_transformation: str = "negative_log",
         fast: bool = False,
         implementation: str = "ccphylo_upgma",
+        threads: int = 1,
     ):
 
         if fast:
@@ -77,6 +81,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             dissimilarity_function=dissimilarity_function,
             add_root=True,
             prior_transformation=prior_transformation,
+            threads=threads
         )
 
         self.__cluster_to_cluster_size = defaultdict(int)

@@ -1,11 +1,11 @@
 """
 Test the ccphylo solver implementations against the standard NJ and UPGMA
 """
-import unittest
-from typing import Dict, Optional
-from unittest import mock
-
 import os
+
+import unittest
+from unittest import mock
+from typing import Dict, Optional
 
 import configparser
 import itertools
@@ -48,12 +48,12 @@ def delta_fn(
 
 # only run test if ccphylo_path is specified in config.ini
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__),
-                         "..","..","cassiopeia","config.ini"))
-CCPHYLO_CONFIGURED = (config.get("Paths","ccphylo_path") != 
-                      "/path/to/ccphylo/ccphylo")
-print(CCPHYLO_CONFIGURED)
-
+config_path = os.path.join(os.path.dirname(__file__),
+                         "..","..","cassiopeia","config.ini")
+CCPHYLO_CONFIGURED = False
+if os.path.exists(config_path):
+    config.read(config_path)
+    CCPHYLO_CONFIGURED = (os.path.exists(config.get("Paths","ccphylo_path")))
 
 class TestCCPhyloSolver(unittest.TestCase):
     @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
