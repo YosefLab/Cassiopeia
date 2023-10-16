@@ -19,7 +19,7 @@ from tqdm.auto import tqdm
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.mixins import HybridSolverError
+from cassiopeia.mixins import find_duplicate_groups, HybridSolverError
 from cassiopeia.solver import (
     CassiopeiaSolver,
     dissimilarity_functions,
@@ -401,20 +401,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             The tree with duplicates added and spurious leaves pruned
         """
 
-        character_matrix.index.name = "index"
-        duplicate_groups = (
-            character_matrix[character_matrix.duplicated(keep=False) == True]
-            .reset_index()
-            .groupby(character_matrix.columns.tolist())["index"]
-            .agg(["first", tuple])
-            .set_index("first")["tuple"]
-            .to_dict()
-        )
+        duplicate_mappings = find_duplicate_groups(character_matrix)
 
-        for i in duplicate_groups:
+        for i in duplicate_mappings:
             new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
-            for duplicate in duplicate_groups[i]:
+            for duplicate in duplicate_mappings[i]:
                 tree.add_edge(new_internal_node, duplicate)
 
         # remove extant lineages that don't correspond to leaves

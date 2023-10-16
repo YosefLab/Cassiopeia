@@ -1377,6 +1377,11 @@ class CassiopeiaTree:
         Returns a list of tuples (character, state) of mutations that occur
         along an edge. Characters are 0-indexed.
 
+        Note that parent states can be ambiguous if all child states have the
+        same ambiguous state. If this is the case, there will not be a mutation
+        detected along an edge, but we handle this case so as to not throw
+        an error handling ambiguous states.
+
         Args:
             parent: parent in tree
             child: child in tree
@@ -1401,7 +1406,11 @@ class CassiopeiaTree:
 
         mutations = []
         for i in range(self.n_character):
-            if parent_states[i] != child_states[i]:
+            
+            parent_state = (list(parent_states[i]) if is_ambiguous_state(parent_states[i]) else [parent_states[i]])
+            child_state = (list(child_states[i]) if is_ambiguous_state(child_states[i]) else [child_states[i]])
+
+            if len(np.intersect1d(parent_state, child_state)) < 1:
                 if treat_missing_as_mutations:
                     mutations.append((i, child_states[i]))
                 elif (
@@ -1828,6 +1837,7 @@ class CassiopeiaTree:
         ] = None,
         prior_transformation: str = "negative_log",
         layer: Optional[str] = None,
+        threads: int = 1
     ) -> None:
         """Computes a dissimilarity map.
 
@@ -1854,6 +1864,7 @@ class CassiopeiaTree:
                         the square root of 1/p
             layer: Character matrix layer to use. If not specified, use the
                 default :attr:`character_matrix`.
+            threads: Number of threads to use for dissimilarity map computation.
         """
 
         if layer is not None:
@@ -1884,6 +1895,7 @@ class CassiopeiaTree:
             dissimilarity_function,
             weights,
             self.missing_state_indicator,
+            threads=threads,
         )
 
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)

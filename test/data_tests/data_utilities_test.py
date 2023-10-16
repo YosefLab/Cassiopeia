@@ -314,7 +314,7 @@ class TestDataUtilities(unittest.TestCase):
         ret_vec = data_utilities.get_lca_characters(
             vecs, missing_state_indicator=-1
         )
-        self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
+        self.assertEqual(ret_vec, [1, 2, 3, 0, 5])
 
     def test_resolve_most_abundant(self):
         state = (1, 2, 3, 3)

@@ -29,6 +29,7 @@ include = [
   {path = "cassiopeia/solver/*.pyx", format = "wheel"},
   {path = "cassiopeia/tools/branch_length_estimator/*.so", format = "wheel"},
   {path = "cassiopeia/tools/branch_length_estimator/*.pyx", format = "wheel"},
+  {path = "cassiopeia/config.ini"},
 ]
 packages = [
   {include = "cassiopeia"},

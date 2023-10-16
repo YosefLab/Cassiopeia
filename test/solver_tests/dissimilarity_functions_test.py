@@ -14,11 +14,11 @@ from cassiopeia.solver import solver_utilities
 
 class TestDissimilarityFunctions(unittest.TestCase):
     def setUp(self):
-
         self.s1 = np.array([0, 1, 0, -1, 1, 2])
         self.s2 = np.array([1, 1, 0, 0, 1, 3])
         self.all_missing = np.array([-1, -1, -1, -1, -1, -1])
         self.ambiguous = [(0,), (-1, 0), (0,), (-1, 0), (1,), (1,)]
+        self.ambiguous_no_missing = [(0,), (1, 0), (0,), (2, 0), (1,), (1,)]
 
         self.priors = {
             0: {1: 0.5, 2: 0.5},
@@ -85,7 +85,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(self.sqiweights, expectedweights)
 
     def test_weighted_hamming_distance_identical(self):
-
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
             self.s1, self.s1
         )
@@ -93,7 +92,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 0)
 
     def test_weighted_hamming_distance_no_priors(self):
-
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
             self.s1, self.s2
         )
@@ -143,7 +141,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, expected_dissimilarity / 5)
 
     def test_weighted_hamming_distance_all_missing(self):
-
         dissimilarity = dissimilarity_functions.weighted_hamming_distance(
             self.s1, self.all_missing, weights=self.nlweights
         )
@@ -151,7 +148,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 0)
 
     def test_hamming_similarity_without_missing_identical(self):
-
         similarity = dissimilarity_functions.hamming_similarity_without_missing(
             self.s1, self.s1, -1
         )
@@ -159,7 +155,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 3)
 
     def test_hamming_similarity_without_missing_no_priors(self):
-
         similarity = dissimilarity_functions.hamming_similarity_without_missing(
             self.s1, self.s2, -1
         )
@@ -178,7 +173,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, expected_similarity)
 
     def test_hamming_similarity_without_missing_all_missing(self):
-
         similarity = dissimilarity_functions.hamming_similarity_without_missing(
             self.s1, self.all_missing, -1, weights=self.nlweights
         )
@@ -186,7 +180,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_hamming_similarity_normalized_identical(self):
-
         similarity = (
             dissimilarity_functions.hamming_similarity_normalized_over_missing(
                 self.s1, self.s1, -1
@@ -196,7 +189,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 3 / 5)
 
     def test_hamming_similarity_normalized_no_priors(self):
-
         similarity = (
             dissimilarity_functions.hamming_similarity_normalized_over_missing(
                 self.s1, self.s2, -1
@@ -219,7 +211,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, expected_similarity / 5)
 
     def test_hamming_similarity_normalized_all_missing(self):
-
         similarity = (
             dissimilarity_functions.hamming_similarity_normalized_over_missing(
                 self.s1, self.all_missing, -1, weights=self.nlweights
@@ -229,7 +220,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_weighted_hamming_similarity_identical(self):
-
         similarity = dissimilarity_functions.weighted_hamming_similarity(
             self.s1, self.s1, -1
         )
@@ -237,7 +227,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 8 / 5)
 
     def test_weighted_hamming_similarity_no_priors(self):
-
         similarity = dissimilarity_functions.weighted_hamming_similarity(
             self.s1, self.s2, -1
         )
@@ -256,7 +245,6 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, expected_similarity / 5)
 
     def test_weighted_hamming_similarity_all_missing(self):
-
         similarity = dissimilarity_functions.weighted_hamming_similarity(
             self.s1, self.all_missing, -1, weights=self.nlweights
         )
@@ -279,14 +267,31 @@ class TestDissimilarityFunctions(unittest.TestCase):
         )
         np.testing.assert_almost_equal(result, 1.2544, decimal=4)
 
-    def test_hamming_distance(self):
+    def test_cluster_dissimilarity_weighted_hamming_distance_min_linkage(self):
+        result = dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
+            self.s1,
+            self.ambiguous_no_missing,
+            -1,
+            None,
+        )
 
+        np.testing.assert_almost_equal(result, 0.4, decimal=4)
+
+        result = dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
+            self.s1,
+            self.ambiguous,
+            -1,
+            None,
+        )
+
+        np.testing.assert_almost_equal(result, 0.4444, decimal=4)
+
+    def test_hamming_distance(self):
         distance = dissimilarity_functions.hamming_distance(self.s1, self.s2)
 
         self.assertEqual(distance, 3)
 
     def test_hamming_distance_ignore_missing(self):
-
         distance = dissimilarity_functions.hamming_distance(
             self.s1, self.s2, ignore_missing_state=True
         )
@@ -302,23 +307,30 @@ class TestDissimilarityFunctions(unittest.TestCase):
     def test_save_dissimilarity_as_phylip(self):
         # Create a sample dissimilarity map
         data = [[0.0, 0.5, 0.7], [0.5, 0.0, 0.3], [0.7, 0.3, 0.0]]
-        index = ['A', 'B', 'C']
+        index = ["A", "B", "C"]
         dissimilarity_map = pd.DataFrame(data, index=index)
 
         # Expected content in the mock file
-        expected_content = ("3\n"
-                            "A\t0.0000\n"
-                            "B\t0.5000\t0.0000\n"
-                            "C\t0.7000\t0.3000\t0.0000\n")
+        expected_content = (
+            "3\n"
+            "A\t0.0000\n"
+            "B\t0.5000\t0.0000\n"
+            "C\t0.7000\t0.3000\t0.0000\n"
+        )
 
         # Mock the open function to use a mock file object
         with mock.patch("builtins.open", mock.mock_open()) as mock_file:
-            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map, 
-                                                          "dummy_path")
+            solver_utilities.save_dissimilarity_as_phylip(
+                dissimilarity_map, "dummy_path"
+            )
             mock_file.assert_called_once_with("dummy_path", "w")
             mock_file().write.assert_called()
-            self.assertIn(expected_content, "".join(call[0][0] for 
-                          call in mock_file().write.call_args_list))
+            self.assertIn(
+                expected_content,
+                "".join(
+                    call[0][0] for call in mock_file().write.call_args_list
+                ),
+            )
 
 
 if __name__ == "__main__":

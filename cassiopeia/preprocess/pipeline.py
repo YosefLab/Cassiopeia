@@ -290,13 +290,14 @@ def collapse_umis(
     logger.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
     max_read_length, total_reads_out = UMI_utils.sort_bam(
-        bam_fp,
+        str(bam_fp),
         str(sorted_file_name),
         sort_key=lambda al: (
             al.get_tag(cell_bc_tag),
             al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
         ),
         filter_func=lambda al: al.has_tag(cell_bc_tag),
+        n_threads=n_threads,
     )
     logger.info("Sorted bam directory saved to " + str(sorted_file_name))
     logger.info("Max read length of " + str(max_read_length))
