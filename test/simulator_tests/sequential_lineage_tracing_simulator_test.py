@@ -65,8 +65,21 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
                 initiation_rate=0.3,
                 continuation_rate=0.4,
                 state_priors=self.priors,
-                heritable_silencing_rate=1e-5,
-                stochastic_silencing_rate=1e-2,
+                heritable_silencing_rate=0,
+                stochastic_silencing_rate=0,
+                random_seed=123412232,
+            )
+        )
+
+        self.tracing_data_simulator_with_missing = (
+            cas.sim.SequentialLineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                initiation_rate=0.3,
+                continuation_rate=0.4,
+                state_priors=self.priors,
+                heritable_silencing_rate=.2,
+                stochastic_silencing_rate=.1,
                 random_seed=123412232,
             )
         )
@@ -80,12 +93,12 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
         self.assertEqual(9, number_of_characters)
 
         self.assertEqual(
-            1e-5,
+            0,
             self.tracing_data_simulator.heritable_silencing_rate,
         )
 
         self.assertEqual(
-            1e-2,
+            0,
             self.tracing_data_simulator.stochastic_silencing_rate,
         )
 
@@ -169,6 +182,14 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
                 state_priors={1: 0.5, 2: 0.2},
             )
 
+        # test negative state prior
+        with self.assertRaises(DataSimulatorError):
+            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                state_priors={1: 1.2, 2: -0.2},
+            )
+
         # incorrect state prior type
         with self.assertRaises(DataSimulatorError):
             data_sim = cas.sim.SequentialLineageTracingDataSimulator(
@@ -190,7 +211,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             {
                 "7": [3, 0, 0, 3, 3, 0, 0, 0, 0],
                 "8": [3, 3, 0, 3, 0, 0, 3, 0, 0],
-                "9": [0, 0, 0, 3, 3, 0, -1, -1, -1],
+                "9": [0, 0, 0, 3, 3, 0, 0, 0, 0],
                 "10": [3, 3, 0, 0, 0, 0, 0, 0, 0],
                 "11": [2, 3, 3, 3, 0, 0, 0, 0, 0],
                 "12": [2, 0, 0, 3, 0, 0, 0, 0, 0],
@@ -224,6 +245,32 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
 
                 if parent_array[i] != 0:
                     self.assertNotEqual(0, child_array[i])
+
+    def test_simulator_with_missing(self):
+
+        self.tracing_data_simulator_with_missing.overlay_data(self.basic_tree)
+
+        character_matrix = self.basic_tree.character_matrix
+
+        expected_character_matrix = pd.DataFrame.from_dict(
+            {
+                "7": [3, 0, 0, -1, -1, -1, 0, 0, 0],
+                "8": [3, 3, 0, 3, 0, 0, 3, 0, 0],
+                "9": [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                "10": [-1, -1, -1, 0, 0, 0, 3, 3, 0],
+                "11": [0, 0, 0, 0, 0, 0, -1, -1, -1],
+                "12": [-1, -1, -1, 0, 0, 0, -1, -1, -1],
+                "13": [0, 0, 0, -1, -1, -1, -1, -1, -1],
+                "14": [-1, -1, -1, 0, 0, 0, 2, 4, 0],
+            },
+            orient="index",
+            columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
+        ) 
+
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, character_matrix
+        )
+
 
     def test_branch_multiple_edits(self):
         topology = nx.DiGraph()
