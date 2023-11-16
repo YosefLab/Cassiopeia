@@ -144,27 +144,40 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         logfile_names = iter([i for i in range(1, len(subproblems) + 1)])
 
         # multi-threaded bottom solver approach
-        with multiprocessing.Pool(processes=self.threads) as pool:
+        if self.threads > 1:
+            with multiprocessing.Pool(processes=self.threads) as pool:
 
-            results = list(
-                tqdm(
-                    pool.starmap(
-                        self.apply_bottom_solver,
-                        [
-                            (
-                                cassiopeia_tree,
-                                subproblem[0],
-                                subproblem[1],
-                                f"{logfile.split('.log')[0]}-"
-                                        f"{next(logfile_names)}.log",
-                                layer,
-                            )
-                            for subproblem in subproblems
-                        ],
-                    ),
-                    total=len(subproblems),
+                results = list(
+                    tqdm(
+                        pool.starmap(
+                            self.apply_bottom_solver,
+                            [
+                                (
+                                    cassiopeia_tree,
+                                    subproblem[0],
+                                    subproblem[1],
+                                    f"{logfile.split('.log')[0]}-"
+                                            f"{next(logfile_names)}.log",
+                                    layer,
+                                )
+                                for subproblem in subproblems
+                            ],
+                        ),
+                        total=len(subproblems),
+                    )
                 )
-            )
+        # single-threaded bottom solver approach
+        else:
+            results = [
+                self.apply_bottom_solver(
+                    cassiopeia_tree,
+                    subproblem[0],
+                    subproblem[1],
+                    f"{logfile.split('.log')[0]}-{next(logfile_names)}.log",
+                    layer,
+                )
+                for subproblem in tqdm(subproblems, total=len(subproblems))
+            ]
 
         for result in results:
 
