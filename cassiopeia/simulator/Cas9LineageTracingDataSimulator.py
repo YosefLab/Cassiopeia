@@ -242,8 +242,6 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             # Ensures backward compatibility
             self.mutation_priors = self.mutation_priors_per_character[0]
 
-        self.mutation_priors = state_priors
-
         if self.number_of_states > _MAX_NUMBER_OF_STATES:
             raise ValueError(
                 f"`number_of_states` should be at most {_MAX_NUMBER_OF_STATES},"
