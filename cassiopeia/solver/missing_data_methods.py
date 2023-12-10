@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
+from cassiopeia.mixins import is_ambiguous_state, unravel_ambiguous_states
 from cassiopeia.solver import solver_utilities
 
 
@@ -60,17 +61,35 @@ def assign_missing_average(
         for char in range(character_matrix.shape[1]):
             state = character_array[missing_sample, char]
             if state != missing_state_indicator and state != 0:
-                state_counts = np.unique(
-                    subset_character_matrix[:, char], return_counts=True
+                all_states = unravel_ambiguous_states(
+                    subset_character_matrix[:, char]
                 )
-                ind = np.where(state_counts[0] == state)
-                if len(ind[0]) > 0:
-                    if weights:
-                        score += (
-                            weights[char][state] * state_counts[1][ind[0][0]]
-                        )
-                    else:
-                        score += state_counts[1][ind[0][0]]
+                state_counts = np.unique(all_states, return_counts=True)
+
+                if is_ambiguous_state(state):
+                    ambiguous_states = [s for s in state if s != 0]
+                    for ambiguous_state in ambiguous_states:
+                        ind = np.where(state_counts[0] == ambiguous_state)
+                        if len(ind[0]) > 0:
+                            if weights:
+                                score += (
+                                    weights[char][ambiguous_state]
+                                    * state_counts[1][ind[0][0]]
+                                )
+                            else:
+                                score += state_counts[1][ind[0][0]]
+
+                else:
+                    ind = np.where(state_counts[0] == state)
+                    if len(ind[0]) > 0:
+                        if weights:
+                            score += (
+                                weights[char][state]
+                                * state_counts[1][ind[0][0]]
+                            )
+                        else:
+                            score += state_counts[1][ind[0][0]]
+
         return score
 
     subset_character_array_left = character_array[left_indices, :]

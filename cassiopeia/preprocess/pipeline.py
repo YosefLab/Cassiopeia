@@ -290,13 +290,14 @@ def collapse_umis(
     logger.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
 
     max_read_length, total_reads_out = UMI_utils.sort_bam(
-        bam_fp,
+        str(bam_fp),
         str(sorted_file_name),
         sort_key=lambda al: (
             al.get_tag(cell_bc_tag),
             al.get_tag(BAM_CONSTANTS["UMI_TAG"]),
         ),
         filter_func=lambda al: al.has_tag(cell_bc_tag),
+        n_threads=n_threads,
     )
     logger.info("Sorted bam directory saved to " + str(sorted_file_name))
     logger.info("Max read length of " + str(max_read_length))
@@ -364,7 +365,7 @@ def resolve_umi_sequence(
             bins=range(1, equivClass_group["grpFlag"].max()),
         )
         plt.title("Unique Seqs per cellBC+UMI")
-        plt.yscale("log", basey=10)
+        plt.yscale("log", base=10)
         plt.xlabel("Number of Unique Seqs")
         plt.ylabel("Count (Log)")
         plt.savefig(os.path.join(output_directory, "seqs_per_equivClass.png"))
@@ -390,8 +391,8 @@ def resolve_umi_sequence(
         if group.shape[0] == 1:
             good_readName = group["readName"].iloc[0]
             mt_filter[good_readName] = False
-            total_numReads[good_readName] = group["readCount"]
-            top_reads[good_readName] = group["readCount"]
+            total_numReads[good_readName] = group["readCount"].values[0]
+            top_reads[good_readName] = group["readCount"].values[0]
 
         # more commonly - many sequences for a given UMI
         else:
@@ -975,8 +976,8 @@ def filter_molecule_table(
         plt.legend()
         plt.ylabel("Number of UMIs")
         plt.xlabel("Rank Order")
-        plt.xscale("log", basex=10)
-        plt.yscale("log", basey=10)
+        plt.xscale("log", base=10)
+        plt.yscale("log", base=10)
         plt.title("UMIs per CellBC")
         plt.savefig(os.path.join(output_directory, "umis_per_cellbc.png"))
         plt.close()

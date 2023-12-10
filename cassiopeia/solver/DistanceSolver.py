@@ -3,19 +3,28 @@ This file stores a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
 the inference procedures that inherit from this method will need to implement
 methods for selecting "cherries" and updating the dissimilarity map. Methods
 that will inherit from this class by default are Neighbor-Joining and UPGMA.
-There may be other subclasses of this.
+There may be other subclasses of this. Currently also implements a method for
+solving trees with CCPhylo but this will be moved with switch to compositional
+framework.
 """
+import os
+
 import abc
+import subprocess
+import tempfile
 from typing import Callable, Dict, List, Optional, Tuple
 
+import configparser
+import ete3
 import networkx as nx
 import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import DistanceSolverError
-from cassiopeia.solver import CassiopeiaSolver, solver_utilities
-
+from cassiopeia.solver import (CassiopeiaSolver, 
+    solver_utilities)
+from cassiopeia.data import utilities
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
@@ -50,6 +59,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        threads: Number of threads to use for solver.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -57,6 +67,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use.
     """
 
     def __init__(
@@ -68,12 +79,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         ] = None,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
+        threads: int = 1,
     ):
 
         super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
+        self.threads = threads
+        
+        if "ccphylo" in self._implementation:
+            self._setup_ccphylo()
 
     def get_dissimilarity_map(
         self, 
@@ -108,7 +124,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         return dissimilarity_map
 
-
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
@@ -135,6 +150,24 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: File location to log output. Not currently used.
         """
+
+        if self._implementation == "ccphylo_dnj":
+            self._ccphylo_solve(cassiopeia_tree,layer,
+                    collapse_mutationless_edges,logfile,method="dnj")
+            return
+        elif self._implementation == "ccphylo_nj":
+            self._ccphylo_solve(cassiopeia_tree,layer,
+                    collapse_mutationless_edges,logfile,method="nj")
+            return
+        elif self._implementation == "ccphylo_hnj":
+            self._ccphylo_solve(cassiopeia_tree,layer,
+                    collapse_mutationless_edges,logfile,method="hnj")
+            return
+        elif self._implementation == "ccphylo_upgma":
+            self._ccphylo_solve(cassiopeia_tree,layer,
+                    collapse_mutationless_edges,logfile,method="upgma")
+            return
+
         node_name_generator = solver_utilities.node_name_generator()
 
         dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
@@ -197,6 +230,124 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 infer_ancestral_characters=True
             )
 
+    def _ccphylo_solve(
+        self,
+        cassiopeia_tree: CassiopeiaTree,
+        layer: Optional[str] = None,
+        collapse_mutationless_edges: bool = False,
+        logfile: str = "stdout.log",
+        method: str = "dnj"
+    ) -> None:
+        """Solves a tree using fast distance-based algorithms implemented by 
+        CCPhylo. To call this method the CCPhlyo package must be installed 
+        and the ccphylo_path must be set in the config file. The method 
+        attribute specifies which algorithm to use. The function will update the 
+        `tree`.
+
+        Args:
+            cassiopeia_tree: CassiopeiaTree object to be populated
+            layer: Layer storing the character matrix for solving. If None, the
+                default character matrix is used in the CassiopeiaTree.
+            collapse_mutationless_edges: Indicates if the final reconstructed
+                tree should collapse mutationless edges based on internal states
+                inferred by Camin-Sokal parsimony. In scoring accuracy, this
+                removes artifacts caused by arbitrarily resolving polytomies.
+            logfile: File location to log output. Not currently used.
+        """
+
+        dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            # save dissimilarity map as phylip file
+            dis_path = os.path.join(temp_dir, "dist.phylip")
+            tree_path = os.path.join(temp_dir, "tree.nwk")
+            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map,
+                                                          dis_path)
+
+            # run ccphylo
+            command = (f"{self._ccphylo_path} tree -i {dis_path} -o "   
+                       f"{tree_path} -m {method}")
+
+            process = subprocess.Popen(command, shell=True, 
+                                       stdout=subprocess.PIPE, 
+                                       stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            T = ete3.Tree(tree_path, format=1)
+
+            # remove temporary files
+            os.remove(dis_path)
+            os.remove(tree_path)
+
+        # Covert to networkx
+        tree = utilities.ete3_to_networkx(T).to_undirected()
+
+        # find last split
+        midpoint = T.get_midpoint_outgroup()
+        root = T.get_tree_root()
+        if midpoint in root.children:
+            last_split = [root.name,midpoint.name]
+        else:
+            last_split = [root.name,root.children[0].name]
+        tree.remove_edge(last_split[0],last_split[1])
+
+        # root tree
+        tree = self.root_tree(tree,cassiopeia_tree.root_sample_name,last_split)
+
+        # remove root from character matrix before populating tree
+        if (
+            cassiopeia_tree.root_sample_name
+            in cassiopeia_tree.character_matrix.index
+        ):
+            cassiopeia_tree.character_matrix = (
+                cassiopeia_tree.character_matrix.drop(
+                    index=cassiopeia_tree.root_sample_name
+                )
+            )
+
+        # populate tree
+        cassiopeia_tree.populate_tree(tree,layer=layer)
+        cassiopeia_tree.collapse_unifurcations()
+
+        # collapse mutationless edges
+        if collapse_mutationless_edges:
+            cassiopeia_tree.collapse_mutationless_edges(
+                infer_ancestral_characters=True
+            )
+
+    def _setup_ccphylo(self) -> None:
+        """Sets up the ccphylo solver by getting the ccphylo_path from the
+        config file and checking that it is valid.
+        """
+
+        # get ccphylo path
+        config = configparser.ConfigParser()
+        config_file = os.path.join(os.path.dirname(__file__),"..","config.ini")
+        self._ccphylo_path = ""
+        if os.path.exists(config_file):
+            config.read(config_file)
+            self._ccphylo_path = config.get("Paths","ccphylo_path")
+
+        #check that ccphylo_path is valid
+        if not os.path.exists(self._ccphylo_path):
+            raise DistanceSolverError(
+                f"ccphylo_path {self._ccphylo_path} does not exist. To use fast "
+            "versions of Neighbor-Joining and UPGMA please install CCPhylo "
+            "(https://bitbucket.org/genomicepidemiology/ccphylo/src/master/)"
+            "set the ccphylo_path in the config.ini file then reinstall "
+            "Cassiopeia."
+            )
+        
+        #check that ccphylo_path is executable
+        if not os.access(self._ccphylo_path, os.X_OK):
+            raise DistanceSolverError(
+                f"ccphylo_path {self._ccphylo_path} is not executable. To use "
+            "fast versions of Neighbor-Joining and UPGMA please install CCPhylo"
+            " (https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) "
+            "set the ccphylo_path in the config.ini file then reinstall "
+            "Cassiopeia."
+            )
+
     def setup_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
     ) -> None:
@@ -228,8 +379,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             else:
                 raise DistanceSolverError(
-                    "Please specify an explicit root sample in the Cassiopeia Tree"
-                    " or specify the solver to add an implicit root"
+                    "Please specify an explicit root sample in the Cassiopeia"
+                    " Tree or specify the solver to add an implicit root"
                 )
 
         if cassiopeia_tree.get_dissimilarity_map() is None:
@@ -240,7 +391,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 )
 
             cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation, layer
+                self.dissimilarity_function, self.prior_transformation, layer, threads=self.threads
             )
 
     @abc.abstractmethod

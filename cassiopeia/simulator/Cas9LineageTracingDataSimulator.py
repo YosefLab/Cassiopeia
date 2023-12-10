@@ -73,17 +73,36 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
     Args:
         number_of_cassettes: Number of cassettes (i.e., arrays of target sites)
         size_of_cassette: Number of editable target sites per cassette
-        mutation_rate: Exponential parameter for the Cas9 cutting rate. The user
-            can either pass in a float, in which every site will mutate at
-            the same rate, or a list with an entry for each cut site indicating
-            potentially a different mutation rate for every site.
+        mutation_rate: Exponential parameter for the Cas9 cutting rate. Can be
+            a float, or a list of floats of length `size_of_cassette` or 
+            `number_of_cassettes * size_of_cassette`:
+                float - all sites mutate at the specified rate.
+                list of length `size_of_cassette` - each site will mutate at 
+                    the specified rate across all cassettes.
+                list of length `number_of_cassettes * size_of_cassette` - each
+                    site and cassettes will mutate at the specified rate.
         state_generating_distribution: Distribution from which to simulate state
             likelihoods. This is only used if mutation priors are not
             specified to the simulator.
+<<<<<<< HEAD
         number_of_states: Number of states to simulate. Must be at most 1e8.
         mutation_priors: A mapping from state to probability that a user
             can specify. If this argument is not None, states will not be
             pulled from the state distribution.
+=======
+        number_of_states: Number of states to simulate
+        state_priors: An optional dictionary mapping states to their prior 
+            probabilities. Can also be a list of dictionaries of length 
+            `size_of_cassette` or `number_of_cassettes * size_of_cassette`:
+                dict - all sites will have the same prior probabilities.
+                list of length `size_of_cassette` - each site will have the
+                    specified prior probabilities across all cassettes.
+                list of length `number_of_cassettes * size_of_cassette` - each
+                    site and cassette will have the specified prior 
+                    probabilities.
+            If this argument is None, states will not be pulled from 
+            the state distribution.
+>>>>>>> master
         heritable_silencing_rate: Silencing rate for the cassettes, per node,
             simulating heritable missing data events.
         stochastic_silencing_rate: Rate at which to randomly drop out cassettes,
@@ -146,47 +165,97 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         self.create_allele_when_collapsing_sites_on_cassette = (
             create_allele_when_collapsing_sites_on_cassette
         )
+        number_of_characters = size_of_cassette * number_of_cassettes
+
+        # covert mutation_rate to list if numpy array
+        if isinstance(mutation_rate, np.ndarray):
+            mutation_rate = mutation_rate.tolist()
 
         if isinstance(mutation_rate, float):
             if mutation_rate < 0:
                 raise DataSimulatorError(
                     "Mutation rate needs to be" " non-negative."
                 )
-            number_of_characters = size_of_cassette * number_of_cassettes
             self.mutation_rate_per_character = [
                 mutation_rate
             ] * number_of_characters
-        else:
-            if len(mutation_rate) != (
-                self.number_of_cassettes * self.size_of_cassette
-            ):
+        elif isinstance(mutation_rate, list):
+            if len(mutation_rate) == number_of_characters:
+                self.mutation_rate_per_character = mutation_rate
+            elif len(mutation_rate) == self.size_of_cassette:
+                self.mutation_rate_per_character = (
+                    mutation_rate * self.number_of_cassettes
+                )
+            else:
                 raise DataSimulatorError(
                     "Length of mutation rate array is not"
-                    " the same as the number of characters."
+                    " the same as the number of characters"
+                    " or the number of cassettes."
                 )
 
             if np.any(np.array(mutation_rate) < 0):
                 raise DataSimulatorError(
                     "Mutation rate needs to be" " non-negative."
                 )
-            self.mutation_rate_per_character = mutation_rate[:]
+        else:
+            raise DataSimulatorError(
+                "Mutation rate needs to be a float or a list."
+            )
+            
+        # convert state_priors to list if numpy array
+        if isinstance(state_priors, np.ndarray):
+            state_priors = state_priors.tolist()
 
         if state_priors is None:
             self.number_of_states = number_of_states
             self.state_generating_distribution = state_generating_distribution
+            self.mutation_priors_per_character = None
         else:
-            Z = np.sum([v for v in state_priors.values()])
-            if not math.isclose(Z, 1.0):
-                raise DataSimulatorError("Mutation priors do not sum to 1.")
-            self.number_of_states = len(state_priors)
+            if isinstance(state_priors, dict):
+                self.mutation_priors_per_character = [
+                    state_priors
+                ] * number_of_characters
+            elif isinstance(state_priors, list):
+                # check that all elements are dictionaries
+                if not all(isinstance(item, dict) for item in state_priors):
+                    raise DataSimulatorError(
+                        "State priors needs to be a dictionary or a list of"
+                        " dictionaries."
+                    )
+                if len(state_priors) == number_of_characters:
+                    self.mutation_priors_per_character = state_priors
+                elif len(state_priors) ==  self.size_of_cassette:
+                    self.mutation_priors_per_character = (
+                        state_priors * self.number_of_cassettes
+                    )
+                else:
+                    raise DataSimulatorError(
+                        "Length of mutation prior array is not"
+                        " the same as the number of characters"
+                        " or the number of cassettes."
+                )
+            else:
+                raise DataSimulatorError(
+                    "State priors needs to be a dictionary or a list of"
+                    " dictionaries."
+                )
+            
+            for prior in self.mutation_priors_per_character:
+                Z = np.sum([v for v in prior.values()])
+                if not math.isclose(Z, 1.0):
+                    raise DataSimulatorError("Mutation priors do not sum to 1.")
+                
             self.state_generating_distribution = None
+            # Ensures backward compatibility
+            self.mutation_priors = self.mutation_priors_per_character[0]
+
+        self.mutation_priors = state_priors
+
         if self.number_of_states > _MAX_NUMBER_OF_STATES:
             raise ValueError(
                 f"`number_of_states` should be at most {_MAX_NUMBER_OF_STATES},"
                 f" but you provided {self.number_of_states}."
             )
-
-        self.mutation_priors = state_priors
 
         self.heritable_silencing_rate = heritable_silencing_rate
         self.stochastic_silencing_rate = stochastic_silencing_rate
@@ -206,10 +275,12 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
+        number_of_characters = self.number_of_cassettes * self.size_of_cassette
+
         # create state priors if they don't exist.
         # This will set the instance's variable for mutation priors and will
         # use this for all future simulations.
-        if self.mutation_priors is None:
+        if self.mutation_priors_per_character is None:
             self.mutation_priors = {}
             probabilites = [
                 self.state_generating_distribution()
@@ -218,8 +289,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             Z = np.sum(probabilites)
             for i in range(self.number_of_states):
                 self.mutation_priors[i + 1] = probabilites[i] / Z
-
-        number_of_characters = self.number_of_cassettes * self.size_of_cassette
+            self.mutation_priors_per_character = (
+                [self.mutation_priors] * number_of_characters)
 
         # initialize character states
         character_matrix = {}
@@ -357,11 +428,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         updated_character_array = character_array.copy()
 
-        states = list(self.mutation_priors.keys())
-        probabilities = list(self.mutation_priors.values())
-
         for i in cuts:
-            state = np.random.choice(states, 1, p=probabilities)[0]
+            states = list(self.mutation_priors_per_character[i].keys())
+            probabilities = list(self.mutation_priors_per_character[i].values())
+            state = np.random.choice(states, 
+                1, p=probabilities)[0]
             updated_character_array[i] = state
 
         return updated_character_array

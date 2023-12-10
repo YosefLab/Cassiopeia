@@ -1,5 +1,5 @@
 """
-This file stores a subclass of DistanceSolver, NeighborJoining. The
+This file stores a subclass of DistanceSolver, NeighborJoiningSolver. The
 inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
@@ -13,12 +13,12 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
 from cassiopeia.solver import (
     DistanceSolver,
     dissimilarity_functions,
     solver_utilities,
 )
-
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     """
@@ -27,7 +27,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
     `solve` method, but implements its own procedure for finding cherries by
-    minimizing the Q-criterion between samples.
+    minimizing the Q-criterion between samples. If fast is set to True, 
+    a fast NJ implementation of is used.
 
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -43,6 +44,16 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        fast: Whether to use a fast implementation of Neighbor-Joining.
+        implementation: Which fast implementation to use. Options are:
+            "ccphylo_dnj": CCPhylo implementation the Dynamic Neighbor-Joining 
+                algorithm described by Clausen (2023). Solution in guaranteed
+                to be exact.
+            "ccphylo_hnj": CCPhylo implementation of the Heuristic 
+                Neighbor-Joining algorithm described by Clausen (2023). 
+                Solution is not guaranteed to be exact.
+            "ccphylo_nj": CCPhylo implementation of the Neighbor-Joining.
+        threads: Number of threads to use for solver.
 
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
@@ -50,6 +61,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use for solver.
 
     """
 
@@ -62,12 +74,27 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         ] = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
+        fast: bool = False,
+        implementation: str = "ccphylo_dnj",
+        threads: int = 1,
     ):
+
+        if fast:
+            if implementation in ["ccphylo_dnj", "ccphylo_hnj", "ccphylo_nj"]:
+                self._implementation = implementation
+            else:
+                raise DistanceSolverError(
+                    "Invalid fast implementation of Neighbor-Joining. Options "
+                    "are: 'ccphylo_dnj', 'ccphylo_hnj', 'ccphylo_nj'"
+                )
+        else:   
+            self._implementation = "generic_nj"
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=add_root,
             prior_transformation=prior_transformation,
+            threads=threads,
         )
 
     def root_tree(
@@ -261,7 +288,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
         if dissimilarity_map is None:
             cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation
+                self.dissimilarity_function, self.prior_transformation, threads=self.threads
             )
         else:
             dissimilarity = {"root": 0}

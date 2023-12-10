@@ -3,6 +3,9 @@ class CassiopeiaTreeWarning(UserWarning):
 
     pass
 
+class DataSimulatorWarning(UserWarning):
+    pass
+
 
 class PreprocessWarning(UserWarning):
     pass
@@ -21,4 +24,8 @@ class ParameterEstimateWarning(UserWarning):
 
 
 class PlottingWarning(UserWarning):
+    pass
+
+class LeafSubsamplerWarning(UserWarning):
+
     pass

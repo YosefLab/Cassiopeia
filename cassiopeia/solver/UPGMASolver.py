@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins import DistanceSolverError
 from cassiopeia.solver import DistanceSolver, dissimilarity_functions
 
 
@@ -26,7 +27,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     dissimilarity between samples. After joining nodes, the dissimilarities
     are updated by averaging the distances of elements in the new cluster
     with each existing node. Produces a rooted tree that is assumed to be
-    ultrametric.
+    ultrametric. If fast is set to True, a fast UPGMA implementation of is used.
 
     Args:
         dissimilarity_function: A function by which to compute the dissimilarity
@@ -38,12 +39,18 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        fast: Whether to use a fast implementation of UPGMA.
+        implementation: Which fast implementation to use. Options are:
+            "ccphylo_upgma": Uses the fast UPGMA implementation from CCPhylo.
+        threads: Number of threads to use for dissimilarity map computation.
+
     Attributes:
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
             weights.
+        threads: Number of threads to use for dissimilarity map computation.
     """
 
     def __init__(
@@ -54,12 +61,27 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             ]
         ] = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
+        fast: bool = False,
+        implementation: str = "ccphylo_upgma",
+        threads: int = 1,
     ):
+
+        if fast:
+            if implementation in ["ccphylo_upgma"]:
+                self._implementation = implementation
+            else:
+                raise DistanceSolverError(
+                    "Invalid fast implementation of UPGMA. Options are: "
+                    "'ccphylo_upgma'"
+                )
+        else:
+            self._implementation = "generic_upgma"
 
         super().__init__(
             dissimilarity_function=dissimilarity_function,
             add_root=True,
             prior_transformation=prior_transformation,
+            threads=threads
         )
 
         self.__cluster_to_cluster_size = defaultdict(int)
