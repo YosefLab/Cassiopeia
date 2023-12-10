@@ -84,13 +84,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         state_generating_distribution: Distribution from which to simulate state
             likelihoods. This is only used if mutation priors are not
             specified to the simulator.
-<<<<<<< HEAD
         number_of_states: Number of states to simulate. Must be at most 1e8.
-        mutation_priors: A mapping from state to probability that a user
-            can specify. If this argument is not None, states will not be
-            pulled from the state distribution.
-=======
-        number_of_states: Number of states to simulate
         state_priors: An optional dictionary mapping states to their prior 
             probabilities. Can also be a list of dictionaries of length 
             `size_of_cassette` or `number_of_cassettes * size_of_cassette`:
@@ -102,7 +96,6 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     probabilities.
             If this argument is None, states will not be pulled from 
             the state distribution.
->>>>>>> master
         heritable_silencing_rate: Silencing rate for the cassettes, per node,
             simulating heritable missing data events.
         stochastic_silencing_rate: Rate at which to randomly drop out cassettes,
