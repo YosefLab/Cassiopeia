@@ -56,50 +56,38 @@ def assign_missing_average(
         sample_names, missing
     )
 
-    def score_side(subset_character_matrix, missing_sample):
+    def score_side(subset_character_states, query_states, weights):
         score = 0
-        for char in range(character_matrix.shape[1]):
-            state = character_array[missing_sample, char]
-            if state != missing_state_indicator and state != 0:
-                all_states = unravel_ambiguous_states(
-                    subset_character_matrix[:, char]
-                )
-                state_counts = np.unique(all_states, return_counts=True)
-
-                if is_ambiguous_state(state):
-                    ambiguous_states = [s for s in state if s != 0]
-                    for ambiguous_state in ambiguous_states:
-                        ind = np.where(state_counts[0] == ambiguous_state)
-                        if len(ind[0]) > 0:
-                            if weights:
-                                score += (
-                                    weights[char][ambiguous_state]
-                                    * state_counts[1][ind[0][0]]
-                                )
-                            else:
-                                score += state_counts[1][ind[0][0]]
-
+        for char in range(len(subset_character_states)):
+    
+            query_state = [q for q in query_states[char] if q != 0 and q != missing_state_indicator]
+            all_states = np.array(subset_character_states[char])
+            for q in query_state:
+                if weights:
+                    score += (
+                        weights[char][q]
+                        * np.count_nonzero(all_states == q)
+                    )
                 else:
-                    ind = np.where(state_counts[0] == state)
-                    if len(ind[0]) > 0:
-                        if weights:
-                            score += (
-                                weights[char][state]
-                                * state_counts[1][ind[0][0]]
-                            )
-                        else:
-                            score += state_counts[1][ind[0][0]]
+                    score += np.count_nonzero(all_states == q)
 
-        return score
-
+        return score                                                
+            
     subset_character_array_left = character_array[left_indices, :]
     subset_character_array_right = character_array[right_indices, :]
 
-    for sample_index in missing_indices:
-        left_score = score_side(subset_character_array_left, sample_index)
-        right_score = score_side(subset_character_array_right, sample_index)
+    all_left_states = [unravel_ambiguous_states(subset_character_array_left[:,char]) for char in range(subset_character_array_left.shape[1])]
+    all_right_states = [unravel_ambiguous_states(subset_character_array_right[:,char]) for char in range(subset_character_array_right.shape[1])]
 
-        if left_score / len(left_set) > right_score / len(right_set):
+    
+    for sample_index in missing_indices:
+
+        all_states_for_sample = [unravel_ambiguous_states([character_array[sample_index, char]]) for char in range(character_array.shape[1])]
+
+        left_score = score_side(np.array(all_left_states, dtype=object), np.array(all_states_for_sample, dtype=object), weights)
+        right_score = score_side(np.array(all_right_states, dtype=object), np.array(all_states_for_sample, dtype=object), weights)
+
+        if (left_score / len(left_set)) > (right_score / len(right_set)):
             left_set.append(sample_names[sample_index])
         else:
             right_set.append(sample_names[sample_index])
