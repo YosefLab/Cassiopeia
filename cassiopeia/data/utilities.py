@@ -64,8 +64,9 @@ def get_lca_characters(
             
             # this check is specifically if all_states consists of a single
             # ambiguous state.
-            if len(all_states) == 1:
+            if len(list(set(all_states))) == 1:
                 state = all_states[0]
+                # lca_vec[i] = state
                 if is_ambiguous_state(state) and len(state) == 1:
                     lca_vec[i] = state[0]
                 else:
