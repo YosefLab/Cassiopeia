@@ -61,17 +61,27 @@ def get_lca_characters(
             all_states = [
                 vec[i] for vec in vecs if vec[i] != missing_state_indicator
             ]
-            chars = set.intersection(
-                *map(
-                    set,
-                    [
-                        state if is_ambiguous_state(state) else [state]
-                        for state in all_states
-                    ],
+            
+            # this check is specifically if all_states consists of a single
+            # ambiguous state.
+            if len(all_states) == 1:
+                state = all_states[0]
+                if is_ambiguous_state(state) and len(state) == 1:
+                    lca_vec[i] = state[0]
+                else:
+                    lca_vec[i] = all_states[0]
+            else:
+                chars = set.intersection(
+                    *map(
+                        set,
+                        [
+                            state if is_ambiguous_state(state) else [state]
+                            for state in all_states
+                        ],
+                    )
                 )
-            )
-            if len(chars) == 1:
-                lca_vec[i] = list(chars)[0]
+                if len(chars) == 1:
+                    lca_vec[i] = list(chars)[0]
     return lca_vec
 
 
