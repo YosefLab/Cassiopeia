@@ -277,7 +277,9 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 infer_ancestral_characters=True
             )
 
-        #logger.removeHandler(handler)
+        if logfile is not None:
+            logger.removeHandler(file_handler)
+            file_handler.close()
 
     def infer_potential_graph(
         self,
