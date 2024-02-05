@@ -137,6 +137,20 @@ class TestCassiopeiaTree(unittest.TestCase):
         for e in test_edges:
             self.assertIn(e, expected_edges)
 
+    def test_newick_to_networkx_with_branch_lengths(self):
+
+        nwk = "(node1:0.2,node2:0.3)node0;"
+
+        network = data_utilities.newick_to_networkx(nwk)
+
+        test_edges = network.edges(data=True)
+        expected_edges = [
+            ("node0", "node1", {"length": 0.2}),
+            ("node0", "node2", {"length": 0.3}),
+        ]
+        for e in test_edges:
+            self.assertIn(e, expected_edges)
+
     def test_newick_constructor(self):
 
         tree = cas.data.CassiopeiaTree(
@@ -180,6 +194,24 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(len(obs_nodes), len(expected_nodes))
         for n in obs_nodes:
             self.assertIn(n, expected_nodes)
+
+    def test_newick_constructor_with_branch_lengths(self):
+
+        nwk = "(node1:0.2,node2:0.3)node0;"
+
+        tree = cas.data.CassiopeiaTree(tree = nwk)
+
+        network = tree.get_tree_topology()
+        test_edges = network.edges(data=True)
+        expected_edges = [
+            ("node0", "node1", {"length": 0.2}),
+            ("node0", "node2", {"length": 0.3}),
+        ]
+        for e in test_edges:
+            self.assertIn(e, expected_edges)
+
+        expected_times = {"node0": 0.0, "node1": 0.2, "node2": 0.3}
+        self.assertEqual(tree.get_times(), expected_times)
 
     def test_networkx_constructor(self):
 
