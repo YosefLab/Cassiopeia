@@ -120,7 +120,7 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
         if n.is_root():
             continue
 
-        g.add_edge(n.up.name, n.name)
+        g.add_edge(n.up.name, n.name, length=n.dist)
 
     return g
 
