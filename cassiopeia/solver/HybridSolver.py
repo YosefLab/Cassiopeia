@@ -59,6 +59,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
+        progress_bar: Indicates if a progress bar should be shown when
+            `solve` is called.
     """
 
     def __init__(
@@ -69,6 +71,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         cell_cutoff: int = None,
         threads: int = 1,
         prior_transformation: str = "negative_log",
+        progress_bar: bool = True,
     ):
 
         if lca_cutoff is None and cell_cutoff is None:
@@ -89,6 +92,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.cell_cutoff = cell_cutoff
 
         self.threads = threads
+        self.progress_bar = progress_bar
 
     def solve(
         self,
@@ -144,27 +148,45 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         logfile_names = iter([i for i in range(1, len(subproblems) + 1)])
 
         # multi-threaded bottom solver approach
-        with multiprocessing.Pool(processes=self.threads) as pool:
+        if self.threads > 1:
+            with multiprocessing.Pool(processes=self.threads) as pool:
 
-            results = list(
-                tqdm(
-                    pool.starmap(
-                        self.apply_bottom_solver,
-                        [
-                            (
-                                cassiopeia_tree,
-                                subproblem[0],
-                                subproblem[1],
-                                f"{logfile.split('.log')[0]}-"
+                results = list(
+                    tqdm(
+                        pool.starmap(
+                            self.apply_bottom_solver,
+                            [
+                                (
+                                    cassiopeia_tree,
+                                    subproblem[0],
+                                    subproblem[1],
+                                    None if logfile is None else 
+                                        f"{logfile.split('.log')[0]}-"
                                         f"{next(logfile_names)}.log",
-                                layer,
-                            )
-                            for subproblem in subproblems
-                        ],
-                    ),
-                    total=len(subproblems),
+                                    layer,
+                                )
+                                for subproblem in subproblems
+                            ],
+                        ),
+                        total=len(subproblems),
+                        disable=not self.progress_bar
+                    )
                 )
-            )
+        # single-threaded bottom solver approach
+        else:
+            results = [
+                self.apply_bottom_solver(
+                    cassiopeia_tree,
+                    subproblem[0],
+                    subproblem[1],
+                    None if logfile is None else 
+                        f"{logfile.split('.log')[0]}-"
+                        f"{next(logfile_names)}.log",
+                    layer,
+                )
+                for subproblem in tqdm(subproblems, 
+                    total=len(subproblems),disable=not self.progress_bar)
+            ]
 
         for result in results:
 

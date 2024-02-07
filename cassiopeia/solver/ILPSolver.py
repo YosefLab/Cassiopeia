@@ -126,10 +126,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 " analysis."
             )
 
-        # setup logfile config
-        handler = logging.FileHandler(logfile)
-        handler.setLevel(logging.INFO)
-        logger.addHandler(handler)
+        # configure logger
+        if logfile is not None:
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setLevel(logging.INFO)
+            logger.addHandler(file_handler)
+        logger.ch.setLevel(logging.getLogger().level)
+    
+        # add to logger
         logger.info("Solving tree with the following parameters.")
         logger.info(f"Convergence time limit: {self.convergence_time_limit}")
         logger.info(
@@ -272,7 +276,10 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             cassiopeia_tree.collapse_mutationless_edges(
                 infer_ancestral_characters=True
             )
-        logger.removeHandler(handler)
+
+        if logfile is not None:
+            logger.removeHandler(file_handler)
+            file_handler.close()
 
     def infer_potential_graph(
         self,
@@ -534,7 +541,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # Add user-defined parameters
         model.params.MIPGAP = self.mip_gap
-        model.params.LogFile = logfile
+        if logfile is not None:
+            model.params.LogFile = logfile
 
         if self.seed is not None:
             model.params.Seed = self.seed
