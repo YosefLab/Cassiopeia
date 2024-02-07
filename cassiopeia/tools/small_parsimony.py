@@ -257,7 +257,7 @@ def fitch_count(
     infer_ancestral_states: bool = True,
     state_key: str = "S1",
     unique_states: Optional[List[str]] = None,
-):
+) -> pd.DataFrame:
     """Runs the FitchCount algorithm.
 
     Performs the FitchCount algorithm for inferring the number of times that
@@ -308,7 +308,7 @@ def fitch_count(
                 " of states that appear in the meta data."
             )
 
-    if root != cassiopeia_tree.root:
+    if root is not None and root != cassiopeia_tree.root:
         cassiopeia_tree.subset_clade(root)
 
     if infer_ancestral_states:
