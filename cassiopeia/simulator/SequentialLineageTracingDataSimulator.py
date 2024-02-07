@@ -5,9 +5,8 @@ Cas9-based technologies (e.g, Typewriter described in Choi et al, Nature 2022).
 This simulator implements the method `overlay_data` which takes
 in a CassiopeiaTree with edge lengths and overlays states.
 """
-import copy
 import math
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -174,8 +173,8 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
                     i = c + 1
                     while time < life_time and i < c + self.size_of_cassette:
                         if character_array[i] == 0:
-                            time = time + (-np.log(np.random.uniform())
-                                / self.continuation_rate)
+                            time = (time + 
+                                np.random.exponential(1/self.continuation_rate))
                             if time < life_time:
                                 self.edit_site(
                                     character_array, i, self.state_priors
