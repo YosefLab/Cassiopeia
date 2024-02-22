@@ -2214,6 +2214,44 @@ class CassiopeiaTree:
             self.get_tree_topology())
         self.populate_tree(binary_topology)
 
+    def add_root_edge_if_not_present(self) -> None:
+        """
+        If the root does not have degree 1, adds a root with degree 1.
+
+        The new root edge will be connecting f"{root}" to f"{root}-child"
+        where `root` is the name of the original root. If for any reason
+        there already existed another node in the tree called
+        f"{root}-child", an error will be raised.
+
+        Helpful for e.g. computing parsimony scores, since not making the
+        root have degree one can overestimate the parsimony score under
+        the CRISPR/Cas9 model. For example, if there are only two leaves
+        u, v with character states ["1"] and ["1"]:
+        - when there is a root node connecting to u and v, the most
+            parsimonious reconstruction (where the root is constrained to
+            be unmutated) has a parsimony score of 2.
+        - in constract, if we add a root edge, the parsimony score is now
+            equal to 1.
+        """
+        tree = self.get_tree_topology()
+        tree = copy.deepcopy(tree)
+        node_names = set([n for n in tree])
+        root = [n for n in tree if tree.in_degree(n) == 0][0]
+
+        # Make the root have degree 1, if not already
+        if tree.out_degree(root) >= 2:
+            children = list(tree.successors(root))
+            assert len(children) == tree.out_degree(root)
+            # First remove the edges from the root
+            tree.remove_edges_from([(root, child) for child in children])
+            # Now create the intermediate node and add edges back
+            root_child = f"{root}-child"
+            if root_child in node_names:
+                raise Exception("Node name already exists!")
+            tree.add_edge(root, root_child)
+            tree.add_edges_from([(root_child, child) for child in children])
+        self.populate_tree(tree)
+
     def get_edge_depth(self) -> int:
         """
         Maximum number of edges from root to leaf in the tree.
