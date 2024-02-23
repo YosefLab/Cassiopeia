@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import ray
 from ray import tune
-from ray.tune.suggest import Searcher
-from ray.tune.suggest.hyperopt import HyperOptSearch
+from ray.tune.search import Searcher
+from ray.tune.search.hyperopt import HyperOptSearch
 
 from cassiopeia.data import CassiopeiaTree
 

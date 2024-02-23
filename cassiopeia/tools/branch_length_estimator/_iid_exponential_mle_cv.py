@@ -4,7 +4,7 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 import pandas as pd
 from ray import tune
-from ray.tune.suggest.basic_variant import BasicVariantGenerator
+from ray.tune.search.basic_variant import BasicVariantGenerator
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins.errors import BranchLengthEstimatorError
