@@ -241,6 +241,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             self.state_generating_distribution = None
             # Ensures backward compatibility
             self.mutation_priors = self.mutation_priors_per_character[0]
+            self.number_of_states = len(self.mutation_priors)
 
         if self.number_of_states > _MAX_NUMBER_OF_STATES:
             raise ValueError(
