@@ -316,6 +316,17 @@ class TestDataUtilities(unittest.TestCase):
         )
         self.assertEqual(ret_vec, [1, 2, 3, 0, 5])
 
+    def test_lca_characters_ambiguous2(self):
+        
+        s1 = [(4, 62), (3, 10), (3, 10, 16), (0, 3), (0, 2, 3), (0, 2, 3), (0, 4, 7), (0, 2, 23), (0, 1, 4, 44)]
+        s2 = [4, 3, -1, 0, 0, 0, (0, 7), (0, 2), (0, 4)]
+
+        expected_reconstruction = [4, 3, (3, 10, 16), 0, 0, 0, (0, 7), (0, 2), (0, 4)]
+        ret_vec = data_utilities.get_lca_characters(
+            [s1, s2], missing_state_indicator=-1
+        )
+        self.assertEqual(ret_vec, expected_reconstruction)
+
     def test_lca_characters_ambiguous_and_missing(self):
         vecs = [
             [(1, 1), (0, 2), (3, 0), (4,), (5,)],

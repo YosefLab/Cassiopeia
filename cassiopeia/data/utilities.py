@@ -72,6 +72,7 @@ def get_lca_characters(
                 else:
                     lca_vec[i] = all_states[0]
             else:
+                all_ambiguous = np.all([is_ambiguous_state(s) for s in all_states])
                 chars = set.intersection(
                     *map(
                         set,
@@ -83,6 +84,10 @@ def get_lca_characters(
                 )
                 if len(chars) == 1:
                     lca_vec[i] = list(chars)[0]
+                if all_ambiguous:
+                    # if we only have ambiguous states, we set the LCA state
+                    # to be the intersection.
+                    lca_vec[i] = tuple(chars)
     return lca_vec
 
 
