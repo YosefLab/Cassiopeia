@@ -1,6 +1,7 @@
 """
 General utilities for the datasets encountered in Cassiopeia.
 """
+
 import collections
 from joblib import delayed
 import multiprocessing
@@ -61,7 +62,7 @@ def get_lca_characters(
             all_states = [
                 vec[i] for vec in vecs if vec[i] != missing_state_indicator
             ]
-            
+
             # this check is specifically if all_states consists of a single
             # ambiguous state.
             if len(list(set(all_states))) == 1:
@@ -72,7 +73,9 @@ def get_lca_characters(
                 else:
                     lca_vec[i] = all_states[0]
             else:
-                all_ambiguous = np.all([is_ambiguous_state(s) for s in all_states])
+                all_ambiguous = np.all(
+                    [is_ambiguous_state(s) for s in all_states]
+                )
                 chars = set.intersection(
                     *map(
                         set,
@@ -233,9 +236,7 @@ def compute_dissimilarity_map(
         ]
 
         # load character matrix into shared memory
-        shm = shared_memory.SharedMemory(
-            create=True, size=cm.nbytes
-        )
+        shm = shared_memory.SharedMemory(create=True, size=cm.nbytes)
         shared_cm = np.ndarray(cm.shape, dtype=cm.dtype, buffer=shm.buf)
         shared_cm[:] = cm[:]
 
