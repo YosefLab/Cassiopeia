@@ -3,7 +3,7 @@ This file contains functions pertaining to filtering cell doublets.
 Invoked through pipeline.py and supports the filter_molecule_table and
 call_lineage_groups functions.
 """
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, List
 
 import pandas as pd
 
@@ -168,3 +168,51 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
     n_cells = at["cellBC"].nunique()
     logger.debug(f"Filtered {n_filtered} inter-doublets of {n_cells} cells")
     return at[at["cellBC"].isin(passing_cellBCs)]
+
+
+def filter_doublet_lg_sets(
+        PIV: pd.DataFrame,
+        master_LGs: List[int], 
+        master_intBCs: Dict[int, List[str]]
+) -> Tuple[List[int], Dict[int, List[str]]]:
+    """Filters out lineage groups that are likely doublets.
+
+    Essentially, filters out lineage groups that have a high proportion of
+    intBCs that are shared with other lineage groups. For every lineage group,
+    calculates the proportion of intBCs that are shared with every pair of two
+    other lineage groups. If the proportion is > .8, then the lineage group
+    is filtered out.
+
+    Args:
+        PIV: A pivot table of cellBC-intBC-allele groups to be filtered
+        master_LGs: A list of lineage groups to be filtered
+        master_intBCs: A dictionary that has mappings from the lineage group
+            number to the set of intBCs being used for reconstruction
+
+    Returns:
+        A filtered list of lineage groups and a filtered dictionary of intBCs
+            for each lineage group
+    """
+    lg_sorted = (PIV.value_counts('lineageGrp')
+        .reset_index().sort_values('lineageGrp', ascending=False))
+
+    for lg in lg_sorted['lineageGrp']:
+        lg = tuple([lg])
+        filtered = False
+        lg_intBC = set(master_intBCs[lg])
+        for lg_i in master_LGs:
+            for lg_j in master_LGs:
+                if lg == lg_i or lg == lg_j:
+                    continue
+                pair_intBC = set(master_intBCs[lg_i]).union(set(master_intBCs[lg_j]))
+                if len(pair_intBC.intersection(lg_intBC)) > len(lg_intBC) * .8:
+                    master_LGs.remove(lg)
+                    master_intBCs.pop(lg)
+                    logger.debug(f"Filtered lineage group {lg} as a doublet"
+                                 f" of {lg_i} and {lg_j}")
+                    filtered = True
+                    break
+            if filtered:
+                break
+
+    return master_LGs, master_intBCs
