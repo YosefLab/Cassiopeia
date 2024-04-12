@@ -85,7 +85,7 @@ class TestDataUtilities(unittest.TestCase):
 
         self.assertEqual(len(bootstrap_samples), 10)
 
-        for (bootstrap_matrix, bootstrap_priors) in bootstrap_samples:
+        for bootstrap_matrix, bootstrap_priors in bootstrap_samples:
             self.assertCountEqual(
                 self.character_matrix.index, bootstrap_matrix.index
             )
@@ -113,7 +113,7 @@ class TestDataUtilities(unittest.TestCase):
 
         self.assertEqual(len(bootstrap_samples), 10)
 
-        for (bootstrap_matrix, bootstrap_priors) in bootstrap_samples:
+        for bootstrap_matrix, bootstrap_priors in bootstrap_samples:
             self.assertCountEqual(
                 self.character_matrix.index, bootstrap_matrix.index
             )
@@ -316,6 +316,48 @@ class TestDataUtilities(unittest.TestCase):
         )
         self.assertEqual(ret_vec, [1, 2, 3, 0, 5])
 
+    def test_lca_characters_ambiguous2(self):
+
+        s1 = [
+            (4, 62),
+            (3, 10),
+            (3, 10, 16),
+            (0, 3),
+            (0, 2, 3),
+            (0, 2, 3),
+            (0, 4, 7),
+            (0, 2, 23),
+            (0, 1, 4, 44),
+        ]
+        s2 = [4, 3, -1, 0, 0, 0, (0, 7), (0, 2), (0, 4)]
+
+        expected_reconstruction = [
+            4,
+            3,
+            (3, 10, 16),
+            0,
+            0,
+            0,
+            (0, 7),
+            (0, 2),
+            (0, 4),
+        ]
+        ret_vec = data_utilities.get_lca_characters(
+            [s1, s2], missing_state_indicator=-1
+        )
+        self.assertEqual(ret_vec, expected_reconstruction)
+
+    def test_lca_characters_ambiguous_and_missing(self):
+        vecs = [
+            [(1, 1), (0, 2), (3, 0), (4,), (5,)],
+            [1, -1, -1, 3, -1],
+            [1, -1, (3, 0), 2, -1],
+        ]
+        ret_vec = data_utilities.get_lca_characters(
+            vecs, missing_state_indicator=-1
+        )
+        self.assertEqual(ret_vec, [1, (0, 2), (3, 0), 0, 5])
+
     def test_resolve_most_abundant(self):
         state = (1, 2, 3, 3)
         self.assertEqual(data_utilities.resolve_most_abundant(state), 3)
@@ -441,8 +483,10 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            tree, meta_item="CellType"
+        inter_cluster_distances = (
+            data_utilities.compute_inter_cluster_distances(
+                tree, meta_item="CellType"
+            )
         )
 
         expected_distances = pd.DataFrame.from_dict(
@@ -496,10 +540,12 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree)
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            tree,
-            meta_data=meta_data["CellType"],
-            dissimilarity_map=weight_matrix,
+        inter_cluster_distances = (
+            data_utilities.compute_inter_cluster_distances(
+                tree,
+                meta_data=meta_data["CellType"],
+                dissimilarity_map=weight_matrix,
+            )
         )
 
         expected_distances = pd.DataFrame.from_dict(
