@@ -3,6 +3,7 @@ This file stores a general phylogenetic tree simulator using forward birth-death
 process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
+
 from random import random
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
@@ -50,9 +51,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         these two stopping criteria must be provided. Both can be provided in which
         case the simulation is run until one of the stopping conditions is reached."
 
-    -(excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
-
-    Example use snippet: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
+    Example use snippet:
         # note that numpy uses a different parameterization of the
         # exponential distribution with the scale parameter, which is 1/rate
 
@@ -74,14 +73,15 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         )
         tree = bd_sim.simulate_tree()
 
-    Args: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
+    Args:
         birth_waiting_distribution: A function that samples waiting times
             from the birth distribution. Determines how often births occur.
             Must take a scale parameter as the input
         initial_birth_scale: The initial scale parameter that is used at the
             start of the experiment
         death_waiting_distribution: A function that samples waiting times
-            from the death distribution. Determines how often deaths occur. Default is no-death.
+            from the death distribution. Determines how often deaths occur.
+            Default is no-death.
         mutation_distribution: A function that samples the number of
             mutations that occur at a division event. If None, then no
             mutations are sampled
@@ -106,18 +106,25 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             on living lineages downstream.
         random_seed: A seed for reproducibility
         initial_copy_number: Initial copy number for parental lineage.
-        cosegregation_coefficient: A coefficient describing how likely it is for one species to be co-inherited
-            with one specific species (currently modeled as the first in the array).
-            TODO: how do we make this generalizable to multiple species each with different pairwise covariances?
-        splitting_function: As implemented, the function that describes segregation of each species at cell division.
-            TO DO: fix this implementation to allow for non-independent segregation.
-        fitness_array: Fitnesses with respect to copy number of each species in a cell. This should be a matrix in
-            R^e (where e is the number of ecDNA species being modelled).
-        fitness_function: A function that produces a fitness value as a function of copy number and the selection coefficient
-            encoded by the fitness array.
-        capture_efficiency: Probability of observing an ecDNA species. Used as the the probability of a binomial process.
+        cosegregation_coefficient: A coefficient describing how likely it is for
+            one species to be co-inherited with one specific species (currently
+            modeled as the first in the array).
+            TODO: how do we make this generalizable to multiple species each
+            with different pairwise covariances?
+        splitting_function: As implemented, the function that describes
+            segregation of each species at cell division.
+            TODO: fix this implementation to allow for non-independent
+            segregation.
+        fitness_array: Fitnesses with respect to copy number of each species in
+            a cell. This should be a matrix in R^e (where e is the number of
+            ecDNA species being modelled).
+        fitness_function: A function that produces a fitness value as a function
+            of copy number and the selection coefficient encoded by the fitness
+            array.
+        capture_efficiency: Probability of observing an ecDNA species. Used as
+            the the probability of a binomial process.
 
-    Raises: (excerpted from from BirthDeathFitnessSimulator, update / check for accuracy)
+    Raises:
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
@@ -194,9 +201,15 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if self.initial_tree:
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
-                tree.nodes[node]['birth_scale'] = self.update_fitness(self.initial_tree.get_attribute(node, 'ecdna_array'))
-                tree.nodes[node]['time'] = self.initial_tree.get_attribute(node, 'time')
-                tree.nodes[node]['ecdna_array'] = self.initial_tree.get_attribute(node, 'ecdna_array')
+                tree.nodes[node]["birth_scale"] = self.update_fitness(
+                    self.initial_tree.get_attribute(node, "ecdna_array")
+                )
+                tree.nodes[node]["time"] = self.initial_tree.get_attribute(
+                    node, "time"
+                )
+                tree.nodes[node]["ecdna_array"] = (
+                    self.initial_tree.get_attribute(node, "ecdna_array")
+                )
             return tree
 
         tree = nx.DiGraph()
@@ -210,10 +223,11 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
     # update to compute fitness using lineage cn_array
     def update_fitness(self, ecdna_array: np.array) -> float:
-        """Updates a lineage birth scale, which represents its (Malthusian) fitness.
+        """Updates a lineage birth scale, representing its (Malthusian) fitness.
 
-        Fitness is computed as a function of copy number, using the fitness_array
-        (which defines fitness for CN=0 or CN >0 for each species, with epistasis).
+        Fitness is computed as a function of copy number, using the
+        fitness_array (which defines fitness for CN=0 or CN >0 for each species,
+        with epistasis).
 
         Args:
             ecdna_array: The birth_scale to be updated
@@ -231,7 +245,12 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             )
         else:
             return self.initial_birth_scale * (
-                1.0 + self.fitness_function(ecdna_array[0], ecdna_array[1], self.fitness_array[tuple((ecdna_array > 0).astype(int))])
+                1.0
+                + self.fitness_function(
+                    ecdna_array[0],
+                    ecdna_array[1],
+                    self.fitness_array[tuple((ecdna_array > 0).astype(int))],
+                )
             )
 
     def sample_lineage_event(
@@ -293,12 +312,12 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
 
-        # TO DO: this is a really hacky fix b/c it bypasses the length checks of whether
-        # the first birth_waiting_time exceeds self.experiment_time.
-        # Also, it just assumes the first event is a birth.  we could also WOLOG that the
-        # first birth_waiting_time of the experiment is 0
-        # (but that requires shifting times elsewhere in order to permit correct model
-        # comparison to non-ecDNA simulators).
+        # TO DO: this is a really hacky fix b/c it bypasses the length checks of
+        # whether the first birth_waiting_time exceeds self.experiment_time.
+        # Also, it just assumes the first event is a birth.  we could also
+        # WOLOG that the first birth_waiting_time of the experiment is 0
+        # (but that requires shifting times elsewhere in order to permit correct
+        # model comparison to non-ecDNA simulators).
         if lineage["total_time"] == 0:
             # Update birth rate
             updated_birth_scale = self.update_fitness(
@@ -331,7 +350,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                     },
                 ),
             )
-          
+
             return
 
         # If birth and death would happen after the total experiment time,
@@ -364,7 +383,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                     },
                 ),
             )
-            
+
             # Indicate this node is observed at the end of experiment
             observed_nodes.append(unique_id)
 
@@ -427,14 +446,14 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 )
 
     def get_ecdna_array(self, parent_id: str, tree: nx.DiGraph) -> np.array:
-        """Generates an ecDNA array for a child given its parent and sister information.
+        """Generates an ecDNA array for a child given its parent and sisters.
 
         Args:
             parent_id: ID of parent in the generated tree.
             tree: The in-progress tree.
 
         Returns:
-            Numpy array corresponding to the ecDNA copy numbers for the new child.
+            Numpy array corresponding to the ecDNA copy numbers for the child.
         """
 
         parental_ecdna_array = 2 * tree.nodes[parent_id]["ecdna_array"]
@@ -499,7 +518,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         """Populates tree with appropriate meta data.
 
         Args:
-            tree: The tree simulated with ecDNA and fitness values populated as attributes.
+            tree: The tree simulated with ecDNA and fitness values populated
+                as attributes.
             observed_nodes: The observed leaves of the tree.
 
         Returns:
@@ -512,21 +532,21 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         time_dictionary = {}
         for node in tree.nodes:
 
-                time_dictionary[node] = tree.nodes[node]["time"]
-            
-                cassiopeia_tree.set_attribute(
-                    node, "ecdna_array", tree.nodes[node]["ecdna_array"]
-                )
-                cassiopeia_tree.set_attribute(
-                    node, "fitness", tree.nodes[node]["birth_scale"]
-                )
+            time_dictionary[node] = tree.nodes[node]["time"]
+
+            cassiopeia_tree.set_attribute(
+                node, "ecdna_array", tree.nodes[node]["ecdna_array"]
+            )
+            cassiopeia_tree.set_attribute(
+                node, "fitness", tree.nodes[node]["birth_scale"]
+            )
 
         cassiopeia_tree.set_times(time_dictionary)
 
-         # Prune dead lineages and collapse resulting unifurcations
-        to_remove = (set(cassiopeia_tree.leaves) - set(observed_nodes))
+        # Prune dead lineages and collapse resulting unifurcations
+        to_remove = set(cassiopeia_tree.leaves) - set(observed_nodes)
         if self.prune_dead_lineages:
-            print(f'Removing {len(to_remove)} sublineages.')
+            print(f"Removing {len(to_remove)} sublineages.")
             cassiopeia_tree.remove_leaves_and_prune_lineages(list(to_remove))
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
             cassiopeia_tree.collapse_unifurcations(source="1")
@@ -553,7 +573,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         cassiopeia_tree.cell_meta = cell_metadata.astype(int).copy()
 
-        cassiopeia_tree.cell_meta['Observed'] = ['False' if n in to_remove else 'True' for n in cassiopeia_tree.leaves]
+        cassiopeia_tree.cell_meta["Observed"] = [
+            "False" if n in to_remove else "True"
+            for n in cassiopeia_tree.leaves
+        ]
 
         # If only implicit root remains after pruning dead lineages, error
         if len(cassiopeia_tree.nodes) == 1:
