@@ -30,7 +30,9 @@ class TestCollapseUMIs(unittest.TestCase):
             ".collapsed.bam"
         )
 
-        _, _ = UMI_utils.sort_bam(self.test_file, str(self.sorted_file_name))
+        _, _ = UMI_utils.sort_bam(
+            str(self.test_file), str(self.sorted_file_name)
+        )
 
         UMI_utils.form_collapsed_clusters(
             str(self.sorted_file_name),
@@ -67,7 +69,7 @@ class TestCollapseUMIs(unittest.TestCase):
         )
 
         _, _ = UMI_utils.sort_bam(
-            self.uncorrected_test_file,
+            str(self.uncorrected_test_file),
             str(self.uncorrected_sorted_file_name),
             sort_key=lambda al: (al.get_tag("CR"), al.get_tag("UR")),
             filter_func=lambda al: al.has_tag("CR"),

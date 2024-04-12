@@ -71,6 +71,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
+        self._implementation = "generic_spectral_nj"
+        
         super().__init__(
             dissimilarity_function=similarity_function,
             add_root=add_root,
@@ -79,6 +81,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         
         self._similarity_map = None
         self._lambda_indices = None
+
 
     def get_dissimilarity_map(
         self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None

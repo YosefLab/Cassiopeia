@@ -12,7 +12,6 @@ TODO(mattjones315@): include invocation instructions & pipeline specifics.
 import os
 
 import argparse
-import configparser
 import logging
 import pandas as pd
 from typing import Any, Dict
@@ -121,6 +120,17 @@ def main():
                 "provided in the configuration."
             )
             continue
+
+        # If intBC correction was performed, don't correct in the
+        # filter_molecule_table step
+        if stage == "filter_molecule_table" and pipeline_parameters[stage].get(
+            "whitelist"
+        ):
+            logger.warning(
+                "intBC whitelist was provided. "
+                "Turning off intBC correction in `filter_molecule_table` stage."
+            )
+            pipeline_parameters[stage]["intbc_dist_thresh"] = -1
 
         procedure = STAGES[stage]
         data = procedure(data, **pipeline_parameters[stage])

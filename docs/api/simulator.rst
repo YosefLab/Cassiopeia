@@ -29,6 +29,18 @@ These simulators are subclasses of the `DataSimulator` class and implement the `
 
    sim.Cas9LineageTracingDataSimulator
 
+
+Spatial Simulators
+~~~~~~~~~~~~~~~~~~~
+These simulators are subclasses of the `SpatialSimulator` class and implement the `overlay_data` method which adds spatial coordinates to a given topology. `SpatialSimulator`s are a special sublcass of `DataSimulator` and can be used in addition to other `DataSimulator`s that simulate lineage tracing data.
+
+.. autosummary::
+   :toctree: reference/
+
+   sim.BrownianSpatialDataSimulator
+   sim.ClonalSpatialDataSimulator
+   
+
 Leaf SubSamplers
 ~~~~~~~~~~~~~~~~~~~
 These are utilities for subsampling lineages for benchmarking purposes. For example, sampling a random proportion of leaves or grouping together cells into clades to model spatial data.
@@ -37,4 +49,5 @@ These are utilities for subsampling lineages for benchmarking purposes. For exam
    :toctree: reference/
 
    sim.SupercellularSampler
+   sim.SpatialLeafSubsampler
    sim.UniformLeafSubsampler

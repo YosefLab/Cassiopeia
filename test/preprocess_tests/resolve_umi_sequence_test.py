@@ -1,7 +1,11 @@
 """
 Tests for the UMI Resolution module in pipeline.py.
 """
+import os
 import unittest
+
+import shutil
+import tempfile
 
 import pandas as pd
 from cassiopeia.preprocess import pipeline
@@ -55,10 +59,13 @@ class TestResolveUMISequence(unittest.TestCase):
             collapsed_umi_table_dict
         )
 
+        # set up temporary directory
+        self.temporary_directory = tempfile.mkdtemp()
+
     def test_resolve_umi(self):
 
         resolved_mt = pipeline.resolve_umi_sequence(
-            self.collapsed_umi_table, ".", min_umi_per_cell=1, plot=False
+            self.collapsed_umi_table,  self.temporary_directory, min_umi_per_cell=1, plot=False
         )
 
         # check that cell1-UMIA was selected correctly
@@ -86,20 +93,26 @@ class TestResolveUMISequence(unittest.TestCase):
 
         resolved_mt = pipeline.resolve_umi_sequence(
             self.collapsed_umi_table,
-            ".",
+            self.temporary_directory,
             min_avg_reads_per_umi=30,
             min_umi_per_cell=1,
-            plot=False,
+            plot=True,
         )
 
         expected_cells = ["cell3"]
         expected_removed_cells = ["cell1", "cell2"]
+
+        # print(expected_cells)
 
         for cell in expected_cells:
             self.assertIn(cell, resolved_mt["cellBC"].unique())
 
         for cell in expected_removed_cells:
             self.assertNotIn(cell, resolved_mt["cellBC"].unique())
+
+    def tearDown(self):
+
+        shutil.rmtree(self.temporary_directory)
 
 
 if __name__ == "__main__":

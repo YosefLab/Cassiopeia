@@ -18,6 +18,8 @@ packages such as Scanpy.
 .. autosummary::
    :toctree: reference/
 
+   pl.labels_from_coordinates
    pl.plot_matplotlib
    pl.plot_plotly
+   pl.Tree3D
    pl.upload_and_export_itol

@@ -3,6 +3,8 @@ This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
 represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
+from collections import defaultdict
+import functools
 from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import networkx as nx
@@ -10,7 +12,12 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import GreedySolverError, is_ambiguous_state
+from cassiopeia.mixins import (
+    GreedySolverError,
+    find_duplicate_groups,
+    is_ambiguous_state,
+    unravel_ambiguous_states,
+)
 from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
@@ -39,8 +46,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     """
 
     def __init__(self, prior_transformation: str = "negative_log"):
-
         super().__init__(prior_transformation)
+        self.allow_ambiguous = False
 
     def perform_split(
         self,
@@ -152,13 +159,30 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
         # Raise exception if the character matrix has ambiguous states.
-        if any(
-            is_ambiguous_state(state)
-            for state in character_matrix.values.flatten()
+        if (
+            any(
+                is_ambiguous_state(state)
+                for state in character_matrix.values.flatten()
+            )
+            and not self.allow_ambiguous
         ):
-            raise GreedySolverError("Solver does not support ambiguous states.")
+            raise GreedySolverError(
+                "Ambiguous states are not currently supported with this solver."
+            )
 
-        unique_character_matrix = character_matrix.drop_duplicates()
+        keep_rows = (
+            character_matrix.apply(
+                lambda x: [
+                    set(s) if is_ambiguous_state(s) else set([s])
+                    for s in x.values
+                ],
+                axis=0,
+            )
+            .apply(tuple, axis=1)
+            .drop_duplicates()
+            .index.values
+        )
+        unique_character_matrix = character_matrix.loc[keep_rows].copy()
 
         tree = nx.DiGraph()
         tree.add_nodes_from(list(unique_character_matrix.index))
@@ -194,20 +218,26 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Generates a dictionary that maps each character to a dictionary of state/
         sample frequency pairs, allowing quick lookup. Subsets the character matrix
         to only include the samples in the sample set.
+
+        This currently supports ambiguous states, for the GreedySolvers that
+        support ambiguous states during inference.
+
         Args:
             samples: The set of relevant samples in calculating frequencies
-            unique_character_matrix: The character matrix from which to calculate frequencies
+            unique_character_matrix: The character matrix from which to
+                calculate frequencies
             missing_state_indicator: The character representing missing values
         Returns:
             A dictionary containing frequency information for each character/state
             pair
         """
-
         subset_cm = unique_character_matrix.loc[samples, :].to_numpy()
         freq_dict = {}
         for char in range(subset_cm.shape[1]):
             char_dict = {}
-            state_counts = np.unique(subset_cm[:, char], return_counts=True)
+            all_states = unravel_ambiguous_states(subset_cm[:, char])
+            state_counts = np.unique(all_states, return_counts=True)
+
             for i in range(len(state_counts[0])):
                 state = state_counts[0][i]
                 count = state_counts[1][i]
@@ -236,21 +266,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             The tree with duplicates added
         """
+        
+        duplicate_mappings = find_duplicate_groups(character_matrix)
 
-        character_matrix.index.name = "index"
-        duplicate_groups = (
-            character_matrix[character_matrix.duplicated(keep=False) == True]
-            .reset_index()
-            .groupby(character_matrix.columns.tolist())["index"]
-            .agg(["first", tuple])
-            .set_index("first")["tuple"]
-            .to_dict()
-        )
-
-        for i in duplicate_groups:
+        for i in duplicate_mappings:
             new_internal_node = next(node_name_generator)
             nx.relabel_nodes(tree, {i: new_internal_node}, copy=False)
-            for duplicate in duplicate_groups[i]:
+            for duplicate in duplicate_mappings[i]:
                 tree.add_edge(new_internal_node, duplicate)
 
         return tree

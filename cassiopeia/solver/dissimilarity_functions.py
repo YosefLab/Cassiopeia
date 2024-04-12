@@ -29,7 +29,7 @@ def weighted_hamming_distance(
     states are different, +1 if one state is uncut and the other is an indel,
     and +0 if the two states are identical.
 
-    Args: 
+    Args:
         s1: Character states of the first sample
         s2: Character states of the second sample
         missing_state_indicator: The character representing missing values
@@ -46,7 +46,6 @@ def weighted_hamming_distance(
     d = 0
     num_present = 0
     for i in range(len(s1)):
-
         if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
             continue
 
@@ -96,7 +95,6 @@ def hamming_similarity_without_missing(
     # TODO Optimize this using masks
     similarity = 0
     for i in range(len(s1)):
-
         if (
             s1[i] == missing_state_indicator
             or s2[i] == missing_state_indicator
@@ -184,11 +182,10 @@ def hamming_distance(
 
     dist = 0
     for i in range(len(s1)):
-
         if s1[i] != s2[i]:
-
             if (
-                s1[i] == missing_state_indicator or s2[i] == missing_state_indicator
+                s1[i] == missing_state_indicator
+                or s2[i] == missing_state_indicator
             ) and ignore_missing_state:
                 dist += 0
             else:
@@ -220,7 +217,6 @@ def weighted_hamming_similarity(
     d = 0
     num_present = 0
     for i in range(len(s1)):
-
         if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
             continue
 
@@ -248,7 +244,6 @@ def exponential_negative_hamming_distance(
     missing_state_indicator=-1,
     weights: Optional[Dict[int, Dict[int, float]]] = None,
 ) -> float:
-
     """
     Gives a similarity function from the inverse of weighted hamming distance.
 
@@ -273,11 +268,10 @@ def exponential_negative_hamming_distance(
     Returns:
         A similarity score.
     """
-    
+
     d = 0
     num_present = 0
     for i in range(len(s1)):
-
         if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
             continue
 
@@ -303,7 +297,6 @@ def exponential_negative_hamming_distance(
 
     weighted_hamm_dist = d / num_present
 
-    
     return np.exp(-weighted_hamm_dist)
 
 
@@ -386,7 +379,8 @@ def cluster_dissimilarity(
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
             present.append(
-                _c1 != missing_state_indicator and _c2 != missing_state_indicator
+                _c1 != missing_state_indicator
+                and _c2 != missing_state_indicator
             )
             dissim.append(
                 dissimilarity_function(
@@ -403,3 +397,100 @@ def cluster_dissimilarity(
         return 0
 
     return result / num_present if normalize else result
+
+
+def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
+    s1: Union[List[int], List[Tuple[int, ...]]],
+    s2: Union[List[int], List[Tuple[int, ...]]],
+    missing_state_indicator: int,
+    weights: Optional[Dict[int, Dict[int, float]]] = None,
+) -> float:
+    """Compute the dissimilarity between (possibly) ambiguous character strings.
+
+    An ambiguous character string is a character string in
+    which each character contains an tuple of possible states, and such a
+    character string is represented as a list of tuples of integers.
+
+    A naive implementation is to first disambiguate each of the two
+    ambiguous character strings by generating all possible strings, then
+    computing the dissimilarity between all pairwise combinations, and finally
+    applying the linkage function on the calculated dissimilarities. However,
+    doing so has complexity O(\prod_{i=1}^N |a_i| x |b_i|) where N is the number
+    of target sites, |a_i| is the number of ambiguous characters at target site
+    i of string a, and |b_i| is the number of amiguous characters at target site
+    i of string b.  As an example, if we have N=10 and all a_i=b_i=2, then we
+    have to construct 1,038,576 * 2 strings and compute over 4 trillion
+    dissimilarities.
+
+    By assuming each target site is independent, simply calculating the sum of
+    the linkages of each target site separately is equivalent to the naive
+    implementation (can be proven by induction). This procedure is implemented
+    in this function. One caveat is that we usually normalize the distance by
+    the number of shared non-missing positions. We approximate this by dividing
+    the absolute distance by the sum of the probability of each site not being
+    a missing site for both strings.
+
+    Note:
+        If neither character string is ambiguous, then calling this function is
+        equivalent to calling ``dissimilarity_function`` separately.
+
+    Args:
+        s1: The first (possibly) ambiguous sample
+        s2: The second (possibly) ambiguous sample
+        missing_state_indicator: The character representing missing values
+        weights: A set of optional weights to weight the similarity of a
+            mutation
+
+    Returns:
+        The dissimilarity between the two ambiguous samples
+    """
+    # Make any unambiguous character strings into pseudo-ambiguous so that we
+    # can easily iterate through combinations
+    s1 = [list(s) if isinstance(s, tuple) else [s] for s in s1]
+    s2 = [list(s) if isinstance(s, tuple) else [s] for s in s2]
+
+    result = 0
+    num_present = 0
+    for i in range(len(s1)):
+        c1, c2 = s1[i], s2[i]
+
+        dissim = []
+        present = 0
+        total = 0
+        for _c1 in c1:
+            for _c2 in c2:
+                d = 0
+
+                total += 1
+                if (
+                    _c1 != missing_state_indicator
+                    and _c2 != missing_state_indicator
+                ):
+                    present += 1
+
+                if (_c1 != _c2) and (
+                    _c1 != missing_state_indicator
+                    and _c2 != missing_state_indicator
+                ):
+                    if _c1 == 0 or _c2 == 0:
+                        if weights:
+                            if _c1 != 0:
+                                d += weights[i][_c1]
+                            else:
+                                d += weights[i][_c2]
+                        else:
+                            d += 1
+                    else:
+                        if weights:
+                            d += weights[i][_c1] + weights[i][_c2]
+                        else:
+                            d += 2
+                dissim.append(d)
+
+        result += np.min(np.array(dissim))
+        num_present += present / total
+
+    if num_present == 0:
+        return 0
+
+    return result / num_present
