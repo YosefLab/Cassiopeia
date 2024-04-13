@@ -11,8 +11,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-# from queue import PriorityQueue
-import heapq
+from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ecDNABirthDeathSimulatorError, TreeSimulatorError
@@ -256,7 +255,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
     def sample_lineage_event(
         self,
         lineage: Dict[str, Union[int, float]],
-        current_lineages: List[Tuple[int, Any]],
+        current_lineages: PriorityQueue,
         tree: nx.DiGraph,
         names: Generator,
         observed_nodes: List[str],
@@ -335,20 +334,17 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 "ecdna_array"
             ]  # child_ecdna_array
 
-            # Add the newly generated cell to the list of living lineages
-            heapq.heappush(
-                current_lineages,
+            current_lineages.put(
                 (
                     birth_waiting_time + lineage["total_time"],
                     unique_id,
                     {
                         "id": unique_id,
                         "birth_scale": updated_birth_scale,
-                        "total_time": birth_waiting_time
-                        + lineage["total_time"],
+                        "total_time": birth_waiting_time + lineage["total_time"],
                         "active": True,
                     },
-                ),
+                )
             )
 
             return
@@ -370,8 +366,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]][
                 "ecdna_array"
             ]
-            heapq.heappush(
-                current_lineages,
+            current_lineages.put(
                 (
                     self.experiment_time,
                     unique_id,
@@ -381,7 +376,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                         "total_time": self.experiment_time,
                         "active": False,
                     },
-                ),
+                )
             )
 
             # Indicate this node is observed at the end of experiment
@@ -405,8 +400,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 )
                 tree.nodes[unique_id]["ecdna_array"] = child_ecdna_array
                 # Add the newly generated cell to the list of living lineages
-                heapq.heappush(
-                    current_lineages,
+                current_lineages.put(
                     (
                         birth_waiting_time + lineage["total_time"],
                         unique_id,
@@ -417,7 +411,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                             + lineage["total_time"],
                             "active": True,
                         },
-                    ),
+                    )
                 )
 
             else:
@@ -430,8 +424,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 tree.nodes[unique_id]["ecdna_array"] = tree.nodes[
                     lineage["id"]
                 ]["ecdna_array"]
-                heapq.heappush(
-                    current_lineages,
+                current_lineages.put(
                     (
                         death_waiting_time + lineage["total_time"],
                         unique_id,
@@ -442,7 +435,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                             + lineage["total_time"],
                             "active": False,
                         },
-                    ),
+                    )
                 )
 
     def get_ecdna_array(self, parent_id: str, tree: nx.DiGraph) -> np.array:

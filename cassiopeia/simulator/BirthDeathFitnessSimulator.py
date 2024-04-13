@@ -330,7 +330,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self,
         lineage: Dict[str, Union[int, float]],
         current_lineages: PriorityQueue,
-        # current_lineages: List[Tuple[int, Any]],
         tree: nx.DiGraph,
         names: Generator,
         observed_nodes: List[str],
