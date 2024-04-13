@@ -24,7 +24,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
-import tqdm
 
 from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers

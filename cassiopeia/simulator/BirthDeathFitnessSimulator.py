@@ -3,12 +3,11 @@ This file stores a general phylogenetic tree simulator using forward birth-death
 process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Union
 
 import networkx as nx
 import numpy as np
-
-import heapq
+from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import TreeSimulatorError
@@ -184,24 +183,23 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         """
         
         leaves = [node for node in tree if tree.out_degree(node) == 0]
-        current_lineages = []
+        current_lineages = PriorityQueue()
         for leaf in leaves:
             
-            lineage = self.make_lineage_dict(
+            lineage_dict = self.make_lineage_dict(
                     leaf, tree.nodes[leaf]['birth_scale'], tree.nodes[leaf]['time'], True
                 )
             
             if len(tree.nodes) == 1:
-                return lineage
-
-            heapq.heappush(
-                    current_lineages,
-                    (
-                        tree.nodes[leaf]['time'],
-                        leaf,
-                        lineage,
-                    ),
+                return lineage_dict
+            
+            current_lineages.put(
+                (
+                    tree.nodes[leaf]['time'],
+                    leaf,
+                    lineage_dict
                 )
+            )
                             
         return current_lineages
 
@@ -222,13 +220,13 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         Returns: a dict (lineage) with the parameter values under the hard-coded keys
 
         """
-        lineage = {
+        lineage_dict = {
             "id": id_value,
             "birth_scale": birth_scale,
             "total_time": total_time,
             "active": active_flag,
         }
-        return lineage
+        return lineage_dict
 
     def simulate_tree(
         self,
@@ -267,24 +265,14 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         # Set the seed
         if self.random_seed:
             np.random.seed(self.random_seed)
-
+        
         tree = self.initialize_tree(names)
 
-        # current_lineages = PriorityQueue()
-        current_lineages = []  # instantiate heap
+        current_lineages = PriorityQueue() # instantiate queue
         # Records the nodes that are observed at the end of the experiment
 
         # TO DO: update to accept arbitrary fields in the dict.
         observed_nodes = []
-
-        """ 
-        starting_lineage = {
-            "id": root,
-            "birth_scale": self.initial_birth_scale,
-            "total_time": 0,
-            "active": True,
-        }
-        """
 
         starting_lineage = self.make_initial_lineage_dict(tree)
     
@@ -297,17 +285,17 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             current_lineages = starting_lineage
 
         # Perform the process until there are no active extant lineages left
-        while len(current_lineages) > 0:
+        while not current_lineages.empty():
             # If number of extant lineages is the stopping criterion, at the
             # first instance of having n extant tips, stop the experiment
             # and set the total lineage time for each lineage to be equal to
             # the minimum, to produce ultrametric trees. Also, the birth_scale
             # parameter of each leaf is rolled back to equal its parent's.
             if self.num_extant:
-                if len(current_lineages) == self.num_extant:
+                if current_lineages.qsize() == self.num_extant:
                     remaining_lineages = []
-                    while len(current_lineages) > 0:
-                        _, _, lineage = heapq.heappop(current_lineages)
+                    while not current_lineages.empty():
+                        _, _, lineage = current_lineages.get()
                         remaining_lineages.append(lineage)
                     min_total_time = remaining_lineages[0]["total_time"]
                     for lineage in remaining_lineages:
@@ -322,7 +310,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         observed_nodes.append(lineage["id"])
                     break
             # Pop the minimum age lineage to simulate forward time
-            _, _, lineage = heapq.heappop(current_lineages)
+            _, _, lineage = current_lineages.get()
+
             # If the lineage is no longer active, just remove it from the queue.
             # This represents the time at which the lineage dies.
             if lineage["active"]:
@@ -340,7 +329,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
     def sample_lineage_event(
         self,
         lineage: Dict[str, Union[int, float]],
-        current_lineages: List[Tuple[int, Any]],
+        current_lineages: PriorityQueue,
+        # current_lineages: List[Tuple[int, Any]],
         tree: nx.DiGraph,
         names: Generator,
         observed_nodes: List[str],
@@ -410,8 +400,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             tree.add_edge(lineage["id"], unique_id)
             tree.nodes[unique_id]["time"] = self.experiment_time
 
-            heapq.heappush(
-                current_lineages,
+            current_lineages.put(
                 (
                     self.experiment_time,
                     unique_id,
@@ -421,7 +410,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         "total_time": self.experiment_time,
                         "active": False,
                     },
-                ),
+                )
             )
 
             # Indicate this node is observed at the end of experiment
@@ -442,8 +431,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     birth_waiting_time + lineage["total_time"]
                 )
                 # Add the newly generated cell to the list of living lineages
-                heapq.heappush(
-                    current_lineages,
+                current_lineages.put(
                     (
                         birth_waiting_time + lineage["total_time"],
                         unique_id,
@@ -454,7 +442,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                             + lineage["total_time"],
                             "active": True,
                         },
-                    ),
+                    )
                 )
 
 
@@ -465,8 +453,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 tree.nodes[unique_id]["time"] = (
                     death_waiting_time + lineage["total_time"]
                 )
-                heapq.heappush(
-                    current_lineages,
+                current_lineages.put(
                     (
                         death_waiting_time + lineage["total_time"],
                         unique_id,
@@ -477,7 +464,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                             + lineage["total_time"],
                             "active": False,
                         },
-                    ),
+                    )
                 )
 
     def update_fitness(self, birth_scale: float) -> float:
