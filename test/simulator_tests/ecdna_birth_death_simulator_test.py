@@ -1,8 +1,10 @@
 """
 Tests the functionality of cassiopeia.simulator.ecDNABirthDeathSimulator.
 """
+
 import heapq
 from typing import List, Tuple, Generator
+
 # from queue import PriorityQueue
 import unittest
 
@@ -23,6 +25,7 @@ def node_name_generator() -> Generator[str, None, None]:
     while True:
         yield str(i)
         i += 1
+
 
 def extract_tree_statistics(
     tree: CassiopeiaTree,
@@ -77,7 +80,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         new_ecdna_array = sim.get_ecdna_array(0, tree)
         expected_array = [3, 3]  # calculated manually as [4*2-5, 5*2 - 7]
         self.assertTrue(np.all(expected_array == new_ecdna_array))
-    
+
     def test_initial_sample_event(self):
 
         np.random.seed(41)
@@ -86,7 +89,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            fitness_array = np.array([[[0,0.1], [0.1,0.2]],[[0.1,0.5],[0.2,0.6]]]),
+            fitness_array=np.array(
+                [[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]
+            ),
         )
 
         # first, we'll trigger the time=0 condition in sample_lineage_event.
@@ -130,7 +135,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            fitness_array = np.array([[[0,0.1], [0.1,0.2]],[[0.1,0.5],[0.2,0.6]]]),
+            fitness_array=np.array(
+                [[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]
+            ),
         )
 
         names = node_name_generator()
@@ -176,7 +183,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
 
         expected_array = [4, 4, 4]
         self.assertTrue(
-            np.all(tree.nodes[new_lineage["id"]]["ecdna_array"] == expected_array)
+            np.all(
+                tree.nodes[new_lineage["id"]]["ecdna_array"] == expected_array
+            )
         )
 
         # Now, let's edit new_lineage to ensure it triggers stopping condition, then pass it into sample_lineage_event
@@ -198,9 +207,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            initial_copy_number=[3,2,5]
+            initial_copy_number=[3, 2, 5],
         )
-        
+
         names = node_name_generator()
 
         tree = nx.DiGraph()
@@ -214,22 +223,35 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = np.array([3, 2, 5])
 
-        tree.nodes[child_1]['birth_scale'] = 1
+        tree.nodes[child_1]["birth_scale"] = 1
         tree.nodes[child_1]["time"] = 2
-        tree.nodes[child_1]["ecdna_array"] = np.array([2,0,6])
-        
-        tree.nodes[child_2]['birth_scale'] = 1
+        tree.nodes[child_1]["ecdna_array"] = np.array([2, 0, 6])
+
+        tree.nodes[child_2]["birth_scale"] = 1
         tree.nodes[child_2]["time"] = 2
         tree.nodes[child_2]["ecdna_array"] = np.array([4, 4, 4])
 
-        cassiopeia_tree = sim.populate_tree_from_simulation(tree, [child_1, child_2])
+        cassiopeia_tree = sim.populate_tree_from_simulation(
+            tree, [child_1, child_2]
+        )
 
-        expected_meta_data = pd.DataFrame.from_dict({
-            child_1: [2, 0, 6, 2, 0, 6],
-            child_2: [4, 4, 4, 4, 4, 4]
-        }, orient='index', columns = ['ecDNA_0', 'ecDNA_1', 'ecDNA_2', 'Observed_ecDNA_0', 'Observed_ecDNA_1', 'Observed_ecDNA_2'])
-        
-        pd.testing.assert_frame_equal(expected_meta_data, cassiopeia_tree.cell_meta.astype(int))
+        expected_meta_data = pd.DataFrame.from_dict(
+            {child_1: [2, 0, 6, 2, 0, 6], child_2: [4, 4, 4, 4, 4, 4]},
+            orient="index",
+            columns=[
+                "ecDNA_0",
+                "ecDNA_1",
+                "ecDNA_2",
+                "Observed_ecDNA_0",
+                "Observed_ecDNA_1",
+                "Observed_ecDNA_2",
+            ],
+        )
+
+        pd.testing.assert_frame_equal(
+            expected_meta_data,
+            cassiopeia_tree.cell_meta[expected_meta_data.columns].astype(int),
+        )
 
     def test_basic_cosegregation(self):
 
@@ -242,7 +264,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             num_extant=16,
             experiment_time=5,
             cosegregation_coefficient=0.5,
-            fitness_array = np.array([[0, 0.5], [0.5, 0]]),
+            fitness_array=np.array([[0, 0.5], [0.5, 0]]),
         )
 
         names = node_name_generator()
@@ -262,7 +284,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             "active": True,
         }
 
-        # simulate time till first cell division 
+        # simulate time till first cell division
         sim.sample_lineage_event(
             starting_lineage, current_lineages, tree, names, observed_nodes
         )
@@ -280,7 +302,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         # get out the children
         _, _, child_lineage_1 = heapq.heappop(current_lineages)
         _, _, child_lineage_2 = heapq.heappop(current_lineages)
-        
+
         # expected arrays derivation (with random seed 41):
         # ecdna1 segregates as (4, 6):
         # ecdna2 co-segregation compartment - (2, 3)
@@ -292,11 +314,17 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         print(tree.nodes[child_lineage_1["id"]]["ecdna_array"])
 
         self.assertTrue(
-            np.all(tree.nodes[child_lineage_1["id"]]["ecdna_array"] == expected_child_1_array)
+            np.all(
+                tree.nodes[child_lineage_1["id"]]["ecdna_array"]
+                == expected_child_1_array
+            )
         )
         self.assertTrue(
-            np.all(tree.nodes[child_lineage_2["id"]]["ecdna_array"] == expected_child_2_array)
-        )    
+            np.all(
+                tree.nodes[child_lineage_2["id"]]["ecdna_array"]
+                == expected_child_2_array
+            )
+        )
 
     def test_perfect_cosegregation(self):
 
@@ -309,7 +337,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             num_extant=16,
             experiment_time=5,
             cosegregation_coefficient=1.0,
-            fitness_array = np.array([[0, 0.5], [0.5, 0]]),
+            fitness_array=np.array([[0, 0.5], [0.5, 0]]),
         )
 
         names = node_name_generator()
@@ -329,7 +357,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             "active": True,
         }
 
-        # simulate time till first cell division 
+        # simulate time till first cell division
         sim.sample_lineage_event(
             starting_lineage, current_lineages, tree, names, observed_nodes
         )
@@ -348,8 +376,14 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         _, _, child_lineage_1 = heapq.heappop(current_lineages)
         _, _, child_lineage_2 = heapq.heappop(current_lineages)
 
-        self.assertEqual(tree.nodes[child_lineage_1["id"]]["ecdna_array"][0], tree.nodes[child_lineage_1["id"]]["ecdna_array"][1])
-        self.assertEqual(tree.nodes[child_lineage_2["id"]]["ecdna_array"][0], tree.nodes[child_lineage_2["id"]]["ecdna_array"][1])
+        self.assertEqual(
+            tree.nodes[child_lineage_1["id"]]["ecdna_array"][0],
+            tree.nodes[child_lineage_1["id"]]["ecdna_array"][1],
+        )
+        self.assertEqual(
+            tree.nodes[child_lineage_2["id"]]["ecdna_array"][0],
+            tree.nodes[child_lineage_2["id"]]["ecdna_array"][1],
+        )
 
     def test_low_capture_efficiency(self):
 
@@ -359,10 +393,10 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            initial_copy_number=[3,2,5],
+            initial_copy_number=[3, 2, 5],
             capture_efficiency=0.5,
         )
-        
+
         names = node_name_generator()
 
         tree = nx.DiGraph()
@@ -376,16 +410,18 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = np.array([3, 2, 5])
 
-        tree.nodes[child_1]['birth_scale'] = 1
+        tree.nodes[child_1]["birth_scale"] = 1
         tree.nodes[child_1]["time"] = 2
-        tree.nodes[child_1]["ecdna_array"] = np.array([2,0,6])
-        
-        tree.nodes[child_2]['birth_scale'] = 1
+        tree.nodes[child_1]["ecdna_array"] = np.array([2, 0, 6])
+
+        tree.nodes[child_2]["birth_scale"] = 1
         tree.nodes[child_2]["time"] = 2
         tree.nodes[child_2]["ecdna_array"] = np.array([4, 4, 4])
 
-        cassiopeia_tree = sim.populate_tree_from_simulation(tree, [child_1, child_2])
-        
+        cassiopeia_tree = sim.populate_tree_from_simulation(
+            tree, [child_1, child_2]
+        )
+
         # reset seed to create expected observations
         np.random.seed(41)
         c1_0 = np.random.binomial(2, 0.5)
@@ -395,13 +431,27 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         c1_2 = np.random.binomial(6, 0.5)
         c2_2 = np.random.binomial(4, 0.5)
 
-        expected_meta_data = pd.DataFrame.from_dict({
-            child_1: [2, 0, 6, c1_0, c1_1, c1_2],
-            child_2: [4, 4, 4, c2_0, c2_1, c2_2]
-        }, orient='index', columns = ['ecDNA_0', 'ecDNA_1', 'ecDNA_2', 'Observed_ecDNA_0', 'Observed_ecDNA_1', 'Observed_ecDNA_2'])
- 
-        pd.testing.assert_frame_equal(expected_meta_data, cassiopeia_tree.cell_meta.astype(int))
+        expected_meta_data = pd.DataFrame.from_dict(
+            {
+                child_1: [2, 0, 6, c1_0, c1_1, c1_2],
+                child_2: [4, 4, 4, c2_0, c2_1, c2_2],
+            },
+            orient="index",
+            columns=[
+                "ecDNA_0",
+                "ecDNA_1",
+                "ecDNA_2",
+                "Observed_ecDNA_0",
+                "Observed_ecDNA_1",
+                "Observed_ecDNA_2",
+            ],
+        )
 
-    
+        pd.testing.assert_frame_equal(
+            expected_meta_data,
+            cassiopeia_tree.cell_meta[expected_meta_data.columns].astype(int),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

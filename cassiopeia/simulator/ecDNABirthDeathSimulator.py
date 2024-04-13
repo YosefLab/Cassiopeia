@@ -545,7 +545,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         # Prune dead lineages and collapse resulting unifurcations
         to_remove = set(cassiopeia_tree.leaves) - set(observed_nodes)
-        if self.prune_dead_lineages:
+        if self.prune_dead_lineages and len(to_remove) > 0:
             print(f"Removing {len(to_remove)} sublineages.")
             cassiopeia_tree.remove_leaves_and_prune_lineages(list(to_remove))
         if self.collapse_unifurcations and len(cassiopeia_tree.nodes) > 1:
