@@ -20,7 +20,8 @@ Other Tutorials
 -----------------
 
 .. toctree::
-
+   :maxdepth: 1
+   
    notebooks/simulate_ecDNA
    
 Contributed tutorials
