@@ -5,7 +5,7 @@ Cassiopeia is a flexible tool for analyzing lineage-tracing data and benchmarkin
 
 For any questions about Cassiopeia, please file an issue on `Github <https://github.com/YosefLab/Cassiopeia/issues>`_. If you'd like to contribute a tutorial or a new algorithm, please follow our :doc:`Contributing guide<contributing>`.
 
-Tutorials
+Main Tutorials
 -----------
 
 .. nbgallery::
@@ -14,6 +14,13 @@ Tutorials
    notebooks/benchmark
    notebooks/reconstruct
    notebooks/local_plotting
+   
+
+Other Tutorials
+-----------------
+
+.. toctree::
+
    notebooks/simulate_ecDNA
    
 Contributed tutorials

@@ -165,6 +165,7 @@ nbsphinx_thumbnails = {
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
     "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
+    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png"
 }
 
 
