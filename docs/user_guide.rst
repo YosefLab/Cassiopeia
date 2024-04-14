@@ -14,6 +14,7 @@ Tutorials
    notebooks/benchmark
    notebooks/reconstruct
    notebooks/local_plotting
+   notebooks/simulate_ecDNA
    
 Contributed tutorials
 ---------------------
