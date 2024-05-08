@@ -11,7 +11,7 @@ import numpy as np
 from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.mixins import CassiopeiaTreeError, TreeSimulatorError
 from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
 
@@ -170,9 +170,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         if self.initial_tree:
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
-                tree.nodes[node]["birth_scale"] = (
-                    self.initial_tree.get_attribute(node, "birth_scale")
-                )
+                try:
+                    tree.nodes[node]["birth_scale"] = (
+                        self.initial_tree.get_attribute(node, "birth_scale")
+                    )
+                except CassiopeiaTreeError:
+                    tree.nodes[node]['birth_scale'] = self.initial_birth_scale
                 tree.nodes[node]["time"] = self.initial_tree.get_attribute(
                     node, "time"
                 )
