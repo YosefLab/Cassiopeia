@@ -95,7 +95,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         collapse_unifurcations: Specifies whether to collapse unifurcations in
             the tree resulting from pruning dead lineages
         random_seed: A seed for reproducibility
-        initial_tree: A tree used for initializing the simulation.
+        initial_tree: A tree used for initializing the simulation. When this
+            argument is passed, a simulation will pick up from the leaves of the
+            specified tree. This can be useful for simulating trees when
+            selection may change over time (for example, in the presence
+            or absence of a drug pressure). 
 
     Raises:
         TreeSimulatorError if invalid stopping conditions are provided or if a
