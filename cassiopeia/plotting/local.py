@@ -185,7 +185,6 @@ def create_indel_heatmap(
     indel_colors: Optional[pd.DataFrame] = None,
     indel_priors: Optional[pd.DataFrame] = None,
     random_state: Optional[np.random.RandomState] = None,
-    clustered_linprof: Optional[pd.DataFrame] = None,
 ) -> Tuple[
     List[
         Dict[
@@ -408,6 +407,9 @@ def place_tree_and_annotations(
         colorstrips.extend(heatmap)
 
     # Any other annotations
+    if type(meta_data) == str:
+        meta_data = [meta_data]
+        
     for meta_item in meta_data:
         if meta_item not in tree.cell_meta.columns:
             raise PlottingError(
