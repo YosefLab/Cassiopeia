@@ -9,6 +9,7 @@ from .SequentialLineageTracingDataSimulator import (
 from .ClonalSpatialDataSimulator import ClonalSpatialDataSimulator
 from .CompleteBinarySimulator import CompleteBinarySimulator
 from .DataSimulator import DataSimulator
+from .ecDNABirthDeathSimulator import ecDNABirthDeathSimulator
 from .LeafSubsampler import LeafSubsampler
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
@@ -25,6 +26,7 @@ __all__ = [
     "SeqeuntialLineageTracingDataSimulator",
     "CompleteBinarySimulator",
     "DataSimulator",
+    "ecDNABirthDeathSimulator",
     "LeafSubsampler",
     "LineageTracingDataSimulator",
     "SimpleFitSubcloneSimulator",

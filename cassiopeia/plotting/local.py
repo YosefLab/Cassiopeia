@@ -407,6 +407,9 @@ def place_tree_and_annotations(
         colorstrips.extend(heatmap)
 
     # Any other annotations
+    if type(meta_data) == str:
+        meta_data = [meta_data]
+        
     for meta_item in meta_data:
         if meta_item not in tree.cell_meta.columns:
             raise PlottingError(

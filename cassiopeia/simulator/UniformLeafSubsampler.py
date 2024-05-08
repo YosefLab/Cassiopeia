@@ -120,4 +120,5 @@ class UniformLeafSubsampler(LeafSubsampler):
                 [(node, tree.get_time(node)) for node in subsampled_tree.nodes]
             )
         )
+
         return subsampled_tree
