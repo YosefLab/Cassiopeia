@@ -146,12 +146,14 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
         cosegregation_coefficient: float = 0.0,
-        splitting_function: Callable[[int], int] = lambda c, x: c
-        + np.random.binomial(x, p=0.5),
+        splitting_function: Callable[[int], int] = \
+                lambda c, x: c + np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0, 1]),
         fitness_function: Optional[Callable[[int, int, float], float]] = None,
         capture_efficiency: float = 1.0,
         initial_tree: Optional[CassiopeiaTree] = None,
+        initial_linear_amplification_array: np.array = np.array([0]),
+        linear_amplification_fitness: np.array = np.array([0, 1]),
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError(
@@ -192,6 +194,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.fitness_function = fitness_function
         self.capture_efficiency = capture_efficiency
         self.initial_tree = initial_tree
+        self.initial_linear_amplification_copy_number = initial_linear_amplification_array
+        self.linear_amplification_array = linear_amplification_fitness
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
@@ -209,6 +213,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 tree.nodes[node]["ecdna_array"] = (
                     self.initial_tree.get_attribute(node, "ecdna_array")
                 )
+                tree.nodes[node]["lin_amp_array"] = (
+                    self.initial_tree.get_attribute(node, "lin_amp_array")
+                )
             return tree
 
         tree = nx.DiGraph()
@@ -217,11 +224,12 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         tree.nodes[root]["birth_scale"] = self.initial_birth_scale
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = self.initial_copy_number
+        tree.nodes[root]["lin_amp_array"] = self.initial_linear_amplification_copy_number
 
         return tree
 
     # update to compute fitness using lineage cn_array
-    def update_fitness(self, ecdna_array: np.array) -> float:
+    def update_fitness(self, ecdna_array: np.array, linear_amp_array: np.array) -> float:
         """Updates a lineage birth scale, representing its (Malthusian) fitness.
 
         Fitness is computed as a function of copy number, using the
@@ -240,7 +248,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         if self.fitness_function is None:
             return self.initial_birth_scale * (
-                1.0 + self.fitness_array[tuple((ecdna_array > 0).astype(int))]
+                1.0 +
+                self.fitness_array[tuple((ecdna_array > 0).astype(int))] +
+                self.linear_amplification_array[tuple((linear_amp_array > 0).astype(int))]
             )
         else:
             return self.initial_birth_scale * (
@@ -320,7 +330,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         if lineage["total_time"] == 0:
             # Update birth rate
             updated_birth_scale = self.update_fitness(
-                tree.nodes[lineage["id"]]["ecdna_array"]
+                tree.nodes[lineage["id"]]["ecdna_array"], tree.nodes[lineage["id"]]["linear_amp_array"]
             )
 
             # Annotate parameters for a given node in the tree
@@ -333,6 +343,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]][
                 "ecdna_array"
             ]  # child_ecdna_array
+            tree.nodes[unique_id]["linear_amp_array"] = tree.nodes[lineage["id"]][
+                "linear_amp_array"
+            ]  # child_linear_amp_array
+
 
             current_lineages.put(
                 (
@@ -366,6 +380,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]][
                 "ecdna_array"
             ]
+            tree.nodes[unique_id]["linear_amp_array"] = tree.nodes[lineage["id"]][
+                "linear_amp_array"
+            ]
             current_lineages.put(
                 (
                     self.experiment_time,
@@ -386,10 +403,11 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             if birth_waiting_time < death_waiting_time:
                 # Update birth rate
                 updated_birth_scale = self.update_fitness(
-                    tree.nodes[lineage["id"]]["ecdna_array"]
+                    tree.nodes[lineage["id"]]["ecdna_array"], tree.nodes[lineage['id']]['linear_amp_array']
                 )
 
                 child_ecdna_array = self.get_ecdna_array(lineage["id"], tree)
+                child_linear_amp_array = self.get_linear_amp_array(lineage['id'], tree)
 
                 # Annotate parameters for a given node in the tree
                 tree.add_node(unique_id)
@@ -399,6 +417,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                     birth_waiting_time + lineage["total_time"]
                 )
                 tree.nodes[unique_id]["ecdna_array"] = child_ecdna_array
+                tree.nodes[unique_id]["linear_amp_array"] = child_linear_amp_array
                 # Add the newly generated cell to the list of living lineages
                 current_lineages.put(
                     (
@@ -504,6 +523,33 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             )
 
         return new_ecdna_array
+    
+    def get_linear_amp_array(self, parent_id: str, tree: nx.DiGraph) -> np.array:
+        """Generates a linear amplification array for a child.
+
+        For now, this just copies the parent's array since we don't assume
+        HSRs will grow in copy-number.
+
+        Args:
+            parent_id: ID of parent in the generated tree.
+            tree: The in-progress tree.
+
+        Returns:
+            Numpy array corresponding to the linear amplification copy numbers
+            for the child.
+        """
+
+        parental_array = tree.nodes[parent_id]["linear_amp_array"]
+        new_array = parental_array.copy()
+
+        # check that new ecdnay array entries do not exceed parental entries
+        if np.any(new_array > parental_array):
+            raise ecDNABirthDeathSimulatorError(
+                "Child linear amplification array entries exceed parental "
+                "entries."
+            )
+
+        return new_array
 
     def populate_tree_from_simulation(
         self, tree: nx.DiGraph, observed_nodes: List[str]
@@ -531,6 +577,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 node, "ecdna_array", tree.nodes[node]["ecdna_array"]
             )
             cassiopeia_tree.set_attribute(
+                node, "linear_amp_array", tree.nodes[node]["linear_amp_array"]
+            )
+            cassiopeia_tree.set_attribute(
                 node, "fitness", tree.nodes[node]["birth_scale"]
             )
 
@@ -555,11 +604,29 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             index=cassiopeia_tree.leaves,
         )
 
+        leaf_lin_amp_arrays = [
+            tree.nodes[node]["linear_amp_array"] for node in cassiopeia_tree.leaves
+        ]
+        cell_metadata = pd.DataFrame(
+            leaf_lin_amp_arrays,
+            columns=[
+                f"LinAmp_{i}" for i in range(len(self.initial_linear_amplification_copy_number))
+            ],
+            index=cassiopeia_tree.leaves,
+        )
+
         # apply noise model
         for i in range(len(self.initial_copy_number)):
             cell_metadata[f"Observed_ecDNA_{i}"] = cell_metadata.apply(
                 lambda x: np.random.binomial(
                     x[f"ecDNA_{i}"], self.capture_efficiency
+                ),
+                axis=1,
+            )
+
+            cell_metadata[f"Observed_LinAmp_{i}"] = cell_metadata.apply(
+                lambda x: np.random.binomial(
+                    x[f"LinAmp_{i}"], self.capture_efficiency
                 ),
                 axis=1,
             )
