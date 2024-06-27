@@ -105,6 +105,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             on living lineages downstream.
         random_seed: A seed for reproducibility
         initial_copy_number: Initial copy number for parental lineage.
+        ecdna_retention: Proportion of ecDNA retained during mitosis.
         cosegregation_coefficient: A coefficient describing how likely it is for
             one species to be co-inherited with one specific species (currently
             modeled as the first in the array).
@@ -145,6 +146,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         prune_dead_lineages: bool = True,
         random_seed: int = None,
         initial_copy_number: np.array = np.array([1]),
+        ecdna_retention: float = 1.0,
         cosegregation_coefficient: float = 0.0,
         splitting_function: Callable[[int], int] = \
                 lambda c, x: c + np.random.binomial(x, p=0.5),
@@ -188,6 +190,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.prune_dead_lineages = prune_dead_lineages
         self.random_seed = random_seed
         self.initial_copy_number = initial_copy_number
+        self.retention_factor = ecdna_retention
         self.cosegregation_coefficient = cosegregation_coefficient
         self.splitting_function = splitting_function
         self.fitness_array = fitness_array
@@ -195,7 +198,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self.capture_efficiency = capture_efficiency
         self.initial_tree = initial_tree
         self.initial_linear_amplification_copy_number = initial_linear_amplification_array
-        self.linear_amplification_array = linear_amplification_fitness
+        self.linear_amplification_fitness = linear_amplification_fitness
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
@@ -205,7 +208,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
                 tree.nodes[node]["birth_scale"] = self.update_fitness(
-                    self.initial_tree.get_attribute(node, "ecdna_array")
+                    self.initial_tree.get_attribute(node, "ecdna_array"),
+                    self.initial_tree.get_attribute(node, "linear_amp_array")
                 )
                 tree.nodes[node]["time"] = self.initial_tree.get_attribute(
                     node, "time"
@@ -224,7 +228,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         tree.nodes[root]["birth_scale"] = self.initial_birth_scale
         tree.nodes[root]["time"] = 0
         tree.nodes[root]["ecdna_array"] = self.initial_copy_number
-        tree.nodes[root]["lin_amp_array"] = self.initial_linear_amplification_copy_number
+        tree.nodes[root]["linear_amp_array"] = self.initial_linear_amplification_copy_number
 
         return tree
 
@@ -250,7 +254,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             return self.initial_birth_scale * (
                 1.0 +
                 self.fitness_array[tuple((ecdna_array > 0).astype(int))] +
-                self.linear_amplification_array[tuple((linear_amp_array > 0).astype(int))]
+                self.linear_amplification_fitness[tuple((linear_amp_array > 0).astype(int))]
             )
         else:
             return self.initial_birth_scale * (
@@ -318,6 +322,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             lineage["birth_scale"]
         )
         death_waiting_time = self.death_waiting_distribution()
+
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
 
@@ -440,6 +445,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 tree.nodes[unique_id]["time"] = (
                     death_waiting_time + lineage["total_time"]
                 )
+                tree.nodes[unique_id]["linear_amp_array"] = tree.nodes[
+                    lineage["id"]
+                ]["linear_amp_array"]
                 tree.nodes[unique_id]["ecdna_array"] = tree.nodes[
                     lineage["id"]
                 ]["ecdna_array"]
@@ -468,7 +476,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             Numpy array corresponding to the ecDNA copy numbers for the child.
         """
 
-        parental_ecdna_array = 2 * tree.nodes[parent_id]["ecdna_array"]
+        parental_ecdna_array = (2 * tree.nodes[parent_id]["ecdna_array"]) * self.retention_factor
 
         has_child = tree.out_degree(parent_id) > 0
 
@@ -607,13 +615,11 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         leaf_lin_amp_arrays = [
             tree.nodes[node]["linear_amp_array"] for node in cassiopeia_tree.leaves
         ]
-        cell_metadata = pd.DataFrame(
-            leaf_lin_amp_arrays,
-            columns=[
-                f"LinAmp_{i}" for i in range(len(self.initial_linear_amplification_copy_number))
-            ],
-            index=cassiopeia_tree.leaves,
-        )
+
+        linamp_columns = [
+            f"LinAmp_{i}" for i in range(len(self.initial_linear_amplification_copy_number))
+        ]
+        cell_metadata.loc[cassiopeia_tree.leaves, linamp_columns] = leaf_lin_amp_arrays
 
         # apply noise model
         for i in range(len(self.initial_copy_number)):
