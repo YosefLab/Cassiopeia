@@ -265,10 +265,15 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # rename internal nodes such that they are not tuples
         node_name_generator = solver_utilities.node_name_generator()
         internal_node_rename = {}
+        seen_nodes = []
         for i in cassiopeia_tree.internal_nodes:
-            internal_node_rename[i] = next(node_name_generator)
+            new_node_name = next(node_name_generator)
+            while new_node_name in seen_nodes:
+                new_node_name = next(node_name_generator)
+            internal_node_rename[i] = new_node_name
+            seen_nodes.append(internal_node_rename[i])
         cassiopeia_tree.relabel_nodes(internal_node_rename)
-
+        
         cassiopeia_tree.collapse_unifurcations()
 
         # collapse mutationless edges

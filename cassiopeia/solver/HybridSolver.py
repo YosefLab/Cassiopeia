@@ -200,6 +200,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
                     mapping[n] = next(node_name_generator)
+                    existing_nodes.append(mapping[n])
+                else:
+                    existing_nodes.append(n)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 
