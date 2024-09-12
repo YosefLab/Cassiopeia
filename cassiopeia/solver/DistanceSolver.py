@@ -287,12 +287,14 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         root = T.get_tree_root()
         if midpoint in root.children:
             last_split = [root.name,midpoint.name]
+            length = tree.get_edge_data(root.name,midpoint.name).get("length",None)
         else:
             last_split = [root.name,root.children[0].name]
+            length = tree.get_edge_data(root.name,root.children[0].name).get("length",None)
         tree.remove_edge(last_split[0],last_split[1])
 
         # root tree
-        tree = self.root_tree(tree,cassiopeia_tree.root_sample_name,last_split)
+        tree = self.root_tree(tree,cassiopeia_tree.root_sample_name,last_split,length=length)
 
         # remove root from character matrix before populating tree
         if (
@@ -396,7 +398,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     @abc.abstractmethod
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str], length: Optional[float] = None
     ) -> nx.DiGraph:
         """Roots a tree.
 
@@ -407,6 +409,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree: an undirected networkx tree topology
             root_sample: node name to treat as the root of the tree topology
             remaining_samples: samples yet to be added to the tree.
+            length: length of the edge to the root node.
 
         Returns:
             A rooted networkx tree

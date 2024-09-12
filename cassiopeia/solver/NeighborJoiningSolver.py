@@ -98,7 +98,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         )
 
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str], length: Optional[float] = None
     ) -> nx.DiGraph():
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
@@ -108,15 +108,21 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             tree: Networkx object representing the tree topology
             root_sample: Sample to treat as the root
             remaining_samples: The last two unjoined nodes in the tree
+            length: length of the edge to the root node.
+
 
         Returns:
             A rooted tree
         """
-        tree.add_edge(remaining_samples[0], remaining_samples[1])
+        if length:
+            tree.add_edge(remaining_samples[0], remaining_samples[1], length=length)
+        else:
+            tree.add_edge(remaining_samples[0], remaining_samples[1])
 
         rooted_tree = nx.DiGraph()
-        for e in nx.dfs_edges(tree, source=root_sample):
-            rooted_tree.add_edge(e[0], e[1])
+        for u, v in nx.dfs_edges(tree, source=root_sample):
+            edge_data = tree.get_edge_data(u, v)
+            rooted_tree.add_edge(u, v, **edge_data)
 
         return rooted_tree
 
