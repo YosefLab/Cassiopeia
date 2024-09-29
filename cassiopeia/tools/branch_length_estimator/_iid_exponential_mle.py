@@ -105,7 +105,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         backup_solver: Optional[str] = "SCS",
         _use_vectorized_implementation: bool = True,
     ):
-        allowed_solvers = ["ECOS", "SCS", "MOSEK"]
+        allowed_solvers = ["ECOS", "SCS", "MOSEK", "CLARABEL"]
         if solver not in allowed_solvers:
             raise ValueError(
                 f"Solver {solver} not allowed. "
