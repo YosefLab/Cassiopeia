@@ -72,6 +72,14 @@ class IIDExponentialMLE(BranchLengthEstimator):
             the default). (If `backup_solver=None` is provided, no retry will be
             attempted and an error will be raised immediately if the main solver
             fails.)
+        pendant_branch_minimum_branch_length_multiplier: For pendant edges in
+            the tree (i.e. those corresponding to leaf nodes), the minimum
+            branch length constraint does not really apply since leaves do not
+            correspond to cell divisions. By default the constraint will be
+            applied. Thus, we can turn off the constraint
+            by setting pendant_branch_minimum_branch_length_multiplier=0.
+            An intermediate option would be
+            pendant_branch_minimum_branch_length_multiplier=0.5.
         _use_vectorized_implementation: Toggles between vectorized and
             non-vectorized implementations. Only used for profiling purposes.
         verbose: Verbosity level.
@@ -103,6 +111,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         verbose: bool = False,
         solver: str = "ECOS",
         backup_solver: Optional[str] = "SCS",
+        pendant_branch_minimum_branch_length_multiplier: float = 1.0,
         _use_vectorized_implementation: bool = True,
     ):
         allowed_solvers = ["ECOS", "SCS", "MOSEK", "CLARABEL"]
@@ -119,6 +128,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         self._verbose = verbose
         self._solver = solver
         self._backup_solver = backup_solver
+        self._pendant_branch_minimum_branch_length_multiplier = pendant_branch_minimum_branch_length_multiplier
         self._use_vectorized_implementation = _use_vectorized_implementation
         self._mutation_rate = None
         self._penalized_log_likelihood = None
@@ -146,6 +156,7 @@ class IIDExponentialMLE(BranchLengthEstimator):
         relative_mutation_rates = self._relative_mutation_rates
         solver = self._solver
         backup_solver = self._backup_solver
+        pendant_branch_minimum_branch_length_multiplier = self._pendant_branch_minimum_branch_length_multiplier
         _use_vectorized_implementation = self._use_vectorized_implementation
         verbose = self._verbose
 
@@ -225,11 +236,19 @@ class IIDExponentialMLE(BranchLengthEstimator):
         # # # # # Create constraints of the optimization problem # # # # #
         root = tree.root
         root_has_time_0_constraint = [t_variables[root] == 0]
+        leaf_set = set(tree.leaves)
         minimum_branch_length_constraints = [
             t_variables[child]
             >= t_variables[parent]
             + minimum_branch_length * t_variables[deepest_leaf]
             for (parent, child) in tree.edges
+            if child not in leaf_set
+        ] + [
+            t_variables[child]
+            >= t_variables[parent]
+            + minimum_branch_length * t_variables[deepest_leaf] * pendant_branch_minimum_branch_length_multiplier
+            for (parent, child) in tree.edges
+            if child in leaf_set
         ]
         ultrametric_constraints = [
             t_variables[leaf]
