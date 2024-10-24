@@ -1,5 +1,6 @@
 import unittest
 from unittest import mock
+import pytest
 
 import networkx as nx
 import numpy as np
@@ -20,6 +21,7 @@ class TestLocal3DPlotting(unittest.TestCase):
 
         self.labels = local_3d.labels_from_coordinates(self.tree)
 
+    @pytest.mark.spatial
     def test_interpolate_branch(self):
         parent = (0, 0, 0)
         child = (1, 1, 1)
@@ -28,6 +30,7 @@ class TestLocal3DPlotting(unittest.TestCase):
             local_3d.interpolate_branch(parent, child),
         )
 
+    @pytest.mark.spatial
     def test_polyline_from_points(self):
         points = np.array(
             [
@@ -39,6 +42,7 @@ class TestLocal3DPlotting(unittest.TestCase):
         poly = local_3d.polyline_from_points(points)
         np.testing.assert_array_equal(points, poly.points)
 
+    @pytest.mark.spatial
     def test_average_mixing(self):
         c1 = (0, 0, 0)
         c2 = (0.1, 0.2, 0.3)
@@ -47,14 +51,17 @@ class TestLocal3DPlotting(unittest.TestCase):
             (0.2, 0.3, 0.1), local_3d.average_mixing(c1, c2, c3)
         )
 
+    @pytest.mark.spatial
     def test_highlight(self):
         c = (0.8, 0.2, 0.0)
         np.testing.assert_allclose((1.0, 0.25, 0.0), local_3d.highlight(c))
 
+    @pytest.mark.spatial
     def test_lowlight(self):
         c = (0.8, 0.2, 0.0)
         np.testing.assert_allclose((0.3, 0.075, 0.0), local_3d.lowlight(c))
 
+    @pytest.mark.spatial
     def test_labels_from_coordinates(self):
         # invalid shape
         with self.assertRaises(ValueError):
@@ -82,6 +89,7 @@ class TestLocal3DPlotting(unittest.TestCase):
         spatial_simulator.overlay_data(dense_tree)
         labels = local_3d.labels_from_coordinates(dense_tree, shape=(100, 100))
 
+    @pytest.mark.spatial
     def test_Tree3D(self):
         # There isn't a good way to test this, other than making sure there
         # are no errors on initialization.

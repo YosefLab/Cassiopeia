@@ -13,7 +13,6 @@ from typing import Dict, List, Generator, Optional, Tuple
 import multiprocessing
 import networkx as nx
 import numpy as np
-from numpy.lib.arraysetops import unique
 import pandas as pd
 from tqdm.auto import tqdm
 
