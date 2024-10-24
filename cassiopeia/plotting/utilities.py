@@ -395,9 +395,9 @@ def get_random_indel_colors(
         if "none" in indel.lower():
             indel2color[indel] = rgb_to_hsv((0.75, 0.75, 0.75))
         elif indel == "NC":
-            indel2color[indel] = rgb_to_hsv((0, 0, 0))
+            indel2color[indel] = rgb_to_hsv((0.0, 0.0, 0.0))
         elif indel == "missing":
-            indel2color[indel] = rgb_to_hsv((1, 1, 1))
+            indel2color[indel] = rgb_to_hsv((1.0, 1.0, 1.0))
         else:
             # randomly pick a color family and then draw random colors
             # from that family
