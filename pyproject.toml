@@ -21,7 +21,7 @@ license = "MIT"
 name = "cassiopeia-lineage"
 readme = 'README.md'
 repository = "https://github.com/YosefLab/Cassiopeia"
-version = "2.0.0"
+version = "2.1.0"
 
 include = [
   {path = "cassiopeia/preprocess/*.so", format = "wheel"},
@@ -47,7 +47,7 @@ codecov = {version = ">=2.0.8", optional = true}
 cvxpy = "*"
 ete3 = ">=3.1.1"
 hits = "*"
-ipython = {version = ">=7.20", optional = true, python = ">=3.7"}
+ipython = {version = ">=7.20", optional = true}
 isort = {version = ">=5.7", optional = true}
 itolapi = "*"
 jupyter = {version = ">=1.0", optional = true}
@@ -59,7 +59,7 @@ nbsphinx-link = {version = "*", optional = true}
 networkx = ">=3.1"
 ngs-tools = ">=1.5.6"
 numba = ">=0.51.0"
-numpy = ">=2.0"
+numpy = ">=1.22, <3.0"
 opencv-python = {version = ">=4.5.4.60", optional = true}
 pandas = ">=1.1.4"
 parameterized = "*"
