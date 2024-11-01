@@ -155,6 +155,14 @@ class TestCCPhyloSolver(unittest.TestCase):
         dnj_tree = self.basic_tree.copy()
         self.ccphylo_dnj_solver.solve(dnj_tree)
 
+        # Test for edge lengths and node times
+        tree = dnj_tree.get_tree_topology()
+        self.assertAlmostEqual(tree.nodes["root"]["time"], 0.0)
+        self.assertAlmostEqual(tree.edges[('root', 'cassiopeia_internal_node1')]["length"], 0.196666667)
+        self.assertAlmostEqual(tree.nodes["cassiopeia_internal_node1"]["time"], 0.196666667)
+        for edge in tree.edges:
+            self.assertTrue("length" in tree.edges[edge])
+
         # test for expected number of edges
         self.assertEqual(len(nj_tree.edges), len(dnj_tree.edges))
 
@@ -201,6 +209,13 @@ class TestCCPhyloSolver(unittest.TestCase):
         # test for expected number of edges
         self.assertEqual(len(upgma_tree.edges), len(ccphylo_upgma_tree.edges))
 
+         # Test for edge lengths and node times
+        tree = ccphylo_upgma_tree.get_tree_topology()
+        self.assertAlmostEqual(tree.nodes["root"]["time"], 0.0)
+        self.assertAlmostEqual(tree.edges[('root', 'cassiopeia_internal_node0')]["length"],  0.4484375)
+        self.assertAlmostEqual(tree.nodes["cassiopeia_internal_node0"]["time"],  0.4484375)
+        for edge in tree.edges:
+            self.assertTrue("length" in tree.edges[edge])
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
