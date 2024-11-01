@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 import networkx as nx
@@ -53,6 +54,7 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
             tree=topology, cell_meta=self.cell_meta
         )
 
+    @pytest.mark.spatial
     def test_init(self):
         with self.assertRaises(DataSimulatorError):
             ClonalSpatialDataSimulator()
@@ -69,6 +71,7 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
         self.assertEqual(simulator.dim, 3)
         np.testing.assert_array_equal(np.ones((10, 10, 10), dtype=bool), simulator.space)
 
+    @pytest.mark.spatial
     def test_overlay_data(self):
         simulator = ClonalSpatialDataSimulator((100, 100))
         simulator.overlay_data(self.basic_tree)
@@ -107,6 +110,7 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
             self.basic_tree.cell_meta, expected_cell_meta
         )
 
+    @pytest.mark.spatial
     def test_overlay_data_with_space(self):
         simulator = ClonalSpatialDataSimulator(space=np.ones((100, 100), dtype=bool))
         simulator.overlay_data(self.basic_tree)
@@ -144,6 +148,7 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
             self.basic_tree.cell_meta, expected_cell_meta
         )
 
+    @pytest.mark.spatial
     def test_overlay_data_with_existing_cell_meta(self):
         simulator = ClonalSpatialDataSimulator((100, 100))
         simulator.overlay_data(self.tree_with_cell_meta)
