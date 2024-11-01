@@ -1,10 +1,7 @@
-import unittest
-from unittest import mock
 import pytest
+import unittest
 
-import networkx as nx
 import numpy as np
-import pandas as pd
 
 import cassiopeia as cas
 from cassiopeia.plotting import local_3d
