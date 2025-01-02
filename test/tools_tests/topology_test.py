@@ -231,7 +231,7 @@ class TestTopology(unittest.TestCase):
         obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
             self.tree, dissimilarity_map=custom_dissimilarity_map
         )[0]
-        self.assertEquals(1.0, obs_cophenetic_correlation)
+        self.assertEqual(1.0, obs_cophenetic_correlation)
 
         # make sure weight matrix can be specified
         W = pd.DataFrame.from_dict(
