@@ -1273,7 +1273,7 @@ class CassiopeiaTree:
         # This function will also clear the cache
         self.__register_data_with_tree()
 
-    def get_newick(self, record_branch_lengths=False) -> str:
+    def get_newick(self, record_branch_lengths=False, record_node_names=False) -> str:
         """Returns newick format of tree.
 
         Args:
