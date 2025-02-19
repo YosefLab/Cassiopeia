@@ -1298,7 +1298,7 @@ class CassiopeiaTree:
                 "No nodes may have the comma (,) character in its name."
             )
 
-        return utilities.to_newick(self.__network, record_branch_lengths)
+        return utilities.to_newick(self.__network, record_branch_lengths, record_node_names)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format.
