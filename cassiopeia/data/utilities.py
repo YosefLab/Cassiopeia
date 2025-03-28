@@ -133,7 +133,11 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     return g
 
 
-def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False, record_node_names: bool = False) -> str:
+def to_newick(
+    tree: nx.DiGraph,
+    record_branch_lengths: bool = False,
+    record_node_names: bool = False,
+) -> str:
     """Converts a networkx graph to a newick string.
 
     Args:
