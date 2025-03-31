@@ -13,6 +13,7 @@ depth or agreement between character states and phylogeny.
 This object can be passed to any CassiopeiaSolver subclass as well as any
 analysis module, like a branch length estimator or rate matrix estimator
 """
+
 import collections
 import copy
 import warnings
@@ -703,7 +704,7 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
         return [v for v in self.__network.successors(node)]
-    
+
     def reorder_children(self, node: str, child_order: List[str]) -> None:
         """Reorders the children of a particular node.
 
@@ -712,8 +713,8 @@ class CassiopeiaTree:
             child_order: A list with the new order of children for the node.
 
         Raises:
-            CassiopeiaTreeError if the node of interest is a leaf that has not 
-                been instantiated, or if the new order of children is not a 
+            CassiopeiaTreeError if the node of interest is a leaf that has not
+                been instantiated, or if the new order of children is not a
                 permutation of the original children.
         """
         self.__check_network_initialized()
@@ -722,13 +723,15 @@ class CassiopeiaTree:
             raise CassiopeiaTreeError("Cannot reorder children of a leaf node.")
 
         if set(child_order) != set(self.children(node)):
-            raise CassiopeiaTreeError("New order of children is not a" 
-                                        "permutation of the original children.")
+            raise CassiopeiaTreeError(
+                "New order of children is not a"
+                "permutation of the original children."
+            )
 
         self.__network.remove_edges_from(
-            [(node, child) for child in self.children(node)])
-        self.__network.add_edges_from(
-            [(node, child) for child in child_order])
+            [(node, child) for child in self.children(node)]
+        )
+        self.__network.add_edges_from([(node, child) for child in child_order])
 
     def __remove_node(self, node) -> None:
         """Private method to remove node from tree.
@@ -864,7 +867,7 @@ class CassiopeiaTree:
         # Currently, if nodes are missing in time_dict, code below blows up. If
         # extra nodes are present, they are ignored.
 
-        for (parent, child) in self.edges:
+        for parent, child in self.edges:
             time_parent = time_dict[parent]
             time_child = time_dict[child]
             if time_parent > time_child:
@@ -1273,11 +1276,15 @@ class CassiopeiaTree:
         # This function will also clear the cache
         self.__register_data_with_tree()
 
-    def get_newick(self, record_branch_lengths=False) -> str:
+    def get_newick(
+        self, record_branch_lengths=False, record_node_names=False
+    ) -> str:
         """Returns newick format of tree.
 
         Args:
             record_branch_lengths: Whether to record branch lengths on the tree
+            in the newick string
+            record_node_names: Whether to record internal node names on the tree
             in the newick string
 
         Returns:
@@ -1298,7 +1305,9 @@ class CassiopeiaTree:
                 "No nodes may have the comma (,) character in its name."
             )
 
-        return utilities.to_newick(self.__network, record_branch_lengths)
+        return utilities.to_newick(
+            self.__network, record_branch_lengths, record_node_names
+        )
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format.
@@ -1407,9 +1416,17 @@ class CassiopeiaTree:
 
         mutations = []
         for i in range(self.n_character):
-            
-            parent_state = (list(parent_states[i]) if is_ambiguous_state(parent_states[i]) else [parent_states[i]])
-            child_state = (list(child_states[i]) if is_ambiguous_state(child_states[i]) else [child_states[i]])
+
+            parent_state = (
+                list(parent_states[i])
+                if is_ambiguous_state(parent_states[i])
+                else [parent_states[i]]
+            )
+            child_state = (
+                list(child_states[i])
+                if is_ambiguous_state(child_states[i])
+                else [child_states[i]]
+            )
 
             if len(np.intersect1d(parent_state, child_state)) < 1:
                 if treat_missing_as_mutations:
@@ -1596,7 +1613,7 @@ class CassiopeiaTree:
         Removes the specified leaves and all ancestors of those leaves that are
         no longer the ancestor of any of the remaining leaves. In the context
         of a phylogeny, this prunes the lineage of all nodes no longer relevant
-        to observed samples. Additionally, maintains consistency with the 
+        to observed samples. Additionally, maintains consistency with the
         updated tree by removing the node from all leaf data.
 
         Args:
@@ -1615,10 +1632,10 @@ class CassiopeiaTree:
         for n in nodes:
             if not self.is_leaf(n):
                 raise CassiopeiaTreeError("A specified node is not a leaf.")
-            
+
         # Keep track of nodes to check and their depths
         nodes_to_check = set()
-        nodes_depth_queue = [] 
+        nodes_depth_queue = []
 
         # Remove leaves from the tree
         for n in nodes:
@@ -1854,7 +1871,7 @@ class CassiopeiaTree:
         ] = None,
         prior_transformation: str = "negative_log",
         layer: Optional[str] = None,
-        threads: int = 1
+        threads: int = 1,
     ) -> None:
         """Computes a dissimilarity map.
 
@@ -1901,7 +1918,7 @@ class CassiopeiaTree:
             )
 
         # Only compute dissimilarities between *unique* states to save runtime!
-        cell_to_state = character_matrix.astype(str).apply('|'.join, axis=1)
+        cell_to_state = character_matrix.astype(str).apply("|".join, axis=1)
         state_to_cells = character_matrix.index.groupby(cell_to_state)
         dedup_character_matrix = character_matrix.drop_duplicates()
 
@@ -1918,7 +1935,9 @@ class CassiopeiaTree:
         dissimilarity_map = scipy.spatial.distance.squareform(dissimilarity_map)
 
         # Expand deduplicated dissimilarity map back to all cells
-        full_dissimilarity_map = np.pad(dissimilarity_map, (0, character_matrix.shape[0] - N))
+        full_dissimilarity_map = np.pad(
+            dissimilarity_map, (0, character_matrix.shape[0] - N)
+        )
         dissimilarity_cells = list(dedup_character_matrix.index)
         j = N
         for i, dedup_cell in enumerate(dedup_character_matrix.index):
@@ -2180,7 +2199,7 @@ class CassiopeiaTree:
             the same length, or if the tree has not been initialized.
         """
         self.__check_network_initialized()
-        for (parent, child) in self.depth_first_traverse_edges():
+        for parent, child in self.depth_first_traverse_edges():
             parent_states = self.get_character_states(parent)
             child_states = self.get_character_states(child)
             if not len(parent_states) == len(child_states):

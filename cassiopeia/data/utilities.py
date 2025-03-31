@@ -133,12 +133,18 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     return g
 
 
-def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
+def to_newick(
+    tree: nx.DiGraph,
+    record_branch_lengths: bool = False,
+    record_node_names: bool = False,
+) -> str:
     """Converts a networkx graph to a newick string.
 
     Args:
         tree: A networkx tree
         record_branch_lengths: Whether to record branch lengths on the tree in
+            the newick string
+        record_node_names: Whether to record internal node names on the tree in
             the newick string
 
     Returns:
@@ -154,6 +160,11 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
             weight_string = ":" + str(g[parent][node]["length"])
 
         _name = str(node)
+
+        name_string = ""
+        if record_node_names:
+            name_string = f"{_name}"
+
         return (
             "%s" % (_name,) + weight_string
             if is_leaf
@@ -163,6 +174,7 @@ def to_newick(tree: nx.DiGraph, record_branch_lengths: bool = False) -> str:
                     _to_newick_str(g, child) for child in g.successors(node)
                 )
                 + ")"
+                + name_string
                 + weight_string
             )
         )
