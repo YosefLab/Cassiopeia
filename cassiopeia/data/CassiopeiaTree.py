@@ -1715,22 +1715,28 @@ class CassiopeiaTree:
         self.__cache = {}
 
     def collapse_mutationless_edges(
-        self, infer_ancestral_characters: bool
+        self,
+        infer_ancestral_characters: bool,
+        distance_function: Callable[[List[int], List[int]], float] = lambda x, y: 0 if x == y else 1
     ) -> None:
         """Collapses mutationless edges in the tree in-place.
 
-        Uses the internal node annotations of a tree to collapse edges with no
-        mutations. The introduction of a missing data event is considered a
-        mutation in this context. Either takes the existing character states on
-        the tree or infers the annotations bottom-up from the samples obeying
+        An edge (u, v) is considered "mutationless" if the distance between the
+        character states of u and v is 0. This distance is defined by the 
+        `distance_function`. Either uses the existing character states on the 
+        tree or infers the annotations bottom-up from the samples obeying
         Camin-Sokal Parsimony. Preserves the times of nodes that are not removed
         by connecting the parent and children of removed nodes by branches with
-        lengths equal to the total time elapsed from parent to each child.
+        lengths equal to the total time elapsed from parent to each child. Only
+        collapses internal edges and will not remove leaf edges.
 
         Args:
             tree: A networkx DiGraph object representing the tree
-            infer_ancestral_characters: Whether to infer the ancestral characters
+            infer_ancestral_characters: Whether to infer the ancestral character
                 states of the tree
+            distance_function: The function defining the distance between the
+                two sets of character states. Defaults to considering the
+                distance to be 0 only if the character states exactly match
 
         Raises:
             CassiopeiaTreeError if the tree has not been initialized or if
@@ -1762,9 +1768,9 @@ class CassiopeiaTree:
             for child in self.children(n):
                 if not self.is_leaf(child):
                     t = self.get_branch_length(n, child)
-                    if self.get_character_states(
-                        n
-                    ) == self.get_character_states(child):
+                    n_states = self.get_character_states(n)
+                    child_states = self.get_character_states(child)
+                    if distance_function(n_states, child_states) == 0:
                         for grandchild in self.children(child):
                             t_ = self.get_branch_length(child, grandchild)
                             self.__add_edge(n, grandchild)
