@@ -1012,9 +1012,12 @@ def call_lineage_groups(
     output_directory: str,
     min_umi_per_cell: int = 10,
     min_avg_reads_per_umi: float = 2.0,
+    min_umi_per_intbc: int = 1,
     min_cluster_prop: float = 0.005,
     min_intbc_thresh: float = 0.05,
-    inter_doublet_threshold: float = 0.35,
+    inter_doublet_threshold: float = None,
+    doublet_kinship_thresh: float = 0.75,
+    keep_doublets: bool = False,
     kinship_thresh: float = 0.25,
     plot: bool = False,
 ) -> pd.DataFrame:
@@ -1026,11 +1029,12 @@ def call_lineage_groups(
         many intBCs they share with each intBC group (kinship).
 
         2. Refines these putative groups by removing non-informative intBCs
-        and reassigning cells through kinship.
+        and doublet lineage groups and reassigning cells through kinship.
 
-        3. Removes all inter-lineage doublets, defined as cells that have
-        relatively equal kinship scores across multiple lineages and whose
-        assignments are therefore ambigious.
+        3. Identifies all inter-lineage doublets, defined as cells that have
+        max kinship scores below a threshold. If `keep_doublets` is True,
+        these doublets will be retained in the final allele table with a
+        lineage group of (lg1, lg2).
 
         4. Finally, performs one more round of filtering non-informative intBCs
         and cellBCs with low UMI counts before returning a final table of
@@ -1046,6 +1050,8 @@ def call_lineage_groups(
         min_avg_reads_per_umi: The threshold specifying the minimum coverage
             (i.e. average) reads per UMI in a cell needed in order for that
             cell not to be filtered during filtering
+        min_umi_per_intbc: The threshold specifying the minimum number of UMIs
+            an intBC needs to have in order to be retained during filtering
         min_cluster_prop: The minimum cluster size in the putative lineage
             assignment step, as a proportion of the number of cells
         min_intbc_thresh: The threshold specifying the minimum proportion of
@@ -1056,6 +1062,15 @@ def call_lineage_groups(
         inter_doublet_threshold: The threshold specifying the minimum proportion
             of kinship a cell shares with its assigned lineage group out of all
             lineage groups for it to be retained during doublet filtering
+        doublet_kinship_thresh: The threshold specifying the minimum kinship a 
+            cell needs to have with a lineage group in order to be considered a
+            singlet. Cells with kinship scores below this threshold will be 
+            filtered out or marked as doublets depending on the value of
+            `keep_doublets`.
+        keep_doublets: Whether or not to keep doublets in the allele table. If 
+            True, doublets will appear in the allele table with a lineage group
+            of (lg1, lg2). If False, doublets will be removed from the 
+            allele table.
         kinship_thresh: The threshold specifying the minimum proportion of
             intBCs shared between a cell and the intBC set of a lineage group
             needed to assign that cell to that lineage group in putative
@@ -1065,15 +1080,32 @@ def call_lineage_groups(
     Returns:
         None, saves output allele table to file.
     """
+
+    if inter_doublet_threshold:
+        logger.warning(
+        "Doublet filtering with the inter_doublet_threshold parameter is"
+        " depreciated and will be removed in Cassiopeia 2.1.0. Please use"
+        " the doublet_kinship_thresh parameter instead."
+        )
+
     logger.info(
         f"{input_df.shape[0]} UMIs (rows), with {input_df.shape[1]} attributes (columns)"
     )
     logger.info(str(len(input_df["cellBC"].unique())) + " Cells")
 
+    if min_umi_per_intbc > 1:
+        logger.info(f"Filtering out intBCs with less than "
+                    f"{min_umi_per_intbc} UMIs...")
+        input_df = input_df.groupby(['cellBC',"intBC"]).filter(
+            lambda x: len(x) >= min_umi_per_intbc)
+
     # Create a pivot_table
     piv = pd.pivot_table(
         input_df, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
     )
+    piv[piv < min_umi_per_intbc] = np.nan
+
+    # Normalize by total UMIs per cell
     piv = piv.div(piv.sum(axis=1), axis=0)
 
     # Reorder piv columns by binarized intBC frequency
@@ -1101,6 +1133,13 @@ def call_lineage_groups(
         piv_assigned, min_intbc_thresh=min_intbc_thresh
     )
 
+    logger.info(
+        "Redefining lineage groups by removing doublet groups..."
+    )
+    master_LGs, master_intBCs = doublet_utils.filter_doublet_lg_sets(
+        piv_assigned, master_LGs, master_intBCs
+    )
+
     logger.info("Reassigning cells to refined lineage groups by kinship...")
     kinship_scores = lineage_utils.score_lineage_kinships(
         piv_assigned, master_LGs, master_intBCs
@@ -1108,14 +1147,28 @@ def call_lineage_groups(
 
     logger.info("Annotating alignment table with refined lineage groups...")
     allele_table = lineage_utils.annotate_lineage_groups(
-        input_df, kinship_scores, master_intBCs
+        input_df, kinship_scores, doublet_kinship_thresh=doublet_kinship_thresh,
     )
-    if inter_doublet_threshold:
+
+    if doublet_kinship_thresh:
+        if not keep_doublets:
+            logger.info("Filtering out inter-lineage group doublets with"
+                        f" kinship threshold {doublet_kinship_thresh}...")
+            allele_table = allele_table[
+                ~allele_table["lineageGrp"].str.startswith("(")]
+        if inter_doublet_threshold:
+            logger.warning(
+                "Ignoring inter_doublet_threshold parameter since"
+                " doublet_kinship_thresh is set."
+            )
+    elif inter_doublet_threshold:
         logger.info(
-            f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
+            f"Filtering out inter-lineage group doublets with"
+            f" doublet threshold {inter_doublet_threshold}..."
         )
         allele_table = doublet_utils.filter_inter_doublets(
-            allele_table, rule=inter_doublet_threshold
+            allele_table, rule=inter_doublet_threshold,
+            keep_doublets=keep_doublets
         )
 
     logger.info(
@@ -1139,7 +1192,7 @@ def call_lineage_groups(
         min_umi_per_cell=int(min_umi_per_cell),
         min_avg_reads_per_umi=min_avg_reads_per_umi,
     )
-    allele_table["lineageGrp"] = allele_table["lineageGrp"].astype(int)
+    allele_table["lineageGrp"] = allele_table["lineageGrp"].astype(str)
 
     if plot:
         logger.info("Producing Plots...")
