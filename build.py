@@ -20,21 +20,6 @@ def build():
             ["cassiopeia/solver/ilp_solver_utilities.pyx"],
             include_dirs=[numpy.get_include()],
         ),
-        Extension(
-            "cassiopeia.tools.branch_length_estimator._iid_exponential_bayesian",
-            sources=[
-                "cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.pyx",
-                "cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian_cpp.cpp",
-            ],
-            extra_compile_args=[
-                "-std=c++17",
-                "-Wall",
-                "-Wextra",
-                "-pedantic",
-                "-O3",
-            ],
-            language="c++",
-        ),
     ]
     ext_modules = cythonize(
         extensions,
