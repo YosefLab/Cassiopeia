@@ -13,7 +13,6 @@ from typing import Dict, List, Generator, Optional, Tuple
 import multiprocessing
 import networkx as nx
 import numpy as np
-from numpy.lib.arraysetops import unique
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -200,6 +199,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             for n in subproblem_tree:
                 if n in existing_nodes and n != subproblem_root:
                     mapping[n] = next(node_name_generator)
+                    existing_nodes.append(mapping[n])
+                else:
+                    existing_nodes.append(n)
 
             subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
 

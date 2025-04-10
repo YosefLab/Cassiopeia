@@ -27,6 +27,10 @@ class DistanceSolverError(Exception):
 
     pass
 
+class ecDNABirthDeathSimulatorError(Exception):
+    """An ExceptionClass for ecDNABirthDeathSimulator class."""
+
+    pass
 
 class FitchCountError(Exception):
     """An ExceptionClass for FitchCount."""

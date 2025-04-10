@@ -47,7 +47,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "scanpydoc.elegant_typehints",
     "scanpydoc.definition_list_typed_field",
-    "scanpydoc.autosummary_generate_imported",
+    # "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
     "sphinx_gallery.load_style",
 ]
@@ -165,6 +165,7 @@ nbsphinx_thumbnails = {
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
     "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
+    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png"
 }
 
 
@@ -199,6 +200,8 @@ class AutoAutoSummary(Autosummary):
         "attributes": directives.unchanged,
         "toctree": directives.unchanged,
     }
+
+    autosummary_imported_members = True
 
     required_arguments = 1
 

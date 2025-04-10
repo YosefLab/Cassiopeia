@@ -1,3 +1,7 @@
+"""
+Tests the functionality of cassiopeia.simulator.BirthDeathFitnessSimulator.
+"""
+
 import unittest
 
 import networkx as nx
@@ -412,6 +416,56 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(results[2])
         self.assertNotIn(2, tree.nodes)
         self.assertNotIn(3, tree.nodes)
+
+    def test_no_initial_birth_scale(self):
+        
+        topology = nx.DiGraph()
+        topology.add_edges_from(
+            [
+                ("0", "1"),
+                ("0", "2"),
+                ("1", "3"),
+                ("1", "4"),
+                ("2", "5"),
+                ("2", "6"),
+            ]
+        )
+        initial_tree = CassiopeiaTree(tree=topology)
+        
+        # initialize simulator with tree without default initial birth scales
+        birth_wd = lambda scale: np.random.exponential(scale)
+
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=16, random_seed=54, initial_tree=initial_tree
+        )
+        final_tree = bd_sim.simulate_tree()
+
+        self.assertEqual(16, len(final_tree.leaves))
+        for l in initial_tree.leaves:
+            birth_scale = final_tree.get_attribute(l, 'birth_scale')
+            self.assertEquals(1, birth_scale)
+
+    def test_birth_scale(self):
+
+        birth_wd = lambda scale: np.random.exponential(scale)
+        bd_sim_1 = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=16, random_seed=54
+        )
+
+        initial_tree = bd_sim_1.simulate_tree()
+
+        bd_sim_2 = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_tree
+        )
+        final_tree = bd_sim_2.simulate_tree()
+
+        self.assertEqual(100, len(final_tree.leaves))
+        
+        for l in initial_tree.leaves:
+            birth_scale = initial_tree.get_attribute(l, 'birth_scale')
+            final_birth_scale = final_tree.get_attribute(l, 'birth_scale')
+            self.assertEquals(birth_scale, final_birth_scale)
+
 
 
 if __name__ == "__main__":
