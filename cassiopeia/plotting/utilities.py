@@ -519,7 +519,7 @@ def prepare_alleletable(
     )
     clustered_linprof = lineage_profile.loc[leaves[::-1]]
     if indel_priors is None:
-        indel_colors = get_random_indel_colors(lineage_profile, random_state)
+        indel_colors = get_random_indel_colors(clustered_linprof, random_state)
     else:
         indel_colors = get_indel_colors(indel_priors, random_state)
     return clustered_linprof, indel_colors
