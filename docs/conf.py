@@ -90,6 +90,7 @@ intersphinx_mapping = dict(
     numpy=("https://docs.scipy.org/doc/numpy/", None),
     pandas=("https://pandas.pydata.org/pandas-docs/stable/", None),
     python=("https://docs.python.org/3", None),
+    treedata=("https://treedata.readthedocs.io/en/latest/", None),
 )
 
 # General information about the project.
