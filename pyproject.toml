@@ -114,6 +114,7 @@ docs = [
   "sphinx_gallery",
 ]
 spatial = [
+  "Cython>=3.0.6",
   "anndata",
   "squidpy",
   "opencv-python",
