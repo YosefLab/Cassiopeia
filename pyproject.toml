@@ -37,13 +37,13 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-anndata = {version = ">=0.11.0", optional=true}
+anndata = ">=0.11.0"
 Biopython = ">=1.71"
-Cython = "==3.0.6"
+Cython = ">=3.0.6"
 PyYAML = ">=3.12"
 black = {version = ">=20.8b1", optional = true}
 bokeh = ">=0.12.15"
-cchardet = {version = ">=2.1.7", optional = true}
+cchardet = {version = ">=2.2.0", optional = true}
 codecov = {version = ">=2.0.8", optional = true}
 cvxpy = "*"
 ete3 = ">=3.1.1"
@@ -80,7 +80,7 @@ scipy = ">=1.2.0"
 sphinx = {version = ">=3.4", optional = true}
 sphinx-autodoc-typehints = {version = "*", optional = true}
 sphinx-gallery = {version = ">0.6", optional = true}
-squidpy = {version = ">=1.6.5", optional = true}
+squidpy = ">=1.6.5"
 trame = {version = ">=3.2.4", optional = true}
 trame-vtk = {version = ">=2.5.8", optional = true}
 trame-vuetify = {version = ">=2.3.1", optional = true}
@@ -117,9 +117,7 @@ docs = [
 ]
 
 spatial = [
-  "anndata",
   "Cython",
-  "squidpy",
   "opencv-python",
   "poisson-disc",
   "vtk",
