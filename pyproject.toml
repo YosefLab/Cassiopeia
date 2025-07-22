@@ -118,6 +118,7 @@ docs = [
 
 spatial = [
   "anndata",
+  "Cython",
   "squidpy",
   "opencv-python",
   "poisson-disc",
