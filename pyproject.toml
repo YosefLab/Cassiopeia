@@ -38,7 +38,7 @@ packages = [
 
 [tool.poetry.dependencies]
 Biopython = ">=1.71"
-Cython = ">=0.29.2"
+Cython = ">=3.0.6"
 PyYAML = ">=3.12"
 black = {version = ">=20.8b1", optional = true}
 bokeh = ">=0.12.15"
@@ -61,7 +61,7 @@ ngs-tools = ">=1.5.6"
 numba = ">=0.51.0"
 numpy = ">=1.22, <3.0"
 opencv-python = {version = ">=4.5.4.60", optional = true}
-pandas = ">=1.1.4"
+pandas = ">=2.2.1"
 parameterized = "*"
 plotly = ">=5.0.0"
 poisson-disc = {version = ">=0.2.1", optional = true}
@@ -93,7 +93,7 @@ script = "build.py"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.7", "Cython", "numpy>=1.19.5", "setuptools", "pip>=22.0.0"]
+requires = ["poetry-core>=1.0.7", "Cython>=3.0.6", "numpy>=1.19.5", "setuptools", "pip>=22.0.0"]
 
 [tool.poetry.scripts]
 cassiopeia-preprocess = 'cassiopeia.preprocess.cassiopeia_preprocess:main'
@@ -114,6 +114,8 @@ docs = [
   "sphinx_gallery",
 ]
 spatial = [
+  "anndata",
+  "squidpy",
   "opencv-python",
   "poisson-disc",
   "vtk",

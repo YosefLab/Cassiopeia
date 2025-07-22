@@ -1711,6 +1711,71 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(set(cas_tree.nodes), expected_nodes)
         self.assertEqual(set(cas_tree.edges), expected_edges)
 
+    def test_mutationless_edge_collapse_ambiguous_internal_ambiguous(self):
+        tree = nx.DiGraph()
+        for i in range(8):
+            tree.add_node(str(i))
+        tree.add_edge("5", "0")
+        tree.add_edge("5", "1")
+        tree.add_edge("6", "2")
+        tree.add_edge("6", "5")
+        tree.add_edge("7", "3")
+        tree.add_edge("7", "4")
+        tree.add_edge("8", "6")
+        tree.add_edge("8", "7")
+        
+        character_matrix = pd.DataFrame.from_dict(
+            {
+                "0": [1, 0, 1, 0, 0],
+                "1": [1, 0, 2, 0, 0],
+                "2": [1, 0, 3, 0, 0],
+                "3": [2, 0, (1,2,3), 0, 0],
+                "4": [2, 0, (2,3,4), 0, 0]
+            },
+            orient="index",
+            columns=["a", "b", "c", "d", "e"],
+        )
+        cas_tree = cas.data.CassiopeiaTree(
+            character_matrix=character_matrix, tree=tree
+        )
+        cas_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
+
+        new_map = {}
+        for i in cas_tree.nodes:
+            new_map[i] = (
+                "|".join([str(c) for c in cas_tree.get_character_states(i)])
+                + f",{i}"
+            )
+        cas_tree.relabel_nodes(new_map)
+
+        expected_nodes = set(
+            [
+                "0|0|0|0|0,8",
+                "2|0|(2, 3)|0|0,7",
+                "2|0|(1, 2, 3)|0|0,3",
+                "2|0|(2, 3, 4)|0|0,4",
+                "1|0|0|0|0,6",
+                "1|0|1|0|0,0",
+                "1|0|2|0|0,1",
+                "1|0|3|0|0,2"
+            ]
+        )
+
+        expected_edges = set(
+            [
+                ("0|0|0|0|0,8", "2|0|(2, 3)|0|0,7"),
+                ("0|0|0|0|0,8", "1|0|0|0|0,6"),
+                ("2|0|(2, 3)|0|0,7", "2|0|(1, 2, 3)|0|0,3"),
+                ("2|0|(2, 3)|0|0,7", "2|0|(2, 3, 4)|0|0,4"),
+                ("1|0|0|0|0,6", "1|0|1|0|0,0"),
+                ("1|0|0|0|0,6", "1|0|2|0|0,1"),
+                ("1|0|0|0|0,6", "1|0|3|0|0,2")
+            ]
+        )
+
+        self.assertEqual(set(cas_tree.nodes), expected_nodes)
+        self.assertEqual(set(cas_tree.edges), expected_edges)
+
     def test_set_and_add_attribute(self):
 
         tree = cas.data.CassiopeiaTree(

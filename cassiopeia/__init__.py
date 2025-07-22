@@ -8,6 +8,7 @@ from . import plotting as pl
 from . import data
 from . import critique
 from . import simulator as sim
+from . import spatial as sp
 from . import tools as tl
 
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
@@ -21,7 +22,7 @@ __version__ = importlib_metadata.version(package_name)
 
 import sys
 
-sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim"]})
+sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim", "sp"]})
 del sys
 
-__all__ = ["pp", "solver", "pl", "data", "critique", "sim", "tl"]
+__all__ = ["pp", "solver", "pl", "data", "critique", "sim", "sp", "tl"]

@@ -2,6 +2,7 @@
 This file stores generally important functionality for the Cassiopeia-Preprocess
 pipeline.
 """
+
 import functools
 import itertools
 import os
@@ -659,6 +660,62 @@ def convert_lineage_profile_to_character_matrix(
     ]
 
     return character_matrix, prior_probs, indel_to_charstate
+
+
+def convert_character_matrix_to_allele_table(
+    character_matrix: pd.DataFrame,
+    state_to_indel: Optional[Dict[int, Dict[int, str]]] = None,
+    keep_ambiguous: bool = False,
+):
+    """Converts a character matrix back into an allele table.
+
+    Args:
+        character_matrix: A dataframe storing the character states for each
+            spot.
+        state_to_indel: A mapping of numerical states into indel strings.
+        keep_ambiguous: A boolean whether to keep ambiguous states for a given
+            intBC
+
+    Returns:
+        An allele table.
+    """
+    allele_table = pd.DataFrame(
+        columns=["cellBC", "intBC", "allele", "r1", "UMI"]
+    )
+
+    def disambiguate_allele(char, allele):
+        if type(allele) == tuple:
+            if keep_ambiguous:
+                all_alleles = [
+                    state_to_indel[int(char)][a] if a != 0 else "None"
+                    for a in allele
+                ]
+                return all_alleles
+            else:
+                allele = allele[0]
+        if allele == 0:
+            return ["None"]
+        if state_to_indel:
+            return [state_to_indel[int(char)][allele]]
+        return [allele]
+
+    for cell in tqdm(character_matrix.index):
+        alleles = character_matrix.loc[cell].values
+        non_missing_iid = np.where(alleles != -1)[0]
+        intbcs = []
+        all_alleles = []
+        for iid in non_missing_iid:
+            _alleles = disambiguate_allele(iid, alleles[iid])
+            intbcs += [f"intbc-{iid}" for _ in range(len(_alleles))]
+            all_alleles += _alleles
+        cellbcs = [cell] * len(intbcs)
+        umis = [1] * len(intbcs)
+        new_rows = pd.DataFrame(
+            [cellbcs, intbcs, all_alleles, all_alleles, umis],
+            index=allele_table.columns,
+        ).T
+        allele_table = pd.concat([allele_table, new_rows])
+    return allele_table
 
 
 def compute_empirical_indel_priors(
