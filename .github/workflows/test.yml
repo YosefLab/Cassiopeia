@@ -35,6 +35,7 @@ jobs:
         pip install pytest-cov
         pip install codecov
         pip install .
+        pip install .[spatial]
     - name: Test with pytest
       run: |
         pytest -vv test/ --cov-report=xml --cov=cassiopeia
