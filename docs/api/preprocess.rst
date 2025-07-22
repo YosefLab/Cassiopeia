@@ -39,4 +39,5 @@ We also have several functions that are useful for converting between data forma
    pp.compute_empirical_indel_priors
    pp.convert_alleletable_to_character_matrix
    pp.convert_alleletable_to_lineage_profile
+   pp.convert_character_matrix_to_allele_table
    pp.convert_lineage_profile_to_character_matrix
