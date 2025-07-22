@@ -46,6 +46,7 @@ bokeh = ">=0.12.15"
 cchardet = {version = ">=2.2.0", optional = true}
 codecov = {version = ">=2.0.8", optional = true}
 cvxpy = "*"
+ecos = "*"
 ete3 = ">=3.1.1"
 hits = "*"
 ipython = {version = ">=7.20", optional = true}
