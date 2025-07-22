@@ -118,7 +118,7 @@ spatial = [
   "squidpy",
   "opencv-python",
   "poisson-disc",
-  "vtk",
+  "vtk==9.3.0",
   "scikit-image", 
   "scikit-learn",
   "trame", 
