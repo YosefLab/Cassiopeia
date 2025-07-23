@@ -15,5 +15,6 @@ Import Cassiopeia as::
    critique
    solver
    simulator
+   spatial
    plotting
    tools

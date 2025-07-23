@@ -1,7 +1,7 @@
 """
 Utilities for spatial lineage-tracing module.
 """
-from typing import Tuple
+from typing import Optional, Tuple
 
 import anndata
 import networkx as nx
@@ -12,8 +12,8 @@ import squidpy as sq
 
 def get_spatial_graph_from_anndata(
     adata: anndata.AnnData,
-    neighborhood_radius: int = 10,
-    neighborhood_size: float = 30.0,
+    neighborhood_radius: int = 30.0,
+    neighborhood_size: Optional[float] = None,
 ) -> nx.DiGraph:
     """Get a spatial graph structure from an spatial anndata
 
@@ -33,19 +33,20 @@ def get_spatial_graph_from_anndata(
         A networkx object storing the spatial graph.
     """
     # create spatial graph if needed
-    if neighborhood_radius:
-        sq.gr.spatial_neighbors(
+    if neighborhood_size:
+         sq.gr.spatial_neighbors(
             adata,
             coord_type="generic",
             spatial_key="spatial",
-            radius=neighborhood_radius,
+            n_neighs=neighborhood_size,
         )
+       
     else:
         sq.gr.spatial_neighbors(
             adata,
             coord_type="generic",
             spatial_key="spatial",
-            n_neighs=neighborhood_size,
+            radius=neighborhood_radius,
         )
 
     spatial_graph = nx.from_numpy_array(adata.obsp["spatial_connectivities"])
@@ -59,6 +60,7 @@ def impute_single_state(
     neighborhood_graph: nx.DiGraph = None,
     number_of_hops: int = 1,
     max_neighbor_distance: float = np.inf,
+    coordinates: Optional[pd.DataFrame] = None,
 ) -> Tuple[int, float, int]:
     """Imputes missing character state for a cell at a defined position.
 
@@ -79,9 +81,10 @@ def impute_single_state(
         if node not in character_matrix.index:
             continue
 
-        distance = nx.shortest_path_length(
-            neighborhood_graph, cell, node, weight="distance"
-        )
+        distance = 0
+        if not (coordinates is None):
+            distance = np.sqrt(np.sum((coordinates.loc[cell].values - coordinates.loc[node].values)**2))
+
         state = character_matrix.loc[node].iloc[character]
         if distance <= max_neighbor_distance and state != -1:
             if type(state) == tuple:

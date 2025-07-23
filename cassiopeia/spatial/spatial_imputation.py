@@ -16,11 +16,11 @@ def impute_spatial_data(
     character_matrix: pd.DataFrame,
     adata: Optional[anndata.AnnData] = None,
     spatial_graph: Optional[nx.Graph] = None,
-    neighborhood_size: int = 10,
     neighborhood_radius: float = 30.0,
     imputation_hops: int = 2,
     imputation_concordance: float = 0.8,
     num_imputation_iterations: int = 1,
+    neighborhood_size: Optional[int] = None,
 ) -> pd.DataFrame:
     """Imputes data based on spatial location.
 
@@ -62,7 +62,7 @@ def impute_spatial_data(
 
         # create spatial graph if needed
         spatial_graph = spatial_utilities.get_spatial_graph_from_anndata(
-            adata, neighborhood_radius, neighborhood_size
+            adata, neighborhood_radius=neighborhood_radius, neighborhood_size=neighorhood_size,
         )
 
 
