@@ -1,6 +1,7 @@
 """
 Utilities for spatial lineage-tracing module.
 """
+
 from typing import Optional, Tuple
 
 import anndata
@@ -34,13 +35,13 @@ def get_spatial_graph_from_anndata(
     """
     # create spatial graph if needed
     if neighborhood_size:
-         sq.gr.spatial_neighbors(
+        sq.gr.spatial_neighbors(
             adata,
             coord_type="generic",
             spatial_key="spatial",
             n_neighs=neighborhood_size,
         )
-       
+
     else:
         sq.gr.spatial_neighbors(
             adata,
@@ -52,6 +53,7 @@ def get_spatial_graph_from_anndata(
     spatial_graph = nx.from_numpy_array(adata.obsp["spatial_connectivities"])
 
     return spatial_graph
+
 
 def impute_single_state(
     cell: str,
@@ -77,13 +79,23 @@ def impute_single_state(
     """
 
     votes = []
-    for _, node in nx.bfs_edges(neighborhood_graph, cell, depth_limit=number_of_hops):
+    for _, node in nx.bfs_edges(
+        neighborhood_graph, cell, depth_limit=number_of_hops
+    ):
         if node not in character_matrix.index:
             continue
 
         distance = 0
         if not (coordinates is None):
-            distance = np.sqrt(np.sum((coordinates.loc[cell].values - coordinates.loc[node].values)**2))
+            distance = np.sqrt(
+                np.sum(
+                    (
+                        coordinates.loc[cell].values
+                        - coordinates.loc[node].values
+                    )
+                    ** 2
+                )
+            )
 
         state = character_matrix.loc[node].iloc[character]
         if distance <= max_neighbor_distance and state != -1:
@@ -95,6 +107,10 @@ def impute_single_state(
 
     if len(votes) > 0:
         values, counts = np.unique(votes, return_counts=True)
-        return values[np.argmax(counts)], np.max(counts) / np.sum(counts), np.max(counts)
+        return (
+            values[np.argmax(counts)],
+            np.max(counts) / np.sum(counts),
+            np.max(counts),
+        )
 
     return -1, 0, 0

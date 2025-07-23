@@ -1,6 +1,7 @@
 """
 Functionality for spatial imputation.
 """
+
 from typing import Optional
 
 import anndata
@@ -71,7 +72,9 @@ def impute_spatial_data(
 
         # create spatial graph if needed
         spatial_graph = spatial_utilities.get_spatial_graph_from_anndata(
-            adata, neighborhood_radius=neighborhood_radius, neighborhood_size=neighborhood_size,
+            adata,
+            neighborhood_radius=neighborhood_radius,
+            neighborhood_size=neighborhood_size,
         )
 
         node_map = dict(
@@ -96,18 +99,16 @@ def impute_spatial_data(
             zip(missing_indices[0], missing_indices[1]),
             total=len(missing_indices[0]),
         ):
-            (
-                imputed_value,
-                proportion_of_votes,
-                number_of_votes
-            ) = spatial_utilities.impute_single_state(
-                prev_character_matrix_imputed.index.values[i],
-                j,
-                prev_character_matrix_imputed,
-                neighborhood_graph=spatial_graph,
-                number_of_hops=imputation_hops,
-                max_neighbor_distance=max_neighbor_distance,
-                coordinates=coordinates,
+            (imputed_value, proportion_of_votes, number_of_votes) = (
+                spatial_utilities.impute_single_state(
+                    prev_character_matrix_imputed.index.values[i],
+                    j,
+                    prev_character_matrix_imputed,
+                    neighborhood_graph=spatial_graph,
+                    number_of_hops=imputation_hops,
+                    max_neighbor_distance=max_neighbor_distance,
+                    coordinates=coordinates,
+                )
             )
             if (
                 proportion_of_votes >= imputation_concordance
@@ -120,6 +121,5 @@ def impute_spatial_data(
 
     # apply final missingness filter
     final_character_matrix = character_matrix_imputed
-
 
     return final_character_matrix

@@ -1,6 +1,7 @@
 """
 Tests for character matrix formation.
 """
+
 import unittest
 
 import numpy as np
@@ -931,57 +932,85 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 self.assertEqual(prob, priors[character][state])
 
     def test_convert_character_matrix_to_allele_table(self):
-        
-        
+
         character_matrix = pd.DataFrame.from_dict(
             {
                 "cell_0": [1, 1, 0],
                 "cell_1": [2, 1, 0],
             },
-            orient="index", columns = ['r1', 'r2', 'r3']
+            orient="index",
+            columns=["r1", "r2", "r3"],
         )
 
-        allele_table = cas.pp.convert_character_matrix_to_allele_table(character_matrix)
+        allele_table = cas.pp.convert_character_matrix_to_allele_table(
+            character_matrix
+        )
 
         expected_allele_table = pd.DataFrame.from_dict(
             {
-                "cellBC": ["cell_0", "cell_0", "cell_0", "cell_1", "cell_1", "cell_1"],
-                "intBC": ["intbc-0", "intbc-1", "intbc-2", "intbc-0", "intbc-1", "intbc-2"],
+                "cellBC": [
+                    "cell_0",
+                    "cell_0",
+                    "cell_0",
+                    "cell_1",
+                    "cell_1",
+                    "cell_1",
+                ],
+                "intBC": [
+                    "intbc-0",
+                    "intbc-1",
+                    "intbc-2",
+                    "intbc-0",
+                    "intbc-1",
+                    "intbc-2",
+                ],
                 "allele": [1, 1, "None", 2, 1, "None"],
                 "r1": [1, 1, "None", 2, 1, "None"],
                 "UMI": [1, 1, 1, 1, 1, 1],
-        })
+            }
+        )
 
         allele_table.index = range(len(allele_table))
 
         pd.testing.assert_frame_equal(
-                allele_table, expected_allele_table, check_dtype=False
-            )
+            allele_table, expected_allele_table, check_dtype=False
+        )
 
         character_matrix = pd.DataFrame.from_dict(
             {
                 "cell_0": [1, 1, -1],
                 "cell_1": [2, 1, 0],
             },
-            orient="index", columns = ['r1', 'r2', 'r3']
+            orient="index",
+            columns=["r1", "r2", "r3"],
         )
 
-        allele_table = cas.pp.convert_character_matrix_to_allele_table(character_matrix)
+        allele_table = cas.pp.convert_character_matrix_to_allele_table(
+            character_matrix
+        )
 
         expected_allele_table = pd.DataFrame.from_dict(
             {
                 "cellBC": ["cell_0", "cell_0", "cell_1", "cell_1", "cell_1"],
-                "intBC": ["intbc-0", "intbc-1", "intbc-0", "intbc-1", "intbc-2"],
+                "intBC": [
+                    "intbc-0",
+                    "intbc-1",
+                    "intbc-0",
+                    "intbc-1",
+                    "intbc-2",
+                ],
                 "allele": [1, 1, 2, 1, "None"],
                 "r1": [1, 1, 2, 1, "None"],
                 "UMI": [1, 1, 1, 1, 1],
-        })
+            }
+        )
 
         allele_table.index = range(len(allele_table))
 
         pd.testing.assert_frame_equal(
-                allele_table, expected_allele_table, check_dtype=False
-            )
+            allele_table, expected_allele_table, check_dtype=False
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
