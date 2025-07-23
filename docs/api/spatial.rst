@@ -1,8 +1,11 @@
 ==========
-Tools
+Spatial
 ==========
 
 .. currentmodule:: cassiopeia
+
+Spatial Analyses
+~~~~~~~~~~~~~~~~~
 
 This library stores code for analyzing lineage-tracing data from spatial
 genomics approaches. While some relevant code is stored elsewhere (e.g., 
