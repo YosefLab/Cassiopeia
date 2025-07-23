@@ -16,11 +16,13 @@ def impute_spatial_data(
     character_matrix: pd.DataFrame,
     adata: Optional[anndata.AnnData] = None,
     spatial_graph: Optional[nx.Graph] = None,
+    neighborhood_size: Optional[int] = None,
     neighborhood_radius: float = 30.0,
     imputation_hops: int = 2,
     imputation_concordance: float = 0.8,
     num_imputation_iterations: int = 1,
-    neighborhood_size: Optional[int] = None,
+    max_neighbor_distance: float = np.inf,
+    coordinates: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """Imputes data based on spatial location.
 
@@ -37,7 +39,9 @@ def impute_spatial_data(
         spatial_graph: Optionally, the user can provide a spatial connectivity
             graph instead of passing in an adata.
         neighborhood_size: If a connectivitity graph is being constructed,
-            this is the number of nearest neighbors to connect to a node.
+            this is the number of nearest neighbors to connect to a node. If
+            both neighborhood_size and neighborhood_radius are passed in,
+            neighborhood_size is preferred.
         neighborhood_radius: Intead of passing in `neighborhood_size`, this
             is the radius of the connectivity graph.
         imputation_hops: Number of adjacent node's adjacencies to query. For
@@ -48,6 +52,11 @@ def impute_spatial_data(
             to accept an imputation.
         num_imputation_iterations: Number of iterations for imputation
             procedure.
+        max_neighbor_distance: Maximum distance to neighbor to be used for
+            imputation.
+        coordinates: If an AnnData is not specified, and you wish to set an
+            upper limit on the distance for spatial imputation, these
+            coordinates can be passed to the imputation procedure.
 
     Returns:
         An imputed character matrix.
@@ -62,17 +71,16 @@ def impute_spatial_data(
 
         # create spatial graph if needed
         spatial_graph = spatial_utilities.get_spatial_graph_from_anndata(
-            adata, neighborhood_radius=neighborhood_radius, neighborhood_size=neighorhood_size,
+            adata, neighborhood_radius=neighborhood_radius, neighborhood_size=neighborhood_size,
         )
 
-
-    node_map = dict(
-        zip(
-            range(adata.obsp["spatial_connectivities"].shape[0]),
-            adata.obs_names,
+        node_map = dict(
+            zip(
+                range(adata.obsp["spatial_connectivities"].shape[0]),
+                adata.obs_names,
+            )
         )
-    )
-    spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
+        spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
 
     prev_character_matrix_imputed = character_matrix.copy()
     missing_indices = np.where(character_matrix == -1)
@@ -97,7 +105,9 @@ def impute_spatial_data(
                 j,
                 prev_character_matrix_imputed,
                 neighborhood_graph=spatial_graph,
-                number_of_hops=1,
+                number_of_hops=imputation_hops,
+                max_neighbor_distance=max_neighbor_distance,
+                coordinates=coordinates,
             )
             if (
                 proportion_of_votes >= imputation_concordance

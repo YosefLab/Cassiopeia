@@ -58,6 +58,21 @@ class TestSpatialImputation(unittest.TestCase):
             orient="index",
         )
 
+        self.character_matrix_missing = pd.DataFrame.from_dict(
+            {
+                "cell_0": [1, 1, 0, 1],
+                "cell_1": [-1, 1, 0, 2],
+                "cell_2": [1, 1, 2, 3],
+                "cell_3": [1, -1, 2, 4],
+                "cell_4": [1, 2, 3, 5],
+                "cell_5": [1, 2, 3, 6],
+                "cell_6": [2, 0, 5, 8],
+                "cell_7": [2, 0, -1, 9],
+                "cell_8": [2, 0, 5, 10],
+            },
+            orient="index",
+        )
+
     def test_anndata_to_graph_radius(self):
         """Tests the radius constructor of anndata to spatial graph."""
 
@@ -222,6 +237,184 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(frequency, 1.0)
         self.assertEqual(2, count)
 
+    def test_spatial_imputation_integration_simple_one_hop(self):
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            self.character_matrix_missing,
+            self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_size=3,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_1', 0], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_3', 1], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_7', 2], 5)
+
+    def test_spatial_imputation_integration_simple_min_concordance(self):
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            self.character_matrix_missing,
+            self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.8,
+            num_imputation_iterations = 1,
+            neighborhood_size=3,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_1', 0], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_3', 1], -1)
+        self.assertEqual(imputed_character_matrix.loc['cell_7', 2], -1)
+
+    def test_spatial_imputation_integration_simple_neighborhood_radius(self):
+
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_8', 2] = 11
+        
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.6,
+            num_imputation_iterations = 1,
+            neighborhood_radius=15.0,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_1', 0], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_3', 1], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_7', 2], -1)
+
+    def test_spatial_imputation_integration_size_over_radius(self):
+        
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_5', 1] = -1
+        character_matrix_missing2.loc['cell_6', 1] = 1
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_radius=10.0,
+            neighborhood_size=3,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_5', 1], 1)
+
+    def test_spatial_imputation_integration_two_hops(self):
+
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_2', 1] = 2
+        character_matrix_missing2.loc['cell_5', 2] = 5
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            self.spatial_adata,
+            imputation_hops = 2,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_size=3
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_1', 0], 1)
+        self.assertEqual(imputed_character_matrix.loc['cell_3', 1], 2)
+        self.assertEqual(imputed_character_matrix.loc['cell_7', 2], 5)
+
+    def test_spatial_imputation_integration_no_zero(self):
+
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_0', 1] = 0
+        character_matrix_missing2.loc['cell_4', 1] = 0
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_size=3
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_3', 1], -1)
+
+    def test_spatial_imputation_integration_two_iterations(self):
+        
+        spatial_graph = cas.sp.get_spatial_graph_from_anndata(
+            self.spatial_adata, neighborhood_size=3
+        )
+
+        node_map = dict(
+            zip(
+                range(
+                    self.spatial_adata.obsp["spatial_connectivities"].shape[0]
+                ),
+                self.spatial_adata.obs_names,
+            )
+        )
+        spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
+
+        spatial_graph.add_edge('cell_7', 'cell_9') # add new edge
+
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_9'] = [-1, -1, -1, -1]
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            spatial_graph = spatial_graph,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+        )
+
+        # make sure that after one iteration no value is imputed in cell_9
+        self.assertEqual(imputed_character_matrix.loc['cell_9', 2], -1)
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            spatial_graph = spatial_graph,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 2,
+        )
+
+        # after 2 iterations, there should be an imputation from cell_7
+        self.assertEqual(imputed_character_matrix.loc['cell_9', 2], 5)
+
+    def test_spatial_imputation_integration_max_neighbor_distance(self):
+
+        character_matrix_missing2 = self.character_matrix_missing.copy()
+        character_matrix_missing2.loc['cell_5', 0] = -1
+
+        coordinates = pd.DataFrame(self.spatial_adata.obsm['spatial'], index=self.spatial_adata.obs_names)
+
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            adata = self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_size=3,
+            max_neighbor_distance=15,
+            coordinates=coordinates,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_5', 0], 1)
+
+        # now without neighbor max distance
+        imputed_character_matrix = cas.sp.impute_spatial_data(
+            character_matrix_missing2,
+            adata = self.spatial_adata,
+            imputation_hops = 1,
+            imputation_concordance = 0.0,
+            num_imputation_iterations = 1,
+            neighborhood_size=3,
+            max_neighbor_distance=np.inf,
+            coordinates=coordinates,
+        )
+
+        self.assertEqual(imputed_character_matrix.loc['cell_5', 0], 2)
 
 if __name__ == "__main__":
     unittest.main()
