@@ -8,14 +8,16 @@ Welcome!
 ========================
 
 This website serves as documentation to the Cassiopeia software suite, maintained by the `Yosef Lab
-<https://yoseflab.github.io/>`_ at UC Berkeley.
+<https://yoseflab.github.io/>`_ at the Weizmann Institute.
 
-Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of single-cell lineage tracing data. The package is composed of four independent modules:
+Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of single-cell lineage tracing data. The package is composed of the following modules:
 
-* ``preprocess`` for processing sequencing FASTQ data to character matrices
-* ``solver`` for performing tree inference
-* ``simulator`` for simulating trees and character-level data
+* ``preprocess`` for processing sequencing FASTQ data to character matrices.
+* ``solver`` for performing tree inference.
+* ``simulator`` for simulating trees and character-level data.
 * ``plotting`` for plotting trees.
+* ``spatial`` for performing analyses with spatial data.
+* ``tools`` for analyzing phylogenies, for example with paired RNA-seq data.
 
 If you find this useful for your research, please consider citing Cassiopeia [Jones20]_.
 
