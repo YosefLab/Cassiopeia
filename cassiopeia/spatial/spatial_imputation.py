@@ -22,6 +22,7 @@ def impute_alleles_from_spatial_data(
     num_imputation_iterations: int = 1,
     max_neighbor_distance: float = np.inf,
     coordinates: pd.DataFrame | None = None,
+    connect_key: str = "spatial_connectivities"
 ) -> pd.DataFrame:
     """Imputes data based on spatial location.
 
@@ -56,6 +57,10 @@ def impute_alleles_from_spatial_data(
         coordinates: If an AnnData is not specified, and you wish to set an
             upper limit on the distance for spatial imputation, these
             coordinates can be passed to the imputation procedure.
+        connect_key: Key used to store spatial connectivities in 
+            `adata.obsp`. This will be passed into the `key_added` argument
+            of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
+            of the form `{connect_key}_connectivities`. 
 
     Returns:
         An imputed character matrix.
@@ -73,11 +78,12 @@ def impute_alleles_from_spatial_data(
             adata,
             neighborhood_radius=neighborhood_radius,
             neighborhood_size=neighborhood_size,
+            connect_key=connect_key,
         )
 
         node_map = dict(
             zip(
-                range(adata.obsp["spatial_connectivities"].shape[0]),
+                range(adata.obsp[f'{connect_key}_connectivities'].shape[0]),
                 adata.obs_names,
             )
         )

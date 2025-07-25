@@ -16,6 +16,7 @@ def get_spatial_graph_from_anndata(
     adata: anndata.AnnData,
     neighborhood_radius: int = 30.0,
     neighborhood_size: float | None = None,
+    connect_key: str = "spatial"
 ) -> nx.DiGraph:
     """Get a spatial graph structure from an spatial anndata
 
@@ -30,6 +31,10 @@ def get_spatial_graph_from_anndata(
             this is the number of nearest neighbors to connect to a node.
         neighborhood_radius: Intead of passing in `neighborhood_size`, this
             is the radius of the connectivity graph.
+        connect_key: Key used to store spatial connectivities in 
+            `adata.obsp`. This will be passed into the `key_added` argument
+            of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
+            of the form `{connect_key}_connectivities`. 
 
     Returns:
         A networkx object storing the spatial graph.
@@ -48,6 +53,7 @@ def get_spatial_graph_from_anndata(
             coord_type="generic",
             spatial_key="spatial",
             n_neighs=neighborhood_size,
+            key_added=connect_key,
         )
 
     else:
@@ -56,9 +62,10 @@ def get_spatial_graph_from_anndata(
             coord_type="generic",
             spatial_key="spatial",
             radius=neighborhood_radius,
+            key_added=connect_key,
         )
 
-    spatial_graph = nx.from_numpy_array(adata.obsp["spatial_connectivities"])
+    spatial_graph = nx.from_numpy_array(adata.obsp[f'{connect_key}_connectivities'])
 
     return spatial_graph
 
