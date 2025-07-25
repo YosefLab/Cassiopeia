@@ -443,7 +443,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertEqual(16, len(final_tree.leaves))
         for l in initial_tree.leaves:
             birth_scale = final_tree.get_attribute(l, 'birth_scale')
-            self.assertEquals(1, birth_scale)
+            self.assertEqual(1, birth_scale)
 
     def test_birth_scale(self):
 
@@ -464,7 +464,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         for l in initial_tree.leaves:
             birth_scale = initial_tree.get_attribute(l, 'birth_scale')
             final_birth_scale = final_tree.get_attribute(l, 'birth_scale')
-            self.assertEquals(birth_scale, final_birth_scale)
+            self.assertEqual(birth_scale, final_birth_scale)
 
 
 
