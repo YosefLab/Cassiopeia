@@ -245,7 +245,7 @@ class TestSpatialImputation(unittest.TestCase):
 
     def test_spatial_imputation_integration_simple_one_hop(self):
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             self.character_matrix_missing,
             self.spatial_adata,
             imputation_hops=1,
@@ -260,7 +260,7 @@ class TestSpatialImputation(unittest.TestCase):
 
     def test_spatial_imputation_integration_simple_min_concordance(self):
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             self.character_matrix_missing,
             self.spatial_adata,
             imputation_hops=1,
@@ -278,7 +278,7 @@ class TestSpatialImputation(unittest.TestCase):
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_8", 2] = 11
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             self.spatial_adata,
             imputation_hops=1,
@@ -297,7 +297,7 @@ class TestSpatialImputation(unittest.TestCase):
         character_matrix_missing2.loc["cell_5", 1] = -1
         character_matrix_missing2.loc["cell_6", 1] = 1
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             self.spatial_adata,
             imputation_hops=1,
@@ -315,7 +315,7 @@ class TestSpatialImputation(unittest.TestCase):
         character_matrix_missing2.loc["cell_2", 1] = 2
         character_matrix_missing2.loc["cell_5", 2] = 5
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             self.spatial_adata,
             imputation_hops=2,
@@ -334,7 +334,7 @@ class TestSpatialImputation(unittest.TestCase):
         character_matrix_missing2.loc["cell_0", 1] = 0
         character_matrix_missing2.loc["cell_4", 1] = 0
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             self.spatial_adata,
             imputation_hops=1,
@@ -366,7 +366,7 @@ class TestSpatialImputation(unittest.TestCase):
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_9"] = [-1, -1, -1, -1]
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             spatial_graph=spatial_graph,
             imputation_hops=1,
@@ -377,7 +377,7 @@ class TestSpatialImputation(unittest.TestCase):
         # make sure that after one iteration no value is imputed in cell_9
         self.assertEqual(imputed_character_matrix.loc["cell_9", 2], -1)
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             spatial_graph=spatial_graph,
             imputation_hops=1,
@@ -398,7 +398,7 @@ class TestSpatialImputation(unittest.TestCase):
             index=self.spatial_adata.obs_names,
         )
 
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             adata=self.spatial_adata,
             imputation_hops=1,
@@ -412,7 +412,7 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_5", 0], 1)
 
         # now without neighbor max distance
-        imputed_character_matrix = cas.sp.impute_spatial_data(
+        imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             character_matrix_missing2,
             adata=self.spatial_adata,
             imputation_hops=1,

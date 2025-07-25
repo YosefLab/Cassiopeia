@@ -14,5 +14,5 @@ the `Spatial Simulators`) we have specific functions here.
 .. autosummary::
    :toctree: reference/
 
-   sp.impute_spatial_data
+   sp.impute_alleles_from_spatial_data
    sp.get_spatial_graph_from_anndata

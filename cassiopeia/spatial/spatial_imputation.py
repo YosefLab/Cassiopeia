@@ -13,7 +13,7 @@ import tqdm
 from cassiopeia.spatial import spatial_utilities
 
 
-def impute_spatial_data(
+def impute_alleles_from_spatial_data(
     character_matrix: pd.DataFrame,
     adata: Optional[anndata.AnnData] = None,
     spatial_graph: Optional[nx.Graph] = None,
