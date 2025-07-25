@@ -15,7 +15,7 @@ def impute_alleles_from_spatial_data(
     character_matrix: pd.DataFrame,
     adata: anndata.AnnData | None = None,
     spatial_graph: nx.Graph | None = None,
-    neighborhood_size: int | None,
+    neighborhood_size: int | None = None,
     neighborhood_radius: float = 30.0,
     imputation_hops: int = 2,
     imputation_concordance: float = 0.8,

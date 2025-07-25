@@ -8,7 +8,8 @@ import anndata
 import networkx as nx
 import numpy as np
 import pandas as pd
-import squidpy as sq
+
+from cassiopeia.mixins import try_import
 
 
 def get_spatial_graph_from_anndata(
@@ -33,6 +34,13 @@ def get_spatial_graph_from_anndata(
     Returns:
         A networkx object storing the spatial graph.
     """
+
+    # Optional dependencies that are required for 3D plotting
+    sq = try_import("squidpy")
+    if sq is None:
+        raise Exception("If you would like to infer a spatial graph, please "
+                        "install squidpy.")
+
     # create spatial graph if needed
     if neighborhood_size:
         sq.gr.spatial_neighbors(
