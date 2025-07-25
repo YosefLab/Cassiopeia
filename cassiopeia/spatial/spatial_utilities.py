@@ -2,7 +2,7 @@
 Utilities for spatial lineage-tracing module.
 """
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import anndata
 import networkx as nx
@@ -14,7 +14,7 @@ import squidpy as sq
 def get_spatial_graph_from_anndata(
     adata: anndata.AnnData,
     neighborhood_radius: int = 30.0,
-    neighborhood_size: Optional[float] = None,
+    neighborhood_size: float | None = None,
 ) -> nx.DiGraph:
     """Get a spatial graph structure from an spatial anndata
 
@@ -62,7 +62,7 @@ def impute_single_state(
     neighborhood_graph: nx.DiGraph = None,
     number_of_hops: int = 1,
     max_neighbor_distance: float = np.inf,
-    coordinates: Optional[pd.DataFrame] = None,
+    coordinates: pd.DataFrame | None = None,
 ) -> Tuple[int, float, int]:
     """Imputes missing character state for a cell at a defined position.
 

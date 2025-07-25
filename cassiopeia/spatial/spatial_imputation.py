@@ -2,8 +2,6 @@
 Functionality for spatial imputation.
 """
 
-from typing import Optional
-
 import anndata
 import networkx as nx
 import numpy as np
@@ -15,15 +13,15 @@ from cassiopeia.spatial import spatial_utilities
 
 def impute_alleles_from_spatial_data(
     character_matrix: pd.DataFrame,
-    adata: Optional[anndata.AnnData] = None,
-    spatial_graph: Optional[nx.Graph] = None,
-    neighborhood_size: Optional[int] = None,
+    adata: anndata.AnnData | None = None,
+    spatial_graph: nx.Graph | None = None,
+    neighborhood_size: int | None,
     neighborhood_radius: float = 30.0,
     imputation_hops: int = 2,
     imputation_concordance: float = 0.8,
     num_imputation_iterations: int = 1,
     max_neighbor_distance: float = np.inf,
-    coordinates: Optional[pd.DataFrame] = None,
+    coordinates: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Imputes data based on spatial location.
 
