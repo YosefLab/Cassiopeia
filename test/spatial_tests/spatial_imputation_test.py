@@ -107,16 +107,6 @@ class TestSpatialImputation(unittest.TestCase):
             self.spatial_adata, neighborhood_radius=10
         )
 
-        node_map = dict(
-            zip(
-                range(
-                    self.spatial_adata.obsp["spatial_connectivities"].shape[0]
-                ),
-                self.spatial_adata.obs_names,
-            )
-        )
-        spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
-
         expected_graph = nx.Graph()
         for edge in [
             ("cell_0", "cell_1"),
@@ -141,16 +131,6 @@ class TestSpatialImputation(unittest.TestCase):
         spatial_graph = cas.sp.get_spatial_graph_from_anndata(
             self.spatial_adata, neighborhood_size=3
         )
-
-        node_map = dict(
-            zip(
-                range(
-                    self.spatial_adata.obsp["spatial_connectivities"].shape[0]
-                ),
-                self.spatial_adata.obs_names,
-            )
-        )
-        spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
 
         expected_graph = nx.Graph()
         for edge in [

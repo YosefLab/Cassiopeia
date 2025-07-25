@@ -66,7 +66,14 @@ def get_spatial_graph_from_anndata(
         )
 
     spatial_graph = nx.from_numpy_array(adata.obsp[f'{connect_key}_connectivities'])
-
+    node_map = dict(
+            zip(
+                range(adata.obsp[f'{connect_key}_connectivities'].shape[0]),
+                adata.obs_names,
+            )
+        )
+    spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
+    
     return spatial_graph
 
 

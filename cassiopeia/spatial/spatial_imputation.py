@@ -92,14 +92,6 @@ def impute_alleles_from_spatial_data(
             connect_key=connect_key,
         )
 
-        node_map = dict(
-            zip(
-                range(adata.obsp[f'{connect_key}_connectivities'].shape[0]),
-                adata.obs_names,
-            )
-        )
-        spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
-
     prev_character_matrix_imputed = character_matrix.copy()
     missing_indices = np.where(character_matrix == -1)
 
