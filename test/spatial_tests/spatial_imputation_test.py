@@ -256,6 +256,7 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_3", 1], -1)
         self.assertEqual(imputed_character_matrix.loc["cell_7", 2], -1)
 
+    @unittest.skipUnless(SQUIDPY_INSTALLED, "Squidpy not installed.")
     def test_spatial_imputation_integration_simple_neighborhood_radius(self):
 
         character_matrix_missing2 = self.character_matrix_missing.copy()
