@@ -27,9 +27,20 @@ def impute_alleles_from_spatial_data(
     """Imputes data based on spatial location.
 
     This procedure iterates over spots in a given anndata and imputes missing
-    data based on spatial neigborhoods. This procedure is iterative, and can act
-    as an approximation of a message-passing process to smooth over missing
-    data.
+    data based on spatial neigborhoods.
+    
+    The procedure is an interative algorithm where for each iteration a missing
+    character is imputed based on the neighborhood of a node. Node neighborhoods
+    are built off of a spatial graph that can passed in directly or inferred
+    from a specified spatial anndata. In the simplest example, node neighobrhoods
+    are just the immediate neighbors of a node, but users can also include
+    neighbors-of-neighbors (and neighbors-of-neighbors-of-neighbors, so on)
+    using the `imputation_hops` argument. An imputation will be accepted if the
+    fraction of neighbors that agree with an observed non-zero allele exceeds
+    the specified `imputation_concordance` threshold (by default 0.8). This
+    procedure can be repeated for several rounds, controlled by the
+    `num_imputation_iterations` argument and in this way approximates a
+    message-passing process.
 
     Args:
         character_matrix: A character matrix of spots, constructed using a
