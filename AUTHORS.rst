@@ -2,11 +2,12 @@
 Credits
 =======
 
-* Matthew Jones <matthew.jones@ucsf.edu>
-* Alex Khodaverdian <alexkhodaverdian@berkeley.edu>
+* Matthew Jones <mgjones@stanford.edu>
+* Alex Khodaverdian
 * Richard Zhang
 * Sebastian Prillo
+* William Colgan
 * Joseph Min
-* Jeffrey Quinn <jeffrey.quinn@ucsf.edu>
-* Jeffrey Hussmann <jeffrey.hussmann@ucsf.edu>
-* Michelle Chan <michelle.chan@ucsf.edu>
+* Jeffrey Quinn
+* Jeffrey Hussmann
+* Michelle Chan

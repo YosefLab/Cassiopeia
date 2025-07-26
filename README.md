@@ -40,7 +40,7 @@ For developers:
 
 1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
 
-2. Ensure that you have Python >= 3.8 installed. (Due to dependencies no longer supporting Python 3.7, we have now stopped supporting Python <= 3.7) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+2. Ensure that you have Python >= 3.10 installed. (Due to dependencies and ongoing updates to Python, we will not guarantee support for python <= 3.9) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 3. [Optional] If you intend to use the CassiopeiaILP solver, please be sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
     * Run the command ``gurobi.sh`` from a terminal window

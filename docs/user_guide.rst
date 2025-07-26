@@ -23,6 +23,7 @@ Other Tutorials
    :maxdepth: 1
    
    notebooks/simulate_ecDNA
+   notebooks/spatial
    
 Contributed tutorials
 ---------------------
