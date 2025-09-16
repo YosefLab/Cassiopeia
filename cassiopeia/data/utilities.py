@@ -681,3 +681,6 @@ def compute_inter_cluster_distances(
             inter_cluster_distances.loc[state1, state2] = distance
 
     return inter_cluster_distances
+
+def cassiopeia_tree_to_treedata():
+    pass
