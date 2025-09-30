@@ -695,8 +695,7 @@ def cassiopeia_to_treedata(
     """
     Convert a CassiopeiaTree object to TreeData format.
     
-    Parameters:
-    -----------
+    Args:
     cassiopeia_tree : CassiopeiaTree
         Source CassiopeiaTree object to convert
     tree_key : str, default "lineage" 
@@ -709,18 +708,17 @@ def cassiopeia_to_treedata(
         Tree alignment type for TreeData ("leaves", "nodes", or "subset")
         
     Returns:
-    --------
     TreeData
         Converted TreeData object with:
-        - X = None (reserved for RNA data)
+        - X = None
         - obsm["character_matrix"] = character matrix
         - obst[tree_key] = tree topology
     """
     
-    # X is None - reserved for RNA data which CassiopeiaTree doesn't have
+    # X is None - typically RNA data which CassiopeiaTree doesn't have
     X = None
     
-    # Extract character matrix for obsm (not X)
+    # Extract character matrix for obsm 
     character_matrix = cassiopeia_tree.character_matrix
     obsm = {}
     if character_matrix is not None:
@@ -756,7 +754,7 @@ def cassiopeia_to_treedata(
     if tree_topology is not None:
         obst[tree_key] = tree_topology
     
-    # Extract character matrix layers into obsm (like PCA, UMAP would go)
+    # Extract character matrix layers into obsm 
     if preserve_layers and hasattr(cassiopeia_tree, 'layers'):
         for layer_name in cassiopeia_tree.layers.keys():
             layer_data = cassiopeia_tree.layers[layer_name]
@@ -788,9 +786,8 @@ def cassiopeia_to_treedata(
         uns['converted_from'] = 'CassiopeiaTree'
     
     # Create TreeData object
-    # Note: X is None because RNA data would go there, but CassiopeiaTree doesn't have it
     treedata_obj = TreeData(
-        X=X,  # None - reserved for RNA expression data
+        X=X,
         obs=obs,
         var=var,
         obst=obst if obst else None,
