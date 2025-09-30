@@ -7,6 +7,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+import treedata as td
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
@@ -560,7 +561,30 @@ class TestDataUtilities(unittest.TestCase):
             check_exact=False,
             atol=0.001,
         )
+    
+    def test_cassiopeiatree_to_treedata(self):
+        graph = nx.DiGraph()
+        graph.add_edges_from([('0','1'),('0','2'),('1','3'),('1','4'),('2','5'),('2','6')])
+        cm = pd.DataFrame(
+            [[0, 1, 3],
+            [0, 1, 4],
+            [1, 0, 1],
+            [1, 0, 2]],
+            index= ['3', '4', '5', '6'],
+            columns=['char1', 'char2', 'char3']
+        )
+        cas_tree = CassiopeiaTree(tree = graph, character_matrix = cm)
+
+        expected_tdata = td.TreeData(obst={"lineage": graph}, obsm={"character_matrix": cm})
+
+        obs_tdata = data_utilities.cassiopeia_tree_to_treedata(cas_tree)
+
+        nx.testing.assert_graphs_equal(obs_tdata.obst["lineage"], expected_tdata.obst["lineage"])
+        np.testing.assert_array_equal(obs_tdata.obsm["character_matrix"], expected_tdata.obsm["character_matrix"])
+        self.assertIsNone(obs_tdata.X)
+
 
 
 if __name__ == "__main__":
     unittest.main()
+

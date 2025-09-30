@@ -6,7 +6,7 @@ import collections
 from joblib import delayed
 import multiprocessing
 from multiprocessing import shared_memory
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any
 import warnings
 
 import ete3
@@ -16,6 +16,9 @@ import numba
 import numpy as np
 import pandas as pd
 import re
+from treedata import TreeData
+
+
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
@@ -682,5 +685,119 @@ def compute_inter_cluster_distances(
 
     return inter_cluster_distances
 
-def cassiopeia_tree_to_treedata():
-    pass
+def cassiopeia_to_treedata(
+    cassiopeia_tree,
+    tree_key: str = "lineage",
+    preserve_layers: bool = True,
+    preserve_metadata: bool = True,
+    alignment: str = "leaves"
+) -> TreeData:
+    """
+    Convert a CassiopeiaTree object to TreeData format.
+    
+    Parameters:
+    -----------
+    cassiopeia_tree : CassiopeiaTree
+        Source CassiopeiaTree object to convert
+    tree_key : str, default "lineage" 
+        Key name for the tree in TreeData.obst
+    preserve_layers : bool, default True
+        Whether to preserve character matrix layers in obsm
+    preserve_metadata : bool, default True
+        Whether to preserve cell and character metadata
+    alignment : str, default "leaves"
+        Tree alignment type for TreeData ("leaves", "nodes", or "subset")
+        
+    Returns:
+    --------
+    TreeData
+        Converted TreeData object with:
+        - X = None (reserved for RNA data)
+        - obsm["character_matrix"] = character matrix
+        - obst[tree_key] = tree topology
+    """
+    
+    # X is None - reserved for RNA data which CassiopeiaTree doesn't have
+    X = None
+    
+    # Extract character matrix for obsm (not X)
+    character_matrix = cassiopeia_tree.character_matrix
+    obsm = {}
+    if character_matrix is not None:
+        obsm["character_matrix"] = character_matrix.values
+    
+    # Extract observation metadata (obs) 
+    obs = None
+    if preserve_metadata and cassiopeia_tree.cell_meta is not None:
+        obs = cassiopeia_tree.cell_meta.copy()
+    else:
+        # Create minimal obs DataFrame with cell IDs
+        if character_matrix is not None:
+            obs = pd.DataFrame(index=character_matrix.index)
+    
+    # Add tree-related metadata if tree exists
+    if hasattr(cassiopeia_tree, '_CassiopeiaTree__network') and cassiopeia_tree._CassiopeiaTree__network is not None:
+        leaves = set(cassiopeia_tree.leaves)
+        if obs is not None:
+            obs['is_leaf'] = obs.index.isin(leaves)
+    
+    # Extract variable metadata (var)
+    var = None
+    if preserve_metadata and cassiopeia_tree.character_meta is not None:
+        var = cassiopeia_tree.character_meta.copy()
+    else:
+        # Create minimal var DataFrame for characters
+        if character_matrix is not None:
+            var = pd.DataFrame(index=character_matrix.columns)
+    
+    # Extract tree topology for obst
+    obst = {}
+    tree_topology = cassiopeia_tree.get_tree_topology()
+    if tree_topology is not None:
+        obst[tree_key] = tree_topology
+    
+    # Extract character matrix layers into obsm (like PCA, UMAP would go)
+    if preserve_layers and hasattr(cassiopeia_tree, 'layers'):
+        for layer_name in cassiopeia_tree.layers.keys():
+            layer_data = cassiopeia_tree.layers[layer_name]
+            if layer_data is not None:
+                obsm[f"layer_{layer_name}"] = layer_data.values
+    
+    # Extract unstructured annotations (uns)
+    uns = {}
+    if preserve_metadata:
+        # Store CassiopeiaTree-specific data in uns
+        if hasattr(cassiopeia_tree, 'priors') and cassiopeia_tree.priors is not None:
+            uns['cassiopeia_priors'] = cassiopeia_tree.priors
+            
+        if hasattr(cassiopeia_tree, 'parameters') and cassiopeia_tree.parameters is not None:
+            uns['cassiopeia_parameters'] = cassiopeia_tree.parameters
+            
+        if hasattr(cassiopeia_tree, 'missing_state_indicator'):
+            uns['missing_state_indicator'] = cassiopeia_tree.missing_state_indicator
+            
+        if hasattr(cassiopeia_tree, 'root_sample_name') and cassiopeia_tree.root_sample_name is not None:
+            uns['root_sample_name'] = cassiopeia_tree.root_sample_name
+            
+        # Store dissimilarity map if it exists
+        dissim_map = cassiopeia_tree.get_dissimilarity_map()
+        if dissim_map is not None:
+            uns['dissimilarity_map'] = dissim_map
+            
+        # Add conversion metadata
+        uns['converted_from'] = 'CassiopeiaTree'
+    
+    # Create TreeData object
+    # Note: X is None because RNA data would go there, but CassiopeiaTree doesn't have it
+    treedata_obj = TreeData(
+        X=X,  # None - reserved for RNA expression data
+        obs=obs,
+        var=var,
+        obst=obst if obst else None,
+        obsm=obsm if obsm else None,
+        uns=uns if uns else None,
+        alignment=alignment,
+        label='tree'
+    )
+    
+    return treedata_obj
