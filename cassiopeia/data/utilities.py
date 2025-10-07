@@ -694,7 +694,7 @@ def cassiopeia_to_treedata(
 ) -> TreeData:
     """
     Convert a CassiopeiaTree object to TreeData format.
-    
+    add desccriptions and assumptions
     Args:
     cassiopeia_tree : CassiopeiaTree
         Source CassiopeiaTree object to convert
@@ -718,11 +718,22 @@ def cassiopeia_to_treedata(
     # X is None - typically RNA data which CassiopeiaTree doesn't have
     X = None
     
+    # Validate that we have both character matrix and tree
+    if cassiopeia_tree.character_matrix is None:
+        raise CassiopeiaError(
+            "CassiopeiaTree must have a character matrix to convert to TreeData."
+        )
+    
+    try:
+        tree_topology = cassiopeia_tree.get_tree_topology()
+    except CassiopeiaError:
+        raise CassiopeiaError(
+            "CassiopeiaTree must have a tree topology to convert to TreeData."
+        ) from None
+    
     # Extract character matrix for obsm 
     character_matrix = cassiopeia_tree.character_matrix
-    obsm = {}
-    if character_matrix is not None:
-        obsm["character_matrix"] = character_matrix.values
+    obsm = {"character_matrix": character_matrix.values}
     
     # Extract observation metadata (obs) 
     obs = None
