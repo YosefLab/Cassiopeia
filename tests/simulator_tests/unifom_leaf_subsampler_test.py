@@ -2,6 +2,7 @@ import unittest
 
 import networkx as nx
 import numpy as np
+
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import LeafSubsamplerError
 from cassiopeia.simulator.UniformLeafSubsampler import UniformLeafSubsampler
@@ -10,9 +11,7 @@ from cassiopeia.simulator.UniformLeafSubsampler import UniformLeafSubsampler
 class UniformLeafSubsamplerTest(unittest.TestCase):
     def test_bad_parameters(self):
         with self.assertRaises(LeafSubsamplerError):
-            UniformLeafSubsampler(
-                ratio=0.5, number_of_leaves=400
-            )
+            UniformLeafSubsampler(ratio=0.5, number_of_leaves=400)
         with self.assertRaises(LeafSubsamplerError):
             UniformLeafSubsampler()
 
@@ -104,9 +103,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         }
         self.assertEqual(set(res.edges), set(expected_edges.keys()))
         for u, v in res.edges:
-            self.assertEqual(
-                res.get_branch_length(u, v), expected_edges[(u, v)]
-            )
+            self.assertEqual(res.get_branch_length(u, v), expected_edges[(u, v)])
 
         expected_times = {
             "node16": 0.0,

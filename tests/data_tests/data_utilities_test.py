@@ -7,6 +7,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins.errors import CassiopeiaError
@@ -15,7 +16,6 @@ from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 class TestDataUtilities(unittest.TestCase):
     def setUp(self):
-
         # this should obey PP for easy checking of ancestral states
         self.character_matrix = pd.DataFrame.from_dict(
             {
@@ -70,12 +70,9 @@ class TestDataUtilities(unittest.TestCase):
 
         # Test allele table without normal cassiopeia columns
         self.non_cassiopeia_allele_table = self.allele_table.copy()
-        self.non_cassiopeia_allele_table.rename(
-            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
-        )
+        self.non_cassiopeia_allele_table.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
 
     def test_bootstrap_character_matrices_no_priors(self):
-
         random_state = np.random.RandomState(123431235)
 
         bootstrap_samples = data_utilities.sample_bootstrap_character_matrices(
@@ -85,12 +82,8 @@ class TestDataUtilities(unittest.TestCase):
         self.assertEqual(len(bootstrap_samples), 10)
 
         for bootstrap_matrix, _bootstrap_priors in bootstrap_samples:
-            self.assertCountEqual(
-                self.character_matrix.index, bootstrap_matrix.index
-            )
-            self.assertEqual(
-                self.character_matrix.shape[1], bootstrap_matrix.shape[1]
-            )
+            self.assertCountEqual(self.character_matrix.index, bootstrap_matrix.index)
+            self.assertEqual(self.character_matrix.shape[1], bootstrap_matrix.shape[1])
 
             self.assertRaises(
                 AssertionError,
@@ -100,7 +93,6 @@ class TestDataUtilities(unittest.TestCase):
             )
 
     def test_bootstrap_character_matrices_with_priors(self):
-
         random_state = np.random.RandomState(12345)
 
         bootstrap_samples = data_utilities.sample_bootstrap_character_matrices(
@@ -113,12 +105,8 @@ class TestDataUtilities(unittest.TestCase):
         self.assertEqual(len(bootstrap_samples), 10)
 
         for bootstrap_matrix, bootstrap_priors in bootstrap_samples:
-            self.assertCountEqual(
-                self.character_matrix.index, bootstrap_matrix.index
-            )
-            self.assertEqual(
-                self.character_matrix.shape[1], bootstrap_matrix.shape[1]
-            )
+            self.assertCountEqual(self.character_matrix.index, bootstrap_matrix.index)
+            self.assertEqual(self.character_matrix.shape[1], bootstrap_matrix.shape[1])
 
             self.assertRaises(
                 AssertionError,
@@ -127,21 +115,16 @@ class TestDataUtilities(unittest.TestCase):
                 bootstrap_matrix,
             )
 
-            self.assertEqual(
-                len(bootstrap_priors), self.character_matrix.shape[1]
-            )
+            self.assertEqual(len(bootstrap_priors), self.character_matrix.shape[1])
 
     def test_bootstrap_allele_tables(self):
-
         random_state = np.random.RandomState(123431235)
 
         (
             character_matrix,
             _,
             _,
-        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
-            self.allele_table
-        )
+        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(self.allele_table)
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
             self.allele_table, num_bootstraps=10, random_state=random_state
@@ -155,18 +138,13 @@ class TestDataUtilities(unittest.TestCase):
             _boostarp_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
-
             self.assertEqual(
                 len(bootstrap_intbcs),
                 len(self.allele_table["intBC"].unique()) * 3,
             )
 
-            self.assertCountEqual(
-                character_matrix.index, bootstrap_matrix.index
-            )
-            self.assertEqual(
-                character_matrix.shape[1], bootstrap_matrix.shape[1]
-            )
+            self.assertCountEqual(character_matrix.index, bootstrap_matrix.index)
+            self.assertEqual(character_matrix.shape[1], bootstrap_matrix.shape[1])
 
             self.assertRaises(
                 AssertionError,
@@ -176,7 +154,6 @@ class TestDataUtilities(unittest.TestCase):
             )
 
     def test_bootstrap_allele_tables_non_cassiopeia_allele_table(self):
-
         random_state = np.random.RandomState(123431235)
 
         (
@@ -202,18 +179,13 @@ class TestDataUtilities(unittest.TestCase):
             _boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
-
             self.assertEqual(
                 len(bootstrap_intbcs),
                 len(self.non_cassiopeia_allele_table["intBC"].unique()) * 3,
             )
 
-            self.assertCountEqual(
-                character_matrix.index, bootstrap_matrix.index
-            )
-            self.assertEqual(
-                character_matrix.shape[1], bootstrap_matrix.shape[1]
-            )
+            self.assertCountEqual(character_matrix.index, bootstrap_matrix.index)
+            self.assertEqual(character_matrix.shape[1], bootstrap_matrix.shape[1])
 
             self.assertRaises(
                 AssertionError,
@@ -223,16 +195,13 @@ class TestDataUtilities(unittest.TestCase):
             )
 
     def test_bootstrap_allele_tables_priors(self):
-
         random_state = np.random.RandomState(12345)
 
         (
             character_matrix,
             _,
             _,
-        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
-            self.allele_table
-        )
+        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(self.allele_table)
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
             self.allele_table,
@@ -249,18 +218,13 @@ class TestDataUtilities(unittest.TestCase):
             _boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
-
             self.assertEqual(
                 len(bootstrap_intbcs),
                 len(self.allele_table["intBC"].unique()) * 3,
             )
 
-            self.assertCountEqual(
-                character_matrix.index, bootstrap_matrix.index
-            )
-            self.assertEqual(
-                character_matrix.shape[1], bootstrap_matrix.shape[1]
-            )
+            self.assertCountEqual(character_matrix.index, bootstrap_matrix.index)
+            self.assertEqual(character_matrix.shape[1], bootstrap_matrix.shape[1])
 
             self.assertRaises(
                 AssertionError,
@@ -292,16 +256,12 @@ class TestDataUtilities(unittest.TestCase):
         tree.add_edge("E", "C", length=0.3)
         tree.add_edge("E", "D", length=0.4)
 
-        newick_string = data_utilities.to_newick(
-            tree, record_branch_lengths=True
-        )
+        newick_string = data_utilities.to_newick(tree, record_branch_lengths=True)
         self.assertEqual(newick_string, "(A:0.1,B:0.2,(C:0.3,D:0.4):0.5);")
 
     def test_lca_characters(self):
         vecs = [[1, 0, 3, 4, 5], [1, -1, -1, 3, -1], [1, 2, 3, 2, -1]]
-        ret_vec = data_utilities.get_lca_characters(
-            vecs, missing_state_indicator=-1
-        )
+        ret_vec = data_utilities.get_lca_characters(vecs, missing_state_indicator=-1)
         self.assertEqual(ret_vec, [1, 0, 3, 0, 5])
 
     def test_lca_characters_ambiguous(self):
@@ -310,13 +270,10 @@ class TestDataUtilities(unittest.TestCase):
             [1, -1, -1, 3, -1],
             [1, 2, 3, 2, -1],
         ]
-        ret_vec = data_utilities.get_lca_characters(
-            vecs, missing_state_indicator=-1
-        )
+        ret_vec = data_utilities.get_lca_characters(vecs, missing_state_indicator=-1)
         self.assertEqual(ret_vec, [1, 2, 3, 0, 5])
 
     def test_lca_characters_ambiguous2(self):
-
         s1 = [
             (4, 62),
             (3, 10),
@@ -341,9 +298,7 @@ class TestDataUtilities(unittest.TestCase):
             (0, 2),
             (0, 4),
         ]
-        ret_vec = data_utilities.get_lca_characters(
-            [s1, s2], missing_state_indicator=-1
-        )
+        ret_vec = data_utilities.get_lca_characters([s1, s2], missing_state_indicator=-1)
         self.assertEqual(ret_vec, expected_reconstruction)
 
     def test_lca_characters_ambiguous_and_missing(self):
@@ -352,9 +307,7 @@ class TestDataUtilities(unittest.TestCase):
             [1, -1, -1, 3, -1],
             [1, -1, (3, 0), 2, -1],
         ]
-        ret_vec = data_utilities.get_lca_characters(
-            vecs, missing_state_indicator=-1
-        )
+        ret_vec = data_utilities.get_lca_characters(vecs, missing_state_indicator=-1)
         self.assertEqual(ret_vec, [1, (0, 2), (3, 0), 0, 5])
 
     def test_resolve_most_abundant(self):
@@ -362,7 +315,6 @@ class TestDataUtilities(unittest.TestCase):
         self.assertEqual(data_utilities.resolve_most_abundant(state), 3)
 
     def test_simple_phylogenetic_weights_matrix(self):
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -389,7 +341,6 @@ class TestDataUtilities(unittest.TestCase):
         pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
 
     def test_simple_phylogenetic_weights_matrix_inverse(self):
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -400,9 +351,7 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree)
 
-        weight_matrix = data_utilities.compute_phylogenetic_weight_matrix(
-            tree, inverse=True
-        )
+        weight_matrix = data_utilities.compute_phylogenetic_weight_matrix(tree, inverse=True)
 
         expected_weight_matrix = pd.DataFrame.from_dict(
             {
@@ -418,7 +367,6 @@ class TestDataUtilities(unittest.TestCase):
         pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
 
     def test_phylogenetic_weights_matrix_inverse_fn(self):
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -447,20 +395,14 @@ class TestDataUtilities(unittest.TestCase):
         pd.testing.assert_frame_equal(weight_matrix, expected_weight_matrix)
 
     def test_net_relatedness_index(self):
-
-        distances = np.array(
-            [[0, 1, 2, 4], [1, 0, 3, 6], [2, 3, 0, 5], [4, 6, 5, 0]]
-        )
+        distances = np.array([[0, 1, 2, 4], [1, 0, 3, 6], [2, 3, 0, 5], [4, 6, 5, 0]])
         indices_1 = np.array([0, 1])
         indices_2 = np.array([2, 3])
 
-        nri = data_utilities.net_relatedness_index(
-            distances, indices_1, indices_2
-        )
+        nri = data_utilities.net_relatedness_index(distances, indices_1, indices_2)
         self.assertAlmostEqual(15.0 / 4.0, nri, delta=0.0001)
 
     def test_inter_cluster_distance_basic(self):
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -482,11 +424,7 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
 
-        inter_cluster_distances = (
-            data_utilities.compute_inter_cluster_distances(
-                tree, meta_item="CellType"
-            )
-        )
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(tree, meta_item="CellType")
 
         expected_distances = pd.DataFrame.from_dict(
             {"TypeA": [0.15, 1.0], "TypeB": [1.0, 0.35]},
@@ -494,9 +432,7 @@ class TestDataUtilities(unittest.TestCase):
             columns=["TypeA", "TypeB"],
         )
 
-        pd.testing.assert_frame_equal(
-            expected_distances, inter_cluster_distances
-        )
+        pd.testing.assert_frame_equal(expected_distances, inter_cluster_distances)
 
         self.assertRaises(
             CassiopeiaError,
@@ -506,7 +442,6 @@ class TestDataUtilities(unittest.TestCase):
         )
 
     def test_inter_cluster_distance_custom_input(self):
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -539,12 +474,10 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree)
 
-        inter_cluster_distances = (
-            data_utilities.compute_inter_cluster_distances(
-                tree,
-                meta_data=meta_data["CellType"],
-                dissimilarity_map=weight_matrix,
-            )
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            tree,
+            meta_data=meta_data["CellType"],
+            dissimilarity_map=weight_matrix,
         )
 
         expected_distances = pd.DataFrame.from_dict(

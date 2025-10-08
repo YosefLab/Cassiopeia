@@ -2,12 +2,12 @@ import os
 import unittest
 
 import pandas as pd
+
 from cassiopeia.preprocess import lineage_utils, pipeline
 
 
 class TestCallLineageGroup(unittest.TestCase):
     def setUp(self):
-
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         if not os.path.exists(self.dir_path + "/test_files"):
             os.makedirs(self.dir_path + "/test_files")
@@ -54,9 +54,7 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.basic_grouping["allele"] = self.basic_grouping.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.basic_grouping["allele"] = self.basic_grouping.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         self.reassign = pd.DataFrame.from_dict(
             {
@@ -130,13 +128,9 @@ class TestCallLineageGroup(unittest.TestCase):
                 "Referencebegin": [0] * 13,
             }
         )
-        self.reassign["readName"] = self.reassign.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
-        )
+        self.reassign["readName"] = self.reassign.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
 
-        self.reassign["allele"] = self.reassign.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.reassign["allele"] = self.reassign.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         self.filter_and_reassign = pd.DataFrame.from_dict(
             {
@@ -250,16 +244,11 @@ class TestCallLineageGroup(unittest.TestCase):
                 "Referencebegin": [0] * 11,
             }
         )
-        self.doublet["readName"] = self.doublet.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
-        )
+        self.doublet["readName"] = self.doublet.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
 
-        self.doublet["allele"] = self.doublet.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.doublet["allele"] = self.doublet.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
     def test_format(self):
-
         aln_df = pipeline.call_lineage_groups(
             self.doublet,
             self.dir_path + "/test_files",
@@ -283,7 +272,6 @@ class TestCallLineageGroup(unittest.TestCase):
             self.assertIn(column, aln_df.columns)
 
     def test_basic_grouping(self):
-
         aln_df = pipeline.call_lineage_groups(
             self.basic_grouping,
             self.dir_path + "/test_files",
@@ -298,13 +286,11 @@ class TestCallLineageGroup(unittest.TestCase):
         }
 
         for pair in expected_rows:
-
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "lineageGrp",
                 ].iloc[0],
                 expected_lineage[0],
@@ -312,15 +298,13 @@ class TestCallLineageGroup(unittest.TestCase):
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "UMI",
                 ].iloc[0],
                 expected_lineage[1],
             )
 
     def test_doublet(self):
-
         aln_df = pipeline.call_lineage_groups(
             self.doublet,
             self.dir_path + "/test_files",
@@ -338,13 +322,11 @@ class TestCallLineageGroup(unittest.TestCase):
         }
 
         for pair in expected_rows:
-
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "lineageGrp",
                 ].iloc[0],
                 expected_lineage[0],
@@ -352,15 +334,13 @@ class TestCallLineageGroup(unittest.TestCase):
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "UMI",
                 ].iloc[0],
                 expected_lineage[1],
             )
 
     def test_reassign(self):
-
         aln_df = pipeline.call_lineage_groups(
             self.reassign,
             self.dir_path + "/test_files",
@@ -379,13 +359,11 @@ class TestCallLineageGroup(unittest.TestCase):
         }
 
         for pair in expected_rows:
-
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "lineageGrp",
                 ].iloc[0],
                 expected_lineage[0],
@@ -393,15 +371,13 @@ class TestCallLineageGroup(unittest.TestCase):
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "UMI",
                 ].iloc[0],
                 expected_lineage[1],
             )
 
     def test_filter_reassign(self):
-
         aln_df = pipeline.call_lineage_groups(
             self.filter_and_reassign,
             self.dir_path + "/test_files",
@@ -422,13 +398,11 @@ class TestCallLineageGroup(unittest.TestCase):
         }
 
         for pair in expected_rows:
-
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "lineageGrp",
                 ].iloc[0],
                 expected_lineage[0],
@@ -436,18 +410,14 @@ class TestCallLineageGroup(unittest.TestCase):
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "UMI",
                 ].iloc[0],
                 expected_lineage[1],
             )
 
     def test_filter_lineage_group_to_allele_table_single_lineage(self):
-
-        aln_df = lineage_utils.filtered_lineage_group_to_allele_table(
-            [self.basic_grouping]
-        )
+        aln_df = lineage_utils.filtered_lineage_group_to_allele_table([self.basic_grouping])
 
         self.assertIn("lineageGrp", aln_df)
 
@@ -458,13 +428,11 @@ class TestCallLineageGroup(unittest.TestCase):
         }
 
         for pair in expected_rows:
-
             expected_lineage = expected_rows[pair]
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "lineageGrp",
                 ].iloc[0],
                 expected_lineage[0],
@@ -472,8 +440,7 @@ class TestCallLineageGroup(unittest.TestCase):
 
             self.assertEqual(
                 aln_df.loc[
-                    (aln_df["cellBC"] == pair[0])
-                    & (aln_df["intBC"] == pair[1]),
+                    (aln_df["cellBC"] == pair[0]) & (aln_df["intBC"] == pair[1]),
                     "UMI",
                 ].iloc[0],
                 expected_lineage[1],

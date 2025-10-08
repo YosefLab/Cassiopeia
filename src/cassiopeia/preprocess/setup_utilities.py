@@ -1,8 +1,9 @@
-""""
+""" "
 A file that stores general functionality for setting up a Cassiopeia
 preprocessing instance. This file supports the command line interface entrypoint
 in cassiopeia_preprocess.py.
 """
+
 import ast
 import configparser
 import logging
@@ -25,15 +26,11 @@ def setup(output_directory_location: str, verbose: bool) -> None:
         os.mkdir(output_directory_location)
 
     # In addition to logging to the console, output logs to files.
-    output_handler = logging.FileHandler(
-        os.path.join(output_directory_location, "preprocess.log")
-    )
+    output_handler = logging.FileHandler(os.path.join(output_directory_location, "preprocess.log"))
     output_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
     logger.addHandler(output_handler)
 
-    error_handler = logging.FileHandler(
-        os.path.join(output_directory_location, "preprocess.err")
-    )
+    error_handler = logging.FileHandler(os.path.join(output_directory_location, "preprocess.err"))
     error_handler.setLevel(logging.ERROR)
     logger.addHandler(error_handler)
 
@@ -61,9 +58,7 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
 
     parameters = {}
     for key in config:
-        parameters[key] = {
-            k: ast.literal_eval(v) for k, v in config[key].items()
-        }
+        parameters[key] = {k: ast.literal_eval(v) for k, v in config[key].items()}
 
     # ensure that minimum items are present in config
     minimum_parameters = [
@@ -81,57 +76,35 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
             )
 
     # we need to add some extra parameters from the "general" settings
-    parameters["convert"]["output_directory"] = parameters["general"][
-        "output_directory"
-    ]
+    parameters["convert"]["output_directory"] = parameters["general"]["output_directory"]
     parameters["convert"]["name"] = parameters["general"]["name"]
     parameters["convert"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["filter_bam"]["output_directory"] = parameters["general"][
-        "output_directory"
-    ]
+    parameters["filter_bam"]["output_directory"] = parameters["general"]["output_directory"]
     parameters["filter_bam"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["error_correct_cellbcs_to_whitelist"][
-        "output_directory"
-    ] = parameters["general"]["output_directory"]
-    parameters["error_correct_cellbcs_to_whitelist"]["n_threads"] = parameters[
-        "general"
-    ]["n_threads"]
-    parameters["collapse"]["output_directory"] = parameters["general"][
-        "output_directory"
-    ]
+    parameters["error_correct_cellbcs_to_whitelist"]["output_directory"] = parameters["general"]["output_directory"]
+    parameters["error_correct_cellbcs_to_whitelist"]["n_threads"] = parameters["general"]["n_threads"]
+    parameters["collapse"]["output_directory"] = parameters["general"]["output_directory"]
     parameters["collapse"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["resolve"]["output_directory"] = parameters["general"][
-        "output_directory"
-    ]
+    parameters["resolve"]["output_directory"] = parameters["general"]["output_directory"]
 
-    parameters["align"]["ref_filepath"] = parameters["general"][
-        "reference_filepath"
-    ]
+    parameters["align"]["ref_filepath"] = parameters["general"]["reference_filepath"]
     parameters["align"]["ref"] = None
     parameters["align"]["n_threads"] = parameters["general"]["n_threads"]
 
-    parameters["call_alleles"]["ref_filepath"] = parameters["general"][
-        "reference_filepath"
-    ]
+    parameters["call_alleles"]["ref_filepath"] = parameters["general"]["reference_filepath"]
     parameters["call_alleles"]["ref"] = None
 
-    parameters["error_correct_umis"]["allow_allele_conflicts"] = parameters[
-        "general"
-    ].get("allow_allele_conflicts", False)
-    parameters["error_correct_umis"]["n_threads"] = parameters["general"][
-        "n_threads"
-    ]
+    parameters["error_correct_umis"]["allow_allele_conflicts"] = parameters["general"].get(
+        "allow_allele_conflicts", False
+    )
+    parameters["error_correct_umis"]["n_threads"] = parameters["general"]["n_threads"]
 
-    parameters["filter_molecule_table"]["output_directory"] = parameters[
-        "general"
-    ]["output_directory"]
-    parameters["filter_molecule_table"]["allow_allele_conflicts"] = parameters[
-        "general"
-    ].get("allow_allele_conflicts", False)
+    parameters["filter_molecule_table"]["output_directory"] = parameters["general"]["output_directory"]
+    parameters["filter_molecule_table"]["allow_allele_conflicts"] = parameters["general"].get(
+        "allow_allele_conflicts", False
+    )
 
-    parameters["call_lineages"]["output_directory"] = parameters["general"][
-        "output_directory"
-    ]
+    parameters["call_lineages"]["output_directory"] = parameters["general"]["output_directory"]
 
     return parameters
 

@@ -122,25 +122,15 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         initial_tree: CassiopeiaTree | None = None,
     ):
         if num_extant is None and experiment_time is None:
-            raise TreeSimulatorError(
-                "Please specify at least one stopping condition"
-            )
+            raise TreeSimulatorError("Please specify at least one stopping condition")
         if mutation_distribution is not None and fitness_distribution is None:
-            raise TreeSimulatorError(
-                "Please specify a fitness strength distribution"
-            )
+            raise TreeSimulatorError("Please specify a fitness strength distribution")
         if num_extant is not None and num_extant <= 0:
-            raise TreeSimulatorError(
-                "Please specify number of extant lineages greater than 0"
-            )
+            raise TreeSimulatorError("Please specify number of extant lineages greater than 0")
         if num_extant is not None and type(num_extant) is not int:
-            raise TreeSimulatorError(
-                "Please specify an integer number of extant tips"
-            )
+            raise TreeSimulatorError("Please specify an integer number of extant tips")
         if experiment_time is not None and experiment_time <= 0:
-            raise TreeSimulatorError(
-                "Please specify an experiment time greater than 0"
-            )
+            raise TreeSimulatorError("Please specify an experiment time greater than 0")
 
         self.birth_waiting_distribution = birth_waiting_distribution
         self.initial_birth_scale = initial_birth_scale
@@ -174,14 +164,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
                 try:
-                    tree.nodes[node]["birth_scale"] = (
-                        self.initial_tree.get_attribute(node, "birth_scale")
-                    )
+                    tree.nodes[node]["birth_scale"] = self.initial_tree.get_attribute(node, "birth_scale")
                 except CassiopeiaTreeError:
-                    tree.nodes[node]['birth_scale'] = self.initial_birth_scale
-                tree.nodes[node]["time"] = self.initial_tree.get_attribute(
-                    node, "time"
-                )
+                    tree.nodes[node]["birth_scale"] = self.initial_birth_scale
+                tree.nodes[node]["time"] = self.initial_tree.get_attribute(node, "time")
             return tree
 
         tree = nx.DiGraph()
@@ -208,7 +194,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         leaves = [node for node in tree if tree.out_degree(node) == 0]
         current_lineages = PriorityQueue()
         for leaf in leaves:
-
             lineage_dict = self.make_lineage_dict(
                 leaf,
                 tree.nodes[leaf]["birth_scale"],
@@ -284,9 +269,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         starting_index = 0
         if self.initial_tree:
-            starting_index = (
-                np.max([int(l) for l in self.initial_tree.leaves]) + 1
-            )
+            starting_index = np.max([int(l) for l in self.initial_tree.leaves]) + 1
         names = node_name_generator(starting_index)
 
         # Set the seed
@@ -305,9 +288,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         if len(tree.nodes) == 1:
             # Sample the waiting time until the first division
-            self.sample_lineage_event(
-                starting_lineage, current_lineages, tree, names, observed_nodes
-            )
+            self.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
         else:
             current_lineages = starting_lineage
 
@@ -328,12 +309,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                     for lineage in remaining_lineages:
                         parent = list(tree.predecessors(lineage["id"]))[0]
 
-                        tree.nodes[lineage["id"]]["time"] += (
-                            min_total_time - lineage["total_time"]
-                        )
-                        tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[
-                            parent
-                        ]["birth_scale"]
+                        tree.nodes[lineage["id"]]["time"] += min_total_time - lineage["total_time"]
+                        tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[parent]["birth_scale"]
                         observed_nodes.append(lineage["id"])
                     break
             # Pop the minimum age lineage to simulate forward time
@@ -343,13 +320,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             # This represents the time at which the lineage dies.
             if lineage["active"]:
                 for _i in range(2):
-                    self.sample_lineage_event(
-                        lineage, current_lineages, tree, names, observed_nodes
-                    )
+                    self.sample_lineage_event(lineage, current_lineages, tree, names, observed_nodes)
 
-        cassiopeia_tree = self.populate_tree_from_simulation(
-            tree, observed_nodes
-        )
+        cassiopeia_tree = self.populate_tree_from_simulation(tree, observed_nodes)
 
         return cassiopeia_tree
 
@@ -399,15 +372,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             non-active lineage is passed in
         """
         if not lineage["active"]:
-            raise TreeSimulatorError(
-                "Cannot sample event for non-active lineage"
-            )
+            raise TreeSimulatorError("Cannot sample event for non-active lineage")
 
         unique_id = next(names)
 
-        birth_waiting_time = self.birth_waiting_distribution(
-            lineage["birth_scale"]
-        )
+        birth_waiting_time = self.birth_waiting_distribution(lineage["birth_scale"])
         death_waiting_time = self.death_waiting_distribution()
         if birth_waiting_time <= 0 or death_waiting_time <= 0:
             raise TreeSimulatorError("0 or negative waiting time detected")
@@ -416,10 +385,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         # just cut off the living branch length at the experiment time
         if (
             self.experiment_time
-            and lineage["total_time"] + birth_waiting_time
-            >= self.experiment_time
-            and lineage["total_time"] + death_waiting_time
-            >= self.experiment_time
+            and lineage["total_time"] + birth_waiting_time >= self.experiment_time
+            and lineage["total_time"] + death_waiting_time >= self.experiment_time
         ):
             tree.add_node(unique_id)
             tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
@@ -445,17 +412,13 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         else:
             if birth_waiting_time < death_waiting_time:
                 # Update birth rate
-                updated_birth_scale = self.update_fitness(
-                    lineage["birth_scale"]
-                )
+                updated_birth_scale = self.update_fitness(lineage["birth_scale"])
 
                 # Annotate parameters for a given node in the tree
                 tree.add_node(unique_id)
                 tree.nodes[unique_id]["birth_scale"] = updated_birth_scale
                 tree.add_edge(lineage["id"], unique_id)
-                tree.nodes[unique_id]["time"] = (
-                    birth_waiting_time + lineage["total_time"]
-                )
+                tree.nodes[unique_id]["time"] = birth_waiting_time + lineage["total_time"]
                 # Add the newly generated cell to the list of living lineages
                 current_lineages.put(
                     (
@@ -464,8 +427,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         {
                             "id": unique_id,
                             "birth_scale": updated_birth_scale,
-                            "total_time": birth_waiting_time
-                            + lineage["total_time"],
+                            "total_time": birth_waiting_time + lineage["total_time"],
                             "active": True,
                         },
                     )
@@ -475,9 +437,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 tree.add_node(unique_id)
                 tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
                 tree.add_edge(lineage["id"], unique_id)
-                tree.nodes[unique_id]["time"] = (
-                    death_waiting_time + lineage["total_time"]
-                )
+                tree.nodes[unique_id]["time"] = death_waiting_time + lineage["total_time"]
                 current_lineages.put(
                     (
                         death_waiting_time + lineage["total_time"],
@@ -485,8 +445,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                         {
                             "id": unique_id,
                             "birth_scale": lineage["birth_scale"],
-                            "total_time": death_waiting_time
-                            + lineage["total_time"],
+                            "total_time": death_waiting_time + lineage["total_time"],
                             "active": False,
                         },
                     )
@@ -522,18 +481,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         if self.mutation_distribution:
             num_mutations = int(self.mutation_distribution())
             if num_mutations < 0:
-                raise TreeSimulatorError(
-                    "Negative number of mutations detected"
-                )
+                raise TreeSimulatorError("Negative number of mutations detected")
             for _ in range(num_mutations):
-                base_selection_coefficient *= (
-                    self.fitness_base ** self.fitness_distribution()
-                )
+                base_selection_coefficient *= self.fitness_base ** self.fitness_distribution()
         return birth_scale * base_selection_coefficient
 
-    def populate_tree_from_simulation(
-        self, tree: nx.DiGraph, observed_nodes: list[str]
-    ) -> CassiopeiaTree:
+    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: list[str]) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
 
         Args:
@@ -550,9 +503,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         time_dictionary = {}
         for i in tree.nodes:
             time_dictionary[i] = tree.nodes[i]["time"]
-            cassiopeia_tree.set_attribute(
-                i, "birth_scale", tree.nodes[i]["birth_scale"]
-            )
+            cassiopeia_tree.set_attribute(i, "birth_scale", tree.nodes[i]["birth_scale"])
         cassiopeia_tree.set_times(time_dictionary)
 
         # Prune dead lineages and collapse resulting unifurcations
@@ -563,8 +514,6 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         # If only implicit root remains after pruning dead lineages, error
         if len(cassiopeia_tree.nodes) == 1:
-            raise TreeSimulatorError(
-                "All lineages died before stopping condition"
-            )
+            raise TreeSimulatorError("All lineages died before stopping condition")
 
         return cassiopeia_tree

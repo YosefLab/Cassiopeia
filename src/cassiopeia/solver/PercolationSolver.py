@@ -6,8 +6,8 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.data import CassiopeiaTree
 import cassiopeia.data as cassdata
+from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import (
     CassiopeiaSolver,
@@ -63,10 +63,10 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         joining_solver: CassiopeiaSolver.CassiopeiaSolver,
         prior_transformation: str = "negative_log",
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float]
+        | None = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: int | None = 0,
     ):
-
         super().__init__(prior_transformation)
 
         self.joining_solver = joining_solver
@@ -113,7 +113,6 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: dict[int, dict[int, float]],
             missing_state_indicator: int,
         ):
-
             if len(samples) == 1:
                 return samples[0]
             # Partitions the set of samples by percolating a similarity graph
@@ -155,9 +154,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         priors = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
             priors = cassiopeia_tree.priors
 
         # extract character matrix
@@ -180,16 +177,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # Append duplicate samples
-        duplicates_tree = self.__add_duplicates_to_tree(
-            tree, character_matrix, node_name_generator
-        )
+        duplicates_tree = self.__add_duplicates_to_tree(tree, character_matrix, node_name_generator)
         cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
         # Collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def percolate(
         self,
@@ -224,9 +217,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         -------
             A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(
-            character_matrix.index, samples
-        )
+        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
         unique_character_array = character_matrix.to_numpy()
 
         G = nx.Graph()
@@ -272,15 +263,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             # Find the LCA of the nodes in each connected component
             for ind in range(len(connected_components)):
                 component_identifier = "component" + str(ind)
-                component_to_nodes[component_identifier] = connected_components[
-                    ind
-                ]
-                character_vectors = [
-                    list(i)
-                    for i in list(
-                        unique_character_array[connected_components[ind], :]
-                    )
-                ]
+                component_to_nodes[component_identifier] = connected_components[ind]
+                character_vectors = [list(i) for i in list(unique_character_array[connected_components[ind], :])]
                 lcas[component_identifier] = data_utilities.get_lca_characters(
                     character_vectors, missing_state_indicator
                 )
@@ -291,9 +275,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 priors=priors,
             )
 
-            self.joining_solver.solve(
-                lca_tree, collapse_mutationless_edges=False
-            )
+            self.joining_solver.solve(lca_tree, collapse_mutationless_edges=False)
             grouped_components = []
 
             # Take the split at the root as the clusters of components

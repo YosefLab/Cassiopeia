@@ -3,6 +3,7 @@ This file stores the SharedMutationJoiningSolver. The inference procedure is
 an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
+
 import warnings
 from collections.abc import Callable
 
@@ -59,10 +60,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float]
+        | None = dissimilarity_functions.hamming_similarity_without_missing,
         prior_transformation: str = "negative_log",
     ):
-
         super().__init__(prior_transformation)
 
         # Attempt to numbaize
@@ -70,21 +71,17 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.nb_similarity_function = similarity_function
         numbaize = True
         try:
-            self.nb_similarity_function = numba.jit(
-                similarity_function, nopython=True
-            )
+            self.nb_similarity_function = numba.jit(similarity_function, nopython=True)
         except TypeError:
             numbaize = False
             warnings.warn(
-                "Failed to numbaize dissimilarity function. "
-                "Falling back to Python.",
-                SharedMutationJoiningSolverWarning, stacklevel=2,
+                "Failed to numbaize dissimilarity function. Falling back to Python.",
+                SharedMutationJoiningSolverWarning,
+                stacklevel=2,
             )
 
         if numbaize:
-            self.__update_similarity_map = numba.jit(
-                self.__update_similarity_map, nopython=True
-            )
+            self.__update_similarity_map = numba.jit(self.__update_similarity_map, nopython=True)
 
     def solve(
         self,
@@ -125,9 +122,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
 
         similarity_map = data_utilities.compute_dissimilarity_map(
             character_matrix.to_numpy(),
@@ -154,9 +149,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
         if weights:
             for k, v in weights.items():
-                nb_char_weights = numba.typed.Dict.empty(
-                    numba.types.int64, numba.types.float64
-                )
+                nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
                 for state, prior in v.items():
                     nb_char_weights[state] = prior
                 nb_weights[k] = nb_char_weights
@@ -166,7 +159,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree.add_nodes_from(similarity_map.index)
 
         while N > 1:
-
             i, j = self.find_cherry(similarity_map.values)
 
             # get indices in the similarity matrix to join
@@ -174,9 +166,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             new_node_name = next(node_name_generator)
             tree.add_node(new_node_name)
-            tree.add_edges_from(
-                [(new_node_name, node_i), (new_node_name, node_j)]
-            )
+            tree.add_edges_from([(new_node_name, node_i), (new_node_name, node_j)])
 
             similarity_map = self.update_similarity_map_and_character_matrix(
                 character_matrix,
@@ -193,9 +183,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         cassiopeia_tree.populate_tree(tree, layer=layer)
         # collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def find_cherry(self, similarity_matrix: np.array) -> tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
@@ -213,16 +201,12 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_matrix = similarity_matrix.astype(float)
         np.fill_diagonal(similarity_matrix, -np.inf)
 
-        return np.unravel_index(
-            np.argmax(similarity_matrix, axis=None), similarity_matrix.shape
-        )
+        return np.unravel_index(np.argmax(similarity_matrix, axis=None), similarity_matrix.shape)
 
     def update_similarity_map_and_character_matrix(
         self,
         character_matrix: pd.DataFrame,
-        similarity_function: Callable[
-            [np.array, np.array, int, dict[int, dict[int, float]]], float
-        ],
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float],
         similarity_map: pd.DataFrame,
         cherry: tuple[str, str],
         new_node: str,
@@ -260,9 +244,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_array = similarity_map.to_numpy()
         i_characters = character_array[character_i, :]
         j_characters = character_array[character_j, :]
-        lca = data_utilities.get_lca_characters(
-            [i_characters, j_characters], missing_state_indicator
-        )
+        lca = data_utilities.get_lca_characters([i_characters, j_characters], missing_state_indicator)
         character_matrix.loc[new_node] = lca
 
         similarity_array_updated = self.__update_similarity_map(
@@ -276,9 +258,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         sample_names = list(similarity_map.index) + [new_node]
 
-        similarity_map = pd.DataFrame(
-            similarity_array_updated, index=sample_names, columns=sample_names
-        )
+        similarity_map = pd.DataFrame(similarity_array_updated, index=sample_names, columns=sample_names)
 
         # drop out cherry from similarity map and character matrix
         similarity_map.drop(
@@ -296,9 +276,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: np.array,
         similarity_map: np.array,
         lca: np.array,
-        similarity_function: Callable[
-            [np.array, np.array, int, dict[int, dict[int, float]]], float
-        ],
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float],
         missing_state_indicator: int = -1,
         weights=None,
     ) -> np.array:
@@ -326,9 +304,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         k = 0
         for i in range(C):
             s1 = character_matrix[i, :]
-            new_row[k] = similarity_function(
-                s1, lca, missing_state_indicator, weights
-            )
+            new_row[k] = similarity_function(s1, lca, missing_state_indicator, weights)
             k += 1
 
         updated_map = np.vstack((similarity_map, np.atleast_2d(new_row)))

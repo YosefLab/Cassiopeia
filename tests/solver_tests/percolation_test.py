@@ -5,11 +5,12 @@ Test PercolationSolver in Cassiopeia.solver.
 import itertools
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.solver import dissimilarity_functions
 
 
@@ -31,9 +32,7 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
-NB_SIMILARITY = numba.jit(
-    dissimilarity_functions.hamming_similarity_without_missing, nopython=True
-)
+NB_SIMILARITY = numba.jit(dissimilarity_functions.hamming_similarity_without_missing, nopython=True)
 
 
 def neg_hamming_similarity_without_missing(
@@ -42,13 +41,11 @@ def neg_hamming_similarity_without_missing(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-
     return -1 * NB_SIMILARITY(s1, s2, missing_state_indicator, weights)
 
 
 class PercolationSolverTest(unittest.TestCase):
     def test_NJ_negative_similarity(self):
-
         cm = pd.DataFrame.from_dict(
             {
                 "c1": [5, 3, 0, 0, 0],
@@ -85,9 +82,7 @@ class PercolationSolverTest(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -159,9 +154,7 @@ class PercolationSolverTest(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -204,9 +197,7 @@ class PercolationSolverTest(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -234,9 +225,7 @@ class PercolationSolverTest(unittest.TestCase):
             4: {1: 0.6},
         }
 
-        p_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1, priors=priors
-        )
+        p_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
         joining_solver = cas.solver.NeighborJoiningSolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
@@ -261,9 +250,7 @@ class PercolationSolverTest(unittest.TestCase):
         )
 
         observed_tree = p_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)

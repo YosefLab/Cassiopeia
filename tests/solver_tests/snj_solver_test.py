@@ -1,15 +1,17 @@
 """
 Test SpectralNeighborJoiningSolver in Cassiopeia.solver.
 """
+
 import itertools
 import unittest
 from unittest import mock
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.classes.digraph import DiGraph
+
+import cassiopeia as cas
 
 
 def find_triplet_structure(triplet, T):
@@ -40,9 +42,7 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
-def assertTripletCorrectness(
-    self, nodes: list[str], expected_tree: DiGraph, observed_tree: DiGraph
-):
+def assertTripletCorrectness(self, nodes: list[str], expected_tree: DiGraph, observed_tree: DiGraph):
     """Checks if two trees are isomorphic.
 
     Args:
@@ -63,9 +63,7 @@ def assertTripletCorrectness(
 class TestSpectralNeighborJoiningSolver(unittest.TestCase):
     def setUp(self):
         """Instantiate instance variables for repeated use in tests."""
-        self.snj_solver = cas.solver.SpectralNeighborJoiningSolver(
-            add_root=True
-        )
+        self.snj_solver = cas.solver.SpectralNeighborJoiningSolver(add_root=True)
 
         # --------------------- General SNJ ---------------------
         cm_general = pd.DataFrame.from_dict(
@@ -170,18 +168,14 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
 
         # ------- Perfect Phylogenetic Tree + Priors --------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
-        self.tree_pp_priors = cas.data.CassiopeiaTree(
-            character_matrix=cm_pp, priors=priors
-        )
+        self.tree_pp_priors = cas.data.CassiopeiaTree(character_matrix=cm_pp, priors=priors)
 
     def test_constructor(self):
         """Test for errors related to rooting trees."""
         self.assertIsNotNone(self.snj_solver.dissimilarity_function)
         self.assertIsNotNone(self.tree_general.get_dissimilarity_map())
 
-        nothing_solver = cas.solver.SpectralNeighborJoiningSolver(
-            similarity_function=None, add_root=False
-        )
+        nothing_solver = cas.solver.SpectralNeighborJoiningSolver(similarity_function=None, add_root=False)
 
         no_root_tree = cas.data.CassiopeiaTree(
             character_matrix=self.cm_general,
@@ -191,16 +185,12 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(no_root_tree)
 
-        no_root_solver = cas.solver.SpectralNeighborJoiningSolver(
-            similarity_function=None, add_root=True
-        )
+        no_root_solver = cas.solver.SpectralNeighborJoiningSolver(similarity_function=None, add_root=True)
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             no_root_solver.solve(no_root_tree)
 
-        root_only_tree = cas.data.CassiopeiaTree(
-            character_matrix=self.cm_general, root_sample_name="b"
-        )
+        root_only_tree = cas.data.CassiopeiaTree(character_matrix=self.cm_general, root_sample_name="b")
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(root_only_tree)
@@ -208,9 +198,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         snj_solver_fn = cas.solver.SpectralNeighborJoiningSolver(add_root=True)
         snj_solver_fn.solve(self.tree_general)
 
-        self.assertEqual(
-            self.tree_general.get_dissimilarity_map().loc["a", "b"], 0.51341712
-        )
+        self.assertEqual(self.tree_general.get_dissimilarity_map().loc["a", "b"], 0.51341712)
 
     def test_compute_svd2_pairwise(self):
         """Test lambda matrix output for subsets of length 1."""
@@ -221,15 +209,10 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
 
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
-        for (j_idx, i_idx) in itertools.combinations(range(N), 2):
+        for j_idx, i_idx in itertools.combinations(range(N), 2):
+            svd2_val = self.snj_solver._compute_svd2(pair=(i_idx, j_idx), lambda_indices=lambda_indices)
 
-            svd2_val = self.snj_solver._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=lambda_indices
-            )
-
-            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
-                j_idx, i_idx
-            ] = svd2_val
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
         np.fill_diagonal(lambda_matrix_arr, np.inf)
 
         expected_lambda_matrix = np.array(
@@ -272,9 +255,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
-        self.assertTrue(
-            np.allclose(lambda_matrix_arr, expected_lambda_matrix, atol=0.1)
-        )
+        self.assertTrue(np.allclose(lambda_matrix_arr, expected_lambda_matrix, atol=0.1))
 
     def test_compute_svd2_N3(self):
         """Test lamba matrix output for when there are 3 subsets left."""
@@ -285,15 +266,10 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
 
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
-        for (j_idx, i_idx) in itertools.combinations(range(N), 2):
+        for j_idx, i_idx in itertools.combinations(range(N), 2):
+            svd2_val = self.snj_solver._compute_svd2(pair=(i_idx, j_idx), lambda_indices=lambda_indices)
 
-            svd2_val = self.snj_solver._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=lambda_indices
-            )
-
-            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
-                j_idx, i_idx
-            ] = svd2_val
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
         np.fill_diagonal(lambda_matrix_arr, np.inf)
 
         expected_lambda_matrix = np.array(
@@ -304,9 +280,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             ]
         )
 
-        self.assertTrue(
-            np.allclose(lambda_matrix_arr, expected_lambda_matrix, atol=0.1)
-        )
+        self.assertTrue(np.allclose(lambda_matrix_arr, expected_lambda_matrix, atol=0.1))
 
     def test_update_dissimilarity_map_base(self):
         """Test the update method's lambda matrix output."""
@@ -318,9 +292,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             lambda_matrix.index[1],
         )
 
-        svd2_vals = self.snj_solver.update_dissimilarity_map(
-            lambda_matrix, (node_i, node_j), "new_node"
-        )
+        svd2_vals = self.snj_solver.update_dissimilarity_map(lambda_matrix, (node_i, node_j), "new_node")
 
         expected_lambda = np.array(
             [
@@ -363,9 +335,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         )
 
         self.assertTrue(np.allclose(svd2_vals, expected_lambda, atol=0.1))
-        self.assertListEqual(
-            svd2_vals.index.values.tolist(), ["c", "d", "e", "root", "new_node"]
-        )
+        self.assertListEqual(svd2_vals.index.values.tolist(), ["c", "d", "e", "root", "new_node"])
         self.assertListEqual(
             svd2_vals.columns.values.tolist(),
             ["c", "d", "e", "root", "new_node"],
@@ -381,18 +351,14 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         lambda_matrix_arr = None
 
         node_names = ["g1", "g2", "g3"]
-        lambda_matrix = pd.DataFrame(
-            lambda_matrix_arr, index=node_names, columns=node_names
-        )
+        lambda_matrix = pd.DataFrame(lambda_matrix_arr, index=node_names, columns=node_names)
 
         node_i, node_j = (
             lambda_matrix.index[0],
             lambda_matrix.index[1],
         )
 
-        svd2_vals = self.snj_solver.update_dissimilarity_map(
-            lambda_matrix, (node_i, node_j), "new_node"
-        )
+        svd2_vals = self.snj_solver.update_dissimilarity_map(lambda_matrix, (node_i, node_j), "new_node")
 
         expected_lambda = np.zeros([2, 2])
 
@@ -404,9 +370,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         new_solver = cas.solver.SpectralNeighborJoiningSolver(add_root=False)
 
         # get lambda products
-        lambda_matrix = new_solver.get_dissimilarity_map(
-            self.tree_general, None
-        )
+        lambda_matrix = new_solver.get_dissimilarity_map(self.tree_general, None)
         lambda_indices = new_solver._lambda_indices
         expected_lambda_indices = [[0], [1], [2], [3], [4]]
 
@@ -455,17 +419,13 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         expected_sim = self.sim_general
 
         # compare lambda matrix output
-        self.assertTrue(
-            np.allclose(lambda_matrix, expected_lambda_matrix, atol=0.1)
-        )
+        self.assertTrue(np.allclose(lambda_matrix, expected_lambda_matrix, atol=0.1))
 
         # compare similarity matrices
         self.assertTrue(np.allclose(obs_sim, expected_sim, atol=0.1))
 
         # compare indices
-        self.assertTrue(
-            np.allclose(lambda_indices, expected_lambda_indices, atol=0)
-        )
+        self.assertTrue(np.allclose(lambda_indices, expected_lambda_indices, atol=0))
 
     def test_find_cherry(self):
         """Test the find_cherry method."""
@@ -533,14 +493,10 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         assertTripletCorrectness(self, leaves, expected_tree, observed_tree)
 
         # solve with collapsing mutationless edges
-        self.snj_solver.solve(
-            self.tree_general, collapse_mutationless_edges=True
-        )
+        self.snj_solver.solve(self.tree_general, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
         expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "5", "6", "7"])
-        expected_tree.add_edges_from(
-            [("6", "a"), ("6", "e"), ("b", "6"), ("6", "d"), ("6", "c")]
-        )
+        expected_tree.add_edges_from([("6", "a"), ("6", "e"), ("b", "6"), ("6", "d"), ("6", "c")])
         observed_tree = self.tree_general.get_tree_topology()
         assertTripletCorrectness(self, leaves, expected_tree, observed_tree)
 
@@ -581,9 +537,7 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         assertTripletCorrectness(self, leaves, expected_tree, observed_tree)
 
         # solve with collapsing mutationless edges
-        self.snj_solver.solve(
-            self.tree_pp_priors, collapse_mutationless_edges=True
-        )
+        self.snj_solver.solve(self.tree_pp_priors, collapse_mutationless_edges=True)
         observed_tree = self.tree_pp_priors.get_tree_topology()
         assertTripletCorrectness(self, leaves, expected_tree, observed_tree)
 
@@ -763,19 +717,13 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             character_matrix=self.cm_general,
             dissimilarity_map=self.sim_general,
         )
-        with mock.patch.object(
-            tree, "compute_dissimilarity_map"
-        ) as compute_dissimilarity_map:
+        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
             self.snj_solver.setup_root_finder(tree)
             compute_dissimilarity_map.assert_not_called()
         self.assertEqual(tree.root_sample_name, "root")
         dissimilarity_map = tree.get_dissimilarity_map()
-        self.assertEqual(
-            {"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.index)
-        )
-        self.assertEqual(
-            {"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.columns)
-        )
+        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.index))
+        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.columns))
         self.assertEqual(dissimilarity_map.loc["root", "root"], 0)
 
 

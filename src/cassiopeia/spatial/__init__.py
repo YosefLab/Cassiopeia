@@ -1,4 +1,3 @@
-
 """Top level for spatial module."""
 
 from .spatial_imputation import impute_alleles_from_spatial_data

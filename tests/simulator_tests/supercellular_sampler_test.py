@@ -3,6 +3,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError
 from cassiopeia.simulator.LeafSubsampler import LeafSubsamplerError
 from cassiopeia.simulator.SupercellularSampler import SupercellularSampler
@@ -53,16 +54,12 @@ class SupercellularSamplerTest(unittest.TestCase):
 
     def test_bad_parameters(self):
         with self.assertRaises(LeafSubsamplerError):
-            SupercellularSampler(
-                ratio=0.5, number_of_merges=400
-            )
+            SupercellularSampler(ratio=0.5, number_of_merges=400)
         with self.assertRaises(LeafSubsamplerError):
             SupercellularSampler()
 
     def test_bad_number_of_samples(self):
-        tree = CassiopeiaTree(
-            tree=self.test_network, character_matrix=self.character_matrix
-        )
+        tree = CassiopeiaTree(tree=self.test_network, character_matrix=self.character_matrix)
         tree_no_character_matrix = CassiopeiaTree(tree=self.test_network)
         with self.assertRaises(LeafSubsamplerError):
             sampler = SupercellularSampler(number_of_merges=10)
@@ -75,9 +72,7 @@ class SupercellularSamplerTest(unittest.TestCase):
             sampler.subsample_leaves(tree_no_character_matrix)
 
     def test_subsample_balanced_tree(self):
-        tree = CassiopeiaTree(
-            tree=self.test_network, character_matrix=self.character_matrix
-        )
+        tree = CassiopeiaTree(tree=self.test_network, character_matrix=self.character_matrix)
 
         np.random.seed(10)
         sampler = SupercellularSampler(number_of_merges=2)

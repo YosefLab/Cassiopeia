@@ -1,13 +1,15 @@
 """
 Tests for cassiopeia/tools/tree_metrics.py
 """
+
 import itertools
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins import TreeMetricError
 from cassiopeia.tools import tree_metrics
 
@@ -39,26 +41,18 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
 
-        self.parsimony_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=parsimony_cm
-        )
+        self.parsimony_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=parsimony_cm)
 
     def test_parsimony_bad_cases(self):
         small_tree = cas.data.CassiopeiaTree(tree=self.small_net)
         with self.assertRaises(TreeMetricError):
-            tree_metrics.calculate_parsimony(
-                small_tree, infer_ancestral_characters=False
-            )
+            tree_metrics.calculate_parsimony(small_tree, infer_ancestral_characters=False)
 
         with self.assertRaises(TreeMetricError):
-            tree_metrics.calculate_parsimony(
-                self.parsimony_tree, infer_ancestral_characters=False
-            )
+            tree_metrics.calculate_parsimony(self.parsimony_tree, infer_ancestral_characters=False)
 
     def test_parsimony_reconstruct_internal_states(self):
-        p = tree_metrics.calculate_parsimony(
-            self.parsimony_tree, infer_ancestral_characters=True
-        )
+        p = tree_metrics.calculate_parsimony(self.parsimony_tree, infer_ancestral_characters=True)
         self.assertEqual(p, 8)
         p = tree_metrics.calculate_parsimony(
             self.parsimony_tree,
@@ -68,14 +62,11 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertEqual(p, 12)
 
     def test_parsimony_specify_internal_states(self):
-
         self.parsimony_tree.set_character_states("node7", [0, 0, 0])
         self.parsimony_tree.set_character_states("node5", [0, 0, 0])
         self.parsimony_tree.set_character_states("node6", [0, 0, 2])
 
-        p = tree_metrics.calculate_parsimony(
-            self.parsimony_tree, infer_ancestral_characters=False
-        )
+        p = tree_metrics.calculate_parsimony(self.parsimony_tree, infer_ancestral_characters=False)
         self.assertEqual(p, 9)
         p = tree_metrics.calculate_parsimony(
             self.parsimony_tree,
@@ -278,9 +269,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
         priors = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         stochastic_missing_probability = 0.3
         mutation_probability_function_of_time = lambda t: 0.44967879185089554
         missing_probability_function_of_time = lambda t: 0.17017346663375654
@@ -331,9 +320,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm)
 
         with self.assertRaises(TreeMetricError):
             small_tree.parameters["mutation_rate"] = -1
@@ -366,9 +353,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
         priors = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
 
         small_tree.parameters["stochastic_missing_probability"] = 0.3
         params = tree_metrics.get_lineage_tracing_parameters(
@@ -401,7 +386,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         for i in range(len(params)):
             self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
 
-
         small_tree.reset_parameters()
         small_tree.parameters["stochastic_missing_probability"] = 0.3
         small_tree.parameters["heritable_missing_rate"] = 0.25
@@ -411,7 +395,6 @@ class TestCassiopeiaTree(unittest.TestCase):
         true_params = (0.44967879185089554, 0.25, 0.3)
         for i in range(len(params)):
             self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
-
 
         small_tree.parameters["mutation_rate"] = 0.25
         params = tree_metrics.get_lineage_tracing_parameters(
@@ -434,9 +417,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             1: {1: 0.2, 2: 0.7, 3: 0.1},
             2: {1: 0.2, 2: 0.7, 3: 0.1},
         }
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         small_tree.set_branch_length("node5", "node0", 1.5)
         small_tree.set_branch_length("node6", "node3", 2)
 
@@ -503,9 +484,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             },
             orient="index",
         )
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm)
         small_tree.parameters["stochastic_missing_probability"] = 0.2
         with self.assertRaises(TreeMetricError):
             tree_metrics.calculate_likelihood_discrete(small_tree)
@@ -516,15 +495,11 @@ class TestCassiopeiaTree(unittest.TestCase):
             2: {1: 0.3, 2: 0.7},
             3: {1: 0.3, 2: 0.7},
         }
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         small_tree.parameters["stochastic_missing_probability"] = 0.2
 
         with self.assertRaises(TreeMetricError):
-            tree_metrics.calculate_likelihood_discrete(
-                small_tree, use_internal_character_states=True
-            )
+            tree_metrics.calculate_likelihood_discrete(small_tree, use_internal_character_states=True)
 
         small_tree.set_character_states("node7", [0, 0, 0])
         small_tree.set_character_states("node5", [0, 0, 0])
@@ -554,9 +529,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
         priors = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         small_tree.parameters["stochastic_missing_probability"] = 0.3
         L = tree_metrics.calculate_likelihood_discrete(small_tree)
         self.assertTrue(np.isclose(L, -11.458928604116634))
@@ -598,9 +571,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             2: {1: 0.3, 2: 0.7},
             3: {1: 0.3, 2: 0.7},
         }
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
 
         small_tree.parameters["mutation_rate"] = 0.5
         small_tree.parameters["heritable_missing_rate"] = 0.25
@@ -625,9 +596,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             2: {1: 0.3, 2: 0.7},
             3: {1: 0.3, 2: 0.7},
         }
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         small_tree.parameters["mutation_rate"] = 0.5
         small_tree.parameters["heritable_missing_rate"] = 0.25
         small_tree.parameters["stochastic_missing_probability"] = 0
@@ -663,9 +632,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             1: {1: 0.2, 2: 0.7, 3: 0.1},
             2: {1: 0.2, 2: 0.7, 3: 0.1},
         }
-        small_tree = cas.data.CassiopeiaTree(
-            tree=self.small_net, character_matrix=small_cm, priors=priors
-        )
+        small_tree = cas.data.CassiopeiaTree(tree=self.small_net, character_matrix=small_cm, priors=priors)
         small_tree.set_branch_length("node5", "node0", 1.5)
         small_tree.set_branch_length("node6", "node3", 2)
 
@@ -702,9 +669,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         ) in itertools.product([0, 1, -1, 2], repeat=2):
             for a_, b_ in itertools.product([0, 1, -1, 2], repeat=2):
                 small_net = nx.DiGraph()
-                small_net.add_edges_from(
-                    [("node2", "node0"), ("node2", "node1"), ("node3", "node2")]
-                )
+                small_net.add_edges_from([("node2", "node0"), ("node2", "node1"), ("node3", "node2")])
                 small_cm = pd.DataFrame.from_dict(
                     {
                         "node0": [a, a_],
@@ -712,9 +677,7 @@ class TestCassiopeiaTree(unittest.TestCase):
                     },
                     orient="index",
                 )
-                small_tree = cas.data.CassiopeiaTree(
-                    tree=small_net, character_matrix=small_cm, priors=priors
-                )
+                small_tree = cas.data.CassiopeiaTree(tree=small_net, character_matrix=small_cm, priors=priors)
                 small_tree.parameters["mutation_rate"] = 0.5
                 small_tree.parameters["heritable_missing_rate"] = 0.25
                 small_tree.parameters["stochastic_missing_probability"] = 0.25

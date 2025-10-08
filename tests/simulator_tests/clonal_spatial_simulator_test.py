@@ -1,10 +1,11 @@
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+
+import cassiopeia as cas
 from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator import ClonalSpatialDataSimulator
 
@@ -49,9 +50,7 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
             columns=["existing_column"],
             index=["7", "8", "9", "10", "11", "12", "13", "14"],
         )
-        self.tree_with_cell_meta = cas.data.CassiopeiaTree(
-            tree=topology, cell_meta=self.cell_meta
-        )
+        self.tree_with_cell_meta = cas.data.CassiopeiaTree(tree=topology, cell_meta=self.cell_meta)
 
     @pytest.mark.spatial
     def test_init(self):
@@ -96,18 +95,13 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
             np.testing.assert_allclose(
                 self.basic_tree.get_attribute(node, "spatial"),
                 expected_coordinates[node],
-
             )
         expected_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf] for leaf in self.basic_tree.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.basic_tree.leaves],
             index=self.basic_tree.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        pd.testing.assert_frame_equal(
-            self.basic_tree.cell_meta, expected_cell_meta
-        )
+        pd.testing.assert_frame_equal(self.basic_tree.cell_meta, expected_cell_meta)
 
     @pytest.mark.spatial
     def test_overlay_data_with_space(self):
@@ -137,15 +131,11 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
                 expected_coordinates[node],
             )
         expected_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf] for leaf in self.basic_tree.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.basic_tree.leaves],
             index=self.basic_tree.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        pd.testing.assert_frame_equal(
-            self.basic_tree.cell_meta, expected_cell_meta
-        )
+        pd.testing.assert_frame_equal(self.basic_tree.cell_meta, expected_cell_meta)
 
     @pytest.mark.spatial
     def test_overlay_data_with_existing_cell_meta(self):
@@ -175,16 +165,9 @@ class TestClonalSpatialDataSimulator(unittest.TestCase):
                 expected_coordinates[node],
             )
         expected_spatial_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf]
-                for leaf in self.tree_with_cell_meta.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.tree_with_cell_meta.leaves],
             index=self.tree_with_cell_meta.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        expected_cell_meta = pd.concat(
-            (self.cell_meta, expected_spatial_cell_meta), axis=1
-        )
-        pd.testing.assert_frame_equal(
-            self.tree_with_cell_meta.cell_meta, expected_cell_meta
-        )
+        expected_cell_meta = pd.concat((self.cell_meta, expected_spatial_cell_meta), axis=1)
+        pd.testing.assert_frame_equal(self.tree_with_cell_meta.cell_meta, expected_cell_meta)

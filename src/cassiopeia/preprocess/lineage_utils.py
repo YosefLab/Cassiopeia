@@ -2,6 +2,7 @@
 This file contains functions pertaining to calling lineage groups.
 Invoked through pipeline.py and supports the call_lineage_group function.
 """
+
 import os
 import re
 import sys
@@ -108,9 +109,7 @@ def find_top_lg(
     # Take subset of PIVOT table that contain cells that have the top intBC
     subPIVOT_in = PIVOT_in[PIVOT_in[intBC_top] > 0]
     subPIVOT_in_sums = subPIVOT_in.sum(0)
-    ordered_intBCs2 = subPIVOT_in_sums.sort_values(
-        ascending=False
-    ).index.tolist()
+    ordered_intBCs2 = subPIVOT_in_sums.sort_values(ascending=False).index.tolist()
     subPIVOT_in = subPIVOT_in[ordered_intBCs2]
 
     # Binarize
@@ -119,9 +118,7 @@ def find_top_lg(
     # Define intBC set
     subPIVOT_in_sums2 = subPIVOT_in.sum(0)
     total = subPIVOT_in_sums2[intBC_top]
-    intBC_sums_filt = subPIVOT_in_sums2[
-        subPIVOT_in_sums2 >= min_intbc_prop * total
-    ]
+    intBC_sums_filt = subPIVOT_in_sums2[subPIVOT_in_sums2 >= min_intbc_prop * total]
 
     # Reduce PIV to only intBCs considered in set
     intBC_set = intBC_sums_filt.index.tolist()
@@ -143,9 +140,7 @@ def find_top_lg(
     PIV_LG["lineageGrp"] = iteration + 1
 
     # Print statements
-    logger.debug(
-        f"LG {iteration+1} Assignment: {PIV_LG.shape[0]} cells assigned"
-    )
+    logger.debug(f"LG {iteration + 1} Assignment: {PIV_LG.shape[0]} cells assigned")
 
     return PIV_LG, PIV_noLG
 
@@ -186,9 +181,7 @@ def filter_intbcs_lg_sets(
         intBC_sums = PIVi_bin.sum(0)
         intBC_normsums = intBC_sums / max(intBC_sums)
 
-        intBC_normsums_filt_i = intBC_normsums[
-            intBC_normsums >= min_intbc_thresh
-        ]
+        intBC_normsums_filt_i = intBC_normsums[intBC_normsums >= min_intbc_thresh]
         intBC_set_i = intBC_normsums_filt_i.index.tolist()
 
         # Update masters
@@ -256,9 +249,7 @@ def score_lineage_kinships(
     max_kinship_ind = dfCellBC2LG.apply(lambda x: np.argmax(x), axis=1)
     max_kinship_frame = max_kinship.to_frame()
 
-    max_kinship_LG = pd.concat(
-        [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    )
+    max_kinship_LG = pd.concat([max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True)
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     return max_kinship_LG
@@ -314,9 +305,7 @@ def annotate_lineage_groups(
     return dfMT
 
 
-def filter_intbcs_final_lineages(
-    at: pd.DataFrame, min_intbc_thresh: float = 0.05
-) -> list[pd.DataFrame]:
+def filter_intbcs_final_lineages(at: pd.DataFrame, min_intbc_thresh: float = 0.05) -> list[pd.DataFrame]:
     """Filters out low-proportion intBCs from the final lineages.
 
     After the assignments of the final lineage groups have been decided,
@@ -333,34 +322,25 @@ def filter_intbcs_final_lineages(
             cellBCs of each lineage group, one table for each lineage group
     """
     lineageGrps = at["lineageGrp"].unique()
-    at_piv = pd.pivot_table(
-        at, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
-    )
+    at_piv = pd.pivot_table(at, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
     at_piv.fillna(value=0, inplace=True)
     at_piv[at_piv > 0] = 1
 
     lgs = []
 
     for i in lineageGrps:
-
         lg = at[at["lineageGrp"] == i]
         cells = lg["cellBC"].unique()
 
         lg_pivot = at_piv.loc[cells]
 
-        props = (
-            lg_pivot.apply(lambda x: pylab.sum(x) / len(x))
-            .to_frame()
-            .reset_index()
-        )
+        props = lg_pivot.apply(lambda x: pylab.sum(x) / len(x)).to_frame().reset_index()
         props.columns = ["iBC", "prop"]
 
         props = props.sort_values(by="prop", ascending=False)
         props.index = props["iBC"]
 
-        p_bc = props[
-            (props["prop"] > min_intbc_thresh) & (props["iBC"] != "NC")
-        ]
+        p_bc = props[(props["prop"] > min_intbc_thresh) & (props["iBC"] != "NC")]
 
         lg_group = lg.loc[np.in1d(lg["intBC"], p_bc["iBC"])]
         lgs.append(lg_group)
@@ -395,9 +375,7 @@ def filtered_lineage_group_to_allele_table(
             grouping.append(i)
     grouping = ["cellBC", "intBC", "allele"] + grouping + ["lineageGrp"]
 
-    final_df = final_df.groupby(grouping, as_index=False).agg(
-        {"UMI": "count", "readCount": "sum"}
-    )
+    final_df = final_df.groupby(grouping, as_index=False).agg({"UMI": "count", "readCount": "sum"})
 
     return final_df
 
@@ -424,7 +402,6 @@ def plot_overlap_heatmap(at, at_pivot_I, output_directory):
 
     flat_master = []
     for _n, lg in at.groupby("lineageGrp"):
-
         for item in lg["intBC"].unique():
             flat_master.append(item)
 
@@ -460,13 +437,10 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
     -------
         None, plot is saved to output directory
     """
-    if not os.path.exists(
-        os.path.join(output_directory, "lineageGrp_piv_heatmaps")
-    ):
+    if not os.path.exists(os.path.join(output_directory, "lineageGrp_piv_heatmaps")):
         os.makedirs(os.path.join(output_directory, "lineageGrp_piv_heatmaps"))
 
     for n, lg_group in at.groupby("lineageGrp"):
-
         plt.close()
 
         lg_group = add_cutsite_encoding(lg_group)
@@ -490,11 +464,7 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
             aggfunc=pylab.size,
         )
 
-        cell_umi_count = (
-            lg_group.groupby(["cellBC"])
-            .agg({"UMI": "count"})
-            .sort_values(by="UMI")
-        )
+        cell_umi_count = lg_group.groupby(["cellBC"]).agg({"UMI": "count"}).sort_values(by="UMI")
 
         agg_dict = {}
         for i in lg_group.columns:
@@ -502,12 +472,7 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
                 agg_dict[i] = "nunique"
         n_unique_alleles = lg_group.groupby(["intBC"]).agg(agg_dict)
 
-        col_order = (
-            lg_group_pivot2.dropna(axis=1, how="all")
-            .sum()
-            .sort_values(ascending=False, inplace=False)
-            .index
-        )
+        col_order = lg_group_pivot2.dropna(axis=1, how="all").sum().sort_values(ascending=False, inplace=False).index
 
         if len(col_order) < 2:
             continue
@@ -554,15 +519,11 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         ax2 = h.add_axes([0.3, 0, 0.6, 0.1], frame_on=False)
         for i in agg_dict.keys():
             num = int(re.findall(r"\d", i)[0])
-            ax2.bar(
-                x + (num - 1) * w, n_unique_alleles[i], width=w, label=i
-            )
+            ax2.bar(x + (num - 1) * w, n_unique_alleles[i], width=w, label=i)
         ax2.set_xlim([0, len(s3_intBCs)])
         ax2.set_ylim(
             ymin=0,
-            ymax=(
-                max([n_unique_alleles[i].max() for i in agg_dict.keys()]) + 10
-            ),
+            ymax=(max([n_unique_alleles[i].max() for i in agg_dict.keys()]) + 10),
         )
         ax2.set_xticks([])
         ax2.yaxis.tick_right()
@@ -575,9 +536,7 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         plt.savefig(
             os.path.join(
                 output_directory,
-                "lineageGrp_piv_heatmaps/lg_"
-                + str(int(n))
-                + "_piv_heatmap.png",
+                "lineageGrp_piv_heatmaps/lg_" + str(int(n)) + "_piv_heatmap.png",
             )
         )
         plt.close()

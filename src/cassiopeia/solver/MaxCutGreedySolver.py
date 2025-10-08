@@ -8,6 +8,7 @@ criterion on a connectivity graph built from the observed mutations in the
 samples representing a supertree of phylogenetic trees on each individual
 character.
 """
+
 from collections.abc import Callable
 
 import pandas as pd
@@ -60,7 +61,6 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
         prior_transformation: str = "negative_log",
     ):
-
         super().__init__(prior_transformation)
         self.missing_data_classifier = missing_data_classifier
 
@@ -90,12 +90,8 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         -------
             A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(
-            character_matrix.index, samples
-        )
-        mutation_frequencies = self.compute_mutation_frequencies(
-            samples, character_matrix, missing_state_indicator
-        )
+        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
+        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
 
         best_frequency = 0
         chosen_character = 0
@@ -106,37 +102,22 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
-                        < len(samples)
-                        - mutation_frequencies[character][
-                            missing_state_indicator
-                        ]
+                        < len(samples) - mutation_frequencies[character][missing_state_indicator]
                     ):
                         if weights:
-                            if (
-                                mutation_frequencies[character][state]
-                                * weights[character][state]
-                                > best_frequency
-                            ):
+                            if mutation_frequencies[character][state] * weights[character][state] > best_frequency:
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = (
-                                    mutation_frequencies[character][state]
-                                    * weights[character][state]
-                                )
+                                best_frequency = mutation_frequencies[character][state] * weights[character][state]
                         else:
-                            if (
-                                mutation_frequencies[character][state]
-                                > best_frequency
-                            ):
+                            if mutation_frequencies[character][state] > best_frequency:
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = mutation_frequencies[
-                                    character
-                                ][state]
+                                best_frequency = mutation_frequencies[character][state]
 
         if chosen_state == 0:
             return samples, []
@@ -151,10 +132,7 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
         for i in sample_indices:
             if unique_character_array[i, chosen_character] == chosen_state:
                 left_set.append(sample_names[i])
-            elif (
-                unique_character_array[i, chosen_character]
-                == missing_state_indicator
-            ):
+            elif unique_character_array[i, chosen_character] == missing_state_indicator:
                 missing.append(sample_names[i])
             else:
                 right_set.append(sample_names[i])

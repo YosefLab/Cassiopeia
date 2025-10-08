@@ -7,6 +7,7 @@ There may be other subclasses of this. Currently also implements a method for
 solving trees with CCPhylo but this will be moved with switch to compositional
 framework.
 """
+
 import abc
 import configparser
 import os
@@ -76,7 +77,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         prior_transformation: str = "negative_log",
         threads: int = 1,
     ):
-
         super().__init__(prior_transformation)
 
         self.dissimilarity_function = dissimilarity_function
@@ -86,11 +86,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         if "ccphylo" in self._implementation:
             self._setup_ccphylo()
 
-    def get_dissimilarity_map(
-        self,
-        cassiopeia_tree: CassiopeiaTree,
-        layer: str | None = None
-    ) -> pd.DataFrame:
+    def get_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None) -> pd.DataFrame:
         """Obtains or generates a matrix that is updated throughout the solver.
 
         The highest-level method to obtain a dissimilarity map, which
@@ -146,20 +142,16 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             logfile: File location to log output. Not currently used.
         """
         if self._implementation == "ccphylo_dnj":
-            self._ccphylo_solve(cassiopeia_tree,layer,
-                    collapse_mutationless_edges,logfile,method="dnj")
+            self._ccphylo_solve(cassiopeia_tree, layer, collapse_mutationless_edges, logfile, method="dnj")
             return
         elif self._implementation == "ccphylo_nj":
-            self._ccphylo_solve(cassiopeia_tree,layer,
-                    collapse_mutationless_edges,logfile,method="nj")
+            self._ccphylo_solve(cassiopeia_tree, layer, collapse_mutationless_edges, logfile, method="nj")
             return
         elif self._implementation == "ccphylo_hnj":
-            self._ccphylo_solve(cassiopeia_tree,layer,
-                    collapse_mutationless_edges,logfile,method="hnj")
+            self._ccphylo_solve(cassiopeia_tree, layer, collapse_mutationless_edges, logfile, method="hnj")
             return
         elif self._implementation == "ccphylo_upgma":
-            self._ccphylo_solve(cassiopeia_tree,layer,
-                    collapse_mutationless_edges,logfile,method="upgma")
+            self._ccphylo_solve(cassiopeia_tree, layer, collapse_mutationless_edges, logfile, method="upgma")
             return
 
         node_name_generator = solver_utilities.node_name_generator()
@@ -177,7 +169,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         tree.add_nodes_from(_dissimilarity_map.index)
 
         while N > 2:
-
             i, j = self.find_cherry(_dissimilarity_map.to_numpy())
 
             # get indices in the dissimilarity matrix to join
@@ -188,13 +179,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             new_node_name = next(node_name_generator)
             tree.add_node(new_node_name)
-            tree.add_edges_from(
-                [(new_node_name, node_i), (new_node_name, node_j)]
-            )
+            tree.add_edges_from([(new_node_name, node_i), (new_node_name, node_j)])
 
-            _dissimilarity_map = self.update_dissimilarity_map(
-                _dissimilarity_map, (node_i, node_j), new_node_name
-            )
+            _dissimilarity_map = self.update_dissimilarity_map(_dissimilarity_map, (node_i, node_j), new_node_name)
 
             N = _dissimilarity_map.shape[0]
 
@@ -205,14 +192,9 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # remove root from character matrix before populating tree
-        if (
-            cassiopeia_tree.root_sample_name
-            in cassiopeia_tree.character_matrix.index
-        ):
-            cassiopeia_tree.character_matrix = (
-                cassiopeia_tree.character_matrix.drop(
-                    index=cassiopeia_tree.root_sample_name
-                )
+        if cassiopeia_tree.root_sample_name in cassiopeia_tree.character_matrix.index:
+            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
+                index=cassiopeia_tree.root_sample_name
             )
 
         cassiopeia_tree.populate_tree(tree, layer=layer)
@@ -220,9 +202,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def _ccphylo_solve(
         self,
@@ -230,7 +210,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
-        method: str = "dnj"
+        method: str = "dnj",
     ) -> None:
         """Solves a tree using fast distance-based algorithms implemented by
         CCPhylo. To call this method the CCPhlyo package must be installed
@@ -251,20 +231,15 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-
             # save dissimilarity map as phylip file
             dis_path = os.path.join(temp_dir, "dist.phylip")
             tree_path = os.path.join(temp_dir, "tree.nwk")
-            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map,
-                                                          dis_path)
+            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map, dis_path)
 
             # run ccphylo
-            command = (f"{self._ccphylo_path} tree -i {dis_path} -o "
-                       f"{tree_path} -m {method}")
+            command = f"{self._ccphylo_path} tree -i {dis_path} -o {tree_path} -m {method}"
 
-            process = subprocess.Popen(command, shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
             T = ete3.Tree(tree_path, format=1)
 
@@ -279,34 +254,27 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         midpoint = T.get_midpoint_outgroup()
         root = T.get_tree_root()
         if midpoint in root.children:
-            last_split = [root.name,midpoint.name]
+            last_split = [root.name, midpoint.name]
         else:
-            last_split = [root.name,root.children[0].name]
-        tree.remove_edge(last_split[0],last_split[1])
+            last_split = [root.name, root.children[0].name]
+        tree.remove_edge(last_split[0], last_split[1])
 
         # root tree
-        tree = self.root_tree(tree,cassiopeia_tree.root_sample_name,last_split)
+        tree = self.root_tree(tree, cassiopeia_tree.root_sample_name, last_split)
 
         # remove root from character matrix before populating tree
-        if (
-            cassiopeia_tree.root_sample_name
-            in cassiopeia_tree.character_matrix.index
-        ):
-            cassiopeia_tree.character_matrix = (
-                cassiopeia_tree.character_matrix.drop(
-                    index=cassiopeia_tree.root_sample_name
-                )
+        if cassiopeia_tree.root_sample_name in cassiopeia_tree.character_matrix.index:
+            cassiopeia_tree.character_matrix = cassiopeia_tree.character_matrix.drop(
+                index=cassiopeia_tree.root_sample_name
             )
 
         # populate tree
-        cassiopeia_tree.populate_tree(tree,layer=layer)
+        cassiopeia_tree.populate_tree(tree, layer=layer)
         cassiopeia_tree.collapse_unifurcations()
 
         # collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def _setup_ccphylo(self) -> None:
         """Sets up the ccphylo solver by getting the ccphylo_path from the
@@ -314,35 +282,33 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """
         # get ccphylo path
         config = configparser.ConfigParser()
-        config_file = os.path.join(os.path.dirname(__file__),"..","config.ini")
+        config_file = os.path.join(os.path.dirname(__file__), "..", "config.ini")
         self._ccphylo_path = ""
         if os.path.exists(config_file):
             config.read(config_file)
-            self._ccphylo_path = config.get("Paths","ccphylo_path")
+            self._ccphylo_path = config.get("Paths", "ccphylo_path")
 
-        #check that ccphylo_path is valid
+        # check that ccphylo_path is valid
         if not os.path.exists(self._ccphylo_path):
             raise DistanceSolverError(
                 f"ccphylo_path {self._ccphylo_path} does not exist. To use fast "
-            "versions of Neighbor-Joining and UPGMA please install CCPhylo "
-            "(https://bitbucket.org/genomicepidemiology/ccphylo/src/master/)"
-            "set the ccphylo_path in the config.ini file then reinstall "
-            "Cassiopeia."
+                "versions of Neighbor-Joining and UPGMA please install CCPhylo "
+                "(https://bitbucket.org/genomicepidemiology/ccphylo/src/master/)"
+                "set the ccphylo_path in the config.ini file then reinstall "
+                "Cassiopeia."
             )
 
-        #check that ccphylo_path is executable
+        # check that ccphylo_path is executable
         if not os.access(self._ccphylo_path, os.X_OK):
             raise DistanceSolverError(
                 f"ccphylo_path {self._ccphylo_path} is not executable. To use "
-            "fast versions of Neighbor-Joining and UPGMA please install CCPhylo"
-            " (https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) "
-            "set the ccphylo_path in the config.ini file then reinstall "
-            "Cassiopeia."
+                "fast versions of Neighbor-Joining and UPGMA please install CCPhylo"
+                " (https://bitbucket.org/genomicepidemiology/ccphylo/src/master/) "
+                "set the ccphylo_path in the config.ini file then reinstall "
+                "Cassiopeia."
             )
 
-    def setup_dissimilarity_map(
-        self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None
-    ) -> None:
+    def setup_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None) -> None:
         """Sets up the solver.
 
         Sets up the solver with respect to the input CassiopeiaTree by
@@ -387,9 +353,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
     @abc.abstractmethod
-    def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
-    ) -> nx.DiGraph:
+    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]) -> nx.DiGraph:
         """Roots a tree.
 
         Finds a location on the tree to place a root and converts the general
@@ -407,9 +371,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         pass
 
     @abc.abstractmethod
-    def find_cherry(
-        self, dissimilarity_map: np.array(float)
-    ) -> tuple[int, int]:
+    def find_cherry(self, dissimilarity_map: np.array(float)) -> tuple[int, int]:
         """Selects two samples to join together as a cherry.
 
         Selects two samples from the dissimilarity map to join together as a

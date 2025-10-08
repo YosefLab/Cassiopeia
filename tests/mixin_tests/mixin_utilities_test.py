@@ -5,6 +5,7 @@ This file tests the utilities stored in cassiopeia/data/utilities.py
 import unittest
 
 import pandas as pd
+
 from cassiopeia.mixins import utilities
 
 
@@ -15,17 +16,12 @@ class TestMixinUtilities(unittest.TestCase):
 
     def test_unravel_states(self):
         state_array = [0, (1, 2), 3, 4, 5]
-        self.assertListEqual(
-            [0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array)
-        )
+        self.assertListEqual([0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array))
 
         state_array = [0, 1, 2, 3, 4, 5]
-        self.assertListEqual(
-            [0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array)
-        )
+        self.assertListEqual([0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array))
 
     def test_find_duplicated_character_states(self):
-
         character_matrix = pd.DataFrame.from_dict(
             {
                 "c1": [(5, 1), 0, 1, 2, 0],
@@ -42,8 +38,7 @@ class TestMixinUtilities(unittest.TestCase):
 
         duplicated_mappings = utilities.find_duplicate_groups(character_matrix)
 
-        expected_entries = [('c1', ('c1', 'c2')),
-                            ('c6', ('c6', 'c6_dup'))]
+        expected_entries = [("c1", ("c1", "c2")), ("c6", ("c6", "c6_dup"))]
 
         for k, grp in expected_entries:
             self.assertIn(k, list(duplicated_mappings.keys()))

@@ -1,8 +1,9 @@
 import os
 import unittest
 
-import cassiopeia
 import pandas as pd
+
+import cassiopeia
 
 
 class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
@@ -102,9 +103,7 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.multi_case["allele"] = self.multi_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.multi_case["allele"] = self.multi_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
         self.corrections = {
             "ACTT": "ACTT",
             "TAAG": "TAAG",
@@ -114,10 +113,7 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
         }
 
     def test_correct(self):
-
-        df = cassiopeia.pp.error_correct_intbcs_to_whitelist(
-            self.multi_case, self.whitelist_fp, intbc_dist_thresh=1
-        )
+        df = cassiopeia.pp.error_correct_intbcs_to_whitelist(self.multi_case, self.whitelist_fp, intbc_dist_thresh=1)
         expected_df = self.multi_case.copy()
         expected_df["intBC"] = expected_df["intBC"].map(self.corrections)
         expected_df.dropna(subset=["intBC"], inplace=True)
@@ -125,10 +121,7 @@ class TestErrorCorrectIntBCstoWhitelist(unittest.TestCase):
         pd.testing.assert_frame_equal(df, expected_df)
 
     def test_correct_whitelist_list(self):
-
-        df = cassiopeia.pp.error_correct_intbcs_to_whitelist(
-            self.multi_case, self.whitelist, intbc_dist_thresh=1
-        )
+        df = cassiopeia.pp.error_correct_intbcs_to_whitelist(self.multi_case, self.whitelist, intbc_dist_thresh=1)
         expected_df = self.multi_case.copy()
         expected_df["intBC"] = expected_df["intBC"].map(self.corrections)
         expected_df.dropna(subset=["intBC"], inplace=True)

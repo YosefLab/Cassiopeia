@@ -1,12 +1,14 @@
 """
 Tests for the UMI Collapsing module in pipeline.py
 """
+
 import os
 import unittest
 from pathlib import Path
 
 import pandas as pd
 import pysam
+
 from cassiopeia.preprocess import UMI_utils, utilities
 
 
@@ -18,19 +20,12 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.test_file = dir_path + "/test_files/test.bam"
         sorted_file_name = Path(
-            dir_path
-            + "/test_files/"
-            + ".".join(self.test_file.split("/")[-1].split(".")[:-1])
-            + "_sorted.bam"
+            dir_path + "/test_files/" + ".".join(self.test_file.split("/")[-1].split(".")[:-1]) + "_sorted.bam"
         )
         self.sorted_file_name = sorted_file_name
-        self.collapsed_file_name = sorted_file_name.with_suffix(
-            ".collapsed.bam"
-        )
+        self.collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
 
-        _, _ = UMI_utils.sort_bam(
-            str(self.test_file), str(self.sorted_file_name)
-        )
+        _, _ = UMI_utils.sort_bam(str(self.test_file), str(self.sorted_file_name))
 
         UMI_utils.form_collapsed_clusters(
             str(self.sorted_file_name),
@@ -39,9 +34,7 @@ class TestCollapseUMIs(unittest.TestCase):
             max_indels=2,
         )
 
-        self.collapsed_bayesian_file_name = sorted_file_name.with_suffix(
-            ".bayesian_collapsed.bam"
-        )
+        self.collapsed_bayesian_file_name = sorted_file_name.with_suffix(".bayesian_collapsed.bam")
         UMI_utils.form_collapsed_clusters(
             str(self.sorted_file_name),
             str(self.collapsed_bayesian_file_name),
@@ -50,21 +43,15 @@ class TestCollapseUMIs(unittest.TestCase):
             method="likelihood",
         )
 
-        self.uncorrected_test_file = (
-            dir_path + "/test_files/test_uncorrected.bam"
-        )
+        self.uncorrected_test_file = dir_path + "/test_files/test_uncorrected.bam"
         uncorrected_sorted_file_name = Path(
             dir_path
             + "/test_files/"
-            + ".".join(
-                self.uncorrected_test_file.split("/")[-1].split(".")[:-1]
-            )
+            + ".".join(self.uncorrected_test_file.split("/")[-1].split(".")[:-1])
             + "_sorted.bam"
         )
         self.uncorrected_sorted_file_name = uncorrected_sorted_file_name
-        self.uncorrected_collapsed_file_name = (
-            uncorrected_sorted_file_name.with_suffix(".collapsed.bam")
-        )
+        self.uncorrected_collapsed_file_name = uncorrected_sorted_file_name.with_suffix(".collapsed.bam")
 
         _, _ = UMI_utils.sort_bam(
             str(self.uncorrected_test_file),
@@ -85,12 +72,8 @@ class TestCollapseUMIs(unittest.TestCase):
         # BAM generated with cellranger, where each alignment requires header
         # information. This BAM is to test that the collapsing parallelization
         # passes the header information to the spawned processes.
-        self.header_file_name = Path(
-            dir_path + "/test_files/collapse_header_required.bam"
-        )
-        self.header_collapsed_file_name = self.header_file_name.with_suffix(
-            ".collapsed.bam"
-        )
+        self.header_file_name = Path(dir_path + "/test_files/collapse_header_required.bam")
+        self.header_collapsed_file_name = self.header_file_name.with_suffix(".collapsed.bam")
         UMI_utils.form_collapsed_clusters(
             str(self.header_file_name),
             str(self.header_collapsed_file_name),
@@ -102,10 +85,7 @@ class TestCollapseUMIs(unittest.TestCase):
         )
 
     def test_sort_bam(self):
-
-        sorted_bam = pysam.AlignmentFile(
-            self.sorted_file_name, "rb", check_sq=False
-        )
+        sorted_bam = pysam.AlignmentFile(self.sorted_file_name, "rb", check_sq=False)
 
         cellBCs = []
         UMIs = []
@@ -121,10 +101,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(expected_UMI, UMIs[7])
 
     def test_sort_bam_uncorrected(self):
-
-        sorted_bam = pysam.AlignmentFile(
-            self.uncorrected_sorted_file_name, "rb", check_sq=False
-        )
+        sorted_bam = pysam.AlignmentFile(self.uncorrected_sorted_file_name, "rb", check_sq=False)
 
         cellBCs = []
         UMIs = []
@@ -140,9 +117,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(expected_UMI, UMIs[7])
 
     def test_collapse_bam(self):
-        collapsed_bam = pysam.AlignmentFile(
-            self.collapsed_file_name, "rb", check_sq=False
-        )
+        collapsed_bam = pysam.AlignmentFile(self.collapsed_file_name, "rb", check_sq=False)
 
         cellBCs = []
         UMIs = []
@@ -166,9 +141,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(2, quals[2][0])
 
     def test_collapse_bam_bayesian(self):
-        collapsed_bam = pysam.AlignmentFile(
-            self.collapsed_bayesian_file_name, "rb", check_sq=False
-        )
+        collapsed_bam = pysam.AlignmentFile(self.collapsed_bayesian_file_name, "rb", check_sq=False)
 
         cellBCs = []
         UMIs = []
@@ -192,9 +165,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(37, quals[2][0])
 
     def test_collapse_bam_uncorrected(self):
-        collapsed_bam = pysam.AlignmentFile(
-            self.uncorrected_collapsed_file_name, "rb", check_sq=False
-        )
+        collapsed_bam = pysam.AlignmentFile(self.uncorrected_collapsed_file_name, "rb", check_sq=False)
 
         cellBCs = []
         UMIs = []
@@ -218,9 +189,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(37, quals[2][0])
 
     def test_bam2DF(self):
-        collapsed_df_file_name = self.sorted_file_name.with_suffix(
-            ".collapsed.txt"
-        )
+        collapsed_df_file_name = self.sorted_file_name.with_suffix(".collapsed.txt")
         ret = utilities.convert_bam_to_df(str(self.collapsed_file_name))
 
         expected_qual = "#@@@@@@@@@@@@@@"
@@ -240,9 +209,7 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(df.iloc[4, 6], expected_readname)
 
     def test_collapsing_passes_header(self):
-        with pysam.AlignmentFile(
-            self.header_collapsed_file_name, check_sq=False
-        ) as f:
+        with pysam.AlignmentFile(self.header_collapsed_file_name, check_sq=False) as f:
             als = list(f.fetch(until_eof=True))
         self.assertEqual(1, len(als))
         self.assertIsNotNone(als[0].query_sequence)

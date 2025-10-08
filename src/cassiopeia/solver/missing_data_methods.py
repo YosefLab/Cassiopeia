@@ -1,6 +1,5 @@
 """This file contains included missing data imputation methods."""
 
-
 import numpy as np
 import pandas as pd
 
@@ -46,31 +45,18 @@ def assign_missing_average(
     # shared between a missing sample and a side of the partition
     sample_names = list(character_matrix.index)
     character_array = character_matrix.to_numpy()
-    left_indices = solver_utilities.convert_sample_names_to_indices(
-        sample_names, left_set
-    )
-    right_indices = solver_utilities.convert_sample_names_to_indices(
-        sample_names, right_set
-    )
-    missing_indices = solver_utilities.convert_sample_names_to_indices(
-        sample_names, missing
-    )
+    left_indices = solver_utilities.convert_sample_names_to_indices(sample_names, left_set)
+    right_indices = solver_utilities.convert_sample_names_to_indices(sample_names, right_set)
+    missing_indices = solver_utilities.convert_sample_names_to_indices(sample_names, missing)
 
     def score_side(subset_character_states, query_states, weights):
         score = 0
         for char in range(len(subset_character_states)):
-
-            query_state = [
-                q
-                for q in query_states[char]
-                if q != 0 and q != missing_state_indicator
-            ]
+            query_state = [q for q in query_states[char] if q != 0 and q != missing_state_indicator]
             all_states = np.array(subset_character_states[char])
             for q in query_state:
                 if weights:
-                    score += weights[char][q] * np.count_nonzero(
-                        all_states == q
-                    )
+                    score += weights[char][q] * np.count_nonzero(all_states == q)
                 else:
                     score += np.count_nonzero(all_states == q)
 
@@ -89,10 +75,8 @@ def assign_missing_average(
     ]
 
     for sample_index in missing_indices:
-
         all_states_for_sample = [
-            unravel_ambiguous_states([character_array[sample_index, char]])
-            for char in range(character_array.shape[1])
+            unravel_ambiguous_states([character_array[sample_index, char]]) for char in range(character_array.shape[1])
         ]
 
         left_score = score_side(

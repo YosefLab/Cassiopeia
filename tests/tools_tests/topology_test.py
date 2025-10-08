@@ -2,18 +2,19 @@
 Test suite for the topology functions in
 cassiopeia/tools/topology.py
 """
+
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins import CassiopeiaError, CassiopeiaTreeError
 from cassiopeia.tools import topology
 
 
 class TestTopology(unittest.TestCase):
     def setUp(self) -> None:
-
         tree = nx.DiGraph()
         tree.add_edge("0", "1")
         tree.add_edge("0", "2")
@@ -51,12 +52,9 @@ class TestTopology(unittest.TestCase):
             orient="index",
         )
 
-        self.tree = cas.data.CassiopeiaTree(
-            character_matrix=character_matrix, tree=tree
-        )
+        self.tree = cas.data.CassiopeiaTree(character_matrix=character_matrix, tree=tree)
 
     def test_simple_choose_function(self):
-
         num_choices = topology.nCk(10, 2)
 
         self.assertEqual(num_choices, 45)
@@ -64,25 +62,19 @@ class TestTopology(unittest.TestCase):
         self.assertRaises(CassiopeiaError, topology.nCk, 5, 7)
 
     def test_simple_coalescent_probability(self):
-
         N = 100
         B = 2
         K = 60
         coalescent_probability = topology.simple_coalescent_probability(N, B, K)
         self.assertAlmostEqual(coalescent_probability, 0.24, delta=0.01)
 
-        self.assertRaises(
-            CassiopeiaError, topology.simple_coalescent_probability, 50, 2, 60
-        )
+        self.assertRaises(CassiopeiaError, topology.simple_coalescent_probability, 50, 2, 60)
 
     def test_expansion_probability(self):
-
         # make sure attributes are instantiated correctly
         cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=20)
         for node in self.tree.depth_first_traverse_nodes(postorder=False):
-            self.assertEqual(
-                1.0, self.tree.get_attribute(node, "expansion_pvalue")
-            )
+            self.assertEqual(1.0, self.tree.get_attribute(node, "expansion_pvalue"))
 
         cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2)
         expected_probabilities = {
@@ -116,10 +108,7 @@ class TestTopology(unittest.TestCase):
             )
 
     def test_expansion_probability_variable_depths(self):
-
-        cas.tl.compute_expansion_pvalues(
-            self.tree, min_clade_size=2, min_depth=3
-        )
+        cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2, min_depth=3)
         expected_probabilities = {
             "0": 1.0,
             "1": 1.0,
@@ -151,10 +140,7 @@ class TestTopology(unittest.TestCase):
             )
 
     def test_expansion_probability_copy_tree(self):
-
-        tree = cas.tl.compute_expansion_pvalues(
-            self.tree, min_clade_size=2, min_depth=1, copy=True
-        )
+        tree = cas.tl.compute_expansion_pvalues(self.tree, min_clade_size=2, min_depth=1, copy=True)
 
         expected_probabilities = {
             "0": 1.0,
@@ -195,7 +181,6 @@ class TestTopology(unittest.TestCase):
             )
 
     def test_cophenetic_correlation_perfect(self):
-
         custom_dissimilarity_map = pd.DataFrame.from_dict(
             {
                 "12": [0, 2, 4, 4, 4, 4, 4, 4, 6, 7, 7],
@@ -261,22 +246,15 @@ class TestTopology(unittest.TestCase):
                 "11",
             ],
         )
-        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
-            self.tree, weights=W, dissimilarity_map=W
-        )[0]
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(self.tree, weights=W, dissimilarity_map=W)[0]
         self.assertAlmostEqual(1.0, obs_cophenetic_correlation, delta=1e-6)
 
     def test_cophenetic_correlation_default(self):
-
-        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(
-            self.tree
-        )[0]
+        obs_cophenetic_correlation = cas.tl.compute_cophenetic_correlation(self.tree)[0]
 
         expected_correlation = 0.819
 
-        self.assertAlmostEqual(
-            expected_correlation, obs_cophenetic_correlation, delta=0.001
-        )
+        self.assertAlmostEqual(expected_correlation, obs_cophenetic_correlation, delta=0.001)
 
 
 if __name__ == "__main__":

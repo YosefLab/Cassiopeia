@@ -1,9 +1,9 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
+  "oldest-supported-numpy",
   "setuptools>=64",
   "wheel",
-  "oldest-supported-numpy",
 ]
 
 [project]
@@ -56,19 +56,21 @@ dependencies = [
   "typing-extensions>=3.7.4",
 ]
 
-[project.optional-dependencies]
-dev = [
-  "cython>=3.0.6",    # for regenerating .c from .pyx when releasing
+optional-dependencies.dev = [
+  "cython>=3.0.6", # for regenerating .c from .pyx when releasing
   "pre-commit",
   "twine>=4.0.2",
 ]
-doc = [
+optional-dependencies.doc = [
   "docutils>=0.8,!=0.18.*,!=0.19.*",
   "ipykernel",
   "ipython",
   "myst-nb>=1.1",
+  "nbsphinx",
+  "nbsphinx-link",
   "pandas",
   "pandoc",
+  "scanpydoc",
   "setuptools",
   "sphinx>=8.1",
   "sphinx-autodoc-typehints",
@@ -79,93 +81,90 @@ doc = [
   "sphinx-tabs",
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
-  "nbsphinx",
-  "nbsphinx-link",
-  "scanpydoc",
 ]
-spatial = [
+optional-dependencies.spatial = [
   "scikit-image>=0.19.1",
   "scikit-learn>=1.0.2",
   "squidpy>=1.6",
 ]
-test = [
+optional-dependencies.test = [
   "coverage>=7.10",
   "joblib",
   "pytest",
   "pytest-cov",
 ]
-
 # URLs
-[project.urls]
-Documentation = "https://cassiopeia-lineage.readthedocs.io/"
-Homepage = "https://cassiopeia-lineage.readthedocs.io/"
-Source = "https://github.com/YosefLab/Cassiopeia"
+urls.Documentation = "https://cassiopeia-lineage.readthedocs.io/"
+urls.Homepage = "https://cassiopeia-lineage.readthedocs.io/"
 
 # --- setuptools: src/ layout + discovery ---
+urls.Source = "https://github.com/YosefLab/Cassiopeia"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
-where = ["src"]
-include = ["cassiopeia*"]
-exclude = ["tests*", "docs*", "notebooks*", "data*"]
+where = [ "src" ]
+include = [ "cassiopeia*" ]
+exclude = [ "tests*", "docs*", "notebooks*", "data*" ]
 
 # If you ship .pxd, include them:
 [tool.setuptools.package-data]
-cassiopeia = ["**/*.pxd"]
+cassiopeia = [ "**/*.pxd" ]
 
 # --- Hatch envs ---
+
 [tool.hatch.envs.default]
 installer = "uv"
-features = ["dev"]
+features = [ "dev" ]
 
 [tool.hatch.envs.docs]
-features = ["doc"]
+features = [ "doc" ]
 scripts.build = "sphinx-build -M html docs docs/_build {args}"
 scripts.open = "python -m webbrowser -t docs/_build/html/index.html"
 scripts.clean = "git clean -fdX -- {args:docs}"
 
-# Define the hatch-test env BEFORE its matrix (important for TOML parsing)
 [tool.hatch.envs.hatch-test]
-features = ["dev", "test"]
+features = [ "dev", "test" ]
 skip-install = false
 
 # Matrix entries for hatch-test
 [[tool.hatch.envs.hatch-test.matrix]]
-deps = ["stable"]
-python = ["3.10", "3.13"]
+deps = [ "stable" ]
+python = [ "3.10", "3.13" ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-deps = ["pre"]
-python = ["3.13"]
+deps = [ "pre" ]
+python = [ "3.13" ]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.deps.env-vars = [
-  { key = "UV_PRERELEASE", value = "allow", if = ["pre"] },
+  { key = "UV_PRERELEASE", value = "allow", if = [ "pre" ] },
 ]
 
 # --- Ruff / Pytest / Coverage ---
+
 [tool.ruff]
 line-length = 120
-src = ["src"]
-extend-include = ["*.ipynb"]
+src = [ "src" ]
+extend-include = [ "*.ipynb" ]
 format.docstring-code-format = true
-lint.select = ["B","BLE","C4","D","E","F","I","RUF100","TID","UP","W"]
-lint.ignore = ["B008","D100","D104","D105","D107","D203","D213","D400","D401","E501","E731","E741"]
-lint.per-file-ignores."*/__init__.py" = ["F401"]
-lint.per-file-ignores."docs/*" = ["I"]
-lint.per-file-ignores."tests/*" = ["D"]
+lint.select = [ "B", "BLE", "C4", "D", "E", "F", "I", "RUF100", "TID", "UP", "W" ]
+lint.ignore = [ "B008", "D100", "D104", "D105", "D107", "D203", "D213", "D400", "D401", "E501", "E731", "E741" ]
+lint.per-file-ignores."*/__init__.py" = [ "F401" ]
+lint.per-file-ignores."docs/*" = [ "I" ]
+lint.per-file-ignores."tests/*" = [ "D" ]
 lint.pydocstyle.convention = "numpy"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = [ "tests" ]
 xfail_strict = true
-addopts = ["--import-mode=importlib"]
-pythonpath = ["src"]
+addopts = [ "--import-mode=importlib" ]
+pythonpath = [ "src" ]
 
 [tool.coverage.run]
-source = ["cassiopeia"]
-omit = ["**/test_*.py"]
+source = [ "cassiopeia" ]
+omit = [ "**/test_*.py" ]
 
 [tool.cruft]
 skip = [

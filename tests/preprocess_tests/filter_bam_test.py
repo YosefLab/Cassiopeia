@@ -1,11 +1,13 @@
 """
 Tests for correcting raw barcodes to a whitelist pipeline.py
 """
+
 import os
 import tempfile
 import unittest
 
 import pysam
+
 from cassiopeia.preprocess import pipeline
 
 

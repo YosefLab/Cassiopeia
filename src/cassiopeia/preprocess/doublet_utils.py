@@ -11,9 +11,7 @@ from cassiopeia.preprocess import utilities
 
 
 @utilities.log_molecule_table
-def filter_intra_doublets(
-    molecule_table: pd.DataFrame, prop: float = 0.1
-) -> pd.DataFrame:
+def filter_intra_doublets(molecule_table: pd.DataFrame, prop: float = 0.1) -> pd.DataFrame:
     """Filters cells that present too much conflicting allele information.
 
     For each cellBC, calculates the most common allele for each intBC by UMI
@@ -36,28 +34,17 @@ def filter_intra_doublets(
         .reset_index()
         .sort_values("UMI", ascending=False)
     )
-    umis_per_allele_unique = umis_per_allele.drop_duplicates(
-        ["cellBC", "intBC"]
-    )
+    umis_per_allele_unique = umis_per_allele.drop_duplicates(["cellBC", "intBC"])
     umis_per_cellBC = umis_per_allele.groupby("cellBC")["UMI"].sum()
-    conflicting_umis_per_cellBC = (
-        umis_per_cellBC - umis_per_allele_unique.groupby("cellBC")["UMI"].sum()
-    )
-    prop_multi_alleles_per_cellBC = (
-        conflicting_umis_per_cellBC / umis_per_cellBC
-    )
+    conflicting_umis_per_cellBC = umis_per_cellBC - umis_per_allele_unique.groupby("cellBC")["UMI"].sum()
+    prop_multi_alleles_per_cellBC = conflicting_umis_per_cellBC / umis_per_cellBC
     passing_mask = prop_multi_alleles_per_cellBC <= prop
     passing_cellBCs = set(prop_multi_alleles_per_cellBC.index[passing_mask])
-    logger.debug(
-        f"Filtered {(~passing_mask).sum()} cellBCs with too much conflicitng "
-        "allele information."
-    )
+    logger.debug(f"Filtered {(~passing_mask).sum()} cellBCs with too much conflicitng allele information.")
     return molecule_table[molecule_table["cellBC"].isin(passing_cellBCs)]
 
 
-def get_intbc_set(
-    lg: pd.DataFrame, thresh: int = None
-) -> tuple[set[str], dict[str, float]]:
+def get_intbc_set(lg: pd.DataFrame, thresh: int = None) -> tuple[set[str], dict[str, float]]:
     """A simple function to return the intBC set of a lineage group.
 
     Given a lineage groups, returns the intBC set for that lineage
@@ -80,9 +67,7 @@ def get_intbc_set(
     intBC_groups = lg.groupby("intBC")["cellBC"]
     cellBC_per_intBC = intBC_groups.nunique()
     dropouts = 1 - (cellBC_per_intBC / n_cells)
-    intBCs = (
-        dropouts.index if thresh is None else dropouts.index[dropouts < thresh]
-    )
+    intBCs = dropouts.index if thresh is None else dropouts.index[dropouts < thresh]
     return set(intBCs), dict(dropouts)
 
 
@@ -118,9 +103,9 @@ def compute_lg_membership(
         if intersect:
             # Calculate weighted intersection, normalized by the total cell
             # proportions
-            lg_mem[lg_key] = (
-                len(intersect) - sum(lg_do[intBC] for intBC in intersect)
-            ) / (len(lg_do) - sum(lg_do.values()))
+            lg_mem[lg_key] = (len(intersect) - sum(lg_do[intBC] for intBC in intersect)) / (
+                len(lg_do) - sum(lg_do.values())
+            )
         else:
             lg_mem[lg_key] = 0
 

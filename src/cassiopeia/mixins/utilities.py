@@ -36,9 +36,7 @@ def try_import(module: str) -> ModuleType | None:
         return None
 
 
-def unravel_ambiguous_states(
-    state_array: list[int | tuple[int, ...]]
-) -> list[int]:
+def unravel_ambiguous_states(state_array: list[int | tuple[int, ...]]) -> list[int]:
     """Helper function to unravel ambiguous states.
 
     Args:
@@ -48,11 +46,9 @@ def unravel_ambiguous_states(
     -------
         A list of unique states contained in the list.
     """
-    all_states = [
-        list(state) if is_ambiguous_state(state) else [state]
-        for state in state_array
-    ]
+    all_states = [list(state) if is_ambiguous_state(state) else [state] for state in state_array]
     return functools.reduce(lambda a, b: a + b, all_states)
+
 
 def find_duplicate_groups(character_matrix) -> dict[str, tuple[str, ...]]:
     """Maps duplicated indices in character matrix to groups.
@@ -70,20 +66,15 @@ def find_duplicate_groups(character_matrix) -> dict[str, tuple[str, ...]]:
     """
     character_matrix.index.name = "index"
 
-     # convert to sets to support ambiguous states
+    # convert to sets to support ambiguous states
     character_matrix_sets = character_matrix.copy()
     character_matrix_sets = character_matrix_sets.apply(
-            lambda x: [
-                set(s) if is_ambiguous_state(s) else {s}
-                for s in x.values
-            ],
-            axis=0,
-        ).apply(tuple, axis=1)
-    is_duplicated = (
-        character_matrix_sets.duplicated(keep=False)
-    )
+        lambda x: [set(s) if is_ambiguous_state(s) else {s} for s in x.values],
+        axis=0,
+    ).apply(tuple, axis=1)
+    is_duplicated = character_matrix_sets.duplicated(keep=False)
     unique_states = np.unique(character_matrix_sets[is_duplicated])
     duplicate_groups = [character_matrix_sets[character_matrix_sets == val].index.values for val in unique_states]
-    duplicate_mappings =  {g[0]: tuple(g) for g in duplicate_groups}
+    duplicate_mappings = {g[0]: tuple(g) for g in duplicate_groups}
 
     return duplicate_mappings

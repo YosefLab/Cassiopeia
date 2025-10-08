@@ -33,5 +33,3 @@ To make sure that the package has been installed correctly, we recommend you als
 ::
 
     make test
-
-

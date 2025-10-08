@@ -9,9 +9,7 @@ from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 
 
-def get_proportion_of_missing_data(
-    tree: CassiopeiaTree, layer: str | None = None
-) -> float:
+def get_proportion_of_missing_data(tree: CassiopeiaTree, layer: str | None = None) -> float:
     """Calculates the proportion of missing entries in the character matrix.
 
     Calculates the proportion of cell/character entries in the character matrix
@@ -37,22 +35,14 @@ def get_proportion_of_missing_data(
         character_matrix = tree.character_matrix
 
     if character_matrix is None:
-        raise ParameterEstimateError(
-            "No character matrix is detected in this tree."
-        )
+        raise ParameterEstimateError("No character matrix is detected in this tree.")
 
-    num_dropped = (
-        character_matrix.values == tree.missing_state_indicator
-    ).sum()
-    missing_proportion = num_dropped / (
-        character_matrix.shape[0] * character_matrix.shape[1]
-    )
+    num_dropped = (character_matrix.values == tree.missing_state_indicator).sum()
+    missing_proportion = num_dropped / (character_matrix.shape[0] * character_matrix.shape[1])
     return missing_proportion
 
 
-def get_proportion_of_mutation(
-    tree: CassiopeiaTree, layer: str | None = None
-) -> float:
+def get_proportion_of_mutation(tree: CassiopeiaTree, layer: str | None = None) -> float:
     """Calculates the proportion of mutated entries in the character matrix.
 
     Calculates the proportion of cell/character entries in the character matrix
@@ -78,22 +68,12 @@ def get_proportion_of_mutation(
         character_matrix = tree.character_matrix
 
     if character_matrix is None:
-        raise ParameterEstimateError(
-            "No character matrix is detected in this tree."
-        )
+        raise ParameterEstimateError("No character matrix is detected in this tree.")
 
-    num_dropped = (
-        character_matrix.values == tree.missing_state_indicator
-    ).sum()
+    num_dropped = (character_matrix.values == tree.missing_state_indicator).sum()
 
-    num_mut = (
-        character_matrix.shape[0] * character_matrix.shape[1]
-        - num_dropped
-        - (character_matrix.values == 0).sum()
-    )
-    mutation_proportion = num_mut / (
-        character_matrix.shape[0] * character_matrix.shape[1] - num_dropped
-    )
+    num_mut = character_matrix.shape[0] * character_matrix.shape[1] - num_dropped - (character_matrix.values == 0).sum()
+    mutation_proportion = num_mut / (character_matrix.shape[0] * character_matrix.shape[1] - num_dropped)
     return mutation_proportion
 
 
@@ -164,9 +144,7 @@ def estimate_mutation_rate(
     else:
         mutation_proportion = tree.parameters["mutated_proportion"]
     if mutation_proportion < 0 or mutation_proportion > 1:
-        raise ParameterEstimateError(
-            "Mutation proportion must be between 0 and 1."
-        )
+        raise ParameterEstimateError("Mutation proportion must be between 0 and 1.")
     if not continuous:
         mean_depth = tree.get_mean_depth_of_tree()
         # We account for the added depth of the implicit branch leading
@@ -178,9 +156,7 @@ def estimate_mutation_rate(
         times = tree.get_times()
         mean_time = np.mean([times[l] for l in tree.leaves])
         if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
-            mean_time += np.mean(
-                [tree.get_branch_length(u, v) for u, v in tree.edges]
-            )
+            mean_time += np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
         mutation_rate = -np.log(1 - mutation_proportion) / mean_time
     return mutation_rate
 
@@ -296,24 +272,17 @@ def estimate_missing_data_rates(
     else:
         total_missing_proportion = tree.parameters["missing_proportion"]
     if total_missing_proportion < 0 or total_missing_proportion > 1:
-        raise ParameterEstimateError(
-            "Missing proportion must be between 0 and 1."
-        )
+        raise ParameterEstimateError("Missing proportion must be between 0 and 1.")
 
     if stochastic_missing_probability is None:
         if "stochastic_missing_probability" in tree.parameters:
-            stochastic_missing_probability = tree.parameters[
-                "stochastic_missing_probability"
-            ]
+            stochastic_missing_probability = tree.parameters["stochastic_missing_probability"]
 
     if heritable_missing_rate is None:
         if "heritable_missing_rate" in tree.parameters:
             heritable_missing_rate = tree.parameters["heritable_missing_rate"]
 
-    if (
-        heritable_missing_rate is None
-        and stochastic_missing_probability is None
-    ):
+    if heritable_missing_rate is None and stochastic_missing_probability is None:
         raise ParameterEstimateError(
             "Neither `heritable_missing_rate` nor "
             "`stochastic_missing_probability` were provided as arguments or "
@@ -321,10 +290,7 @@ def estimate_missing_data_rates(
             "parameters, otherwise they are convolved and cannot be estimated"
         )
 
-    if (
-        heritable_missing_rate is not None
-        and stochastic_missing_probability is not None
-    ):
+    if heritable_missing_rate is not None and stochastic_missing_probability is not None:
         raise ParameterEstimateError(
             "Both `heritable_missing_rate` and `stochastic_missing_probability`"
             " were provided as parameters or found in `tree.parameters`. "
@@ -333,88 +299,53 @@ def estimate_missing_data_rates(
 
     if heritable_missing_rate is None:
         if stochastic_missing_probability < 0:
-            raise ParameterEstimateError(
-                "Stochastic missing data rate must be > 0."
-            )
+            raise ParameterEstimateError("Stochastic missing data rate must be > 0.")
         if stochastic_missing_probability > 1:
-            raise ParameterEstimateError(
-                "Stochastic missing data rate must be < 1."
-            )
+            raise ParameterEstimateError("Stochastic missing data rate must be < 1.")
 
         if not continuous:
             mean_depth = tree.get_mean_depth_of_tree()
             # We account for the added depth of the implicit branch leading
             # from the root, if it is to be added
-            if (
-                assume_root_implicit_branch
-                and len(tree.children(tree.root)) != 1
-            ):
+            if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
                 mean_depth += 1
-            heritable_missing_rate = 1 - (
-                (1 - total_missing_proportion)
-                / (1 - stochastic_missing_probability)
-            ) ** (1 / mean_depth)
+            heritable_missing_rate = 1 - ((1 - total_missing_proportion) / (1 - stochastic_missing_probability)) ** (
+                1 / mean_depth
+            )
 
         else:
             times = tree.get_times()
             mean_time = np.mean([times[l] for l in tree.leaves])
-            if (
-                assume_root_implicit_branch
-                and len(tree.children(tree.root)) != 1
-            ):
-                mean_time += np.mean(
-                    [tree.get_branch_length(u, v) for u, v in tree.edges]
-                )
+            if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
+                mean_time += np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
             heritable_missing_rate = (
-                -np.log(
-                    (1 - total_missing_proportion)
-                    / (1 - stochastic_missing_probability)
-                )
-                / mean_time
+                -np.log((1 - total_missing_proportion) / (1 - stochastic_missing_probability)) / mean_time
             )
 
     if stochastic_missing_probability is None:
         if heritable_missing_rate < 0:
-            raise ParameterEstimateError(
-                "Heritable missing data rate must be > 0."
-            )
+            raise ParameterEstimateError("Heritable missing data rate must be > 0.")
         if not continuous and heritable_missing_rate > 1:
-            raise ParameterEstimateError(
-                "Per-generation heritable missing data rate must be < 1."
-            )
+            raise ParameterEstimateError("Per-generation heritable missing data rate must be < 1.")
 
         if not continuous:
             mean_depth = tree.get_mean_depth_of_tree()
             # We account for the added depth of the implicit branch leading
             # from the root, if it is to be added
-            if (
-                assume_root_implicit_branch
-                and len(tree.children(tree.root)) != 1
-            ):
+            if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
                 mean_depth += 1
 
-            heritable_proportion = 1 - (1 - heritable_missing_rate) ** (
-                mean_depth
-            )
+            heritable_proportion = 1 - (1 - heritable_missing_rate) ** (mean_depth)
 
         else:
             times = tree.get_times()
             mean_time = np.mean([times[l] for l in tree.leaves])
-            if (
-                assume_root_implicit_branch
-                and len(tree.children(tree.root)) != 1
-            ):
-                mean_time += np.mean(
-                    [tree.get_branch_length(u, v) for u, v in tree.edges]
-                )
+            if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
+                mean_time += np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
 
-            heritable_proportion = 1 - np.exp(
-                -heritable_missing_rate * mean_time
-            )
+            heritable_proportion = 1 - np.exp(-heritable_missing_rate * mean_time)
 
-        stochastic_missing_probability = (
-            total_missing_proportion - heritable_proportion
-        ) / (1 - heritable_proportion)
+        stochastic_missing_probability = (total_missing_proportion - heritable_proportion) / (1 - heritable_proportion)
 
     if stochastic_missing_probability < 0:
         raise ParameterEstimateWarning(

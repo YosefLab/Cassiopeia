@@ -6,6 +6,7 @@ store an input character matrix and implement a method called `solve`. Each
 derived class stores more information around the parameters necessary for
 inferring a phylogenetic tree.
 """
+
 import abc
 
 from cassiopeia.data import CassiopeiaTree
@@ -27,7 +28,6 @@ class CassiopeiaSolver(abc.ABC):
     """
 
     def __init__(self, prior_transformation: str = "negative_log"):
-
         self.prior_transformation = prior_transformation
 
     @abc.abstractmethod

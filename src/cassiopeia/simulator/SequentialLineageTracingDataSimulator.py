@@ -5,6 +5,7 @@ Cas9-based technologies (e.g, Typewriter described in Choi et al, Nature 2022).
 This simulator implements the method `overlay_data` which takes
 in a CassiopeiaTree with edge lengths and overlays states.
 """
+
 import math
 
 import numpy as np
@@ -91,13 +92,10 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         stochastic_missing_data_state: int = -1,
         random_seed: int | None = None,
     ):
-
         if number_of_cassettes <= 0 or not isinstance(number_of_cassettes, int):
             raise DataSimulatorError("Specify a positive number of cassettes.")
         if size_of_cassette <= 0 or not isinstance(size_of_cassette, int):
-            raise DataSimulatorError(
-                "Specify a positive number of cut-sites per cassette."
-            )
+            raise DataSimulatorError("Specify a positive number of cut-sites per cassette.")
         if not isinstance(initiation_rate, float):
             raise DataSimulatorError("Initiation rate must be a float.")
         if initiation_rate <= 0:
@@ -107,16 +105,12 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         if continuation_rate <= 0:
             raise DataSimulatorError("Continuation rate must be positive.")
         if not isinstance(state_priors, dict):
-            raise DataSimulatorError(
-                "State priors dictionary is required" )
+            raise DataSimulatorError("State priors dictionary is required")
         if np.any(np.array(list(state_priors.values())) < 0):
-            raise DataSimulatorError(
-                "State prior to be non-negative."
-            )
+            raise DataSimulatorError("State prior to be non-negative.")
         Z = np.sum(list(state_priors.values()))
         if not math.isclose(Z, 1.0):
             raise DataSimulatorError("State priors do not sum to 1.")
-
 
         self.size_of_cassette = size_of_cassette
         self.number_of_cassettes = number_of_cassettes
@@ -150,7 +144,6 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             character_matrix[node] = [-1] * number_of_characters
 
         for node in tree.depth_first_traverse_nodes(tree.root, postorder=False):
-
             if tree.is_root(node):
                 character_matrix[node] = [0] * number_of_characters
                 continue
@@ -171,36 +164,26 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
                     i = c + 1
                     while time < life_time and i < c + self.size_of_cassette:
                         if character_array[i] == 0:
-                            time = (time +
-                                np.random.exponential(1/self.continuation_rate))
+                            time = time + np.random.exponential(1 / self.continuation_rate)
                             if time < life_time:
-                                self.edit_site(
-                                    character_array, i, self.state_priors
-                                )
+                                self.edit_site(character_array, i, self.state_priors)
                         i += 1
                 # uninitiated
                 elif character_array[c] == 0:
                     i = c
-                    time = np.random.exponential(1/self.initiation_rate)
+                    time = np.random.exponential(1 / self.initiation_rate)
                     if time < life_time:
-                        self.edit_site(
-                            character_array, i, self.state_priors
-                        )
+                        self.edit_site(character_array, i, self.state_priors)
                     i += 1
                     while time < life_time and i < c + self.size_of_cassette:
                         if character_array[i] == 0:
-                            time = (time +
-                                np.random.exponential(1/self.continuation_rate))
+                            time = time + np.random.exponential(1 / self.continuation_rate)
                             if time < life_time:
-                                self.edit_site(
-                                    character_array, i, self.state_priors
-                                )
+                                self.edit_site(character_array, i, self.state_priors)
                         i += 1
 
             # silence cassettes
-            silencing_probability = 1 - (
-                np.exp(-life_time * self.heritable_silencing_rate)
-            )
+            silencing_probability = 1 - (np.exp(-life_time * self.heritable_silencing_rate))
             character_array = self.silence_cassettes(
                 character_array,
                 silencing_probability,
@@ -219,11 +202,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
 
         tree.set_all_character_states(character_matrix)
 
-    def edit_site(
-        self, character_array: list[int],
-        site: int,
-        state_priors: dict[int, float]
-    ) -> list[int]:
+    def edit_site(self, character_array: list[int], site: int, state_priors: dict[int, float]) -> list[int]:
         """Edits a site.
 
         Args:
@@ -262,9 +241,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
 
         number_of_characters = self.number_of_cassettes * self.size_of_cassette
         cassettes = range(0, number_of_characters, self.size_of_cassette)
-        cut_site_by_cassette = np.digitize(
-            range(len(character_array)), cassettes
-        )
+        cut_site_by_cassette = np.digitize(range(len(character_array)), cassettes)
 
         for cassette in range(1, self.number_of_cassettes + 1):
             if np.random.uniform() < silencing_rate:

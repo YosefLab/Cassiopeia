@@ -59,7 +59,6 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         iterations: int | None = 50,
         prior_transformation: str = "negative_log",
     ):
-
         super().__init__(prior_transformation)
         self.sdimension = sdimension
         self.iterations = iterations
@@ -96,9 +95,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         -------
             A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(
-            samples, character_matrix, missing_state_indicator
-        )
+        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
 
         G = graph_utilities.construct_connectivity_graph(
             character_matrix,
@@ -123,11 +120,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
             for i in G.nodes:
                 cm = np.zeros(embedding_dimension, dtype=float)
                 for j in G.neighbors(i):
-                    cm -= (
-                        G[i][j]["weight"]
-                        * np.linalg.norm(emb[i] - emb[j])
-                        * emb[j]
-                    )
+                    cm -= G[i][j]["weight"] * np.linalg.norm(emb[i] - emb[j]) * emb[j]
                 if cm.any():
                     cm = cm / np.linalg.norm(cm)
                 new_emb[i] = cm

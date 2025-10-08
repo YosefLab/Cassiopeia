@@ -12,6 +12,7 @@ and delete entries using canonical commands.
 This data structure is inspired by AnnData's layer functionality for scRNA-seq
 count matrices. Much of the code and logic is derived from the AnnData project.
 """
+
 from collections.abc import Iterator, Mapping
 
 import pandas as pd
@@ -20,14 +21,11 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class Layers(dict):
-
     attrname = "layers"
 
     parent_mapping: Mapping[str, pd.DataFrame]
 
-    def __init__(
-        self, parent: CassiopeiaTree, layers: Mapping | None = None
-    ):
+    def __init__(self, parent: CassiopeiaTree, layers: Mapping | None = None):
         self._parent = parent
         self._data = {}
         if layers is not None:

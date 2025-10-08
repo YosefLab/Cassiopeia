@@ -2,11 +2,13 @@
 Tests for the dissimilarity functions that are supported by the DistanceSolver
 module.
 """
+
 import unittest
 from unittest import mock
 
 import numpy as np
 import pandas as pd
+
 from cassiopeia.solver import dissimilarity_functions, solver_utilities
 
 
@@ -29,17 +31,11 @@ class TestDissimilarityFunctions(unittest.TestCase):
 
         self.badpriors = {0: {1: 0}, 1: {1: -1, 2: -1.5}}
 
-        self.nlweights = solver_utilities.transform_priors(
-            self.priors, "negative_log"
-        )
+        self.nlweights = solver_utilities.transform_priors(self.priors, "negative_log")
 
-        self.iweights = solver_utilities.transform_priors(
-            self.priors, "inverse"
-        )
+        self.iweights = solver_utilities.transform_priors(self.priors, "inverse")
 
-        self.sqiweights = solver_utilities.transform_priors(
-            self.priors, "square_root_inverse"
-        )
+        self.sqiweights = solver_utilities.transform_priors(self.priors, "square_root_inverse")
 
     def test_bad_prior_transformations(self):
         with self.assertRaises(solver_utilities.PriorTransformationError):
@@ -83,23 +79,17 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(self.sqiweights, expectedweights)
 
     def test_weighted_hamming_distance_identical(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s1
-        )
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s1)
 
         self.assertEqual(dissimilarity, 0)
 
     def test_weighted_hamming_distance_no_priors(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s2
-        )
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2)
 
         self.assertEqual(dissimilarity, 3 / 5)
 
     def test_weighted_hamming_distance_priors_negative_log(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s2, weights=self.nlweights
-        )
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.nlweights)
 
         expected_dissimilarity = np.sum(
             [
@@ -111,9 +101,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, expected_dissimilarity / 5)
 
     def test_weighted_hamming_distance_priors_inverse(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s2, weights=self.iweights
-        )
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.iweights)
 
         expected_dissimilarity = np.sum(
             [
@@ -125,9 +113,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, expected_dissimilarity / 5)
 
     def test_weighted_hamming_distance_priors_sq_inverse(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
-            self.s1, self.s2, weights=self.sqiweights
-        )
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.sqiweights)
 
         expected_dissimilarity = np.sum(
             [
@@ -146,16 +132,12 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 0)
 
     def test_hamming_similarity_without_missing_identical(self):
-        similarity = dissimilarity_functions.hamming_similarity_without_missing(
-            self.s1, self.s1, -1
-        )
+        similarity = dissimilarity_functions.hamming_similarity_without_missing(self.s1, self.s1, -1)
 
         self.assertEqual(similarity, 3)
 
     def test_hamming_similarity_without_missing_no_priors(self):
-        similarity = dissimilarity_functions.hamming_similarity_without_missing(
-            self.s1, self.s2, -1
-        )
+        similarity = dissimilarity_functions.hamming_similarity_without_missing(self.s1, self.s2, -1)
 
         self.assertEqual(similarity, 2)
 
@@ -164,9 +146,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
             self.s1, self.s2, -1, weights=self.nlweights
         )
 
-        expected_similarity = np.sum(
-            [-np.log(self.priors[1][1]), -np.log(self.priors[4][1])]
-        )
+        expected_similarity = np.sum([-np.log(self.priors[1][1]), -np.log(self.priors[4][1])])
 
         self.assertEqual(similarity, expected_similarity)
 
@@ -178,67 +158,45 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_hamming_similarity_normalized_identical(self):
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s1, -1
-            )
-        )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(self.s1, self.s1, -1)
 
         self.assertEqual(similarity, 3 / 5)
 
     def test_hamming_similarity_normalized_no_priors(self):
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s2, -1
-            )
-        )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(self.s1, self.s2, -1)
 
         self.assertEqual(similarity, 2 / 5)
 
     def test_hamming_similarity_normalized_priors(self):
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.s2, -1, weights=self.nlweights
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s2, -1, weights=self.nlweights
         )
 
-        expected_similarity = np.sum(
-            [-np.log(self.priors[1][1]), -np.log(self.priors[4][1])]
-        )
+        expected_similarity = np.sum([-np.log(self.priors[1][1]), -np.log(self.priors[4][1])])
 
         self.assertEqual(similarity, expected_similarity / 5)
 
     def test_hamming_similarity_normalized_all_missing(self):
-        similarity = (
-            dissimilarity_functions.hamming_similarity_normalized_over_missing(
-                self.s1, self.all_missing, -1, weights=self.nlweights
-            )
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.all_missing, -1, weights=self.nlweights
         )
 
         self.assertEqual(similarity, 0)
 
     def test_weighted_hamming_similarity_identical(self):
-        similarity = dissimilarity_functions.weighted_hamming_similarity(
-            self.s1, self.s1, -1
-        )
+        similarity = dissimilarity_functions.weighted_hamming_similarity(self.s1, self.s1, -1)
 
         self.assertEqual(similarity, 8 / 5)
 
     def test_weighted_hamming_similarity_no_priors(self):
-        similarity = dissimilarity_functions.weighted_hamming_similarity(
-            self.s1, self.s2, -1
-        )
+        similarity = dissimilarity_functions.weighted_hamming_similarity(self.s1, self.s2, -1)
 
         self.assertEqual(similarity, 1)
 
     def test_weighted_hamming_similarity_priors(self):
-        similarity = dissimilarity_functions.weighted_hamming_similarity(
-            self.s1, self.s2, -1, weights=self.nlweights
-        )
+        similarity = dissimilarity_functions.weighted_hamming_similarity(self.s1, self.s2, -1, weights=self.nlweights)
 
-        expected_similarity = np.sum(
-            [-np.log(self.priors[1][1]) * 2, -np.log(self.priors[4][1]) * 2]
-        )
+        expected_similarity = np.sum([-np.log(self.priors[1][1]) * 2, -np.log(self.priors[4][1]) * 2])
 
         self.assertEqual(similarity, expected_similarity / 5)
 
@@ -250,9 +208,7 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_cluster_dissimilarity(self):
-        dissimilarity_function = (
-            dissimilarity_functions.weighted_hamming_distance
-        )
+        dissimilarity_function = dissimilarity_functions.weighted_hamming_distance
         linkage_function = np.mean
 
         result = dissimilarity_functions.cluster_dissimilarity(
@@ -290,15 +246,11 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(distance, 3)
 
     def test_hamming_distance_ignore_missing(self):
-        distance = dissimilarity_functions.hamming_distance(
-            self.s1, self.s2, ignore_missing_state=True
-        )
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2, ignore_missing_state=True)
 
         self.assertEqual(distance, 2)
 
-        distance = dissimilarity_functions.hamming_distance(
-            self.s1, self.all_missing, ignore_missing_state=True
-        )
+        distance = dissimilarity_functions.hamming_distance(self.s1, self.all_missing, ignore_missing_state=True)
 
         self.assertEqual(distance, 0)
 
@@ -309,25 +261,16 @@ class TestDissimilarityFunctions(unittest.TestCase):
         dissimilarity_map = pd.DataFrame(data, index=index)
 
         # Expected content in the mock file
-        expected_content = (
-            "3\n"
-            "A\t0.0000\n"
-            "B\t0.5000\t0.0000\n"
-            "C\t0.7000\t0.3000\t0.0000\n"
-        )
+        expected_content = "3\nA\t0.0000\nB\t0.5000\t0.0000\nC\t0.7000\t0.3000\t0.0000\n"
 
         # Mock the open function to use a mock file object
         with mock.patch("builtins.open", mock.mock_open()) as mock_file:
-            solver_utilities.save_dissimilarity_as_phylip(
-                dissimilarity_map, "dummy_path"
-            )
+            solver_utilities.save_dissimilarity_as_phylip(dissimilarity_map, "dummy_path")
             mock_file.assert_called_once_with("dummy_path", "w")
             mock_file().write.assert_called()
             self.assertIn(
                 expected_content,
-                "".join(
-                    call[0][0] for call in mock_file().write.call_args_list
-                ),
+                "".join(call[0][0] for call in mock_file().write.call_args_list),
             )
 
 

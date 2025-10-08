@@ -3,12 +3,12 @@ import tempfile
 import unittest
 
 import pandas as pd
+
 from cassiopeia.preprocess import pipeline
 
 
 class TestFilterMolculeTable(unittest.TestCase):
     def setUp(self):
-
         self.base_filter_case = pd.DataFrame.from_dict(
             {
                 "cellBC": ["A", "A", "A", "B", "B", "C", "C", "C", "C"],
@@ -39,9 +39,7 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.base_filter_case["allele"] = self.base_filter_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.base_filter_case["allele"] = self.base_filter_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         self.doublets_case = pd.DataFrame.from_dict(
             {
@@ -73,9 +71,7 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.doublets_case["allele"] = self.doublets_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.doublets_case["allele"] = self.doublets_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         self.intBC_case = pd.DataFrame.from_dict(
             {
@@ -107,15 +103,12 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.intBC_case["allele"] = self.intBC_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.intBC_case["allele"] = self.intBC_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         # set up temporary directory
         self.temporary_directory = tempfile.mkdtemp()
 
     def test_format(self):
-
         aln_df = pipeline.filter_molecule_table(
             self.base_filter_case, self.temporary_directory, min_umi_per_cell=2, plot=True
         )
@@ -139,9 +132,12 @@ class TestFilterMolculeTable(unittest.TestCase):
             self.assertIn(column, aln_df.columns)
 
     def test_umi_and_cellbc_filter(self):
-
         aln_df = pipeline.filter_molecule_table(
-            self.base_filter_case, self.temporary_directory, min_umi_per_cell=3, min_reads_per_umi=11, plot=True,
+            self.base_filter_case,
+            self.temporary_directory,
+            min_umi_per_cell=3,
+            min_reads_per_umi=11,
+            plot=True,
         )
 
         expected_alignments = {
@@ -151,18 +147,14 @@ class TestFilterMolculeTable(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"]:
-
             expected_readcount = expected_alignments[read_name]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[
-                    0
-                ],
+                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[0],
                 expected_readcount,
             )
 
     def test_doublet_and_map(self):
-
         aln_df = pipeline.filter_molecule_table(
             self.doublets_case,
             self.temporary_directory,
@@ -179,7 +171,6 @@ class TestFilterMolculeTable(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"]:
-
             expected_allele = expected_alignments[read_name]
 
             self.assertEqual(
@@ -188,7 +179,6 @@ class TestFilterMolculeTable(unittest.TestCase):
             )
 
     def test_error_correct_intBC(self):
-
         aln_df = pipeline.filter_molecule_table(
             self.intBC_case,
             self.temporary_directory,
@@ -210,7 +200,6 @@ class TestFilterMolculeTable(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"]:
-
             expected_intbc = expected_alignments[read_name]
 
             self.assertEqual(
@@ -241,7 +230,6 @@ class TestFilterMolculeTable(unittest.TestCase):
             "C_ACGTA_10": "A",
         }
         for read_name in aln_df["readName"]:
-
             expected_intbc = expected_alignments[read_name]
 
             self.assertEqual(
@@ -250,8 +238,8 @@ class TestFilterMolculeTable(unittest.TestCase):
             )
 
     def tearDown(self):
-
         shutil.rmtree(self.temporary_directory)
+
 
 if __name__ == "__main__":
     unittest.main()

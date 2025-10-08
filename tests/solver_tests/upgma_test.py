@@ -1,12 +1,14 @@
 """
 Test UPGMASolver in Cassiopeia.solver.
 """
+
 import itertools
 import unittest
 
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.solver.UPGMASolver import UPGMASolver
@@ -32,7 +34,6 @@ def find_triplet_structure(triplet, T):
 
 class TestUPGMASolver(unittest.TestCase):
     def setUp(self):
-
         # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
             {
@@ -59,9 +60,7 @@ class TestUPGMASolver(unittest.TestCase):
         )
 
         self.basic_dissimilarity_map = delta
-        self.basic_tree = CassiopeiaTree(
-            character_matrix=cm, dissimilarity_map=delta
-        )
+        self.basic_tree = CassiopeiaTree(character_matrix=cm, dissimilarity_map=delta)
 
         self.upgma_solver = UPGMASolver()
 
@@ -81,9 +80,7 @@ class TestUPGMASolver(unittest.TestCase):
 
         self.pp_tree = CassiopeiaTree(character_matrix=pp_cm)
 
-        self.upgma_solver_delta = UPGMASolver(
-            dissimilarity_function=dissimilarity_functions.weighted_hamming_distance
-        )
+        self.upgma_solver_delta = UPGMASolver(dissimilarity_function=dissimilarity_functions.weighted_hamming_distance)
 
         # ------------- CM with Duplicates and Missing Data -----------------------
         duplicates_cm = pd.DataFrame.from_dict(
@@ -103,38 +100,29 @@ class TestUPGMASolver(unittest.TestCase):
 
         # -------------  Hamming dissimilarity with weights  ------------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
-        self.pp_tree_priors = CassiopeiaTree(
-            character_matrix=pp_cm, priors=priors
-        )
+        self.pp_tree_priors = CassiopeiaTree(character_matrix=pp_cm, priors=priors)
         self.upgma_solver_modified = UPGMASolver(
             dissimilarity_function=dissimilarity_functions.weighted_hamming_distance
         )
 
     def test_constructor(self):
-
         self.assertIsNotNone(self.upgma_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
     def test_find_cherry(self):
-
-        cherry = self.upgma_solver.find_cherry(
-            self.basic_dissimilarity_map.values
-        )
+        cherry = self.upgma_solver.find_cherry(self.basic_dissimilarity_map.values)
         delta = self.basic_dissimilarity_map
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
         self.assertIn((node_i, node_j), [("a", "b"), ("b", "a")])
 
     def test_update_dissimilarity_map(self):
-
         delta = self.basic_dissimilarity_map
 
         cherry = self.upgma_solver.find_cherry(delta.values)
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
-        delta = self.upgma_solver.update_dissimilarity_map(
-            delta, (node_i, node_j), "ab"
-        )
+        delta = self.upgma_solver.update_dissimilarity_map(delta, (node_i, node_j), "ab")
 
         expected_delta = pd.DataFrame.from_dict(
             {
@@ -157,9 +145,7 @@ class TestUPGMASolver(unittest.TestCase):
         cherry = self.upgma_solver.find_cherry(delta.values)
         node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
 
-        delta = self.upgma_solver.update_dissimilarity_map(
-            delta, (node_i, node_j), "abe"
-        )
+        delta = self.upgma_solver.update_dissimilarity_map(delta, (node_i, node_j), "abe")
 
         expected_delta = pd.DataFrame.from_dict(
             {"abe": [0, 30, 36], "c": [30, 0, 28], "d": [36, 28, 0]},
@@ -175,7 +161,6 @@ class TestUPGMASolver(unittest.TestCase):
                 )
 
     def test_basic_solver(self):
-
         self.upgma_solver.solve(self.basic_tree)
 
         # test leaves exist in tree
@@ -207,7 +192,6 @@ class TestUPGMASolver(unittest.TestCase):
         observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
-
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
@@ -252,9 +236,7 @@ class TestUPGMASolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-        self.upgma_solver_modified.solve(
-            self.pp_tree_priors, collapse_mutationless_edges=True
-        )
+        self.upgma_solver_modified.solve(self.pp_tree_priors, collapse_mutationless_edges=True)
         observed_tree = self.pp_tree_priors.get_tree_topology()
 
         expected_tree = nx.DiGraph()

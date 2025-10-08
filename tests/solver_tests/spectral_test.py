@@ -1,9 +1,10 @@
 import itertools
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.solver import dissimilarity_functions, graph_utilities
 from cassiopeia.solver.SpectralSolver import SpectralSolver
 
@@ -206,9 +207,7 @@ class SpectralSolverTest(unittest.TestCase):
             ]
         )
         observed_tree = sp_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -276,9 +275,7 @@ class SpectralSolverTest(unittest.TestCase):
             ]
         )
         observed_tree = sp_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -301,9 +298,7 @@ class SpectralSolverTest(unittest.TestCase):
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [(4, "c1"), (4, "c3"), (5, "c2"), (5, "c4"), (6, 4), (6, 5)]
-        )
+        expected_tree.add_edges_from([(4, "c1"), (4, "c3"), (5, "c2"), (5, "c4"), (6, 4), (6, 5)])
         observed_tree = sp_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
         for triplet in triplets:
@@ -338,16 +333,12 @@ class SpectralSolverTest(unittest.TestCase):
             4: {1: 0.1},
         }
 
-        sp_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1, priors=priors
-        )
+        sp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
 
         spsolver = SpectralSolver()
         spsolver.solve(sp_tree, collapse_mutationless_edges=True)
         expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [(4, "c3"), (4, "c4"), (5, "c1"), (5, "c2"), (5, 4)]
-        )
+        expected_tree.add_edges_from([(4, "c3"), (4, "c4"), (5, "c1"), (5, "c2"), (5, 4)])
         observed_tree = sp_tree.get_tree_topology()
         triplets = itertools.combinations(["c1", "c2", "c3", "c4"], 3)
         for triplet in triplets:

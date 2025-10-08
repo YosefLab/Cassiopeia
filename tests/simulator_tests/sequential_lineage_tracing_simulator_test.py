@@ -2,17 +2,18 @@
 Tests the Sequential-based lineage tracing data simulator in
 cassiopeia.simulator.SequentialLineageTracingDataSimulator.
 """
+
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.simulator.DataSimulator import DataSimulatorError
 
 
 class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
     def setUp(self):
-
         topology = nx.DiGraph()
         topology.add_edges_from(
             [
@@ -57,37 +58,31 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
         self.basic_tree = tree
         self.priors = {1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05}
 
-        self.tracing_data_simulator = (
-            cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=3,
-                size_of_cassette=3,
-                initiation_rate=0.3,
-                continuation_rate=0.4,
-                state_priors=self.priors,
-                heritable_silencing_rate=0,
-                stochastic_silencing_rate=0,
-                random_seed=123412232,
-            )
+        self.tracing_data_simulator = cas.sim.SequentialLineageTracingDataSimulator(
+            number_of_cassettes=3,
+            size_of_cassette=3,
+            initiation_rate=0.3,
+            continuation_rate=0.4,
+            state_priors=self.priors,
+            heritable_silencing_rate=0,
+            stochastic_silencing_rate=0,
+            random_seed=123412232,
         )
 
-        self.tracing_data_simulator_with_missing = (
-            cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=3,
-                size_of_cassette=3,
-                initiation_rate=0.3,
-                continuation_rate=0.4,
-                state_priors=self.priors,
-                heritable_silencing_rate=.2,
-                stochastic_silencing_rate=.1,
-                random_seed=123412232,
-            )
+        self.tracing_data_simulator_with_missing = cas.sim.SequentialLineageTracingDataSimulator(
+            number_of_cassettes=3,
+            size_of_cassette=3,
+            initiation_rate=0.3,
+            continuation_rate=0.4,
+            state_priors=self.priors,
+            heritable_silencing_rate=0.2,
+            stochastic_silencing_rate=0.1,
+            random_seed=123412232,
         )
 
     def test_basic_setup(self):
-
         number_of_characters = (
-            self.tracing_data_simulator.number_of_cassettes
-            * self.tracing_data_simulator.size_of_cassette
+            self.tracing_data_simulator.number_of_cassettes * self.tracing_data_simulator.size_of_cassette
         )
         self.assertEqual(9, number_of_characters)
 
@@ -101,76 +96,57 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             self.tracing_data_simulator.stochastic_silencing_rate,
         )
 
-        self.assertEqual(
-            4, len(self.tracing_data_simulator.state_priors)
-        )
+        self.assertEqual(4, len(self.tracing_data_simulator.state_priors))
 
-        self.assertEqual(
-            0.3, self.tracing_data_simulator.initiation_rate
-        )
+        self.assertEqual(0.3, self.tracing_data_simulator.initiation_rate)
 
-        self.assertEqual(
-            0.4, self.tracing_data_simulator.continuation_rate
-        )
+        self.assertEqual(0.4, self.tracing_data_simulator.continuation_rate)
 
     def test_setup_errors(self):
-
         # test number of cassettes is not a positive integer
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=0, size_of_cassette=2,
-                state_priors=self.priors
+                number_of_cassettes=0, size_of_cassette=2, state_priors=self.priors
             )
 
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=0.1, size_of_cassette=2,
-                state_priors=self.priors
+                number_of_cassettes=0.1, size_of_cassette=2, state_priors=self.priors
             )
 
         # test size of cassette is not a positive integer
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=0,
-                state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=0, state_priors=self.priors
             )
 
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=0.1,
-                state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=0.1, state_priors=self.priors
             )
 
         # test for invalid continuation rate type
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2,
-                size_of_cassette=2,
-                continuation_rate="invalid",
-                state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=2, continuation_rate="invalid", state_priors=self.priors
             )
 
         # test for invalid initiation rate type
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2,
-                size_of_cassette=2,
-                initiation_rate="invalid",
-                state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=2, initiation_rate="invalid", state_priors=self.priors
             )
 
         # test for positive continuation rate
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2,
-                continuation_rate=-0.2,state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=2, continuation_rate=-0.2, state_priors=self.priors
             )
 
         # test for positive initiation rate
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2,
-                initiation_rate=-0.2,state_priors=self.priors
+                number_of_cassettes=2, size_of_cassette=2, initiation_rate=-0.2, state_priors=self.priors
             )
 
         # test that state distribution adds up to 1
@@ -198,7 +174,6 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             )
 
     def test_simulator_basic(self):
-
         self.tracing_data_simulator.overlay_data(self.basic_tree)
 
         character_matrix = self.basic_tree.character_matrix
@@ -221,15 +196,12 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
         )
 
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
-        )
+        pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
 
         self.basic_tree.reconstruct_ancestral_characters()
 
         # check inheritance patterns
         for n in self.basic_tree.depth_first_traverse_nodes(postorder=False):
-
             if self.basic_tree.is_root(n):
                 continue
 
@@ -238,7 +210,6 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             child_array = self.basic_tree.get_character_states(n)
             parent_array = self.basic_tree.get_character_states(parent)
             for i in range(len(child_array)):
-
                 if parent_array[i] == -1:
                     self.assertEqual(-1, child_array[i])
 
@@ -246,7 +217,6 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
                     self.assertNotEqual(0, child_array[i])
 
     def test_simulator_with_missing(self):
-
         self.tracing_data_simulator_with_missing.overlay_data(self.basic_tree)
 
         character_matrix = self.basic_tree.character_matrix
@@ -266,10 +236,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
         )
 
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, character_matrix
-        )
-
+        pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
 
     def test_branch_multiple_edits(self):
         topology = nx.DiGraph()
@@ -294,7 +261,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             size_of_cassette=3,
             initiation_rate=0.3,
             continuation_rate=0.4,
-            state_priors={1:0.5,2:0.5},
+            state_priors={1: 0.5, 2: 0.5},
             heritable_silencing_rate=0,
             stochastic_silencing_rate=0,
             random_seed=123412232,
@@ -310,9 +277,8 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
         )
 
-        pd.testing.assert_frame_equal(
-            expected_character_matrix, tree.character_matrix
-        )
+        pd.testing.assert_frame_equal(expected_character_matrix, tree.character_matrix)
+
 
 if __name__ == "__main__":
     unittest.main()

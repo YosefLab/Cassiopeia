@@ -4,6 +4,7 @@ Abstract class TreeSimulator, for tree simulation module.
 All tree simulators are derived classes of this abstract class, and at a minimum
 implement a method called `simulate_tree`.
 """
+
 import abc
 
 from cassiopeia.data import CassiopeiaTree

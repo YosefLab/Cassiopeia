@@ -2,6 +2,7 @@
 This file stores useful functions for dealing with alignments.
 Invoked through pipeline.py and supports the align_sequences function.
 """
+
 import re
 
 import ngs_tools as ngs
@@ -71,8 +72,7 @@ def align_global(
     """
     aligner = NeedlemanWunsch(
         substitution_matrix=substitution_matrix,
-        gap_open=-gap_open_penalty
-        + 1,  # Slight difference in score calculation
+        gap_open=-gap_open_penalty + 1,  # Slight difference in score calculation
         gap_extend=-gap_extend_penalty,
         no_end_gap_penalty=True,  # Reads are expected to be shorter
     )
@@ -126,9 +126,7 @@ def parse_cigar(
     -------
         The intBC and a list storing the indel observed at each cutsite.
     """
-    cutsite_lims = [
-        (site - cutsite_window, site + cutsite_window) for site in cutsites
-    ]
+    cutsite_lims = [(site - cutsite_window, site + cutsite_window) for site in cutsites]
     indels = ["" for site in cutsites]
     uncut_indels = ["" for site in cutsites]
     intBC = "NC"
@@ -144,7 +142,6 @@ def parse_cigar(
     cigar_chunks = re.findall(r"(\d+)?([A-Za-z])?", cigar)
 
     for chunk in cigar_chunks:
-
         if chunk[1] == "":
             continue
 
@@ -156,23 +153,15 @@ def parse_cigar(
             # check if match goes into barcode interval.
             # this misses instances where the entire barcode isn't matched, as
             # in when there is a 1bp deletion in the intBC region.
-            if (
-                barcode_interval[0] >= pos_start
-                and barcode_interval[1] <= pos_end
-            ):
+            if barcode_interval[0] >= pos_start and barcode_interval[1] <= pos_end:
                 intBC_offset = barcode_interval[0] - pos_start
                 # if the entire intBC is deleted, we report this as not-captured
                 if query_pad > (-1 * intBC_length):
-                    intbc_end_index = (
-                        query_pointer + intBC_offset + intBC_length + query_pad
-                    )
-                    intBC = seq[
-                        (query_pointer + intBC_offset) : intbc_end_index
-                    ]
+                    intbc_end_index = query_pointer + intBC_offset + intBC_length + query_pad
+                    intBC = seq[(query_pointer + intBC_offset) : intbc_end_index]
 
             # check if a match occurs in any of the cutsite windows
             for i, site in zip(range(len(cutsites)), cutsites, strict=False):
-
                 if site >= pos_start and site <= pos_end and indels[i] == "":
                     dist = site - pos_start
                     loc = query_pointer + dist
@@ -186,20 +175,12 @@ def parse_cigar(
                         uncut_indels[i] = "None"
 
             # account for partial deletions of the intBC
-            if (
-                pos_start >= barcode_interval[0]
-                and pos_start <= barcode_interval[1]
-                and pos_end > barcode_interval[1]
-            ):
+            if pos_start >= barcode_interval[0] and pos_start <= barcode_interval[1] and pos_end > barcode_interval[1]:
                 new_intbc_len = barcode_interval[1] - pos_start + 1
                 intbc_end_index = query_pointer + new_intbc_len
                 intBC = seq[query_pointer:intbc_end_index]
 
-            if (
-                pos_end >= barcode_interval[0]
-                and pos_end <= barcode_interval[1]
-                and pos_start < barcode_interval[0]
-            ):
+            if pos_end >= barcode_interval[0] and pos_end <= barcode_interval[1] and pos_start < barcode_interval[0]:
                 new_intbc_len = pos_end - barcode_interval[0] + 1
                 intBC_offset = barcode_interval[0] - pos_start
                 intbc_end_index = query_pointer + intBC_offset + new_intbc_len
@@ -209,7 +190,6 @@ def parse_cigar(
             query_pointer += length
 
         elif _type == "I":
-
             if ref_pointer == barcode_interval[0]:
                 query_pad = length
 
@@ -220,30 +200,20 @@ def parse_cigar(
             query_pointer += length
 
             for i, window in zip(range(len(cutsites)), cutsite_lims, strict=False):
-
                 if ref_pointer >= window[0] and ref_pointer <= window[1]:
-
                     if context:
                         context_l = seq[(pos_start - context_size) : pos_start]
-                        context_r = seq[
-                            pos_start : (pos_start + context_size + length)
-                        ]
+                        context_r = seq[pos_start : (pos_start + context_size + length)]
 
                         # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
-                        indels[
-                            i
-                        ] += (
-                            f"{context_l}[{ref_pointer+1}:{length}I]{context_r}"
-                        )
+                        indels[i] += f"{context_l}[{ref_pointer + 1}:{length}I]{context_r}"
                     else:
-
                         # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
-                        indels[i] += f"{ref_pointer+1}:{length}I"
+                        indels[i] += f"{ref_pointer + 1}:{length}I"
 
         elif _type == "D":
-
             # increment the reference string pointer since we're working with a
             # deletion (i.e. character that appear in the reference but not the
             # query string)
@@ -254,31 +224,23 @@ def parse_cigar(
                 query_pad = -1 * length
 
             for i, window in zip(range(len(cutsites)), cutsite_lims, strict=False):
-
                 if (
                     (window[0] <= ref_pointer and ref_pointer <= window[1])
                     or (window[0] <= pos_start and pos_start <= window[1])
                     or (pos_start <= window[0] and ref_pointer >= window[1])
                     or (pos_start >= window[0] and ref_pointer <= window[1])
                 ):
-
                     if context:
-                        context_l = seq[
-                            (query_pointer - context_size) : query_pointer
-                        ]
-                        context_r = seq[
-                            query_pointer : (query_pointer + context_size)
-                        ]
+                        context_l = seq[(query_pointer - context_size) : query_pointer]
+                        context_r = seq[query_pointer : (query_pointer + context_size)]
 
                         # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
-                        indels[
-                            i
-                        ] += f"{context_l}[{pos_start+1}:{length}D]{context_r}"
+                        indels[i] += f"{context_l}[{pos_start + 1}:{length}D]{context_r}"
                     else:
                         # when referencing the actual string, we say convert
                         # to 1-indexing for easier comparison
-                        indels[i] += f"{pos_start+1}:{length}D"
+                        indels[i] += f"{pos_start + 1}:{length}D"
 
         elif _type == "H":
             # Hard clip! Do nothing.
@@ -286,18 +248,14 @@ def parse_cigar(
             query_pointer += length
 
         else:
-            raise UnknownCigarStringError(
-                f"Encountered unknown cigar string: {chunk}"
-            )
+            raise UnknownCigarStringError(f"Encountered unknown cigar string: {chunk}")
 
     if intBC == "NC" or len(intBC) < intBC_length:
-
         anchor = seq[(barcode_interval[0] - 11) : barcode_interval[0]]
         if anchor == ref_anchor:
             intBC = seq[barcode_interval[0] : barcode_interval[1]]
 
     for i, indel in zip(range(len(indels)), indels, strict=False):
-
         if indel == "":
             indels[i] = uncut_indels[i]
 

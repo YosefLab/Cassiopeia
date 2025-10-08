@@ -5,6 +5,7 @@ Uniformly samples leaves within a region of interest of a CassiopeiaTree
 with spatial information and produces a new CassiopeiaTree containing the
 sampled leaves.
 """
+
 import copy
 import warnings
 from collections import defaultdict
@@ -26,7 +27,7 @@ class SpatialLeafSubsampler(LeafSubsampler):
         ratio: float | None = None,
         number_of_leaves: int | None = None,
         attribute_key: str | None = "spatial",
-        merge_cells: bool | None = False
+        merge_cells: bool | None = False,
     ):
         """Subsamples leaves within a region of interest.
 
@@ -59,32 +60,22 @@ class SpatialLeafSubsampler(LeafSubsampler):
         """
         # check that exactly one of bounding_box or space is provided
         if (bounding_box is None) == (space is None):
-            raise LeafSubsamplerError(
-                "Exactly one of `bounding_box` or `space` must be provided."
-            )
+            raise LeafSubsamplerError("Exactly one of `bounding_box` or `space` must be provided.")
         # check that not both ratio and number_of_leaves are provided
         if ratio is not None and number_of_leaves is not None:
-            raise LeafSubsamplerError(
-                "Can not specify both `ratio` and `number_of_leaves`"
-            )
+            raise LeafSubsamplerError("Can not specify both `ratio` and `number_of_leaves`")
         if number_of_leaves is not None:
             # Check number_of_leaves is > 0
             if number_of_leaves <= 0:
-                raise LeafSubsamplerError(
-                    "Specified number of leaves sampled is <= 0."
-                )
+                raise LeafSubsamplerError("Specified number of leaves sampled is <= 0.")
         if ratio is not None:
             # Check ratio is between 0 and 1
             if ratio <= 0 or ratio > 1:
-                raise LeafSubsamplerError(
-                    "Specified ratio is <= 0 or > 1."
-                )
+                raise LeafSubsamplerError("Specified ratio is <= 0 or > 1.")
         if merge_cells:
             # Check that space is provided
             if space is None:
-                raise LeafSubsamplerError(
-                    "Can not merge cells without space provided."
-                )
+                raise LeafSubsamplerError("Can not merge cells without space provided.")
         self.__bounding_box = bounding_box
         self.__space = space
         self.__ratio = ratio
@@ -142,9 +133,7 @@ class SpatialLeafSubsampler(LeafSubsampler):
         try:
             coordinates = tree.get_attribute(tree.leaves[0], attribute)
         except CassiopeiaTreeError:
-            raise LeafSubsamplerError(
-                f"Attribute {attribute} not present in the tree."
-            )
+            raise LeafSubsamplerError(f"Attribute {attribute} not present in the tree.")
 
         if bounding_box is not None:
             # Check the dimensions of coordinates and bounding box match
@@ -167,19 +156,19 @@ class SpatialLeafSubsampler(LeafSubsampler):
             # Check the dimensions of coordinates and space match
             if len(coordinates) != len(space.shape):
                 raise LeafSubsamplerError(
-                    f"Dimensions of coordinates ({len(coordinates)}) and "
-                    f"space ({len(space.shape)}) do not match."
+                    f"Dimensions of coordinates ({len(coordinates)}) and space ({len(space.shape)}) do not match."
                 )
             # check that max coordinate is similar to space shape
             max_coordinate = np.max(coordinates)
             max_dimension = np.max(space.shape)
-            if (max_coordinate * 10 < max_dimension):
+            if max_coordinate * 10 < max_dimension:
                 warnings.warn(
                     f"Maximum coordinate {max_coordinate} is much smaller than "
                     f"maximum dimension of space {max_dimension}. Consider "
                     f"rescaling coordinates since they are converted to "
                     f"integers for spatial down sampling.",
-                    LeafSubsamplerWarning, stacklevel=2
+                    LeafSubsamplerWarning,
+                    stacklevel=2,
                 )
 
             # Subset the leaves to those within the space
@@ -189,11 +178,8 @@ class SpatialLeafSubsampler(LeafSubsampler):
                 # round coordinates to nearest integer
                 coordinates = [int(c) for c in coordinates]
                 # check if coordinates are within space size
-                if any(c < 0 or c >= s for c, s in
-                        zip(coordinates, space.shape, strict=False)):
-                    raise LeafSubsamplerError(
-                        f"Coordinates {coordinates} are outside the space."
-                    )
+                if any(c < 0 or c >= s for c, s in zip(coordinates, space.shape, strict=False)):
+                    raise LeafSubsamplerError(f"Coordinates {coordinates} are outside the space.")
                 # check if coordinates are in space
                 if not space[tuple(coordinates)]:
                     continue
@@ -206,12 +192,10 @@ class SpatialLeafSubsampler(LeafSubsampler):
 
         # Check that the number of leaves to keep is > 0
         if len(leaf_keep) == 0:
-            raise LeafSubsamplerError(
-                "No leaves within the specified region."
-            )
+            raise LeafSubsamplerError("No leaves within the specified region.")
 
-         # Check less than leaf_keep
-        if number_of_leaves  > len(leaf_keep):
+        # Check less than leaf_keep
+        if number_of_leaves > len(leaf_keep):
             raise LeafSubsamplerError(
                 f"Specified number of leaves to sample ({number_of_leaves}) is"
                 f" greater than the number of leaves within the region of "
@@ -220,8 +204,7 @@ class SpatialLeafSubsampler(LeafSubsampler):
 
         # sample uniformly from leaf_keep
         if number_of_leaves is not None:
-            leaf_keep = np.random.choice(leaf_keep, number_of_leaves,
-                                         replace=False)
+            leaf_keep = np.random.choice(leaf_keep, number_of_leaves, replace=False)
 
         # Find leaves to remove
         leaf_remove = set(tree.leaves) - set(leaf_keep)
@@ -230,7 +213,6 @@ class SpatialLeafSubsampler(LeafSubsampler):
 
         # Merge cells
         if merge_cells:
-
             # Get the coordinates of the leaves
             coordinate_leaves = defaultdict(list)
             for leaf in tree.leaves:
@@ -256,7 +238,7 @@ class SpatialLeafSubsampler(LeafSubsampler):
                             new_char.append(tree.get_character_states(leaf)[i])
                         new_state.append(tuple(new_char))
                     # update the tree
-                    tree.add_leaf(lca, new_leaf,states=new_state,time=new_time)
+                    tree.add_leaf(lca, new_leaf, states=new_state, time=new_time)
                     tree.set_attribute(new_leaf, attribute, coordinates)
                     tree.remove_leaves_and_prune_lineages(leaves)
 
@@ -265,20 +247,13 @@ class SpatialLeafSubsampler(LeafSubsampler):
                 tree.collapse_ambiguous_characters()
 
         # Keep the singular root edge if it exists and is indicated to be kept
-        if (
-            len(tree.children(tree.root)) == 1
-            and keep_singular_root_edge
-        ):
+        if len(tree.children(tree.root)) == 1 and keep_singular_root_edge:
             collapse_source = tree.children(tree.root)[0]
         else:
             collapse_source = None
         tree.collapse_unifurcations(source=collapse_source)
 
         # Copy and annotate branch lengths and times
-        tree.set_times(
-            {
-                node: tree.get_time(node) for node in tree.nodes
-            }
-        )
+        tree.set_times({node: tree.get_time(node) for node in tree.nodes})
 
         return tree

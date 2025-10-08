@@ -4,6 +4,7 @@ inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
+
 from collections.abc import Callable
 
 import networkx as nx
@@ -68,14 +69,14 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
+        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
+        | None = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
         fast: bool = False,
         implementation: str = "ccphylo_dnj",
         threads: int = 1,
     ):
-
         if fast:
             if implementation in ["ccphylo_dnj", "ccphylo_hnj", "ccphylo_nj"]:
                 self._implementation = implementation
@@ -94,9 +95,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             threads=threads,
         )
 
-    def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
-    ) -> nx.DiGraph():
+    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]) -> nx.DiGraph():
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
         Uses the specified root to root the tree passed in
@@ -159,12 +158,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for i in range(n):
             for j in range(i):
                 q[i, j] = q[j, i] = (dissimilarity_map[i, j]) - (
-                    1
-                    / (n - 2)
-                    * (
-                        dissimilarity_map_rowsums[i]
-                        + dissimilarity_map_rowsums[j]
-                    )
+                    1 / (n - 2) * (dissimilarity_map_rowsums[i] + dissimilarity_map_rowsums[j])
                 )
         return q
 
@@ -195,14 +189,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.__update_dissimilarity_map_numba(
-            dissimilarity_map.to_numpy(), i, j
-        )
+        dissimilarity_array = self.__update_dissimilarity_map_numba(dissimilarity_map.to_numpy(), i, j)
         sample_names = list(dissimilarity_map.index) + [new_node]
 
-        dissimilarity_map = pd.DataFrame(
-            dissimilarity_array, index=sample_names, columns=sample_names
-        )
+        dissimilarity_map = pd.DataFrame(dissimilarity_array, index=sample_names, columns=sample_names)
 
         # drop out cherry from dissimilarity map
         dissimilarity_map.drop(
@@ -215,9 +205,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     @staticmethod
     @numba.jit(nopython=True)
-    def __update_dissimilarity_map_numba(
-        dissimilarity_map: np.array, cherry_i: int, cherry_j: int
-    ) -> np.array:
+    def __update_dissimilarity_map_numba(dissimilarity_map: np.array, cherry_i: int, cherry_j: int) -> np.array:
         """A private, optimized function for updating dissimilarities.
 
         A faster implementation of updating the dissimilarity map for Neighbor
@@ -245,12 +233,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         for v in range(dissimilarity_map.shape[0]):
             if v == cherry_i or v == cherry_j:
                 continue
-            updated_map[v, new_node_index] = updated_map[
-                new_node_index, v
-            ] = 0.5 * (
-                dissimilarity_map[v, cherry_i]
-                + dissimilarity_map[v, cherry_j]
-                - dissimilarity_map[cherry_i, cherry_j]
+            updated_map[v, new_node_index] = updated_map[new_node_index, v] = 0.5 * (
+                dissimilarity_map[v, cherry_i] + dissimilarity_map[v, cherry_j] - dissimilarity_map[cherry_i, cherry_j]
             )
 
         updated_map[new_node_index, new_node_index] = 0
@@ -279,8 +263,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         if self.dissimilarity_function is None:
             raise DistanceSolver.DistanceSolverError(
-                "Please specify a dissimilarity function to add an implicit "
-                "root, or specify an explicit root"
+                "Please specify a dissimilarity function to add an implicit root, or specify an explicit root"
             )
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
@@ -293,9 +276,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             for leaf in character_matrix.index:
                 weights = None
                 if cassiopeia_tree.priors:
-                    weights = solver_utilities.transform_priors(
-                        cassiopeia_tree.priors, self.prior_transformation
-                    )
+                    weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
                 dissimilarity[leaf] = self.dissimilarity_function(
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,

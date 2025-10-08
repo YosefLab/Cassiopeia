@@ -1,15 +1,16 @@
 """
 Tests for the sequence alignment in pipeline.py.
 """
+
 import unittest
 
-import cassiopeia
 import pandas as pd
+
+import cassiopeia
 
 
 class TestErrorCorrectUMISequence(unittest.TestCase):
     def setUp(self):
-
         self.multi_case = pd.DataFrame.from_dict(
             {
                 "cellBC": [
@@ -100,9 +101,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.multi_case["allele"] = self.multi_case.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.multi_case["allele"] = self.multi_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
         self.ambiguous = pd.DataFrame.from_dict(
             {
@@ -128,15 +127,10 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.ambiguous["allele"] = self.ambiguous.apply(
-            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
-        )
+        self.ambiguous["allele"] = self.ambiguous.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 
     def test_format(self):
-
-        aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, max_umi_distance=1
-        )
+        aln_df = cassiopeia.pp.error_correct_umis(self.multi_case, max_umi_distance=1)
 
         expected_columns = [
             "cellBC",
@@ -155,10 +149,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             self.assertIn(column, aln_df.columns)
 
     def test_zero_dist(self):
-
-        aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, max_umi_distance=0
-        )
+        aln_df = cassiopeia.pp.error_correct_umis(self.multi_case, max_umi_distance=0)
 
         self.assertEqual(aln_df.shape[0], self.multi_case.shape[0])
 
@@ -166,10 +157,7 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             self.assertIn(cellBC, aln_df["cellBC"].unique())
 
     def test_error_correct_two_dist(self):
-
-        aln_df = cassiopeia.pp.error_correct_umis(
-            self.multi_case, max_umi_distance=2
-        )
+        aln_df = cassiopeia.pp.error_correct_umis(self.multi_case, max_umi_distance=2)
 
         expected_alignments = {
             "A_AACCG_80": 80,
@@ -182,13 +170,10 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"]:
-
             expected_readcount = expected_alignments[read_name]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[
-                    0
-                ],
+                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[0],
                 expected_readcount,
             )
 
@@ -207,13 +192,10 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             "B_AACCG_90": 90,
         }
         for read_name in aln_df["readName"]:
-
             expected_readcount = expected_alignments[read_name]
 
             self.assertEqual(
-                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[
-                    0
-                ],
+                aln_df.loc[aln_df["readName"] == read_name, "readCount"].iloc[0],
                 expected_readcount,
             )
 

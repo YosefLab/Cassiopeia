@@ -5,6 +5,7 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
+
 from collections.abc import Callable
 
 import pandas as pd
@@ -86,12 +87,8 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
         -------
             A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(
-            character_matrix.index, samples
-        )
-        mutation_frequencies = self.compute_mutation_frequencies(
-            samples, character_matrix, missing_state_indicator
-        )
+        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
+        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
 
         best_frequency = 0
         chosen_character = 0
@@ -102,37 +99,22 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                     # Avoid splitting on mutations shared by all samples
                     if (
                         mutation_frequencies[character][state]
-                        < len(samples)
-                        - mutation_frequencies[character][
-                            missing_state_indicator
-                        ]
+                        < len(samples) - mutation_frequencies[character][missing_state_indicator]
                     ):
                         if weights:
-                            if (
-                                mutation_frequencies[character][state]
-                                * weights[character][state]
-                                > best_frequency
-                            ):
+                            if mutation_frequencies[character][state] * weights[character][state] > best_frequency:
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = (
-                                    mutation_frequencies[character][state]
-                                    * weights[character][state]
-                                )
+                                best_frequency = mutation_frequencies[character][state] * weights[character][state]
                         else:
-                            if (
-                                mutation_frequencies[character][state]
-                                > best_frequency
-                            ):
+                            if mutation_frequencies[character][state] > best_frequency:
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = mutation_frequencies[
-                                    character
-                                ][state]
+                                best_frequency = mutation_frequencies[character][state]
 
         if chosen_state == 0:
             return samples, []
@@ -150,10 +132,7 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
             observed_state = unique_character_array[i, chosen_character]
             if ambiguous_contains(observed_state, chosen_state):
                 left_set.append(sample_names[i])
-            elif (
-                unique_character_array[i, chosen_character]
-                == missing_state_indicator
-            ):
+            elif unique_character_array[i, chosen_character] == missing_state_indicator:
                 missing.append(sample_names[i])
             else:
                 right_set.append(sample_names[i])
