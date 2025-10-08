@@ -731,29 +731,28 @@ def cassiopeia_to_treedata(
         obs = pd.DataFrame(index=character_matrix.index)
 
     obst = {}
-    try:
-        tree_topology = cassiopeia_tree.get_tree_topology()
-        if tree_topology is not None:
-            obst[tree_key] = tree_topology
-    except CassiopeiaTreeError:
-        if cassiopeia_tree.character_matrix is None:
-            raise CassiopeiaError(
-                "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
-            )
 
-    # Extract observation metadata (obs) 
+    tree_topology = cassiopeia_tree.get_tree_topology()
+    if tree_topology is not None:
+        obst[tree_key] = tree_topology
+    elif cassiopeia_tree.character_matrix is None:
+        raise CassiopeiaError(
+            "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
+        )
+
+    # Extract observation metadata (obs)
     if preserve_metadata and cassiopeia_tree.cell_meta is not None:
         if obs is None:
             obs = cassiopeia_tree.cell_meta.copy()
         else:
             obs = obs.join(cassiopeia_tree.cell_meta.copy(), how="left")
-    
-    # Extract character matrix layers into obsm 
+
+    # Extract character matrix layers into obsm
     if preserve_layers and hasattr(cassiopeia_tree, 'layers'):
         for layer_name, layer_data in cassiopeia_tree.layers.items():
-            if layer_data is not None:    
+            if layer_data is not None:
                 obsm[f"layer_{layer_name}"] = layer_data.values
-    
+
     # Store dissimilarity map if it exists
     obsp = {}
     dissim_map = cassiopeia_tree.get_dissimilarity_map()
