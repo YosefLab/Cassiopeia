@@ -7,10 +7,11 @@ import os
 import pathlib as pl
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 

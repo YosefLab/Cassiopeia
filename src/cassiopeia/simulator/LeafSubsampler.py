@@ -9,7 +9,7 @@ implement a method called `subsample_leaves`.
 import abc
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import LeafSubsamplerError
+from cassiopeia.mixins import LeafSubsamplerError  # noqa: F401
 
 
 class LeafSubsampler(abc.ABC):

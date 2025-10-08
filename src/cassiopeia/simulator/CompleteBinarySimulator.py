@@ -3,6 +3,7 @@ This file defines the CompleteBinarySimulator, which inherits TreeSimulator,
 that simulates complte binary trees. In this sense, this is the simplest tree
 simulator.
 """
+
 from collections.abc import Generator
 
 import networkx as nx
@@ -33,13 +34,9 @@ class CompleteBinarySimulator(TreeSimulator):
             depth is not greater than 0.
     """
 
-    def __init__(
-        self, num_cells: int | None = None, depth: int | None = None
-    ):
+    def __init__(self, num_cells: int | None = None, depth: int | None = None):
         if (num_cells is None) == (depth is None):
-            raise TreeSimulatorError(
-                "One of `num_cells` or `depth` must be provided."
-            )
+            raise TreeSimulatorError("One of `num_cells` or `depth` must be provided.")
         if num_cells is not None:
             log2_num_cells = np.log2(num_cells)
             if log2_num_cells != int(log2_num_cells):
@@ -78,9 +75,6 @@ class CompleteBinarySimulator(TreeSimulator):
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 
         # Initialize branch lengths
-        time_dict = {
-            node: cassiopeia_tree.get_time(node) / (self.depth + 1)
-            for node in cassiopeia_tree.nodes
-        }
+        time_dict = {node: cassiopeia_tree.get_time(node) / (self.depth + 1) for node in cassiopeia_tree.nodes}
         cassiopeia_tree.set_times(time_dict)
         return cassiopeia_tree

@@ -3,6 +3,7 @@ A library that stores functions for comparing two trees to one another.
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """
+
 import copy
 from collections import defaultdict
 
@@ -18,9 +19,7 @@ def triplets_correct(
     tree2: CassiopeiaTree,
     number_of_trials: int = 1000,
     min_triplets_at_depth: int = 1,
-) -> tuple[
-    dict[int, float], dict[int, float], dict[int, float], dict[int, float]
-]:
+) -> tuple[dict[int, float], dict[int, float], dict[int, float], dict[int, float]]:
     """Calculate the triplets correct accuracy between two trees.
 
     Takes in two newick strings and computes the proportion of triplets in the
@@ -65,27 +64,19 @@ def triplets_correct(
 
     max_depth = np.max([T1.get_attribute(n, "depth") for n in T1.nodes])
     for depth in range(max_depth):
-
         score = 0
         number_unresolvable_triplets = 0
 
         # check that there are enough triplets at this depth
         candidate_nodes = depth_to_nodes[depth]
-        total_triplets = sum(
-            [T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes]
-        )
+        total_triplets = sum([T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
         if total_triplets < min_triplets_at_depth:
             continue
 
         for _ in range(number_of_trials):
+            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(T1, depth, depth_to_nodes)
 
-            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
-                T1, depth, depth_to_nodes
-            )
-
-            reconstructed_outgroup = critique_utilities.get_outgroup(
-                T2, (i, j, k)
-            )
+            reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
 
             is_resolvable = True
             if out_group == "None":
@@ -109,14 +100,10 @@ def triplets_correct(
         else:
             unresolved_triplets_correct[depth] /= number_unresolvable_triplets
 
-        proportion_unresolvable[depth] = (
-            number_unresolvable_triplets / number_of_trials
-        )
+        proportion_unresolvable[depth] = number_unresolvable_triplets / number_of_trials
 
         if proportion_unresolvable[depth] < 1:
-            resolvable_triplets_correct[depth] /= (
-                number_of_trials - number_unresolvable_triplets
-            )
+            resolvable_triplets_correct[depth] /= number_of_trials - number_unresolvable_triplets
         else:
             resolvable_triplets_correct[depth] = 1.0
 
@@ -128,9 +115,7 @@ def triplets_correct(
     )
 
 
-def robinson_foulds(
-    tree1: CassiopeiaTree, tree2: CassiopeiaTree
-) -> tuple[float, float]:
+def robinson_foulds(tree1: CassiopeiaTree, tree2: CassiopeiaTree) -> tuple[float, float]:
     """Compares two trees with Robinson-Foulds distance.
 
     Computes the Robinsons-Foulds distance between two trees. Currently, this

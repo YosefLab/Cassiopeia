@@ -1,6 +1,7 @@
 """
 Test SharedMutationJoiningSolver in Cassiopeia.solver.
 """
+
 import itertools
 import unittest
 from functools import partial
@@ -10,6 +11,7 @@ import numba
 import numpy as np
 import pandas as pd
 import scipy
+
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.solver import dissimilarity_functions, solver_utilities
@@ -39,7 +41,6 @@ def find_triplet_structure(triplet, T):
 
 class TestSharedMutationJoiningSolver(unittest.TestCase):
     def setUp(self):
-
         # --------------------- General NJ ---------------------
         cm = pd.DataFrame.from_dict(
             {
@@ -66,9 +67,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         )
 
         self.basic_similarity_map = delta
-        self.basic_tree = CassiopeiaTree(
-            character_matrix=cm, dissimilarity_map=delta
-        )
+        self.basic_tree = CassiopeiaTree(character_matrix=cm, dissimilarity_map=delta)
 
         self.smj_solver = SharedMutationJoiningSolver(
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing
@@ -118,9 +117,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
         # ------------- Hamming similarity with weights ------------
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.9, 2: 0.1}}
-        self.pp_tree_priors = CassiopeiaTree(
-            character_matrix=pp_cm, priors=priors
-        )
+        self.pp_tree_priors = CassiopeiaTree(character_matrix=pp_cm, priors=priors)
         self.smj_solver_modified_pp = SharedMutationJoiningSolver(
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing
         )
@@ -130,11 +127,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         solver = SharedMutationJoiningSolver(
             similarity_function=dissimilarity_functions.hamming_similarity_without_missing
         )
-        self.assertTrue(
-            isinstance(
-                solver.nb_similarity_function, numba.core.registry.CPUDispatcher
-            )
-        )
+        self.assertTrue(isinstance(solver.nb_similarity_function, numba.core.registry.CPUDispatcher))
         self.assertTrue(
             isinstance(
                 solver._SharedMutationJoiningSolver__update_similarity_map,
@@ -172,9 +165,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
     def test_create_similarity_map(self):
         character_matrix = self.pp_tree_priors.character_matrix.copy()
-        weights = solver_utilities.transform_priors(
-            self.pp_tree_priors.priors, "negative_log"
-        )
+        weights = solver_utilities.transform_priors(self.pp_tree_priors.priors, "negative_log")
 
         similarity_map = data_utilities.compute_dissimilarity_map(
             character_matrix.to_numpy(),
@@ -268,9 +259,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
 
         for sample in expected_cm.index:
             for col in expected_cm.columns:
-                self.assertEqual(
-                    cm.loc[sample, col], expected_cm.loc[sample, col]
-                )
+                self.assertEqual(cm.loc[sample, col], expected_cm.loc[sample, col])
 
     def test_basic_solver(self):
         self.smj_solver.solve(self.basic_tree)
@@ -295,9 +284,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
                 )
         for i in self.basic_tree.character_matrix.index:
             for j in self.basic_tree.character_matrix.columns:
-                self.assertEqual(
-                    cm.loc[i, j], self.basic_tree.character_matrix.loc[i, j]
-                )
+                self.assertEqual(cm.loc[i, j], self.basic_tree.character_matrix.loc[i, j])
 
         # test leaves exist in tree
         _leaves = self.basic_tree.leaves
@@ -328,7 +315,6 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         observed_tree = self.basic_tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
-
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
@@ -401,9 +387,7 @@ class TestSharedMutationJoiningSolver(unittest.TestCase):
         self.assertIsNone(self.pp_tree.get_dissimilarity_map())
         for i in self.pp_tree.character_matrix.index:
             for j in self.pp_tree.character_matrix.columns:
-                self.assertEqual(
-                    pp_cm.loc[i, j], self.pp_tree.character_matrix.loc[i, j]
-                )
+                self.assertEqual(pp_cm.loc[i, j], self.pp_tree.character_matrix.loc[i, j])
 
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(

@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+
 from cassiopeia.simulator import SimpleFitSubcloneSimulator
 
 
@@ -65,9 +66,5 @@ class TestSimpleFitSubcloneSimulator(unittest.TestCase):
         # Just check that all branch lengths are distinct to confirm
         # non-determinism. We exclude the leaves because sister leaves have the
         # same branch length.
-        branch_lengths = [
-            tree.get_branch_length(p, c)
-            for (p, c) in tree.edges
-            if not tree.is_leaf(c)
-        ]
+        branch_lengths = [tree.get_branch_length(p, c) for (p, c) in tree.edges if not tree.is_leaf(c)]
         assert len(branch_lengths) == len(set(branch_lengths))

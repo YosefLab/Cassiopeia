@@ -49,15 +49,10 @@ def get_lca_characters(
         assert len(i) == k
     lca_vec = [0] * len(vecs[0])
     for i in range(k):
-        if np.all(
-            np.array([vec[i] for vec in vecs], dtype=object)
-            == missing_state_indicator
-        ):
+        if np.all(np.array([vec[i] for vec in vecs], dtype=object) == missing_state_indicator):
             lca_vec[i] = missing_state_indicator
         else:
-            all_states = [
-                vec[i] for vec in vecs if vec[i] != missing_state_indicator
-            ]
+            all_states = [vec[i] for vec in vecs if vec[i] != missing_state_indicator]
 
             # this check is specifically if all_states consists of a single
             # ambiguous state.
@@ -69,16 +64,11 @@ def get_lca_characters(
                 else:
                     lca_vec[i] = all_states[0]
             else:
-                all_ambiguous = np.all(
-                    [is_ambiguous_state(s) for s in all_states]
-                )
+                all_ambiguous = np.all([is_ambiguous_state(s) for s in all_states])
                 chars = set.intersection(
                     *map(
                         set,
-                        [
-                            state if is_ambiguous_state(state) else [state]
-                            for state in all_states
-                        ],
+                        [state if is_ambiguous_state(state) else [state] for state in all_states],
                     )
                 )
                 if len(chars) == 1:
@@ -167,9 +157,7 @@ def to_newick(
             if is_leaf
             else (
                 "("
-                + ",".join(
-                    _to_newick_str(g, child) for child in g.successors(node)
-                )
+                + ",".join(_to_newick_str(g, child) for child in g.successors(node))
                 + ")"
                 + name_string
                 + weight_string
@@ -207,17 +195,13 @@ def compute_dissimilarity_map(
         A dissimilarity mapping as a flattened array.
     """
     # check to see if any ambiguous characters are present
-    ambiguous_present = np.any(
-        [(cm[:, i].dtype == "object") for i in range(cm.shape[1])]
-    )
+    ambiguous_present = np.any([(cm[:, i].dtype == "object") for i in range(cm.shape[1])])
 
     # Try to numbaize the dissimilarity function, but fallback to python
     numbaize = True
     try:
         if not ambiguous_present:
-            dissimilarity_func = numba.jit(
-                dissimilarity_function, nopython=True
-            )
+            dissimilarity_func = numba.jit(dissimilarity_function, nopython=True)
         else:
             dissimilarity_func = numba.jit(
                 dissimilarity_function,
@@ -232,7 +216,8 @@ def compute_dissimilarity_map(
     except TypeError:
         warnings.warn(
             "Failed to numbaize dissimilarity function. Falling back to Python.",
-            CassiopeiaTreeWarning, stacklevel=2,
+            CassiopeiaTreeWarning,
+            stacklevel=2,
         )
         numbaize = False
         dissimilarity_func = dissimilarity_function
@@ -240,10 +225,7 @@ def compute_dissimilarity_map(
     if threads > 1:
         dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
         k, m = divmod(len(dm), threads)
-        batches = [
-            np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)]
-            for i in range(threads)
-        ]
+        batches = [np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(threads)]
 
         # load character matrix into shared memory
         shm = shared_memory.SharedMemory(create=True, size=cm.nbytes)
@@ -335,9 +317,7 @@ def __compute_dissimilarity_map_wrapper(
     )
     if weights:
         for k, v in weights.items():
-            nb_char_weights = numba.typed.Dict.empty(
-                numba.types.int64, numba.types.float64
-            )
+            nb_char_weights = numba.typed.Dict.empty(numba.types.int64, numba.types.float64)
             for state, prior in v.items():
                 nb_char_weights[state] = prior
             nb_weights[k] = nb_char_weights
@@ -358,9 +338,7 @@ def __compute_dissimilarity_map_wrapper(
             j = int(index + i * (b + i + 2) / 2 + 1)
             s1 = cm[i, :]
             s2 = cm[j, :]
-            batch_results[k] = dissimilarity_func(
-                s1, s2, missing_state_indicator, nb_weights
-            )
+            batch_results[k] = dissimilarity_func(s1, s2, missing_state_indicator, nb_weights)
             k += 1
         return batch_indices, batch_results
 
@@ -369,9 +347,7 @@ def __compute_dissimilarity_map_wrapper(
         warnings.simplefilter("ignore", category=numba.NumbaWarning)
 
         if not ambiguous_present:
-            _compute_dissimilarity_map = numba.jit(
-                _compute_dissimilarity_map, nopython=numbaize
-            )
+            _compute_dissimilarity_map = numba.jit(_compute_dissimilarity_map, nopython=numbaize)
         else:
             _compute_dissimilarity_map = numba.jit(
                 _compute_dissimilarity_map,
@@ -422,12 +398,8 @@ def sample_bootstrap_character_matrices(
         else:
             sampled_cut_sites = np.random.choice(M, M, replace=True)
 
-        bootstrapped_character_matrix = character_matrix.iloc[
-            :, sampled_cut_sites
-        ]
-        bootstrapped_character_matrix.columns = [
-            f"random_character{i}" for i in range(M)
-        ]
+        bootstrapped_character_matrix = character_matrix.iloc[:, sampled_cut_sites]
+        bootstrapped_character_matrix.columns = [f"random_character{i}" for i in range(M)]
 
         new_priors = {}
         if prior_probabilities:
@@ -478,15 +450,9 @@ def sample_bootstrap_allele_tables(
             state to indel mapping, bootstrapped intBC set)
     """
     if cut_sites is None:
-        cut_sites = preprocessing_utilities.get_default_cut_site_columns(
-            allele_table
-        )
+        cut_sites = preprocessing_utilities.get_default_cut_site_columns(allele_table)
 
-    lineage_profile = (
-        preprocessing_utilities.convert_alleletable_to_lineage_profile(
-            allele_table, cut_sites
-        )
-    )
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(allele_table, cut_sites)
 
     intbcs = allele_table["intBC"].unique()
     M = len(intbcs)
@@ -500,10 +466,7 @@ def sample_bootstrap_allele_tables(
             sampled_intbcs = np.random.choice(intbcs, M, replace=True)
 
         bootstrap_intbcs = sum(
-            [
-                [intbc + f"_{cut_site}" for cut_site in cut_sites]
-                for intbc in sampled_intbcs
-            ],
+            [[intbc + f"_{cut_site}" for cut_site in cut_sites] for intbc in sampled_intbcs],
             [],
         )
         b_sample = lineage_profile[bootstrap_intbcs]
@@ -512,9 +475,7 @@ def sample_bootstrap_allele_tables(
             bootstrapped_character_matrix,
             priors,
             state_to_indel,
-        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(
-            b_sample, indel_priors=indel_priors
-        )
+        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors=indel_priors)
 
         bootstrap_samples.append(
             (
@@ -544,9 +505,7 @@ def resolve_most_abundant(state: tuple[int, ...]) -> int:
         Selected state as a single integer
     """
     most_common = collections.Counter(state).most_common()
-    return np.random.choice(
-        [state for state, count in most_common if count == most_common[0][1]]
-    )
+    return np.random.choice([state for state, count in most_common if count == most_common[0][1]])
 
 
 def compute_phylogenetic_weight_matrix(
@@ -590,9 +549,7 @@ def compute_phylogenetic_weight_matrix(
 
 
 @numba.jit(nopython=True)
-def net_relatedness_index(
-    dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
-) -> float:
+def net_relatedness_index(dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array) -> float:
     """Computes the net relatedness index between indices.
 
     Using the dissimilarity map specified and the indices of samples, compute
@@ -658,17 +615,11 @@ def compute_inter_cluster_distances(
     if not pd.api.types.is_string_dtype(meta_data):
         raise CassiopeiaError("Meta data must be categorical or a string.")
 
-    D = (
-        compute_phylogenetic_weight_matrix(tree)
-        if (dissimilarity_map is None)
-        else dissimilarity_map
-    )
+    D = compute_phylogenetic_weight_matrix(tree) if (dissimilarity_map is None) else dissimilarity_map
 
     unique_states = meta_data.unique()
     K = len(unique_states)
-    inter_cluster_distances = pd.DataFrame(
-        np.zeros((K, K)), index=unique_states, columns=unique_states
-    )
+    inter_cluster_distances = pd.DataFrame(np.zeros((K, K)), index=unique_states, columns=unique_states)
 
     # align distance matrix and meta_data
     D = D.loc[meta_data.index.values, meta_data.index.values]
@@ -678,9 +629,7 @@ def compute_inter_cluster_distances(
         for state2 in unique_states:
             indices_2 = np.where(np.array(meta_data) == state2)[0]
 
-            distance = distance_function(
-                D.values, indices_1, indices_2, **kwargs
-            )
+            distance = distance_function(D.values, indices_1, indices_2, **kwargs)
             inter_cluster_distances.loc[state1, state2] = distance
 
     return inter_cluster_distances

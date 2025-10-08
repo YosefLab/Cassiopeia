@@ -2,6 +2,7 @@
 This file stores functions for scoring metrics on a tree.
 Currently, we'll support parsimony and likelihood calculations.
 """
+
 from collections.abc import Callable
 
 import numpy as np
@@ -79,9 +80,7 @@ def calculate_parsimony(
                     " setting infer_ancestral_characters=True."
                 )
 
-        parsimony += len(
-            tree.get_mutations_along_edge(u, v, treat_missing_as_mutation)
-        )
+        parsimony += len(tree.get_mutations_along_edge(u, v, treat_missing_as_mutation))
 
     return parsimony
 
@@ -144,9 +143,9 @@ def log_transition_probability(
             return np.log(1 - missing_probability_function_of_time(t))
     elif s_ == 0:
         if s == 0:
-            return np.log(
-                1 - mutation_probability_function_of_time(t)
-            ) + np.log(1 - missing_probability_function_of_time(t))
+            return np.log(1 - mutation_probability_function_of_time(t)) + np.log(
+                1 - missing_probability_function_of_time(t)
+            )
         else:
             # The transition from "&" to a non-missing state cannot occur
             return -1e16
@@ -252,9 +251,7 @@ def log_likelihood_of_character(
             possible_states = [state_at_n[character]]
         else:
             child_possible_states = []
-            for c in [
-                set(likelihoods_at_nodes[child]) for child in tree.children(n)
-            ]:
+            for c in [set(likelihoods_at_nodes[child]) for child in tree.children(n)]:
                 if tree.missing_state_indicator not in c and "&" not in c:
                     child_possible_states.append(c)
             # "&" stands in for any non-missing state (including uncut), and
@@ -299,28 +296,16 @@ def log_likelihood_of_character(
                     # Here we take into account the probability of
                     # stochastic missing data
                     if tree.is_leaf(child):
-                        if (
-                            s_ == tree.missing_state_indicator
-                            and s != tree.missing_state_indicator
-                        ):
+                        if s_ == tree.missing_state_indicator and s != tree.missing_state_indicator:
                             likelihood_s_ = np.log(
                                 np.exp(likelihood_s_)
-                                + (
-                                    1
-                                    - missing_probability_function_of_time(
-                                        tree.get_branch_length(n, child)
-                                    )
-                                )
+                                + (1 - missing_probability_function_of_time(tree.get_branch_length(n, child)))
                                 * stochastic_missing_probability
                             )
                         if s_ != tree.missing_state_indicator:
-                            likelihood_s_ += np.log(
-                                1 - stochastic_missing_probability
-                            )
+                            likelihood_s_ += np.log(1 - stochastic_missing_probability)
                     likelihoods_for_s_marginalize_over_s_.append(likelihood_s_)
-                likelihood_for_s += scipy.special.logsumexp(
-                    np.array(likelihoods_for_s_marginalize_over_s_)
-                )
+                likelihood_for_s += scipy.special.logsumexp(np.array(likelihoods_for_s_marginalize_over_s_))
             likelihoods_per_state_at_n[s] = likelihood_for_s
 
         likelihoods_at_nodes[n] = likelihoods_per_state_at_n
@@ -335,7 +320,6 @@ def log_likelihood_of_character(
         # `implicit_root_branch_length`. Otherwise, we just use the existing
         # root with a singleton child as the implicit root
         if len(tree.children(tree.root)) != 1:
-
             likelihood_contribution_from_each_root_state = [
                 log_transition_probability(
                     tree,
@@ -349,9 +333,7 @@ def log_likelihood_of_character(
                 + likelihoods_at_nodes[tree.root][s_]
                 for s_ in likelihoods_at_nodes[tree.root]
             ]
-            likelihood_at_implicit_root = scipy.special.logsumexp(
-                likelihood_contribution_from_each_root_state
-            )
+            likelihood_at_implicit_root = scipy.special.logsumexp(likelihood_contribution_from_each_root_state)
 
             return likelihood_at_implicit_root
 
@@ -416,10 +398,7 @@ def get_lineage_tracing_parameters(
         )
     else:
         mutation_rate = tree.parameters["mutation_rate"]
-    if not (
-        "stochastic_missing_probability" in tree.parameters
-        and "heritable_missing_rate" in tree.parameters
-    ):
+    if not ("stochastic_missing_probability" in tree.parameters and "heritable_missing_rate" in tree.parameters):
         (
             stochastic_missing_probability,
             heritable_missing_rate,
@@ -430,9 +409,7 @@ def get_lineage_tracing_parameters(
             layer=layer,
         )
     else:
-        stochastic_missing_probability = tree.parameters[
-            "stochastic_missing_probability"
-        ]
+        stochastic_missing_probability = tree.parameters["stochastic_missing_probability"]
         heritable_missing_rate = tree.parameters["heritable_missing_rate"]
 
     # We check that the mutation and missing rates have valid values
@@ -443,9 +420,7 @@ def get_lineage_tracing_parameters(
     if heritable_missing_rate < 0:
         raise TreeMetricError("Heritable missing data rate must be > 0.")
     if not continuous and heritable_missing_rate > 1:
-        raise TreeMetricError(
-            "Per-generation heritable missing data rate must be < 1."
-        )
+        raise TreeMetricError("Per-generation heritable missing data rate must be < 1.")
     if stochastic_missing_probability < 0:
         raise TreeMetricError("Stochastic missing data rate must be > 0.")
     if stochastic_missing_probability > 1:
@@ -496,10 +471,7 @@ def calculate_likelihood_discrete(
             annotations are missing at a node.
     """
     if tree.priors is None:
-        raise TreeMetricError(
-            "Priors must be specified for this tree to calculate the"
-            " likelihood."
-        )
+        raise TreeMetricError("Priors must be specified for this tree to calculate the likelihood.")
 
     for l in tree.leaves:
         if tree.get_character_states(l) == []:
@@ -593,10 +565,7 @@ def calculate_likelihood_continuous(
             state annotations are missing at a node.
     """
     if tree.priors is None:
-        raise TreeMetricError(
-            "Priors must be specified for this tree to calculate the"
-            " likelihood."
-        )
+        raise TreeMetricError("Priors must be specified for this tree to calculate the likelihood.")
 
     for l in tree.leaves:
         if tree.get_character_states(l) == []:
@@ -627,15 +596,9 @@ def calculate_likelihood_continuous(
         layer,
     )
 
-    mutation_probability_function_of_time = lambda t: 1 - np.exp(
-        -mutation_rate * t
-    )
-    missing_probability_function_of_time = lambda t: 1 - np.exp(
-        -heritable_missing_rate * t
-    )
-    implicit_root_branch_length = np.mean(
-        [tree.get_branch_length(u, v) for u, v in tree.edges]
-    )
+    mutation_probability_function_of_time = lambda t: 1 - np.exp(-mutation_rate * t)
+    missing_probability_function_of_time = lambda t: 1 - np.exp(-heritable_missing_rate * t)
+    implicit_root_branch_length = np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
 
     return np.sum(
         [

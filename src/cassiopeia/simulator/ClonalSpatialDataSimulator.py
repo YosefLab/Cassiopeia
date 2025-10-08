@@ -66,9 +66,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             )
 
         if (shape is None) == (space is None):
-            raise DataSimulatorError(
-                "Exactly one of `shape` or `space` must be provided."
-            )
+            raise DataSimulatorError("Exactly one of `shape` or `space` must be provided.")
         self.random_seed = random_seed
 
         if shape is not None:
@@ -111,9 +109,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             nx.add_path(G, path)
 
         for n1, n2 in G.edges:
-            G[n1][n2]["weight"] = spatial.distance.euclidean(
-                points[n1], points[n2]
-            )
+            G[n1][n2]["weight"] = spatial.distance.euclidean(points[n1], points[n2])
         return G
 
     @staticmethod
@@ -158,9 +154,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         )
 
     @staticmethod
-    def __split_graph(
-        G: nx.Graph, sizes: tuple[int, ...]
-    ) -> tuple[list[int], ...]:
+    def __split_graph(G: nx.Graph, sizes: tuple[int, ...]) -> tuple[list[int], ...]:
         """Generate a node partition of exact sizes.
 
         A set of seed nodes, the same size as the number of elements in `sizes`,
@@ -179,38 +173,25 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         if not nx.is_connected(G):
             raise DataSimulatorError("Graph is not connected.")
         if sum(sizes) != len(G.nodes):
-            raise DataSimulatorError(
-                f"Can not obtain node partition {sizes} for graph of "
-                "{len(G.nodes)} nodes."
-            )
+            raise DataSimulatorError(f"Can not obtain node partition {sizes} for graph of {{len(G.nodes)}} nodes.")
 
         # Find seeds
-        seeds = dict(
-            zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes, strict=False)
-        )
+        seeds = dict(zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes, strict=False))
 
         # Find minimum weighted paths from each seed to every node
-        seed_distances = {
-            seed: nx.single_source_dijkstra_path_length(G, seed)
-            for seed in seeds
-        }
+        seed_distances = {seed: nx.single_source_dijkstra_path_length(G, seed) for seed in seeds}
 
         # Assign each non-seed point.
         # We assign exactly the desired number of nodes to each seed by
         # iterating through a sorted list of all distances and assigning each
         # node one at a time.
         distance_seed_nodes = sorted(
-            (distance, seed, node)
-            for seed, distances in seed_distances.items()
-            for node, distance in distances.items()
+            (distance, seed, node) for seed, distances in seed_distances.items() for node, distance in distances.items()
         )
         assigned = set()
         assignments = {}
         for _, seed, node in distance_seed_nodes:
-            if (
-                node in assigned
-                or len(assignments.get(seed, [])) == seeds[seed]
-            ):
+            if node in assigned or len(assignments.get(seed, [])) == seeds[seed]:
                 continue
 
             assignments.setdefault(seed, []).append(node)
@@ -276,13 +257,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
             children = tree.children(node)
 
-            node_idx = np.array(
-                [
-                    i
-                    for i, assign in enumerate(point_assignments)
-                    if assign == node
-                ]
-            )
+            node_idx = np.array([i for i, assign in enumerate(point_assignments) if assign == node])
             node_points = points[node_idx]
             locations[node] = node_points.mean(axis=0)
             # The only requirement for this graph is that it must be connected.
@@ -296,19 +271,13 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
                 for i in node_idx[nodes]:
                     point_assignments[i] = child
         # Add leaf locations
-        locations.update(
-            {leaf: points[i] for i, leaf in enumerate(point_assignments)}
-        )
+        locations.update({leaf: points[i] for i, leaf in enumerate(point_assignments)})
 
         # Set node attributes
         for node, loc in locations.items():
             tree.set_attribute(node, attribute_key, tuple(loc))
         # Set cell meta
-        cell_meta = (
-            tree.cell_meta.copy()
-            if tree.cell_meta is not None
-            else pd.DataFrame(index=tree.leaves)
-        )
+        cell_meta = tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
         columns = [f"{attribute_key}_{i}" for i in range(self.dim)]
         cell_meta[columns] = np.nan
         for leaf in tree.leaves:

@@ -4,10 +4,11 @@ Abstract class DataSimulator, for overlaying data onto a CassiopeiaTree.
 All data simulators are derived classes of this abstract class, and at a minimum
 implement a method called `overlay_data`.
 """
+
 import abc
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import DataSimulatorError
+from cassiopeia.mixins import DataSimulatorError  # noqa: F401
 
 
 class DataSimulator(abc.ABC):

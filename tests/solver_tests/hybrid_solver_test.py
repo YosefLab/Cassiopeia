@@ -1,14 +1,16 @@
 """
 Test HybridSolver in Cassiopeia.solver.
 """
+
 import itertools
 import os
 import pathlib as pl
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.solver import solver_utilities
 
 GUROBI_INSTALLED = True
@@ -42,7 +44,6 @@ class TestHybridSolver(unittest.TestCase):
             raise AssertionError(f"File does not exist: {str(path)}")
 
     def setUp(self):
-
         # basic PP example with no missing data
         cm = pd.DataFrame.from_dict(
             {
@@ -91,30 +92,20 @@ class TestHybridSolver(unittest.TestCase):
         self.logfile = os.path.join(self.dir_path, "test.log")
 
         self.pp_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        self.large_tree = cas.data.CassiopeiaTree(
-            cm_large, missing_state_indicator=-1
-        )
-        self.missing_tree = cas.data.CassiopeiaTree(
-            cm_missing, missing_state_indicator=-1
-        )
+        self.large_tree = cas.data.CassiopeiaTree(cm_large, missing_state_indicator=-1)
+        self.missing_tree = cas.data.CassiopeiaTree(cm_missing, missing_state_indicator=-1)
 
         ## smaller hybrid solver
         ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
         greedy_solver = cas.solver.VanillaGreedySolver()
-        self.hybrid_pp_solver = cas.solver.HybridSolver(
-            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
-        )
+        self.hybrid_pp_solver = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
 
         ## larger hybrid solver
-        self.hybrid_pp_solver_large = cas.solver.HybridSolver(
-            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
-        )
+        self.hybrid_pp_solver_large = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
 
         ## hybrid solver with missing data
-        self.hybrid_pp_solver_missing = cas.solver.HybridSolver(
-            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
-        )
+        self.hybrid_pp_solver_missing = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
 
         ## hybrid solver with MaxCut Greedy
         greedy_maxcut_solver = cas.solver.MaxCutGreedySolver()
@@ -123,21 +114,16 @@ class TestHybridSolver(unittest.TestCase):
         )
 
         ## hybrid solver with Greedy on top and Maxcut on Bottom
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut = (
-            cas.solver.HybridSolver(
-                greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
-            )
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut = cas.solver.HybridSolver(
+            greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
         )
 
     def test_constructor(self):
-
         self.assertEqual(self.hybrid_pp_solver.cell_cutoff, 3)
         self.assertEqual(self.hybrid_pp_solver.lca_cutoff, None)
 
         # test bottom solver is populated correctly
-        self.assertEqual(
-            self.hybrid_pp_solver.bottom_solver.convergence_time_limit, 12600
-        )
+        self.assertEqual(self.hybrid_pp_solver.bottom_solver.convergence_time_limit, 12600)
         self.assertEqual(
             self.hybrid_pp_solver.bottom_solver.maximum_potential_graph_layer_size,
             10000,
@@ -162,19 +148,14 @@ class TestHybridSolver(unittest.TestCase):
         )
 
     def test_cutoff(self):
-
         character_matrix = self.pp_tree.character_matrix.copy()
         missing_state = self.pp_tree.missing_state_indicator
         self.assertTrue(
-            self.hybrid_pp_solver.assess_cutoff(
-                ["a", "b", "c"], character_matrix, missing_state
-            ),
+            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state),
             True,
         )
         self.assertFalse(
-            self.hybrid_pp_solver.assess_cutoff(
-                ["a", "b", "c", "d"], character_matrix, missing_state
-            ),
+            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c", "d"], character_matrix, missing_state),
             False,
         )
 
@@ -182,27 +163,16 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver.cell_cutoff = None
         self.hybrid_pp_solver.lca_cutoff = 2
 
-        self.assertTrue(
-            self.hybrid_pp_solver.assess_cutoff(
-                ["a", "b", "c"], character_matrix, missing_state
-            )
-        )
-        self.assertFalse(
-            self.hybrid_pp_solver.assess_cutoff(
-                ["c", "d"], character_matrix, missing_state
-            )
-        )
+        self.assertTrue(self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state))
+        self.assertFalse(self.hybrid_pp_solver.assess_cutoff(["c", "d"], character_matrix, missing_state))
 
     def test_top_down_split_manual(self):
-
         character_matrix = self.pp_tree.character_matrix.copy()
         # test manually
-        mutation_frequencies = (
-            self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
-                ["a", "b", "c", "d", "e"],
-                character_matrix,
-                self.pp_tree.missing_state_indicator,
-            )
+        mutation_frequencies = self.hybrid_pp_solver.top_solver.compute_mutation_frequencies(
+            ["a", "b", "c", "d", "e"],
+            character_matrix,
+            self.pp_tree.missing_state_indicator,
         )
 
         expected_dictionary = {
@@ -212,16 +182,13 @@ class TestHybridSolver(unittest.TestCase):
         }
         self.assertDictEqual(mutation_frequencies, expected_dictionary)
 
-        clades = self.hybrid_pp_solver.top_solver.perform_split(
-            character_matrix, ["a", "b", "c", "d", "e"]
-        )
+        clades = self.hybrid_pp_solver.top_solver.perform_split(character_matrix, ["a", "b", "c", "d", "e"])
 
         expected_split = (["a", "b", "c"], ["d", "e"])
         for expected_clade in expected_split:
             self.assertIn(expected_clade, clades)
 
     def test_apply_top_solver_small(self):
-
         character_matrix = self.pp_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
@@ -241,7 +208,6 @@ class TestHybridSolver(unittest.TestCase):
             self.assertIn(clade, observed_clades)
 
     def test_apply_top_solver_large(self):
-
         character_matrix = self.large_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
@@ -269,7 +235,6 @@ class TestHybridSolver(unittest.TestCase):
             self.assertIn(clade, observed_clades)
 
     def test_apply_top_solver_missing(self):
-
         character_matrix = self.missing_tree.character_matrix.copy()
         unique_character_matrix = character_matrix.drop_duplicates()
         names = solver_utilities.node_name_generator()
@@ -290,7 +255,6 @@ class TestHybridSolver(unittest.TestCase):
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid(self):
-
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
         tree = self.pp_tree.get_tree_topology()
 
@@ -317,9 +281,7 @@ class TestHybridSolver(unittest.TestCase):
         self.assertEqual(len(one_child), 0)
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
-        )
+        expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"])
         expected_tree.add_edges_from(
             [
                 ("root", "9"),
@@ -340,9 +302,7 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-        self.hybrid_pp_solver.solve(
-            self.pp_tree, logfile=self.logfile, collapse_mutationless_edges=True
-        )
+        self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile, collapse_mutationless_edges=True)
         tree = self.pp_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
@@ -354,7 +314,6 @@ class TestHybridSolver(unittest.TestCase):
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_single_thread(self):
-
         self.hybrid_pp_solver.threads = 1
         self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile)
 
@@ -383,9 +342,7 @@ class TestHybridSolver(unittest.TestCase):
         self.assertEqual(len(one_child), 0)
 
         expected_tree = nx.DiGraph()
-        expected_tree.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
-        )
+        expected_tree.add_nodes_from(["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"])
         expected_tree.add_edges_from(
             [
                 ("root", "9"),
@@ -411,17 +368,12 @@ class TestHybridSolver(unittest.TestCase):
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_large(self):
-
         self.hybrid_pp_solver_large.solve(self.large_tree, logfile=self.logfile)
         tree = self.large_tree.get_tree_topology()
 
         # make sure log files are created correctly
-        self.assertIsFile(
-            os.path.join(self.dir_path, "test-1.log")
-        )
-        self.assertIsFile(
-            os.path.join(self.dir_path, "test-7.log")
-        )
+        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
+        self.assertIsFile(os.path.join(self.dir_path, "test-7.log"))
 
         # make sure there's one root
         roots = [n for n in tree if tree.in_degree(n) == 0]
@@ -457,9 +409,7 @@ class TestHybridSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], 3
-        )
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
@@ -481,10 +431,7 @@ class TestHybridSolver(unittest.TestCase):
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_maxcut(self):
-
-        self.hybrid_pp_solver_maxcut.solve(
-            self.missing_tree, logfile=self.logfile
-        )
+        self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
         tree = self.missing_tree.get_tree_topology()
 
         # make sure log files are created correctly
@@ -524,17 +471,13 @@ class TestHybridSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3
-        )
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-        self.hybrid_pp_solver_maxcut.solve(
-            self.missing_tree, logfile=self.logfile
-        )
+        self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
         tree = self.missing_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
@@ -546,7 +489,6 @@ class TestHybridSolver(unittest.TestCase):
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_missing(self):
-
         self.hybrid_pp_solver_missing.solve(
             self.missing_tree,
             logfile=self.logfile,
@@ -591,19 +533,14 @@ class TestHybridSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3
-        )
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_greedy_over_greedy_maxcut_missing(self):
-
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(
-            self.missing_tree, collapse_mutationless_edges=True
-        )
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(self.missing_tree, collapse_mutationless_edges=True)
 
         tree = self.missing_tree.get_tree_topology()
 
@@ -637,9 +574,7 @@ class TestHybridSolver(unittest.TestCase):
             ]
         )
 
-        triplets = itertools.combinations(
-            ["a", "b", "c", "d", "e", "f", "g", "h"], 3
-        )
+        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
@@ -649,7 +584,6 @@ class TestHybridSolver(unittest.TestCase):
         self.missing_tree.get_newick()
 
     def tearDown(self):
-
         for _file in os.listdir(self.dir_path):
             if ".log" in _file:
                 os.remove(os.path.join(self.dir_path, _file))

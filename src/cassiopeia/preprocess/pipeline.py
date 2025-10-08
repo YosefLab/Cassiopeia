@@ -3,6 +3,7 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
+
 import os
 import warnings
 from functools import partial
@@ -84,9 +85,7 @@ def convert_fastqs_to_unmapped_bam(
     chemistry = ngs.chemistry.get_chemistry(chemistry)
 
     logger.info(f"Using {chemistry} chemistry.")
-    bam_fp = os.path.join(
-        output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam"
-    )
+    bam_fp = os.path.join(output_directory, f"{name}_unmapped.bam" if name else "unmapped.bam")
     ngs.fastq.fastqs_to_bam_with_chemistry(
         fastq_fps,
         chemistry,
@@ -129,14 +128,9 @@ def filter_bam(
         # False means this read will be filtered out
         filter_bool = all(
             q >= quality_threshold
-            for q in pysam.qualitystring_to_array(
-                aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
-            )
+            for q in pysam.qualitystring_to_array(aln.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"]))
         ) and all(
-            q >= quality_threshold
-            for q in pysam.qualitystring_to_array(
-                aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"])
-            )
+            q >= quality_threshold for q in pysam.qualitystring_to_array(aln.get_tag(BAM_CONSTANTS["UMI_QUALITY_TAG"]))
         )
         nonlocal n_filtered
         n_filtered += not filter_bool
@@ -194,22 +188,16 @@ def error_correct_cellbcs_to_whitelist(
         whitelist_set = set(whitelist)
     else:
         with open(whitelist) as f:
-            whitelist_set = {
-                line.strip() for line in f if not line.isspace()
-            }
+            whitelist_set = {line.strip() for line in f if not line.isspace()}
     whitelist = list(whitelist_set)
 
     # Extract all raw barcodes and their qualities
     barcodes = []
     qualities = []
-    with pysam.AlignmentFile(
-        bam_fp, "rb", check_sq=False, threads=n_threads
-    ) as f:
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False, threads=n_threads) as f:
         for read in f:
             barcodes.append(read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_TAG"]))
-            qualities.append(
-                read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"])
-            )
+            qualities.append(read.get_tag(BAM_CONSTANTS["RAW_CELL_BC_QUALITY_TAG"]))
     logger.info(f"Detected {len(set(barcodes))} raw barcodes.")
 
     # Correct
@@ -220,12 +208,8 @@ def error_correct_cellbcs_to_whitelist(
     # Write corrected BAM
     prefix, ext = os.path.splitext(os.path.basename(bam_fp))
     corrected_fp = os.path.join(output_directory, f"{prefix}_corrected{ext}")
-    with pysam.AlignmentFile(
-        bam_fp, "rb", check_sq=False, threads=n_threads
-    ) as f_in:
-        with pysam.AlignmentFile(
-            corrected_fp, "wb", template=f_in, threads=n_threads
-        ) as f_out:
+    with pysam.AlignmentFile(bam_fp, "rb", check_sq=False, threads=n_threads) as f_in:
+        with pysam.AlignmentFile(corrected_fp, "wb", template=f_in, threads=n_threads) as f_out:
             for i, read in enumerate(f_in):
                 if corrections[i]:
                     read.set_tag(BAM_CONSTANTS["CELL_BC_TAG"], corrections[i])
@@ -280,12 +264,7 @@ def collapse_umis(
     # have to exist currently in the output directory
     if output_directory[-1] == "/":
         output_directory = output_directory[:-1]
-    sorted_file_name = Path(
-        output_directory
-        + "/"
-        + ".".join(bam_fp.split("/")[-1].split(".")[:-1])
-        + "_sorted.bam"
-    )
+    sorted_file_name = Path(output_directory + "/" + ".".join(bam_fp.split("/")[-1].split(".")[:-1]) + "_sorted.bam")
 
     cell_bc_tag = UMI_utils.detect_cell_bc_tag(bam_fp)
     logger.info(f"Using BAM tag `{cell_bc_tag}` as cell barcodes")
@@ -388,7 +367,6 @@ def resolve_umi_sequence(
         total=len(unique_pairs.size()),
         desc="Resolving UMI sequences",
     ):
-
         # base case - only one sequence
         if group.shape[0] == 1:
             good_readName = group["readName"].iloc[0]
@@ -398,9 +376,7 @@ def resolve_umi_sequence(
 
         # more commonly - many sequences for a given UMI
         else:
-            group_sort = group.sort_values(
-                "readCount", ascending=False, ignore_index=True
-            )
+            group_sort = group.sort_values("readCount", ascending=False, ignore_index=True)
             good_readName = group_sort["readName"].iloc[0]
 
             # keep the first entry (highest readCount)
@@ -433,9 +409,7 @@ def resolve_umi_sequence(
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Total vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory, "total_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory, "total_vs_top_reads_pickSeq.png"))
         plt.close()
 
         plt.figure(figsize=(14, 10))
@@ -443,9 +417,7 @@ def resolve_umi_sequence(
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
         plt.title("Second Best vs. Top Reads for Picked Sequence")
-        plt.savefig(
-            os.path.join(output_directory, "second_vs_top_reads_pickSeq.png")
-        )
+        plt.savefig(os.path.join(output_directory, "second_vs_top_reads_pickSeq.png"))
         plt.close()
 
     filt_molecule_table = utilities.filter_cells(
@@ -501,16 +473,13 @@ def align_sequences(
             provided, or if the `method` is not either "local" or "global".
     """
     if (ref is None) == (ref_filepath is None):
-        raise PreprocessError(
-            "Either `ref_filepath` or `ref` must be provided."
-        )
+        raise PreprocessError("Either `ref_filepath` or `ref` must be provided.")
     if method == "local":
         align = alignment_utilities.align_local
     elif method == "global":
         align = alignment_utilities.align_global
     else:
         raise PreprocessError("`method` must be either 'local' or 'global'.")
-
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
@@ -530,7 +499,8 @@ def align_sequences(
             n_jobs=n_threads,
             total=len(all_sequences),
             desc="Aligning sequences to reference",
-        )(delayed(align_partial)(ref, seq) for seq in all_sequences), strict=False,
+        )(delayed(align_partial)(ref, seq) for seq in all_sequences),
+        strict=False,
     ):
         alignments.append(aln)
     alignment_table = pd.DataFrame(
@@ -593,9 +563,7 @@ def call_alleles(
     if cutsite_locations is None:
         cutsite_locations = [112, 166, 220]
     if (ref is None) == (ref_filepath is None):
-        raise PreprocessError(
-            "Either `ref_filepath` or `ref` must be provided."
-        )
+        raise PreprocessError("Either `ref_filepath` or `ref` must be provided.")
 
     alignment_to_indel = {}
     alignment_to_intBC = {}
@@ -608,7 +576,6 @@ def call_alleles(
         total=alignments.shape[0],
         desc="Parsing CIGAR strings into indels",
     ):
-
         intBC, indels = alignment_utilities.parse_cigar(
             row.CIGAR,
             row.Seq,
@@ -631,9 +598,7 @@ def call_alleles(
         columns=[f"r{i}" for i in range(1, len(cutsite_locations) + 1)],
     )
 
-    indel_df["allele"] = indel_df.apply(
-        lambda x: "".join([str(i) for i in x.values]), axis=1
-    )
+    indel_df["allele"] = indel_df.apply(lambda x: "".join([str(i) for i in x.values]), axis=1)
     indel_df["intBC"] = indel_df.index.map(alignment_to_intBC)
 
     alignments.set_index("readName", inplace=True)
@@ -650,7 +615,8 @@ def call_alleles(
             " consider re-running align_sequences with a"
             " lower gap-open penalty, or using a separate"
             " alignment strategy.",
-            PreprocessWarning, stacklevel=2,
+            PreprocessWarning,
+            stacklevel=2,
         )
 
     return alignments
@@ -685,9 +651,7 @@ def error_correct_intbcs_to_whitelist(
         whitelist_set = set(whitelist)
     else:
         with open(whitelist) as f:
-            whitelist_set = {
-                line.strip() for line in f if not line.isspace()
-            }
+            whitelist_set = {line.strip() for line in f if not line.isspace()}
     whitelist = list(whitelist_set)
     unique_intbcs = list(input_df["intBC"].unique())
     corrections = {intbc: intbc for intbc in whitelist_set}
@@ -747,19 +711,8 @@ def error_correct_umis(
     -------
         A DataFrame of error corrected UMIs.
     """
-    if (
-        len(
-            [
-                i
-                for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size()
-                if i > 1
-            ]
-        )
-        != 0
-    ):
-        raise PreprocessError(
-            "Non-unique cellBC-UMI pair exists, please resolve UMIs."
-        )
+    if len([i for i in input_df.groupby(["cellBC", "intBC", "UMI"]).size() if i > 1]) != 0:
+        raise PreprocessError("Non-unique cellBC-UMI pair exists, please resolve UMIs.")
 
     sorted_df = input_df.sort_values(
         ["cellBC", "intBC", "readCount", "UMI"],
@@ -767,9 +720,7 @@ def error_correct_umis(
     )
 
     if max_umi_distance == 0:
-        logger.info(
-            "Distance of 0, no correction occurred, all alignments returned"
-        )
+        logger.info("Distance of 0, no correction occurred, all alignments returned")
         return sorted_df
 
     num_corrected = 0
@@ -785,22 +736,14 @@ def error_correct_umis(
     alignment_dfs = []
     for allele_group, num_corr in ngs.utils.ParallelWithProgress(
         n_jobs=n_threads, total=len(allele_groups), desc="Error-correcting UMIs"
-    )(
-        delayed(UMI_utils.correct_umis_in_group)(allele_group, max_umi_distance)
-        for _, allele_group in allele_groups
-    ):
+    )(delayed(UMI_utils.correct_umis_in_group)(allele_group, max_umi_distance) for _, allele_group in allele_groups):
         num_corrected += num_corr
 
         alignment_dfs.append(allele_group)
     alignment_df = pd.concat(alignment_dfs, sort=True)
-    logger.info(
-        f"{num_corrected} UMIs Corrected of {total}"
-        + f"({round(float(num_corrected) / total, 5) * 100}%)"
-    )
+    logger.info(f"{num_corrected} UMIs Corrected of {total}" + f"({round(float(num_corrected) / total, 5) * 100}%)")
 
-    alignment_df["readName"] = alignment_df.apply(
-        lambda x: "_".join([x.cellBC, x.UMI, str(int(x.readCount))]), axis=1
-    )
+    alignment_df["readName"] = alignment_df.apply(lambda x: "_".join([x.cellBC, x.UMI, str(int(x.readCount))]), axis=1)
 
     alignment_df.set_index("readName", inplace=True)
     alignment_df.reset_index(inplace=True)
@@ -892,9 +835,7 @@ def filter_molecule_table(
         else:
             min_reads_per_umi = 0
     logger.info(f"Filtering UMIs with less than {min_reads_per_umi} reads...")
-    filtered_df = utilities.filter_umis(
-        input_df, min_reads_per_umi=min_reads_per_umi
-    )
+    filtered_df = utilities.filter_umis(input_df, min_reads_per_umi=min_reads_per_umi)
     if plot:
         (
             rc_profile["Filtered_UMI"],
@@ -935,12 +876,8 @@ def filter_molecule_table(
         ) = utilities.record_stats(filtered_df)
 
     if doublet_threshold and not allow_allele_conflicts:
-        logger.info(
-            f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}..."
-        )
-        filtered_df = doublet_utils.filter_intra_doublets(
-            filtered_df, prop=doublet_threshold
-        )
+        logger.info(f"Filtering out intra-lineage group doublets with proportion {doublet_threshold}...")
+        filtered_df = doublet_utils.filter_intra_doublets(filtered_df, prop=doublet_threshold)
 
     if not allow_allele_conflicts:
         logger.info("Mapping remaining intBC conflicts...")
@@ -969,9 +906,7 @@ def filter_molecule_table(
         # Plot Read Per UMI Histogram
         plt.figure(figsize=(14, 10))
         for n in stages:
-            plt.hist(
-                rc_profile[n], label=n, histtype="step", log=True, bins=200
-            )
+            plt.hist(rc_profile[n], label=n, histtype="step", log=True, bins=200)
         plt.legend()
         plt.ylabel("Frequency")
         plt.xlabel("Number of Reads")
@@ -993,9 +928,7 @@ def filter_molecule_table(
 
         plt.figure(figsize=(14, 10))
         for n in stages:
-            plt.hist(
-                upi_profile[n], label=n, histtype="step", log=True, bins=200
-            )
+            plt.hist(upi_profile[n], label=n, histtype="step", log=True, bins=200)
         plt.legend()
         plt.ylabel("Frequency")
         plt.xlabel("Number of UMIs")
@@ -1003,9 +936,7 @@ def filter_molecule_table(
         plt.savefig(os.path.join(output_directory, "umis_per_intbc.png"))
         plt.close()
 
-    logger.info(
-        f"Overall, filtered {cellBC_count} cells, with {filtered_df.shape[0]} UMIs."
-    )
+    logger.info(f"Overall, filtered {cellBC_count} cells, with {filtered_df.shape[0]} UMIs.")
 
     filtered_df.set_index("readName", inplace=True)
     filtered_df.reset_index(inplace=True)
@@ -1075,15 +1006,11 @@ def call_lineage_groups(
     -------
         None, saves output allele table to file.
     """
-    logger.info(
-        f"{input_df.shape[0]} UMIs (rows), with {input_df.shape[1]} attributes (columns)"
-    )
+    logger.info(f"{input_df.shape[0]} UMIs (rows), with {input_df.shape[1]} attributes (columns)")
     logger.info(str(len(input_df["cellBC"].unique())) + " Cells")
 
     # Create a pivot_table
-    piv = pd.pivot_table(
-        input_df, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
-    )
+    piv = pd.pivot_table(input_df, index="cellBC", columns="intBC", values="UMI", aggfunc="count")
     piv = piv.div(piv.sum(axis=1), axis=0)
 
     # Reorder piv columns by binarized intBC frequency
@@ -1104,40 +1031,22 @@ def call_lineage_groups(
     )
 
     logger.info("Refining lineage groups...")
-    logger.info(
-        "Redefining lineage groups by removing low proportion intBCs..."
-    )
-    master_LGs, master_intBCs = lineage_utils.filter_intbcs_lg_sets(
-        piv_assigned, min_intbc_thresh=min_intbc_thresh
-    )
+    logger.info("Redefining lineage groups by removing low proportion intBCs...")
+    master_LGs, master_intBCs = lineage_utils.filter_intbcs_lg_sets(piv_assigned, min_intbc_thresh=min_intbc_thresh)
 
     logger.info("Reassigning cells to refined lineage groups by kinship...")
-    kinship_scores = lineage_utils.score_lineage_kinships(
-        piv_assigned, master_LGs, master_intBCs
-    )
+    kinship_scores = lineage_utils.score_lineage_kinships(piv_assigned, master_LGs, master_intBCs)
 
     logger.info("Annotating alignment table with refined lineage groups...")
-    allele_table = lineage_utils.annotate_lineage_groups(
-        input_df, kinship_scores, master_intBCs
-    )
+    allele_table = lineage_utils.annotate_lineage_groups(input_df, kinship_scores, master_intBCs)
     if inter_doublet_threshold:
-        logger.info(
-            f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}..."
-        )
-        allele_table = doublet_utils.filter_inter_doublets(
-            allele_table, rule=inter_doublet_threshold
-        )
+        logger.info(f"Filtering out inter-lineage group doublets with proportion {inter_doublet_threshold}...")
+        allele_table = doublet_utils.filter_inter_doublets(allele_table, rule=inter_doublet_threshold)
 
-    logger.info(
-        "Filtering out low proportion intBCs in finalized lineage groups..."
-    )
-    filtered_lgs = lineage_utils.filter_intbcs_final_lineages(
-        allele_table, min_intbc_thresh=min_intbc_thresh
-    )
+    logger.info("Filtering out low proportion intBCs in finalized lineage groups...")
+    filtered_lgs = lineage_utils.filter_intbcs_final_lineages(allele_table, min_intbc_thresh=min_intbc_thresh)
 
-    allele_table = lineage_utils.filtered_lineage_group_to_allele_table(
-        filtered_lgs
-    )
+    allele_table = lineage_utils.filtered_lineage_group_to_allele_table(filtered_lgs)
 
     logger.debug("Final lineage group assignments:")
     for n, g in allele_table.groupby(["lineageGrp"]):
@@ -1164,13 +1073,9 @@ def call_lineage_groups(
         at_pivot_I[at_pivot_I > 0] = 1
 
         logger.info("Producing pivot table heatmap...")
-        lineage_utils.plot_overlap_heatmap(
-            allele_table, at_pivot_I, output_directory
-        )
+        lineage_utils.plot_overlap_heatmap(allele_table, at_pivot_I, output_directory)
 
         logger.info("Plotting filtered lineage group pivot table heatmap...")
-        lineage_utils.plot_overlap_heatmap_lg(
-            allele_table, at_pivot_I, output_directory
-        )
+        lineage_utils.plot_overlap_heatmap_lg(allele_table, at_pivot_I, output_directory)
 
     return allele_table

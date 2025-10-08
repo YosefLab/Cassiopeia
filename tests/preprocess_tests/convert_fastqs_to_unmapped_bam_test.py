@@ -1,12 +1,14 @@
 """
 Tests for converting FASTQs to an unmapped BAM in pipeline.py
 """
+
 import os
 import tempfile
 import unittest
 
 import ngs_tools as ngs
 import pysam
+
 from cassiopeia.preprocess import pipeline
 
 
@@ -45,21 +47,12 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             [al.query_name for al in alignments],
         )
         self.assertEqual(
-            [
-                read.sequence
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
+            [read.sequence for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
             [al.query_sequence for al in alignments],
         )
         self.assertEqual(
-            [
-                read.qualities.string
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
-            [
-                pysam.array_to_qualitystring(al.query_qualities)
-                for al in alignments
-            ],
+            [read.qualities.string for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
+            [pysam.array_to_qualitystring(al.query_qualities) for al in alignments],
         )
         self.assertEqual(
             {
@@ -84,9 +77,7 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
 
     def test_10xv2(self):
         # NOTE: using 10xv3 fastqs just for testing
-        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
-            self.fastq_10xv3_fps, "10xv2", tempfile.mkdtemp(), name="test"
-        )
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(self.fastq_10xv3_fps, "10xv2", tempfile.mkdtemp(), name="test")
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
         self.assertEqual(2, len(alignments))
@@ -98,21 +89,12 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             [al.query_name for al in alignments],
         )
         self.assertEqual(
-            [
-                read.sequence
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
+            [read.sequence for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
             [al.query_sequence for al in alignments],
         )
         self.assertEqual(
-            [
-                read.qualities.string
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
-            [
-                pysam.array_to_qualitystring(al.query_qualities)
-                for al in alignments
-            ],
+            [read.qualities.string for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
+            [pysam.array_to_qualitystring(al.query_qualities) for al in alignments],
         )
         self.assertEqual(
             {
@@ -136,9 +118,7 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
         )
 
     def test_10xv3(self):
-        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
-            self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test"
-        )
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test")
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
         self.assertEqual(2, len(alignments))
@@ -150,21 +130,12 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             [al.query_name for al in alignments],
         )
         self.assertEqual(
-            [
-                read.sequence
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
+            [read.sequence for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
             [al.query_sequence for al in alignments],
         )
         self.assertEqual(
-            [
-                read.qualities.string
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
-            [
-                pysam.array_to_qualitystring(al.query_qualities)
-                for al in alignments
-            ],
+            [read.qualities.string for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
+            [pysam.array_to_qualitystring(al.query_qualities) for al in alignments],
         )
         self.assertEqual(
             {
@@ -205,21 +176,12 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             [al.query_name for al in alignments],
         )
         self.assertEqual(
-            [
-                read.sequence
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
+            [read.sequence for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
             [al.query_sequence for al in alignments],
         )
         self.assertEqual(
-            [
-                read.qualities.string
-                for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])
-            ],
-            [
-                pysam.array_to_qualitystring(al.query_qualities)
-                for al in alignments
-            ],
+            [read.qualities.string for read in ngs.fastq.Fastq(self.fastq_10xv3_fps[1])],
+            [pysam.array_to_qualitystring(al.query_qualities) for al in alignments],
         )
         self.assertEqual(
             {
@@ -260,21 +222,12 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
             [al.query_name for al in alignments],
         )
         self.assertEqual(
-            [
-                read.sequence
-                for read in ngs.fastq.Fastq(self.fastq_slideseq2_fps[1])
-            ],
+            [read.sequence for read in ngs.fastq.Fastq(self.fastq_slideseq2_fps[1])],
             [al.query_sequence for al in alignments],
         )
         self.assertEqual(
-            [
-                read.qualities.string
-                for read in ngs.fastq.Fastq(self.fastq_slideseq2_fps[1])
-            ],
-            [
-                pysam.array_to_qualitystring(al.query_qualities)
-                for al in alignments
-            ],
+            [read.qualities.string for read in ngs.fastq.Fastq(self.fastq_slideseq2_fps[1])],
+            [pysam.array_to_qualitystring(al.query_qualities) for al in alignments],
         )
         self.assertEqual(
             {

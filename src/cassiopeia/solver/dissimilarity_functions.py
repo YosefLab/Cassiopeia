@@ -2,6 +2,7 @@
 A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
+
 import itertools
 from collections.abc import Callable
 
@@ -95,12 +96,7 @@ def hamming_similarity_without_missing(
     # TODO Optimize this using masks
     similarity = 0
     for i in range(len(s1)):
-        if (
-            s1[i] == missing_state_indicator
-            or s2[i] == missing_state_indicator
-            or s1[i] == 0
-            or s2[i] == 0
-        ):
+        if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator or s1[i] == 0 or s2[i] == 0:
             continue
 
         if s1[i] == s2[i]:
@@ -184,10 +180,7 @@ def hamming_distance(
     dist = 0
     for i in range(len(s1)):
         if s1[i] != s2[i]:
-            if (
-                s1[i] == missing_state_indicator
-                or s2[i] == missing_state_indicator
-            ) and ignore_missing_state:
+            if (s1[i] == missing_state_indicator or s2[i] == missing_state_indicator) and ignore_missing_state:
                 dist += 0
             else:
                 dist += 1
@@ -302,9 +295,7 @@ def exponential_negative_hamming_distance(
 
 
 def cluster_dissimilarity(
-    dissimilarity_function: Callable[
-        [list[int], list[int], int, dict[int, dict[int, float]]], float
-    ],
+    dissimilarity_function: Callable[[list[int], list[int], int, dict[int, dict[int, float]]], float],
     s1: list[int] | list[tuple[int, ...]],
     s2: list[int] | list[tuple[int, ...]],
     missing_state_indicator: int,
@@ -380,10 +371,7 @@ def cluster_dissimilarity(
         dissim = []
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
-            present.append(
-                _c1 != missing_state_indicator
-                and _c2 != missing_state_indicator
-            )
+            present.append(_c1 != missing_state_indicator and _c2 != missing_state_indicator)
             dissim.append(
                 dissimilarity_function(
                     [_c1],
@@ -465,16 +453,10 @@ def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
                 d = 0
 
                 total += 1
-                if (
-                    _c1 != missing_state_indicator
-                    and _c2 != missing_state_indicator
-                ):
+                if _c1 != missing_state_indicator and _c2 != missing_state_indicator:
                     present += 1
 
-                if (_c1 != _c2) and (
-                    _c1 != missing_state_indicator
-                    and _c2 != missing_state_indicator
-                ):
+                if (_c1 != _c2) and (_c1 != missing_state_indicator and _c2 != missing_state_indicator):
                     if _c1 == 0 or _c2 == 0:
                         if weights:
                             if _c1 != 0:

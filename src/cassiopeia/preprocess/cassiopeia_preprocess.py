@@ -9,6 +9,7 @@ relates cell barcodes and UMIs to sequences.
 
 TODO(mattjones315@): include invocation instructions & pipeline specifics.
 """
+
 import argparse
 import logging
 import os
@@ -36,12 +37,9 @@ STAGES = {
 @logger.namespaced("main")
 @utilities.log_runtime
 def main():
-
     # --------------- Create Argument Parser & Read in Arguments -------------- #
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "config", type=str, help="Specify a config file for analysis."
-    )
+    parser.add_argument("config", type=str, help="Specify a config file for analysis.")
 
     args = parser.parse_args()
 
@@ -76,16 +74,13 @@ def main():
     setup_utilities.setup(output_directory, verbose=verbose)
 
     # create pipeline plan
-    pipeline_stages = setup_utilities.create_pipeline(
-        entry_point, exit_point, STAGES
-    )
+    pipeline_stages = setup_utilities.create_pipeline(entry_point, exit_point, STAGES)
     if entry_point == "convert":
         data = data_filepaths
     else:
         if len(data_filepaths) != 1:
             raise PreprocessError(
-                "`input_files` must contain exactly one input file for pipeline "
-                f"stage `{entry_point}`"
+                f"`input_files` must contain exactly one input file for pipeline stage `{entry_point}`"
             )
 
         if entry_point in (
@@ -100,34 +95,19 @@ def main():
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
         # Skip barcode correction if whitelist was not provided
-        if (
-            stage == "error_correct_cellbcs_to_whitelist"
-            and not pipeline_parameters[stage].get("whitelist")
-        ):
-            logger.warning(
-                "Skipping barcode error correction because no whitelist was "
-                "provided in the configuration."
-            )
+        if stage == "error_correct_cellbcs_to_whitelist" and not pipeline_parameters[stage].get("whitelist"):
+            logger.warning("Skipping barcode error correction because no whitelist was provided in the configuration.")
             continue
         # Skip intBC correction to whitelist if whitelist was not provided
-        if (
-            stage == "error_correct_intbcs_to_whitelist"
-            and not pipeline_parameters[stage].get("whitelist")
-        ):
-            logger.warning(
-                "Skipping intBC error correction because no whitelist was "
-                "provided in the configuration."
-            )
+        if stage == "error_correct_intbcs_to_whitelist" and not pipeline_parameters[stage].get("whitelist"):
+            logger.warning("Skipping intBC error correction because no whitelist was provided in the configuration.")
             continue
 
         # If intBC correction was performed, don't correct in the
         # filter_molecule_table step
-        if stage == "filter_molecule_table" and pipeline_parameters[stage].get(
-            "whitelist"
-        ):
+        if stage == "filter_molecule_table" and pipeline_parameters[stage].get("whitelist"):
             logger.warning(
-                "intBC whitelist was provided. "
-                "Turning off intBC correction in `filter_molecule_table` stage."
+                "intBC whitelist was provided. Turning off intBC correction in `filter_molecule_table` stage."
             )
             pipeline_parameters[stage]["intbc_dist_thresh"] = -1
 

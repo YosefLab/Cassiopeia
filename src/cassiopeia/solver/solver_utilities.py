@@ -78,9 +78,7 @@ def transform_priors(
         "inverse",
         "square_root_inverse",
     ]:
-        raise PriorTransformationError(
-            "Please select one of the supported prior transformations."
-        )
+        raise PriorTransformationError("Please select one of the supported prior transformations.")
 
     prior_function = lambda x: -np.log(x)
 
@@ -95,17 +93,13 @@ def transform_priors(
         for state in priors[character]:
             p = priors[character][state]
             if p <= 0.0 or p > 1.0:
-                raise PriorTransformationError(
-                    "Please make sure all priors have a value between 0 and 1"
-                )
+                raise PriorTransformationError("Please make sure all priors have a value between 0 and 1")
             state_weights[state] = prior_function(p)
         weights[character] = state_weights
     return weights
 
 
-def convert_sample_names_to_indices(
-    names: list[str], samples: list[str]
-) -> list[int]:
+def convert_sample_names_to_indices(names: list[str], samples: list[str]) -> list[int]:
     """Maps samples to their integer indices in a given set of names.
 
     Used to map sample string names to the their integer positions in the index
@@ -125,9 +119,8 @@ def convert_sample_names_to_indices(
 
     return [name_to_index[x] for x in samples]
 
-def save_dissimilarity_as_phylip(
-        dissimilarity_map: pd.DataFrame, path: str
-    ) -> None:
+
+def save_dissimilarity_as_phylip(dissimilarity_map: pd.DataFrame, path: str) -> None:
     """Saves a dissimilarity map as a phylip file.
 
     Args:
@@ -143,6 +136,6 @@ def save_dissimilarity_as_phylip(
     with open(path, "w") as f:
         f.write(f"{n}\n")
         for i in range(n):
-            row = dissimilarity_np[i, :i+1]
-            formatted_values = '\t'.join(map('{:.4f}'.format, row))
+            row = dissimilarity_np[i, : i + 1]
+            formatted_values = "\t".join(map("{:.4f}".format, row))
             f.write(f"{dissimilarity_map.index[i]}\t{formatted_values}\n")

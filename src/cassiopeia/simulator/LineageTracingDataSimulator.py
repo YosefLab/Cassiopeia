@@ -4,6 +4,7 @@ LineageTracingDataSimulator. A LineageTracingDataSimulator overlays lineage
 tracing data onto a CassiopeiaTree, i.e. it sets the character states of a
 CassiopeiaTree (in particular, the character matrix).
 """
+
 import abc
 
 from cassiopeia.data import CassiopeiaTree

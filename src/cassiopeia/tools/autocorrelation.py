@@ -1,4 +1,5 @@
 """Utility file for computing autocorrelation statistics on trees."""
+
 from collections.abc import Callable
 
 import numpy as np
@@ -53,9 +54,7 @@ def compute_morans_i(
         Moran's I statistic
     """
     if X is None and meta_columns is None:
-        raise AutocorrelationError(
-            "Specify data for computing autocorrelations."
-        )
+        raise AutocorrelationError("Specify data for computing autocorrelations.")
 
     _X = None
     if meta_columns is not None:
@@ -64,35 +63,25 @@ def compute_morans_i(
     if X is not None:
         if len(np.intersect1d(tree.leaves, X.index)) != tree.n_cell:
             raise AutocorrelationError(
-                "Specified argument X must be a dataframe with identical"
-                " indices to the leaves of the CassiopeiaTree."
+                "Specified argument X must be a dataframe with identical indices to the leaves of the CassiopeiaTree."
             )
 
         _X = pd.concat([_X, X], axis=0)
 
     # check to make sure all values are numerical
-    if not np.all(
-        _X.apply(lambda s: pd.to_numeric(s, errors="coerce").notnull().all())
-    ):
-        raise AutocorrelationError(
-            "There are some columns that are not numeric in the specified data."
-        )
+    if not np.all(_X.apply(lambda s: pd.to_numeric(s, errors="coerce").notnull().all())):
+        raise AutocorrelationError("There are some columns that are not numeric in the specified data.")
 
     # cast to numeric
     _X = _X.apply(lambda s: pd.to_numeric(s, errors="coerce"))
 
     # instantiate the weight matrix if None is specified
     if W is None:
-        W = utilities.compute_phylogenetic_weight_matrix(
-            tree, inverse=True, inverse_fn=inverse_weight_fn
-        )
+        W = utilities.compute_phylogenetic_weight_matrix(tree, inverse=True, inverse_fn=inverse_weight_fn)
 
     # make sure that W has the correct indices
     if len(np.intersect1d(tree.leaves, W.index)) != tree.n_cell:
-            raise AutocorrelationError(
-                "Weight matrix does not have the same leaves as the tree."
-            )
-
+        raise AutocorrelationError("Weight matrix does not have the same leaves as the tree.")
 
     # normalize W to 1
     _W = W / W.sum().sum()

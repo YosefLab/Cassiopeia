@@ -21,9 +21,7 @@ class TestCompleteBinarySimulator(unittest.TestCase):
     def test_simulate_tree(self):
         tree = CompleteBinarySimulator(depth=2).simulate_tree()
 
-        self.assertEqual(
-            set(tree.nodes), {"0", "1", "2", "3", "4", "5", "6", "7"}
-        )
+        self.assertEqual(set(tree.nodes), {"0", "1", "2", "3", "4", "5", "6", "7"})
         self.assertEqual(set(tree.leaves), {"4", "5", "6", "7"})
         self.assertEqual(
             set(tree.edges),

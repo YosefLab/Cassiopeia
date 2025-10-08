@@ -1,12 +1,14 @@
 """
 Tests for the coupling estimators implemented in cassiopeia/tools/coupling.py
 """
+
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import CassiopeiaError
@@ -14,7 +16,6 @@ from cassiopeia.mixins import CassiopeiaError
 
 class TestDataUtilities(unittest.TestCase):
     def setUp(self) -> None:
-
         tree = nx.DiGraph()
         tree.add_edges_from(
             [
@@ -46,7 +47,6 @@ class TestDataUtilities(unittest.TestCase):
         self.tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
 
     def test_evolutionary_coupling_basic(self):
-
         random_state = np.random.RandomState(1231234)
 
         evolutionary_coupling = cas.tl.compute_evolutionary_coupling(
@@ -57,9 +57,7 @@ class TestDataUtilities(unittest.TestCase):
             number_of_shuffles=10,
         )
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            self.tree, meta_item="CellType"
-        )
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(self.tree, meta_item="CellType")
 
         # background computed with random seed set above and 10 shuffles
         # (state1, state2): (mean, sd)
@@ -81,13 +79,9 @@ class TestDataUtilities(unittest.TestCase):
                 mean = expected_summary_stats[(s1, s2)][0]
                 sd = expected_summary_stats[(s1, s2)][1]
 
-                expected_coupling.loc[s1, s2] = (
-                    inter_cluster_distances.loc[s1, s2] - mean
-                ) / sd
+                expected_coupling.loc[s1, s2] = (inter_cluster_distances.loc[s1, s2] - mean) / sd
 
-        pd.testing.assert_frame_equal(
-            expected_coupling, evolutionary_coupling, atol=0.001
-        )
+        pd.testing.assert_frame_equal(expected_coupling, evolutionary_coupling, atol=0.001)
 
         # make sure errors are raised for numerical data
         self.assertRaises(
@@ -98,7 +92,6 @@ class TestDataUtilities(unittest.TestCase):
         )
 
     def test_evolutionary_coupling_custom_dissimilarity_map(self):
-
         weight_matrix = pd.DataFrame.from_dict(
             {
                 "D": [0.0, 0.5, 1.2, 0.4, 0.5, 0.6],
@@ -147,16 +140,11 @@ class TestDataUtilities(unittest.TestCase):
                 mean = expected_summary_stats[(s1, s2)][0]
                 sd = expected_summary_stats[(s1, s2)][1]
 
-                expected_coupling.loc[s1, s2] = (
-                    inter_cluster_distances.loc[s1, s2] - mean
-                ) / sd
+                expected_coupling.loc[s1, s2] = (inter_cluster_distances.loc[s1, s2] - mean) / sd
 
-        pd.testing.assert_frame_equal(
-            expected_coupling, evolutionary_coupling, atol=0.001
-        )
+        pd.testing.assert_frame_equal(expected_coupling, evolutionary_coupling, atol=0.001)
 
     def test_evolutionary_coupling_minimum_proportion(self):
-
         self.tree.cell_meta.loc["J", "CellType"] = "TypeD"
 
         random_state = np.random.RandomState(1231234)
@@ -165,7 +153,7 @@ class TestDataUtilities(unittest.TestCase):
             self.tree,
             meta_variable="CellType",
             random_state=random_state,
-            minimum_proportion=1 / 6, # This will drop types C and D
+            minimum_proportion=1 / 6,  # This will drop types C and D
             number_of_shuffles=10,
         )
 
@@ -175,13 +163,9 @@ class TestDataUtilities(unittest.TestCase):
         self.assertCountEqual(expected_types, evolutionary_coupling.columns)
 
         # make sure couplings are correct
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
-            self.tree, meta_item="CellType"
-        )
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(self.tree, meta_item="CellType")
 
-        inter_cluster_distances = inter_cluster_distances.loc[
-            expected_types, expected_types
-        ]
+        inter_cluster_distances = inter_cluster_distances.loc[expected_types, expected_types]
 
         expected_summary_stats = {
             ("TypeB", "TypeB"): (1.4, 0.19999999999999998),
@@ -196,16 +180,10 @@ class TestDataUtilities(unittest.TestCase):
                 mean = expected_summary_stats[(s1, s2)][0]
                 sd = expected_summary_stats[(s1, s2)][1]
 
-                expected_coupling.loc[s1, s2] = (
-                    inter_cluster_distances.loc[s1, s2] - mean
-                ) / sd
+                expected_coupling.loc[s1, s2] = (inter_cluster_distances.loc[s1, s2] - mean) / sd
 
-        evolutionary_coupling = evolutionary_coupling.loc[
-            expected_types, expected_types
-        ]
-        pd.testing.assert_frame_equal(
-            expected_coupling, evolutionary_coupling, atol=0.001
-        )
+        evolutionary_coupling = evolutionary_coupling.loc[expected_types, expected_types]
+        pd.testing.assert_frame_equal(expected_coupling, evolutionary_coupling, atol=0.001)
 
 
 if __name__ == "__main__":

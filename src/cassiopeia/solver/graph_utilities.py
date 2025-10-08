@@ -2,6 +2,7 @@
 Utility functions for building connectivity and similarity graphs for the
 Graph-Based solvers.
 """
+
 import itertools
 from collections.abc import Callable
 
@@ -62,9 +63,7 @@ def construct_connectivity_graph(
     -------
         A connectivity graph constructed over the sample set
     """
-    sample_indices = solver_utilities.convert_sample_names_to_indices(
-        character_matrix.index, samples
-    )
+    sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
     character_array = character_matrix.to_numpy()
 
     k = character_matrix.shape[1]
@@ -79,9 +78,7 @@ def construct_connectivity_graph(
         for l in range(k):
             x = character_array[i, l]
             y = character_array[j, l]
-            if (
-                x != missing_state_indicator and y != missing_state_indicator
-            ) and (x != 0 or y != 0):
+            if (x != missing_state_indicator and y != missing_state_indicator) and (x != 0 or y != 0):
                 if weights is not None:
                     if x == y:
                         score -= (
@@ -90,46 +87,32 @@ def construct_connectivity_graph(
                             * (
                                 len(samples)
                                 - mutation_frequencies[l][x]
-                                - mutation_frequencies[l][
-                                    missing_state_indicator
-                                ]
+                                - mutation_frequencies[l][missing_state_indicator]
                             )
                         )
                     elif x == 0:
-                        score += weights[l][y] * (
+                        score += weights[l][y] * (mutation_frequencies[l][y] - 1)
+                    elif y == 0:
+                        score += weights[l][x] * (mutation_frequencies[l][x] - 1)
+                    else:
+                        score += weights[l][x] * (mutation_frequencies[l][x] - 1) + weights[l][y] * (
                             mutation_frequencies[l][y] - 1
                         )
-                    elif y == 0:
-                        score += weights[l][x] * (
-                            mutation_frequencies[l][x] - 1
-                        )
-                    else:
-                        score += weights[l][x] * (
-                            mutation_frequencies[l][x] - 1
-                        ) + weights[l][y] * (mutation_frequencies[l][y] - 1)
                 else:
                     if x == y:
                         score -= 3 * (
-                            len(samples)
-                            - mutation_frequencies[l][x]
-                            - mutation_frequencies[l][missing_state_indicator]
+                            len(samples) - mutation_frequencies[l][x] - mutation_frequencies[l][missing_state_indicator]
                         )
                     elif x == 0:
                         score += mutation_frequencies[l][y] - 1
                     elif y == 0:
                         score += mutation_frequencies[l][x] - 1
                     else:
-                        score += (
-                            mutation_frequencies[l][x]
-                            + mutation_frequencies[l][y]
-                            - 2
-                        )
+                        score += mutation_frequencies[l][x] + mutation_frequencies[l][y] - 2
         if score != 0:
             G.add_edge(i, j, weight=score)
 
-    G_names = nx.relabel_nodes(
-        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
-    )
+    G_names = nx.relabel_nodes(G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False)))
     return G_names
 
 
@@ -231,9 +214,7 @@ def construct_similarity_graph(
     -------
         A similarity graph constructed over the sample set
     """
-    sample_indices = solver_utilities.convert_sample_names_to_indices(
-        character_matrix.index, samples
-    )
+    sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
     character_array = character_matrix.to_numpy()
 
     G = nx.Graph()
@@ -264,9 +245,7 @@ def construct_similarity_graph(
         for edge in to_remove:
             G.remove_edge(edge[0], edge[1])
 
-    G_names = nx.relabel_nodes(
-        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
-    )
+    G_names = nx.relabel_nodes(G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False)))
     return G_names
 
 
@@ -317,45 +296,27 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
         else:
             # The improvement potential is the change to the weight ratio in
             # moving the node across the cut.
-            improvement_potentials[node] = (
-                numerator + delta_numerator[node]
-            ) / min(
+            improvement_potentials[node] = (numerator + delta_numerator[node]) / min(
                 weight_within_side + delta_denominator[node],
                 total_weight - weight_within_side - delta_denominator[node],
-            ) - numerator / min(
-                weight_within_side, total_weight - weight_within_side
-            )
+            ) - numerator / min(weight_within_side, total_weight - weight_within_side)
 
     delta_numerator = {}
     delta_denominator = {}
     improvement_potentials = {}
     new_cut = cut.copy()
     total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
-    numerator = sum(
-        [
-            G[e[0]][e[1]]["weight"]
-            for e in G.edges()
-            if check_if_cut(e[0], e[1], new_cut)
-        ]
-    )
-    weight_within_side = sum(
-        [sum([G[u][v]["weight"] for v in G.neighbors(u)]) for u in new_cut]
-    )
+    numerator = sum([G[e[0]][e[1]]["weight"] for e in G.edges() if check_if_cut(e[0], e[1], new_cut)])
+    weight_within_side = sum([sum([G[u][v]["weight"] for v in G.neighbors(u)]) for u in new_cut])
     if numerator == 0:
         return new_cut
 
     for node1 in G.nodes:
         # Annotate each node with the change to the weight across the cut and
         # the weight within a side of the cut
-        neighbor_weight = sum(
-            [G[node1][node2]["weight"] for node2 in G.neighbors(node1)]
-        )
+        neighbor_weight = sum([G[node1][node2]["weight"] for node2 in G.neighbors(node1)])
         cut_weight = sum(
-            [
-                G[node1][node2]["weight"]
-                for node2 in G.neighbors(node1)
-                if check_if_cut(node1, node2, new_cut)
-            ]
+            [G[node1][node2]["weight"] for node2 in G.neighbors(node1) if check_if_cut(node1, node2, new_cut)]
         )
         delta_numerator[node1] = neighbor_weight - 2 * cut_weight
         if node1 in new_cut:
@@ -372,9 +333,7 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
         # Negative potentials improve the cut
         best_potential = min(improvement_potentials.values())
         if best_potential < 0:
-            best_index = min(
-                improvement_potentials, key=improvement_potentials.get
-            )
+            best_index = min(improvement_potentials, key=improvement_potentials.get)
             numerator += delta_numerator[best_index]
             weight_within_side += delta_denominator[best_index]
             for i in G.neighbors(best_index):

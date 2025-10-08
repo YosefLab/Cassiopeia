@@ -2,24 +2,23 @@
 Test the spatial imputation workflow.
 """
 
-
 import unittest
 
 import anndata
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins import try_import
 from cassiopeia.spatial import spatial_utilities
 
 sq = try_import("squidpy")
-SQUIDPY_INSTALLED = (sq is not None)
+SQUIDPY_INSTALLED = sq is not None
 
 
 class TestSpatialImputation(unittest.TestCase):
     def setUp(self):
-
         coordinates = np.array(
             [
                 [0.0, 0.0],
@@ -34,11 +33,7 @@ class TestSpatialImputation(unittest.TestCase):
             ]
         )
 
-        adata = anndata.AnnData(
-            obs=pd.DataFrame(
-                index=[f"cell_{x}" for x in range(len(coordinates))]
-            )
-        )
+        adata = anndata.AnnData(obs=pd.DataFrame(index=[f"cell_{x}" for x in range(len(coordinates))]))
         adata.obsm["spatial"] = coordinates
 
         self.spatial_adata = adata
@@ -63,7 +58,6 @@ class TestSpatialImputation(unittest.TestCase):
             ("cell_7", "cell_8"),
         ]:
             self.spatial_graph_neigh3.add_edge(edge[0], edge[1])
-
 
         self.character_matrix = pd.DataFrame.from_dict(
             {
@@ -99,9 +93,7 @@ class TestSpatialImputation(unittest.TestCase):
     def test_anndata_to_graph_radius(self):
         """Tests the radius constructor of anndata to spatial graph."""
 
-        spatial_graph = cas.sp.get_spatial_graph_from_anndata(
-            self.spatial_adata, neighborhood_radius=10
-        )
+        spatial_graph = cas.sp.get_spatial_graph_from_anndata(self.spatial_adata, neighborhood_radius=10)
 
         expected_graph = nx.Graph()
         for edge in [
@@ -124,9 +116,7 @@ class TestSpatialImputation(unittest.TestCase):
     def test_anndata_to_graph_size(self):
         """Tests the radius constructor of anndata to spatial graph."""
 
-        spatial_graph = cas.sp.get_spatial_graph_from_anndata(
-            self.spatial_adata, neighborhood_size=3
-        )
+        spatial_graph = cas.sp.get_spatial_graph_from_anndata(self.spatial_adata, neighborhood_size=3)
 
         expected_graph = nx.Graph()
         for edge in [
@@ -157,7 +147,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(set(spatial_graph.edges), expected_edges)
 
     def test_impute_single_state_basic(self):
-
         cell = "cell_4"
         character = 0
 
@@ -183,7 +172,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(3, count)
 
     def test_impute_single_state_max_neighborhood_size(self):
-
         cell = "cell_5"
         character = 0
 
@@ -223,7 +211,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(2, count)
 
     def test_spatial_imputation_integration_simple_one_hop(self):
-
         imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             self.character_matrix_missing,
             self.spatial_adata,
@@ -238,7 +225,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_7", 2], 5)
 
     def test_spatial_imputation_integration_simple_min_concordance(self):
-
         imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             self.character_matrix_missing,
             self.spatial_adata,
@@ -254,7 +240,6 @@ class TestSpatialImputation(unittest.TestCase):
 
     @unittest.skipUnless(SQUIDPY_INSTALLED, "Squidpy not installed.")
     def test_spatial_imputation_integration_simple_neighborhood_radius(self):
-
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_8", 2] = 11
 
@@ -273,7 +258,6 @@ class TestSpatialImputation(unittest.TestCase):
 
     @unittest.skipUnless(SQUIDPY_INSTALLED, "Squidpy not installed.")
     def test_spatial_imputation_integration_size_over_radius(self):
-
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_5", 1] = -1
         character_matrix_missing2.loc["cell_6", 1] = 1
@@ -291,7 +275,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_5", 1], 1)
 
     def test_spatial_imputation_integration_two_hops(self):
-
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_2", 1] = 2
         character_matrix_missing2.loc["cell_5", 2] = 5
@@ -310,7 +293,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_7", 2], 5)
 
     def test_spatial_imputation_integration_no_zero(self):
-
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_0", 1] = 0
         character_matrix_missing2.loc["cell_4", 1] = 0
@@ -327,9 +309,7 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_3", 1], -1)
 
     def test_spatial_imputation_integration_two_iterations(self):
-
-
-        spatial_graph=self.spatial_graph_neigh3
+        spatial_graph = self.spatial_graph_neigh3
         spatial_graph.add_edge("cell_7", "cell_9")  # add new edge
 
         character_matrix_missing2 = self.character_matrix_missing.copy()
@@ -358,7 +338,6 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(imputed_character_matrix.loc["cell_9", 2], 5)
 
     def test_spatial_imputation_integration_max_neighbor_distance(self):
-
         character_matrix_missing2 = self.character_matrix_missing.copy()
         character_matrix_missing2.loc["cell_5", 0] = -1
 

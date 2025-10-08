@@ -2,6 +2,7 @@
 File storing functionality for computing coupling statistics between meta
 variables on a tree.
 """
+
 from collections import defaultdict
 from collections.abc import Callable
 
@@ -60,11 +61,7 @@ def compute_evolutionary_coupling(
     -------
         A K x K evolutionary coupling dataframe.
     """
-    W = (
-        data_utilities.compute_phylogenetic_weight_matrix(tree)
-        if (dissimilarity_map is None)
-        else dissimilarity_map
-    )
+    W = data_utilities.compute_phylogenetic_weight_matrix(tree) if (dissimilarity_map is None) else dissimilarity_map
 
     meta_data = tree.cell_meta[meta_variable]
 
@@ -72,9 +69,7 @@ def compute_evolutionary_coupling(
     if minimum_proportion > 0:
         filter_threshold = int(len(tree.leaves) * minimum_proportion)
         category_frequencies = meta_data.value_counts()
-        passing_categories = category_frequencies[
-            category_frequencies > filter_threshold
-        ].index.values
+        passing_categories = category_frequencies[category_frequencies > filter_threshold].index.values
         meta_data = meta_data[meta_data.isin(passing_categories)]
         W = W.loc[meta_data.index.values, meta_data.index.values]
 
@@ -89,18 +84,12 @@ def compute_evolutionary_coupling(
 
     # compute background for Z-scoring
     background = defaultdict(list)
-    for _ in tqdm(
-        range(number_of_shuffles), desc="Creating empirical background"
-    ):
+    for _ in tqdm(range(number_of_shuffles), desc="Creating empirical background"):
         permuted_assignments = meta_data.copy()
         if random_state:
-            permuted_assignments.index = random_state.permutation(
-                meta_data.index.values
-            )
+            permuted_assignments.index = random_state.permutation(meta_data.index.values)
         else:
-            permuted_assignments.index = np.random.permutation(
-                meta_data.index.values
-            )
+            permuted_assignments.index = np.random.permutation(meta_data.index.values)
         background_distances = data_utilities.compute_inter_cluster_distances(
             tree,
             meta_data=permuted_assignments,
@@ -118,8 +107,6 @@ def compute_evolutionary_coupling(
             mean = np.mean(background[(s1, s2)])
             sd = np.std(background[(s1, s2)])
 
-            Z_scores.loc[s1, s2] = (
-                inter_cluster_distances.loc[s1, s2] - mean
-            ) / sd
+            Z_scores.loc[s1, s2] = (inter_cluster_distances.loc[s1, s2] - mean) / sd
 
     return Z_scores

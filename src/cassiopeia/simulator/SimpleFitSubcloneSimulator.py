@@ -3,6 +3,7 @@ This file stores a subclass of TreeSolver, the SimpleFitSubcloneSimulator. The
 SimpleFitSubcloneSimulator simulates a clonal population which develops one
 fit subclone.
 """
+
 from collections.abc import Callable, Generator
 from queue import Queue
 
@@ -64,16 +65,12 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
         experiment_duration: float,
         generations_until_fit_subclone: int,
     ):
-        self.branch_length_neutral = self._create_callable(
-            branch_length_neutral
-        )
+        self.branch_length_neutral = self._create_callable(branch_length_neutral)
         self.branch_length_fit = self._create_callable(branch_length_fit)
         self.experiment_duration = experiment_duration
         self.generations_until_fit_subclone = generations_until_fit_subclone
 
-    def _create_callable(
-        self, x: float | Callable[[], float]
-    ) -> Callable[[], float]:
+    def _create_callable(self, x: float | Callable[[], float]) -> Callable[[], float]:
         # In case the user provides an int, we still hold their back...
         if type(x) in [int, float]:
 
@@ -115,11 +112,7 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
         while not q.empty():
             # Pop next node
             (node, time, node_fitness, generation) = q.get()
-            time_till_division = (
-                branch_length_neutral()
-                if node_fitness == "neutral"
-                else branch_length_fit()
-            )
+            time_till_division = branch_length_neutral() if node_fitness == "neutral" else branch_length_fit()
             time_of_division = time + time_till_division
             if time_of_division >= experiment_duration:
                 # Not enough time left for the individual to divide.
@@ -130,10 +123,7 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
             times[node] = time_of_division
             left_child_fitness = node_fitness
             right_child_fitness = node_fitness
-            if (
-                not subclone_started
-                and generation + 1 == generations_until_fit_subclone
-            ):
+            if not subclone_started and generation + 1 == generations_until_fit_subclone:
                 # Start the subclone
                 subclone_started = True
                 left_child_fitness = "fit"

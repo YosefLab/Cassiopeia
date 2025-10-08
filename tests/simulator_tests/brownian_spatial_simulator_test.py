@@ -1,9 +1,10 @@
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator import BrownianSpatialDataSimulator
 
@@ -68,9 +69,7 @@ class TestBrownianSpatialDataSimulator(unittest.TestCase):
             columns=["existing_column"],
             index=["7", "8", "9", "10", "11", "12", "13", "14"],
         )
-        self.tree_with_cell_meta = cas.data.CassiopeiaTree(
-            tree=topology, cell_meta=self.cell_meta
-        )
+        self.tree_with_cell_meta = cas.data.CassiopeiaTree(tree=topology, cell_meta=self.cell_meta)
 
     def test_init(self):
         with self.assertRaises(DataSimulatorError):
@@ -110,20 +109,14 @@ class TestBrownianSpatialDataSimulator(unittest.TestCase):
                 expected_coordinates[node],
             )
         expected_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf] for leaf in self.basic_tree.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.basic_tree.leaves],
             index=self.basic_tree.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        pd.testing.assert_frame_equal(
-            self.basic_tree.cell_meta, expected_cell_meta
-        )
+        pd.testing.assert_frame_equal(self.basic_tree.cell_meta, expected_cell_meta)
 
     def test_overlay_data_without_scale(self):
-        simulator = BrownianSpatialDataSimulator(
-            dim=2, diffusion_coefficient=1, scale_unit_area=False
-        )
+        simulator = BrownianSpatialDataSimulator(dim=2, diffusion_coefficient=1, scale_unit_area=False)
         simulator.overlay_data(self.basic_tree)
 
         expected_coordinates = {
@@ -149,15 +142,11 @@ class TestBrownianSpatialDataSimulator(unittest.TestCase):
                 expected_coordinates[node],
             )
         expected_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf] for leaf in self.basic_tree.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.basic_tree.leaves],
             index=self.basic_tree.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        pd.testing.assert_frame_equal(
-            self.basic_tree.cell_meta, expected_cell_meta
-        )
+        pd.testing.assert_frame_equal(self.basic_tree.cell_meta, expected_cell_meta)
 
     def test_overlay_data_with_existing_cell_meta(self):
         simulator = BrownianSpatialDataSimulator(dim=2, diffusion_coefficient=1)
@@ -186,16 +175,9 @@ class TestBrownianSpatialDataSimulator(unittest.TestCase):
                 expected_coordinates[node],
             )
         expected_spatial_cell_meta = pd.DataFrame(
-            data=[
-                expected_coordinates[leaf]
-                for leaf in self.tree_with_cell_meta.leaves
-            ],
+            data=[expected_coordinates[leaf] for leaf in self.tree_with_cell_meta.leaves],
             index=self.tree_with_cell_meta.leaves,
             columns=["spatial_0", "spatial_1"],
         )
-        expected_cell_meta = pd.concat(
-            (self.cell_meta, expected_spatial_cell_meta), axis=1
-        )
-        pd.testing.assert_frame_equal(
-            self.tree_with_cell_meta.cell_meta, expected_cell_meta
-        )
+        expected_cell_meta = pd.concat((self.cell_meta, expected_spatial_cell_meta), axis=1)
+        pd.testing.assert_frame_equal(self.tree_with_cell_meta.cell_meta, expected_cell_meta)

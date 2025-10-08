@@ -4,14 +4,14 @@ Tests for character matrix formation.
 
 import unittest
 
-import cassiopeia as cas
 import numpy as np
 import pandas as pd
+
+import cassiopeia as cas
 
 
 class TestCharacterMatrixFormation(unittest.TestCase):
     def setUp(self):
-
         at_dict = {
             "cellBC": ["cellA", "cellA", "cellA", "cellB", "cellC"],
             "intBC": ["A", "B", "C", "A", "C"],
@@ -59,9 +59,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         ## set up non-cassiopeia allele table
         self.noncassiopeia_alleletable = self.alleletable_basic.copy()
-        self.noncassiopeia_alleletable.rename(
-            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
-        )
+        self.noncassiopeia_alleletable.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
 
         # allele table with conflicts
         at_dict = {
@@ -75,14 +73,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
 
     def test_basic_character_matrix_formation(self):
-
         (
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic)
 
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 9)
@@ -100,7 +95,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_character_matrix_formation_custom_missing_data(self):
-
         self.alleletable_basic.loc[0, "r1"] = "missing"
 
         (
@@ -133,9 +127,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_conflict
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_conflict)
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 9)
 
@@ -156,9 +148,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_conflict, collapse_duplicates=False
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_conflict, collapse_duplicates=False)
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 9)
 
@@ -175,14 +165,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_ignore_intbc(self):
-
         (
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic, ignore_intbcs=["B"]
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, ignore_intbcs=["B"])
 
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 6)
@@ -200,14 +187,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_filter_out_low_diversity_intbcs(self):
-
         (
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic, allele_rep_thresh=0.99
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, allele_rep_thresh=0.99)
 
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 2)
@@ -221,14 +205,11 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_mutation_prior_formation(self):
-
         (
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic, mutation_priors=self.mutation_priors
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, mutation_priors=self.mutation_priors)
 
         expected_priors_dictionary = {
             2: {1: 0.5, 2: 0.1},
@@ -242,19 +223,14 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         for char in expected_priors_dictionary.keys():
             for state in expected_priors_dictionary[char].keys():
-                self.assertEqual(
-                    priors[char][state], expected_priors_dictionary[char][state]
-                )
+                self.assertEqual(priors[char][state], expected_priors_dictionary[char][state])
 
     def test_indel_state_mapping_formation(self):
-
         (
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(
-            self.alleletable_basic, mutation_priors=self.mutation_priors
-        )
+        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, mutation_priors=self.mutation_priors)
 
         expected_state_mapping_dictionary = {
             2: {1: "ATC", 2: "ATA"},
@@ -274,10 +250,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 )
 
     def test_alleletable_to_lineage_profile(self):
-
-        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_basic
-        )
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(self.alleletable_basic)
 
         expected_lineage_profile = pd.DataFrame.from_dict(
             {
@@ -336,9 +309,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
     def test_alleletable_to_lineage_profile_with_conflicts(self):
-        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_conflict
-        )
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(self.alleletable_conflict)
 
         expected_lineage_profile = pd.DataFrame.from_dict(
             {
@@ -458,7 +429,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
     def test_lineage_profile_to_character_matrix_with_conflicts(self):
-
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
             self.alleletable_conflict, collapse_duplicates=False
         )
@@ -497,19 +467,12 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_character_matrix2.index.name = "cellBC"
 
         try:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
         except AssertionError:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix2, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix2, character_matrix)
 
     def test_lineage_profile_to_character_matrix_no_priors(self):
-
-        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_basic
-        )
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(self.alleletable_basic)
 
         (
             character_matrix,
@@ -545,27 +508,18 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_character_matrix2.index.name = "cellBC"
 
         try:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
         except AssertionError:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix2, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix2, character_matrix)
 
     def test_lineage_profile_to_character_matrix_with_priors(self):
-
-        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_basic
-        )
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(self.alleletable_basic)
 
         (
             character_matrix,
             priors,
             state_to_indel,
-        ) = cas.pp.convert_lineage_profile_to_character_matrix(
-            lineage_profile, self.mutation_priors
-        )
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(lineage_profile, self.mutation_priors)
 
         self.assertEqual(len(priors), 7)
         self.assertEqual(len(state_to_indel), 9)
@@ -595,13 +549,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_character_matrix2.index.name = "cellBC"
 
         try:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
         except AssertionError:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix2, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix2, character_matrix)
 
         # test prior dictionary formation
         for character in priors.keys():
@@ -611,10 +561,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 self.assertEqual(prob, priors[character][state])
 
     def test_compute_empirical_indel_probabilities(self):
-
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
-            self.alleletable_basic
-        )
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(self.alleletable_basic)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -630,7 +577,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -639,10 +585,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             )
 
     def test_compute_empirical_indel_probabilities_with_conflicts(self):
-
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
-            self.alleletable_conflict
-        )
+        indel_probabilities = cas.pp.compute_empirical_indel_priors(self.alleletable_conflict)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -659,7 +602,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -668,7 +610,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             )
 
     def test_compute_empirical_indel_probabilities_multiple_variables(self):
-
         indel_probabilities = cas.pp.compute_empirical_indel_priors(
             self.allele_table_mouse, grouping_variables=["Mouse", "intBC"]
         )
@@ -699,7 +640,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -713,7 +653,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -722,7 +661,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             )
 
     def test_noncanonical_cut_sites_allele_table_to_character_matrix(self):
-
         (
             character_matrix,
             priors,
@@ -747,7 +685,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(character_matrix, expected_df)
 
     def test_noncanonical_cut_sites_allele_table_to_lineage_profile(self):
-
         lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
             self.noncassiopeia_alleletable, cut_sites=["cs1", "cs2", "cs3"]
         )
@@ -811,11 +748,8 @@ class TestCharacterMatrixFormation(unittest.TestCase):
     def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(
         self,
     ):
-
         noncassiopeia_at = self.allele_table_mouse.copy()
-        noncassiopeia_at.rename(
-            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
-        )
+        noncassiopeia_at.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
         indel_probabilities = cas.pp.compute_empirical_indel_priors(
             noncassiopeia_at,
             grouping_variables=["Mouse", "intBC"],
@@ -848,7 +782,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -862,7 +795,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         )
 
         for indel in expected_priors.index:
-
             self.assertIn(indel, indel_probabilities.index.values)
             self.assertAlmostEqual(
                 expected_priors.loc[indel, "freq"],
@@ -871,11 +803,8 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             )
 
     def test_lineage_profile_to_character_matrix_custom_missing_data(self):
-
         self.alleletable_basic.fillna("MISSING", inplace=True)
-        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(
-            self.alleletable_basic
-        )
+        lineage_profile = cas.pp.convert_alleletable_to_lineage_profile(self.alleletable_basic)
 
         (
             character_matrix,
@@ -915,13 +844,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         expected_character_matrix2.index.name = "cellBC"
 
         try:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix, character_matrix)
         except AssertionError:
-            pd.testing.assert_frame_equal(
-                expected_character_matrix2, character_matrix
-            )
+            pd.testing.assert_frame_equal(expected_character_matrix2, character_matrix)
 
         # test prior dictionary formation
         for character in priors.keys():
@@ -931,7 +856,6 @@ class TestCharacterMatrixFormation(unittest.TestCase):
                 self.assertEqual(prob, priors[character][state])
 
     def test_convert_character_matrix_to_allele_table(self):
-
         character_matrix = pd.DataFrame.from_dict(
             {
                 "cell_0": [1, 1, 0],
@@ -941,9 +865,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=["r1", "r2", "r3"],
         )
 
-        allele_table = cas.pp.convert_character_matrix_to_allele_table(
-            character_matrix
-        )
+        allele_table = cas.pp.convert_character_matrix_to_allele_table(character_matrix)
 
         expected_allele_table = pd.DataFrame.from_dict(
             {
@@ -971,9 +893,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         allele_table.index = range(len(allele_table))
 
-        pd.testing.assert_frame_equal(
-            allele_table, expected_allele_table, check_dtype=False
-        )
+        pd.testing.assert_frame_equal(allele_table, expected_allele_table, check_dtype=False)
 
         character_matrix = pd.DataFrame.from_dict(
             {
@@ -984,9 +904,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             columns=["r1", "r2", "r3"],
         )
 
-        allele_table = cas.pp.convert_character_matrix_to_allele_table(
-            character_matrix
-        )
+        allele_table = cas.pp.convert_character_matrix_to_allele_table(character_matrix)
 
         expected_allele_table = pd.DataFrame.from_dict(
             {
@@ -1006,9 +924,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         allele_table.index = range(len(allele_table))
 
-        pd.testing.assert_frame_equal(
-            allele_table, expected_allele_table, check_dtype=False
-        )
+        pd.testing.assert_frame_equal(allele_table, expected_allele_table, check_dtype=False)
 
 
 if __name__ == "__main__":

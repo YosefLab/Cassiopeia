@@ -9,6 +9,7 @@ from queue import PriorityQueue
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator.ecDNABirthDeathSimulator import (
     ecDNABirthDeathSimulator,
@@ -54,9 +55,7 @@ def extract_tree_statistics(
 
 
 class ecDNABirthDeathSimulatorTest(unittest.TestCase):
-
     def test_ecdna_splitting(self):
-
         np.random.seed(41)
         sim = ecDNABirthDeathSimulator(lambda _: 1, 1, num_extant=16)
 
@@ -78,16 +77,13 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(np.all(expected_array == new_ecdna_array))
 
     def test_initial_sample_event(self):
-
         np.random.seed(41)
         sim = ecDNABirthDeathSimulator(
             birth_waiting_distribution=lambda _: 1,
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            fitness_array=np.array(
-                [[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]
-            ),
+            fitness_array=np.array([[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]),
         )
 
         # first, we'll trigger the time=0 condition in sample_lineage_event.
@@ -108,18 +104,11 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             "active": True,
         }
 
-        sim.sample_lineage_event(
-            starting_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
         self.assertTrue(current_lineages.qsize() == 1)
 
         _, _, new_lineage = current_lineages.get()
-        self.assertTrue(
-            np.all(
-                tree.nodes[root]["ecdna_array"]
-                == tree.nodes[new_lineage["id"]]["ecdna_array"]
-            )
-        )
+        self.assertTrue(np.all(tree.nodes[root]["ecdna_array"] == tree.nodes[new_lineage["id"]]["ecdna_array"]))
 
     def test_basic_sample_lineage_events(self):
         """Checks that sample_lineage_event behaves as expected under edge cases."""
@@ -130,9 +119,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             initial_birth_scale=1,
             num_extant=16,
             experiment_time=5,
-            fitness_array=np.array(
-                [[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]
-            ),
+            fitness_array=np.array([[[0, 0.1], [0.1, 0.2]], [[0.1, 0.5], [0.2, 0.6]]]),
         )
 
         names = node_name_generator()
@@ -152,20 +139,14 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
             "active": True,
         }
 
-        sim.sample_lineage_event(
-            starting_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, new_lineage = current_lineages.get()
         # now, let's do one normal division
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
         # checked: the first ecdna_array is [2,0,6], so the other one should be [4,4,4]
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, new_lineage = current_lineages.get()
         total_time_d1 = new_lineage["total_time"]
@@ -177,17 +158,11 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(total_time_d1 == total_time_d2)
 
         expected_array = [4, 4, 4]
-        self.assertTrue(
-            np.all(
-                tree.nodes[new_lineage["id"]]["ecdna_array"] == expected_array
-            )
-        )
+        self.assertTrue(np.all(tree.nodes[new_lineage["id"]]["ecdna_array"] == expected_array))
 
         # Now, let's edit new_lineage to ensure it triggers stopping condition, then pass it into sample_lineage_event
         new_lineage["total_time"] = 4.5
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, new_lineage = current_lineages.get()
         self.assertTrue(observed_nodes[0] == new_lineage["id"])
@@ -195,7 +170,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(not (new_lineage["active"]))
 
     def test_populate_tree_from_simulation(self):
-
         np.random.seed(41)
         sim = ecDNABirthDeathSimulator(
             birth_waiting_distribution=lambda _: 1,
@@ -226,9 +200,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[child_2]["time"] = 2
         tree.nodes[child_2]["ecdna_array"] = np.array([4, 4, 4])
 
-        cassiopeia_tree = sim.populate_tree_from_simulation(
-            tree, [child_1, child_2]
-        )
+        cassiopeia_tree = sim.populate_tree_from_simulation(tree, [child_1, child_2])
 
         expected_meta_data = pd.DataFrame.from_dict(
             {child_1: [2, 0, 6, 2, 0, 6], child_2: [4, 4, 4, 4, 4, 4]},
@@ -249,7 +221,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
     def test_basic_cosegregation(self):
-
         np.random.seed(41)
 
         # test basic cosegregation
@@ -280,19 +251,13 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         }
 
         # simulate time till first cell division
-        sim.sample_lineage_event(
-            starting_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, new_lineage = current_lineages.get()
 
         # now, let's do one normal division
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
         # get out the children
         _, _, child_lineage_1 = current_lineages.get()
@@ -308,21 +273,10 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
 
         print(tree.nodes[child_lineage_1["id"]]["ecdna_array"])
 
-        self.assertTrue(
-            np.all(
-                tree.nodes[child_lineage_1["id"]]["ecdna_array"]
-                == expected_child_1_array
-            )
-        )
-        self.assertTrue(
-            np.all(
-                tree.nodes[child_lineage_2["id"]]["ecdna_array"]
-                == expected_child_2_array
-            )
-        )
+        self.assertTrue(np.all(tree.nodes[child_lineage_1["id"]]["ecdna_array"] == expected_child_1_array))
+        self.assertTrue(np.all(tree.nodes[child_lineage_2["id"]]["ecdna_array"] == expected_child_2_array))
 
     def test_perfect_cosegregation(self):
-
         np.random.seed(41)
 
         # test perfect cosegregation
@@ -353,20 +307,14 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         }
 
         # simulate time till first cell division
-        sim.sample_lineage_event(
-            starting_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, new_lineage = current_lineages.get()
 
         # now, let's do one normal division
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
-        sim.sample_lineage_event(
-            new_lineage, current_lineages, tree, names, observed_nodes
-        )
+        sim.sample_lineage_event(new_lineage, current_lineages, tree, names, observed_nodes)
 
         _, _, child_lineage_1 = current_lineages.get()
         _, _, child_lineage_2 = current_lineages.get()
@@ -381,7 +329,6 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         )
 
     def test_low_capture_efficiency(self):
-
         np.random.seed(41)
         sim = ecDNABirthDeathSimulator(
             birth_waiting_distribution=lambda _: 1,
@@ -413,9 +360,7 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         tree.nodes[child_2]["time"] = 2
         tree.nodes[child_2]["ecdna_array"] = np.array([4, 4, 4])
 
-        cassiopeia_tree = sim.populate_tree_from_simulation(
-            tree, [child_1, child_2]
-        )
+        cassiopeia_tree = sim.populate_tree_from_simulation(tree, [child_1, child_2])
 
         # reset seed to create expected observations
         np.random.seed(41)

@@ -5,6 +5,7 @@ phylogenies.
 Amongst these tools are basic Fitch-Hartigan reconstruction, parsimony scoring,
 and the FitchCount algorithm described in Quinn, Jones et al, Science (2021).
 """
+
 import itertools
 
 import numpy as np
@@ -106,24 +107,16 @@ def fitch_hartigan_bottom_up(
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
 
     for node in cassiopeia_tree.depth_first_traverse_nodes():
-
         if cassiopeia_tree.is_leaf(node):
             cassiopeia_tree.set_attribute(node, add_key, [meta.loc[node]])
 
         else:
             children = cassiopeia_tree.children(node)
             if len(children) == 1:
-                child_assignment = cassiopeia_tree.get_attribute(
-                    children[0], add_key
-                )
+                child_assignment = cassiopeia_tree.get_attribute(children[0], add_key)
                 cassiopeia_tree.set_attribute(node, add_key, [child_assignment])
 
-            all_labels = np.concatenate(
-                [
-                    cassiopeia_tree.get_attribute(child, add_key)
-                    for child in children
-                ]
-            )
+            all_labels = np.concatenate([cassiopeia_tree.get_attribute(child, add_key) for child in children])
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
@@ -169,15 +162,10 @@ def fitch_hartigan_top_down(
 
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
 
-    for node in cassiopeia_tree.depth_first_traverse_nodes(
-        source=root, postorder=False
-    ):
-
+    for node in cassiopeia_tree.depth_first_traverse_nodes(source=root, postorder=False):
         if node == root:
             root_states = cassiopeia_tree.get_attribute(root, state_key)
-            cassiopeia_tree.set_attribute(
-                root, label_key, np.random.choice(root_states)
-            )
+            cassiopeia_tree.set_attribute(root, label_key, np.random.choice(root_states))
             continue
 
         parent = cassiopeia_tree.parent(node)
@@ -188,9 +176,7 @@ def fitch_hartigan_top_down(
             cassiopeia_tree.set_attribute(node, label_key, parent_label)
 
         else:
-            cassiopeia_tree.set_attribute(
-                node, label_key, np.random.choice(optimal_node_states)
-            )
+            cassiopeia_tree.set_attribute(node, label_key, np.random.choice(optimal_node_states))
 
     return cassiopeia_tree if copy else None
 
@@ -233,14 +219,9 @@ def score_small_parsimony(
         fitch_hartigan(cassiopeia_tree, meta_item, root, label_key=label_key)
 
     parsimony = 0
-    for (parent, child) in cassiopeia_tree.depth_first_traverse_edges(
-        source=root
-    ):
-
+    for parent, child in cassiopeia_tree.depth_first_traverse_edges(source=root):
         try:
-            if cassiopeia_tree.get_attribute(
-                parent, label_key
-            ) != cassiopeia_tree.get_attribute(child, label_key):
+            if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(child, label_key):
                 parsimony += 1
         except CassiopeiaTreeError:
             raise CassiopeiaError(
@@ -297,18 +278,8 @@ def fitch_count(
     if unique_states is None:
         unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
     else:
-        if (
-            len(
-                np.setdiff1d(
-                    cassiopeia_tree.cell_meta[meta_item].unique(), unique_states
-                )
-            )
-            > 0
-        ):
-            raise FitchCountError(
-                "Specified state space does not span the set"
-                " of states that appear in the meta data."
-            )
+        if len(np.setdiff1d(cassiopeia_tree.cell_meta[meta_item].unique(), unique_states)) > 0:
+            raise FitchCountError("Specified state space does not span the set of states that appear in the meta data.")
 
     if root != cassiopeia_tree.root:
         cassiopeia_tree.subset_clade(root)
@@ -318,19 +289,15 @@ def fitch_count(
 
     # create mapping from nodes to integers
     bfs_postorder = [cassiopeia_tree.root]
-    for (_, e1) in cassiopeia_tree.breadth_first_traverse_edges():
+    for _, e1 in cassiopeia_tree.breadth_first_traverse_edges():
         bfs_postorder.append(e1)
 
     node_to_i = dict(zip(bfs_postorder, range(len(bfs_postorder)), strict=False))
     label_to_j = dict(zip(unique_states, range(len(unique_states)), strict=False))
 
-    N = _N_fitch_count(
-        cassiopeia_tree, unique_states, node_to_i, label_to_j, state_key
-    )
+    N = _N_fitch_count(cassiopeia_tree, unique_states, node_to_i, label_to_j, state_key)
 
-    C = _C_fitch_count(
-        cassiopeia_tree, N, unique_states, node_to_i, label_to_j, state_key
-    )
+    C = _C_fitch_count(cassiopeia_tree, N, unique_states, node_to_i, label_to_j, state_key)
 
     M = pd.DataFrame(np.zeros((N.shape[1], N.shape[1])))
     M.columns = unique_states
@@ -390,15 +357,12 @@ def _N_fitch_count(
 
         legal_states = []
         for i, u in zip(range(len(children)), children, strict=False):
-
             if s not in cassiopeia_tree.get_attribute(u, state_key):
                 legal_states = cassiopeia_tree.get_attribute(u, state_key)
             else:
                 legal_states = [s]
 
-            A[i] = np.sum(
-                [N[node_to_i[u], label_to_j[sp]] for sp in legal_states]
-            )
+            A[i] = np.sum([N[node_to_i[u], label_to_j[sp]] for sp in legal_states])
         return np.prod([A[u] for u in range(len(A))])
 
     N = np.full((len(cassiopeia_tree.nodes), len(unique_states)), 0.0)
@@ -489,15 +453,11 @@ def _C_fitch_count(
 
         return np.sum(parts)
 
-    C = np.zeros(
-        (len(cassiopeia_tree.nodes), N.shape[1], N.shape[1], N.shape[1])
-    )
+    C = np.zeros((len(cassiopeia_tree.nodes), N.shape[1], N.shape[1], N.shape[1]))
 
     for n in cassiopeia_tree.depth_first_traverse_nodes():
         for s in cassiopeia_tree.get_attribute(n, state_key):
-            for (s1, s2) in itertools.product(unique_states, repeat=2):
-                C[
-                    node_to_i[n], label_to_j[s], label_to_j[s1], label_to_j[s2]
-                ] = _fill(n, s, s1, s2)
+            for s1, s2 in itertools.product(unique_states, repeat=2):
+                C[node_to_i[n], label_to_j[s], label_to_j[s1], label_to_j[s2]] = _fill(n, s, s1, s2)
 
     return C

@@ -2,17 +2,18 @@
 Test suite for the autocorrelation functions in
 cassiopeia/tools/autocorrelation.py
 """
+
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.mixins.errors import AutocorrelationError
 
 
 class TestAutocorrelation(unittest.TestCase):
     def setUp(self) -> None:
-
         tree = nx.DiGraph()
         tree.add_nodes_from(["A", "B", "C", "D", "E", "F"])
         tree.add_edge("F", "A", length=0.1)
@@ -41,9 +42,7 @@ class TestAutocorrelation(unittest.TestCase):
         in Chaligne et al, Nat Genetics 2021
         """
 
-        I = cas.tl.compute_morans_i(
-            self.basic_tree, X=pd.DataFrame(self.X["nUMI"])
-        )
+        I = cas.tl.compute_morans_i(self.basic_tree, X=pd.DataFrame(self.X["nUMI"]))
 
         self.assertAlmostEqual(I, 0.084456, delta=0.001)
 
@@ -64,12 +63,9 @@ class TestAutocorrelation(unittest.TestCase):
             columns=["nUMI", "GeneX", "GeneY"],
         )
 
-        pd.testing.assert_frame_equal(
-            I, expected_correlations, check_exact=False, atol=0.001
-        )
+        pd.testing.assert_frame_equal(I, expected_correlations, check_exact=False, atol=0.001)
 
     def test_moran_custom_weights(self):
-
         W = pd.DataFrame.from_dict(
             {
                 "A": [0, 1 / 2, 1 / 3, 1 / 3],
@@ -81,14 +77,11 @@ class TestAutocorrelation(unittest.TestCase):
             columns=["A", "B", "C", "D"],
         )
 
-        I = cas.tl.compute_morans_i(
-            self.basic_tree, X=pd.DataFrame(self.X["nUMI"]), W=W
-        )
+        I = cas.tl.compute_morans_i(self.basic_tree, X=pd.DataFrame(self.X["nUMI"]), W=W)
 
         self.assertAlmostEqual(I, -0.1428571, delta=0.0001)
 
     def test_moran_exceptions(self):
-
         # check typing
         string_type_meta = pd.DataFrame(
             ["type1", "type2", "type1", "type3"],
@@ -107,9 +100,7 @@ class TestAutocorrelation(unittest.TestCase):
         )
 
         # check all leaves are accounted for
-        new_row = pd.DataFrame.from_dict(
-            {"E": [5, 5, 5]}, orient="index", columns=["nUMI", "GeneX", "GeneY"]
-        )
+        new_row = pd.DataFrame.from_dict({"E": [5, 5, 5]}, orient="index", columns=["nUMI", "GeneX", "GeneY"])
 
         X = pd.concat([self.X, new_row], axis=1)
 
@@ -140,14 +131,8 @@ class TestAutocorrelation(unittest.TestCase):
             orient="index",
             columns=["A", "B", "C"],
         )
-        self.assertRaises(
-            AutocorrelationError,
-            cas.tl.compute_morans_i,
-            self.basic_tree,
-            None,
-            self.X,
-            W
-        )
+        self.assertRaises(AutocorrelationError, cas.tl.compute_morans_i, self.basic_tree, None, self.X, W)
+
 
 if __name__ == "__main__":
     unittest.main()

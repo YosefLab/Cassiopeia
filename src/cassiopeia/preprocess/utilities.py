@@ -36,9 +36,7 @@ def log_molecule_table(wrapped: Callable):
     def wrapper(*args, **kwargs):
         df = wrapped(*args, **kwargs)
         umi_count = df["UMI"].dtype != object
-        logger.debug(
-            f"Resulting {'alleletable' if umi_count else 'molecule_table'} statistics:"
-        )
+        logger.debug(f"Resulting {'alleletable' if umi_count else 'molecule_table'} statistics:")
         logger.debug(f"# Reads: {df['readCount'].sum()}")
         logger.debug(f"# UMIs: {df['UMI'].sum() if umi_count else df.shape[0]}")
         logger.debug(f"# Cell BCs: {df['cellBC'].nunique()}")
@@ -111,17 +109,13 @@ def filter_cells(
     umi_count = molecule_table["UMI"].dtype != object
 
     cell_groups = molecule_table.groupby("cellBC")
-    umis_per_cell = (
-        cell_groups["UMI"].sum() if umi_count else cell_groups.size()
-    )
+    umis_per_cell = cell_groups["UMI"].sum() if umi_count else cell_groups.size()
     umis_per_cell_mask = umis_per_cell >= min_umi_per_cell
     avg_reads_per_umi = cell_groups["readCount"].sum() / umis_per_cell
     avg_read_per_umi_mask = avg_reads_per_umi >= min_avg_reads_per_umi
 
     umis_per_cell_passing = set(umis_per_cell_mask.index[umis_per_cell_mask])
-    avg_read_per_umi_passing = set(
-        avg_read_per_umi_mask.index[avg_read_per_umi_mask]
-    )
+    avg_read_per_umi_passing = set(avg_read_per_umi_mask.index[avg_read_per_umi_mask])
     passing_cells = umis_per_cell_passing & avg_read_per_umi_passing
     passing_mask = molecule_table["cellBC"].isin(passing_cells)
     n_cells = molecule_table["cellBC"].nunique()
@@ -130,19 +124,13 @@ def filter_cells(
         "or too few average number of reads per UMI."
     )
     molecule_table_filt = molecule_table[~passing_mask]
-    n_umi_filt = (
-        molecule_table_filt["UMI"].sum()
-        if umi_count
-        else molecule_table_filt.shape[0]
-    )
+    n_umi_filt = molecule_table_filt["UMI"].sum() if umi_count else molecule_table_filt.shape[0]
     logger.info(f"Filtered out {n_umi_filt} UMIs as a result.")
     return molecule_table[passing_mask].copy()
 
 
 @log_molecule_table
-def filter_umis(
-    molecule_table: pd.DataFrame, min_reads_per_umi: int = 100
-) -> pd.DataFrame:
+def filter_umis(molecule_table: pd.DataFrame, min_reads_per_umi: int = 100) -> pd.DataFrame:
     """
     Filters out UMIs with too few reads.
 
@@ -198,13 +186,12 @@ def error_correct_intbc(
     if prop > 0.5:
         warnings.warn(
             "No intBC correction was done because `prop` is greater than 0.5.",
-            PreprocessWarning, stacklevel=2,
+            PreprocessWarning,
+            stacklevel=2,
         )
         return molecule_table
 
-    cellBC_intBC_allele_groups = molecule_table.groupby(
-        ["cellBC", "intBC", "allele"], sort=False
-    )
+    cellBC_intBC_allele_groups = molecule_table.groupby(["cellBC", "intBC", "allele"], sort=False)
     cellBC_intBC_allele_indices = cellBC_intBC_allele_groups.groups
     molecule_table_agg = (
         cellBC_intBC_allele_groups.agg({"UMI": "count", "readCount": "sum"})
@@ -230,15 +217,9 @@ def error_correct_intbc(
                 distance = ngs.sequence.levenshtein_distance(intBC1, intBC2)
 
                 # Correct
-                if (
-                    distance <= dist_thresh
-                    and proportion < prop
-                    and UMI2 <= umi_count_thresh
-                ):
+                if distance <= dist_thresh and proportion < prop and UMI2 <= umi_count_thresh:
                     key_to_correct = (cellBC, intBC2, allele)
-                    molecule_table.loc[
-                        cellBC_intBC_allele_indices[key_to_correct], "intBC"
-                    ] = intBC1
+                    molecule_table.loc[cellBC_intBC_allele_indices[key_to_correct], "intBC"] = intBC1
     return molecule_table
 
 
@@ -256,9 +237,7 @@ def record_stats(
         Read counts for each alignment, number of unique UMIs per intBC, number
             of UMIs per cellBC
     """
-    umis_per_intBC = (
-        molecule_table.groupby(["cellBC", "intBC"], sort=False).size().values
-    )
+    umis_per_intBC = molecule_table.groupby(["cellBC", "intBC"], sort=False).size().values
     umis_per_cellBC = molecule_table.groupby("cellBC", sort=False).size().values
 
     return (
@@ -279,9 +258,7 @@ def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
         A Pandas dataframe containing the BAM information.
     """
     als = []
-    with pysam.AlignmentFile(
-        data_fp, ignore_truncation=True, check_sq=False
-    ) as bam_fh:
+    with pysam.AlignmentFile(data_fp, ignore_truncation=True, check_sq=False) as bam_fh:
         for al in bam_fh:
             cellBC, UMI, readCount, grpFlag = al.query_name.split("_")
             seq = al.query_sequence
@@ -321,9 +298,7 @@ def convert_alleletable_to_character_matrix(
     mutation_priors: pd.DataFrame | None = None,
     cut_sites: list[str] | None = None,
     collapse_duplicates: bool = True,
-) -> tuple[
-    pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]
-]:
+) -> tuple[pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]]:
     """Converts an AlleleTable into a character matrix.
 
     Given an AlleleTable storing the observed mutations for each intBC / cellBC
@@ -371,9 +346,7 @@ def convert_alleletable_to_character_matrix(
 
         for i, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
-                filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(
-                    alleletable.loc[sample, c]
-                )
+                filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(alleletable.loc[sample, c])
 
     character_strings = defaultdict(list)
     allele_counter = defaultdict(OrderedDict)
@@ -407,31 +380,24 @@ def convert_alleletable_to_character_matrix(
     indel_to_charstate = defaultdict(dict)
     # for all characters
     for i in tqdm(range(len(list(intbc_uniq))), desc="Processing characters"):
-
         c = list(intbc_uniq)[i]
         indel_to_charstate[i] = {}
 
         # for all samples, construct a character string
         for sample in filtered_samples.keys():
-
             if c in filtered_samples[sample]:
-
                 # This is a list of states
                 states = filtered_samples[sample][c]
                 transformed_states = []
 
                 for state in states:
-
                     if type(state) != str and np.isnan(state):
                         transformed_states.append(missing_data_state)
                         continue
 
                     if state == "NONE" or "None" in state:
                         transformed_states.append(0)
-                    elif (
-                        missing_data_allele is not None
-                        and state == missing_data_allele
-                    ):
+                    elif missing_data_allele is not None and state == missing_data_allele:
                         transformed_states.append(missing_data_state)
                     else:
                         if state in allele_counter[c]:
@@ -439,23 +405,15 @@ def convert_alleletable_to_character_matrix(
                         else:
                             # if this is the first time we're seeing the state for this character,
                             # add a new entry to the allele_counter
-                            allele_counter[c][state] = (
-                                len(allele_counter[c]) + 1
-                            )
+                            allele_counter[c][state] = len(allele_counter[c]) + 1
                             transformed_states.append(allele_counter[c][state])
 
-                            indel_to_charstate[i][
-                                len(allele_counter[c])
-                            ] = state
+                            indel_to_charstate[i][len(allele_counter[c])] = state
 
                             # add a new entry to the character's probability map
                             if mutation_priors is not None:
-                                prob = np.mean(
-                                    mutation_priors.loc[state, "freq"]
-                                )
-                                prior_probs[i][len(allele_counter[c])] = float(
-                                    prob
-                                )
+                                prob = np.mean(mutation_priors.loc[state, "freq"])
+                                prior_probs[i][len(allele_counter[c])] = float(prob)
 
                 if collapse_duplicates:
                     # Sort for testing
@@ -506,9 +464,7 @@ def convert_alleletable_to_lineage_profile(
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(allele_table)
 
-    agg_recipe = dict(
-        zip(list(cut_sites), [list] * len(cut_sites), strict=False)
-    )
+    agg_recipe = dict(zip(list(cut_sites), [list] * len(cut_sites), strict=False))
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
 
@@ -538,19 +494,12 @@ def convert_alleletable_to_lineage_profile(
         values="UMI",
         aggfunc=pylab.size,
     )
-    col_order = (
-        allele_piv2.dropna(axis=1, how="all")
-        .sum()
-        .sort_values(ascending=False, inplace=False)
-        .index
-    )
+    col_order = allele_piv2.dropna(axis=1, how="all").sum().sort_values(ascending=False, inplace=False).index
 
     lineage_profile = allele_piv[col_order]
 
     # collapse column names here
-    lineage_profile.columns = [
-        "_".join(tup).rstrip("_") for tup in lineage_profile.columns.values
-    ]
+    lineage_profile.columns = ["_".join(tup).rstrip("_") for tup in lineage_profile.columns.values]
 
     return lineage_profile
 
@@ -560,9 +509,7 @@ def convert_lineage_profile_to_character_matrix(
     indel_priors: pd.DataFrame | None = None,
     missing_allele_indicator: str | None = None,
     missing_state_indicator: int = -1,
-) -> tuple[
-    pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]
-]:
+) -> tuple[pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]]:
     """Converts a lineage profile to a character matrix.
 
     Takes in a lineage profile summarizing the explicit indel identities
@@ -594,33 +541,23 @@ def convert_lineage_profile_to_character_matrix(
 
     lineage_profile = lineage_profile.fillna("Missing").copy()
     if missing_allele_indicator:
-        lineage_profile.replace(
-            {missing_allele_indicator: "Missing"}, inplace=True
-        )
-
+        lineage_profile.replace({missing_allele_indicator: "Missing"}, inplace=True)
 
     lineage_profile.columns = [f"r{i}" for i in range(lineage_profile.shape[1])]
     column_to_unique_values = dict(
         zip(
             lineage_profile.columns,
-            [
-                lineage_profile[x].factorize()[1].values
-                for x in lineage_profile.columns
-            ], strict=False,
+            [lineage_profile[x].factorize()[1].values for x in lineage_profile.columns],
+            strict=False,
         )
     )
 
-    column_to_number = dict(
-        zip(lineage_profile.columns, range(lineage_profile.shape[1]), strict=False)
-    )
+    column_to_number = dict(zip(lineage_profile.columns, range(lineage_profile.shape[1]), strict=False))
 
-    mutation_counter = dict(
-        zip(lineage_profile.columns, [0] * lineage_profile.shape[1], strict=False)
-    )
+    mutation_counter = dict(zip(lineage_profile.columns, [0] * lineage_profile.shape[1], strict=False))
     mutation_to_state = defaultdict(dict)
 
     for col in column_to_unique_values.keys():
-
         c = column_to_number[col]
         indel_to_charstate[c] = {}
 
@@ -643,9 +580,7 @@ def convert_lineage_profile_to_character_matrix(
 
                     if indel_priors is not None:
                         prob = np.mean(indel_priors.loc[indel]["freq"])
-                        prior_probs[c][mutation_to_state[col][indel]] = float(
-                            prob
-                        )
+                        prior_probs[c][mutation_to_state[col][indel]] = float(prob)
 
     # Helper function to apply to lineage profile
     def apply_mutation_to_state(x):
@@ -660,9 +595,7 @@ def convert_lineage_profile_to_character_matrix(
     character_matrix = lineage_profile.apply(apply_mutation_to_state, axis=0)
 
     character_matrix.index = lineage_profile.index
-    character_matrix.columns = [
-        f"r{i}" for i in range(lineage_profile.shape[1])
-    ]
+    character_matrix.columns = [f"r{i}" for i in range(lineage_profile.shape[1])]
 
     return character_matrix, prior_probs, indel_to_charstate
 
@@ -685,17 +618,12 @@ def convert_character_matrix_to_allele_table(
     -------
         An allele table.
     """
-    allele_table = pd.DataFrame(
-        columns=["cellBC", "intBC", "allele", "r1", "UMI"]
-    )
+    allele_table = pd.DataFrame(columns=["cellBC", "intBC", "allele", "r1", "UMI"])
 
     def disambiguate_allele(char, allele):
         if type(allele) == tuple:
             if keep_ambiguous:
-                all_alleles = [
-                    state_to_indel[int(char)][a] if a != 0 else "None"
-                    for a in allele
-                ]
+                all_alleles = [state_to_indel[int(char)][a] if a != 0 else "None" for a in allele]
                 return all_alleles
             else:
                 allele = allele[0]
@@ -760,15 +688,12 @@ def compute_empirical_indel_priors(
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(allele_table)
 
-    agg_recipe = dict(
-        zip(list(cut_sites), ["unique"] * len(cut_sites), strict=False)
-    )
+    agg_recipe = dict(zip(list(cut_sites), ["unique"] * len(cut_sites), strict=False))
     groups = allele_table.groupby(grouping_variables).agg(agg_recipe)
 
     indel_count = defaultdict(int)
 
     for g in groups.index:
-
         alleles = np.unique(np.concatenate(groups.loc[g].values))
         for a in alleles:
             if "none" not in a.lower():
@@ -776,9 +701,7 @@ def compute_empirical_indel_priors(
 
     tot = len(groups.index)
 
-    indel_freqs = dict(
-        zip(list(indel_count.keys()), [v / tot for v in indel_count.values()], strict=False)
-    )
+    indel_freqs = dict(zip(list(indel_count.keys()), [v / tot for v in indel_count.values()], strict=False))
 
     indel_priors = pd.DataFrame([indel_count, indel_freqs]).T
     indel_priors.columns = ["count", "freq"]
@@ -801,10 +724,6 @@ def get_default_cut_site_columns(allele_table: pd.DataFrame) -> list[str]:
     Return:
         Columns in the AlleleTable corresponding to the cut sites.
     """
-    cut_sites = [
-        column
-        for column in allele_table.columns
-        if bool(re.search(r"r\d", column))
-    ]
+    cut_sites = [column for column in allele_table.columns if bool(re.search(r"r\d", column))]
 
     return cut_sites

@@ -55,9 +55,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
         if dim <= 0:
             raise DataSimulatorError("Number of dimensions must be positive.")
         if diffusion_coefficient < 0:
-            raise DataSimulatorError(
-                "Diffusion coefficient must be non-negative."
-            )
+            raise DataSimulatorError("Diffusion coefficient must be non-negative.")
 
         self.dim = dim
         self.diffusion_coefficient = diffusion_coefficient
@@ -111,11 +109,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             tree.set_attribute(node, attribute_key, tuple(loc))
 
         # Set cell meta
-        cell_meta = (
-            tree.cell_meta.copy()
-            if tree.cell_meta is not None
-            else pd.DataFrame(index=tree.leaves)
-        )
+        cell_meta = tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
         columns = [f"{attribute_key}_{i}" for i in range(self.dim)]
         cell_meta[columns] = np.nan
         for leaf in tree.leaves:

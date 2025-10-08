@@ -3,12 +3,22 @@ build:
   os: "ubuntu-22.04"
   tools:
     python: "3.11"
-sphinx:
-  configuration: docs/conf.py
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-      - docs
-      - spatial
+  jobs:
+    pre_install:
+      - pip install "cython>=3" "numpy>=2"
+      - |
+        python - <<'PY'
+        from Cython.Build import cythonize
+        cythonize([
+            "src/cassiopeia/preprocess/collapse_cython.pyx",
+            "src/cassiopeia/solver/ilp_solver_utilities.pyx",
+        ], language_level="3")
+        PY
+    create_environment:
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
+    build:
+      html:
+        - uvx hatch run docs:build
+        - mv docs/_build $READTHEDOCS_OUTPUT

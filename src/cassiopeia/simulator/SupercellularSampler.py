@@ -5,13 +5,14 @@ Iteratively, this subsampler randomly merges two leaves to generate a tree with
 ambiguous character states. The probability that two leaves will be merged is
 proportional to their branch distance.
 """
+
 import copy
 
 import numpy as np
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError
-from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 from cassiopeia.mixins import LeafSubsamplerError
+from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class SupercellularSampler(LeafSubsampler):
@@ -35,9 +36,7 @@ class SupercellularSampler(LeafSubsampler):
             number_of_merges: Explicit number of merges to perform.
         """
         if (ratio is None) == (number_of_merges is None):
-            raise LeafSubsamplerError(
-                "Exactly one of 'ratio' and 'number_of_merges' must be specified."
-            )
+            raise LeafSubsamplerError("Exactly one of 'ratio' and 'number_of_merges' must be specified.")
 
         self.__ratio = ratio
         self.__number_of_merges = number_of_merges
@@ -75,15 +74,9 @@ class SupercellularSampler(LeafSubsampler):
             LeafSubsamplerError if the number of merges exceeds the number of
                 leaves in the tree or no merges will be performed.
         """
-        n_merges = (
-            self.__number_of_merges
-            if self.__number_of_merges is not None
-            else int(tree.n_cell * self.__ratio)
-        )
+        n_merges = self.__number_of_merges if self.__number_of_merges is not None else int(tree.n_cell * self.__ratio)
         if n_merges >= len(tree.leaves):
-            raise LeafSubsamplerError(
-                "Number of required merges exceeds number of leaves in the tree."
-            )
+            raise LeafSubsamplerError("Number of required merges exceeds number of leaves in the tree.")
         if n_merges == 0:
             raise LeafSubsamplerError("No merges to be performed.")
         # Tree needs to have character matrix defined
@@ -105,9 +98,7 @@ class SupercellularSampler(LeafSubsampler):
                     continue
                 leaves.append(leaf)
                 weights.append(1 / distances[leaf])
-            leaf2 = np.random.choice(
-                leaves, p=np.array(weights) / np.sum(weights)
-            )
+            leaf2 = np.random.choice(leaves, p=np.array(weights) / np.sum(weights))
 
             leaf2_state = merged_tree.get_character_states(leaf2)
 
@@ -118,9 +109,7 @@ class SupercellularSampler(LeafSubsampler):
             # If the tree is ultrametric, this preserves ultrametricity.
             new_leaf = f"{leaf1}-{leaf2}"
             lca = merged_tree.find_lca(leaf1, leaf2)
-            new_time = (
-                merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)
-            ) / 2
+            new_time = (merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)) / 2
             new_state = []
             for char1, char2 in zip(leaf1_state, leaf2_state, strict=False):
                 if not isinstance(char1, tuple):

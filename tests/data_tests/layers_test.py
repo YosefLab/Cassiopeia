@@ -1,12 +1,14 @@
 """
 Tests for the Layers class in the data module.
 """
+
 import itertools
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 
 
 def find_triplet_structure(triplet, T):
@@ -29,7 +31,6 @@ def find_triplet_structure(triplet, T):
 
 class TestLayers(unittest.TestCase):
     def setUp(self):
-
         character_matrix = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0],
@@ -42,9 +43,7 @@ class TestLayers(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
         topology = nx.DiGraph()
-        topology.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"]
-        )
+        topology.add_nodes_from(["a", "b", "c", "d", "e", "root", "6", "7", "8", "9"])
         topology.add_edges_from(
             [
                 ("root", "9"),
@@ -62,20 +61,14 @@ class TestLayers(unittest.TestCase):
         self.base_character_matrix = character_matrix
         self.base_tree_topology = topology
 
-        self.tree = cas.data.CassiopeiaTree(
-            character_matrix=character_matrix, tree=topology
-        )
+        self.tree = cas.data.CassiopeiaTree(character_matrix=character_matrix, tree=topology)
 
     def test_basic_character_matrix(self):
-
         character_matrix = self.tree.character_matrix
 
-        pd.testing.assert_frame_equal(
-            character_matrix, self.base_character_matrix
-        )
+        pd.testing.assert_frame_equal(character_matrix, self.base_character_matrix)
 
     def test_add_layer(self):
-
         character_matrix = self.tree.character_matrix.copy()
         character_matrix.loc["a"] = [0, 0, 0]
 
@@ -94,9 +87,7 @@ class TestLayers(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        pd.testing.assert_frame_equal(
-            modified_character_matrix, expected_character_matrix
-        )
+        pd.testing.assert_frame_equal(modified_character_matrix, expected_character_matrix)
 
         # test layer updates
         self.assertListEqual([1, 2, 0], self.tree.get_character_states("b"))
@@ -118,16 +109,11 @@ class TestLayers(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        pd.testing.assert_frame_equal(
-            layer_character_matrix, expected_character_matrix
-        )
+        pd.testing.assert_frame_equal(layer_character_matrix, expected_character_matrix)
 
-        pd.testing.assert_frame_equal(
-            self.tree.character_matrix, self.base_character_matrix
-        )
+        pd.testing.assert_frame_equal(self.tree.character_matrix, self.base_character_matrix)
 
     def test_reconstruct_tree_with_layers(self):
-
         # first reconstruct basic tree
         greedy_solver = cas.solver.VanillaGreedySolver()
         greedy_solver.solve(self.tree, collapse_mutationless_edges=True)
@@ -135,12 +121,8 @@ class TestLayers(unittest.TestCase):
         reconstructed_tree = self.tree.get_tree_topology()
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(
-                triplet, self.base_tree_topology
-            )
-            observed_triplet = find_triplet_structure(
-                triplet, reconstructed_tree
-            )
+            expected_triplet = find_triplet_structure(triplet, self.base_tree_topology)
+            observed_triplet = find_triplet_structure(triplet, reconstructed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
         # add layer and reconstruct tree
@@ -156,14 +138,10 @@ class TestLayers(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
         self.tree.layers["modified"] = modified_character_matrix
-        greedy_solver.solve(
-            self.tree, collapse_mutationless_edges=True, layer="modified"
-        )
+        greedy_solver.solve(self.tree, collapse_mutationless_edges=True, layer="modified")
 
         expected_tree_topology = nx.DiGraph()
-        expected_tree_topology.add_nodes_from(
-            ["a", "b", "c", "d", "e", "root", "1", "2"]
-        )
+        expected_tree_topology.add_nodes_from(["a", "b", "c", "d", "e", "root", "1", "2"])
         expected_tree_topology.add_edges_from(
             [
                 ("root", "d"),
@@ -179,19 +157,14 @@ class TestLayers(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "b", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(
-                triplet, expected_tree_topology
-            )
-            observed_triplet = find_triplet_structure(
-                triplet, reconstructed_tree
-            )
+            expected_triplet = find_triplet_structure(triplet, expected_tree_topology)
+            observed_triplet = find_triplet_structure(triplet, reconstructed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure character states get set correctly
         self.assertEqual([1, 0, 0], self.tree.get_character_states("e"))
 
     def test_add_layer_with_incorrect_number_of_cells(self):
-
         modified_character_matrix = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0],
@@ -211,7 +184,6 @@ class TestLayers(unittest.TestCase):
         self.assertRaises(ValueError, add_layer_fn, modified_character_matrix)
 
     def test_add_layer_with_different_number_of_characters(self):
-
         modified_character_matrix = pd.DataFrame.from_dict(
             {
                 "a": [1, 1, 0, 1],
@@ -226,9 +198,7 @@ class TestLayers(unittest.TestCase):
 
         self.tree.layers["modified"] = modified_character_matrix
 
-        self.assertListEqual(
-            [1, 2, 0, 5], self.tree.layers["modified"].loc["b"].tolist()
-        )
+        self.assertListEqual([1, 2, 0, 5], self.tree.layers["modified"].loc["b"].tolist())
 
         # make sure states change
         self.assertListEqual([1, 2, 0], self.tree.get_character_states("b"))

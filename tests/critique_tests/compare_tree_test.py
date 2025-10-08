@@ -4,16 +4,14 @@ Tests for the cassiopeia.critique.compare module.
 
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
+
+import cassiopeia as cas
 
 
 class TestTreeComparisons(unittest.TestCase):
     def setUp(self):
-
-        self.ground_truth_tree = cas.data.CassiopeiaTree(
-            tree=nx.balanced_tree(2, 3, create_using=nx.DiGraph)
-        )
+        self.ground_truth_tree = cas.data.CassiopeiaTree(tree=nx.balanced_tree(2, 3, create_using=nx.DiGraph))
 
         tree1 = nx.DiGraph()
         tree1.add_nodes_from(list(range(15)))
@@ -62,9 +60,7 @@ class TestTreeComparisons(unittest.TestCase):
                 (7, 17),
             ]
         )
-        self.multifurcating_ground_truth = cas.data.CassiopeiaTree(
-            tree=multifurcating_ground_truth
-        )
+        self.multifurcating_ground_truth = cas.data.CassiopeiaTree(tree=multifurcating_ground_truth)
 
         tree2 = nx.DiGraph()
         tree2.add_edges_from(
@@ -91,35 +87,25 @@ class TestTreeComparisons(unittest.TestCase):
         self.tree2 = cas.data.CassiopeiaTree(tree=tree2)
 
         ground_truth_rake = nx.DiGraph()
-        ground_truth_rake.add_edges_from(
-            [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)]
-        )
+        ground_truth_rake.add_edges_from([(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)])
 
         self.ground_truth_rake = cas.data.CassiopeiaTree(tree=ground_truth_rake)
 
     def test_out_group(self):
-
-        out_group = cas.critique.critique_utilities.get_outgroup(
-            self.tree1, ("11", "14", "9")
-        )
+        out_group = cas.critique.critique_utilities.get_outgroup(self.tree1, ("11", "14", "9"))
 
         self.assertEqual("9", out_group)
 
-        out_group = cas.critique.critique_utilities.get_outgroup(
-            self.ground_truth_rake, ("4", "5", "6")
-        )
+        out_group = cas.critique.critique_utilities.get_outgroup(self.ground_truth_rake, ("4", "5", "6"))
         self.assertEqual("None", out_group)
 
     def test_same_tree_gives_perfect_triplets_correct(self):
-
         (
             all_triplets,
             resolvable_triplets_correct,
             unresolved_triplets_correct,
             proportion_unresolvable,
-        ) = cas.critique.triplets_correct(
-            self.ground_truth_tree, self.ground_truth_tree, number_of_trials=10
-        )
+        ) = cas.critique.triplets_correct(self.ground_truth_tree, self.ground_truth_tree, number_of_trials=10)
 
         for depth in all_triplets.keys():
             self.assertEqual(all_triplets[depth], 1.0)
@@ -131,15 +117,12 @@ class TestTreeComparisons(unittest.TestCase):
             self.assertEqual(proportion_unresolvable[depth], 0.0)
 
     def test_triplets_correct_different_trees(self):
-
         (
             all_triplets,
             resolvable_triplets_correct,
             unresolved_triplets_correct,
             proportion_unresolvable,
-        ) = cas.critique.triplets_correct(
-            self.ground_truth_tree, self.tree1, number_of_trials=10
-        )
+        ) = cas.critique.triplets_correct(self.ground_truth_tree, self.tree1, number_of_trials=10)
 
         self.assertEqual(all_triplets[0], 1.0)
         self.assertEqual(all_triplets[1], 0.0)
@@ -148,7 +131,6 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertEqual(proportion_unresolvable[1], 0.0)
 
     def test_triplets_correct_multifurcating_same_tree(self):
-
         (
             all_triplets,
             resolvable_triplets_correct,
@@ -169,9 +151,7 @@ class TestTreeComparisons(unittest.TestCase):
         #   the prob of sampling a leaf from each of its children
         prob_of_sampling_left = 0.833333
         prob_of_sampling_unresolvable_from_left = 0.4
-        expected_unresolvable_triplets = (
-            prob_of_sampling_left * prob_of_sampling_unresolvable_from_left
-        )
+        expected_unresolvable_triplets = prob_of_sampling_left * prob_of_sampling_unresolvable_from_left
 
         self.assertEqual(proportion_unresolvable[0], 0)
         self.assertAlmostEqual(
@@ -181,15 +161,12 @@ class TestTreeComparisons(unittest.TestCase):
         )
 
     def test_triplets_correct_multifurcating_different_trees(self):
-
         (
             all_triplets,
             resolvable_triplets_correct,
             unresolved_triplets_correct,
             proportion_unresolvable,
-        ) = cas.critique.triplets_correct(
-            self.multifurcating_ground_truth, self.tree2, number_of_trials=1000
-        )
+        ) = cas.critique.triplets_correct(self.multifurcating_ground_truth, self.tree2, number_of_trials=1000)
 
         self.assertEqual(all_triplets[0], 1.0)
 
@@ -202,12 +179,9 @@ class TestTreeComparisons(unittest.TestCase):
         # incorrect, so the overall triplets correct should be just the prob.
         # of sampling the left
         prob_of_sampling_left = 0.833
-        self.assertAlmostEqual(
-            all_triplets[1], prob_of_sampling_left, delta=0.05
-        )
+        self.assertAlmostEqual(all_triplets[1], prob_of_sampling_left, delta=0.05)
 
     def test_rake_tree(self):
-
         (
             all_triplets,
             resolvable_triplets_correct,
@@ -224,10 +198,7 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertEqual(proportion_unresolvable[0], 1.0)
 
     def test_robinson_foulds_same_tree_bifurcating(self):
-
-        rf, max_rf = cas.critique.robinson_foulds(
-            self.ground_truth_tree, self.ground_truth_tree
-        )
+        rf, max_rf = cas.critique.robinson_foulds(self.ground_truth_tree, self.ground_truth_tree)
 
         self.assertEqual(rf, 0)
         self.assertEqual(max_rf, 10)

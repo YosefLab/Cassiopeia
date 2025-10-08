@@ -1,9 +1,10 @@
 import itertools
 import unittest
 
-import cassiopeia as cas
 import networkx as nx
 import pandas as pd
+
+import cassiopeia as cas
 from cassiopeia.solver import missing_data_methods, solver_utilities
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
 
@@ -27,7 +28,6 @@ def find_triplet_structure(triplet, T):
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
-
     def test_basic_freq_dict(self):
         cm = pd.DataFrame.from_dict(
             {
@@ -149,9 +149,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
         keep_rows = (
             cm.apply(
-                lambda x: [
-                    set(s) if type(s) == tuple else {s} for s in x.values
-                ],
+                lambda x: [set(s) if type(s) == tuple else {s} for s in x.values],
                 axis=0,
             )
             .apply(tuple, axis=1)
@@ -192,9 +190,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        left_set, right_set = missing_data_methods.assign_missing_average(
-            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"]
-        )
+        left_set, right_set = missing_data_methods.assign_missing_average(cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"])
         self.assertEqual(left_set, ["c1", "c2", "c3"])
         self.assertEqual(right_set, ["c4", "c5"])
 
@@ -277,9 +273,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
 
-        left, right = vgsolver.perform_split(
-            unique_character_matrix, unique_character_matrix.index
-        )
+        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
 
         self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
         self.assertListEqual(right, ["c1", "c2"])
@@ -301,9 +295,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             ]
         )
         observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -367,9 +359,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             ]
         )
         observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -421,9 +411,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             4: {5: 0.5},
         }
 
-        vg_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1, priors=priors
-        )
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
 
         vgsolver = VanillaGreedySolver()
 
@@ -445,9 +433,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             ]
         )
         observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
@@ -476,9 +462,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             4: {5: 0.99, 6: 0.01},
         }
 
-        vg_tree = cas.data.CassiopeiaTree(
-            cm, missing_state_indicator=-1, priors=priors
-        )
+        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
         vgsolver = VanillaGreedySolver()
 
         vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
@@ -498,9 +482,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
             ]
         )
         observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
 
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
@@ -549,16 +531,12 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
 
-        left, right = vgsolver.perform_split(
-            unique_character_matrix, unique_character_matrix.index
-        )
+        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
 
         self.assertEqual(set(left), {"c4", "c5", "c6", "c3"})
         self.assertEqual(set(right), {"c1", "c2"})
 
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
-        )
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
 
         vgsolver.solve(vg_tree)
         expected_tree = nx.DiGraph()
@@ -601,17 +579,12 @@ class VanillaGreedySolverTest(unittest.TestCase):
 
         unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
 
-        left, right = vgsolver.perform_split(
-            unique_character_matrix, unique_character_matrix.index
-        )
+        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
 
         self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
         self.assertListEqual(right, ["c1", "c2"])
 
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6"], 3
-        )
-
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
 
         vgsolver.solve(vg_tree)
         expected_tree = nx.DiGraph()
@@ -653,11 +626,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
         vgsolver = VanillaGreedySolver()
 
-
-        triplets = itertools.combinations(
-            ["c1", "c2", "c3", "c4", "c5", "c6", "c6_dup"], 3
-        )
-
+        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c6_dup"], 3)
 
         vgsolver.solve(vg_tree)
         expected_tree = nx.DiGraph()
@@ -682,7 +651,6 @@ class VanillaGreedySolverTest(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
-
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ technologies (e.g, as described in Chan et al, Nature 2019 or McKenna et al,
 Science 2016). This simulator implements the method `overlay_data` which takes
 in a CassiopeiaTree with edge lengths and overlays states onto cut-sites.
 """
+
 import math
 from collections.abc import Callable
 
@@ -121,9 +122,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         number_of_cassettes: int = 10,
         size_of_cassette: int = 3,
         mutation_rate: float | list[float] = 0.01,
-        state_generating_distribution: Callable[
-            [], float
-        ] = lambda: np.random.exponential(1e-5),
+        state_generating_distribution: Callable[[], float] = lambda: np.random.exponential(1e-5),
         number_of_states: int = 100,
         state_priors: dict[int, float] | None = None,
         heritable_silencing_rate: float = 1e-4,
@@ -133,13 +132,10 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         random_seed: int | None = None,
         collapse_sites_on_cassette: bool = True,
     ):
-
         if number_of_cassettes <= 0 or not isinstance(number_of_cassettes, int):
             raise DataSimulatorError("Specify a positive number of cassettes.")
         if size_of_cassette <= 0 or not isinstance(size_of_cassette, int):
-            raise DataSimulatorError(
-                "Specify a positive number of cut-sites" " per cassette."
-            )
+            raise DataSimulatorError("Specify a positive number of cut-sites per cassette.")
 
         self.size_of_cassette = size_of_cassette
         self.number_of_cassettes = number_of_cassettes
@@ -152,19 +148,13 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         if isinstance(mutation_rate, float):
             if mutation_rate < 0:
-                raise DataSimulatorError(
-                    "Mutation rate needs to be" " non-negative."
-                )
-            self.mutation_rate_per_character = [
-                mutation_rate
-            ] * number_of_characters
+                raise DataSimulatorError("Mutation rate needs to be non-negative.")
+            self.mutation_rate_per_character = [mutation_rate] * number_of_characters
         elif isinstance(mutation_rate, list):
             if len(mutation_rate) == number_of_characters:
                 self.mutation_rate_per_character = mutation_rate
             elif len(mutation_rate) == self.size_of_cassette:
-                self.mutation_rate_per_character = (
-                    mutation_rate * self.number_of_cassettes
-                )
+                self.mutation_rate_per_character = mutation_rate * self.number_of_cassettes
             else:
                 raise DataSimulatorError(
                     "Length of mutation rate array is not"
@@ -173,13 +163,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                 )
 
             if np.any(np.array(mutation_rate) < 0):
-                raise DataSimulatorError(
-                    "Mutation rate needs to be" " non-negative."
-                )
+                raise DataSimulatorError("Mutation rate needs to be non-negative.")
         else:
-            raise DataSimulatorError(
-                "Mutation rate needs to be a float or a list."
-            )
+            raise DataSimulatorError("Mutation rate needs to be a float or a list.")
 
         # convert state_priors to list if numpy array
         if isinstance(state_priors, np.ndarray):
@@ -191,33 +177,23 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             self.mutation_priors_per_character = None
         else:
             if isinstance(state_priors, dict):
-                self.mutation_priors_per_character = [
-                    state_priors
-                ] * number_of_characters
+                self.mutation_priors_per_character = [state_priors] * number_of_characters
             elif isinstance(state_priors, list):
                 # check that all elements are dictionaries
                 if not all(isinstance(item, dict) for item in state_priors):
-                    raise DataSimulatorError(
-                        "State priors needs to be a dictionary or a list of"
-                        " dictionaries."
-                    )
+                    raise DataSimulatorError("State priors needs to be a dictionary or a list of dictionaries.")
                 if len(state_priors) == number_of_characters:
                     self.mutation_priors_per_character = state_priors
-                elif len(state_priors) ==  self.size_of_cassette:
-                    self.mutation_priors_per_character = (
-                        state_priors * self.number_of_cassettes
-                    )
+                elif len(state_priors) == self.size_of_cassette:
+                    self.mutation_priors_per_character = state_priors * self.number_of_cassettes
                 else:
                     raise DataSimulatorError(
                         "Length of mutation prior array is not"
                         " the same as the number of characters"
                         " or the number of cassettes."
-                )
+                    )
             else:
-                raise DataSimulatorError(
-                    "State priors needs to be a dictionary or a list of"
-                    " dictionaries."
-                )
+                raise DataSimulatorError("State priors needs to be a dictionary or a list of dictionaries.")
 
             for prior in self.mutation_priors_per_character:
                 Z = np.sum(list(prior.values()))
@@ -252,15 +228,11 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         # use this for all future simulations.
         if self.mutation_priors_per_character is None:
             self.mutation_priors = {}
-            probabilites = [
-                self.state_generating_distribution()
-                for _ in range(self.number_of_states)
-            ]
+            probabilites = [self.state_generating_distribution() for _ in range(self.number_of_states)]
             Z = np.sum(probabilites)
             for i in range(self.number_of_states):
                 self.mutation_priors[i + 1] = probabilites[i] / Z
-            self.mutation_priors_per_character = (
-                [self.mutation_priors] * number_of_characters)
+            self.mutation_priors_per_character = [self.mutation_priors] * number_of_characters
 
         # initialize character states
         character_matrix = {}
@@ -268,7 +240,6 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             character_matrix[node] = [-1] * number_of_characters
 
         for node in tree.depth_first_traverse_nodes(tree.root, postorder=False):
-
             if tree.is_root(node):
                 character_matrix[node] = [0] * number_of_characters
                 continue
@@ -277,11 +248,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             life_time = tree.get_time(node) - tree.get_time(parent)
 
             character_array = character_matrix[parent]
-            open_sites = [
-                c
-                for c in range(len(character_array))
-                if character_array[c] == 0
-            ]
+            open_sites = [c for c in range(len(character_array)) if character_array[c] == 0]
 
             new_cuts = []
             for site in open_sites:
@@ -294,19 +261,13 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             # collapse cuts that are on the same cassette
             cuts_remaining = new_cuts
             if self.collapse_sites_on_cassette and self.size_of_cassette > 1:
-                character_array, cuts_remaining = self.collapse_sites(
-                    character_array, new_cuts
-                )
+                character_array, cuts_remaining = self.collapse_sites(character_array, new_cuts)
 
             # introduce new states at cut sites
-            character_array = self.introduce_states(
-                character_array, cuts_remaining
-            )
+            character_array = self.introduce_states(character_array, cuts_remaining)
 
             # silence cassettes
-            silencing_probability = 1 - (
-                np.exp(-life_time * self.heritable_silencing_rate)
-            )
+            silencing_probability = 1 - (np.exp(-life_time * self.heritable_silencing_rate))
             character_array = self.silence_cassettes(
                 character_array,
                 silencing_probability,
@@ -325,9 +286,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         tree.set_all_character_states(character_matrix)
 
-    def collapse_sites(
-        self, character_array: list[int], cuts: list[int]
-    ) -> tuple[list[int], list[int]]:
+    def collapse_sites(self, character_array: list[int], cuts: list[int]) -> tuple[list[int], list[int]]:
         """Collapses cassettes.
 
         Given a character array and a new set of cuts that Cas9 is inducing,
@@ -357,17 +316,13 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                     np.max(sites_to_collapse),
                 )
                 for site in range(left, right + 1):
-                    updated_character_array[
-                        site
-                    ] = self.heritable_missing_data_state
+                    updated_character_array[site] = self.heritable_missing_data_state
             else:
                 cuts_remaining.append(np.array(cuts)[cut_indices[0]])
 
         return updated_character_array, cuts_remaining
 
-    def introduce_states(
-        self, character_array: list[int], cuts: list[int]
-    ) -> list[int]:
+    def introduce_states(self, character_array: list[int], cuts: list[int]) -> list[int]:
         """Adds states to character array.
 
         New states are added to the character array at the predefined cut
@@ -386,8 +341,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         for i in cuts:
             states = list(self.mutation_priors_per_character[i].keys())
             probabilities = list(self.mutation_priors_per_character[i].values())
-            state = np.random.choice(states,
-                1, p=probabilities)[0]
+            state = np.random.choice(states, 1, p=probabilities)[0]
             updated_character_array[i] = state
 
         return updated_character_array
@@ -416,9 +370,7 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         updated_character_array = character_array.copy()
 
         cassettes = self.get_cassettes()
-        cut_site_by_cassette = np.digitize(
-            range(len(character_array)), cassettes
-        )
+        cut_site_by_cassette = np.digitize(range(len(character_array)), cassettes)
 
         for cassette in range(1, self.number_of_cassettes + 1):
             if np.random.uniform() < silencing_rate:
@@ -440,8 +392,5 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             An array of indices corresponding to the start positions of the
                 cassettes.
         """
-        cassettes = [
-            (self.size_of_cassette * j)
-            for j in range(0, self.number_of_cassettes)
-        ]
+        cassettes = [(self.size_of_cassette * j) for j in range(0, self.number_of_cassettes)]
         return cassettes

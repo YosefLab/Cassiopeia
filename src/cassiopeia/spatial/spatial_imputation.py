@@ -20,7 +20,7 @@ def impute_alleles_from_spatial_data(
     num_imputation_iterations: int = 1,
     max_neighbor_distance: float = np.inf,
     coordinates: pd.DataFrame | None = None,
-    connect_key: str = "spatial_connectivities"
+    connect_key: str = "spatial_connectivities",
 ) -> pd.DataFrame:
     """Imputes data based on spatial location.
 
@@ -76,13 +76,9 @@ def impute_alleles_from_spatial_data(
         An imputed character matrix.
     """
     if (not spatial_graph) and (not adata):
-        raise Exception(
-            "One of the following must be specified: "
-            "`spatial_graph` or `adata`."
-        )
+        raise Exception("One of the following must be specified: `spatial_graph` or `adata`.")
 
     if not spatial_graph:
-
         # create spatial graph if needed
         spatial_graph = spatial_utilities.get_spatial_graph_from_anndata(
             adata,
@@ -95,8 +91,7 @@ def impute_alleles_from_spatial_data(
     missing_indices = np.where(character_matrix == -1)
 
     for _round in range(num_imputation_iterations):
-
-        print(f">> Imputation round {_round+1}...")
+        print(f">> Imputation round {_round + 1}...")
 
         character_matrix_imputed = prev_character_matrix_imputed.copy()
         missing_indices = np.where(prev_character_matrix_imputed == -1)
@@ -105,22 +100,16 @@ def impute_alleles_from_spatial_data(
             zip(missing_indices[0], missing_indices[1], strict=False),
             total=len(missing_indices[0]),
         ):
-            (imputed_value, proportion_of_votes, number_of_votes) = (
-                spatial_utilities.impute_single_state(
-                    prev_character_matrix_imputed.index.values[i],
-                    j,
-                    prev_character_matrix_imputed,
-                    neighborhood_graph=spatial_graph,
-                    number_of_hops=imputation_hops,
-                    max_neighbor_distance=max_neighbor_distance,
-                    coordinates=coordinates,
-                )
+            (imputed_value, proportion_of_votes, number_of_votes) = spatial_utilities.impute_single_state(
+                prev_character_matrix_imputed.index.values[i],
+                j,
+                prev_character_matrix_imputed,
+                neighborhood_graph=spatial_graph,
+                number_of_hops=imputation_hops,
+                max_neighbor_distance=max_neighbor_distance,
+                coordinates=coordinates,
             )
-            if (
-                proportion_of_votes >= imputation_concordance
-                and imputed_value != -1
-                and imputed_value != 0
-            ):
+            if proportion_of_votes >= imputation_concordance and imputed_value != -1 and imputed_value != 0:
                 character_matrix_imputed.iloc[i, j] = int(imputed_value)
 
         prev_character_matrix_imputed = character_matrix_imputed.copy()

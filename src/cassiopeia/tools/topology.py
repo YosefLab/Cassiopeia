@@ -2,6 +2,7 @@
 Utilities to assess topological properties of a phylogeny, such as balance
 and expansion.
 """
+
 import math
 from collections.abc import Callable
 
@@ -67,12 +68,10 @@ def compute_expansion_pvalues(
             _depths[node] = _depths[tree.parent(node)] + 1
 
     for node in tree.depth_first_traverse_nodes(postorder=False):
-
         n = len(tree.leaves_in_subtree(node))
 
         k = len(tree.children(node))
         for c in tree.children(node):
-
             if len(tree.leaves_in_subtree(c)) < min_clade_size:
                 continue
 
@@ -96,7 +95,8 @@ def compute_cophenetic_correlation(
     tree: CassiopeiaTree,
     weights: pd.DataFrame | None = None,
     dissimilarity_map: pd.DataFrame | None = None,
-    dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
+    dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
+    | None = dissimilarity_functions.weighted_hamming_distance,
 ) -> tuple[float, float]:
     """Computes the cophenetic correlation of a lineage.
 
@@ -126,22 +126,12 @@ def compute_cophenetic_correlation(
         The cophenetic correlation value and significance for the tree.
     """
     # set phylogenetic weight matrix
-    W = (
-        compute_phylogenetic_weight_matrix(tree)
-        if (weights is None)
-        else weights
-    )
+    W = compute_phylogenetic_weight_matrix(tree) if (weights is None) else weights
 
     # set dissimilarity map
-    D = (
-        tree.get_dissimilarity_map()
-        if (dissimilarity_map is None)
-        else dissimilarity_map
-    )
+    D = tree.get_dissimilarity_map() if (dissimilarity_map is None) else dissimilarity_map
     if D is None:
-        tree.compute_dissimilarity_map(
-            dissimilarity_function=dissimilarity_function
-        )
+        tree.compute_dissimilarity_map(dissimilarity_function=dissimilarity_function)
         D = tree.get_dissimilarity_map()
 
     # align matrices

@@ -14,17 +14,17 @@ Main Tutorials
    notebooks/benchmark
    notebooks/reconstruct
    notebooks/local_plotting
-   
+
 
 Other Tutorials
 -----------------
 
 .. toctree::
    :maxdepth: 1
-   
+
    notebooks/simulate_ecDNA
    notebooks/spatial
-   
+
 Contributed tutorials
 ---------------------
 

@@ -10,8 +10,8 @@ import copy
 import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 from cassiopeia.mixins import LeafSubsamplerError
+from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class UniformLeafSubsampler(LeafSubsampler):
@@ -34,21 +34,13 @@ class UniformLeafSubsampler(LeafSubsampler):
             number_of_leaves: Explicitly specifies the number of leaves to be sampled
         """
         if ratio is None and number_of_leaves is None:
-            raise LeafSubsamplerError(
-                "At least one of 'ratio' and 'number_of_leaves' "
-                "must be specified."
-            )
+            raise LeafSubsamplerError("At least one of 'ratio' and 'number_of_leaves' must be specified.")
         if ratio is not None and number_of_leaves is not None:
-            raise LeafSubsamplerError(
-                "Exactly one of 'ratio' and 'number_of_leaves'"
-                "must be specified."
-            )
+            raise LeafSubsamplerError("Exactly one of 'ratio' and 'number_of_leaves'must be specified.")
         self.__ratio = ratio
         self.__number_of_leaves = number_of_leaves
 
-    def subsample_leaves(
-        self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True
-    ) -> CassiopeiaTree:
+    def subsample_leaves(self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True) -> CassiopeiaTree:
         """Uniformly subsample leaf samples of a given tree.
 
         Generates a uniform random sample on the leaves of the given
@@ -81,44 +73,28 @@ class UniformLeafSubsampler(LeafSubsampler):
         """
         ratio = self.__ratio
         number_of_leaves = self.__number_of_leaves
-        n_subsample = (
-            number_of_leaves
-            if number_of_leaves is not None
-            else int(tree.n_cell * ratio)
-        )
+        n_subsample = number_of_leaves if number_of_leaves is not None else int(tree.n_cell * ratio)
         if n_subsample <= 0:
-            raise LeafSubsamplerError(
-                "Specified number of leaves sampled is <= 0."
-            )
+            raise LeafSubsamplerError("Specified number of leaves sampled is <= 0.")
         if n_subsample > tree.n_cell:
             raise LeafSubsamplerError(
-                "Specified number of leaves sampled is greater than the number"
-                " of leaves in the given tree."
+                "Specified number of leaves sampled is greater than the number of leaves in the given tree."
             )
 
         n_remove = len(tree.leaves) - n_subsample
         subsampled_tree = copy.deepcopy(tree)
-        leaf_remove = np.random.choice(
-            subsampled_tree.leaves, n_remove, replace=False
-        )
+        leaf_remove = np.random.choice(subsampled_tree.leaves, n_remove, replace=False)
 
         subsampled_tree.remove_leaves_and_prune_lineages(leaf_remove)
 
         # Keep the singular root edge if it exists and is indicated to be kept
-        if (
-            len(subsampled_tree.children(subsampled_tree.root)) == 1
-            and keep_singular_root_edge
-        ):
+        if len(subsampled_tree.children(subsampled_tree.root)) == 1 and keep_singular_root_edge:
             collapse_source = subsampled_tree.children(subsampled_tree.root)[0]
         else:
             collapse_source = None
         subsampled_tree.collapse_unifurcations(source=collapse_source)
 
         # Copy and annotate branch lengths and times
-        subsampled_tree.set_times(
-            {
-                node: tree.get_time(node) for node in subsampled_tree.nodes
-            }
-        )
+        subsampled_tree.set_times({node: tree.get_time(node) for node in subsampled_tree.nodes})
 
         return subsampled_tree

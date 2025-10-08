@@ -1,6 +1,5 @@
 """Utilities for spatial lineage-tracing module."""
 
-
 import anndata
 import networkx as nx
 import numpy as np
@@ -13,7 +12,7 @@ def get_spatial_graph_from_anndata(
     adata: anndata.AnnData,
     neighborhood_radius: int = 30.0,
     neighborhood_size: float | None = None,
-    connect_key: str = "spatial"
+    connect_key: str = "spatial",
 ) -> nx.DiGraph:
     """Get a spatial graph structure from an spatial anndata
 
@@ -40,8 +39,7 @@ def get_spatial_graph_from_anndata(
     # Optional dependencies that are required for 3D plotting
     sq = try_import("squidpy")
     if sq is None:
-        raise Exception("If you would like to infer a spatial graph, please "
-                        "install squidpy.")
+        raise Exception("If you would like to infer a spatial graph, please install squidpy.")
 
     # create spatial graph if needed
     if neighborhood_size:
@@ -62,13 +60,14 @@ def get_spatial_graph_from_anndata(
             key_added=connect_key,
         )
 
-    spatial_graph = nx.from_numpy_array(adata.obsp[f'{connect_key}_connectivities'])
+    spatial_graph = nx.from_numpy_array(adata.obsp[f"{connect_key}_connectivities"])
     node_map = dict(
-            zip(
-                range(adata.obsp[f'{connect_key}_connectivities'].shape[0]),
-                adata.obs_names, strict=False,
-            )
+        zip(
+            range(adata.obsp[f"{connect_key}_connectivities"].shape[0]),
+            adata.obs_names,
+            strict=False,
         )
+    )
     spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
 
     return spatial_graph
@@ -99,23 +98,13 @@ def impute_single_state(
         The state, the frequency of votes, and the absolute number of votes
     """
     votes = []
-    for _, node in nx.bfs_edges(
-        neighborhood_graph, cell, depth_limit=number_of_hops
-    ):
+    for _, node in nx.bfs_edges(neighborhood_graph, cell, depth_limit=number_of_hops):
         if node not in character_matrix.index:
             continue
 
         distance = 0
         if coordinates is not None:
-            distance = np.sqrt(
-                np.sum(
-                    (
-                        coordinates.loc[cell].values
-                        - coordinates.loc[node].values
-                    )
-                    ** 2
-                )
-            )
+            distance = np.sqrt(np.sum((coordinates.loc[cell].values - coordinates.loc[node].values) ** 2))
 
         state = character_matrix.loc[node].iloc[character]
         if distance <= max_neighbor_distance and state != -1:

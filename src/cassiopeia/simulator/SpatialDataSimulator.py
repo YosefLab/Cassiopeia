@@ -4,6 +4,7 @@ SpatialDataSimulator. A SpatialDataSimulator overlays spatial data onto a
 Cassiopeiatree, i.e. it sets the spatial coordinates of a CassiopeiaTree
 (in particular, as attributes of the nodes of the tree and the cell meta).
 """
+
 import abc
 
 from cassiopeia.data import CassiopeiaTree

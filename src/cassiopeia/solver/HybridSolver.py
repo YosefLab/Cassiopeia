@@ -8,6 +8,7 @@ infer relationships at the bottom of the phylogeny under construction.
 In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
+
 import multiprocessing
 from collections.abc import Generator
 
@@ -73,11 +74,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         prior_transformation: str = "negative_log",
         progress_bar: bool = True,
     ):
-
         if lca_cutoff is None and cell_cutoff is None:
-            raise HybridSolverError(
-                "Please specify a cutoff, either through lca_cutoff or cell_cutoff"
-            )
+            raise HybridSolverError("Please specify a cutoff, either through lca_cutoff or cell_cutoff")
 
         super().__init__(prior_transformation)
 
@@ -130,9 +128,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
 
         tree = nx.DiGraph()
         # call top-down solver until a desired cutoff is reached.
@@ -150,7 +146,6 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         # multi-threaded bottom solver approach
         if self.threads > 1:
             with multiprocessing.Pool(processes=self.threads) as pool:
-
                 results = list(
                     tqdm(
                         pool.starmap(
@@ -160,16 +155,16 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                     cassiopeia_tree,
                                     subproblem[0],
                                     subproblem[1],
-                                    None if logfile is None else
-                                        f"{logfile.split('.log')[0]}-"
-                                        f"{next(logfile_names)}.log",
+                                    None
+                                    if logfile is None
+                                    else f"{logfile.split('.log')[0]}-{next(logfile_names)}.log",
                                     layer,
                                 )
                                 for subproblem in subproblems
                             ],
                         ),
                         total=len(subproblems),
-                        disable=not self.progress_bar
+                        disable=not self.progress_bar,
                     )
                 )
         # single-threaded bottom solver approach
@@ -179,17 +174,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                     cassiopeia_tree,
                     subproblem[0],
                     subproblem[1],
-                    None if logfile is None else
-                        f"{logfile.split('.log')[0]}-"
-                        f"{next(logfile_names)}.log",
+                    None if logfile is None else f"{logfile.split('.log')[0]}-{next(logfile_names)}.log",
                     layer,
                 )
-                for subproblem in tqdm(subproblems,
-                    total=len(subproblems),disable=not self.progress_bar)
+                for subproblem in tqdm(subproblems, total=len(subproblems), disable=not self.progress_bar)
             ]
 
         for result in results:
-
             subproblem_tree, subproblem_root = result[0], result[1]
 
             # check that the only overlapping name is the root, else
@@ -218,9 +209,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def apply_top_solver(
         self,
@@ -257,11 +246,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         if len(samples) == 1:
             return samples[0], [samples], tree
 
-        clades = list(
-            self.top_solver.perform_split(
-                character_matrix, samples, weights, missing_state_indicator
-            )
-        )
+        clades = list(self.top_solver.perform_split(character_matrix, samples, weights, missing_state_indicator))
 
         root = next(node_name_generator)
         tree.add_node(root)
@@ -277,10 +262,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         subproblems = []
         for clade in clades:
-
-            if self.assess_cutoff(
-                clade, character_matrix, missing_state_indicator
-            ):
+            if self.assess_cutoff(clade, character_matrix, missing_state_indicator):
                 subproblems += [(root, clade)]
             else:
                 child, new_subproblems, tree = self.apply_top_solver(
@@ -359,9 +341,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.bottom_solver.solve(subtree, logfile=logfile)
 
         subproblem_tree = subtree.get_tree_topology()
-        subproblem_root = [
-            n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0
-        ][0]
+        subproblem_root = [n for n in subproblem_tree if subproblem_tree.in_degree(n) == 0][0]
         subproblem_tree.add_edge(root, subproblem_root)
 
         return subproblem_tree, root
@@ -390,9 +370,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             lca_distances = [
-                dissimilarity_functions.hamming_distance(
-                    np.array(root_states), character_matrix.loc[u].values
-                )
+                dissimilarity_functions.hamming_distance(np.array(root_states), character_matrix.loc[u].values)
                 for u in samples
             ]
 

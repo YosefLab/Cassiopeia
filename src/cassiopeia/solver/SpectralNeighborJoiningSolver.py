@@ -5,6 +5,7 @@ titled "Spectral neighbor joining for reconstruction of latent tree models",
 published in the SIAM Journal for Math and Data Science.
 
 """
+
 import itertools
 from collections.abc import Callable
 
@@ -60,7 +61,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[np.ndarray, np.ndarray, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.exponential_negative_hamming_distance,
+        similarity_function: Callable[[np.ndarray, np.ndarray, int, dict[int, dict[int, float]]], float]
+        | None = dissimilarity_functions.exponential_negative_hamming_distance,
         # type: ignore
         add_root: bool = False,
         prior_transformation: str = "negative_log",
@@ -76,10 +78,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         self._similarity_map = None
         self._lambda_indices = None
 
-
-    def get_dissimilarity_map(
-        self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None
-    ) -> pd.DataFrame:
+    def get_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None) -> pd.DataFrame:
         """Outputs the first lambda matrix.
 
         The lambda matrix is a k x k matrix indexed by the k subsets
@@ -101,9 +100,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
                 DistanceSolver's dissimilarity_map.
         """
         # get dissimilarity map and save it as private instance variable
-        self._similarity_map = super().get_dissimilarity_map(
-            cassiopeia_tree, layer
-        )
+        self._similarity_map = super().get_dissimilarity_map(cassiopeia_tree, layer)
 
         # prepare for first (pairwise) lambda matrix
         N = self._similarity_map.shape[0]
@@ -112,22 +109,15 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         # generate the lambda matrix
         lambda_matrix_arr = np.zeros([N, N])
-        for (j_idx, i_idx) in itertools.combinations(range(N), 2):
+        for j_idx, i_idx in itertools.combinations(range(N), 2):
+            svd2_val = self._compute_svd2(pair=(i_idx, j_idx), lambda_indices=self._lambda_indices)
 
-            svd2_val = self._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=self._lambda_indices
-            )
-
-            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
-                j_idx, i_idx
-            ] = svd2_val
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
 
         np.fill_diagonal(lambda_matrix_arr, np.inf)
 
         # convert array to dataframe
-        lambda_matrix_df = pd.DataFrame(
-            lambda_matrix_arr, index=node_names, columns=node_names
-        )
+        lambda_matrix_df = pd.DataFrame(lambda_matrix_arr, index=node_names, columns=node_names)
 
         return lambda_matrix_df
 
@@ -151,13 +141,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             A tuple of integers representing rows in the
                 dissimilarity matrix to join.
         """
-        return np.unravel_index(
-            np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape
-        )
+        return np.unravel_index(np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape)
 
-    def _compute_svd2(
-        self, pair: tuple[int, int], lambda_indices: list[list[int]]
-    ) -> float:
+    def _compute_svd2(self, pair: tuple[int, int], lambda_indices: list[list[int]]) -> float:
         """Computes the second largest singular value for an RA matrix.
 
         From Jaffe et al., the RA matrix is the matrix given by taking
@@ -234,9 +220,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         node_names = node_names[boolmask]
 
         # modify indices
-        self._lambda_indices.append(
-            [*self._lambda_indices[i], *self._lambda_indices[j]]
-        )
+        self._lambda_indices.append([*self._lambda_indices[i], *self._lambda_indices[j]])
         self._lambda_indices.pop(max(i, j))
         self._lambda_indices.pop(min(i, j))
 
@@ -244,42 +228,28 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         N = len(self._lambda_indices)
 
         if N <= 2:
-            return pd.DataFrame(
-                np.zeros([N, N]), index=node_names, columns=node_names
-            )
+            return pd.DataFrame(np.zeros([N, N]), index=node_names, columns=node_names)
 
         # get the old lambda matrix
-        lambda_matrix_arr = similarity_map.drop(
-            index=[cherry[0], cherry[1]], columns=[cherry[0], cherry[1]]
-        ).values
+        lambda_matrix_arr = similarity_map.drop(index=[cherry[0], cherry[1]], columns=[cherry[0], cherry[1]]).values
 
         # add new col + row to lambda matrix
         new_row = np.array([0.0] * (N - 1))
-        lambda_matrix_arr = np.vstack(
-            (lambda_matrix_arr, np.atleast_2d(new_row))
-        )
+        lambda_matrix_arr = np.vstack((lambda_matrix_arr, np.atleast_2d(new_row)))
         new_col = np.array([0.0] * N)
-        lambda_matrix_arr = np.array(
-            np.hstack((lambda_matrix_arr, np.atleast_2d(new_col).T))
-        )
+        lambda_matrix_arr = np.array(np.hstack((lambda_matrix_arr, np.atleast_2d(new_col).T)))
 
         # compute new SVDs
         i_idx = N - 1
         for j_idx in range(i_idx):
-            svd2_val = self._compute_svd2(
-                pair=(i_idx, j_idx), lambda_indices=self._lambda_indices
-            )
+            svd2_val = self._compute_svd2(pair=(i_idx, j_idx), lambda_indices=self._lambda_indices)
 
-            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[
-                j_idx, i_idx
-            ] = svd2_val
+            lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
 
         np.fill_diagonal(lambda_matrix_arr, np.inf)
 
         # regenerate lambda matrix
-        lambda_matrix_df = pd.DataFrame(
-            lambda_matrix_arr, index=node_names, columns=node_names
-        )
+        lambda_matrix_df = pd.DataFrame(lambda_matrix_arr, index=node_names, columns=node_names)
 
         return lambda_matrix_df
 
@@ -306,23 +276,18 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         if self.dissimilarity_function is None:
             raise DistanceSolver.DistanceSolverError(
-                "Please specify a dissimilarity function to add an implicit "
-                "root, or specify an explicit root"
+                "Please specify a dissimilarity function to add an implicit root, or specify an explicit root"
             )
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
         if dissimilarity_map is None:
-            cassiopeia_tree.compute_dissimilarity_map(
-                self.dissimilarity_function, self.prior_transformation
-            )
+            cassiopeia_tree.compute_dissimilarity_map(self.dissimilarity_function, self.prior_transformation)
         else:
             dissimilarity = {"root": 0}
             for leaf in character_matrix.index:
                 weights = None
                 if cassiopeia_tree.priors:
-                    weights = solver_utilities.transform_priors(
-                        cassiopeia_tree.priors, self.prior_transformation
-                    )
+                    weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
                 dissimilarity[leaf] = self.dissimilarity_function(
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,
@@ -333,9 +298,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         cassiopeia_tree.character_matrix = character_matrix
 
-    def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
-    ) -> nx.DiGraph:
+    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]) -> nx.DiGraph:
         """Assigns a node as the root of the solved tree.
 
         Finds a location on the tree to place a root and converts the general

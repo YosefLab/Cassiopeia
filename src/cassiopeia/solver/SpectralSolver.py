@@ -6,6 +6,7 @@ the observed mutations on a group of samples. The goal is to find a partition
 on a graph that minimizes seperation in samples that share mutations, normalizing
 for the sizes of each of the sides of the partition.
 """
+
 from collections.abc import Callable
 
 import networkx as nx
@@ -62,11 +63,11 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[int, int, pd.DataFrame, int, dict[int, dict[str, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
+        similarity_function: Callable[[int, int, pd.DataFrame, int, dict[int, dict[str, float]] | None], float]
+        | None = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: int | None = 0,
         prior_transformation: str = "negative_log",
     ):
-
         super().__init__(prior_transformation)
 
         self.threshold = threshold
@@ -153,21 +154,14 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 best_index = i - 1
                 break
             if min(denominator, total_weight - denominator) != 0:
-                if (
-                    numerator / min(denominator, total_weight - denominator)
-                    < best_score
-                ):
-                    best_score = numerator / min(
-                        denominator, total_weight - denominator
-                    )
+                if numerator / min(denominator, total_weight - denominator) < best_score:
+                    best_score = numerator / min(denominator, total_weight - denominator)
                     best_index = i
             else:
                 best_score = 0
                 best_index = i
 
-        improved_left_set = graph_utilities.spectral_improve_cut(
-            G, vertices[: best_index + 1]
-        )
+        improved_left_set = graph_utilities.spectral_improve_cut(G, vertices[: best_index + 1])
 
         improved_right_set = []
         for i in samples:

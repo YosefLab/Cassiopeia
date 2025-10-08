@@ -1,4 +1,3 @@
-
 """Top-level for Cassiopeia development."""
 
 from . import critique, data, solver

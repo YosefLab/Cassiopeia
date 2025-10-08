@@ -3,6 +3,7 @@ This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
 represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
+
 from collections.abc import Generator
 
 import networkx as nx
@@ -148,9 +149,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
 
         # extract character matrix
         if layer:
@@ -159,23 +158,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
         # Raise exception if the character matrix has ambiguous states.
-        if (
-            any(
-                is_ambiguous_state(state)
-                for state in character_matrix.values.flatten()
-            )
-            and not self.allow_ambiguous
-        ):
-            raise GreedySolverError(
-                "Ambiguous states are not currently supported with this solver."
-            )
+        if any(is_ambiguous_state(state) for state in character_matrix.values.flatten()) and not self.allow_ambiguous:
+            raise GreedySolverError("Ambiguous states are not currently supported with this solver.")
 
         keep_rows = (
             character_matrix.apply(
-                lambda x: [
-                    set(s) if is_ambiguous_state(s) else {s}
-                    for s in x.values
-                ],
+                lambda x: [set(s) if is_ambiguous_state(s) else {s} for s in x.values],
                 axis=0,
             )
             .apply(tuple, axis=1)
@@ -196,16 +184,12 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         )
 
         # Append duplicate samples
-        duplicates_tree = self.__add_duplicates_to_tree(
-            tree, character_matrix, node_name_generator
-        )
+        duplicates_tree = self.__add_duplicates_to_tree(tree, character_matrix, node_name_generator)
         cassiopeia_tree.populate_tree(duplicates_tree, layer=layer)
 
         # Collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def compute_mutation_frequencies(
         self,

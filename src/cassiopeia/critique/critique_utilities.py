@@ -1,4 +1,5 @@
 """Utilities for the critique module."""
+
 import itertools
 import math
 from collections import defaultdict
@@ -44,9 +45,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
         if tree.is_root(n):
             tree.set_attribute(n, "depth", 0)
         else:
-            tree.set_attribute(
-                n, "depth", tree.get_attribute(tree.parent(n), "depth") + 1
-            )
+            tree.set_attribute(n, "depth", tree.get_attribute(tree.parent(n), "depth") + 1)
 
         depth_to_nodes[tree.get_attribute(n, "depth")].append(n)
 
@@ -56,9 +55,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
             number_of_leaves += len(tree.leaves_in_subtree(child))
             correction += nCr(len(tree.leaves_in_subtree(child)), 3)
 
-        tree.set_attribute(
-            n, "number_of_triplets", nCr(number_of_leaves, 3) - correction
-        )
+        tree.set_attribute(n, "number_of_triplets", nCr(number_of_leaves, 3) - correction)
 
     return depth_to_nodes
 
@@ -120,22 +117,15 @@ def sample_triplet_at_depth(
             of the triplet.
     """
     if depth_to_nodes is None:
-        candidate_nodes = tree.filter_nodes(
-            lambda x: tree.get_attribute(x, "depth") == depth
-        )
+        candidate_nodes = tree.filter_nodes(lambda x: tree.get_attribute(x, "depth") == depth)
     else:
         candidate_nodes = depth_to_nodes[depth]
 
-    total_triplets = sum(
-        [tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes]
-    )
+    total_triplets = sum([tree.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
 
     # sample a  node from this depth with probability proportional to the number
     # of triplets underneath it
-    probs = [
-        tree.get_attribute(v, "number_of_triplets") / total_triplets
-        for v in candidate_nodes
-    ]
+    probs = [tree.get_attribute(v, "number_of_triplets") / total_triplets for v in candidate_nodes]
     node = np.random.choice(candidate_nodes, size=1, replace=False, p=probs)[0]
 
     # Generate the probabilities to sample each combination of 3 daughter clades
@@ -145,10 +135,7 @@ def sample_triplet_at_depth(
     probs = []
     combos = []
     denom = 0
-    for (i, j, k) in itertools.combinations_with_replacement(
-        list(tree.children(node)), 3
-    ):
-
+    for i, j, k in itertools.combinations_with_replacement(list(tree.children(node)), 3):
         if i == j and j == k:
             continue
 
@@ -173,9 +160,7 @@ def sample_triplet_at_depth(
     probs = [val / denom for val in probs]
 
     # choose daughter clades
-    ind = np.random.choice(range(len(combos)), size=1, replace=False, p=probs)[
-        0
-    ]
+    ind = np.random.choice(range(len(combos)), size=1, replace=False, p=probs)[0]
     (i, j, k) = combos[ind]
 
     if i == j:
@@ -188,7 +173,6 @@ def sample_triplet_at_depth(
         in_group = np.random.choice(tree.leaves_in_subtree(k), 2, replace=True)
         out_group = np.random.choice(tree.leaves_in_subtree(j))
     else:
-
         return (
             (
                 str(np.random.choice(tree.leaves_in_subtree(i))),

@@ -1,15 +1,16 @@
 """
 Tests for the sequence alignment in pipeline.py.
 """
+
 import unittest
 
-import cassiopeia
 import pandas as pd
+
+import cassiopeia
 
 
 class TestAlignSequence(unittest.TestCase):
     def setUp(self):
-
         self.queries = pd.DataFrame.from_dict(
             {
                 "cellBC": ["A", "A", "A", "B", "B", "C", "C", "C"],
@@ -27,14 +28,11 @@ class TestAlignSequence(unittest.TestCase):
                 ],
             }
         )
-        self.queries["readName"] = self.queries.apply(
-            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
-        )
+        self.queries["readName"] = self.queries.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
 
         self.reference = "AACCTTGG"
 
     def test_alignment_dataframe_structure(self):
-
         aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
@@ -64,7 +62,6 @@ class TestAlignSequence(unittest.TestCase):
             self.assertIn(column, aln_df.columns)
 
     def test_extremely_large_gap_open_penalty(self):
-
         aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
@@ -75,12 +72,10 @@ class TestAlignSequence(unittest.TestCase):
         # since the gap open penalty is so large, enforce that
         # no gaps should occur
         for _ind, row in aln_df.iterrows():
-
             self.assertNotIn("D", row.CIGAR)
             self.assertNotIn("I", row.CIGAR)
 
     def test_default_alignment_works(self):
-
         aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
@@ -100,7 +95,6 @@ class TestAlignSequence(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"].unique():
-
             expected_cigar = expected_alignments[read_name][0]
             expected_score = expected_alignments[read_name][1]
 
@@ -114,7 +108,6 @@ class TestAlignSequence(unittest.TestCase):
             )
 
     def test_global_alignment(self):
-
         aln_df = cassiopeia.pp.align_sequences(
             self.queries,
             ref=self.reference,
@@ -135,7 +128,6 @@ class TestAlignSequence(unittest.TestCase):
         }
 
         for read_name in aln_df["readName"].unique():
-
             expected_cigar = expected_alignments[read_name][0]
             expected_score = expected_alignments[read_name][1]
 

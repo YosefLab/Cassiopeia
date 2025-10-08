@@ -3,6 +3,7 @@ This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
 a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
 iteratively joins together samples with the minimum dissimilarity.
 """
+
 from collections import defaultdict
 from collections.abc import Callable
 
@@ -55,21 +56,18 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
+        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
+        | None = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
         fast: bool = False,
         implementation: str = "ccphylo_upgma",
         threads: int = 1,
     ):
-
         if fast:
             if implementation in ["ccphylo_upgma"]:
                 self._implementation = implementation
             else:
-                raise DistanceSolverError(
-                    "Invalid fast implementation of UPGMA. Options are: "
-                    "'ccphylo_upgma'"
-                )
+                raise DistanceSolverError("Invalid fast implementation of UPGMA. Options are: 'ccphylo_upgma'")
         else:
             self._implementation = "generic_upgma"
 
@@ -77,14 +75,12 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             dissimilarity_function=dissimilarity_function,
             add_root=True,
             prior_transformation=prior_transformation,
-            threads=threads
+            threads=threads,
         )
 
         self.__cluster_to_cluster_size = defaultdict(int)
 
-    def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
-    ):
+    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]):
         """Roots a tree produced by UPGMA.
 
         Adds the root at the top of the UPGMA reconstructed tree. By the
@@ -101,9 +97,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             A rooted tree.
         """
         tree.add_node("root")
-        tree.add_edges_from(
-            [("root", remaining_samples[0]), ("root", remaining_samples[1])]
-        )
+        tree.add_edges_from([("root", remaining_samples[0]), ("root", remaining_samples[1])])
 
         rooted_tree = nx.DiGraph()
         for e in nx.dfs_edges(tree, source="root"):
@@ -170,14 +164,10 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.__update_dissimilarity_map_numba(
-            dissimilarity_map.to_numpy(), i, j, i_size, j_size
-        )
+        dissimilarity_array = self.__update_dissimilarity_map_numba(dissimilarity_map.to_numpy(), i, j, i_size, j_size)
         sample_names = list(dissimilarity_map.index) + [new_node]
 
-        dissimilarity_map = pd.DataFrame(
-            dissimilarity_array, index=sample_names, columns=sample_names
-        )
+        dissimilarity_map = pd.DataFrame(dissimilarity_array, index=sample_names, columns=sample_names)
 
         # drop out cherry from dissimilarity map
         dissimilarity_map.drop(
@@ -225,8 +215,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             if v == cherry_i or v == cherry_j:
                 continue
             updated_map[v, new_node_index] = updated_map[new_node_index, v] = (
-                size_i * dissimilarity_map[v, cherry_i]
-                + size_j * dissimilarity_map[v, cherry_j]
+                size_i * dissimilarity_map[v, cherry_i] + size_j * dissimilarity_map[v, cherry_j]
             ) / (size_i + size_j)
 
         updated_map[new_node_index, new_node_index] = 0
