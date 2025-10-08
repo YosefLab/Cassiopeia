@@ -6,13 +6,7 @@ build:
   jobs:
     pre_install:
       - pip install "cython>=3" "numpy>=2"
-      - python - <<'PY'
-        from Cython.Build import cythonize
-        cythonize([
-            "src/cassiopeia/preprocess/collapse_cython.pyx",
-            "src/cassiopeia/solver/ilp_solver_utilities.pyx",
-        ], language_level="3")
-        PY
+      - python -c 'from Cython.Build import cythonize; cythonize(["src/cassiopeia/preprocess/collapse_cython.pyx","src/cassiopeia/solver/ilp_solver_utilities.pyx"], language_level="3")'
     build:
       html:
         - sphinx-build -b html -T -n -d docs/_build/doctrees docs docs/_build/html
