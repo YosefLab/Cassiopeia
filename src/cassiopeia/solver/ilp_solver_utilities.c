@@ -2960,15 +2960,15 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 /* #### Code section: module_code ### */
 
 /* "cassiopeia/solver/ilp_solver_utilities.pyx":14
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_potential_graph_cython(
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -2977,7 +2977,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 ); /*proto*/
 PyDoc_STRVAR(__pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_infer_potential_graph_cython, "Cython-optimized potential graph inference (NumPy-2-safe).\n\n    Args:\n        character_array: 2D array-like of strings; items are states.\n        pid: Unique process ID used for logging purposes.\n        maximum_lca_distance: Maximum LCA height to use when inferring ancestors.\n        maximum_potential_graph_layer_size: Max nodes in a layer of the potential graph.\n        missing_state_indicator: Indicator for missing data (int), converted to \"-\".\n    ");
 static PyMethodDef __pyx_mdef_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython = {"infer_potential_graph_cython", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_infer_potential_graph_cython};
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_1infer_potential_graph_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -3218,7 +3218,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *         f"(Process: {pid}) Estimating a potential graph with a maximum layer size of "
  *         f"{maximum_potential_graph_layer_size} and a maximum LCA distance of {maximum_lca_distance}."             # <<<<<<<<<<<<<<
  *     )
- * 
+ *
  */
   __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_maximum_potential_graph_layer_size, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 34, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
@@ -3279,11 +3279,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":38
- * 
+ *
  *     # Ensure ndarray of str
  *     carr = np.asarray(character_array, dtype=str)             # <<<<<<<<<<<<<<
  *     cdef int n_characters = carr.shape[1]
- * 
+ *
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3310,7 +3310,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *     # Ensure ndarray of str
  *     carr = np.asarray(character_array, dtype=str)
  *     cdef int n_characters = carr.shape[1]             # <<<<<<<<<<<<<<
- * 
+ *
  *     # Cast character states to a compact string representation, normalizing missing to "-"
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_carr, __pyx_n_s_shape); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
@@ -3323,7 +3323,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
   __pyx_v_n_characters = __pyx_t_8;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":42
- * 
+ *
  *     # Cast character states to a compact string representation, normalizing missing to "-"
  *     character_states = np.array(             # <<<<<<<<<<<<<<
  *         [
@@ -3444,7 +3444,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
   } /* exit inner scope */
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":42
- * 
+ *
  *     # Cast character states to a compact string representation, normalizing missing to "-"
  *     character_states = np.array(             # <<<<<<<<<<<<<<
  *         [
@@ -3461,14 +3461,14 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *         ],
  *         dtype=str,             # <<<<<<<<<<<<<<
  *     )
- * 
+ *
  */
   __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, ((PyObject *)(&PyUnicode_Type))) < 0) __PYX_ERR(0, 47, __pyx_L1_error)
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":42
- * 
+ *
  *     # Cast character states to a compact string representation, normalizing missing to "-"
  *     character_states = np.array(             # <<<<<<<<<<<<<<
  *         [
@@ -3523,7 +3523,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *     cdef list previous_layer_edges = []
  *     cdef list current_layer_edges = []             # <<<<<<<<<<<<<<
  *     cdef int distance_threshold = 0
- * 
+ *
  */
   __pyx_t_11 = PyList_New(0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
@@ -3534,17 +3534,17 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *     cdef list previous_layer_edges = []
  *     cdef list current_layer_edges = []
  *     cdef int distance_threshold = 0             # <<<<<<<<<<<<<<
- * 
+ *
  *     while distance_threshold < (maximum_lca_distance + 1):
  */
   __pyx_v_distance_threshold = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":58
  *     cdef int distance_threshold = 0
- * 
+ *
  *     while distance_threshold < (maximum_lca_distance + 1):             # <<<<<<<<<<<<<<
  *         current_layer_edges = []
- * 
+ *
  */
   while (1) {
     __pyx_t_11 = __Pyx_PyInt_From_int(__pyx_v_distance_threshold); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 58, __pyx_L1_error)
@@ -3559,10 +3559,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
     if (!__pyx_t_12) break;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":59
- * 
+ *
  *     while distance_threshold < (maximum_lca_distance + 1):
  *         current_layer_edges = []             # <<<<<<<<<<<<<<
- * 
+ *
  *         source_nodes = character_states
  */
     __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
@@ -3572,7 +3572,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":61
  *         current_layer_edges = []
- * 
+ *
  *         source_nodes = character_states             # <<<<<<<<<<<<<<
  *         effective_threshold = distance_threshold
  *         max_layer_width = 0
@@ -3581,11 +3581,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
     __Pyx_XDECREF_SET(__pyx_v_source_nodes, __pyx_v_character_states);
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":62
- * 
+ *
  *         source_nodes = character_states
  *         effective_threshold = distance_threshold             # <<<<<<<<<<<<<<
  *         max_layer_width = 0
- * 
+ *
  */
     __pyx_v_effective_threshold = __pyx_v_distance_threshold;
 
@@ -3593,14 +3593,14 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *         source_nodes = character_states
  *         effective_threshold = distance_threshold
  *         max_layer_width = 0             # <<<<<<<<<<<<<<
- * 
+ *
  *         while source_nodes.shape[0] > 1:
  */
     __pyx_v_max_layer_width = 0;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":65
  *         max_layer_width = 0
- * 
+ *
  *         while source_nodes.shape[0] > 1:             # <<<<<<<<<<<<<<
  *             if source_nodes.shape[0] > maximum_potential_graph_layer_size:
  *                 logger.info(f"(Process: {pid}) Maximum layer size exceeded, returning network.")
@@ -3618,7 +3618,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
       if (!__pyx_t_12) break;
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":66
- * 
+ *
  *         while source_nodes.shape[0] > 1:
  *             if source_nodes.shape[0] > maximum_potential_graph_layer_size:             # <<<<<<<<<<<<<<
  *                 logger.info(f"(Process: {pid}) Maximum layer size exceeded, returning network.")
@@ -3640,7 +3640,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *             if source_nodes.shape[0] > maximum_potential_graph_layer_size:
  *                 logger.info(f"(Process: {pid}) Maximum layer size exceeded, returning network.")             # <<<<<<<<<<<<<<
  *                 return previous_layer_edges
- * 
+ *
  */
         __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_logger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 67, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
@@ -3698,7 +3698,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *             if source_nodes.shape[0] > maximum_potential_graph_layer_size:
  *                 logger.info(f"(Process: {pid}) Maximum layer size exceeded, returning network.")
  *                 return previous_layer_edges             # <<<<<<<<<<<<<<
- * 
+ *
  *             next_layer, layer_edges = infer_layer_of_potential_graph(
  */
         __Pyx_XDECREF(__pyx_r);
@@ -3707,7 +3707,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
         goto __pyx_L0;
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":66
- * 
+ *
  *         while source_nodes.shape[0] > 1:
  *             if source_nodes.shape[0] > maximum_potential_graph_layer_size:             # <<<<<<<<<<<<<<
  *                 logger.info(f"(Process: {pid}) Maximum layer size exceeded, returning network.")
@@ -3717,7 +3717,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":70
  *                 return previous_layer_edges
- * 
+ *
  *             next_layer, layer_edges = infer_layer_of_potential_graph(             # <<<<<<<<<<<<<<
  *                 source_nodes, effective_threshold
  *             )
@@ -3726,11 +3726,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
       __Pyx_GOTREF(__pyx_t_11);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":71
- * 
+ *
  *             next_layer, layer_edges = infer_layer_of_potential_graph(
  *                 source_nodes, effective_threshold             # <<<<<<<<<<<<<<
  *             )
- * 
+ *
  */
       __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_effective_threshold); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 71, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
@@ -3767,11 +3767,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
         if (likely(PyTuple_CheckExact(sequence))) {
-          __pyx_t_11 = PyTuple_GET_ITEM(sequence, 0); 
-          __pyx_t_2 = PyTuple_GET_ITEM(sequence, 1); 
+          __pyx_t_11 = PyTuple_GET_ITEM(sequence, 0);
+          __pyx_t_2 = PyTuple_GET_ITEM(sequence, 1);
         } else {
-          __pyx_t_11 = PyList_GET_ITEM(sequence, 0); 
-          __pyx_t_2 = PyList_GET_ITEM(sequence, 1); 
+          __pyx_t_11 = PyList_GET_ITEM(sequence, 0);
+          __pyx_t_2 = PyList_GET_ITEM(sequence, 1);
         }
         __Pyx_INCREF(__pyx_t_11);
         __Pyx_INCREF(__pyx_t_2);
@@ -3806,7 +3806,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":70
  *                 return previous_layer_edges
- * 
+ *
  *             next_layer, layer_edges = infer_layer_of_potential_graph(             # <<<<<<<<<<<<<<
  *                 source_nodes, effective_threshold
  *             )
@@ -3818,10 +3818,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":74
  *             )
- * 
+ *
  *             if (next_layer.shape[0] > maximum_potential_graph_layer_size) and (len(previous_layer_edges) > 0):             # <<<<<<<<<<<<<<
  *                 return previous_layer_edges
- * 
+ *
  */
       __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_next_layer, __pyx_n_s_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
@@ -3844,10 +3844,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
       if (__pyx_t_12) {
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":75
- * 
+ *
  *             if (next_layer.shape[0] > maximum_potential_graph_layer_size) and (len(previous_layer_edges) > 0):
  *                 return previous_layer_edges             # <<<<<<<<<<<<<<
- * 
+ *
  *             # Convert concatenated "parent|...|child" strings into edge tuples
  */
         __Pyx_XDECREF(__pyx_r);
@@ -3857,15 +3857,15 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":74
  *             )
- * 
+ *
  *             if (next_layer.shape[0] > maximum_potential_graph_layer_size) and (len(previous_layer_edges) > 0):             # <<<<<<<<<<<<<<
  *                 return previous_layer_edges
- * 
+ *
  */
       }
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":78
- * 
+ *
  *             # Convert concatenated "parent|...|child" strings into edge tuples
  *             edges_tuples = []             # <<<<<<<<<<<<<<
  *             for e in layer_edges:
@@ -4017,7 +4017,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *                 if parent != child:
  *                     edges_tuples.append((parent, child))             # <<<<<<<<<<<<<<
  *             current_layer_edges += edges_tuples
- * 
+ *
  */
           __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
@@ -4053,7 +4053,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *                 if parent != child:
  *                     edges_tuples.append((parent, child))
  *             current_layer_edges += edges_tuples             # <<<<<<<<<<<<<<
- * 
+ *
  *             if source_nodes.shape[0] > next_layer.shape[0]:
  */
       __pyx_t_1 = PyNumber_InPlaceAdd(__pyx_v_current_layer_edges, __pyx_v_edges_tuples); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L1_error)
@@ -4063,7 +4063,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":87
  *             current_layer_edges += edges_tuples
- * 
+ *
  *             if source_nodes.shape[0] > next_layer.shape[0]:             # <<<<<<<<<<<<<<
  *                 if effective_threshold == distance_threshold:
  *                     effective_threshold *= 3
@@ -4086,11 +4086,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
       if (__pyx_t_12) {
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":88
- * 
+ *
  *             if source_nodes.shape[0] > next_layer.shape[0]:
  *                 if effective_threshold == distance_threshold:             # <<<<<<<<<<<<<<
  *                     effective_threshold *= 3
- * 
+ *
  */
         __pyx_t_12 = (__pyx_v_effective_threshold == __pyx_v_distance_threshold);
         if (__pyx_t_12) {
@@ -4099,23 +4099,23 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *             if source_nodes.shape[0] > next_layer.shape[0]:
  *                 if effective_threshold == distance_threshold:
  *                     effective_threshold *= 3             # <<<<<<<<<<<<<<
- * 
+ *
  *             source_nodes = next_layer
  */
           __pyx_v_effective_threshold = (__pyx_v_effective_threshold * 3);
 
           /* "cassiopeia/solver/ilp_solver_utilities.pyx":88
- * 
+ *
  *             if source_nodes.shape[0] > next_layer.shape[0]:
  *                 if effective_threshold == distance_threshold:             # <<<<<<<<<<<<<<
  *                     effective_threshold *= 3
- * 
+ *
  */
         }
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":87
  *             current_layer_edges += edges_tuples
- * 
+ *
  *             if source_nodes.shape[0] > next_layer.shape[0]:             # <<<<<<<<<<<<<<
  *                 if effective_threshold == distance_threshold:
  *                     effective_threshold *= 3
@@ -4124,7 +4124,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":91
  *                     effective_threshold *= 3
- * 
+ *
  *             source_nodes = next_layer             # <<<<<<<<<<<<<<
  *             if source_nodes.shape[0] > max_layer_width:
  *                 max_layer_width = source_nodes.shape[0]
@@ -4133,11 +4133,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
       __Pyx_DECREF_SET(__pyx_v_source_nodes, __pyx_v_next_layer);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":92
- * 
+ *
  *             source_nodes = next_layer
  *             if source_nodes.shape[0] > max_layer_width:             # <<<<<<<<<<<<<<
  *                 max_layer_width = source_nodes.shape[0]
- * 
+ *
  */
       __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_source_nodes, __pyx_n_s_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 92, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
@@ -4157,7 +4157,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *             source_nodes = next_layer
  *             if source_nodes.shape[0] > max_layer_width:
  *                 max_layer_width = source_nodes.shape[0]             # <<<<<<<<<<<<<<
- * 
+ *
  *         logger.info(
  */
         __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_source_nodes, __pyx_n_s_shape); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L1_error)
@@ -4170,18 +4170,18 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
         __pyx_v_max_layer_width = __pyx_t_8;
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":92
- * 
+ *
  *             source_nodes = next_layer
  *             if source_nodes.shape[0] > max_layer_width:             # <<<<<<<<<<<<<<
  *                 max_layer_width = source_nodes.shape[0]
- * 
+ *
  */
       }
     }
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":95
  *                 max_layer_width = source_nodes.shape[0]
- * 
+ *
  *         logger.info(             # <<<<<<<<<<<<<<
  *             f"(Process: {pid}) LCA distance {distance_threshold} completed with a neighborhood size of {max_layer_width}."
  *         )
@@ -4193,11 +4193,11 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":96
- * 
+ *
  *         logger.info(
  *             f"(Process: {pid}) LCA distance {distance_threshold} completed with a neighborhood size of {max_layer_width}."             # <<<<<<<<<<<<<<
  *         )
- * 
+ *
  */
     __pyx_t_2 = PyTuple_New(7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -4268,7 +4268,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":99
  *         )
- * 
+ *
  *         distance_thresholds.append(distance_threshold)             # <<<<<<<<<<<<<<
  *         distance_threshold += 1
  *         layer_sizes.append(max_layer_width)
@@ -4279,7 +4279,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":100
- * 
+ *
  *         distance_thresholds.append(distance_threshold)
  *         distance_threshold += 1             # <<<<<<<<<<<<<<
  *         layer_sizes.append(max_layer_width)
@@ -4292,7 +4292,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *         distance_threshold += 1
  *         layer_sizes.append(max_layer_width)             # <<<<<<<<<<<<<<
  *         previous_layer_edges = current_layer_edges
- * 
+ *
  */
     __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_max_layer_width); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
@@ -4303,7 +4303,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
  *         distance_threshold += 1
  *         layer_sizes.append(max_layer_width)
  *         previous_layer_edges = current_layer_edges             # <<<<<<<<<<<<<<
- * 
+ *
  *     return current_layer_edges
  */
     __Pyx_INCREF(__pyx_v_current_layer_edges);
@@ -4312,10 +4312,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":104
  *         previous_layer_edges = current_layer_edges
- * 
+ *
  *     return current_layer_edges             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_current_layer_edges);
@@ -4323,8 +4323,8 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
   goto __pyx_L0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":14
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_potential_graph_cython(
@@ -4362,15 +4362,15 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_infer_pote
 }
 
 /* "cassiopeia/solver/ilp_solver_utilities.pyx":107
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_layer_of_potential_graph(
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -4379,7 +4379,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 ); /*proto*/
 PyDoc_STRVAR(__pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_2infer_layer_of_potential_graph, "Infer a layer of the potential graph.\n\n    Args:\n        source_nodes: 1D array-like[str], character strings (\"a|b|c|\").\n        distance_threshold: Max Hamming distance via the ancestor.\n    Returns:\n        next_layer: np.ndarray[str] of ancestor node strings for the next layer.\n        new_edges:  np.ndarray[str] of concatenated \"parent|...|child\" strings.\n    ");
 static PyMethodDef __pyx_mdef_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph = {"infer_layer_of_potential_graph", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_2infer_layer_of_potential_graph};
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_3infer_layer_of_potential_graph(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -4583,7 +4583,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *     cdef int n_samples = source_nodes.shape[0]
  *     if n_samples == 0:             # <<<<<<<<<<<<<<
  *         return np.empty((0,), dtype=str), np.empty((0,), dtype=str)
- * 
+ *
  */
   __pyx_t_6 = (__pyx_v_n_samples == 0);
   if (__pyx_t_6) {
@@ -4592,7 +4592,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *     cdef int n_samples = source_nodes.shape[0]
  *     if n_samples == 0:
  *         return np.empty((0,), dtype=str), np.empty((0,), dtype=str)             # <<<<<<<<<<<<<<
- * 
+ *
  *     # Infer dimension from first node string
  */
     __Pyx_XDECREF(__pyx_r);
@@ -4637,12 +4637,12 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *     cdef int n_samples = source_nodes.shape[0]
  *     if n_samples == 0:             # <<<<<<<<<<<<<<
  *         return np.empty((0,), dtype=str), np.empty((0,), dtype=str)
- * 
+ *
  */
   }
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":128
- * 
+ *
  *     # Infer dimension from first node string
  *     first = str(source_nodes[0])             # <<<<<<<<<<<<<<
  *     cdef int dim = len(first.split("|"))
@@ -4693,10 +4693,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":137
  *     cdef list distance_to_ancestors
- * 
+ *
  *     cdef set layer = set()             # <<<<<<<<<<<<<<
  *     cdef set new_edges = set()
- * 
+ *
  */
   __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -4704,10 +4704,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
   __pyx_t_2 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":138
- * 
+ *
  *     cdef set layer = set()
  *     cdef set new_edges = set()             # <<<<<<<<<<<<<<
- * 
+ *
  *     for i in range(0, n_samples - 1):
  */
   __pyx_t_2 = PySet_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
@@ -4717,7 +4717,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":140
  *     cdef set new_edges = set()
- * 
+ *
  *     for i in range(0, n_samples - 1):             # <<<<<<<<<<<<<<
  *         sample1 = str(source_nodes[i])
  *         top_ancestors = []
@@ -4728,7 +4728,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
     __pyx_v_i = __pyx_t_5;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":141
- * 
+ *
  *     for i in range(0, n_samples - 1):
  *         sample1 = str(source_nodes[i])             # <<<<<<<<<<<<<<
  *         top_ancestors = []
@@ -4747,7 +4747,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *         sample1 = str(source_nodes[i])
  *         top_ancestors = []             # <<<<<<<<<<<<<<
  *         distance_to_ancestors = []
- * 
+ *
  */
     __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -4758,7 +4758,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *         sample1 = str(source_nodes[i])
  *         top_ancestors = []
  *         distance_to_ancestors = []             # <<<<<<<<<<<<<<
- * 
+ *
  *         for j in range(i + 1, n_samples):
  */
     __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
@@ -4768,10 +4768,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":145
  *         distance_to_ancestors = []
- * 
+ *
  *         for j in range(i + 1, n_samples):             # <<<<<<<<<<<<<<
  *             sample2 = str(source_nodes[j])
- * 
+ *
  */
     __pyx_t_11 = __pyx_v_n_samples;
     __pyx_t_12 = __pyx_t_11;
@@ -4779,10 +4779,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       __pyx_v_j = __pyx_t_13;
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":146
- * 
+ *
  *         for j in range(i + 1, n_samples):
  *             sample2 = str(source_nodes[j])             # <<<<<<<<<<<<<<
- * 
+ *
  *             ancestor = get_lca_characters_cython(
  */
       __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_source_nodes, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
@@ -4795,7 +4795,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":148
  *             sample2 = str(source_nodes[j])
- * 
+ *
  *             ancestor = get_lca_characters_cython(             # <<<<<<<<<<<<<<
  *                 np.array(sample1.split("|"), dtype=str),
  *                 np.array(sample2.split("|"), dtype=str),
@@ -4804,7 +4804,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       __Pyx_GOTREF(__pyx_t_3);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":149
- * 
+ *
  *             ancestor = get_lca_characters_cython(
  *                 np.array(sample1.split("|"), dtype=str),             # <<<<<<<<<<<<<<
  *                 np.array(sample2.split("|"), dtype=str),
@@ -4896,7 +4896,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":148
  *             sample2 = str(source_nodes[j])
- * 
+ *
  *             ancestor = get_lca_characters_cython(             # <<<<<<<<<<<<<<
  *                 np.array(sample1.split("|"), dtype=str),
  *                 np.array(sample2.split("|"), dtype=str),
@@ -4907,7 +4907,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":155
  *             )
- * 
+ *
  *             d1_a = simple_hamming_distance_cython(             # <<<<<<<<<<<<<<
  *                 np.array(ancestor.split("|"), dtype=str),
  *                 np.array(sample1.split("|"), dtype=str),
@@ -4916,7 +4916,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       __Pyx_GOTREF(__pyx_t_3);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":156
- * 
+ *
  *             d1_a = simple_hamming_distance_cython(
  *                 np.array(ancestor.split("|"), dtype=str),             # <<<<<<<<<<<<<<
  *                 np.array(sample1.split("|"), dtype=str),
@@ -5001,7 +5001,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":155
  *             )
- * 
+ *
  *             d1_a = simple_hamming_distance_cython(             # <<<<<<<<<<<<<<
  *                 np.array(ancestor.split("|"), dtype=str),
  *                 np.array(sample1.split("|"), dtype=str),
@@ -5012,7 +5012,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":161
  *             )
- * 
+ *
  *             d2_a = simple_hamming_distance_cython(             # <<<<<<<<<<<<<<
  *                 np.array(ancestor.split("|"), dtype=str),
  *                 np.array(sample2.split("|"), dtype=str),
@@ -5021,7 +5021,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       __Pyx_GOTREF(__pyx_t_3);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":162
- * 
+ *
  *             d2_a = simple_hamming_distance_cython(
  *                 np.array(ancestor.split("|"), dtype=str),             # <<<<<<<<<<<<<<
  *                 np.array(sample2.split("|"), dtype=str),
@@ -5106,7 +5106,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":161
  *             )
- * 
+ *
  *             d2_a = simple_hamming_distance_cython(             # <<<<<<<<<<<<<<
  *                 np.array(ancestor.split("|"), dtype=str),
  *                 np.array(sample2.split("|"), dtype=str),
@@ -5116,7 +5116,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       __pyx_v_d2_a = __pyx_t_17;
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":168
- * 
+ *
  *             # store concatenated parent|...|child string
  *             edge = ancestor + "|" + sample2             # <<<<<<<<<<<<<<
  *             top_ancestors.append(edge)
@@ -5135,7 +5135,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *             edge = ancestor + "|" + sample2
  *             top_ancestors.append(edge)             # <<<<<<<<<<<<<<
  *             distance_to_ancestors.append(d1_a + d2_a)
- * 
+ *
  */
       __pyx_t_18 = __Pyx_PyList_Append(__pyx_v_top_ancestors, __pyx_v_edge); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 169, __pyx_L1_error)
 
@@ -5143,7 +5143,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *             edge = ancestor + "|" + sample2
  *             top_ancestors.append(edge)
  *             distance_to_ancestors.append(d1_a + d2_a)             # <<<<<<<<<<<<<<
- * 
+ *
  *             if d1_a + d2_a < distance_threshold:
  */
       __pyx_t_3 = __Pyx_PyInt_From_int((__pyx_v_d1_a + __pyx_v_d2_a)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
@@ -5153,7 +5153,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":172
  *             distance_to_ancestors.append(d1_a + d2_a)
- * 
+ *
  *             if d1_a + d2_a < distance_threshold:             # <<<<<<<<<<<<<<
  *                 edge1 = ancestor + "|" + sample1
  *                 edge2 = ancestor + "|" + sample2
@@ -5167,7 +5167,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
       if (__pyx_t_6) {
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":173
- * 
+ *
  *             if d1_a + d2_a < distance_threshold:
  *                 edge1 = ancestor + "|" + sample1             # <<<<<<<<<<<<<<
  *                 edge2 = ancestor + "|" + sample2
@@ -5210,7 +5210,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *                 new_edges.add(edge1)
  *                 new_edges.add(edge2)             # <<<<<<<<<<<<<<
  *                 layer.add(ancestor)
- * 
+ *
  */
         __pyx_t_18 = PySet_Add(__pyx_v_new_edges, __pyx_v_edge2); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 176, __pyx_L1_error)
 
@@ -5218,14 +5218,14 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *                 new_edges.add(edge1)
  *                 new_edges.add(edge2)
  *                 layer.add(ancestor)             # <<<<<<<<<<<<<<
- * 
+ *
  *         if distance_to_ancestors:
  */
         __pyx_t_18 = PySet_Add(__pyx_v_layer, __pyx_v_ancestor); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 177, __pyx_L1_error)
 
         /* "cassiopeia/solver/ilp_solver_utilities.pyx":172
  *             distance_to_ancestors.append(d1_a + d2_a)
- * 
+ *
  *             if d1_a + d2_a < distance_threshold:             # <<<<<<<<<<<<<<
  *                 edge1 = ancestor + "|" + sample1
  *                 edge2 = ancestor + "|" + sample2
@@ -5235,7 +5235,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":179
  *                 layer.add(ancestor)
- * 
+ *
  *         if distance_to_ancestors:             # <<<<<<<<<<<<<<
  *             # enforce at least one edge via best (closest) ancestor
  *             min_distance_to_ancestor = min(distance_to_ancestors)
@@ -5365,7 +5365,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *                     new_edges.add(edge1)
  *                     new_edges.add(edge2)             # <<<<<<<<<<<<<<
  *                     layer.add(parent)
- * 
+ *
  */
           __pyx_t_18 = PySet_Add(__pyx_v_new_edges, __pyx_v_edge2); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 188, __pyx_L1_error)
 
@@ -5373,7 +5373,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
  *                     new_edges.add(edge1)
  *                     new_edges.add(edge2)
  *                     layer.add(parent)             # <<<<<<<<<<<<<<
- * 
+ *
  *     return np.array(list(layer), dtype=str), np.array(list(new_edges), dtype=str)
  */
           __pyx_t_18 = PySet_Add(__pyx_v_layer, __pyx_v_parent); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 189, __pyx_L1_error)
@@ -5390,7 +5390,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":179
  *                 layer.add(ancestor)
- * 
+ *
  *         if distance_to_ancestors:             # <<<<<<<<<<<<<<
  *             # enforce at least one edge via best (closest) ancestor
  *             min_distance_to_ancestor = min(distance_to_ancestors)
@@ -5400,10 +5400,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":191
  *                     layer.add(parent)
- * 
+ *
  *     return np.array(list(layer), dtype=str), np.array(list(new_edges), dtype=str)             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 191, __pyx_L1_error)
@@ -5459,8 +5459,8 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
   goto __pyx_L0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":107
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_layer_of_potential_graph(
@@ -5497,15 +5497,15 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_2infer_lay
 }
 
 /* "cassiopeia/solver/ilp_solver_utilities.pyx":194
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def get_lca_characters_cython(
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -5514,7 +5514,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 ); /*proto*/
 PyDoc_STRVAR(__pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_characters_cython, "Cython-optimized LCA inference using strings.");
 static PyMethodDef __pyx_mdef_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython = {"get_lca_characters_cython", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_characters_cython};
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_5get_lca_characters_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -5677,7 +5677,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
  *     # Ensure indexable sequences of str
  *     a1 = np.asarray(arr1, dtype=str)             # <<<<<<<<<<<<<<
  *     a2 = np.asarray(arr2, dtype=str)
- * 
+ *
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5704,7 +5704,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
  *     # Ensure indexable sequences of str
  *     a1 = np.asarray(arr1, dtype=str)
  *     a2 = np.asarray(arr2, dtype=str)             # <<<<<<<<<<<<<<
- * 
+ *
  *     cdef list ancestor = ["0"] * n_char
  */
   __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
@@ -5730,10 +5730,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":207
  *     a2 = np.asarray(arr2, dtype=str)
- * 
+ *
  *     cdef list ancestor = ["0"] * n_char             # <<<<<<<<<<<<<<
  *     cdef int i
- * 
+ *
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5750,7 +5750,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":210
  *     cdef int i
- * 
+ *
  *     for i in range(n_char):             # <<<<<<<<<<<<<<
  *         if a1[i] == a2[i]:
  *             ancestor[i] = a1[i]
@@ -5761,7 +5761,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
     __pyx_v_i = __pyx_t_7;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":211
- * 
+ *
  *     for i in range(n_char):
  *         if a1[i] == a2[i]:             # <<<<<<<<<<<<<<
  *             ancestor[i] = a1[i]
@@ -5791,7 +5791,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":211
- * 
+ *
  *     for i in range(n_char):
  *         if a1[i] == a2[i]:             # <<<<<<<<<<<<<<
  *             ancestor[i] = a1[i]
@@ -5854,7 +5854,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
  *             elif a2[i] == missing_state_indicator:
  *                 ancestor[i] = a1[i]             # <<<<<<<<<<<<<<
  *             # else leave as "0"
- * 
+ *
  */
         __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_a1, __pyx_v_i, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
@@ -5876,10 +5876,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":220
  *             # else leave as "0"
- * 
+ *
  *     return "|".join(ancestor)             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_4 = PyUnicode_Join(__pyx_kp_u__2, __pyx_v_ancestor); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 220, __pyx_L1_error)
@@ -5889,8 +5889,8 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
   goto __pyx_L0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":194
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def get_lca_characters_cython(
@@ -5914,15 +5914,15 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_4get_lca_c
 }
 
 /* "cassiopeia/solver/ilp_solver_utilities.pyx":223
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def simple_hamming_distance_cython(arr1, arr2, missing_state_indicator: str) -> int:
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -5931,7 +5931,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 ); /*proto*/
 PyDoc_STRVAR(__pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_6simple_hamming_distance_cython, "Hamming distance ignoring missing values.");
 static PyMethodDef __pyx_mdef_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython = {"simple_hamming_distance_cython", (PyCFunction)(void*)(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_10cassiopeia_6solver_20ilp_solver_utilities_6simple_hamming_distance_cython};
-static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython(PyObject *__pyx_self, 
+static PyObject *__pyx_pw_10cassiopeia_6solver_20ilp_solver_utilities_7simple_hamming_distance_cython(PyObject *__pyx_self,
 #if CYTHON_METH_FASTCALL
 PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 #else
@@ -6080,7 +6080,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
  *     """Hamming distance ignoring missing values."""
  *     a1 = np.asarray(arr1, dtype=str)             # <<<<<<<<<<<<<<
  *     a2 = np.asarray(arr2, dtype=str)
- * 
+ *
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 227, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -6107,7 +6107,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
  *     """Hamming distance ignoring missing values."""
  *     a1 = np.asarray(arr1, dtype=str)
  *     a2 = np.asarray(arr2, dtype=str)             # <<<<<<<<<<<<<<
- * 
+ *
  *     if a1.shape[0] != a2.shape[0]:
  */
   __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 228, __pyx_L1_error)
@@ -6133,10 +6133,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":230
  *     a2 = np.asarray(arr2, dtype=str)
- * 
+ *
  *     if a1.shape[0] != a2.shape[0]:             # <<<<<<<<<<<<<<
  *         raise ValueError("Arrays must be the same length")
- * 
+ *
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_a1, __pyx_n_s_shape); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 230, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -6156,10 +6156,10 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
   if (unlikely(__pyx_t_5)) {
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":231
- * 
+ *
  *     if a1.shape[0] != a2.shape[0]:
  *         raise ValueError("Arrays must be the same length")             # <<<<<<<<<<<<<<
- * 
+ *
  *     cdef int i
  */
     __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 231, __pyx_L1_error)
@@ -6170,19 +6170,19 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":230
  *     a2 = np.asarray(arr2, dtype=str)
- * 
+ *
  *     if a1.shape[0] != a2.shape[0]:             # <<<<<<<<<<<<<<
  *         raise ValueError("Arrays must be the same length")
- * 
+ *
  */
   }
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":234
- * 
+ *
  *     cdef int i
  *     cdef int count = 0             # <<<<<<<<<<<<<<
  *     cdef Py_ssize_t n = a1.shape[0]
- * 
+ *
  */
   __pyx_v_count = 0;
 
@@ -6190,7 +6190,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
  *     cdef int i
  *     cdef int count = 0
  *     cdef Py_ssize_t n = a1.shape[0]             # <<<<<<<<<<<<<<
- * 
+ *
  *     for i in range(n):
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_a1, __pyx_n_s_shape); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
@@ -6204,7 +6204,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":237
  *     cdef Py_ssize_t n = a1.shape[0]
- * 
+ *
  *     for i in range(n):             # <<<<<<<<<<<<<<
  *         if (a1[i] != a2[i]) and (a1[i] != missing_state_indicator) and (a2[i] != missing_state_indicator):
  *             count += 1
@@ -6215,7 +6215,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
     __pyx_v_i = __pyx_t_8;
 
     /* "cassiopeia/solver/ilp_solver_utilities.pyx":238
- * 
+ *
  *     for i in range(n):
  *         if (a1[i] != a2[i]) and (a1[i] != missing_state_indicator) and (a2[i] != missing_state_indicator):             # <<<<<<<<<<<<<<
  *             count += 1
@@ -6261,7 +6261,7 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
       __pyx_v_count = (__pyx_v_count + 1);
 
       /* "cassiopeia/solver/ilp_solver_utilities.pyx":238
- * 
+ *
  *     for i in range(n):
  *         if (a1[i] != a2[i]) and (a1[i] != missing_state_indicator) and (a2[i] != missing_state_indicator):             # <<<<<<<<<<<<<<
  *             count += 1
@@ -6284,8 +6284,8 @@ static PyObject *__pyx_pf_10cassiopeia_6solver_20ilp_solver_utilities_6simple_ha
   goto __pyx_L0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":223
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def simple_hamming_distance_cython(arr1, arr2, missing_state_indicator: str) -> int:
@@ -6453,7 +6453,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     cdef int n_samples = source_nodes.shape[0]
  *     if n_samples == 0:
  *         return np.empty((0,), dtype=str), np.empty((0,), dtype=str)             # <<<<<<<<<<<<<<
- * 
+ *
  *     # Infer dimension from first node string
  */
   __pyx_tuple__4 = PyTuple_Pack(1, __pyx_int_0); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 125, __pyx_L1_error)
@@ -6464,10 +6464,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__5);
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":231
- * 
+ *
  *     if a1.shape[0] != a2.shape[0]:
  *         raise ValueError("Arrays must be the same length")             # <<<<<<<<<<<<<<
- * 
+ *
  *     cdef int i
  */
   __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_Arrays_must_be_the_same_length); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 231, __pyx_L1_error)
@@ -6475,8 +6475,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__6);
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":14
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_potential_graph_cython(
@@ -6487,8 +6487,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 24, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_solver_ilp_solver_uti, __pyx_n_s_infer_potential_graph_cython, 14, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 14, __pyx_L1_error)
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":107
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_layer_of_potential_graph(
@@ -6499,8 +6499,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_solver_ilp_solver_uti, __pyx_n_s_infer_layer_of_potential_graph, 107, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 107, __pyx_L1_error)
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":194
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def get_lca_characters_cython(
@@ -6511,8 +6511,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cassiopeia_solver_ilp_solver_uti, __pyx_n_s_get_lca_characters_cython, 194, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 194, __pyx_L1_error)
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":223
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def simple_hamming_distance_cython(arr1, arr2, missing_state_indicator: str) -> int:
@@ -6891,7 +6891,7 @@ if (!__Pyx_RefNanny) {
  * """
  * import cython
  * from typing import List, Tuple, Union             # <<<<<<<<<<<<<<
- * 
+ *
  * import numpy as np
  */
   __pyx_t_2 = PyList_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
@@ -6924,9 +6924,9 @@ if (!__Pyx_RefNanny) {
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":7
  * from typing import List, Tuple, Union
- * 
+ *
  * import numpy as np             # <<<<<<<<<<<<<<
- * 
+ *
  * from cassiopeia.data import utilities as data_utilities  # noqa: F401 (if unused)
  */
   __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_numpy, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 7, __pyx_L1_error)
@@ -6936,7 +6936,7 @@ if (!__Pyx_RefNanny) {
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":9
  * import numpy as np
- * 
+ *
  * from cassiopeia.data import utilities as data_utilities  # noqa: F401 (if unused)             # <<<<<<<<<<<<<<
  * from cassiopeia.mixins import logger
  * from cassiopeia.solver import dissimilarity_functions  # noqa: F401 (if unused)
@@ -6956,11 +6956,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":10
- * 
+ *
  * from cassiopeia.data import utilities as data_utilities  # noqa: F401 (if unused)
  * from cassiopeia.mixins import logger             # <<<<<<<<<<<<<<
  * from cassiopeia.solver import dissimilarity_functions  # noqa: F401 (if unused)
- * 
+ *
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -6980,8 +6980,8 @@ if (!__Pyx_RefNanny) {
  * from cassiopeia.data import utilities as data_utilities  # noqa: F401 (if unused)
  * from cassiopeia.mixins import logger
  * from cassiopeia.solver import dissimilarity_functions  # noqa: F401 (if unused)             # <<<<<<<<<<<<<<
- * 
- * 
+ *
+ *
  */
   __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -6998,8 +6998,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":14
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_potential_graph_cython(
@@ -7019,8 +7019,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":107
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def infer_layer_of_potential_graph(
@@ -7037,8 +7037,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":194
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def get_lca_characters_cython(
@@ -7056,8 +7056,8 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "cassiopeia/solver/ilp_solver_utilities.pyx":223
- * 
- * 
+ *
+ *
  * @cython.boundscheck(False)             # <<<<<<<<<<<<<<
  * @cython.wraparound(False)
  * def simple_hamming_distance_cython(arr1, arr2, missing_state_indicator: str) -> int:
