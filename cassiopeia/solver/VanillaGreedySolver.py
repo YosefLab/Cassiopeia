@@ -5,9 +5,8 @@ in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.
 """
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
 
-import numpy as np
 import pandas as pd
 
 from cassiopeia.mixins.utilities import is_ambiguous_state
@@ -44,7 +43,8 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes:
+    Attributes
+    ----------
         prior_transformation: Function to transform priors, if these are
             available.
         missing_data_classifier: Function to classify missing data during
@@ -64,10 +64,10 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
     def perform_split(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[int],
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        samples: list[int],
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """Partitions based on the most frequent (character, state) pair.
 
         Uses the (character, state) pair to split the list of samples into
@@ -82,10 +82,10 @@ class VanillaGreedySolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns:
+        Returns
+        -------
             A tuple of lists, representing the left and right partition groups
         """
-
         sample_indices = solver_utilities.convert_sample_names_to_indices(
             character_matrix.index, samples
         )

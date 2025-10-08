@@ -1,11 +1,9 @@
 """
 Tests for the UMI Resolution module in pipeline.py.
 """
-import os
-import unittest
-
 import shutil
 import tempfile
+import unittest
 
 import pandas as pd
 from cassiopeia.preprocess import pipeline

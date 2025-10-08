@@ -7,24 +7,22 @@ There may be other subclasses of this. Currently also implements a method for
 solving trees with CCPhylo but this will be moved with switch to compositional
 framework.
 """
-import os
-
 import abc
+import configparser
+import os
 import subprocess
 import tempfile
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
-import configparser
 import ete3
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data import CassiopeiaTree, utilities
 from cassiopeia.mixins import DistanceSolverError
-from cassiopeia.solver import (CassiopeiaSolver, 
-    solver_utilities)
-from cassiopeia.data import utilities
+from cassiopeia.solver import CassiopeiaSolver, solver_utilities
+
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     """
@@ -61,7 +59,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                     the square root of 1/p
         threads: Number of threads to use for solver.
 
-    Attributes:
+    Attributes
+    ----------
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
@@ -72,11 +71,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Optional[
-            Callable[
-                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
-            ]
-        ] = None,
+        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = None,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
         threads: int = 1,
@@ -87,15 +82,15 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         self.dissimilarity_function = dissimilarity_function
         self.add_root = add_root
         self.threads = threads
-        
+
         if "ccphylo" in self._implementation:
             self._setup_ccphylo()
 
     def get_dissimilarity_map(
-        self, 
+        self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None
-    ) -> pd.DataFrame: 
+        layer: str | None = None
+    ) -> pd.DataFrame:
         """Obtains or generates a matrix that is updated throughout the solver.
 
         The highest-level method to obtain a dissimilarity map, which
@@ -108,17 +103,17 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         algorithm-specific sample to sample comparison maps in derived classes.
 
         Args:
-            cassiopeia_tree: Tree object from which the 
+            cassiopeia_tree: Tree object from which the
                 dissimilarity map is generated from
-            layer: Layer storing the character matrix 
-                for solving. If None, the default character matrix is used in 
+            layer: Layer storing the character matrix
+                for solving. If None, the default character matrix is used in
                 the CassiopeiaTree.
 
-        Returns:
-            pd.DataFrame: The matrix that will be used throughout the solve 
+        Returns
+        -------
+            pd.DataFrame: The matrix that will be used throughout the solve
                 method.
         """
-
         self.setup_dissimilarity_map(cassiopeia_tree, layer)
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
 
@@ -127,7 +122,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ) -> None:
@@ -150,7 +145,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: File location to log output. Not currently used.
         """
-
         if self._implementation == "ccphylo_dnj":
             self._ccphylo_solve(cassiopeia_tree,layer,
                     collapse_mutationless_edges,logfile,method="dnj")
@@ -233,15 +227,15 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     def _ccphylo_solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
         method: str = "dnj"
     ) -> None:
-        """Solves a tree using fast distance-based algorithms implemented by 
-        CCPhylo. To call this method the CCPhlyo package must be installed 
-        and the ccphylo_path must be set in the config file. The method 
-        attribute specifies which algorithm to use. The function will update the 
+        """Solves a tree using fast distance-based algorithms implemented by
+        CCPhylo. To call this method the CCPhlyo package must be installed
+        and the ccphylo_path must be set in the config file. The method
+        attribute specifies which algorithm to use. The function will update the
         `tree`.
 
         Args:
@@ -254,7 +248,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: File location to log output. Not currently used.
         """
-
         dissimilarity_map = self.get_dissimilarity_map(cassiopeia_tree, layer)
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -266,11 +259,11 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
                                                           dis_path)
 
             # run ccphylo
-            command = (f"{self._ccphylo_path} tree -i {dis_path} -o "   
+            command = (f"{self._ccphylo_path} tree -i {dis_path} -o "
                        f"{tree_path} -m {method}")
 
-            process = subprocess.Popen(command, shell=True, 
-                                       stdout=subprocess.PIPE, 
+            process = subprocess.Popen(command, shell=True,
+                                       stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
             T = ete3.Tree(tree_path, format=1)
@@ -319,7 +312,6 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         """Sets up the ccphylo solver by getting the ccphylo_path from the
         config file and checking that it is valid.
         """
-
         # get ccphylo path
         config = configparser.ConfigParser()
         config_file = os.path.join(os.path.dirname(__file__),"..","config.ini")
@@ -337,7 +329,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             "set the ccphylo_path in the config.ini file then reinstall "
             "Cassiopeia."
             )
-        
+
         #check that ccphylo_path is executable
         if not os.access(self._ccphylo_path, os.X_OK):
             raise DistanceSolverError(
@@ -349,7 +341,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
     def setup_dissimilarity_map(
-        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+        self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None
     ) -> None:
         """Sets up the solver.
 
@@ -363,13 +355,13 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
 
-        Raises:
+        Raises
+        ------
             A `DistanceSolverError` if rooting parameters are not passed in
                 correctly (i.e. no root is specified and the user has not
                 asked to find a root) or when a dissimilarity map cannot
                 be found or computed.
         """
-
         # if root sample is not specified, we'll add the implicit root
         # and recompute the dissimilarity map
 
@@ -396,7 +388,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     @abc.abstractmethod
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
     ) -> nx.DiGraph:
         """Roots a tree.
 
@@ -408,7 +400,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             root_sample: node name to treat as the root of the tree topology
             remaining_samples: samples yet to be added to the tree.
 
-        Returns:
+        Returns
+        -------
             A rooted networkx tree
         """
         pass
@@ -416,7 +409,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     @abc.abstractmethod
     def find_cherry(
         self, dissimilarity_map: np.array(float)
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Selects two samples to join together as a cherry.
 
         Selects two samples from the dissimilarity map to join together as a
@@ -425,7 +418,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             dissimilarity_map: A dissimilarity map relating samples
 
-        Returns:
+        Returns
+        -------
             A tuple of samples to join together.
         """
         pass
@@ -434,7 +428,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
     def update_dissimilarity_map(
         self,
         dissimilarity_map: pd.DataFrame,
-        cherry: Tuple[str, str],
+        cherry: tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
         """Updates dissimilarity map with respect to new cherry.
@@ -445,7 +439,8 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
             cherry2: One of the children to join.
             new_node: New node name to add to the dissimilarity map
 
-        Returns:
+        Returns
+        -------
             An updated dissimilarity map.
         """
         pass

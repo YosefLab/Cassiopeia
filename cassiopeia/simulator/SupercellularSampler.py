@@ -6,22 +6,19 @@ ambiguous character states. The probability that two leaves will be merged is
 proportional to their branch distance.
 """
 import copy
-from typing import Optional
 
 import numpy as np
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree, CassiopeiaTreeError
-from cassiopeia.simulator.LeafSubsampler import (
-    LeafSubsampler,
-    LeafSubsamplerError,
-)
+from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
+from cassiopeia.mixins import LeafSubsamplerError
 
 
 class SupercellularSampler(LeafSubsampler):
     def __init__(
         self,
-        ratio: Optional[float] = None,
-        number_of_merges: Optional[float] = None,
+        ratio: float | None = None,
+        number_of_merges: float | None = None,
     ):
         """
         Merge leaves in a tree to generate a new tree with ambiguous states.
@@ -48,7 +45,7 @@ class SupercellularSampler(LeafSubsampler):
     def subsample_leaves(
         self,
         tree: CassiopeiaTree,
-        collapse_source: Optional[str] = None,
+        collapse_source: str | None = None,
         collapse_duplicates: bool = True,
     ) -> CassiopeiaTree:
         """Construct a new CassiopeiaTree by merging leaves.
@@ -73,7 +70,8 @@ class SupercellularSampler(LeafSubsampler):
                 states, so that only unique character states are present in each
                 ambiguous state. Defaults to True.
 
-        Raises:
+        Raises
+        ------
             LeafSubsamplerError if the number of merges exceeds the number of
                 leaves in the tree or no merges will be performed.
         """
@@ -124,8 +122,7 @@ class SupercellularSampler(LeafSubsampler):
                 merged_tree.get_time(leaf1) + merged_tree.get_time(leaf2)
             ) / 2
             new_state = []
-            for char1, char2 in zip(leaf1_state, leaf2_state):
-                new_char = []
+            for char1, char2 in zip(leaf1_state, leaf2_state, strict=False):
                 if not isinstance(char1, tuple):
                     char1 = (char1,)
                 if not isinstance(char2, tuple):

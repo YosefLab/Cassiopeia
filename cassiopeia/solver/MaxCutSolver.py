@@ -1,22 +1,20 @@
 """
-This file stores a subclass of GreedySolver, the MaxCutSolver. This subclass 
-implements an inference procedure inspired by Snir and Rao (2006) that 
-approximates the max-cut problem on a connectivity graph generated from the 
+This file stores a subclass of GreedySolver, the MaxCutSolver. This subclass
+implements an inference procedure inspired by Snir and Rao (2006) that
+approximates the max-cut problem on a connectivity graph generated from the
 observed mutations on a group of samples. The connectivity graph represents a
 supertree generated over phylogenetic trees for each individual character, and
 encodes similarities and differences in mutations between the samples. The
-goal is to find a partition on the graph that resolves triplets on the 
+goal is to find a partition on the graph that resolves triplets on the
 supertree, grouping together samples that share mutations and seperating
 samples that differ in mutations.
 """
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.solver import graph_utilities, GreedySolver
+from cassiopeia.solver import GreedySolver, graph_utilities
 
 
 class MaxCutSolver(GreedySolver.GreedySolver):
@@ -47,7 +45,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         iterations: The number of iterations in updating the embeddings.
             Acts as a hyperparameter
 
-    Attributes:
+    Attributes
+    ----------
         prior_transformation: Function to use when transforming priors into
             weights.
         sdimension: The number of dimensions to use for the embedding space
@@ -56,8 +55,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        sdimension: Optional[int] = 3,
-        iterations: Optional[int] = 50,
+        sdimension: int | None = 3,
+        iterations: int | None = 50,
         prior_transformation: str = "negative_log",
     ):
 
@@ -68,10 +67,10 @@ class MaxCutSolver(GreedySolver.GreedySolver):
     def perform_split(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[int],
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        samples: list[int],
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """Generate a partition of the samples by finding the max-cut.
 
         First, a connectivity graph is generated with samples as nodes such
@@ -93,7 +92,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns:
+        Returns
+        -------
             A tuple of lists, representing the left and right partition groups
         """
         mutation_frequencies = self.compute_mutation_frequencies(
@@ -156,7 +156,7 @@ class MaxCutSolver(GreedySolver.GreedySolver):
 
         return improved_left_set, improved_right_set
 
-    def evaluate_cut(self, cut: List[str], G: nx.DiGraph) -> float:
+    def evaluate_cut(self, cut: list[str], G: nx.DiGraph) -> float:
         """A simple function to evaluate the weight of a cut.
 
         For each edge in the graph, checks if it is in the cut, and then adds
@@ -167,7 +167,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                 on the graph
             G: The graph the cut is over
 
-        Returns:
+        Returns
+        -------
             The weight of the cut
         """
         cut_score = 0

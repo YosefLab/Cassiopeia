@@ -3,17 +3,14 @@ This file contains functions pertaining to calling lineage groups.
 Invoked through pipeline.py and supports the call_lineage_group function.
 """
 import os
+import re
 import sys
-import time
 
-from typing import Dict, List, Tuple
-
-from matplotlib import colors, colorbar
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pylab
-import re
+from matplotlib import colors
 
 from cassiopeia.mixins import logger
 
@@ -42,7 +39,8 @@ def assign_lineage_groups(
             the proportion of intBCs that a cell needs to share with the group
             in order to included in that group
 
-    Returns:
+    Returns
+    -------
         A pivot table of cells labled with lineage group assignments
     """
     # initiate output variables
@@ -78,8 +76,7 @@ def find_top_lg(
     iteration: int,
     min_intbc_prop: float = 0.2,
     kinship_thresh: float = 0.2,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Algorithm to creates lineage groups from a pivot table of UMI counts
     for each cellBC-intBC pair.
 
@@ -99,11 +96,11 @@ def find_top_lg(
         kinship_thresh: Determines the proportion of intBCs that a cell needs
             to share with the cluster in order to included in that cluster
 
-    Returns:
+    Returns
+    -------
         A pivot table of cells labled with lineage group assignments, and a
             pivot table of the remaining unassigned cells
     """
-
     # Calculate sum of observed intBCs, identify top intBC
     intBC_sums = PIVOT_in.sum(0).sort_values(ascending=False)
     intBC_top = intBC_sums.index[0]
@@ -155,7 +152,7 @@ def find_top_lg(
 
 def filter_intbcs_lg_sets(
     PIV_assigned: pd.DataFrame, min_intbc_thresh: float = 0.2
-) -> Tuple[List[int], Dict[int, pd.DataFrame]]:
+) -> tuple[list[int], dict[int, pd.DataFrame]]:
     """Filters out lineage group sets for low-proportion intBCs.
 
     For each lineage group, removes the intBCs that <= min_intbc_thresh
@@ -170,7 +167,8 @@ def filter_intbcs_lg_sets(
             that must have an intBC for the intBC to remain in the lineage
             group set
 
-    Returns:
+    Returns
+    -------
         A list of the lineage groups, and a dictionary that has mappings from
             the lineage group number to the set of intBCs being used for
             reconstruction
@@ -202,8 +200,8 @@ def filter_intbcs_lg_sets(
 
 def score_lineage_kinships(
     PIV: pd.DataFrame,
-    master_LGs: List[int],
-    master_intBCs: Dict[int, pd.DataFrame],
+    master_LGs: list[int],
+    master_intBCs: dict[int, pd.DataFrame],
 ) -> pd.DataFrame:
     """Identifies which lineage group each cell should belong to.
 
@@ -219,11 +217,11 @@ def score_lineage_kinships(
             number to the set of intBCs being used for reconstruction
 
 
-    Returns:
+    Returns
+    -------
         A DataFrame that contains the lineage group for each cell with the
             greatest kinship
     """
-
     dfLG2intBC = pd.DataFrame()
 
     # Identifies which lineage groups have which intBCs in their set
@@ -260,7 +258,7 @@ def score_lineage_kinships(
 
     max_kinship_LG = pd.concat(
         [max_kinship_frame, max_kinship_ind + 1], axis=1, sort=True
-    ) 
+    )
     max_kinship_LG.columns = ["maxOverlap", "lineageGrp"]
 
     return max_kinship_LG
@@ -269,7 +267,7 @@ def score_lineage_kinships(
 def annotate_lineage_groups(
     dfMT: pd.DataFrame,
     max_kinship_LG: pd.DataFrame,
-    master_intBCs: Dict[int, pd.DataFrame],
+    master_intBCs: dict[int, pd.DataFrame],
 ) -> pd.DataFrame:
     """
     Assign cells in the allele table to a lineage group.
@@ -284,10 +282,10 @@ def annotate_lineage_groups(
             cell, see documentation of score_lineage_kinships
         master_intBCs: A dictionary relating lineage group to its set of intBCs
 
-    Returns:
+    Returns
+    -------
         Original allele table with annotated lineage group assignments for cells
     """
-
     dfMT["lineageGrp"] = 0
 
     cellBC2LG = {}
@@ -306,7 +304,7 @@ def annotate_lineage_groups(
             lg_sizes[n] = len(g["cellBC"].unique())
 
     sorted_by_value = sorted(lg_sizes.items(), key=lambda kv: kv[1])[::-1]
-    for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value):
+    for i, tup in zip(range(1, len(sorted_by_value) + 1), sorted_by_value, strict=False):
         rename_lg[tup[0]] = float(i)
 
     rename_lg[0] = 0.0
@@ -318,7 +316,7 @@ def annotate_lineage_groups(
 
 def filter_intbcs_final_lineages(
     at: pd.DataFrame, min_intbc_thresh: float = 0.05
-) -> List[pd.DataFrame]:
+) -> list[pd.DataFrame]:
     """Filters out low-proportion intBCs from the final lineages.
 
     After the assignments of the final lineage groups have been decided,
@@ -334,7 +332,6 @@ def filter_intbcs_final_lineages(
         A list of alignment DataFrames recording the UMI counts, intBCs, and
             cellBCs of each lineage group, one table for each lineage group
     """
-
     lineageGrps = at["lineageGrp"].unique()
     at_piv = pd.pivot_table(
         at, index="cellBC", columns="intBC", values="UMI", aggfunc="count"
@@ -372,7 +369,7 @@ def filter_intbcs_final_lineages(
 
 
 def filtered_lineage_group_to_allele_table(
-    filtered_lgs: List[pd.DataFrame],
+    filtered_lgs: list[pd.DataFrame],
 ) -> pd.DataFrame:
     """Produces the final allele table as a DataFrame to be used for
     reconstruction.
@@ -383,7 +380,8 @@ def filtered_lineage_group_to_allele_table(
     Args:
         filtered_lgs: A DataFrame of alignments annotated with lineage groups
 
-    Returns:
+    Returns
+    -------
         A final processed DataFrame with indel information
     """
     final_df = pd.concat(filtered_lgs, sort=True)
@@ -417,15 +415,15 @@ def plot_overlap_heatmap(at, at_pivot_I, output_directory):
             which UMIs
         output_directory: The directory in which to store the plot
 
-    Returns:
+    Returns
+    -------
         None, plot is saved to output directory
     """
-
     # Close old plots
     plt.close()
 
     flat_master = []
-    for n, lg in at.groupby("lineageGrp"):
+    for _n, lg in at.groupby("lineageGrp"):
 
         for item in lg["intBC"].unique():
             flat_master.append(item)
@@ -434,7 +432,7 @@ def plot_overlap_heatmap(at, at_pivot_I, output_directory):
 
     h2 = plt.figure(figsize=(20, 20))
     axmat2 = h2.add_axes([0.3, 0.1, 0.6, 0.8])
-    im2 = axmat2.matshow(at_pivot_I, aspect="auto", origin="upper")
+    axmat2.matshow(at_pivot_I, aspect="auto", origin="upper")
 
     plt.savefig(os.path.join(output_directory, "clustered_intbc.png"))
     plt.close()
@@ -458,10 +456,10 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
             which UMIs
         output_directory: The directory in which to store the plot
 
-    Returns:
+    Returns
+    -------
         None, plot is saved to output directory
     """
-
     if not os.path.exists(
         os.path.join(output_directory, "lineageGrp_piv_heatmaps")
     ):
@@ -534,9 +532,9 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         h = plt.figure(figsize=(14, 10))
 
         ax = h.add_axes([0.3, 0.1, 0.6, 0.8], frame_on=True)
-        im = ax.matshow(s3, aspect="auto", origin="lower", cmap=s_cmap)
+        ax.matshow(s3, aspect="auto", origin="lower", cmap=s_cmap)
 
-        axx1 = plt.xticks(
+        plt.xticks(
             range(1, len(col_order) * len(agg_dict), len(agg_dict)),
             col_order,
             rotation="vertical",
@@ -548,15 +546,15 @@ def plot_overlap_heatmap_lg(at, at_pivot_I, output_directory):
         plt.ylim([0, s3.shape[0]])
         ax3.autoscale(tight=True)
 
-        axy0 = ax3.set_yticks(range(len(s3_cellBCs)))
-        axy1 = ax3.set_yticklabels(s3_cellBCs, family="monospace")
+        ax3.set_yticks(range(len(s3_cellBCs)))
+        ax3.set_yticklabels(s3_cellBCs, family="monospace")
 
         w = 1 / len(agg_dict)
         x = np.arange(len(s3_intBCs)) - w * ((len(agg_dict) - 1) // 2)
         ax2 = h.add_axes([0.3, 0, 0.6, 0.1], frame_on=False)
         for i in agg_dict.keys():
             num = int(re.findall(r"\d", i)[0])
-            b = ax2.bar(
+            ax2.bar(
                 x + (num - 1) * w, n_unique_alleles[i], width=w, label=i
             )
         ax2.set_xlim([0, len(s3_intBCs)])
@@ -591,7 +589,8 @@ def add_cutsite_encoding(lg_group):
     Args:
         lg_group: A pivot table representing a lineage group
 
-    Returns:
+    Returns
+    -------
         A pivot table with cutsite encodings
     """
     cutsites = []

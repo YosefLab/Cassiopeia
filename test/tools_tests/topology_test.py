@@ -4,11 +4,9 @@ cassiopeia/tools/topology.py
 """
 import unittest
 
-import networkx as nx
-import numpy as np
-import pandas as pd
-
 import cassiopeia as cas
+import networkx as nx
+import pandas as pd
 from cassiopeia.mixins import CassiopeiaError, CassiopeiaTreeError
 from cassiopeia.tools import topology
 

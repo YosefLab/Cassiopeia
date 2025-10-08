@@ -1,13 +1,8 @@
 """Top level for tools."""
 
 from .autocorrelation import compute_morans_i
-from .branch_length_estimator import IIDExponentialBayesian, IIDExponentialMLE
 from .coupling import compute_evolutionary_coupling
-from .fitness_estimator import (
-    FitnessEstimator,
-    FitnessEstimatorError,
-    LBIJungle,
-)
+from .deprecated import FitnessEstimator, IIDExponentialBayesian, IIDExponentialMLE
 from .parameter_estimators import (
     estimate_missing_data_rates,
     estimate_mutation_rate,
@@ -19,7 +14,6 @@ from .tree_metrics import (
     calculate_likelihood_discrete,
     calculate_parsimony,
 )
-
 
 __all__ = [
     "calculate_likelihood_continuous",

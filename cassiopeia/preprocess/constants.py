@@ -1,6 +1,4 @@
-"""
-Stores constants for the ProcessingPipeline module
-"""
+"""Stores constants for the ProcessingPipeline module"""
 
 BAM_CONSTANTS = {
     "RAW_CELL_BC_TAG": "CR",

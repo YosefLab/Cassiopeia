@@ -6,22 +6,16 @@ import unittest
 
 import networkx as nx
 import numpy as np
-
-from typing import List, Tuple
-
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import TreeSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
 
-import cassiopeia.data.utilities as utilities
-
 
 def extract_tree_statistics(
     tree: CassiopeiaTree,
-) -> Tuple[List[float], int, bool]:
+) -> tuple[list[float], int, bool]:
     """A helper function for testing simulated trees.
 
     Outputs the total lived time for each extant lineage, the number of extant
@@ -56,23 +50,23 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: -1, 1, experiment_time=1
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(lambda _: 0, 1, num_extant=4)
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: -1, num_extant=1
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 0, experiment_time=1
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
@@ -83,35 +77,35 @@ class BirthDeathSimulatorTest(unittest.TestCase):
                 fitness_distribution=lambda: 1,
                 experiment_time=1,
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
     def test_bad_stopping_conditions(self):
         """Ensures errors when an invalid stopping conditions are given."""
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(lambda _: 1, 1, lambda: 2)
+            BirthDeathFitnessSimulator(lambda _: 1, 1, lambda: 2)
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(
+            BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 2, num_extant=0.5
             )
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(
+            BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 2, num_extant=-1
             )
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(
+            BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 2, num_extant=0
             )
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(
+            BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 2, experiment_time=-1
             )
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(
+            BirthDeathFitnessSimulator(
                 lambda _: 1, 1, lambda: 2, experiment_time=0
             )
 
@@ -121,13 +115,13 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: 2, 1, lambda: 1, num_extant=4
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
                 lambda _: 2, 1, lambda: 1, experiment_time=4
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
     def test_dead_before_end(self):
         """Ensures errors when all lineages die before stopping condition."""
@@ -138,13 +132,13 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             bd_sim = BirthDeathFitnessSimulator(
                 birth_wd, 0.5, death_wd, num_extant=8, random_seed=5
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
             bd_sim = BirthDeathFitnessSimulator(
                 birth_wd, 0.5, death_wd, experiment_time=2, random_seed=5
             )
-            tree = bd_sim.simulate_tree()
+            bd_sim.simulate_tree()
 
     def test_single_lineage(self):
         """Tests base case that stopping conditions work before divisions."""
@@ -418,7 +412,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertNotIn(3, tree.nodes)
 
     def test_no_initial_birth_scale(self):
-        
+
         topology = nx.DiGraph()
         topology.add_edges_from(
             [
@@ -431,7 +425,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
             ]
         )
         initial_tree = CassiopeiaTree(tree=topology)
-        
+
         # initialize simulator with tree without default initial birth scales
         birth_wd = lambda scale: np.random.exponential(scale)
 
@@ -460,7 +454,7 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         final_tree = bd_sim_2.simulate_tree()
 
         self.assertEqual(100, len(final_tree.leaves))
-        
+
         for l in initial_tree.leaves:
             birth_scale = initial_tree.get_attribute(l, 'birth_scale')
             final_birth_scale = final_tree.get_attribute(l, 'birth_scale')

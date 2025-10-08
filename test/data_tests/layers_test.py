@@ -1,24 +1,19 @@
 """
 Tests for the Layers class in the data module.
 """
+import itertools
 import unittest
 
-import ete3
-import itertools
-import networkx as nx
-import numpy as np
-from numpy.testing._private.utils import assert_equal
-import pandas as pd
-
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
+import networkx as nx
+import pandas as pd
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))

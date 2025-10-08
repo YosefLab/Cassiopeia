@@ -7,15 +7,9 @@ implement a method called `subsample_leaves`.
 """
 
 import abc
-import networkx as nx
-import numpy as np
-from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import (
-    LeafSubsamplerError,
-    LeafSubsamplerWarning,
-)
+from cassiopeia.mixins import LeafSubsamplerError
 
 
 class LeafSubsampler(abc.ABC):
@@ -42,7 +36,8 @@ class LeafSubsampler(abc.ABC):
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
 
-        Returns:
+        Returns
+        -------
             A new CassiopeiaTree that is the induced subtree on a sample of the
             leaves in the given tree.
         """

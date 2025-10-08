@@ -1,14 +1,14 @@
 """This file contains general utilities to be called by functions throughout
-the solver module"""
+the solver module
+"""
 
-import logging
-from typing import Dict, Generator, List, Optional
+import time
+from collections.abc import Generator
+from hashlib import blake2b
 
 import ete3
-from hashlib import blake2b
 import numpy as np
 import pandas as pd
-import time
 
 from cassiopeia.mixins import PriorTransformationError
 
@@ -19,10 +19,10 @@ def node_name_generator() -> Generator[str, None, None]:
     Creates a generator object that produces unique node names by hashing
     timestamps.
 
-    Returns:
+    Returns
+    -------
         A generator object
     """
-
     while True:
         k = str(time.time()).encode("utf-8")
         h = blake2b(key=k, digest_size=12)
@@ -38,7 +38,6 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     Returns:
         A collapsed tree.
     """
-
     collapse_fn = lambda x: (len(x.children) == 1)
 
     collapsed_tree = tree.copy()
@@ -51,9 +50,9 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
 
 
 def transform_priors(
-    priors: Optional[Dict[int, Dict[int, float]]],
+    priors: dict[int, dict[int, float]] | None,
     prior_transformation: str = "negative_log",
-) -> Dict[int, Dict[int, float]]:
+) -> dict[int, dict[int, float]]:
     """Generates a dictionary of weights from priors.
 
     Generates a dictionary of weights from given priors for each character/state
@@ -70,7 +69,8 @@ def transform_priors(
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Returns:
+    Returns
+    -------
         A dictionary of weights for each character/state pair
     """
     if prior_transformation not in [
@@ -104,8 +104,8 @@ def transform_priors(
 
 
 def convert_sample_names_to_indices(
-    names: List[str], samples: List[str]
-) -> List[int]:
+    names: list[str], samples: list[str]
+) -> list[int]:
     """Maps samples to their integer indices in a given set of names.
 
     Used to map sample string names to the their integer positions in the index
@@ -117,12 +117,13 @@ def convert_sample_names_to_indices(
         samples: A list of sample names representing the subset to be mapped to
             integer indices
 
-    Returns:
+    Returns
+    -------
         A list of samples mapped to integer indices
     """
-    name_to_index = dict(zip(names, range(len(names))))
+    name_to_index = dict(zip(names, range(len(names)), strict=False))
 
-    return list(map(lambda x: name_to_index[x], samples))
+    return [name_to_index[x] for x in samples]
 
 def save_dissimilarity_as_phylip(
         dissimilarity_map: pd.DataFrame, path: str
@@ -133,14 +134,15 @@ def save_dissimilarity_as_phylip(
         dissimilarity_map: A dissimilarity map
         path: The path to save the phylip file
 
-    Returns:
+    Returns
+    -------
         None
     """
     dissimilarity_np = dissimilarity_map.to_numpy()
     n = dissimilarity_np.shape[0]
     with open(path, "w") as f:
-        f.write("{}\n".format(n))
+        f.write(f"{n}\n")
         for i in range(n):
             row = dissimilarity_np[i, :i+1]
             formatted_values = '\t'.join(map('{:.4f}'.format, row))
-            f.write("{}\t{}\n".format(dissimilarity_map.index[i], formatted_values))
+            f.write(f"{dissimilarity_map.index[i]}\t{formatted_values}\n")

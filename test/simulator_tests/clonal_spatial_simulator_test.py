@@ -1,11 +1,10 @@
-import pytest
 import unittest
 
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
+import pytest
 from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator import ClonalSpatialDataSimulator
 

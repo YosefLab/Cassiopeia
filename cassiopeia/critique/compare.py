@@ -3,12 +3,11 @@ A library that stores functions for comparing two trees to one another.
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """
-from collections import defaultdict
 import copy
+from collections import defaultdict
+
 import ete3
-import networkx as nx
 import numpy as np
-from typing import Dict, Tuple
 
 from cassiopeia.critique import critique_utilities
 from cassiopeia.data import CassiopeiaTree
@@ -19,8 +18,8 @@ def triplets_correct(
     tree2: CassiopeiaTree,
     number_of_trials: int = 1000,
     min_triplets_at_depth: int = 1,
-) -> Tuple[
-    Dict[int, float], Dict[int, float], Dict[int, float], Dict[int, float]
+) -> tuple[
+    dict[int, float], dict[int, float], dict[int, float], dict[int, float]
 ]:
     """Calculate the triplets correct accuracy between two trees.
 
@@ -36,7 +35,8 @@ def triplets_correct(
         min_triplets_at_depth: The minimum number of triplets needed with LCA
             at a depth for that depth to be included
 
-    Returns:
+    Returns
+    -------
         Four dictionaries storing triplet information at each depth:
             all_triplets_correct: the total triplets correct
             resolvable_triplets_correct: the triplets correct for resolvable
@@ -46,7 +46,6 @@ def triplets_correct(
             proportion_resolvable: the proportion of unresolvable triplets per
                 depth
     """
-
     # keep dictionary of triplets correct
     all_triplets_correct = defaultdict(int)
     unresolved_triplets_correct = defaultdict(int)
@@ -131,7 +130,7 @@ def triplets_correct(
 
 def robinson_foulds(
     tree1: CassiopeiaTree, tree2: CassiopeiaTree
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Compares two trees with Robinson-Foulds distance.
 
     Computes the Robinsons-Foulds distance between two trees. Currently, this
@@ -143,7 +142,8 @@ def robinson_foulds(
         tree1: A CassiopeiaTree representing the first tree
         tree2: A CassiopeiaTree representing the second tree
 
-    Returns:
+    Returns
+    -------
         The Robinson-Foulds distance between the two trees and the maximum
             Robinson-Foulds distance for downstream normalization
     """

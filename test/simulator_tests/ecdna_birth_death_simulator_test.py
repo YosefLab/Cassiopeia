@@ -2,21 +2,17 @@
 Tests the functionality of cassiopeia.simulator.ecDNABirthDeathSimulator.
 """
 
-import heapq
-from typing import List, Tuple, Generator
-
-from queue import PriorityQueue
 import unittest
+from collections.abc import Generator
+from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.simulator.ecDNABirthDeathSimulator import (
     ecDNABirthDeathSimulator,
 )
-import cassiopeia.data.utilities as utilities
 
 
 def node_name_generator() -> Generator[str, None, None]:
@@ -29,7 +25,7 @@ def node_name_generator() -> Generator[str, None, None]:
 
 def extract_tree_statistics(
     tree: CassiopeiaTree,
-) -> Tuple[List[float], int, bool]:
+) -> tuple[list[float], int, bool]:
     """A helper function for testing simulated trees.
 
     Outputs the total lived time for each extant lineage, the number of extant

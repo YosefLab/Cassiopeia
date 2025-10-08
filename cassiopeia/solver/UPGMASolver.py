@@ -1,12 +1,11 @@
 """
 This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
-a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that 
+a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
 iteratively joins together samples with the minimum dissimilarity.
 """
-from typing import Callable, Dict, List, Optional, Tuple, Union
-
-import abc
 from collections import defaultdict
+from collections.abc import Callable
+
 import networkx as nx
 import numba
 import numpy as np
@@ -44,7 +43,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             "ccphylo_upgma": Uses the fast UPGMA implementation from CCPhylo.
         threads: Number of threads to use for dissimilarity map computation.
 
-    Attributes:
+    Attributes
+    ----------
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
@@ -55,11 +55,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Optional[
-            Callable[
-                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
-            ]
-        ] = dissimilarity_functions.weighted_hamming_distance,
+        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
         fast: bool = False,
         implementation: str = "ccphylo_upgma",
@@ -87,7 +83,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         self.__cluster_to_cluster_size = defaultdict(int)
 
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
     ):
         """Roots a tree produced by UPGMA.
 
@@ -100,10 +96,10 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             root_sample: Ignored in this case, the root is known in this case
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns:
+        Returns
+        -------
             A rooted tree.
         """
-
         tree.add_node("root")
         tree.add_edges_from(
             [("root", remaining_samples[0]), ("root", remaining_samples[1])]
@@ -115,7 +111,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
         return rooted_tree
 
-    def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
+    def find_cherry(self, dissimilarity_matrix: np.array) -> tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
         Finds the pair of samples with the minimum dissimilarity by finding the
@@ -124,11 +120,11 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_matrix: A sample x sample dissimilarity matrix
 
-        Returns:
+        Returns
+        -------
             A tuple of integers representing rows in the dissimilarity matrix
                 to join.
         """
-
         dissimilarity_matrix = dissimilarity_matrix.astype(float)
         np.fill_diagonal(dissimilarity_matrix, np.inf)
 
@@ -140,7 +136,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
     def update_dissimilarity_map(
         self,
         dissimilarity_map: pd.DataFrame,
-        cherry: Tuple[str, str],
+        cherry: tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
@@ -158,10 +154,10 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             cherry: A tuple of indices in the dissimilarity map that are joining
             new_node: New node name, to be added to the new dissimilarity map
 
-        Returns:
+        Returns
+        -------
             A new dissimilarity map, updated with the new node
         """
-
         i_size, j_size = (
             max(1, self.__cluster_to_cluster_size[cherry[0]]),
             max(1, self.__cluster_to_cluster_size[cherry[1]]),
@@ -211,11 +207,11 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
 
-        Returns:
+        Returns
+        -------
             An updated dissimilarity map
 
         """
-
         # add new row & column for incoming sample
         N = dissimilarity_map.shape[1]
 

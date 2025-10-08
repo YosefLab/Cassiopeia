@@ -2,20 +2,16 @@
 Test the spatial imputation workflow.
 """
 
-import os
 
 import unittest
-from unittest import mock
-from typing import Dict, Optional
 
 import anndata
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
-from cassiopeia.spatial import spatial_utilities
 from cassiopeia.mixins import try_import
+from cassiopeia.spatial import spatial_utilities
 
 sq = try_import("squidpy")
 SQUIDPY_INSTALLED = (sq is not None)
@@ -159,13 +155,13 @@ class TestSpatialImputation(unittest.TestCase):
 
         self.assertEqual(set(spatial_graph.nodes), expected_nodes)
         self.assertEqual(set(spatial_graph.edges), expected_edges)
-    
+
     def test_impute_single_state_basic(self):
 
         cell = "cell_4"
         character = 0
 
-        coordinates = pd.DataFrame(
+        pd.DataFrame(
             self.spatial_adata.obsm["spatial"],
             index=self.spatial_adata.obs_names,
         )
@@ -227,7 +223,7 @@ class TestSpatialImputation(unittest.TestCase):
         self.assertEqual(2, count)
 
     def test_spatial_imputation_integration_simple_one_hop(self):
-        
+
         imputed_character_matrix = cas.sp.impute_alleles_from_spatial_data(
             self.character_matrix_missing,
             self.spatial_adata,
@@ -332,7 +328,7 @@ class TestSpatialImputation(unittest.TestCase):
 
     def test_spatial_imputation_integration_two_iterations(self):
 
-        
+
         spatial_graph=self.spatial_graph_neigh3
         spatial_graph.add_edge("cell_7", "cell_9")  # add new edge
 

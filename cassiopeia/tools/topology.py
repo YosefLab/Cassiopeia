@@ -2,9 +2,9 @@
 Utilities to assess topological properties of a phylogeny, such as balance
 and expansion.
 """
-from typing import Callable, Dict, Optional, Tuple, Union
-
 import math
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 from scipy import spatial, stats
@@ -19,7 +19,7 @@ def compute_expansion_pvalues(
     min_clade_size: int = 10,
     min_depth: int = 1,
     copy: bool = False,
-) -> Union[CassiopeiaTree, None]:
+) -> CassiopeiaTree | None:
     """Call expansion pvalues on a tree.
 
     Uses the methodology described in Yang, Jones et al, BioRxiv (2021) to
@@ -32,14 +32,14 @@ def compute_expansion_pvalues(
     cells; in other words, a one-sided p-value. Often, if the probability is
     less than some threshold (e.g., 0.05), this might indicate that there exists
     some subclade under this node that to which this expansion probability can
-    be attributed (i.e. the null hypothesis that the subclade is undergoing 
+    be attributed (i.e. the null hypothesis that the subclade is undergoing
     neutral drift can be rejected).
 
     This function will add an attribute "expansion_pvalue" to the tree, and
     return None unless :param:`copy` is set to True.
 
-    On a typical balanced tree, this function will perform in O(n log n) time, 
-    but can be up to O(n^3) on highly unbalanced trees. A future endeavor may 
+    On a typical balanced tree, this function will perform in O(n log n) time,
+    but can be up to O(n^3) on highly unbalanced trees. A future endeavor may
     be to impelement the function in O(n) time.
 
     Args:
@@ -49,11 +49,11 @@ def compute_expansion_pvalues(
             in number of nodes from the root, not branch lengths.
         copy: Return copy.
 
-    Returns:
+    Returns
+    -------
         If copy is set to False, returns the tree with attributes added
             in place. Else, returns a new CassiopeiaTree.
     """
-
     tree = tree.copy() if copy else tree
 
     # instantiate attributes
@@ -94,19 +94,17 @@ def compute_expansion_pvalues(
 
 def compute_cophenetic_correlation(
     tree: CassiopeiaTree,
-    weights: Optional[pd.DataFrame] = None,
-    dissimilarity_map: Optional[pd.DataFrame] = None,
-    dissimilarity_function: Optional[
-        Callable[[np.array, np.array, int, Dict[int, Dict[int, float]]], float]
-    ] = dissimilarity_functions.weighted_hamming_distance,
-) -> Tuple[float, float]:
+    weights: pd.DataFrame | None = None,
+    dissimilarity_map: pd.DataFrame | None = None,
+    dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
+) -> tuple[float, float]:
     """Computes the cophenetic correlation of a lineage.
 
     Computes the cophenetic correlation of a lineage, which is defined as the
     Pearson correlation between the phylogenetic distance and dissimilarity
     between characters.
 
-    If neither weight matrix nor the dissimilarity map are precomputed, then 
+    If neither weight matrix nor the dissimilarity map are precomputed, then
     this function will run in O(mn^2 + n^2logn + n^2) time, as the dissimilarity
     map will take O(mn^2) time, the phylogenetic distance will take O(n^2 logn)
     time, and the Pearson correlation will take O(n^2) time since it must
@@ -122,11 +120,11 @@ def compute_cophenetic_correlation(
             map is not passed in, and one does not already exist in the
             CassiopeiaTree, then this function will be used to compute the
             dissimilarities between samples.
-    
-    Returns:
+
+    Returns
+    -------
         The cophenetic correlation value and significance for the tree.
     """
-
     # set phylogenetic weight matrix
     W = (
         compute_phylogenetic_weight_matrix(tree)
@@ -160,17 +158,17 @@ def compute_cophenetic_correlation(
 
 def simple_coalescent_probability(n: int, b: int, k: int) -> float:
     """Simple coalescent probability of imbalance.
-    
+
     Assuming a simple coalescent model, compute the probability that a given
     lineage has exactly b samples, given there are n cells and k lineages
     overall.
- 
+
     Args:
         n: Number of leaves in subtree
         b: Number of leaves in one lineage
         k: Number of lineages
     Returns:
-        Probability of observing b leaves on one lineage in a tree of n total 
+        Probability of observing b leaves on one lineage in a tree of n total
             leaves
     """
     return nCk(n - b - 1, k - 2) / nCk(n - 1, k - 1)
@@ -183,10 +181,10 @@ def nCk(n: int, k: int) -> float:
         n: Number of items total.
         k: Number of items to choose.
 
-    Returns:
+    Returns
+    -------
         The number of ways to choose k items from n.
     """
-
     if k > n:
         raise CassiopeiaError("Argument k cannot be larger than n.")
 

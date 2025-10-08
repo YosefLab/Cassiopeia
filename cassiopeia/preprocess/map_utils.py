@@ -19,10 +19,10 @@ def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
     Args:
         molecule_table: A molecule table of cellBC-UMI pairs to be filtered
 
-    Returns:
+    Returns
+    -------
         An allele table with one allele per cellBC-intBC pair
     """
-
     # Have to drop out all intBCs that are NaN
     molecule_table = molecule_table.dropna(subset=["intBC"])
 

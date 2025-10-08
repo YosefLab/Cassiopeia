@@ -4,9 +4,8 @@ inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
 
-import abc
 import networkx as nx
 import numba
 import numpy as np
@@ -20,6 +19,7 @@ from cassiopeia.solver import (
     solver_utilities,
 )
 
+
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     """
     Neighbor-Joining class for Cassiopeia.
@@ -27,7 +27,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic
     `solve` method, but implements its own procedure for finding cherries by
-    minimizing the Q-criterion between samples. If fast is set to True, 
+    minimizing the Q-criterion between samples. If fast is set to True,
     a fast NJ implementation of is used.
 
     Args:
@@ -46,16 +46,17 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                     the square root of 1/p
         fast: Whether to use a fast implementation of Neighbor-Joining.
         implementation: Which fast implementation to use. Options are:
-            "ccphylo_dnj": CCPhylo implementation the Dynamic Neighbor-Joining 
+            "ccphylo_dnj": CCPhylo implementation the Dynamic Neighbor-Joining
                 algorithm described by Clausen (2023). Solution in guaranteed
                 to be exact.
-            "ccphylo_hnj": CCPhylo implementation of the Heuristic 
-                Neighbor-Joining algorithm described by Clausen (2023). 
+            "ccphylo_hnj": CCPhylo implementation of the Heuristic
+                Neighbor-Joining algorithm described by Clausen (2023).
                 Solution is not guaranteed to be exact.
             "ccphylo_nj": CCPhylo implementation of the Neighbor-Joining.
         threads: Number of threads to use for solver.
 
-    Attributes:
+    Attributes
+    ----------
         dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
@@ -67,11 +68,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Optional[
-            Callable[
-                [np.array, np.array, int, Dict[int, Dict[int, float]]], float
-            ]
-        ] = dissimilarity_functions.weighted_hamming_distance,
+        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
         fast: bool = False,
@@ -87,7 +84,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
                     "Invalid fast implementation of Neighbor-Joining. Options "
                     "are: 'ccphylo_dnj', 'ccphylo_hnj', 'ccphylo_nj'"
                 )
-        else:   
+        else:
             self._implementation = "generic_nj"
 
         super().__init__(
@@ -98,7 +95,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         )
 
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
     ) -> nx.DiGraph():
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
@@ -109,7 +106,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             root_sample: Sample to treat as the root
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns:
+        Returns
+        -------
             A rooted tree
         """
         tree.add_edge(remaining_samples[0], remaining_samples[1])
@@ -120,7 +118,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return rooted_tree
 
-    def find_cherry(self, dissimilarity_matrix: np.array) -> Tuple[int, int]:
+    def find_cherry(self, dissimilarity_matrix: np.array) -> tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
         Proceeds by minimizing the Q-criterion as in Saitou and Nei (1987) to
@@ -129,11 +127,11 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_matrix: A sample x sample dissimilarity matrix
 
-        Returns:
+        Returns
+        -------
             A tuple of intgers representing rows in the dissimilarity matrix
                 to join.
         """
-
         q = self.compute_q(dissimilarity_matrix)
         np.fill_diagonal(q, np.inf)
 
@@ -151,10 +149,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_map: A sample x sample dissimilarity map
 
-        Returns:
+        Returns
+        -------
             A matrix storing the Q-criterion for every pair of samples.
         """
-
         q = np.zeros(dissimilarity_map.shape)
         n = dissimilarity_map.shape[0]
         dissimilarity_map_rowsums = dissimilarity_map.sum(axis=1)
@@ -173,7 +171,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def update_dissimilarity_map(
         self,
         dissimilarity_map: pd.DataFrame,
-        cherry: Tuple[str, str],
+        cherry: tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
         """Update dissimilarity map after finding a cherry.
@@ -188,10 +186,10 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             cherry: A tuple of indices in the dissimilarity map that are joining
             new_node: New node name, to be added to the new dissimilarity map
 
-        Returns:
+        Returns
+        -------
             A new dissimilarity map, updated with the new node
         """
-
         i, j = (
             np.where(dissimilarity_map.index == cherry[0])[0][0],
             np.where(dissimilarity_map.index == cherry[1])[0][0],
@@ -230,11 +228,11 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
 
-        Returns:
+        Returns
+        -------
             An updated dissimilarity map
 
         """
-
         # add new row & column for incoming sample
         N = dissimilarity_map.shape[1]
 

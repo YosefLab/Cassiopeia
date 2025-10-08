@@ -1,26 +1,24 @@
 """
-A subclass of LeafSubsampler, the UniformLeafSubsampler. 
+A subclass of LeafSubsampler, the UniformLeafSubsampler.
 
 Takes a uniform random sample of the leaves of a CassiopeiaTree and produces a
 new CassiopeiaTree that keeps only the lineages pertaining to the sample.
 """
 
 import copy
+
 import numpy as np
-from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import (
-    LeafSubsampler,
-    LeafSubsamplerError,
-)
+from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
+from cassiopeia.mixins import LeafSubsamplerError
 
 
 class UniformLeafSubsampler(LeafSubsampler):
     def __init__(
         self,
-        ratio: Optional[float] = None,
-        number_of_leaves: Optional[int] = None,
+        ratio: float | None = None,
+        number_of_leaves: int | None = None,
     ):
         """
         Uniformly subsample leaf samples of a CassiopeiaTree.
@@ -71,11 +69,13 @@ class UniformLeafSubsampler(LeafSubsampler):
             keep_singular_root_edge: Whether or not to collapse the single edge
                 leading from the root in the subsample, if it exists
 
-        Returns:
+        Returns
+        -------
             A new CassiopeiaTree that is the induced subtree on a sample of the
                 leaves in the given tree
 
-        Raises:
+        Raises
+        ------
             LeafSubsamplerError if the sample size is <= 0, or larger than the
                 number of leaves in the tree
         """
@@ -116,9 +116,9 @@ class UniformLeafSubsampler(LeafSubsampler):
 
         # Copy and annotate branch lengths and times
         subsampled_tree.set_times(
-            dict(
-                [(node, tree.get_time(node)) for node in subsampled_tree.nodes]
-            )
+            {
+                node: tree.get_time(node) for node in subsampled_tree.nodes
+            }
         )
 
         return subsampled_tree

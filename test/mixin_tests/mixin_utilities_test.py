@@ -5,7 +5,6 @@ This file tests the utilities stored in cassiopeia/data/utilities.py
 import unittest
 
 import pandas as pd
-
 from cassiopeia.mixins import utilities
 
 
@@ -19,7 +18,7 @@ class TestMixinUtilities(unittest.TestCase):
         self.assertListEqual(
             [0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array)
         )
-        
+
         state_array = [0, 1, 2, 3, 4, 5]
         self.assertListEqual(
             [0, 1, 2, 3, 4, 5], utilities.unravel_ambiguous_states(state_array)
@@ -42,10 +41,10 @@ class TestMixinUtilities(unittest.TestCase):
         )
 
         duplicated_mappings = utilities.find_duplicate_groups(character_matrix)
-        
+
         expected_entries = [('c1', ('c1', 'c2')),
                             ('c6', ('c6', 'c6_dup'))]
-        
+
         for k, grp in expected_entries:
             self.assertIn(k, list(duplicated_mappings.keys()))
             self.assertSetEqual(set(grp), set(duplicated_mappings[k]))

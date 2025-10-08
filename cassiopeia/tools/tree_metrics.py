@@ -2,7 +2,7 @@
 This file stores functions for scoring metrics on a tree.
 Currently, we'll support parsimony and likelihood calculations.
 """
-from typing import Callable, Optional, Tuple, Union
+from collections.abc import Callable
 
 import numpy as np
 import scipy
@@ -42,14 +42,15 @@ def calculate_parsimony(
         treat_missing_as_mutations: Whether to treat missing states as
             mutations
 
-    Returns:
+    Returns
+    -------
         The number of mutations that have occurred on the tree
 
-    Raises:
+    Raises
+    ------
         TreeMetricError if the tree has not been initialized or if
             a node does not have character states initialized
     """
-
     if infer_ancestral_characters:
         tree.reconstruct_ancestral_characters()
 
@@ -57,7 +58,7 @@ def calculate_parsimony(
 
     if tree.get_character_states(tree.root) == []:
         raise TreeMetricError(
-            f"Character states empty at internal node. Annotate"
+            "Character states empty at internal node. Annotate"
             " character states or infer ancestral characters by"
             " setting infer_ancestral_characters=True."
         )
@@ -73,7 +74,7 @@ def calculate_parsimony(
                 )
             else:
                 raise TreeMetricError(
-                    f"Character states empty at internal node. Annotate"
+                    "Character states empty at internal node. Annotate"
                     " character states or infer ancestral characters by"
                     " setting infer_ancestral_characters=True."
                 )
@@ -88,8 +89,8 @@ def calculate_parsimony(
 def log_transition_probability(
     tree: CassiopeiaTree,
     character: int,
-    s: Union[int, str],
-    s_: Union[int, str],
+    s: int | str,
+    s_: int | str,
     t: float,
     mutation_probability_function_of_time: Callable[[float], float],
     missing_probability_function_of_time: Callable[[float], float],
@@ -123,7 +124,8 @@ def log_transition_probability(
             probability of a lineage acquiring heritable missing data within a
             given time
 
-    Returns:
+    Returns
+    -------
         The log transition probability between the states
     """
     if s_ == tree.missing_state_indicator:
@@ -224,10 +226,10 @@ def log_likelihood_of_character(
         implicit_root_branch_length: The length of the implicit root branch.
             Used if the implicit root needs to be added
 
-    Returns:
+    Returns
+    -------
         The log likelihood of the tree on one character
     """
-
     # This dictionary uses a nested dictionary structure. Each node is mapped
     # to a dictionary storing the likelihood for each possible state
     # (states that have non-0 likelihood)
@@ -376,8 +378,8 @@ def get_lineage_tracing_parameters(
     tree: CassiopeiaTree,
     continuous: bool,
     assume_root_implicit_branch: bool,
-    layer: Optional[str] = None,
-) -> Tuple[float, float, float]:
+    layer: str | None = None,
+) -> tuple[float, float, float]:
     """Gets the lineage tracing parameters from a tree.
 
     This function attempts to consume these parameters from `tree.parameters`
@@ -397,14 +399,15 @@ def get_lineage_tracing_parameters(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns:
+    Returns
+    -------
         The mutation rate, the heritable missing rate, and the stochastic
             missing probability
 
-    Raises:
+    Raises
+    ------
         TreeMetricError if one of the provided parameters is invalid
     """
-
     # Here we attempt to consume the lineage tracing parameters from the tree.
     # If the attributes are not populated, then the parameters are inferred.
     if "mutation_rate" not in tree.parameters:
@@ -454,7 +457,7 @@ def get_lineage_tracing_parameters(
 def calculate_likelihood_discrete(
     tree: CassiopeiaTree,
     use_internal_character_states: bool = False,
-    layer: Optional[str] = None,
+    layer: str | None = None,
 ) -> float:
     """
     Calculates the log likelihood of a tree under a discrete process.
@@ -482,15 +485,16 @@ def calculate_likelihood_discrete(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns:
+    Returns
+    -------
         The log likelihood of the tree given the observed character states.
 
-    Raises:
+    Raises
+    ------
         CassiopeiaError if the parameters consumed from the tree are invalid,
             if the tree priors are not populated, or if character states
             annotations are missing at a node.
     """
-
     if tree.priors is None:
         raise TreeMetricError(
             "Priors must be specified for this tree to calculate the"
@@ -548,7 +552,7 @@ def calculate_likelihood_discrete(
 def calculate_likelihood_continuous(
     tree: CassiopeiaTree,
     use_internal_character_states: bool = False,
-    layer: Optional[str] = None,
+    layer: str | None = None,
 ) -> float:
     """
     Calculates the log likelihood of a tree under a continuous process.
@@ -579,14 +583,15 @@ def calculate_likelihood_continuous(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns:
+    Returns
+    -------
         The log likelihood of the tree given the observed character states.
 
-    Raises:
+    Raises
+    ------
         CassiopeiaError if the tree priors are not populated, or if character
             state annotations are missing at a node.
     """
-
     if tree.priors is None:
         raise TreeMetricError(
             "Priors must be specified for this tree to calculate the"

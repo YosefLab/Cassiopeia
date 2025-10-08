@@ -4,13 +4,12 @@ Tests for cassiopeia/tools/parameter_estimators.py
 
 import unittest
 
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
-from cassiopeia.tools import parameter_estimators
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
+from cassiopeia.tools import parameter_estimators
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -114,12 +113,12 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_estimate_missing_data_bad_cases(self):
         with self.assertRaises(ParameterEstimateError):
-            temp = parameter_estimators.estimate_missing_data_rates(
+            parameter_estimators.estimate_missing_data_rates(
                 self.discrete_tree, continuous=False
             )
 
         with self.assertRaises(ParameterEstimateError):
-            temp = parameter_estimators.estimate_missing_data_rates(
+            parameter_estimators.estimate_missing_data_rates(
                 self.discrete_tree,
                 continuous=False,
                 heritable_missing_rate=0.25,
@@ -131,14 +130,14 @@ class TestCassiopeiaTree(unittest.TestCase):
             self.discrete_tree.parameters[
                 "stochastic_missing_probability"
             ] = 0.2
-            temp = parameter_estimators.estimate_missing_data_rates(
+            parameter_estimators.estimate_missing_data_rates(
                 self.discrete_tree, continuous=False
             )
 
         with self.assertRaises(ParameterEstimateWarning):
             self.discrete_tree.reset_parameters()
             self.discrete_tree.parameters["heritable_missing_rate"] = 0.5
-            temp = parameter_estimators.estimate_missing_data_rates(
+            parameter_estimators.estimate_missing_data_rates(
                 self.discrete_tree, continuous=False
             )
 
@@ -146,7 +145,7 @@ class TestCassiopeiaTree(unittest.TestCase):
             self.continuous_tree.parameters[
                 "stochastic_missing_probability"
             ] = 0.9
-            temp = parameter_estimators.estimate_missing_data_rates(
+            parameter_estimators.estimate_missing_data_rates(
                 self.continuous_tree, continuous=True
             )
 

@@ -16,15 +16,6 @@ Autocorrelation
 
    tl.compute_morans_i
 
-Branch Length Estimation (BLE)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: reference/
-
-   tl.IIDExponentialBayesian
-   tl.IIDExponentialMLE
-
 Coupling
 ~~~~~~~~~~~
 

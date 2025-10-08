@@ -1,17 +1,15 @@
 """
 Tests for cassiopeia/tools/tree_metrics.py
 """
+import itertools
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
-from networkx.generators import stochastic
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
-from cassiopeia.tools import tree_metrics
 from cassiopeia.mixins import TreeMetricError
+from cassiopeia.tools import tree_metrics
 
 
 class TestCassiopeiaTree(unittest.TestCase):
@@ -413,7 +411,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         true_params = (0.44967879185089554, 0.25, 0.3)
         for i in range(len(params)):
             self.assertAlmostEqual(params[i], true_params[i], delta=1e-6)
-        
+
 
         small_tree.parameters["mutation_rate"] = 0.25
         params = tree_metrics.get_lineage_tracing_parameters(

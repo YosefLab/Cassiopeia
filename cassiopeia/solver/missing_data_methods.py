@@ -1,22 +1,21 @@
 """This file contains included missing data imputation methods."""
 
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from cassiopeia.mixins import is_ambiguous_state, unravel_ambiguous_states
+from cassiopeia.mixins import unravel_ambiguous_states
 from cassiopeia.solver import solver_utilities
 
 
 def assign_missing_average(
     character_matrix: pd.DataFrame,
     missing_state_indicator: int,
-    left_set: List[str],
-    right_set: List[str],
-    missing: List[str],
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
-) -> Tuple[List[str], List[str]]:
+    left_set: list[str],
+    right_set: list[str],
+    missing: list[str],
+    weights: dict[int, dict[int, float]] | None = None,
+) -> tuple[list[str], list[str]]:
     """Implements the "Average" missing data imputation method.
 
     An on-the-fly missing data imputation method for the VanillaGreedy
@@ -38,11 +37,11 @@ def assign_missing_average(
             represented by their names in the original character matrix
         weights: A set of optional weights for character/state mutation pairs
 
-    Returns:
+    Returns
+    -------
         A tuple of lists, representing the left and right partitions with
         missing samples imputed
     """
-
     # A helper function to calculate the number of shared character/state pairs
     # shared between a missing sample and a side of the partition
     sample_names = list(character_matrix.index)

@@ -1,12 +1,8 @@
 import os
 import unittest
 
-import numpy as np
 import pandas as pd
-import pathlib as Path
-
-import cassiopeia
-from cassiopeia.preprocess import pipeline, lineage_utils
+from cassiopeia.preprocess import lineage_utils, pipeline
 
 
 class TestCallLineageGroup(unittest.TestCase):

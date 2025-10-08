@@ -1,12 +1,8 @@
-import unittest
-
 import shutil
 import tempfile
+import unittest
 
-import numpy as np
 import pandas as pd
-
-import cassiopeia
 from cassiopeia.preprocess import pipeline
 
 

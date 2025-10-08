@@ -7,7 +7,6 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
-
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins.errors import CassiopeiaError
@@ -85,7 +84,7 @@ class TestDataUtilities(unittest.TestCase):
 
         self.assertEqual(len(bootstrap_samples), 10)
 
-        for bootstrap_matrix, bootstrap_priors in bootstrap_samples:
+        for bootstrap_matrix, _bootstrap_priors in bootstrap_samples:
             self.assertCountEqual(
                 self.character_matrix.index, bootstrap_matrix.index
             )
@@ -152,8 +151,8 @@ class TestDataUtilities(unittest.TestCase):
 
         for (
             bootstrap_matrix,
-            bootstrap_priors,
-            boostarp_state_to_indel,
+            _bootstrap_priors,
+            _boostarp_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
 
@@ -199,8 +198,8 @@ class TestDataUtilities(unittest.TestCase):
 
         for (
             bootstrap_matrix,
-            bootstrap_priors,
-            boostrap_state_to_indel,
+            _bootstrap_priors,
+            _boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
 
@@ -247,7 +246,7 @@ class TestDataUtilities(unittest.TestCase):
         for (
             bootstrap_matrix,
             bootstrap_priors,
-            boostrap_state_to_indel,
+            _boostrap_state_to_indel,
             bootstrap_intbcs,
         ) in bootstrap_samples:
 

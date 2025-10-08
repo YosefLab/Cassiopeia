@@ -7,7 +7,6 @@ implement a method called `simulate_tree`.
 import abc
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.mixins import TreeSimulatorError
 
 
 class TreeSimulator(abc.ABC):

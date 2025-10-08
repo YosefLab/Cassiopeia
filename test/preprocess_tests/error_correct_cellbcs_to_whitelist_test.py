@@ -2,12 +2,10 @@
 Tests for correcting raw barcodes to a whitelist pipeline.py
 """
 import os
-import unittest
 import tempfile
+import unittest
 
 import pysam
-import ngs_tools as ngs
-
 from cassiopeia.preprocess import pipeline
 
 

@@ -2,7 +2,6 @@
 This file stores functions for estimating lineage tracing parameters.
 Currently, we'll support the estimation of mutation and missing data rates.
 """
-from typing import Optional, Tuple
 
 import numpy as np
 
@@ -11,7 +10,7 @@ from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 
 
 def get_proportion_of_missing_data(
-    tree: CassiopeiaTree, layer: Optional[str] = None
+    tree: CassiopeiaTree, layer: str | None = None
 ) -> float:
     """Calculates the proportion of missing entries in the character matrix.
 
@@ -24,13 +23,14 @@ def get_proportion_of_missing_data(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns:
+    Returns
+    -------
         The proportion of missing cell/character entries
 
-    Raises:
+    Raises
+    ------
         ParameterEstimateError if character matrix or layer doesn't exist
     """
-
     if layer:
         character_matrix = tree.layers[layer]
     else:
@@ -51,7 +51,7 @@ def get_proportion_of_missing_data(
 
 
 def get_proportion_of_mutation(
-    tree: CassiopeiaTree, layer: Optional[str] = None
+    tree: CassiopeiaTree, layer: str | None = None
 ) -> float:
     """Calculates the proportion of mutated entries in the character matrix.
 
@@ -64,13 +64,14 @@ def get_proportion_of_mutation(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns:
+    Returns
+    -------
         The proportion of non-missing cell/character entries that are mutated
 
-    Raises:
+    Raises
+    ------
         ParameterEstimateError if character matrix or layer doesn't exist
     """
-
     if layer:
         character_matrix = tree.layers[layer]
     else:
@@ -100,7 +101,7 @@ def estimate_mutation_rate(
     tree: CassiopeiaTree,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
-    layer: Optional[str] = None,
+    layer: str | None = None,
 ) -> float:
     """Estimates the mutation rate from a tree and character matrix.
 
@@ -149,10 +150,12 @@ def estimate_mutation_rate(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns:
+    Returns
+    -------
         The estimated mutation rate
 
-    Raises:
+    Raises
+    ------
         ParameterEstimateError if the `mutation_proportion` parameter is not
             between 0 and 1
     """
@@ -186,10 +189,10 @@ def estimate_missing_data_rates(
     tree: CassiopeiaTree,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
-    stochastic_missing_probability: Optional[float] = None,
-    heritable_missing_rate: Optional[float] = None,
-    layer: Optional[str] = None,
-) -> Tuple[float, float]:
+    stochastic_missing_probability: float | None = None,
+    heritable_missing_rate: float | None = None,
+    layer: str | None = None,
+) -> tuple[float, float]:
     """
     Estimates both missing data parameters given one of the two from a tree.
 
@@ -274,11 +277,13 @@ def estimate_missing_data_rates(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns:
+    Returns
+    -------
         The stochastic missing probability and heritable missing rate. One of
         these will be the parameter as provided, the other will be an estimate
 
-    Raises:
+    Raises
+    ------
         ParameterEstimateError if the `total_missing_proportion`,
             `stochastic_missing_probability`, or `heritable_missing_rate` that
             are provided have invalid values, or if both or neither of
@@ -286,7 +291,6 @@ def estimate_missing_data_rates(
             provided. ParameterEstimateWarning if the estimated parameter is
             negative
     """
-
     if "missing_proportion" not in tree.parameters:
         total_missing_proportion = get_proportion_of_missing_data(tree, layer)
     else:

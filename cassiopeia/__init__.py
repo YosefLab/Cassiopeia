@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 
 """Top-level for Cassiopeia development."""
 
-from . import preprocess as pp
-from . import solver
+from . import critique, data, solver
 from . import plotting as pl
-from . import data
-from . import critique
+from . import preprocess as pp
 from . import simulator as sim
 from . import spatial as sp
 from . import tools as tl

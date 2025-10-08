@@ -3,13 +3,11 @@ Tests for the UMI Collapsing module in pipeline.py
 """
 import os
 import unittest
+from pathlib import Path
 
 import pandas as pd
-from pathlib import Path
 import pysam
-
-from cassiopeia.preprocess import UMI_utils
-from cassiopeia.preprocess import utilities
+from cassiopeia.preprocess import UMI_utils, utilities
 
 
 class TestCollapseUMIs(unittest.TestCase):

@@ -2,12 +2,11 @@
 Tests for converting FASTQs to an unmapped BAM in pipeline.py
 """
 import os
-import unittest
 import tempfile
+import unittest
 
-import pysam
 import ngs_tools as ngs
-
+import pysam
 from cassiopeia.preprocess import pipeline
 
 

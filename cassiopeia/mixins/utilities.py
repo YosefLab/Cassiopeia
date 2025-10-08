@@ -1,12 +1,11 @@
 import functools
 import importlib
 from types import ModuleType
-from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
 
-def is_ambiguous_state(state: Union[int, Tuple[int, ...]]) -> bool:
+def is_ambiguous_state(state: int | tuple[int, ...]) -> bool:
     """Determine whether the provided state is ambiguous.
 
     Note that this function operates on a single (indel) state.
@@ -14,19 +13,21 @@ def is_ambiguous_state(state: Union[int, Tuple[int, ...]]) -> bool:
     Args:
         state: Single, possibly ambiguous, character state
 
-    Returns:
+    Returns
+    -------
         True if the state is ambiguous, False otherwise.
     """
     return isinstance(state, tuple)
 
 
-def try_import(module: str) -> Optional[ModuleType]:
+def try_import(module: str) -> ModuleType | None:
     """Helper function to import a possibly not-installed module.
 
     Args:
         module: Module to try and import
 
-    Returns:
+    Returns
+    -------
         The imported module, if the module exists, or None
     """
     try:
@@ -36,14 +37,15 @@ def try_import(module: str) -> Optional[ModuleType]:
 
 
 def unravel_ambiguous_states(
-    state_array: List[Union[int, Tuple[int, ...]]]
-) -> List[int]:
+    state_array: list[int | tuple[int, ...]]
+) -> list[int]:
     """Helper function to unravel ambiguous states.
 
     Args:
         A list of states, potentially containing ambiguous states.
 
-    Returns:
+    Returns
+    -------
         A list of unique states contained in the list.
     """
     all_states = [
@@ -52,7 +54,7 @@ def unravel_ambiguous_states(
     ]
     return functools.reduce(lambda a, b: a + b, all_states)
 
-def find_duplicate_groups(character_matrix) -> Dict[str, Tuple[str, ...]]:
+def find_duplicate_groups(character_matrix) -> dict[str, tuple[str, ...]]:
     """Maps duplicated indices in character matrix to groups.
 
     Groups together samples in a character matrix if they have the same
@@ -61,18 +63,18 @@ def find_duplicate_groups(character_matrix) -> Dict[str, Tuple[str, ...]]:
     Args:
         character_matrix: Character matrix, potentially with ambiguous states.
 
-    Returns:
+    Returns
+    -------
         A mapping of a single sample name to the set of of samples that have
             the same character states.
     """
-
     character_matrix.index.name = "index"
 
      # convert to sets to support ambiguous states
     character_matrix_sets = character_matrix.copy()
     character_matrix_sets = character_matrix_sets.apply(
             lambda x: [
-                set(s) if is_ambiguous_state(s) else set([s])
+                set(s) if is_ambiguous_state(s) else {s}
                 for s in x.values
             ],
             axis=0,

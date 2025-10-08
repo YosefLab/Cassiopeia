@@ -1,5 +1,4 @@
 ##!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # cassiopeia documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
@@ -20,6 +19,11 @@
 #
 import sys
 from pathlib import Path
+
+from sphinx.ext.autosummary import Autosummary
+from sphinx.ext.autosummary import get_documenter
+from docutils.parsers.rst import directives
+from sphinx.util.inspect import safe_getattr
 
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
@@ -50,6 +54,17 @@ extensions = [
     # "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
     "sphinx_gallery.load_style",
+    "myst_parser",
+    "sphinx_tabs.tabs",
+]
+
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_image",
+    "html_admonition",
 ]
 
 # nbsphinx specific settings
@@ -66,7 +81,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 
 # Generate the API documentation when building
 autosummary_generate = True
@@ -85,12 +100,12 @@ annotate_defaults = True  # scanpydoc option, look into why we need this
 master_doc = "index"
 
 
-intersphinx_mapping = dict(
-    matplotlib=("https://matplotlib.org/", None),
-    numpy=("https://docs.scipy.org/doc/numpy/", None),
-    pandas=("https://pandas.pydata.org/pandas-docs/stable/", None),
-    python=("https://docs.python.org/3", None),
-)
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "python": ("https://docs.python.org/3", None),
+}
 
 # General information about the project.
 project = "cassiopeia"
@@ -146,13 +161,13 @@ html_theme_options = {
     "twitter_url": "https://twitter.com/YosefLab",
     # "use_edit_page_button": True,
 }
-html_context = dict(
-    display_github=True,  # Integrate GitHub
-    github_user="YosefLab",  # Username
-    github_repo="Cassiopeia",  # Repo name
-    github_version="master",  # Version
-    doc_path="docs/",  # Path in the checkout to the docs root
-)
+html_context = {
+    "display_github": True,  # Integrate GitHub
+    "github_user": "YosefLab",  # Username
+    "github_repo": "Cassiopeia",  # Repo name
+    "github_version": "master",  # Version
+    "doc_path": "docs/",  # Path in the checkout to the docs root
+}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -165,7 +180,7 @@ nbsphinx_thumbnails = {
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
     "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
-    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png"
+    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png",
 }
 
 
@@ -185,15 +200,10 @@ mathjax_config = {
 }
 
 
-from sphinx.ext.autosummary import Autosummary
-from sphinx.ext.autosummary import get_documenter
-from docutils.parsers.rst import directives
-from sphinx.util.inspect import safe_getattr
-import re
-
 # Code for creating autosummaries for class methods / attributes
 # Taken originally from Pandas documentation
 class AutoAutoSummary(Autosummary):
+    """Autosummary directive that can document both methods and attributes."""
 
     option_spec = {
         "methods": directives.unchanged,
@@ -229,20 +239,12 @@ class AutoAutoSummary(Autosummary):
             if "methods" in self.options:
                 _, methods = self.get_members(c, "method", ["__init__"])
 
-                self.content = [
-                    "~%s.%s" % (clazz, method)
-                    for method in methods
-                    if not method.startswith("_")
-                ]
+                self.content = [f"~{clazz}.{method}" for method in methods if not method.startswith("_")]
             if "attributes" in self.options:
                 _, attribs = self.get_members(c, "attribute")
-                self.content = [
-                    "~%s.%s" % (clazz, attrib)
-                    for attrib in attribs
-                    if not attrib.startswith("_")
-                ]
+                self.content = [f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")]
         finally:
-            return super(AutoAutoSummary, self).run()
+            return super().run()
 
 
 def setup(app):

@@ -3,32 +3,30 @@ This file contains all functions pertaining to UMI collapsing and preprocessing.
 Invoked through pipeline.py and supports the collapseUMIs and
 errorCorrectUMIs functions.
 """
-import os
-
-from typing import Callable, Generator, List, Optional, Tuple, Union
-from typing_extensions import Literal
 
 import array
-from collections import Counter, defaultdict, namedtuple
 import heapq
-from hits import annotation as annotation_module
-from hits import fastq, utilities, sw, sam
-from joblib import delayed
+import warnings
+from collections import Counter
+from collections.abc import Callable, Generator
+from pathlib import Path
+from typing import Literal
+
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import pysam
+from hits import annotation as annotation_module
+from hits import fastq, sw, utilities
+from joblib import delayed
 from tqdm.auto import tqdm
-import warnings
 
-from cassiopeia.mixins import logger, PreprocessError, PreprocessWarning
+from cassiopeia.mixins import PreprocessError, PreprocessWarning
 from cassiopeia.preprocess import constants
 
 from .collapse_cython import (
-    hq_mismatches_from_seed,
-    hq_hamming_distance,
     hamming_distance_matrix,
+    hq_mismatches_from_seed,
     register_corrections,
 )
 
@@ -86,7 +84,8 @@ def detect_cell_bc_tag(bam_fp: str) -> str:
     Args:
         bam_fp: Path to the BAM file
 
-    Returns:
+    Returns
+    -------
         The BAM tag to use as the barcode
     """
     raw_tag = BAM_CONSTANTS["RAW_CELL_BC_TAG"]
@@ -103,10 +102,10 @@ def detect_cell_bc_tag(bam_fp: str) -> str:
 
 def group_bam_by_key(
     sorted_fn: str,
-    sort_key: Callable[[pysam.AlignedSegment], Union[str, Tuple[str, ...]]],
+    sort_key: Callable[[pysam.AlignedSegment], str | tuple[str, ...]],
     n_threads: int = 1,
 ) -> Generator[
-    Tuple[Union[str, Tuple[str, ...]], List[pysam.AlignedSegment]], None, None
+    tuple[str | tuple[str, ...], list[pysam.AlignedSegment]], None, None
 ]:
     """Given a sorted BAM, yield groups of alignments.
 
@@ -118,7 +117,8 @@ def group_bam_by_key(
         sort_key: Function that yields a key, given a single alignment.
         n_threads: Number of threads to use.
 
-    Returns:
+    Returns
+    -------
         A generator yielding tuple of two elements, where the first element is
         the grouping key, and the second is a list of alignments with that key.
     """
@@ -141,7 +141,7 @@ def sort_bam(
     bam_fp: str,
     sorted_fn: str,
     sort_key: Callable[
-        [pysam.AlignedSegment], Union[str, Tuple[str, ...]]
+        [pysam.AlignedSegment], str | tuple[str, ...]
     ] = sort_key,
     filter_func: Callable[[pysam.AlignedSegment], str] = filter_func,
     n_threads: int = 1,
@@ -160,7 +160,8 @@ def sort_bam(
             irrelevant sequences.
         n_threads: Number of threads to use.
 
-    Returns:
+    Returns
+    -------
         The max read length and the the total number of relevant reads sorted.
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
@@ -176,7 +177,7 @@ def sort_bam(
         chunk_fns = []
 
         for i, chunk in enumerate(utilities.chunks(relevant, 10000000)):
-            suffix = ".{:06d}.bam".format(i)
+            suffix = f".{i:06d}.bam"
             chunk_fn = Path(sorted_fn).with_suffix(suffix)
             sorted_chunk = sorted(chunk, key=sort_key)
 
@@ -281,7 +282,7 @@ def form_collapsed_clusters(
             "Provided `max_hq_mismatches` exceeds half of the maximum read "
             "length. Most reads will be collapsed into a single consensus "
             "sequence.",
-            PreprocessWarning,
+            PreprocessWarning, stacklevel=2,
         )
 
     # Helper function so that we can use joblib to parallelize the computation
@@ -372,10 +373,10 @@ def form_collapsed_clusters(
 
 
 def form_clusters(
-    als: List[pysam.AlignedSegment],
+    als: list[pysam.AlignedSegment],
     max_read_length: int,
     max_hq_mismatches: int,
-) -> List[pysam.AlignedSegment]:
+) -> list[pysam.AlignedSegment]:
     """Forms clusters from a list of aligned segments (reads).
 
     Forms clusters of aligned segments that have similar sequences, creating
@@ -391,11 +392,11 @@ def form_clusters(
             quality mismatches between the seqeunces of 2 aligned segments to be
             collapsed.
 
-    Returns:
+    Returns
+    -------
         A list of annotated aligned segments representing the consensus of each
             cluster.
     """
-
     if len(als) == 0:
         clusters = []
 
@@ -421,10 +422,10 @@ def form_clusters(
 
 
 def form_clusters_likelihood(
-    als: List[pysam.AlignedSegment],
-    q_threshold: Optional[int] = None,
+    als: list[pysam.AlignedSegment],
+    q_threshold: int | None = None,
     proportion: float = 0.05,
-) -> List[pysam.AlignedSegment]:
+) -> list[pysam.AlignedSegment]:
     """Forms clusters from a list of aligned segments (reads) probabilistically.
 
     This function has the same purpose as :func:`form_clusters`, but instead
@@ -451,7 +452,8 @@ def form_clusters_likelihood(
         proportion: Proportion of each sequence to allow mismatched bases to be
             above ``q_threshold``. Defaults to 0.05.
 
-    Returns:
+    Returns
+    -------
         A list of annotated aligned segments representing the consensus of each
             cluster.
     """
@@ -474,7 +476,7 @@ def form_clusters_likelihood(
     )
 
     clusters = []
-    for i, (consensus, quality) in enumerate(zip(consensuses, qualities)):
+    for i, (consensus, quality) in enumerate(zip(consensuses, qualities, strict=False)):
         cluster = pysam.AlignedSegment(empty_header)
         cluster.query_sequence = consensus
         cluster.query_qualities = pysam.qualitystring_to_array(quality)
@@ -493,11 +495,11 @@ def align_clusters(
         first: The first aligned segment.
         second: The second aligned segment.
 
-    Returns:
+    Returns
+    -------
         The number of differing indels and the number of high quality
             mismatches.
     """
-
     al = sw.global_alignment(first.query_sequence, second.query_sequence)
 
     num_hq_mismatches = 0
@@ -512,8 +514,8 @@ def align_clusters(
 
 
 def within_radius_of_seed(
-    seed: str, als: List[pysam.AlignedSegment], max_hq_mismatches: int
-) -> (List[pysam.AlignedSegment], List[pysam.AlignedSegment]):
+    seed: str, als: list[pysam.AlignedSegment], max_hq_mismatches: int
+) -> (list[pysam.AlignedSegment], list[pysam.AlignedSegment]):
     """Returns the aligned segments (reads) in a list with sequences that are
     close enough to specified seed
 
@@ -527,7 +529,8 @@ def within_radius_of_seed(
         max_hq_mismatches: A threshold specifying the maximum number of high quality
             mismatches between the seqeunces of 2 aligned segments to be collapsed.
 
-    Returns:
+    Returns
+    -------
         A list of aligned segments with sequences that are within radius of seed
             and a list of aligned segments with sequences that are not within
             radius of seed.
@@ -543,7 +546,7 @@ def within_radius_of_seed(
     near_seed = []
     remaining = []
 
-    for i, (d, al) in enumerate(zip(ds, als)):
+    for _i, (d, al) in enumerate(zip(ds, als, strict=False)):
         if d <= max_hq_mismatches:
             near_seed.append(al)
         else:
@@ -552,7 +555,7 @@ def within_radius_of_seed(
     return near_seed, remaining
 
 
-def propose_seed(als: List[pysam.AlignedSegment], max_read_length: int) -> str:
+def propose_seed(als: list[pysam.AlignedSegment], max_read_length: int) -> str:
     """Proposes a 'seed' around which a cluster is formed.
 
     Generates a seed around which clusters of aligned segments (reads) are formed
@@ -565,7 +568,8 @@ def propose_seed(als: List[pysam.AlignedSegment], max_read_length: int) -> str:
         als: A list of aligned segments.
         max_read_length: the max read length in the sorted BAM.
 
-    Returns:
+    Returns
+    -------
         A sequence as the seed.
     """
     seq, count = Counter(al.query_sequence for al in als).most_common(1)[0]
@@ -588,7 +592,8 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
     Args:
         al: The single aligned segment.
 
-    Returns:
+    Returns
+    -------
         A single annotated aligned segment representing the singleton cluster.
     """
     singleton = pysam.AlignedSegment(empty_header)
@@ -599,7 +604,7 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
 
 
 def call_consensus(
-    als: List[pysam.AlignedSegment], max_read_length: int
+    als: list[pysam.AlignedSegment], max_read_length: int
 ) -> pysam.AlignedSegment:
     """Generates a consensus annotated aligned segment for a list of aligned
     segments (reads).
@@ -618,7 +623,8 @@ def call_consensus(
         als: A list of aligned segments.
         max_read_length: The max read length in the dataset.
 
-    Returns:
+    Returns
+    -------
         A consensus annotated aligned segment.
     """
     statistics = fastq.quality_and_complexity(
@@ -673,10 +679,10 @@ def merge_annotated_clusters(
         biggest: The larger of the 2 clusters, with a higher read number.
         other: The smaller of the 2 clusters, with a lower read number.
 
-    Returns:
+    Returns
+    -------
         The annotated aligned segment representing the merged cluster.
     """
-
     merged_id = biggest.get_tag(CLUSTER_ID_TAG)
     if not merged_id.endswith("+"):
         merged_id = merged_id + "+"
@@ -693,7 +699,7 @@ def merge_annotated_clusters(
 
 def correct_umis_in_group(
     cell_group: pd.DataFrame, max_umi_distance: int = 2
-) -> Tuple[pd.DataFrame, int]:
+) -> tuple[pd.DataFrame, int]:
     """
     Given a group of alignments, collapses UMIs that have close sequences.
 
@@ -713,11 +719,13 @@ def correct_umis_in_group(
         max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 
-    Returns:
+    Returns
+    -------
         A DataFrame of error corrected UMIs within the grouping, and the
             number of corrected UMIs
 
-    Raises:
+    Raises
+    ------
         PreprocessError if there are duplicate UMIs
     """
     UMIs = list(cell_group["UMI"])

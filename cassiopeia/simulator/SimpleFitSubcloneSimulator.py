@@ -3,9 +3,10 @@ This file stores a subclass of TreeSolver, the SimpleFitSubcloneSimulator. The
 SimpleFitSubcloneSimulator simulates a clonal population which develops one
 fit subclone.
 """
-import networkx as nx
+from collections.abc import Callable, Generator
 from queue import Queue
-from typing import Callable, Generator, Tuple, Union
+
+import networkx as nx
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.simulator.TreeSimulator import TreeSimulator
@@ -58,8 +59,8 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
 
     def __init__(
         self,
-        branch_length_neutral: Union[float, Callable[[], float]],
-        branch_length_fit: Union[float, Callable[[], float]],
+        branch_length_neutral: float | Callable[[], float],
+        branch_length_fit: float | Callable[[], float],
         experiment_duration: float,
         generations_until_fit_subclone: int,
     ):
@@ -71,7 +72,7 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
         self.generations_until_fit_subclone = generations_until_fit_subclone
 
     def _create_callable(
-        self, x: Union[float, Callable[[], float]]
+        self, x: float | Callable[[], float]
     ) -> Callable[[], float]:
         # In case the user provides an int, we still hold their back...
         if type(x) in [int, float]:
@@ -84,9 +85,7 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
             return x
 
     def simulate_tree(self) -> CassiopeiaTree:
-        r"""
-        See base class.
-        """
+        r"""See base class."""
         branch_length_neutral = self.branch_length_neutral
         branch_length_fit = self.branch_length_fit
         experiment_duration = self.experiment_duration

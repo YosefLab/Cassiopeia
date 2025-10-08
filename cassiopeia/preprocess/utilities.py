@@ -4,22 +4,20 @@ pipeline.
 """
 
 import functools
-import itertools
-import os
+import re
 import time
-from typing import Callable, Dict, List, Optional, Tuple
 import warnings
+from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 
-from collections import defaultdict, OrderedDict
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pylab
 import pysam
-import re
 from tqdm.auto import tqdm
 
-from cassiopeia.mixins import is_ambiguous_state, logger, PreprocessWarning
+from cassiopeia.mixins import PreprocessWarning, is_ambiguous_state, logger
 
 
 def log_molecule_table(wrapped: Callable):
@@ -105,7 +103,8 @@ def filter_cells(
             UMI in a cell needed in order for that cell not to be filtered.
             Defaults to 2.0.
 
-    Returns:
+    Returns
+    -------
         A filtered molecule table
     """
     # Detect if the UMI column contains UMI counts or the actual UMI sequence
@@ -154,7 +153,8 @@ def filter_umis(
         min_reads_per_umi: The minimum read count needed for a UMI to not be
             filtered. Defaults to 100.
 
-    Returns:
+    Returns
+    -------
         A filtered molecule table
     """
     return molecule_table[molecule_table["readCount"] >= min_reads_per_umi]
@@ -191,13 +191,14 @@ def error_correct_intbc(
         dist_thresh: barcode distance threshold, to decide what's similar
             enough to error correct
 
-    Returns:
+    Returns
+    -------
         Filtered molecule table with error corrected intBCs
     """
     if prop > 0.5:
         warnings.warn(
             "No intBC correction was done because `prop` is greater than 0.5.",
-            PreprocessWarning,
+            PreprocessWarning, stacklevel=2,
         )
         return molecule_table
 
@@ -243,14 +244,15 @@ def error_correct_intbc(
 
 def record_stats(
     molecule_table: pd.DataFrame,
-) -> Tuple[np.array, np.array, np.array]:
+) -> tuple[np.array, np.array, np.array]:
     """
     Simple function to record the number of UMIs.
 
     Args:
         molecule_table: A DataFrame of alignments
 
-    Returns:
+    Returns
+    -------
         Read counts for each alignment, number of unique UMIs per intBC, number
             of UMIs per cellBC
     """
@@ -272,7 +274,8 @@ def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
     Args:
         data_fp: The input filepath for the BAM file to be converted.
 
-    Returns:
+    Returns
+    -------
         A Pandas dataframe containing the BAM information.
     """
     als = []
@@ -311,15 +314,15 @@ def convert_bam_to_df(data_fp: str) -> pd.DataFrame:
 
 def convert_alleletable_to_character_matrix(
     alleletable: pd.DataFrame,
-    ignore_intbcs: List[str] = [],
+    ignore_intbcs: list[str] = None,
     allele_rep_thresh: float = 1.0,
-    missing_data_allele: Optional[str] = None,
+    missing_data_allele: str | None = None,
     missing_data_state: int = -1,
-    mutation_priors: Optional[pd.DataFrame] = None,
-    cut_sites: Optional[List[str]] = None,
+    mutation_priors: pd.DataFrame | None = None,
+    cut_sites: list[str] | None = None,
     collapse_duplicates: bool = True,
-) -> Tuple[
-    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
+) -> tuple[
+    pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]
 ]:
     """Converts an AlleleTable into a character matrix.
 
@@ -348,10 +351,13 @@ def convert_alleletable_to_character_matrix(
             states present for a single cellBC-intBC pair. This option has no
             effect if there are no allele conflicts. Defaults to True.
 
-    Returns:
+    Returns
+    -------
         A character matrix, a probability dictionary, and a dictionary mapping
             states to the original mutation.
     """
+    if ignore_intbcs is None:
+        ignore_intbcs = []
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(alleletable)
 
@@ -473,7 +479,7 @@ def convert_alleletable_to_character_matrix(
 
 def convert_alleletable_to_lineage_profile(
     allele_table,
-    cut_sites: Optional[List[str]] = None,
+    cut_sites: list[str] | None = None,
     collapse_duplicates: bool = True,
 ) -> pd.DataFrame:
     """Converts an AlleleTable to a lineage profile.
@@ -493,15 +499,15 @@ def convert_alleletable_to_lineage_profile(
             states present for a single cellBC-intBC pair. This option has no
             effect if there are no allele conflicts. Defaults to True.
 
-    Returns:
+    Returns
+    -------
         An NxM lineage profile.
     """
-
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(allele_table)
 
     agg_recipe = dict(
-        zip([cutsite for cutsite in cut_sites], [list] * len(cut_sites))
+        zip(list(cut_sites), [list] * len(cut_sites), strict=False)
     )
     g = allele_table.groupby(["cellBC", "intBC"]).agg(agg_recipe)
     intbcs = allele_table["intBC"].unique()
@@ -516,7 +522,7 @@ def convert_alleletable_to_lineage_profile(
 
     allele_piv = pd.DataFrame(index=g.index.levels[0], columns=indices)
     for j in tqdm(g.index, desc="filling in multiindex table"):
-        for val, cutsite in zip(g.loc[j], cut_sites):
+        for val, cutsite in zip(g.loc[j], cut_sites, strict=False):
             if collapse_duplicates:
                 # Sort for testing
                 val = sorted(set(val))
@@ -551,11 +557,11 @@ def convert_alleletable_to_lineage_profile(
 
 def convert_lineage_profile_to_character_matrix(
     lineage_profile: pd.DataFrame,
-    indel_priors: Optional[pd.DataFrame] = None,
-    missing_allele_indicator: Optional[str] = None,
+    indel_priors: pd.DataFrame | None = None,
+    missing_allele_indicator: str | None = None,
     missing_state_indicator: int = -1,
-) -> Tuple[
-    pd.DataFrame, Dict[int, Dict[int, float]], Dict[int, Dict[int, str]]
+) -> tuple[
+    pd.DataFrame, dict[int, dict[int, float]], dict[int, dict[int, str]]
 ]:
     """Converts a lineage profile to a character matrix.
 
@@ -576,11 +582,11 @@ def convert_lineage_profile_to_character_matrix(
             missing data.
         missing_state_indicator: State to indicate missing data
 
-    Returns:
+    Returns
+    -------
         A character matrix, prior probability dictionary, and mapping from
             character/state pairs to indel identities.
     """
-
     prior_probs = defaultdict(dict)
     indel_to_charstate = defaultdict(dict)
 
@@ -592,7 +598,6 @@ def convert_lineage_profile_to_character_matrix(
             {missing_allele_indicator: "Missing"}, inplace=True
         )
 
-    samples = []
 
     lineage_profile.columns = [f"r{i}" for i in range(lineage_profile.shape[1])]
     column_to_unique_values = dict(
@@ -601,16 +606,16 @@ def convert_lineage_profile_to_character_matrix(
             [
                 lineage_profile[x].factorize()[1].values
                 for x in lineage_profile.columns
-            ],
+            ], strict=False,
         )
     )
 
     column_to_number = dict(
-        zip(lineage_profile.columns, range(lineage_profile.shape[1]))
+        zip(lineage_profile.columns, range(lineage_profile.shape[1]), strict=False)
     )
 
     mutation_counter = dict(
-        zip(lineage_profile.columns, [0] * lineage_profile.shape[1])
+        zip(lineage_profile.columns, [0] * lineage_profile.shape[1], strict=False)
     )
     mutation_to_state = defaultdict(dict)
 
@@ -664,7 +669,7 @@ def convert_lineage_profile_to_character_matrix(
 
 def convert_character_matrix_to_allele_table(
     character_matrix: pd.DataFrame,
-    state_to_indel: Optional[Dict[int, Dict[int, str]]] = None,
+    state_to_indel: dict[int, dict[int, str]] | None = None,
     keep_ambiguous: bool = False,
 ):
     """Converts a character matrix back into an allele table.
@@ -676,7 +681,8 @@ def convert_character_matrix_to_allele_table(
         keep_ambiguous: A boolean whether to keep ambiguous states for a given
             intBC
 
-    Returns:
+    Returns
+    -------
         An allele table.
     """
     allele_table = pd.DataFrame(
@@ -720,8 +726,8 @@ def convert_character_matrix_to_allele_table(
 
 def compute_empirical_indel_priors(
     allele_table: pd.DataFrame,
-    grouping_variables: List[str] = ["intBC"],
-    cut_sites: Optional[List[str]] = None,
+    grouping_variables: list[str] = None,
+    cut_sites: list[str] | None = None,
 ) -> pd.DataFrame:
     """Computes indel prior probabilities.
 
@@ -745,15 +751,17 @@ def compute_empirical_indel_priors(
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
 
-    Returns:
+    Returns
+    -------
         A DataFrame mapping indel identities to the probability.
     """
-
+    if grouping_variables is None:
+        grouping_variables = ["intBC"]
     if cut_sites is None:
         cut_sites = get_default_cut_site_columns(allele_table)
 
     agg_recipe = dict(
-        zip([cut_site for cut_site in cut_sites], ["unique"] * len(cut_sites))
+        zip(list(cut_sites), ["unique"] * len(cut_sites), strict=False)
     )
     groups = allele_table.groupby(grouping_variables).agg(agg_recipe)
 
@@ -769,7 +777,7 @@ def compute_empirical_indel_priors(
     tot = len(groups.index)
 
     indel_freqs = dict(
-        zip(list(indel_count.keys()), [v / tot for v in indel_count.values()])
+        zip(list(indel_count.keys()), [v / tot for v in indel_count.values()], strict=False)
     )
 
     indel_priors = pd.DataFrame([indel_count, indel_freqs]).T
@@ -779,7 +787,7 @@ def compute_empirical_indel_priors(
     return indel_priors
 
 
-def get_default_cut_site_columns(allele_table: pd.DataFrame) -> List[str]:
+def get_default_cut_site_columns(allele_table: pd.DataFrame) -> list[str]:
     """Retrieves the default cut-sites columns of an AlleleTable.
 
     A basic helper function that will retrieve the cut-sites from an AlleleTable

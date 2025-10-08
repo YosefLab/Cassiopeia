@@ -1,22 +1,20 @@
-"""
-Utility file for computing autocorrelation statistics on trees.
-"""
-from typing import Callable, List, Optional, Union
+"""Utility file for computing autocorrelation statistics on trees."""
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data import CassiopeiaTree, utilities
 from cassiopeia.mixins import AutocorrelationError
-from cassiopeia.data import utilities
 
 
 def compute_morans_i(
     tree: CassiopeiaTree,
-    meta_columns: Optional[List] = None,
-    X: Optional[pd.DataFrame] = None,
-    W: Optional[pd.DataFrame] = None,
-    inverse_weight_fn: Callable[[Union[int, float]], float] = lambda x: 1.0 / x,
-) -> Union[float, pd.DataFrame]:
+    meta_columns: list | None = None,
+    X: pd.DataFrame | None = None,
+    W: pd.DataFrame | None = None,
+    inverse_weight_fn: Callable[[int | float], float] = lambda x: 1.0 / x,
+) -> float | pd.DataFrame:
     """Computes Moran's I statistic.
 
     Using the cross-correlation between leaves as specified on the tree, compute
@@ -31,7 +29,7 @@ def compute_morans_i(
     I = X' * Wn * X
 
     where X' denotes a tranpose, * denotes the matrix multiplier, and Wn is the
-    normalized weight matrix such that sum([w_i,j for all i,j]) = 1. 
+    normalized weight matrix such that sum([w_i,j for all i,j]) = 1.
 
     Inspired from the tools and code used in Chaligne et al, Nature Genetics
     2021.
@@ -50,10 +48,10 @@ def compute_morans_i(
         inverse_weight_fn: Inverse function to apply to the weights, if the
             weight matrix must be computed.
 
-    Returns:
+    Returns
+    -------
         Moran's I statistic
     """
-
     if X is None and meta_columns is None:
         raise AutocorrelationError(
             "Specify data for computing autocorrelations."
@@ -79,7 +77,7 @@ def compute_morans_i(
         raise AutocorrelationError(
             "There are some columns that are not numeric in the specified data."
         )
-    
+
     # cast to numeric
     _X = _X.apply(lambda s: pd.to_numeric(s, errors="coerce"))
 
@@ -95,7 +93,6 @@ def compute_morans_i(
                 "Weight matrix does not have the same leaves as the tree."
             )
 
-    N = tree.n_cell
 
     # normalize W to 1
     _W = W / W.sum().sum()

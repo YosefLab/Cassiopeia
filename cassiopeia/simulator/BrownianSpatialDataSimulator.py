@@ -3,7 +3,7 @@ This file defines the BrownianSpatialDataSimulator, which is a subclass of
 the SpatialDataSimulator. The BrownianSpatialDataSimulator simulates spatial
 coordinates by simulating Brownian motion of each cell.
 """
-from typing import Optional
+
 import numpy as np
 import pandas as pd
 
@@ -39,7 +39,8 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             have unit length in all dimensions. Defaults to `True`.
         random_seed: A seed for reproducibility
 
-    Raises:
+    Raises
+    ------
         DataSimulatorError if `dim` is less than equal to zero, or the diffusion
             coefficient is negative.
     """
@@ -49,7 +50,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
         dim: int,
         diffusion_coefficient: float,
         scale_unit_area: bool = True,
-        random_seed: Optional[int] = None,
+        random_seed: int | None = None,
     ):
         if dim <= 0:
             raise DataSimulatorError("Number of dimensions must be positive.")
@@ -103,10 +104,7 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             # between [0, 1]. We don't scale each dimension separately because
             # we want to retain the shape of the distribution.
             all_coordinates /= all_coordinates.max()
-            locations = {
-                node: coordinates
-                for node, coordinates in zip(locations.keys(), all_coordinates)
-            }
+            locations = dict(zip(locations.keys(), all_coordinates, strict=False))
 
         # Set node attributes
         for node, loc in locations.items():

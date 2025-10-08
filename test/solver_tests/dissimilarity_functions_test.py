@@ -7,9 +7,7 @@ from unittest import mock
 
 import numpy as np
 import pandas as pd
-
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import solver_utilities
+from cassiopeia.solver import dissimilarity_functions, solver_utilities
 
 
 class TestDissimilarityFunctions(unittest.TestCase):

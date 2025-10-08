@@ -1,18 +1,15 @@
 """
 Test SpectralNeighborJoiningSolver in Cassiopeia.solver.
 """
-from typing import List
-
 import itertools
-import networkx as nx
-import numpy as np
-import pandas as pd
 import unittest
-
-from networkx.classes.digraph import DiGraph
 from unittest import mock
 
 import cassiopeia as cas
+import networkx as nx
+import numpy as np
+import pandas as pd
+from networkx.classes.digraph import DiGraph
 
 
 def find_triplet_structure(triplet, T):
@@ -27,9 +24,9 @@ def find_triplet_structure(triplet, T):
             common ancestors.
     """
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -44,7 +41,7 @@ def find_triplet_structure(triplet, T):
 
 
 def assertTripletCorrectness(
-    self, nodes: List[str], expected_tree: DiGraph, observed_tree: DiGraph
+    self, nodes: list[str], expected_tree: DiGraph, observed_tree: DiGraph
 ):
     """Checks if two trees are isomorphic.
 

@@ -3,11 +3,10 @@ Tests for the coupling estimators implemented in cassiopeia/tools/coupling.py
 """
 import unittest
 
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import CassiopeiaError

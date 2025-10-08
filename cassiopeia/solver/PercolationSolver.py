@@ -1,11 +1,13 @@
-from collections import defaultdict
 import itertools
+from collections import defaultdict
+from collections.abc import Callable, Generator
+
 import networkx as nx
 import numpy as np
 import pandas as pd
-from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from cassiopeia.data import CassiopeiaTree
+import cassiopeia.data as cassdata
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.solver import (
     CassiopeiaSolver,
@@ -45,7 +47,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             have an edge between them in the graph. Acts as a hyperparameter
             that controls the sparsity of the graph by filtering low
             similarities.
-    Attributes:
+
+    Attributes
+    ----------
         joining_solver: The CassiopeiaSolver that is used to cluster groups of
             samples after percolation steps that produce more than two groups
         prior_transformation: Function to use when transforming priors into
@@ -59,18 +63,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         joining_solver: CassiopeiaSolver.CassiopeiaSolver,
         prior_transformation: str = "negative_log",
-        similarity_function: Optional[
-            Callable[
-                [
-                    np.array,
-                    np.array,
-                    int,
-                    Optional[Dict[int, Dict[int, float]]],
-                ],
-                float,
-            ]
-        ] = dissimilarity_functions.hamming_similarity_without_missing,
-        threshold: Optional[int] = 0,
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
+        threshold: int | None = 0,
     ):
 
         super().__init__(prior_transformation)
@@ -82,7 +76,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ):
@@ -108,16 +102,15 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: Location to write standard out. Not currently used.
         """
-
         node_name_generator = solver_utilities.node_name_generator()
 
         # A helper function that builds the subtree given a set of samples
         def _solve(
-            samples: List[Union[str, int]],
+            samples: list[str | int],
             tree: nx.DiGraph,
             unique_character_matrix: pd.DataFrame,
-            priors: Dict[int, Dict[int, float]],
-            weights: Dict[int, Dict[int, float]],
+            priors: dict[int, dict[int, float]],
+            weights: dict[int, dict[int, float]],
             missing_state_indicator: int,
         ):
 
@@ -201,11 +194,11 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
     def percolate(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[str],
-        priors: Optional[Dict[int, Dict[int, float]]] = None,
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        samples: list[str],
+        priors: dict[int, dict[int, float]] | None = None,
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """The function used by the percolation algorithm to partition the
         set of samples in two.
         First, a pairwise similarity graph is generated with samples as nodes
@@ -226,7 +219,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
-        Returns:
+
+        Returns
+        -------
             A tuple of lists, representing the left and right partition groups
         """
         sample_indices = solver_utilities.convert_sample_names_to_indices(
@@ -290,7 +285,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                     character_vectors, missing_state_indicator
                 )
             # Build a tree on the LCA characters to cluster the components
-            lca_tree = CassiopeiaTree(
+            lca_tree = cassdata.CassiopeiaTree(
                 pd.DataFrame.from_dict(lcas, orient="index"),
                 missing_state_indicator=missing_state_indicator,
                 priors=priors,
@@ -350,10 +345,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         Returns:
             The tree with duplicates added
         """
-
         character_matrix.index.name = "index"
         duplicate_groups = (
-            character_matrix[character_matrix.duplicated(keep=False) == True]
+            character_matrix[character_matrix.duplicated(keep=False)]
             .reset_index()
             .groupby(character_matrix.columns.tolist())["index"]
             .agg(["first", tuple])

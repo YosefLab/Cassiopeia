@@ -2,24 +2,22 @@
 Test PercolationSolver in Cassiopeia.solver.
 """
 
+import itertools
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional
-
-import cassiopeia as cas
 from cassiopeia.solver import dissimilarity_functions
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -42,7 +40,7 @@ def neg_hamming_similarity_without_missing(
     s1: np.array,
     s2: np.array,
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
 
     return -1 * NB_SIMILARITY(s1, s2, missing_state_indicator, weights)

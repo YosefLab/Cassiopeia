@@ -1,12 +1,12 @@
 """
-This file stores a subclass of GreedySolver, the SpectralSolver. 
+This file stores a subclass of GreedySolver, the SpectralSolver.
 This subclass implements an inference procedure that uses Fiedler's algorithm to
-minimize for a version of the normalized cut on a similarity graph generated from 
-the observed mutations on a group of samples. The goal is to find a partition 
-on a graph that minimizes seperation in samples that share mutations, normalizing 
+minimize for a version of the normalized cut on a similarity graph generated from
+the observed mutations on a group of samples. The goal is to find a partition
+on a graph that minimizes seperation in samples that share mutations, normalizing
 for the sizes of each of the sides of the partition.
 """
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
 
 import networkx as nx
 import numpy as np
@@ -51,7 +51,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes:
+    Attributes
+    ----------
         similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
@@ -61,19 +62,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        similarity_function: Optional[
-            Callable[
-                [
-                    int,
-                    int,
-                    pd.DataFrame,
-                    int,
-                    Optional[Dict[int, Dict[str, float]]],
-                ],
-                float,
-            ]
-        ] = dissimilarity_functions.hamming_similarity_without_missing,
-        threshold: Optional[int] = 0,
+        similarity_function: Callable[[int, int, pd.DataFrame, int, dict[int, dict[str, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
+        threshold: int | None = 0,
         prior_transformation: str = "negative_log",
     ):
 
@@ -85,10 +75,10 @@ class SpectralSolver(GreedySolver.GreedySolver):
     def perform_split(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[int],
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        samples: list[int],
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-    ) -> Tuple[List[str], List[str]]:
+    ) -> tuple[list[str], list[str]]:
         """Partitions the samples using the spectral algorithm.
 
         First, a similarity graph is generated with samples as nodes such that
@@ -111,7 +101,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns:
+        Returns
+        -------
             A tuple of lists, representing the left and right partition groups
         """
         G = graph_utilities.construct_similarity_graph(

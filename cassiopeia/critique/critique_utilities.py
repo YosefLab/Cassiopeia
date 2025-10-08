@@ -1,13 +1,9 @@
-"""
-Utilities for the critique module.
-"""
-from collections import defaultdict
-import ete3
+"""Utilities for the critique module."""
 import itertools
 import math
+from collections import defaultdict
+
 import numpy as np
-from scipy import special
-from typing import Dict, List, Optional, Tuple
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -19,7 +15,8 @@ def nCr(n: int, r: int) -> float:
         n: Total number
         r: Number to sample
 
-    Returns:
+    Returns
+    -------
         nCr
     """
     if r > n or n < 0 or r < 0:
@@ -38,10 +35,10 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     Args:
         tree: An ete3 Tree
 
-    Returns:
+    Returns
+    -------
         A dictionary mapping depth to the list of nodes at that depth.
     """
-
     depth_to_nodes = defaultdict(list)
     for n in tree.depth_first_traverse_nodes(source=tree.root, postorder=False):
         if tree.is_root(n):
@@ -66,9 +63,8 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     return depth_to_nodes
 
 
-def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
+def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
     """Infers the outgroup of a triplet from a CassioepiaTree.
-
 
     Finds the outgroup based on the depth of the latest-common-ancestors
     of each pair of items. The pair with the deepest LCA is the
@@ -79,10 +75,10 @@ def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
         tree: CassiopeiaTree
         triplet: A tuple of three leaves constituting a triplet.
 
-    Returns:
+    Returns
+    -------
         The outgroup (i.e. the most distal leaf in the triplet.)
     """
-
     i, j, k = triplet[0], triplet[1], triplet[2]
 
     i_ancestors = tree.get_all_ancestors(i)
@@ -105,8 +101,8 @@ def get_outgroup(tree: CassiopeiaTree, triplet: Tuple[str, str, str]) -> str:
 def sample_triplet_at_depth(
     tree: CassiopeiaTree,
     depth: int,
-    depth_to_nodes: Optional[Dict[int, List[str]]] = None,
-) -> Tuple[List[int], str]:
+    depth_to_nodes: dict[int, list[str]] | None = None,
+) -> tuple[list[int], str]:
     """Samples a triplet at a given depth.
 
     Samples a triplet of leaves such that the depth of the LCA of the triplet
@@ -118,11 +114,11 @@ def sample_triplet_at_depth(
         depth_to_nodes: An optional dictionary that maps a depth to the nodes
             that appear at that depth. This speeds up the function considerably.
 
-    Returns:
+    Returns
+    -------
         A list of three leaves corresponding to the triplet name of the outgroup
             of the triplet.
     """
-
     if depth_to_nodes is None:
         candidate_nodes = tree.filter_nodes(
             lambda x: tree.get_attribute(x, "depth") == depth

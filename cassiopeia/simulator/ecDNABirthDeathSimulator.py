@@ -4,17 +4,15 @@ process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
 
-from random import random
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
+from collections.abc import Callable, Generator
+from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from queue import PriorityQueue
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.mixins import ecDNABirthDeathSimulatorError, TreeSimulatorError
+from cassiopeia.mixins import TreeSimulatorError, ecDNABirthDeathSimulatorError
 from cassiopeia.simulator.BirthDeathFitnessSimulator import (
     BirthDeathFitnessSimulator,
 )
@@ -123,7 +121,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         capture_efficiency: Probability of observing an ecDNA species. Used as
             the the probability of a binomial process.
 
-    Raises:
+    Raises
+    ------
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
@@ -133,14 +132,12 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         self,
         birth_waiting_distribution: Callable[[float], float],
         initial_birth_scale: float,
-        death_waiting_distribution: Optional[
-            Callable[[], float]
-        ] = lambda: np.inf,
-        mutation_distribution: Optional[Callable[[], int]] = None,
-        fitness_distribution: Optional[Callable[[], float]] = None,
+        death_waiting_distribution: Callable[[], float] | None = lambda: np.inf,
+        mutation_distribution: Callable[[], int] | None = None,
+        fitness_distribution: Callable[[], float] | None = None,
         fitness_base: float = np.e,
-        num_extant: Optional[int] = None,
-        experiment_time: Optional[float] = None,
+        num_extant: int | None = None,
+        experiment_time: float | None = None,
         collapse_unifurcations: bool = True,
         prune_dead_lineages: bool = True,
         random_seed: int = None,
@@ -149,9 +146,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         splitting_function: Callable[[int], int] = lambda c, x: c
         + np.random.binomial(x, p=0.5),
         fitness_array: np.array = np.array([0, 1]),
-        fitness_function: Optional[Callable[[int, int, float], float]] = None,
+        fitness_function: Callable[[int, int, float], float] | None = None,
         capture_efficiency: float = 1.0,
-        initial_tree: Optional[CassiopeiaTree] = None,
+        initial_tree: CassiopeiaTree | None = None,
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError(
@@ -195,8 +192,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
-        """initializes a tree (nx.DiGraph() object with one node)"""
-
+        """Initializes a tree (nx.DiGraph() object with one node)"""
         if self.initial_tree:
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
@@ -231,13 +227,14 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         Args:
             ecdna_array: The birth_scale to be updated
 
-        Returns:
+        Returns
+        -------
             The updated birth_scale
 
-        Raises:
+        Raises
+        ------
             TreeSimulatorError if a negative number of mutations is sampled
         """
-
         if self.fitness_function is None:
             return self.initial_birth_scale * (
                 1.0 + self.fitness_array[tuple((ecdna_array > 0).astype(int))]
@@ -254,11 +251,11 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
     def sample_lineage_event(
         self,
-        lineage: Dict[str, Union[int, float]],
+        lineage: dict[str, int | float],
         current_lineages: PriorityQueue,
         tree: nx.DiGraph,
         names: Generator,
-        observed_nodes: List[str],
+        observed_nodes: list[str],
     ) -> None:
         """A helper function that samples an event for a lineage.
         Takes a lineage and determines the next event in that lineage's
@@ -445,10 +442,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             parent_id: ID of parent in the generated tree.
             tree: The in-progress tree.
 
-        Returns:
+        Returns
+        -------
             Numpy array corresponding to the ecDNA copy numbers for the child.
         """
-
         parental_ecdna_array = 2 * tree.nodes[parent_id]["ecdna_array"]
 
         has_child = tree.out_degree(parent_id) > 0
@@ -456,7 +453,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         new_ecdna_array = parental_ecdna_array.copy()
 
         if has_child:
-            child_id = [n for n in tree.successors(parent_id)][0]
+            child_id = list(tree.successors(parent_id))[0]
             child_ecdna_array = tree.nodes[child_id]["ecdna_array"]
 
             new_ecdna_array = parental_ecdna_array - child_ecdna_array
@@ -506,7 +503,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         return new_ecdna_array
 
     def populate_tree_from_simulation(
-        self, tree: nx.DiGraph, observed_nodes: List[str]
+        self, tree: nx.DiGraph, observed_nodes: list[str]
     ) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
 
@@ -515,10 +512,10 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 as attributes.
             observed_nodes: The observed leaves of the tree.
 
-        Returns:
+        Returns
+        -------
             A CassiopeiaTree with relevant node attributes filled in.
         """
-
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 
         # transfer over all meta data

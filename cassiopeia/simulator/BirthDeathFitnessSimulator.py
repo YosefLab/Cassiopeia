@@ -4,11 +4,11 @@ process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
 
-from typing import Callable, Dict, Generator, List, Optional, Union
+from collections.abc import Callable, Generator
+from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
-from queue import PriorityQueue
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeError, TreeSimulatorError
@@ -99,9 +99,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             argument is passed, a simulation will pick up from the leaves of the
             specified tree. This can be useful for simulating trees when
             selection may change over time (for example, in the presence
-            or absence of a drug pressure). 
+            or absence of a drug pressure).
 
-    Raises:
+    Raises
+    ------
         TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
@@ -110,17 +111,15 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self,
         birth_waiting_distribution: Callable[[float], float],
         initial_birth_scale: float,
-        death_waiting_distribution: Optional[
-            Callable[[], float]
-        ] = lambda: np.inf,
-        mutation_distribution: Optional[Callable[[], int]] = None,
-        fitness_distribution: Optional[Callable[[], float]] = None,
+        death_waiting_distribution: Callable[[], float] | None = lambda: np.inf,
+        mutation_distribution: Callable[[], int] | None = None,
+        fitness_distribution: Callable[[], float] | None = None,
         fitness_base: float = np.e,
-        num_extant: Optional[int] = None,
-        experiment_time: Optional[float] = None,
+        num_extant: int | None = None,
+        experiment_time: float | None = None,
         collapse_unifurcations: bool = True,
         random_seed: int = None,
-        initial_tree: Optional[CassiopeiaTree] = None,
+        initial_tree: CassiopeiaTree | None = None,
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError(
@@ -202,10 +201,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         Args:
             id_value: name of new lineage
 
-        Returns:
+        Returns
+        -------
             A lineage dict
         """
-
         leaves = [node for node in tree if tree.out_degree(node) == 0]
         current_lineages = PriorityQueue()
         for leaf in leaves:
@@ -231,7 +230,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         total_time,
         active_flag,
     ):
-        """makes a dict (lineage) from the given parameters. keys are hardcoded.
+        """Makes a dict (lineage) from the given parameters. keys are hardcoded.
 
         Args:
             id_value: id of new lineage
@@ -239,7 +238,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             total_time: age of lineage
             active_flag: bool to indicate whether lineage is active
 
-        Returns:
+        Returns
+        -------
             A dict (lineage) with the parameter values under the hard-coded keys
 
         """
@@ -265,11 +265,13 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         their multiplicative coefficients. This updated birth scale passed
         onto successors.
 
-        Returns:
+        Returns
+        -------
             A CassiopeiaTree with the tree topology initialized with the
             simulated tree
 
-        Raises:
+        Raises
+        ------
             TreeSimulatorError if all lineages die before a stopping condition
         """
 
@@ -340,7 +342,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             # If the lineage is no longer active, just remove it from the queue.
             # This represents the time at which the lineage dies.
             if lineage["active"]:
-                for i in range(2):
+                for _i in range(2):
                     self.sample_lineage_event(
                         lineage, current_lineages, tree, names, observed_nodes
                     )
@@ -353,11 +355,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
     def sample_lineage_event(
         self,
-        lineage: Dict[str, Union[int, float]],
+        lineage: dict[str, int | float],
         current_lineages: PriorityQueue,
         tree: nx.DiGraph,
         names: Generator,
-        observed_nodes: List[str],
+        observed_nodes: list[str],
     ) -> None:
         """A helper function that samples an event for a lineage.
         Takes a lineage and determines the next event in that lineage's
@@ -508,10 +510,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         Args:
             birth_scale: The birth_scale to be updated
 
-        Returns:
+        Returns
+        -------
             The updated birth_scale
 
-        Raises:
+        Raises
+        ------
             TreeSimulatorError if a negative number of mutations is sampled
         """
         base_selection_coefficient = 1
@@ -528,7 +532,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         return birth_scale * base_selection_coefficient
 
     def populate_tree_from_simulation(
-        self, tree: nx.DiGraph, observed_nodes: List[str]
+        self, tree: nx.DiGraph, observed_nodes: list[str]
     ) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
 
@@ -537,10 +541,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 attributes.
             observed_nodes: The observed leaves of the tree.
 
-        Returns:
+        Returns
+        -------
             A CassiopeiaTree with relevant node attributes filled in.
         """
-
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 
         time_dictionary = {}

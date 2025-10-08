@@ -114,9 +114,9 @@ class TreeMetricError(Exception):
 
 class ParameterEstimateError(Exception):
     """An Exception class for the estimation and retrieval of tree parameters"""
-    
+
     pass
 
-  
+
 class PlottingError(Exception):
     pass

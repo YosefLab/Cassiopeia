@@ -2,15 +2,9 @@
 Test config parsing for cassiopeia_preprocess pipeline.
 """
 
-import os
 import unittest
 
-import pandas as pd
-from pathlib import Path
-
-from cassiopeia.preprocess import cassiopeia_preprocess
-from cassiopeia.preprocess import constants
-from cassiopeia.preprocess import setup_utilities
+from cassiopeia.preprocess import cassiopeia_preprocess, setup_utilities
 
 
 class TestCollapseUMIs(unittest.TestCase):

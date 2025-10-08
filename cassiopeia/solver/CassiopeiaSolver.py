@@ -7,7 +7,6 @@ derived class stores more information around the parameters necessary for
 inferring a phylogenetic tree.
 """
 import abc
-from typing import Optional
 
 from cassiopeia.data import CassiopeiaTree
 
@@ -35,7 +34,7 @@ class CassiopeiaSolver(abc.ABC):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ):

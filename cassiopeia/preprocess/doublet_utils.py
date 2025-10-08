@@ -3,7 +3,6 @@ This file contains functions pertaining to filtering cell doublets.
 Invoked through pipeline.py and supports the filter_molecule_table and
 call_lineage_groups functions.
 """
-from typing import Dict, Set, Tuple
 
 import pandas as pd
 
@@ -28,6 +27,7 @@ def filter_intra_doublets(
         UMIs needed to filter out a cellBC from the DataFrame
 
     Returns
+    -------
         A filtered molecule table
     """
     umis_per_allele = (
@@ -57,7 +57,7 @@ def filter_intra_doublets(
 
 def get_intbc_set(
     lg: pd.DataFrame, thresh: int = None
-) -> Tuple[Set[str], Dict[str, float]]:
+) -> tuple[set[str], dict[str, float]]:
     """A simple function to return the intBC set of a lineage group.
 
     Given a lineage groups, returns the intBC set for that lineage
@@ -70,7 +70,8 @@ def get_intbc_set(
             have an intBC needed in each lineage group in order for that intBC
             to be included in the intBC set
 
-    Returns:
+    Returns
+    -------
         A list containing the intBCs in the lineage group, and a dictionary
             with intBCs as keys and the proportion of cells that do not have
             that intBC in each lineage group as values.
@@ -87,9 +88,9 @@ def get_intbc_set(
 
 def compute_lg_membership(
     cell: pd.DataFrame,
-    intbc_sets: Dict[int, Set[str]],
-    lg_dropouts: Dict[int, Dict[str, float]],
-) -> Dict[int, float]:
+    intbc_sets: dict[int, set[str]],
+    lg_dropouts: dict[int, dict[str, float]],
+) -> dict[int, float]:
     """Calculates the kinship for the given cell for each lineage group.
 
     Given a cell, for each lineage group, it calculates the intBC intersection
@@ -102,10 +103,10 @@ def compute_lg_membership(
         lg_dropouts: A dictionary of the cell proportion of cells that do not
             have that intBC for each lineage group
 
-    Returns:
+    Returns
+    -------
         A kinship score for each lineage group
     """
-
     lg_mem = {}
 
     # Get the intBC set for the cell
@@ -146,7 +147,8 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
         rule: The minimum kinship threshold which a cell needs to pass in order
             to be included in the final DataFrame
 
-    Returns:
+    Returns
+    -------
         A filtered allele table
     """
     ibc_sets = {}

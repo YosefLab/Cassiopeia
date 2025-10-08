@@ -3,17 +3,17 @@ A library that contains dissimilarity functions for the purpose of comparing
 phylogenetic samples.
 """
 import itertools
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from collections.abc import Callable
 
 import numba
 import numpy as np
 
 
 def weighted_hamming_distance(
-    s1: List[int],
-    s2: List[int],
+    s1: list[int],
+    s2: list[int],
     missing_state_indicator=-1,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """Computes the weighted hamming distance between samples.
 
@@ -39,7 +39,8 @@ def weighted_hamming_distance(
             another dictionary storing the weight of each observed state.
             (Character -> State -> Weight)
 
-    Returns:
+    Returns
+    -------
         A dissimilarity score.
 
     """
@@ -73,10 +74,10 @@ def weighted_hamming_distance(
 
 
 def hamming_similarity_without_missing(
-    s1: List[int],
-    s2: List[int],
+    s1: list[int],
+    s2: list[int],
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """A function to return the number of (non-missing) character/state
     mutations shared by two samples.
@@ -91,7 +92,6 @@ def hamming_similarity_without_missing(
         The number of shared mutations between two samples, weighted or
             unweighted
     """
-
     # TODO Optimize this using masks
     similarity = 0
     for i in range(len(s1)):
@@ -113,10 +113,10 @@ def hamming_similarity_without_missing(
 
 
 def hamming_similarity_normalized_over_missing(
-    s1: List[int],
-    s2: List[int],
+    s1: list[int],
+    s2: list[int],
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """
     A function to return the number of (non-missing) character/state mutations
@@ -129,7 +129,8 @@ def hamming_similarity_normalized_over_missing(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns:
+    Returns
+    -------
         The number of shared mutations between two samples normalized over the
             number of missing data events, weighted or unweighted
     """
@@ -176,10 +177,10 @@ def hamming_distance(
             indicator
         missing_state_indicator: Indicator for missing data.
 
-    Returns:
+    Returns
+    -------
         The number of positions two nodes disagree at.
     """
-
     dist = 0
     for i in range(len(s1)):
         if s1[i] != s2[i]:
@@ -195,10 +196,10 @@ def hamming_distance(
 
 
 def weighted_hamming_similarity(
-    s1: List[int],
-    s2: List[int],
+    s1: list[int],
+    s2: list[int],
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """A function to return the weighted number of (non-missing) character/state
     mutations shared by two samples.
@@ -210,10 +211,10 @@ def weighted_hamming_similarity(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns:
+    Returns
+    -------
         The weighted number of shared mutations between two samples
     """
-
     d = 0
     num_present = 0
     for i in range(len(s1)):
@@ -239,10 +240,10 @@ def weighted_hamming_similarity(
 
 
 def exponential_negative_hamming_distance(
-    s1: List[int],
-    s2: List[int],
+    s1: list[int],
+    s2: list[int],
     missing_state_indicator=-1,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """
     Gives a similarity function from the inverse of weighted hamming distance.
@@ -265,10 +266,10 @@ def exponential_negative_hamming_distance(
             another dictionary storing the weight of each observed state.
             (Character -> State -> Weight)
 
-    Returns:
+    Returns
+    -------
         A similarity score.
     """
-
     d = 0
     num_present = 0
     for i in range(len(s1)):
@@ -302,16 +303,16 @@ def exponential_negative_hamming_distance(
 
 def cluster_dissimilarity(
     dissimilarity_function: Callable[
-        [List[int], List[int], int, Dict[int, Dict[int, float]]], float
+        [list[int], list[int], int, dict[int, dict[int, float]]], float
     ],
-    s1: Union[List[int], List[Tuple[int, ...]]],
-    s2: Union[List[int], List[Tuple[int, ...]]],
+    s1: list[int] | list[tuple[int, ...]],
+    s2: list[int] | list[tuple[int, ...]],
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
-    linkage_function: Callable[[Union[np.array, List[float]]], float] = np.mean,
+    weights: dict[int, dict[int, float]] | None = None,
+    linkage_function: Callable[[np.ndarray | list[float]], float] = np.mean,
     normalize: bool = True,
 ) -> float:
-    """Compute the dissimilarity between (possibly) ambiguous character strings.
+    r"""Compute the dissimilarity between (possibly) ambiguous character strings.
 
     An ambiguous character string is a character string in
     which each character contains an tuple of possible states, and such a
@@ -364,7 +365,8 @@ def cluster_dissimilarity(
         normalize: Whether to normalize to the proportion of sites present in
             both strings.
 
-    Returns:
+    Returns
+    -------
         The dissimilarity between the two ambiguous samples
     """
     # Make any unambiguous character strings into pseudo-ambiguous so that we
@@ -374,7 +376,7 @@ def cluster_dissimilarity(
 
     result = 0
     num_present = 0
-    for i, (c1, c2) in enumerate(zip(s1, s2)):
+    for i, (c1, c2) in enumerate(zip(s1, s2, strict=False)):
         dissim = []
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
@@ -400,12 +402,12 @@ def cluster_dissimilarity(
 
 
 def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
-    s1: Union[List[int], List[Tuple[int, ...]]],
-    s2: Union[List[int], List[Tuple[int, ...]]],
+    s1: list[int] | list[tuple[int, ...]],
+    s2: list[int] | list[tuple[int, ...]],
     missing_state_indicator: int,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """Compute the dissimilarity between (possibly) ambiguous character strings.
+    r"""Compute the dissimilarity between (possibly) ambiguous character strings.
 
     An ambiguous character string is a character string in
     which each character contains an tuple of possible states, and such a
@@ -441,7 +443,8 @@ def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns:
+    Returns
+    -------
         The dissimilarity between the two ambiguous samples
     """
     # Make any unambiguous character strings into pseudo-ambiguous so that we

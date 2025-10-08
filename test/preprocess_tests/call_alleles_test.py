@@ -1,14 +1,11 @@
 """
 Tests for the allele calling in alignment_utilities.py and pipeline.py
 """
-from cassiopeia.mixins.errors import PreprocessError
-from cassiopeia.mixins.warnings import PreprocessWarning
 import unittest
 
-import numpy as np
-import pandas as pd
-
 import cassiopeia
+import pandas as pd
+from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import alignment_utilities
 
 
@@ -386,7 +383,7 @@ class TestCallAlleles(unittest.TestCase):
     def test_missing_data_in_allele_throws_warning(self):
 
         with self.assertWarns(PreprocessWarning):
-            molecule_table = cassiopeia.pp.call_alleles(
+            cassiopeia.pp.call_alleles(
                 self.alignment_dataframe_with_missing,
                 ref=self.basic_ref,
                 barcode_interval=self.basic_barcode_interval,

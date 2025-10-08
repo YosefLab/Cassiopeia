@@ -3,14 +3,13 @@ A file that stores general functionality for setting up a Cassiopeia
 preprocessing instance. This file supports the command line interface entrypoint
 in cassiopeia_preprocess.py.
 """
-import os
-
 import ast
 import configparser
 import logging
-from typing import Any, Dict
+import os
+from typing import Any
 
-from cassiopeia.mixins import logger, UnspecifiedConfigParameterError
+from cassiopeia.mixins import UnspecifiedConfigParameterError, logger
 from cassiopeia.preprocess import constants
 
 
@@ -22,7 +21,6 @@ def setup(output_directory_location: str, verbose: bool) -> None:
             directory
         verbose: Whether or not to log debugging output.
     """
-
     if not os.path.isdir(output_directory_location):
         os.mkdir(output_directory_location)
 
@@ -40,16 +38,18 @@ def setup(output_directory_location: str, verbose: bool) -> None:
     logger.addHandler(error_handler)
 
 
-def parse_config(config_string: str) -> Dict[str, Dict[str, Any]]:
+def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
     """Parse config for pipeline.
 
     Args:
         config_string: Configuration file rendered as a string.
 
-    Returns:
+    Returns
+    -------
         A dictionary mapping parameters for each preprocessing stage.
 
-    Raises:
+    Raises
+    ------
         UnspecifiedConfigParameterError
     """
     config = configparser.ConfigParser()
@@ -144,10 +144,10 @@ def create_pipeline(entry, _exit, stages):
         _exit: a string representing the stage to stop.
         stages: a list of stages in order of the general pipeline.
 
-    Returns:
+    Returns
+    -------
         A list of procedures to run.
     """
-
     stage_names = list(stages.keys())
     start = stage_names.index(entry)
     end = stage_names.index(_exit)

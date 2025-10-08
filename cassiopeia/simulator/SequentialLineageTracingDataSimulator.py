@@ -1,12 +1,11 @@
 """
 A Sequential lineage tracing data simulator. This is a subclass of the
 LineageTracingDataSimulator that simulates the data produced from sequential
-Cas9-based technologies (e.g, Typewriter described in Choi et al, Nature 2022). 
+Cas9-based technologies (e.g, Typewriter described in Choi et al, Nature 2022).
 This simulator implements the method `overlay_data` which takes
 in a CassiopeiaTree with edge lengths and overlays states.
 """
 import math
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -21,26 +20,26 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
     """Simulates Cas9-based lineage tracing data.
 
     This subclass of `LineageTracingDataSimulator` implements the `overlay_data`
-    function to simulate Cas9-based edits onto a defined sequential recording 
-    site, aka "DNA tape" or "cassette". These cassettes are designed such that 
+    function to simulate Cas9-based edits onto a defined sequential recording
+    site, aka "DNA tape" or "cassette". These cassettes are designed such that
     only one site can be edited at a time and the position of the active site
-    shifts as edits are made. One example of this type of lineage recorder is 
+    shifts as edits are made. One example of this type of lineage recorder is
     the DNA Typewriter system described by Choi et al, Nature 2022.
 
-    First, the class accepts several parameters that govern the Cas9-based 
-    tracer. These are 1. the initiation rate which describes the rate at which 
+    First, the class accepts several parameters that govern the Cas9-based
+    tracer. These are 1. the initiation rate which describes the rate at which
     particular cassette starts recording and 2. the continuation rate which
-    describes the rate at which sequential events occur once recording has 
-    started. We model Cas9 recording as an exponential process, 
+    describes the rate at which sequential events occur once recording has
+    started. We model Cas9 recording as an exponential process,
     parameterized by the specified initiation and continuation rates.
-     
+
     Second, the class accepts the architecture of the recorder - described by
     the size of the cassette (by default 3) and the number of cassettes. The
     resulting lineage will have (size_of_cassette * number_of_cassettes)
     characters.
 
     Third, the class accepts a state distribution describing the relative
-    likelihoods of various states. This is very useful, as the probability of 
+    likelihoods of various states. This is very useful, as the probability of
     different editing outcomes can vary greatly.
 
     Finally, the class accepts two types of silencing rates. The first is the
@@ -57,7 +56,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         size_of_cassette: Number of editable target sites per cassette
         initiation_rate: Exponential parameter for the Cas9 initiation rate
         continuation_rate: Exponential parameter for the Cas9 continuation rate
-        state_priors: An optional dictionary mapping states to their prior 
+        state_priors: An optional dictionary mapping states to their prior
             probabilities.
         heritable_silencing_rate: Silencing rate for the cassettes, per node,
             simulating heritable missing data events.
@@ -74,7 +73,8 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             `overlay_data`, thereby producing deterministic simulations every
             time this function is called.
 
-    Raises:
+    Raises
+    ------
         DataSimulatorError if assumptions about the system are broken.
     """
 
@@ -84,12 +84,12 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         size_of_cassette: int = 3,
         initiation_rate: float = 0.1,
         continuation_rate: float = 0.1,
-        state_priors: Dict[int, float] = None,
+        state_priors: dict[int, float] = None,
         heritable_silencing_rate: float = 0,
         stochastic_silencing_rate: float = 0,
         heritable_missing_data_state: int = -1,
         stochastic_missing_data_state: int = -1,
-        random_seed: Optional[int] = None,
+        random_seed: int | None = None,
     ):
 
         if number_of_cassettes <= 0 or not isinstance(number_of_cassettes, int):
@@ -113,7 +113,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             raise DataSimulatorError(
                 "State prior to be non-negative."
             )
-        Z = np.sum([v for v in state_priors.values()])
+        Z = np.sum(list(state_priors.values()))
         if not math.isclose(Z, 1.0):
             raise DataSimulatorError("State priors do not sum to 1.")
 
@@ -139,11 +139,10 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         Args:
             tree: Input CassiopeiaTree
         """
-
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
-        # initialize character matrix 
+        # initialize character matrix
         number_of_characters = self.number_of_cassettes * self.size_of_cassette
         initiation_sites = range(0, number_of_characters, self.size_of_cassette)
         character_matrix = {}
@@ -160,7 +159,6 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             life_time = tree.get_time(node) - tree.get_time(parent)
 
             character_array = character_matrix[parent].copy()
-            new_edits = []
 
             # sequentially edit each cassette
             for c in initiation_sites:
@@ -173,7 +171,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
                     i = c + 1
                     while time < life_time and i < c + self.size_of_cassette:
                         if character_array[i] == 0:
-                            time = (time + 
+                            time = (time +
                                 np.random.exponential(1/self.continuation_rate))
                             if time < life_time:
                                 self.edit_site(
@@ -182,7 +180,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
                         i += 1
                 # uninitiated
                 elif character_array[c] == 0:
-                    i = c 
+                    i = c
                     time = np.random.exponential(1/self.initiation_rate)
                     if time < life_time:
                         self.edit_site(
@@ -191,7 +189,7 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
                     i += 1
                     while time < life_time and i < c + self.size_of_cassette:
                         if character_array[i] == 0:
-                            time = (time + 
+                            time = (time +
                                 np.random.exponential(1/self.continuation_rate))
                             if time < life_time:
                                 self.edit_site(
@@ -222,30 +220,29 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
         tree.set_all_character_states(character_matrix)
 
     def edit_site(
-        self, character_array: List[int], 
-        site: int, 
-        state_priors: Dict[int, float] 
-    ) -> List[int]:
+        self, character_array: list[int],
+        site: int,
+        state_priors: dict[int, float]
+    ) -> list[int]:
         """Edits a site.
 
         Args:
             character_array: Character array
             site: Site to edit
-            state_priors: Dictionary mapping states to their prior 
+            state_priors: Dictionary mapping states to their prior
                 probabilities.
         """
-
         states = list(state_priors.keys())
         probabilities = list(state_priors.values())
         state = np.random.choice(states, 1, p=probabilities)[0]
         character_array[site] = state
-    
+
     def silence_cassettes(
         self,
-        character_array: List[int],
+        character_array: list[int],
         silencing_rate: float,
         missing_state: int = -1,
-    ) -> List[int]:
+    ) -> list[int]:
         """Silences cassettes.
 
         Using the specified silencing rate, this function will randomly select
@@ -256,11 +253,11 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             silencing_rate: Silencing rate.
             missing_state: State to use for encoding missing data.
 
-        Returns:
+        Returns
+        -------
             An updated character array.
 
         """
-
         updated_character_array = character_array.copy()
 
         number_of_characters = self.number_of_cassettes * self.size_of_cassette

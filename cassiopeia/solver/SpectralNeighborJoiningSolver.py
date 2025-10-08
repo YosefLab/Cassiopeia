@@ -1,13 +1,13 @@
 """
-This file stores a subclass of DistanceSolver, SpectralNeighborJoining. This 
-algorithm is based on the one developed by Jaffe, et al. (2021) in their paper 
+This file stores a subclass of DistanceSolver, SpectralNeighborJoining. This
+algorithm is based on the one developed by Jaffe, et al. (2021) in their paper
 titled "Spectral neighbor joining for reconstruction of latent tree models",
-published in the SIAM Journal for Math and Data Science. 
- 
-"""
-from typing import Callable, Dict, List, Optional, Tuple
+published in the SIAM Journal for Math and Data Science.
 
+"""
 import itertools
+from collections.abc import Callable
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -15,11 +15,10 @@ import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.solver import (
-    dissimilarity_functions,
     DistanceSolver,
+    dissimilarity_functions,
     solver_utilities,
 )
-
 
 
 class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
@@ -61,30 +60,25 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        similarity_function: Optional[
-            Callable[
-                [np.ndarray, np.ndarray, int, Dict[int, Dict[int, float]]],
-                float,
-            ]
-        ] = dissimilarity_functions.exponential_negative_hamming_distance,
+        similarity_function: Callable[[np.ndarray, np.ndarray, int, dict[int, dict[int, float]]], float] | None = dissimilarity_functions.exponential_negative_hamming_distance,
         # type: ignore
         add_root: bool = False,
         prior_transformation: str = "negative_log",
     ):
         self._implementation = "generic_spectral_nj"
-        
+
         super().__init__(
             dissimilarity_function=similarity_function,
             add_root=add_root,
             prior_transformation=prior_transformation,
         )  # type: ignore
-        
+
         self._similarity_map = None
         self._lambda_indices = None
 
 
     def get_dissimilarity_map(
-        self, cassiopeia_tree: CassiopeiaTree, layer: Optional[str] = None
+        self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None
     ) -> pd.DataFrame:
         """Outputs the first lambda matrix.
 
@@ -101,11 +95,11 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
 
-        Returns:
+        Returns
+        -------
             DataFrame object of the lambda matrix, but similar in structure to
                 DistanceSolver's dissimilarity_map.
         """
-
         # get dissimilarity map and save it as private instance variable
         self._similarity_map = super().get_dissimilarity_map(
             cassiopeia_tree, layer
@@ -137,7 +131,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         return lambda_matrix_df
 
-    def find_cherry(self, dissimilarity_map: np.ndarray) -> Tuple[int, int]:
+    def find_cherry(self, dissimilarity_map: np.ndarray) -> tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
         With dissimilarity_map being the lambda matrix, this method finds the
@@ -152,20 +146,20 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_matrix: Lambda matrix
 
-        Returns:
+        Returns
+        -------
             A tuple of integers representing rows in the
                 dissimilarity matrix to join.
         """
-
         return np.unravel_index(
             np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape
         )
 
     def _compute_svd2(
-        self, pair: Tuple[int, int], lambda_indices: List[List[int]]
+        self, pair: tuple[int, int], lambda_indices: list[list[int]]
     ) -> float:
         """Computes the second largest singular value for an RA matrix.
-        
+
         From Jaffe et al., the RA matrix is the matrix given by taking
         rows indexed by elements of A, and columns indexed by elements of the
         complement of A. Entries are given by R(i, j), the similarity score
@@ -173,14 +167,15 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         subsets given in 'pair'. The procedure takes O(n^3) time where n is the
         number of leaves. On average it should be more efficient because we are
         not computing the singular value decomposition of a whole nxn matrix, RA
-        is smaller than nxn. 
+        is smaller than nxn.
 
         Args:
             pair: pair of indices i and j where i > j.
             lambda_indices: the list of subsets for
                 which 'pair' refers to.
 
-        Returns:
+        Returns
+        -------
             The second largest singular value of the pair's RA matrix.
         """
         i_idx, j_idx = pair
@@ -210,7 +205,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
     def update_dissimilarity_map(
         self,
         similarity_map: pd.DataFrame,
-        cherry: Tuple[str, str],
+        cherry: tuple[str, str],
         new_node: str,
     ) -> pd.DataFrame:
         """Updates the lambda matrix using the pair of subsets from find_cherry.
@@ -221,7 +216,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             cherry2: One of the children to join.
             new_node: New node name to add to the dissimilarity map
 
-        Returns:
+        Returns
+        -------
             An updated lambda matrix.
         """
         # get cherry nodes in index of lambda matrix
@@ -338,7 +334,7 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         cassiopeia_tree.character_matrix = character_matrix
 
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
     ) -> nx.DiGraph:
         """Assigns a node as the root of the solved tree.
 
@@ -350,7 +346,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             root_sample: Sample to treat as the root
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns:
+        Returns
+        -------
             A rooted tree
         """
         tree.add_edge(remaining_samples[0], remaining_samples[1])

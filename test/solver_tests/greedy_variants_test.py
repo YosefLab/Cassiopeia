@@ -1,21 +1,20 @@
+import itertools
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
 import pandas as pd
-
-import cassiopeia as cas
 from cassiopeia.mixins import GreedySolverError
-from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
-from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
 from cassiopeia.solver import solver_utilities
+from cassiopeia.solver.MaxCutGreedySolver import MaxCutGreedySolver
+from cassiopeia.solver.SpectralGreedySolver import SpectralGreedySolver
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -47,7 +46,7 @@ class GreedyVariantsTest(unittest.TestCase):
         with self.assertRaises(GreedySolverError):
             solver = SpectralGreedySolver()
             solver.solve(tree)
-            
+
     def test_spectral_sparse_case(self):
         cm = pd.DataFrame.from_dict(
             {

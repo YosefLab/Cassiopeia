@@ -1,26 +1,22 @@
 """
 Test the ccphylo solver implementations against the standard NJ and UPGMA
 """
-import os
-
-import unittest
-from unittest import mock
-from typing import Dict, Optional
-
 import configparser
 import itertools
+import os
+import unittest
+
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-import cassiopeia as cas
-
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -38,7 +34,7 @@ def delta_fn(
     x: np.array,
     y: np.array,
     missing_state: int,
-    priors: Optional[Dict[int, Dict[int, float]]],
+    priors: dict[int, dict[int, float]] | None,
 ):
     d = 0
     for i in range(len(x)):
@@ -74,7 +70,7 @@ class TestCCPhyloSolver(unittest.TestCase):
                 "j": [1, 2, 0, 0, 1, 0, 0, 1, 1, 1],
             },
             orient="index",
-            columns=["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", 
+            columns=["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8",
                         "x9", "x10"],
         )
 
@@ -91,10 +87,10 @@ class TestCCPhyloSolver(unittest.TestCase):
             add_root=True,fast = True, implementation="ccphylo_dnj")
         self.ccphylo_hnj_solver = cas.solver.NeighborJoiningSolver(
             add_root=True, fast = True, implementation="ccphylo_hnj")
-        
+
         self.ccphylo_upgma_solver = cas.solver.UPGMASolver(fast=True)
         self.upgma_solver = cas.solver.UPGMASolver(fast=False)
-        
+
 
         # ------------- CM with Duplictes -----------------------
         duplicates_cm = pd.DataFrame.from_dict(
@@ -117,11 +113,11 @@ class TestCCPhyloSolver(unittest.TestCase):
     @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
     def test_ccphylo_invalid_input(self):
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
-            nothing_solver = cas.solver.NeighborJoiningSolver(fast = True,
+            cas.solver.NeighborJoiningSolver(fast = True,
                 implementation="invalid")
-       
+
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
-            nothing_solver = cas.solver.UPGMASolver(fast = True,
+            cas.solver.UPGMASolver(fast = True,
                 implementation="invalid")
 
     @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")
@@ -139,9 +135,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     nj_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     ccphylo_nj_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -160,9 +156,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     nj_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     dnj_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -182,9 +178,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     nj_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     hnj_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -204,9 +200,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     upgma_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     ccphylo_upgma_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -218,7 +214,7 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         # Fast NJ Solver
         ccphylo_nj_tree = self.basic_tree.copy()
-        self.ccphylo_nj_solver.solve(ccphylo_nj_tree, 
+        self.ccphylo_nj_solver.solve(ccphylo_nj_tree,
                                         collapse_mutationless_edges=True)
 
         # test for expected number of edges
@@ -226,9 +222,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     nj_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     ccphylo_nj_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 
@@ -247,9 +243,9 @@ class TestCCPhyloSolver(unittest.TestCase):
 
         triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)
         for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, 
+            expected_triplet = find_triplet_structure(triplet,
                                     nj_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, 
+            observed_triplet = find_triplet_structure(triplet,
                                     ccphylo_nj_tree.get_tree_topology())
             self.assertEqual(expected_triplet, observed_triplet)
 

@@ -1,15 +1,14 @@
 """
 Test HybridSolver in Cassiopeia.solver.
 """
+import itertools
 import os
+import pathlib as pl
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
 import pandas as pd
-import pathlib as pl
-
-import cassiopeia as cas
 from cassiopeia.solver import solver_utilities
 
 GUROBI_INSTALLED = True
@@ -21,9 +20,9 @@ except ModuleNotFoundError:
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -40,7 +39,7 @@ def find_triplet_structure(triplet, T):
 class TestHybridSolver(unittest.TestCase):
     def assertIsFile(self, path):
         if not pl.Path(path).resolve().is_file():
-            raise AssertionError("File does not exist: %s" % str(path))
+            raise AssertionError(f"File does not exist: {str(path)}")
 
     def setUp(self):
 
@@ -351,7 +350,7 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure that the tree can be converted to newick format
-        tree_newick = self.pp_tree.get_newick()
+        self.pp_tree.get_newick()
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_single_thread(self):
@@ -408,7 +407,7 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure that the tree can be converted to newick format
-        tree_newick = self.pp_tree.get_newick()
+        self.pp_tree.get_newick()
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_large(self):
@@ -478,7 +477,7 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure that the tree can be converted to newick format
-        tree_newick = self.large_tree.get_newick()
+        self.large_tree.get_newick()
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_maxcut(self):
@@ -543,7 +542,7 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure that the tree can be converted to newick format
-        tree_newick = self.missing_tree.get_newick()
+        self.missing_tree.get_newick()
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_missing(self):
@@ -647,7 +646,7 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
         # make sure that the tree can be converted to newick format
-        tree_newick = self.missing_tree.get_newick()
+        self.missing_tree.get_newick()
 
     def tearDown(self):
 

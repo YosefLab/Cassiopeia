@@ -1,32 +1,29 @@
 """
 Test SharedMutationJoiningSolver in Cassiopeia.solver.
 """
+import itertools
 import unittest
 from functools import partial
-from typing import Dict
 
-import itertools
 import networkx as nx
 import numba
 import numpy as np
 import pandas as pd
 import scipy
-
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
+from cassiopeia.solver import dissimilarity_functions, solver_utilities
 from cassiopeia.solver.SharedMutationJoiningSolver import (
     SharedMutationJoiningSolver,
     SharedMutationJoiningSolverWarning,
 )
-from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver import solver_utilities
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))

@@ -2,9 +2,9 @@
 File storing functionality for computing coupling statistics between meta
 variables on a tree.
 """
-from typing import Callable, Optional
-
 from collections import defaultdict
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -18,8 +18,8 @@ def compute_evolutionary_coupling(
     meta_variable: str,
     minimum_proportion: float = 0.05,
     number_of_shuffles: int = 500,
-    random_state: Optional[np.random.RandomState] = None,
-    dissimilarity_map: Optional[pd.DataFrame] = None,
+    random_state: np.random.RandomState | None = None,
+    dissimilarity_map: pd.DataFrame | None = None,
     cluster_comparison_function: Callable = data_utilities.net_relatedness_index,
     **comparison_kwargs,
 ) -> pd.DataFrame:
@@ -35,7 +35,7 @@ def compute_evolutionary_coupling(
     Briefly, this statistic is the Z-normalized mean distance between categories
     in the specified categorical variable. Note that empirical nulls that have a
     standard deviation of 0 lead to NaNs in the resulting evolutionary coupling
-    matrix. 
+    matrix.
 
     The computational complexity of this function is
     O(n^2 log n + (B+1)(K^2 * O(distance_function)) for a tree with n leaves, a
@@ -56,10 +56,10 @@ def compute_evolutionary_coupling(
         **comparison_kwargs: Extra arguments to pass to the cluster comparison
             function.
 
-    Returns:
-        A K x K evolutionary coupling dataframe. 
+    Returns
+    -------
+        A K x K evolutionary coupling dataframe.
     """
-
     W = (
         data_utilities.compute_phylogenetic_weight_matrix(tree)
         if (dissimilarity_map is None)

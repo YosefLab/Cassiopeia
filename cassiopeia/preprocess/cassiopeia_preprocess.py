@@ -9,14 +9,13 @@ relates cell barcodes and UMIs to sequences.
 
 TODO(mattjones315@): include invocation instructions & pipeline specifics.
 """
-import os
-
 import argparse
 import logging
-import pandas as pd
-from typing import Any, Dict
+import os
 
-from cassiopeia.mixins import logger, PreprocessError
+import pandas as pd
+
+from cassiopeia.mixins import PreprocessError, logger
 from cassiopeia.preprocess import pipeline, setup_utilities, utilities
 
 STAGES = {
@@ -48,7 +47,7 @@ def main():
 
     config_filepath = args.config
 
-    with open(config_filepath, "r") as f:
+    with open(config_filepath) as f:
         pipeline_parameters = setup_utilities.parse_config(f.read())
 
     # pull out general parameters

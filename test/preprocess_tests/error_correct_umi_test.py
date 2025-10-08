@@ -3,10 +3,8 @@ Tests for the sequence alignment in pipeline.py.
 """
 import unittest
 
-import numpy as np
-import pandas as pd
-
 import cassiopeia
+import pandas as pd
 
 
 class TestErrorCorrectUMISequence(unittest.TestCase):

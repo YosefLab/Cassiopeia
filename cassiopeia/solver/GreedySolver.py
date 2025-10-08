@@ -3,9 +3,7 @@ This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
 represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
-from collections import defaultdict
-import functools
-from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
+from collections.abc import Generator
 
 import networkx as nx
 import numpy as np
@@ -40,7 +38,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes:
+    Attributes
+    ----------
         prior_transformation: Function to use when transforming priors into
             weights.
     """
@@ -52,10 +51,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     def perform_split(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[int],
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        samples: list[int],
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-    ) -> Tuple[List[Union[int, str]], List[Union[int, str]]]:
+    ) -> tuple[list[int | str], list[int | str]]:
         """Performs a partition of the samples.
 
         Args:
@@ -65,7 +64,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns:
+        Returns
+        -------
             A tuple of lists, representing the left and right partition groups
         """
         pass
@@ -73,7 +73,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ):
@@ -102,10 +102,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # A helper function that builds the subtree given a set of samples
         def _solve(
-            samples: List[Union[str, int]],
+            samples: list[str | int],
             tree: nx.DiGraph,
             unique_character_matrix: pd.DataFrame,
-            weights: Dict[int, Dict[int, float]],
+            weights: dict[int, dict[int, float]],
             missing_state_indicator: int,
         ):
             if len(samples) == 1:
@@ -173,7 +173,7 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         keep_rows = (
             character_matrix.apply(
                 lambda x: [
-                    set(s) if is_ambiguous_state(s) else set([s])
+                    set(s) if is_ambiguous_state(s) else {s}
                     for s in x.values
                 ],
                 axis=0,
@@ -209,10 +209,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def compute_mutation_frequencies(
         self,
-        samples: List[str],
+        samples: list[str],
         unique_character_matrix: pd.DataFrame,
         missing_state_indicator: int = -1,
-    ) -> Dict[int, Dict[int, int]]:
+    ) -> dict[int, dict[int, int]]:
         """Computes character/state mutation frequencies.
 
         Generates a dictionary that maps each character to a dictionary of state/
@@ -263,10 +263,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
 
-        Returns:
+        Returns
+        -------
             The tree with duplicates added
         """
-        
         duplicate_mappings = find_duplicate_groups(character_matrix)
 
         for i in duplicate_mappings:

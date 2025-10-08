@@ -4,7 +4,7 @@ an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
 import warnings
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
 
 import networkx as nx
 import numba
@@ -15,7 +15,6 @@ import scipy
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins import (
-    SharedMutationJoiningSolverError,
     SharedMutationJoiningSolverWarning,
 )
 from cassiopeia.solver import (
@@ -50,7 +49,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes:
+    Attributes
+    ----------
         similarity_function: Function used to compute similarity between
             samples.
         prior_transformation: Function to use when transforming priors into
@@ -59,17 +59,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        similarity_function: Optional[
-            Callable[
-                [
-                    np.array,
-                    np.array,
-                    int,
-                    Optional[Dict[int, Dict[int, float]]],
-                ],
-                float,
-            ]
-        ] = dissimilarity_functions.hamming_similarity_without_missing,
+        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float] | None = dissimilarity_functions.hamming_similarity_without_missing,
         prior_transformation: str = "negative_log",
     ):
 
@@ -88,7 +78,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             warnings.warn(
                 "Failed to numbaize dissimilarity function. "
                 "Falling back to Python.",
-                SharedMutationJoiningSolverWarning,
+                SharedMutationJoiningSolverWarning, stacklevel=2,
             )
 
         if numbaize:
@@ -99,7 +89,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ) -> None:
@@ -126,7 +116,6 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: Location to write standard out. Not currently used.
         """
-
         node_name_generator = solver_utilities.node_name_generator()
 
         if layer:
@@ -208,7 +197,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 infer_ancestral_characters=True
             )
 
-    def find_cherry(self, similarity_matrix: np.array) -> Tuple[int, int]:
+    def find_cherry(self, similarity_matrix: np.array) -> tuple[int, int]:
         """Finds a pair of samples to join into a cherry.
 
         Finds the pair of samples with the highest pairwise similarity to join.
@@ -216,7 +205,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             similarity_matrix: A sample x sample similarity matrix
 
-        Returns:
+        Returns
+        -------
             A tuple of integers representing rows in the similarity matrix
             to join.
         """
@@ -231,10 +221,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         character_matrix: pd.DataFrame,
         similarity_function: Callable[
-            [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
         ],
         similarity_map: pd.DataFrame,
-        cherry: Tuple[str, str],
+        cherry: tuple[str, str],
         new_node: str,
         missing_state_indicator: int = -1,
         weights=None,
@@ -257,10 +247,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
 
-        Returns:
+        Returns
+        -------
             A new similarity map, updated with the new node
         """
-
         character_i, character_j = (
             np.where(character_matrix.index == cherry[0])[0][0],
             np.where(character_matrix.index == cherry[1])[0][0],
@@ -307,7 +297,7 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_map: np.array,
         lca: np.array,
         similarity_function: Callable[
-            [np.array, np.array, int, Dict[int, Dict[int, float]]], float
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
         ],
         missing_state_indicator: int = -1,
         weights=None,
@@ -327,10 +317,10 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
 
-        Returns:
+        Returns
+        -------
             An updated similarity map
         """
-
         C = similarity_map.shape[0]
         new_row = np.zeros(C, dtype=np.float64)
         k = 0

@@ -3,7 +3,6 @@ This file stores useful functions for dealing with alignments.
 Invoked through pipeline.py and supports the align_sequences function.
 """
 import re
-from typing import Dict, List, Tuple
 
 import ngs_tools as ngs
 from pyseq_align import NeedlemanWunsch, SmithWaterman
@@ -14,10 +13,10 @@ from cassiopeia.mixins import UnknownCigarStringError
 def align_local(
     ref: str,
     seq: str,
-    substitution_matrix: Dict[str, Dict[str, int]],
+    substitution_matrix: dict[str, dict[str, int]],
     gap_open_penalty: int,
     gap_extend_penalty: int,
-) -> Tuple[str, int, int, float, str]:
+) -> tuple[str, int, int, float, str]:
     """Perform local alignment of `seq` to `ref` using Smith-Waterman.
 
     Args:
@@ -27,7 +26,8 @@ def align_local(
         gap_open_penalty: Gap open penalty.
         gap_extend_penalty: Gap extend penalty.
 
-    Returns:
+    Returns
+    -------
         A tuple containing the CIGAR string, query sequence start position,
             reference sequence start position, alignment score, and query
             sequence
@@ -50,10 +50,10 @@ def align_local(
 def align_global(
     ref: str,
     seq: str,
-    substitution_matrix: Dict[str, Dict[str, int]],
+    substitution_matrix: dict[str, dict[str, int]],
     gap_open_penalty: int,
     gap_extend_penalty: int,
-) -> Tuple[str, int, int, float, str]:
+) -> tuple[str, int, int, float, str]:
     """Perform global alignment of `seq` to `ref` using Needleman-Wunsch.
 
     Args:
@@ -63,7 +63,8 @@ def align_global(
         gap_open_penalty: Gap open penalty.
         gap_extend_penalty: Gap extend penalty.
 
-    Returns:
+    Returns
+    -------
         A tuple containing the CIGAR string, query sequence start position,
             reference sequence start position, alignment score, and query
             sequence
@@ -91,12 +92,12 @@ def parse_cigar(
     ref: str,
     ref_start: int,
     query_start: int,
-    barcode_interval: Tuple[int, int],
-    cutsites: List[int],
+    barcode_interval: tuple[int, int],
+    cutsites: list[int],
     cutsite_window: int = 0,
     context: bool = True,
     context_size: int = 5,
-) -> Tuple[str, List[str]]:
+) -> tuple[str, list[str]]:
     """Parse the cigar string from a TargetSite alignment.
 
     Parse the cigar string from an alignment of a TargetSite read into the
@@ -121,10 +122,10 @@ def parse_cigar(
         context: Include nucleotide sequence around indels
         context_size: Number of bases to report for context
 
-    Returns:
+    Returns
+    -------
         The intBC and a list storing the indel observed at each cutsite.
     """
-
     cutsite_lims = [
         (site - cutsite_window, site + cutsite_window) for site in cutsites
     ]
@@ -170,7 +171,7 @@ def parse_cigar(
                     ]
 
             # check if a match occurs in any of the cutsite windows
-            for i, site in zip(range(len(cutsites)), cutsites):
+            for i, site in zip(range(len(cutsites)), cutsites, strict=False):
 
                 if site >= pos_start and site <= pos_end and indels[i] == "":
                     dist = site - pos_start
@@ -218,7 +219,7 @@ def parse_cigar(
             pos_start = query_pointer
             query_pointer += length
 
-            for i, window in zip(range(len(cutsites)), cutsite_lims):
+            for i, window in zip(range(len(cutsites)), cutsite_lims, strict=False):
 
                 if ref_pointer >= window[0] and ref_pointer <= window[1]:
 
@@ -252,7 +253,7 @@ def parse_cigar(
             if ref_pointer == barcode_interval[0]:
                 query_pad = -1 * length
 
-            for i, window in zip(range(len(cutsites)), cutsite_lims):
+            for i, window in zip(range(len(cutsites)), cutsite_lims, strict=False):
 
                 if (
                     (window[0] <= ref_pointer and ref_pointer <= window[1])
@@ -295,7 +296,7 @@ def parse_cigar(
         if anchor == ref_anchor:
             intBC = seq[barcode_interval[0] : barcode_interval[1]]
 
-    for i, indel in zip(range(len(indels)), indels):
+    for i, indel in zip(range(len(indels)), indels, strict=False):
 
         if indel == "":
             indels[i] = uncut_indels[i]

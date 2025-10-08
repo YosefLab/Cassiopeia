@@ -1,6 +1,4 @@
-"""
-Functionality for spatial imputation.
-"""
+"""Functionality for spatial imputation."""
 
 import anndata
 import networkx as nx
@@ -28,7 +26,7 @@ def impute_alleles_from_spatial_data(
 
     This procedure iterates over spots in a given anndata and imputes missing
     data based on spatial neigborhoods.
-    
+
     The procedure is an interative algorithm where for each iteration a missing
     character is imputed based on the neighborhood of a node. Node neighborhoods
     are built off of a spatial graph that can passed in directly or inferred
@@ -68,12 +66,13 @@ def impute_alleles_from_spatial_data(
         coordinates: If an AnnData is not specified, and you wish to set an
             upper limit on the distance for spatial imputation, these
             coordinates can be passed to the imputation procedure.
-        connect_key: Key used to store spatial connectivities in 
+        connect_key: Key used to store spatial connectivities in
             `adata.obsp`. This will be passed into the `key_added` argument
             of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
-            of the form `{connect_key}_connectivities`. 
+            of the form `{connect_key}_connectivities`.
 
-    Returns:
+    Returns
+    -------
         An imputed character matrix.
     """
     if (not spatial_graph) and (not adata):
@@ -103,7 +102,7 @@ def impute_alleles_from_spatial_data(
         missing_indices = np.where(prev_character_matrix_imputed == -1)
 
         for i, j in tqdm.tqdm(
-            zip(missing_indices[0], missing_indices[1]),
+            zip(missing_indices[0], missing_indices[1], strict=False),
             total=len(missing_indices[0]),
         ):
             (imputed_value, proportion_of_votes, number_of_votes) = (

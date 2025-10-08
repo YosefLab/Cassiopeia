@@ -4,11 +4,8 @@ Tests for the cassiopeia.critique.compare module.
 
 import unittest
 
-import networkx as nx
-import numpy as np
-import pandas as pd
-
 import cassiopeia as cas
+import networkx as nx
 
 
 class TestTreeComparisons(unittest.TestCase):
@@ -19,7 +16,7 @@ class TestTreeComparisons(unittest.TestCase):
         )
 
         tree1 = nx.DiGraph()
-        tree1.add_nodes_from([i for i in range(15)])
+        tree1.add_nodes_from(list(range(15)))
         tree1.add_edges_from(
             [
                 (0, 1),

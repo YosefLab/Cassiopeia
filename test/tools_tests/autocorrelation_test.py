@@ -4,13 +4,10 @@ cassiopeia/tools/autocorrelation.py
 """
 import unittest
 
-import networkx as nx
-import numpy as np
-import pandas as pd
-
 import cassiopeia as cas
+import networkx as nx
+import pandas as pd
 from cassiopeia.mixins.errors import AutocorrelationError
-from cassiopeia.tools.autocorrelation import compute_morans_i
 
 
 class TestAutocorrelation(unittest.TestCase):
@@ -132,7 +129,7 @@ class TestAutocorrelation(unittest.TestCase):
             None,
             None,
         )
-        
+
         # make sure weight matrix has the right leaves
         W = pd.DataFrame.from_dict(
             {

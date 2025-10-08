@@ -3,36 +3,32 @@ This file contains all high-level functionality for preprocessing sequencing
 data into character matrices ready for phylogenetic inference. This file
 is mainly invoked by cassiopeia_preprocess.py.
 """
-import warnings
-
-from functools import partial
 import os
+import warnings
+from functools import partial
 from pathlib import Path
-import time
-from typing import List, Optional, Tuple, Union
+from typing import Literal
 
-from Bio import SeqIO
-from joblib import delayed
 import matplotlib.pyplot as plt
 import ngs_tools as ngs
 import numpy as np
 import pandas as pd
 import pysam
+from Bio import SeqIO
+from joblib import delayed
 from tqdm.auto import tqdm
-from typing_extensions import Literal
 
-from cassiopeia.mixins import logger, PreprocessError
+from cassiopeia.mixins import PreprocessError, logger
 from cassiopeia.mixins.warnings import PreprocessWarning
 from cassiopeia.preprocess import (
+    UMI_utils,
     alignment_utilities,
     constants,
-    map_utils,
     doublet_utils,
     lineage_utils,
-    UMI_utils,
+    map_utils,
     utilities,
 )
-
 
 DNA_SUBSTITUTION_MATRIX = constants.DNA_SUBSTITUTION_MATRIX
 BAM_CONSTANTS = constants.BAM_CONSTANTS
@@ -43,10 +39,10 @@ progress = tqdm
 @utilities.log_kwargs
 @utilities.log_runtime
 def convert_fastqs_to_unmapped_bam(
-    fastq_fps: List[str],
+    fastq_fps: list[str],
     chemistry: Literal["dropseq", "10xv2", "10xv3", "indropsv3", "slideseq2"],
     output_directory: str,
-    name: Optional[str] = None,
+    name: str | None = None,
     n_threads: int = 1,
 ) -> str:
     """Converts FASTQs into an unmapped BAM based on a chemistry.
@@ -74,10 +70,12 @@ def convert_fastqs_to_unmapped_bam(
             the read group name, but not as the filename prefix of the BAM.
         n_threads: Number of threads to use. Defaults to 1.
 
-    Returns:
+    Returns
+    -------
         Path to written BAM
 
-    Raises:
+    Raises
+    ------
         PreprocessError if the provided chemistry does not exist.
     """
     if chemistry not in constants.CHEMISTRY_BAM_TAGS:
@@ -121,7 +119,8 @@ def filter_bam(
             pass the filtering.
         n_threads: Number of threads to use. Defaults to 1.
 
-    Returns:
+    Returns
+    -------
         Path to filtered BAM
     """
     n_filtered = 0
@@ -161,7 +160,7 @@ def filter_bam(
 @utilities.log_runtime
 def error_correct_cellbcs_to_whitelist(
     bam_fp: str,
-    whitelist: Union[str, List[str]],
+    whitelist: str | list[str],
     output_directory: str,
     n_threads: int = 1,
 ) -> str:
@@ -187,16 +186,17 @@ def error_correct_cellbcs_to_whitelist(
         At some point, we should update the pipeline so that if ngs-tools
         provides a pre-packaged whitelists, it uses that for those chemistries.
 
-    Returns:
+    Returns
+    -------
         Path to corrected BAM
     """
     if isinstance(whitelist, list):
         whitelist_set = set(whitelist)
     else:
-        with open(whitelist, "r") as f:
-            whitelist_set = set(
+        with open(whitelist) as f:
+            whitelist_set = {
                 line.strip() for line in f if not line.isspace()
-            )
+            }
     whitelist = list(whitelist_set)
 
     # Extract all raw barcodes and their qualities
@@ -272,7 +272,8 @@ def collapse_umis(
                 most probable at each position.
         n_threads: Number of threads to use.
 
-    Returns:
+    Returns
+    -------
         A DataFrame of collapsed reads.
     """
     # pathing written such that the bam file that is being converted does not
@@ -347,7 +348,8 @@ def resolve_umi_sequence(
             (i.e. average) reads per UMI in a cell needed for that cell to be
             retained during filtering
 
-    Returns:
+    Returns
+    -------
         A molecule table with unique mappings between cellBC-UMI pairs.
     """
     if plot:
@@ -426,7 +428,7 @@ def resolve_umi_sequence(
 
     if plot:
         # ---------------- Plot Diagnositics after Resolving ---------------- #
-        h = plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 10))
         plt.plot(list(top_reads.values()), list(total_numReads.values()), "r.")
         plt.ylabel("Total Reads")
         plt.xlabel("Number Reads for Picked Sequence")
@@ -436,7 +438,7 @@ def resolve_umi_sequence(
         )
         plt.close()
 
-        h = plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 10))
         plt.plot(list(first_reads.values()), list(second_reads.values()), "r.")
         plt.ylabel("Number Reads for Second Best Sequence")
         plt.xlabel("Number Reads for Picked Sequence")
@@ -459,8 +461,8 @@ def resolve_umi_sequence(
 @utilities.log_runtime
 def align_sequences(
     queries: pd.DataFrame,
-    ref_filepath: Optional[str] = None,
-    ref: Optional[str] = None,
+    ref_filepath: str | None = None,
+    ref: str | None = None,
     gap_open_penalty: float = 20,
     gap_extend_penalty: float = 1,
     method: Literal["local", "global"] = "local",
@@ -488,11 +490,13 @@ def align_sequences(
             perform global alignment using Needleman Wunsch.
         n_threads: Number of threads to use.
 
-    Returns:
+    Returns
+    -------
         A DataFrame mapping each sequence name to the CIGAR string, quality,
             and original query sequence.
 
-    Raises:
+    Raises
+    ------
         PreprocessError if both or neither `ref_filepath` and `ref` are
             provided, or if the `method` is not either "local" or "global".
     """
@@ -507,7 +511,6 @@ def align_sequences(
     else:
         raise PreprocessError("`method` must be either 'local' or 'global'.")
 
-    alignment_dictionary = {}
 
     if ref_filepath:
         ref = str(list(SeqIO.parse(ref_filepath, "fasta"))[0].seq)
@@ -521,13 +524,13 @@ def align_sequences(
     )
     all_sequences = list(set(queries["seq"]))
     alignments = []
-    for seq, aln in zip(
+    for _seq, aln in zip(
         all_sequences,
         ngs.utils.ParallelWithProgress(
             n_jobs=n_threads,
             total=len(all_sequences),
             desc="Aligning sequences to reference",
-        )(delayed(align_partial)(ref, seq) for seq in all_sequences),
+        )(delayed(align_partial)(ref, seq) for seq in all_sequences), strict=False,
     ):
         alignments.append(aln)
     alignment_table = pd.DataFrame(
@@ -557,10 +560,10 @@ def align_sequences(
 @utilities.log_runtime
 def call_alleles(
     alignments: pd.DataFrame,
-    ref_filepath: Optional[str] = None,
-    ref: Optional[str] = None,
-    barcode_interval: Tuple[int, int] = (20, 34),
-    cutsite_locations: List[int] = [112, 166, 220],
+    ref_filepath: str | None = None,
+    ref: str | None = None,
+    barcode_interval: tuple[int, int] = (20, 34),
+    cutsite_locations: list[int] = None,
     cutsite_width: int = 12,
     context: bool = True,
     context_size: int = 5,
@@ -583,9 +586,12 @@ def call_alleles(
         context_size: Number of bases to the right and left to include as
             context
 
-    Returns:
+    Returns
+    -------
         A DataFrame mapping each sequence alignment to the called indels.
     """
+    if cutsite_locations is None:
+        cutsite_locations = [112, 166, 220]
     if (ref is None) == (ref_filepath is None):
         raise PreprocessError(
             "Either `ref_filepath` or `ref` must be provided."
@@ -644,7 +650,7 @@ def call_alleles(
             " consider re-running align_sequences with a"
             " lower gap-open penalty, or using a separate"
             " alignment strategy.",
-            PreprocessWarning,
+            PreprocessWarning, stacklevel=2,
         )
 
     return alignments
@@ -655,7 +661,7 @@ def call_alleles(
 @utilities.log_runtime
 def error_correct_intbcs_to_whitelist(
     input_df: pd.DataFrame,
-    whitelist: Union[str, List[str]],
+    whitelist: str | list[str],
     intbc_dist_thresh: int = 1,
 ) -> pd.DataFrame:
     """Corrects all intBCs to the provided whitelist.
@@ -671,16 +677,17 @@ def error_correct_intbcs_to_whitelist(
         intbc_dist_thresh: The threshold specifying the maximum Levenshtein
             distance between the read sequence and whitelist to be corrected.
 
-    Returns:
+    Returns
+    -------
         A DataFrame of error corrected intBCs.
     """
     if isinstance(whitelist, list):
         whitelist_set = set(whitelist)
     else:
-        with open(whitelist, "r") as f:
-            whitelist_set = set(
+        with open(whitelist) as f:
+            whitelist_set = {
                 line.strip() for line in f if not line.isspace()
-            )
+            }
     whitelist = list(whitelist_set)
     unique_intbcs = list(input_df["intBC"].unique())
     corrections = {intbc: intbc for intbc in whitelist_set}
@@ -736,7 +743,8 @@ def error_correct_umis(
             spatial data.
         n_threads: Number of threads to use.
 
-    Returns:
+    Returns
+    -------
         A DataFrame of error corrected UMIs.
     """
     if (
@@ -861,7 +869,8 @@ def filter_molecule_table(
         plot: Indicates whether to plot the change in intBC and cellBC counts
             across filtering stages
 
-    Returns:
+    Returns
+    -------
         A filtered and corrected allele table of cellBC-UMI-allele groups
     """
     input_df["status"] = "good"
@@ -945,7 +954,7 @@ def filter_molecule_table(
 
     # Count total filtered cellBCs
     cellBC_count = 0
-    for name, grp in filtered_df.groupby(["cellBC"]):
+    for _name, _grp in filtered_df.groupby(["cellBC"]):
         cellBC_count += 1
 
     if plot:
@@ -958,9 +967,9 @@ def filter_molecule_table(
         ]
 
         # Plot Read Per UMI Histogram
-        h = plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 10))
         for n in stages:
-            ax = plt.hist(
+            plt.hist(
                 rc_profile[n], label=n, histtype="step", log=True, bins=200
             )
         plt.legend()
@@ -970,9 +979,9 @@ def filter_molecule_table(
         plt.savefig(os.path.join(output_directory, "reads_per_umi.png"))
         plt.close()
 
-        h = plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 10))
         for n in stages:
-            ax = plt.plot(upc_profile[n], label=n)
+            plt.plot(upc_profile[n], label=n)
         plt.legend()
         plt.ylabel("Number of UMIs")
         plt.xlabel("Rank Order")
@@ -982,9 +991,9 @@ def filter_molecule_table(
         plt.savefig(os.path.join(output_directory, "umis_per_cellbc.png"))
         plt.close()
 
-        h = plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 10))
         for n in stages:
-            ax = plt.hist(
+            plt.hist(
                 upi_profile[n], label=n, histtype="step", log=True, bins=200
             )
         plt.legend()
@@ -1062,7 +1071,8 @@ def call_lineage_groups(
             assignment
         plot: Indicates whether to generate plots
 
-    Returns:
+    Returns
+    -------
         None, saves output allele table to file.
     """
     logger.info(

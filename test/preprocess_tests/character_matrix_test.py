@@ -4,10 +4,9 @@ Tests for character matrix formation.
 
 import unittest
 
+import cassiopeia as cas
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
 
 
 class TestCharacterMatrixFormation(unittest.TestCase):

@@ -3,10 +3,8 @@ Tests for the sequence alignment in pipeline.py.
 """
 import unittest
 
-import numpy as np
-import pandas as pd
-
 import cassiopeia
+import pandas as pd
 
 
 class TestAlignSequence(unittest.TestCase):
@@ -76,7 +74,7 @@ class TestAlignSequence(unittest.TestCase):
 
         # since the gap open penalty is so large, enforce that
         # no gaps should occur
-        for ind, row in aln_df.iterrows():
+        for _ind, row in aln_df.iterrows():
 
             self.assertNotIn("D", row.CIGAR)
             self.assertNotIn("I", row.CIGAR)

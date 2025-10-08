@@ -4,7 +4,6 @@ the SpatialDataSimulator. The ClonalSpatialDataSimulator simulates spatial
 coordinates with a spatial constraints that clonal populations (i.e. subclones)
 are spatially localized together.
 """
-from typing import List, Optional, Tuple
 
 import networkx as nx
 import numpy as np
@@ -48,15 +47,16 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             indicated with True.
         random_seed: A seed for reproducibility
 
-    Raises:
+    Raises
+    ------
         DataSimulatorError if neither `shape` nor `space` are provided
     """
 
     def __init__(
         self,
-        shape: Optional[Tuple[int, ...]] = None,
-        space: Optional[np.ndarray] = None,
-        random_seed: Optional[int] = None,
+        shape: tuple[int, ...] | None = None,
+        space: np.ndarray | None = None,
+        random_seed: int | None = None,
     ):
         if None in (cv2, disc, neighbors):
             raise DataSimulatorError(
@@ -95,13 +95,14 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
     @staticmethod
     def __triangulation_graph(points: np.ndarray) -> nx.Graph:
-        """Compute a fully-connected Delaunay triangulation graph from a set of 
+        """Compute a fully-connected Delaunay triangulation graph from a set of
         points.
 
         Args:
             points: Points to triangulate
 
-        Returns:
+        Returns
+        -------
             Networkx graph
         """
         tri = spatial.Delaunay(points)
@@ -123,7 +124,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             points: Point coordinates
             k: Number of nearest neighbors
 
-        Returns:
+        Returns
+        -------
             Networkx graph
         """
         distances = neighbors.kneighbors_graph(points, k, mode="distance")
@@ -145,7 +147,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         Args:
             points: Points
 
-        Returns:
+        Returns
+        -------
             Networkx graph
         """
         return (
@@ -156,8 +159,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
     @staticmethod
     def __split_graph(
-        G: nx.Graph, sizes: Tuple[int, ...]
-    ) -> Tuple[List[int], ...]:
+        G: nx.Graph, sizes: tuple[int, ...]
+    ) -> tuple[list[int], ...]:
         """Generate a node partition of exact sizes.
 
         A set of seed nodes, the same size as the number of elements in `sizes`,
@@ -169,7 +172,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             G: Graph to partition
             sizes: Tuple of integers indicating the partition sizes
 
-        Returns:
+        Returns
+        -------
             Obtained node partition as a tuple of lists of integers
         """
         if not nx.is_connected(G):
@@ -182,7 +186,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
         # Find seeds
         seeds = dict(
-            zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes)
+            zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes, strict=False)
         )
 
         # Find minimum weighted paths from each seed to every node
@@ -218,13 +222,14 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
         Points are sampled using Poisson-Disc sampling to generate approximately
         equally-spaced points. The Bridson algorithm is used, which is
-        implemented in the poisson_disc package. 
+        implemented in the poisson_disc package.
         https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
 
         Args:
             n: Number of points to sample.
 
-        Returns:
+        Returns
+        -------
             `n` sampled points within `shape`
         """
         shape = self.space.shape
@@ -287,7 +292,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
                 G,
                 tuple(len(tree.leaves_in_subtree(child)) for child in children),
             )
-            for child, nodes in zip(children, assignments):
+            for child, nodes in zip(children, assignments, strict=False):
                 for i in node_idx[nodes]:
                     point_assignments[i] = child
         # Add leaf locations

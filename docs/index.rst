@@ -103,5 +103,5 @@ If you find this useful for your research, please consider citing Cassiopeia [Jo
    api/index
    user_guide
    contributing
-   authors
+   changelog
    references

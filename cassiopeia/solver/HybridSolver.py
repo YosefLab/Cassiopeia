@@ -8,21 +8,22 @@ infer relationships at the bottom of the phylogeny under construction.
 In Jones et al, the Cassiopeia-Hybrid algorithm is a HybridSolver that consists
 of a VanillaGreedySolver stacked on top of a ILPSolver instance.
 """
-from typing import Dict, List, Generator, Optional, Tuple
-
 import multiprocessing
+from collections.abc import Generator
+
 import networkx as nx
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
+import cassiopeia.data as cassdata
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.mixins import find_duplicate_groups, HybridSolverError
+from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
 from cassiopeia.solver import (
     CassiopeiaSolver,
-    dissimilarity_functions,
     GreedySolver,
+    dissimilarity_functions,
     solver_utilities,
 )
 
@@ -96,7 +97,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ):
@@ -144,7 +145,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
         )
 
-        logfile_names = iter([i for i in range(1, len(subproblems) + 1)])
+        logfile_names = iter(list(range(1, len(subproblems) + 1)))
 
         # multi-threaded bottom solver approach
         if self.threads > 1:
@@ -159,7 +160,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                                     cassiopeia_tree,
                                     subproblem[0],
                                     subproblem[1],
-                                    None if logfile is None else 
+                                    None if logfile is None else
                                         f"{logfile.split('.log')[0]}-"
                                         f"{next(logfile_names)}.log",
                                     layer,
@@ -178,12 +179,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                     cassiopeia_tree,
                     subproblem[0],
                     subproblem[1],
-                    None if logfile is None else 
+                    None if logfile is None else
                         f"{logfile.split('.log')[0]}-"
                         f"{next(logfile_names)}.log",
                     layer,
                 )
-                for subproblem in tqdm(subproblems, 
+                for subproblem in tqdm(subproblems,
                     total=len(subproblems),disable=not self.progress_bar)
             ]
 
@@ -193,7 +194,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
             # check that the only overlapping name is the root, else
             # add a new name so that we don't get edges across the tree
-            existing_nodes = [n for n in tree]
+            existing_nodes = list(tree)
 
             mapping = {}
             for n in subproblem_tree:
@@ -224,13 +225,13 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
     def apply_top_solver(
         self,
         character_matrix: pd.DataFrame,
-        samples: List[str],
+        samples: list[str],
         tree: nx.DiGraph,
         node_name_generator: Generator[str, None, None],
-        weights: Optional[Dict[int, Dict[int, float]]] = None,
+        weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
-        root: Optional[int] = None,
-    ) -> Tuple[int, List[Tuple[int, List[str]]]]:
+        root: int | None = None,
+    ) -> tuple[int, list[tuple[int, list[str]]]]:
         """Applies the top solver to samples.
 
         A helper method for applying the top solver to the samples
@@ -247,12 +248,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator: Indicator for missing data
             root: Node ID of the root in the subtree containing the samples.
 
-        Returns:
+        Returns
+        -------
             The ID of the node serving as the root of the tree containing the
                 samples, and a list of subproblems in the form
                 [subtree-root, subtree-samples].
         """
-
         if len(samples) == 1:
             return samples[0], [samples], tree
 
@@ -301,10 +302,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         cassiopeia_tree: CassiopeiaTree,
         root: int,
-        samples=List[str],
+        samples=list[str],
         logfile: str = "stdout.log",
-        layer: Optional[str] = None,
-    ) -> Tuple[nx.DiGraph, int]:
+        layer: str | None = None,
+    ) -> tuple[nx.DiGraph, int]:
         """Apply the bottom solver to subproblems.
 
         A private method for solving subproblems identified by the top-down
@@ -326,7 +327,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
 
-        Returns:
+        Returns
+        -------
             A tree in the form of a Networkx graph and the original root
                 identifier
 
@@ -343,12 +345,12 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         subproblem_character_matrix = character_matrix.loc[samples]
 
-        subtree_root = data_utilities.get_lca_characters(
+        data_utilities.get_lca_characters(
             subproblem_character_matrix.loc[samples].values.tolist(),
             cassiopeia_tree.missing_state_indicator,
         )
 
-        subtree = CassiopeiaTree(
+        subtree = cassdata.CassiopeiaTree(
             subproblem_character_matrix,
             missing_state_indicator=cassiopeia_tree.missing_state_indicator,
             priors=cassiopeia_tree.priors,
@@ -366,7 +368,7 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def assess_cutoff(
         self,
-        samples: List[str],
+        samples: list[str],
         character_matrix: pd.DataFrame,
         missing_state_indicator: int = -1,
     ) -> bool:
@@ -377,10 +379,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: Character matrix
             missing_state_indicator: Indicator for missing data.
 
-        Returns:
+        Returns
+        -------
             True if the cutoff is reached, False if not.
         """
-
         if self.cell_cutoff is None:
             root_states = data_utilities.get_lca_characters(
                 character_matrix.loc[samples].values.tolist(),
@@ -421,10 +423,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             tree: The tree after solving
             character_matrix: Character matrix
 
-        Returns:
+        Returns
+        -------
             The tree with duplicates added and spurious leaves pruned
         """
-
         duplicate_mappings = find_duplicate_groups(character_matrix)
 
         for i in duplicate_mappings:
@@ -440,10 +442,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             if l not in character_matrix.index:
                 to_drop.append(l)
 
-                parent = [p for p in tree.predecessors(l)][0]
+                parent = list(tree.predecessors(l))[0]
                 while tree.out_degree(parent) < 2:
                     to_drop.append(parent)
-                    parent = [p for p in tree.predecessors(parent)][0]
+                    parent = list(tree.predecessors(parent))[0]
 
         tree.remove_nodes_from(to_drop)
 

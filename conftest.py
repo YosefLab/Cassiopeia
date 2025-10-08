@@ -13,7 +13,7 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
     config.addinivalue_line("markers", "spatial: mark test as spatial to run")
-    
+
 
 
 def pytest_collection_modifyitems(config, items):
@@ -21,7 +21,7 @@ def pytest_collection_modifyitems(config, items):
     run_spatial = config.getoption("--runspatial")
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
     skip_spatial = pytest.mark.skip(reason="need --runspatial option to run")
-    
+
     for item in items:
         if "slow" in item.keywords and not run_slow:
             item.add_marker(skip_slow)

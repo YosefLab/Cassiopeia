@@ -4,12 +4,11 @@ cassiopeia.simulator.SequentialLineageTracingDataSimulator.
 """
 import unittest
 
-import networkx as nx
-import numpy as np
-import pandas as pd
-
 import cassiopeia as cas
+import networkx as nx
+import pandas as pd
 from cassiopeia.simulator.DataSimulator import DataSimulatorError
+
 
 class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
     def setUp(self):
@@ -118,65 +117,65 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
 
         # test number of cassettes is not a positive integer
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=0, size_of_cassette=2,
                 state_priors=self.priors
             )
 
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=0.1, size_of_cassette=2,
                 state_priors=self.priors
             )
 
         # test size of cassette is not a positive integer
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2, size_of_cassette=0,
                 state_priors=self.priors
             )
 
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2, size_of_cassette=0.1,
                 state_priors=self.priors
             )
 
         # test for invalid continuation rate type
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2,
-                size_of_cassette=2, 
+                size_of_cassette=2,
                 continuation_rate="invalid",
                 state_priors=self.priors
             )
 
         # test for invalid initiation rate type
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2,
-                size_of_cassette=2, 
+                size_of_cassette=2,
                 initiation_rate="invalid",
                 state_priors=self.priors
             )
 
         # test for positive continuation rate
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, 
+            cas.sim.SequentialLineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2,
                 continuation_rate=-0.2,state_priors=self.priors
             )
 
         # test for positive initiation rate
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, 
+            cas.sim.SequentialLineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2,
                 initiation_rate=-0.2,state_priors=self.priors
             )
 
         # test that state distribution adds up to 1
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 state_priors={1: 0.5, 2: 0.2},
@@ -184,7 +183,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
 
         # test negative state prior
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 state_priors={1: 1.2, 2: -0.2},
@@ -192,7 +191,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
 
         # incorrect state prior type
         with self.assertRaises(DataSimulatorError):
-            data_sim = cas.sim.SequentialLineageTracingDataSimulator(
+            cas.sim.SequentialLineageTracingDataSimulator(
                 number_of_cassettes=2,
                 size_of_cassette=2,
                 state_priors="invalid",
@@ -265,7 +264,7 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
             },
             orient="index",
             columns=[0, 1, 2, 3, 4, 5, 6, 7, 8],
-        ) 
+        )
 
         pd.testing.assert_frame_equal(
             expected_character_matrix, character_matrix

@@ -2,9 +2,9 @@
 Utility functions for building connectivity and similarity graphs for the
 Graph-Based solvers.
 """
-from typing import Callable, Dict, List, Optional, Union
-
 import itertools
+from collections.abc import Callable
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ import pandas as pd
 from cassiopeia.solver import solver_utilities
 
 
-def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
+def check_if_cut(u: int, v: int, cut: list[int]) -> bool:
     """Checks if two nodes are on opposite sides of a graph partition.
 
     Args:
@@ -21,18 +21,19 @@ def check_if_cut(u: int, v: int, cut: List[int]) -> bool:
         cut: A set of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns:
+    Returns
+    -------
         Whether nodes u and v are on the same side of the partition
     """
-    return ((u in cut) and (not v in cut)) or ((v in cut) and (not u in cut))
+    return ((u in cut) and (v not in cut)) or ((v in cut) and (u not in cut))
 
 
 def construct_connectivity_graph(
     character_matrix: pd.DataFrame,
-    mutation_frequencies: Dict[int, Dict[int, int]],
+    mutation_frequencies: dict[int, dict[int, int]],
     missing_state_indicator: int,
-    samples: List[str],
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    samples: list[str],
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> nx.Graph:
     """
     TODO: Optimize with numba?
@@ -57,7 +58,8 @@ def construct_connectivity_graph(
             their names in the original character matrix
         weights: A set of optional weights for edges in the connectivity graph
 
-    Returns:
+    Returns
+    -------
         A connectivity graph constructed over the sample set
     """
     sample_indices = solver_utilities.convert_sample_names_to_indices(
@@ -126,12 +128,12 @@ def construct_connectivity_graph(
             G.add_edge(i, j, weight=score)
 
     G_names = nx.relabel_nodes(
-        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
     )
     return G_names
 
 
-def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
+def max_cut_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
     """A greedy hill-climbing procedure to optimize a partition for the max-cut.
 
     The procedure is initialized by calculating the improvement to the max-cut
@@ -147,7 +149,8 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns:
+    Returns
+    -------
         A new partition that is a local maximum to the max-cut criterion
     """
     ip = {}
@@ -190,13 +193,13 @@ def max_cut_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
 def construct_similarity_graph(
     character_matrix: pd.DataFrame,
     missing_state_indicator: int,
-    samples: List[str],
+    samples: list[str],
     similarity_function: Callable[
-        [List[int], List[int], int, Optional[Dict[int, Dict[int, float]]]],
+        [list[int], list[int], int, dict[int, dict[int, float]] | None],
         float,
     ],
     threshold: int = 0,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
 ) -> nx.Graph:
     """
     TODO: Optimize with numba?
@@ -224,7 +227,8 @@ def construct_similarity_graph(
         threshold: A minimum similarity threshold
         weights: A set of optional weights for edges in the similarity graph
 
-    Returns:
+    Returns
+    -------
         A similarity graph constructed over the sample set
     """
     sample_indices = solver_utilities.convert_sample_names_to_indices(
@@ -261,12 +265,12 @@ def construct_similarity_graph(
             G.remove_edge(edge[0], edge[1])
 
     G_names = nx.relabel_nodes(
-        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index))
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
     )
     return G_names
 
 
-def spectral_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
+def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
     """A greedy hill-climbing procedure minimizing a modified normalized cut.
 
     The procedure minimizes a partition on a graph for the following objective
@@ -284,7 +288,8 @@ def spectral_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns:
+    Returns
+    -------
         A new partition that is a local minimum to the objective function
     """
 
@@ -295,7 +300,8 @@ def spectral_improve_cut(G: nx.Graph, cut: List[str]) -> List[str]:
         Args:
             node: The index of a sample and its respective node in the graph G
 
-        Returns:
+        Returns
+        -------
             None. Annotates the improvement_potentials dictionary
         """
         # If moving a node across the cut would result in one side having 0

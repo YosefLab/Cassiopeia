@@ -2,20 +2,19 @@ import unittest
 
 import networkx as nx
 import numpy as np
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
-from cassiopeia.simulator.LeafSubsampler import LeafSubsamplerError
+from cassiopeia.mixins import LeafSubsamplerError
 from cassiopeia.simulator.UniformLeafSubsampler import UniformLeafSubsampler
 
 
 class UniformLeafSubsamplerTest(unittest.TestCase):
     def test_bad_parameters(self):
         with self.assertRaises(LeafSubsamplerError):
-            uniform_sampler = UniformLeafSubsampler(
+            UniformLeafSubsampler(
                 ratio=0.5, number_of_leaves=400
             )
         with self.assertRaises(LeafSubsamplerError):
-            uniform_sampler = UniformLeafSubsampler()
+            UniformLeafSubsampler()
 
     def test_bad_number_of_samples(self):
         balanced_tree = nx.balanced_tree(2, 3, create_using=nx.DiGraph)
@@ -31,7 +30,7 @@ class UniformLeafSubsamplerTest(unittest.TestCase):
         balanced_tree = nx.balanced_tree(2, 3, create_using=nx.DiGraph)
         balanced_tree = nx.relabel_nodes(
             balanced_tree,
-            dict([(i, "node" + str(i)) for i in balanced_tree.nodes]),
+            {i: "node" + str(i) for i in balanced_tree.nodes},
         )
         balanced_tree.add_node("node15")
         balanced_tree.add_edge("node15", "node0")

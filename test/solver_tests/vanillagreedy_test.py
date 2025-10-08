@@ -1,21 +1,18 @@
+import itertools
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
 import pandas as pd
-
-import cassiopeia as cas
-from cassiopeia.mixins import GreedySolverError
+from cassiopeia.solver import missing_data_methods, solver_utilities
 from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
-from cassiopeia.solver import missing_data_methods
-from cassiopeia.solver import solver_utilities
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))
@@ -30,7 +27,7 @@ def find_triplet_structure(triplet, T):
 
 
 class VanillaGreedySolverTest(unittest.TestCase):
-    
+
     def test_basic_freq_dict(self):
         cm = pd.DataFrame.from_dict(
             {
@@ -153,7 +150,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         keep_rows = (
             cm.apply(
                 lambda x: [
-                    set(s) if type(s) == tuple else set([s]) for s in x.values
+                    set(s) if type(s) == tuple else {s} for s in x.values
                 ],
                 axis=0,
             )
@@ -556,8 +553,8 @@ class VanillaGreedySolverTest(unittest.TestCase):
             unique_character_matrix, unique_character_matrix.index
         )
 
-        self.assertEqual(set(left), set(["c4", "c5", "c6", "c3"]))
-        self.assertEqual(set(right), set(["c1", "c2"]))
+        self.assertEqual(set(left), {"c4", "c5", "c6", "c3"})
+        self.assertEqual(set(right), {"c1", "c2"})
 
         triplets = itertools.combinations(
             ["c1", "c2", "c3", "c4", "c5", "c6"], 3

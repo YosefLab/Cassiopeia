@@ -1,16 +1,17 @@
 """
-Implements the Cassiopeia-ILP solver, as described in Jones et al, Genome Biol
-2020. Briefly, this algorithm infers the maximum parsimony tree by solving for
+Implements the Cassiopeia-ILP solver, as described in Jones et al, Genome Biol 2020.
+
+Briefly, this algorithm infers the maximum parsimony tree by solving for
 a Steiner Tree over an inferred potential graph of potential intermediate
 evolutionary states.
 """
-import datetime
-import logging
-import time
-from typing import Dict, List, Optional
 
+import datetime
 import hashlib
 import itertools
+import logging
+import time
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -72,22 +73,17 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         convergence_time_limit: int = 12600,
         convergence_iteration_limit: int = 0,
         maximum_potential_graph_layer_size: int = 10000,
-        maximum_potential_graph_lca_distance: Optional[int] = None,
+        maximum_potential_graph_lca_distance: int | None = None,
         weighted: bool = False,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         mip_gap: float = 0.01,
         prior_transformation: str = "negative_log",
     ):
-
         super().__init__(prior_transformation)
         self.convergence_time_limit = convergence_time_limit
         self.convergence_iteration_limit = convergence_iteration_limit
-        self.maximum_potential_graph_layer_size = (
-            maximum_potential_graph_layer_size
-        )
-        self.maximum_potential_graph_lca_distance = (
-            maximum_potential_graph_lca_distance
-        )
+        self.maximum_potential_graph_layer_size = maximum_potential_graph_layer_size
+        self.maximum_potential_graph_lca_distance = maximum_potential_graph_lca_distance
         self.weighted = weighted
         self.seed = seed
         self.mip_gap = mip_gap
@@ -96,7 +92,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     def solve(
         self,
         cassiopeia_tree: CassiopeiaTree,
-        layer: Optional[str] = None,
+        layer: str | None = None,
         collapse_mutationless_edges: bool = False,
         logfile: str = "stdout.log",
     ):
@@ -119,12 +115,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 removes artifacts caused by arbitrarily resolving polytomies.
             logfile: Location to log progress.
         """
-
         if self.weighted and not cassiopeia_tree.priors:
-            raise ILPSolverError(
-                "Specify prior probabilities in the CassiopeiaTree for weighted"
-                " analysis."
-            )
+            raise ILPSolverError("Specify prior probabilities in the CassiopeiaTree for weighted analysis.")
 
         # configure logger
         if logfile is not None:
@@ -132,40 +124,27 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             file_handler.setLevel(logging.INFO)
             logger.addHandler(file_handler)
         logger.ch.setLevel(logging.getLogger().level)
-    
+
         # add to logger
         logger.info("Solving tree with the following parameters.")
         logger.info(f"Convergence time limit: {self.convergence_time_limit}")
-        logger.info(
-            f"Convergence iteration limit: {self.convergence_iteration_limit}"
-        )
-        logger.info(
-            "Max potential graph layer size: "
-            f"{self.maximum_potential_graph_layer_size}"
-        )
-        logger.info(
-            "Max potential graph lca distance: "
-            f"{self.maximum_potential_graph_lca_distance}"
-        )
+        logger.info(f"Convergence iteration limit: {self.convergence_iteration_limit}")
+        logger.info(f"Max potential graph layer size: {self.maximum_potential_graph_layer_size}")
+        logger.info(f"Max potential graph lca distance: {self.maximum_potential_graph_lca_distance}")
         logger.info(f"MIP gap: {self.mip_gap}")
 
         if layer:
             character_matrix = cassiopeia_tree.layers[layer].copy()
         else:
             character_matrix = cassiopeia_tree.character_matrix.copy()
-        if any(
-            is_ambiguous_state(state)
-            for state in character_matrix.values.flatten()
-        ):
+        if any(is_ambiguous_state(state) for state in character_matrix.values.flatten()):
             raise ILPSolverError("Solver does not support ambiguous states.")
 
         unique_character_matrix = character_matrix.drop_duplicates()
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(
-                cassiopeia_tree.priors, self.prior_transformation
-            )
+            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
 
         # find the root of the tree & generate process ID
         root = tuple(
@@ -177,28 +156,20 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         logger.info(f"Phylogenetic root: {root}")
 
-        pid = hashlib.md5(
-            "|".join([str(r) for r in root]).encode("utf-8")
-        ).hexdigest()
+        pid = hashlib.md5("|".join([str(r) for r in root]).encode("utf-8")).hexdigest()
 
         targets = [tuple(t) for t in unique_character_matrix.values.tolist()]
 
         if unique_character_matrix.shape[0] == 1:
             optimal_solution = nx.DiGraph()
             optimal_solution.add_node(root)
-            optimal_solution = (
-                self.__append_sample_names_and_remove_spurious_leaves(
-                    optimal_solution, character_matrix
-                )
-            )
+            optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(optimal_solution, character_matrix)
             cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
             return
 
         # determine diameter of the dataset by evaluating maximum distance to
         # the root from each sample
-        if (self.maximum_potential_graph_lca_distance is not None) and (
-            self.maximum_potential_graph_lca_distance > 0
-        ):
+        if (self.maximum_potential_graph_lca_distance is not None) and (self.maximum_potential_graph_lca_distance > 0):
             max_lca_distance = self.maximum_potential_graph_lca_distance
 
         else:
@@ -213,10 +184,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 for u in targets
             ]
 
-            for (i, j) in itertools.combinations(range(len(lca_distances)), 2):
-                max_lca_distance = max(
-                    max_lca_distance, lca_distances[i] + lca_distances[j] + 1
-                )
+            for i, j in itertools.combinations(range(len(lca_distances)), 2):
+                max_lca_distance = max(max_lca_distance, lca_distances[i] + lca_distances[j] + 1)
 
         # infer the potential graph
         potential_graph = self.infer_potential_graph(
@@ -229,36 +198,26 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # generate Steiner Tree ILP model
         nodes = list(potential_graph.nodes())
-        encoder = dict(zip(nodes, list(range(len(nodes)))))
-        decoder = dict((v, k) for k, v in encoder.items())
+        encoder = dict(zip(nodes, list(range(len(nodes))), strict=False))
+        decoder = {v: k for k, v in encoder.items()}
 
         _potential_graph = nx.relabel_nodes(potential_graph, encoder)
-        _targets = list(map(lambda x: encoder[x], targets))
+        _targets = [encoder[x] for x in targets]
         _root = encoder[root]
 
-        model, edge_variables = self.generate_steiner_model(
-            _potential_graph, _root, _targets
-        )
+        model, edge_variables = self.generate_steiner_model(_potential_graph, _root, _targets)
 
         # solve the ILP problem and return a set of proposed solutions
-        proposed_solutions = self.solve_steiner_instance(
-            model, edge_variables, _potential_graph, pid, logfile
-        )
+        proposed_solutions = self.solve_steiner_instance(model, edge_variables, _potential_graph, pid, logfile)
 
         # select best model and post process the solution
         optimal_solution = proposed_solutions[0]
         optimal_solution = nx.relabel_nodes(optimal_solution, decoder)
 
-        optimal_solution = self.post_process_steiner_solution(
-            optimal_solution, root
-        )
+        optimal_solution = self.post_process_steiner_solution(optimal_solution, root)
 
         # append sample names to the solution and populate the tree
-        optimal_solution = (
-            self.__append_sample_names_and_remove_spurious_leaves(
-                optimal_solution, character_matrix
-            )
-        )
+        optimal_solution = self.__append_sample_names_and_remove_spurious_leaves(optimal_solution, character_matrix)
 
         cassiopeia_tree.populate_tree(optimal_solution, layer=layer)
 
@@ -273,14 +232,12 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             internal_node_rename[i] = new_node_name
             seen_nodes.append(internal_node_rename[i])
         cassiopeia_tree.relabel_nodes(internal_node_rename)
-        
+
         cassiopeia_tree.collapse_unifurcations()
 
         # collapse mutationless edges
         if collapse_mutationless_edges:
-            cassiopeia_tree.collapse_mutationless_edges(
-                infer_ancestral_characters=True
-            )
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
         if logfile is not None:
             logger.removeHandler(file_handler)
@@ -291,7 +248,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: pd.DataFrame,
         pid: int,
         lca_height: int,
-        weights: Optional[Dict[int, Dict[int, str]]] = None,
+        weights: dict[int, dict[int, str]] | None = None,
         missing_state_indicator: int = -1,
     ) -> nx.DiGraph:
         """Infers a potential graph for the observed states.
@@ -318,49 +275,43 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 if these are available.
             missing_state_indicator: Indicator for missing data.
 
-        Returns:
+        Returns
+        -------
             A potential graph represented by a directed graph.
         """
-
-        potential_graph_edges = (
-            ilp_solver_utilities.infer_potential_graph_cython(
-                character_matrix.astype(str).values,
-                pid,
-                lca_height,
-                self.maximum_potential_graph_layer_size,
-                missing_state_indicator,
-            )
+        potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
+            character_matrix.astype(str).values,
+            pid,
+            lca_height,
+            self.maximum_potential_graph_layer_size,
+            missing_state_indicator,
         )
 
         if len(potential_graph_edges) == 0:
-            raise ILPSolverError("Potential Graph could not be found with" 
-                                " solver parameters. Try increasing"
-                                " `maximum_potential_graph_layer_size` or"
-                                " using another solver.")
+            raise ILPSolverError(
+                "Potential Graph could not be found with"
+                " solver parameters. Try increasing"
+                " `maximum_potential_graph_layer_size` or"
+                " using another solver."
+            )
 
         # the potential graph edges returned are strings in the form
         # "state1|state2|...", so we "decode" them here
         decoded_edges = []
         for e1, e2 in potential_graph_edges:
-            e1 = np.array(
-                e1.replace("-", str(missing_state_indicator)).split("|")
-            ).astype(int)
-            e2 = np.array(
-                e2.replace("-", str(missing_state_indicator)).split("|")
-            ).astype(int)
+            e1 = np.array(e1.replace("-", str(missing_state_indicator)).split("|")).astype(int)
+            e2 = np.array(e2.replace("-", str(missing_state_indicator)).split("|")).astype(int)
             decoded_edges.append((tuple(e1), tuple(e2)))
 
         potential_graph = nx.DiGraph()
         potential_graph.add_edges_from(decoded_edges)
 
-        return self.add_edge_weights(
-            potential_graph, weights, missing_state_indicator
-        )
+        return self.add_edge_weights(potential_graph, weights, missing_state_indicator)
 
     def add_edge_weights(
         self,
         potential_graph: nx.DiGraph(),
-        weights: Optional[Dict[int, Dict[int, str]]] = None,
+        weights: dict[int, dict[int, str]] | None = None,
         missing_state_indicator: int = -1,
     ) -> nx.DiGraph:
         """Annotates edges with the weight.
@@ -377,16 +328,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator: Variable to indicate missing state
                 information.
 
-        Returns:
+        Returns
+        -------
             The potential graph with edge weights added, stored in the `weight`
                 attribute.
         """
-
         weighted_graph = potential_graph.copy()
         for u, v in weighted_graph.edges():
-            weighted_graph[u][v][
-                "weight"
-            ] = dissimilarity_functions.weighted_hamming_distance(
+            weighted_graph[u][v]["weight"] = dissimilarity_functions.weighted_hamming_distance(
                 list(u), list(v), missing_state_indicator, weights
             )
 
@@ -395,8 +344,8 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
     def generate_steiner_model(
         self,
         potential_graph: nx.DiGraph,
-        root: List[int],
-        targets: List[List[int]],
+        root: list[int],
+        targets: list[list[int]],
     ):
         """Generates a Gurobi instance for Steiner Tree inference.
 
@@ -411,18 +360,16 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             targets: A list of nodes in the tree that serve as targets for the
                 Steiner Tree procedure.
 
-        Returns:
+        Returns
+        -------
             A Gurobipy Model instance and the edge variables involved.
         """
         try:
             import gurobipy
-        except ModuleNotFoundError:
-            raise ILPSolverError(
-                "Gurobi not found. You must install Gurobi & "
-                "gurobipy from source."
-            )
+        except ModuleNotFoundError as err:
+            raise ILPSolverError("Gurobi not found. You must install Gurobi & gurobipy from source.") from err
 
-        source_flow = {v: 0 for v in potential_graph.nodes()}
+        source_flow = dict.fromkeys(potential_graph.nodes(), 0)
 
         if root not in potential_graph.nodes:
             raise ILPSolverError("Root node not in potential graph.")
@@ -454,9 +401,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         # add edge-usage indicator variable
         edge_variables_binary = {}
         for u, v in potential_graph.edges():
-            edge_variables_binary[u, v] = model.addVar(
-                vtype=gurobipy.GRB.BINARY, name=f"edge_binary_{u}_{v}"
-            )
+            edge_variables_binary[u, v] = model.addVar(vtype=gurobipy.GRB.BINARY, name=f"edge_binary_{u}_{v}")
 
         model.update()
 
@@ -464,34 +409,19 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         # check if edge is used
         for u, v in potential_graph.edges():
-            model.addConstr(
-                edge_variables_binary[u, v]
-                >= (edge_variables[u, v] / len(targets))
-            )
+            model.addConstr(edge_variables_binary[u, v] >= (edge_variables[u, v] / len(targets)))
 
         # flow conservation constraints
         for v in potential_graph.nodes():
             model.addConstr(
-                (
-                    gurobipy.quicksum(
-                        edge_variables[u, v]
-                        for u in potential_graph.predecessors(v)
-                    )
-                    + source_flow[v]
-                )
-                == (
-                    gurobipy.quicksum(
-                        edge_variables[v, w]
-                        for w in potential_graph.successors(v)
-                    )
-                )
+                (gurobipy.quicksum(edge_variables[u, v] for u in potential_graph.predecessors(v)) + source_flow[v])
+                == (gurobipy.quicksum(edge_variables[v, w] for w in potential_graph.successors(v)))
             )
 
         ############ add objective #############
 
         objective_expression = gurobipy.quicksum(
-            edge_variables_binary[u, v] * potential_graph[u][v]["weight"]
-            for u, v in potential_graph.edges()
+            edge_variables_binary[u, v] * potential_graph[u][v]["weight"] for u, v in potential_graph.edges()
         )
         model.setObjective(objective_expression, gurobipy.GRB.MINIMIZE)
 
@@ -504,7 +434,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
         potential_graph: nx.DiGraph,
         pid: int,
         logfile: str,
-    ) -> List[nx.DiGraph]:
+    ) -> list[nx.DiGraph]:
         """Solves for a Steiner Tree from the Gurobi instance.
 
         This function works with a model that has been specified via Gurobi,
@@ -524,16 +454,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             pid: Process ID
             logfile: Location to store standard out.
 
-        Returns:
+        Returns
+        -------
             A list of solutions
         """
         try:
             import gurobipy
-        except ModuleNotFoundError:
-            raise ILPSolverError(
-                "Gurobi not found. You must install Gurobi & "
-                "gurobipy from source."
-            )
+        except ModuleNotFoundError as err:
+            raise ILPSolverError("Gurobi not found. You must install Gurobi & gurobipy from source.") from err
 
         model.params.LogToConsole = 0
 
@@ -570,9 +498,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             value_for_edge = model.getAttr("xn", edge_variables)
             for u, v in potential_graph.edges():
                 if value_for_edge[u, v] > 0:
-                    subgraph.add_edge(
-                        u, v, weight=potential_graph[u][v]["weight"]
-                    )
+                    subgraph.add_edge(u, v, weight=potential_graph[u][v]["weight"])
             solutions.append(subgraph)
 
         end_time = time.time()
@@ -588,17 +514,14 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             f"{hours} hours, {minutes} minutes, and {seconds} seconds."
         )
         if model.status != gurobipy.GRB.status.OPTIMAL:
-            logger.info(
-                f"(Process {pid}) Warning: Steiner tree solving did "
-                "not result in an optimal model."
-            )
+            logger.info(f"(Process {pid}) Warning: Steiner tree solving did not result in an optimal model.")
 
         return solutions
 
     def post_process_steiner_solution(
         self,
         solution: nx.DiGraph,
-        root: List[int],
+        root: list[int],
     ) -> nx.DiGraph:
         """Post-processes the returned graph from Gurobi.
 
@@ -612,36 +535,24 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             targets: A list of targets
             pid: Process id
 
-        Returns:
+        Returns
+        -------
             A cleaned up networkx solution
         """
-
         processed_solution = solution.copy()
         for edge in nx.selfloop_edges(processed_solution):
             processed_solution.remove_edge(edge[0], edge[1])
 
         # remove spurious roots
-        spurious_roots = [
-            n
-            for n in processed_solution
-            if processed_solution.in_degree(n) == 0
-        ]
+        spurious_roots = [n for n in processed_solution if processed_solution.in_degree(n) == 0]
         while len(spurious_roots) > 1:
             for r in spurious_roots:
                 if r != root:
                     processed_solution.remove_node(r)
-            spurious_roots = [
-                n
-                for n in processed_solution
-                if processed_solution.in_degree(n) == 0
-            ]
+            spurious_roots = [n for n in processed_solution if processed_solution.in_degree(n) == 0]
 
         # impose that each node only has one parent
-        non_tree_nodes = [
-            n
-            for n in processed_solution.nodes()
-            if processed_solution.in_degree(n) > 1
-        ]
+        non_tree_nodes = [n for n in processed_solution.nodes() if processed_solution.in_degree(n) > 1]
         for node in non_tree_nodes:
             parents = processed_solution.predecessors(node)
             parents = sorted(
@@ -685,19 +596,16 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
                 names to.
             character_matrix: Character matrix
 
-        Returns:
+        Returns
+        -------
             A solution with extra leaves corresponding to sample names.
         """
-
         root = [n for n in solution if solution.in_degree(n) == 0][0]
 
-        sample_lookup = character_matrix.apply(
-            lambda x: tuple(x.values), axis=1
-        )
+        sample_lookup = character_matrix.apply(lambda x: tuple(x.values), axis=1)
 
         states_added = []
         for node in nx.dfs_postorder_nodes(solution, source=root):
-
             # append nodes with this character state at the deepest place
             # possible
             if node in states_added:
@@ -714,10 +622,7 @@ class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
             if l not in character_matrix.index:
                 curr_parent = list(solution.predecessors(l))[0]
                 solution.remove_node(l)
-                while (
-                    len(list(solution.successors(curr_parent))) < 1
-                    and curr_parent != root
-                ):
+                while len(list(solution.successors(curr_parent))) < 1 and curr_parent != root:
                     next_parent = list(solution.predecessors(curr_parent))[0]
                     solution.remove_node(curr_parent)
                     curr_parent = next_parent

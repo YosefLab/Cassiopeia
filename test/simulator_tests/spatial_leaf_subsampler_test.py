@@ -6,7 +6,6 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
-
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
 from cassiopeia.simulator.SpatialLeafSubsampler import SpatialLeafSubsampler
@@ -18,7 +17,7 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         balanced_tree = nx.balanced_tree(2, 2, create_using=nx.DiGraph)
         balanced_tree = nx.relabel_nodes(
             balanced_tree,
-            dict([(i, "node" + str(i)) for i in balanced_tree.nodes]),
+            {i: "node" + str(i) for i in balanced_tree.nodes},
         )
         tree = CassiopeiaTree(tree=balanced_tree)
         self.tree = tree.copy()
@@ -47,27 +46,27 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
     def test_bad_init_parameters(self):
         # both ratio and number_of_leaves provided
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(
+            SpatialLeafSubsampler(
                 ratio=0.5, number_of_leaves=1, space=self.space_2d)
         # neither space nor bounding_box provided
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler()
+            SpatialLeafSubsampler()
         # both space and bounding_box provided
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(space=self.space_2d, 
+            SpatialLeafSubsampler(space=self.space_2d,
                 bounding_box=self.bounding_box_2d)
         # negative number of leaves
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(number_of_leaves=-1, 
+            SpatialLeafSubsampler(number_of_leaves=-1,
                 space=self.space_2d)
         # ratio > 1
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(ratio=2, space=self.space_2d)
+            SpatialLeafSubsampler(ratio=2, space=self.space_2d)
         # merge cells without space
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(bounding_box=self.bounding_box_3d,
+            SpatialLeafSubsampler(bounding_box=self.bounding_box_3d,
                         merge_cells=True)
-        
+
     def test_bad_subsample_parameters(self):
         # tree without spatial attributes
         with self.assertRaises(LeafSubsamplerError):
@@ -93,7 +92,7 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
             sampler.subsample_leaves(self.tree_2d)
         # test number_of_leaves too large
         with self.assertRaises(LeafSubsamplerError):
-            sampler = SpatialLeafSubsampler(number_of_leaves=100, 
+            sampler = SpatialLeafSubsampler(number_of_leaves=100,
                 space=self.space_3d)
             sampler.subsample_leaves(self.tree_3d)
 
@@ -102,14 +101,14 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         balanced_tree = nx.balanced_tree(2, 1, create_using=nx.DiGraph)
         balanced_tree = nx.relabel_nodes(
             balanced_tree,
-            dict([(i, "node" + str(i)) for i in balanced_tree.nodes]),
+            {i: "node" + str(i) for i in balanced_tree.nodes},
         )
         tree = CassiopeiaTree(tree=balanced_tree)
         tree.set_attribute("node1", "spatial", (.001,0))
         tree.set_attribute("node2", "spatial", (0,.001))
         sampler = SpatialLeafSubsampler(space=self.space_2d)
         with self.assertWarns(LeafSubsamplerWarning):
-            res = sampler.subsample_leaves(tree)
+            sampler.subsample_leaves(tree)
 
     def test_subsample_3d_tree(self):
         # test subsampling using bounding box
@@ -163,7 +162,7 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         balanced_tree = nx.balanced_tree(2, 2, create_using=nx.DiGraph)
         balanced_tree = nx.relabel_nodes(
             balanced_tree,
-            dict([(i, "node" + str(i)) for i in balanced_tree.nodes]),
+            {i: "node" + str(i) for i in balanced_tree.nodes},
         )
         balanced_tree.add_node("root")
         balanced_tree.add_edge("root", "node0")

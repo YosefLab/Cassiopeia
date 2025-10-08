@@ -1,21 +1,16 @@
-"""
-General utilities for the datasets encountered in Cassiopeia.
-"""
+"""General utilities for the datasets encountered in Cassiopeia."""
 
 import collections
-from joblib import delayed
 import multiprocessing
-from multiprocessing import shared_memory
-from typing import Callable, Dict, List, Optional, Tuple, Union
 import warnings
+from collections.abc import Callable
+from multiprocessing import shared_memory
 
 import ete3
 import networkx as nx
-import ngs_tools
 import numba
 import numpy as np
 import pandas as pd
-import re
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
@@ -24,9 +19,9 @@ from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 def get_lca_characters(
-    vecs: List[Union[List[int], List[Tuple[int, ...]]]],
+    vecs: list[list[int] | list[tuple[int, ...]]],
     missing_state_indicator: int,
-) -> List[int]:
+) -> list[int]:
     """Builds the character vector of the LCA of a list of character vectors,
     obeying Camin-Sokal Parsimony.
 
@@ -44,7 +39,8 @@ def get_lca_characters(
         vecs: A list of character vectors to generate an LCA for
         missing_state_indicator: The character representing missing values
 
-    Returns:
+    Returns
+    -------
         A list representing the character vector of the LCA
 
     """
@@ -100,10 +96,10 @@ def newick_to_networkx(newick_string: str) -> nx.DiGraph:
     Args:
         newick_string: A newick string.
 
-    Returns:
+    Returns
+    -------
         A networkx DiGraph.
     """
-
     tree = ete3.Tree(newick_string, 1)
     return ete3_to_networkx(tree)
 
@@ -114,10 +110,10 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     Args:
         tree: an ete3 Tree object
 
-    Returns:
+    Returns
+    -------
         a networkx DiGraph
     """
-
     g = nx.DiGraph()
     internal_node_iter = 0
     for n in tree.traverse():
@@ -147,7 +143,8 @@ def to_newick(
         record_node_names: Whether to record internal node names on the tree in
             the newick string
 
-    Returns:
+    Returns
+    -------
         A newick string representing the topology of the tree
     """
 
@@ -166,7 +163,7 @@ def to_newick(
             name_string = f"{_name}"
 
         return (
-            "%s" % (_name,) + weight_string
+            f"{_name}" + weight_string
             if is_leaf
             else (
                 "("
@@ -187,7 +184,7 @@ def compute_dissimilarity_map(
     cm: np.array([[]]),
     C: int,
     dissimilarity_function: Callable,
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
     missing_state_indicator: int = -1,
     threads: int = 1,
 ) -> np.array:
@@ -205,7 +202,8 @@ def compute_dissimilarity_map(
         missing_state_indicator: State indicating missing data
         threads: Number of threads to use for distance computation.
 
-    Returns:
+    Returns
+    -------
         A dissimilarity mapping as a flattened array.
     """
     # check to see if any ambiguous characters are present
@@ -234,7 +232,7 @@ def compute_dissimilarity_map(
     except TypeError:
         warnings.warn(
             "Failed to numbaize dissimilarity function. Falling back to Python.",
-            CassiopeiaTreeWarning,
+            CassiopeiaTreeWarning, stacklevel=2,
         )
         numbaize = False
         dissimilarity_func = dissimilarity_function
@@ -296,11 +294,11 @@ def __compute_dissimilarity_map_wrapper(
     dissimilarity_func: Callable,
     cm: np.array([[]]),
     batch_indices: np.array([]),
-    weights: Optional[Dict[int, Dict[int, float]]] = None,
+    weights: dict[int, dict[int, float]] | None = None,
     missing_state_indicator: int = -1,
     numbaize: bool = True,
     ambiguous_present: bool = False,
-) -> Tuple[np.array, np.array]:
+) -> tuple[np.array, np.array]:
     """Wrapper function for parallel computation of dissimilarity maps.
 
     This is a wrapper function that is intended to interface with
@@ -326,7 +324,8 @@ def __compute_dissimilarity_map_wrapper(
             was compatible with jit-compilation.
         ambiguous_present: Whether or not ambiguous states are present.
 
-    Returns:
+    Returns
+    -------
         A tuple of (batch_indices, batch_results) indicating the dissimilarities
             for the comparisons specified by batch_indices.
     """
@@ -347,7 +346,7 @@ def __compute_dissimilarity_map_wrapper(
         cm=np.array([[]]),
         batch_indices=np.array([]),
         missing_state_indicator=-1,
-        nb_weights={},
+        nb_weights={},  # noqa: B006
     ):
         batch_results = np.zeros(len(batch_indices), dtype=np.float64)
         k = 0
@@ -391,10 +390,10 @@ def __compute_dissimilarity_map_wrapper(
 
 def sample_bootstrap_character_matrices(
     character_matrix: pd.DataFrame,
-    prior_probabilities: Optional[Dict[int, Dict[int, float]]] = None,
+    prior_probabilities: dict[int, dict[int, float]] | None = None,
     num_bootstraps: int = 10,
-    random_state: Optional[np.random.RandomState] = None,
-) -> List[Tuple[pd.DataFrame, Dict[int, Dict[int, float]]]]:
+    random_state: np.random.RandomState | None = None,
+) -> list[tuple[pd.DataFrame, dict[int, dict[int, float]]]]:
     """Generates bootstrapped character matrices from a character matrix.
 
     Ingests a character matrix and randomly creates bootstrap samples by
@@ -410,11 +409,11 @@ def sample_bootstrap_character_matrices(
         num_bootstraps: Number of bootstrap samples to create.
         random_state: A numpy random state to from which to draw samples
 
-    Returns:
+    Returns
+    -------
         A list of bootstrap samples in the form
             (bootstrap_character_matrix, bootstrap_priors).
     """
-
     bootstrap_samples = []
     M = character_matrix.shape[1]
     for _ in range(num_bootstraps):
@@ -432,7 +431,7 @@ def sample_bootstrap_character_matrices(
 
         new_priors = {}
         if prior_probabilities:
-            for i, cut_site in zip(range(M), sampled_cut_sites):
+            for i, cut_site in zip(range(M), sampled_cut_sites, strict=False):
                 new_priors[i] = prior_probabilities[cut_site]
 
         bootstrap_samples.append((bootstrapped_character_matrix, new_priors))
@@ -442,16 +441,16 @@ def sample_bootstrap_character_matrices(
 
 def sample_bootstrap_allele_tables(
     allele_table: pd.DataFrame,
-    indel_priors: Optional[pd.DataFrame] = None,
+    indel_priors: pd.DataFrame | None = None,
     num_bootstraps: int = 10,
-    random_state: Optional[np.random.RandomState] = None,
-    cut_sites: Optional[List[str]] = None,
-) -> List[
-    Tuple[
+    random_state: np.random.RandomState | None = None,
+    cut_sites: list[str] | None = None,
+) -> list[
+    tuple[
         pd.DataFrame,
-        Dict[int, Dict[int, float]],
-        Dict[int, Dict[int, str]],
-        List[str],
+        dict[int, dict[int, float]],
+        dict[int, dict[int, str]],
+        list[str],
     ]
 ]:
     """Generates bootstrap character matrices from an allele table.
@@ -471,12 +470,13 @@ def sample_bootstrap_allele_tables(
         cut_sites: Columns in the AlleleTable to treat as cut sites. If None,
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
-    Returns:
+
+    Returns
+    -------
         A list of bootstrap samples in the form of tuples
             (bootstrapped character matrix, prior dictionary,
             state to indel mapping, bootstrapped intBC set)
     """
-
     if cut_sites is None:
         cut_sites = preprocessing_utilities.get_default_cut_site_columns(
             allele_table
@@ -528,7 +528,7 @@ def sample_bootstrap_allele_tables(
     return bootstrap_samples
 
 
-def resolve_most_abundant(state: Tuple[int, ...]) -> int:
+def resolve_most_abundant(state: tuple[int, ...]) -> int:
     """Resolve an ambiguous character by selecting the most abundant.
 
     This function is designed to be used with
@@ -539,7 +539,8 @@ def resolve_most_abundant(state: Tuple[int, ...]) -> int:
     Args:
         state: Ambiguous state as a tuple of integers
 
-    Returns:
+    Returns
+    -------
         Selected state as a single integer
     """
     most_common = collections.Counter(state).most_common()
@@ -551,7 +552,7 @@ def resolve_most_abundant(state: Tuple[int, ...]) -> int:
 def compute_phylogenetic_weight_matrix(
     tree: CassiopeiaTree,
     inverse: bool = False,
-    inverse_fn: Callable[[Union[int, float]], float] = lambda x: 1 / x,
+    inverse_fn: Callable[[int | float], float] = lambda x: 1 / x,
 ) -> pd.DataFrame:
     """Computes the phylogenetic weight matrix.
 
@@ -568,7 +569,8 @@ def compute_phylogenetic_weight_matrix(
         inverse: Convert distances to proximities
         inverse_fn: Inverse function (default = 1 / x)
 
-    Returns:
+    Returns
+    -------
         An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
@@ -603,10 +605,10 @@ def net_relatedness_index(
         indices_1: Indices corresponding to the first group.
         indices_2: Indices corresponding to the second group.
 
-    Returns:
+    Returns
+    -------
         The Net Relatedness Index (NRI)
     """
-
     nri = 0
     for i in indices_1:
         for j in indices_2:
@@ -617,9 +619,9 @@ def net_relatedness_index(
 
 def compute_inter_cluster_distances(
     tree: CassiopeiaTree,
-    meta_item: Optional[str] = None,
-    meta_data: Optional[pd.DataFrame] = None,
-    dissimilarity_map: Optional[pd.DataFrame] = None,
+    meta_item: str | None = None,
+    meta_data: pd.DataFrame | None = None,
+    dissimilarity_map: pd.DataFrame | None = None,
     distance_function: Callable = net_relatedness_index,
     **kwargs,
 ) -> pd.DataFrame:
@@ -646,7 +648,8 @@ def compute_inter_cluster_distances(
             used.
         **kwargs: Arguments to pass to the distance function.
 
-    Returns:
+    Returns
+    -------
         A K x K distance matrix.
     """
     meta_data = tree.cell_meta[meta_item] if (meta_data is None) else meta_data

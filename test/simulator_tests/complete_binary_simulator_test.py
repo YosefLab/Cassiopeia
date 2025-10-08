@@ -1,4 +1,3 @@
-import numpy as np
 import unittest
 
 from cassiopeia.mixins import TreeSimulatorError

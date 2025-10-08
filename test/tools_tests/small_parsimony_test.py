@@ -3,11 +3,10 @@ Tests for cassiopeia/tools/small_parsimony.py
 """
 import unittest
 
+import cassiopeia as cas
 import networkx as nx
 import numpy as np
 import pandas as pd
-
-import cassiopeia as cas
 from cassiopeia.mixins import (
     CassiopeiaError,
     CassiopeiaTreeError,

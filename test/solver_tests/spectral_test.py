@@ -1,20 +1,18 @@
+import itertools
 import unittest
 
-import itertools
+import cassiopeia as cas
 import networkx as nx
 import pandas as pd
-
-import cassiopeia as cas
+from cassiopeia.solver import dissimilarity_functions, graph_utilities
 from cassiopeia.solver.SpectralSolver import SpectralSolver
-from cassiopeia.solver import graph_utilities
-from cassiopeia.solver import dissimilarity_functions
 
 
 def find_triplet_structure(triplet, T):
     a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = [node for node in nx.ancestors(T, a)]
-    b_ancestors = [node for node in nx.ancestors(T, b)]
-    c_ancestors = [node for node in nx.ancestors(T, c)]
+    a_ancestors = list(nx.ancestors(T, a))
+    b_ancestors = list(nx.ancestors(T, b))
+    c_ancestors = list(nx.ancestors(T, c))
     ab_common = len(set(a_ancestors) & set(b_ancestors))
     ac_common = len(set(a_ancestors) & set(c_ancestors))
     bc_common = len(set(b_ancestors) & set(c_ancestors))

@@ -1,8 +1,5 @@
-"""
-Utilities for spatial lineage-tracing module.
-"""
+"""Utilities for spatial lineage-tracing module."""
 
-from typing import Tuple
 
 import anndata
 import networkx as nx
@@ -31,15 +28,15 @@ def get_spatial_graph_from_anndata(
             this is the number of nearest neighbors to connect to a node.
         neighborhood_radius: Intead of passing in `neighborhood_size`, this
             is the radius of the connectivity graph.
-        connect_key: Key used to store spatial connectivities in 
+        connect_key: Key used to store spatial connectivities in
             `adata.obsp`. This will be passed into the `key_added` argument
             of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
-            of the form `{connect_key}_connectivities`. 
+            of the form `{connect_key}_connectivities`.
 
-    Returns:
+    Returns
+    -------
         A networkx object storing the spatial graph.
     """
-
     # Optional dependencies that are required for 3D plotting
     sq = try_import("squidpy")
     if sq is None:
@@ -69,11 +66,11 @@ def get_spatial_graph_from_anndata(
     node_map = dict(
             zip(
                 range(adata.obsp[f'{connect_key}_connectivities'].shape[0]),
-                adata.obs_names,
+                adata.obs_names, strict=False,
             )
         )
     spatial_graph = nx.relabel_nodes(spatial_graph, node_map)
-    
+
     return spatial_graph
 
 
@@ -85,7 +82,7 @@ def impute_single_state(
     number_of_hops: int = 1,
     max_neighbor_distance: float = np.inf,
     coordinates: pd.DataFrame | None = None,
-) -> Tuple[int, float, int]:
+) -> tuple[int, float, int]:
     """Imputes missing character state for a cell at a defined position.
 
     Args:
@@ -96,10 +93,11 @@ def impute_single_state(
         number_of_hops: Number of hops to make during imputation.
         max_neighbor_distance: Maximum distance to neighbor to be used for
             imputation.
-    Returns:
+
+    Returns
+    -------
         The state, the frequency of votes, and the absolute number of votes
     """
-
     votes = []
     for _, node in nx.bfs_edges(
         neighborhood_graph, cell, depth_limit=number_of_hops
@@ -108,7 +106,7 @@ def impute_single_state(
             continue
 
         distance = 0
-        if not (coordinates is None):
+        if coordinates is not None:
             distance = np.sqrt(
                 np.sum(
                     (
