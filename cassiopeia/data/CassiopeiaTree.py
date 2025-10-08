@@ -2228,7 +2228,35 @@ class CassiopeiaTree:
         dissimilarity_map_key: str | None = "distances",
         preserve_layers: bool = True,
         preserve_metadata: bool = True
-    ):        
+    ):
+        """
+        Convert a CassiopeiaTree object to TreeData format.
+
+        This is a  wrapper around
+        `utilities.cassiopeia_to_treedata`.
+
+        Args:
+        cassiopeia_tree: CassiopeiaTree
+            Source CassiopeiaTree object to convert
+        tree_key: str, default "tree"
+            Key name for the tree in TreeData.obst
+        characters_key: str, default "characters"
+            Key name for character matrix in TreeData.obsm
+        dissimilarity_map_key: str, default "distances"
+            Key name for dissimilarity map in TreeData.obsp
+        preserve_layers: bool, default True
+            Whether to preserve character matrix layers in obsm
+        preserve_metadata: bool, default True
+            Whether to preserve cell and character metadata
+
+        Returns:
+        TreeData
+            Converted TreeData object with:
+            - X = None
+            - obsm[characters_key] = character matrix (if present)
+            - obst[tree_key] = tree topology (if present)
+            - obsp[dissimilarity_map_key] = dissimilarity map (if present)
+        """
         return utilities.cassiopeia_to_treedata(
             cassiopeia_tree=self,
             tree_key=tree_key,
