@@ -14,16 +14,11 @@ build:
             "src/cassiopeia/solver/ilp_solver_utilities.pyx",
         ], language_level="3")
         PY
+    create_environment:
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
     build:
       html:
-        - sphinx-build -b html -T -n -d docs/_build/doctrees docs docs/_build/html
-
-sphinx:
-  configuration: docs/conf.py
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-      - docs
-      - spatial
+        - uvx hatch run docs:build
+        - mv docs/_build $READTHEDOCS_OUTPUT
