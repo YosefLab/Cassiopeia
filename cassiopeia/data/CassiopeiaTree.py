@@ -2220,3 +2220,20 @@ class CassiopeiaTree:
                 else:
                     new_child_states.append(child_state)
             self.set_character_states(child, new_child_states)
+
+    def to_treedata(
+        self,
+        tree_key: str = "tree",
+        characters_key: str = "characters",
+        dissimilarity_map_key: str | None = "distances",
+        preserve_layers: bool = True,
+        preserve_metadata: bool = True
+    ):        
+        return utilities.cassiopeia_to_treedata(
+            cassiopeia_tree=self,
+            tree_key=tree_key,
+            characters_key=characters_key,
+            dissimilarity_map_key=dissimilarity_map_key,
+            preserve_layers=preserve_layers,
+            preserve_metadata=preserve_metadata,
+        )

@@ -22,7 +22,7 @@ from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeWarning, is_ambiguous_state
-from cassiopeia.mixins.errors import CassiopeiaError
+from cassiopeia.mixins.errors import CassiopeiaError, CassiopeiaTreeError
 from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
@@ -686,28 +686,27 @@ def compute_inter_cluster_distances(
     return inter_cluster_distances
 
 def cassiopeia_to_treedata(
-    cassiopeia_tree,
+    cassiopeia_tree: CassiopeiaTree,
     tree_key: str = "tree",
     characters_key: str = "characters",
-    dissimilarity_map_key: str = "distances",
+    dissimilarity_map_key: str | None = "distances",
     preserve_layers: bool = True,
     preserve_metadata: bool = True
-
 ) -> TreeData:
     """
     Convert a CassiopeiaTree object to TreeData format.
     Args:
-    cassiopeia_tree : CassiopeiaTree
+    cassiopeia_tree: CassiopeiaTree
         Source CassiopeiaTree object to convert
-    tree_key : str, default "tree" 
+    tree_key: str, default "tree" 
         Key name for the tree in TreeData.obst
-    characters_key : str, default "characters"
+    characters_key: str, default "characters"
         Key name for character matrix in TreeData.obsm
-    dissimilarity_map_key : str, default "distances"
+    dissimilarity_map_key: str, default "distances"
         Key name for dissimilarity map in TreeData.obsp
-    preserve_layers : bool, default True
+    preserve_layers: bool, default True
         Whether to preserve character matrix layers in obsm
-    preserve_metadata : bool, default True
+    preserve_metadata: bool, default True
         Whether to preserve cell and character metadata
     
     Returns:
@@ -724,33 +723,30 @@ def cassiopeia_to_treedata(
     var = None
     
     # Validate that we have both character matrix and tree
-    if cassiopeia_tree.character_matrix is None:
-        raise CassiopeiaError(
-            "CassiopeiaTree must have a character matrix to convert to TreeData."
-        )
-    
+    obsm = {}
+    obs = None
+    if cassiopeia_tree.character_matrix is not None:
+        character_matrix = cassiopeia_tree.character_matrix
+        obsm[characters_key] = character_matrix.values
+        obs = pd.DataFrame(index=character_matrix.index)
+
+    obst = {}
     try:
         tree_topology = cassiopeia_tree.get_tree_topology()
-    except CassiopeiaError:
-        raise CassiopeiaError(
-            "CassiopeiaTree must have a tree topology to convert to TreeData."
-        ) from None
-    
-    # Extract character matrix for obsm 
-    character_matrix = cassiopeia_tree.character_matrix
-    obsm = {characters_key: character_matrix.values}
-    
-    # Extract tree topology for obst
-    obst = {tree_key: tree_topology}
+        if tree_topology is not None:
+            obst[tree_key] = tree_topology
+    except CassiopeiaTreeError:
+        if cassiopeia_tree.character_matrix is None:
+            raise CassiopeiaError(
+                "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
+            )
 
     # Extract observation metadata (obs) 
-    obs = None
     if preserve_metadata and cassiopeia_tree.cell_meta is not None:
-        obs = cassiopeia_tree.cell_meta.copy()
-    else:
-        # Create minimal obs DataFrame with cell IDs
-        if character_matrix is not None:
-            obs = pd.DataFrame(index=character_matrix.index)
+        if obs is None:
+            obs = cassiopeia_tree.cell_meta.copy()
+        else:
+            obs = obs.join(cassiopeia_tree.cell_meta.copy(), how="left")
     
     # Extract character matrix layers into obsm 
     if preserve_layers and hasattr(cassiopeia_tree, 'layers'):

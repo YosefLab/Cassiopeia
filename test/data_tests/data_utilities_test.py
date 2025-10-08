@@ -583,6 +583,7 @@ class TestDataUtilities(unittest.TestCase):
         self.assertEqual(obs_tdata.obsm["characters"].shape, (4, 3))
         self.assertEqual(len(obs_tdata.obst["tree"].nodes), 7)
     
+    # new tests needed
     def test_missing_cm_tree(self):
         cas_tree = CassiopeiaTree()
         with self.assertRaises(CassiopeiaError):
