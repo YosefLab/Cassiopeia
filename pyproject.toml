@@ -1,11 +1,9 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-# No Cython here so end-users don't need it; numpy headers come from
-# oldest-supported-numpy at build time only.
 requires = [
-  "oldest-supported-numpy",
   "setuptools>=64",
   "wheel",
+  "oldest-supported-numpy",
 ]
 
 [project]
@@ -33,7 +31,6 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: Python :: 3.13",
 ]
 dependencies = [
   "anndata>=0.11",
@@ -53,20 +50,19 @@ dependencies = [
   "parameterized",
   "pysam>=0.14.1",
   "pyseq-align>=1.0.2",
-  # Cython removed from runtime deps
   "pyyaml>=3.12",
   "scipy>=1.2",
   "tqdm>=4",
   "typing-extensions>=3.7.4",
 ]
 
-optional-dependencies.dev = [
-  "cython>=3.0.6", # dev-only, to regenerate .c from .pyx when releasing
+[project.optional-dependencies]
+dev = [
+  "cython>=3.0.6",    # for regenerating .c from .pyx when releasing
   "pre-commit",
   "twine>=4.0.2",
 ]
-
-optional-dependencies.doc = [
+doc = [
   "docutils>=0.8,!=0.18.*,!=0.19.*",
   "ipykernel",
   "ipython",
@@ -79,93 +75,100 @@ optional-dependencies.doc = [
   "sphinx-book-theme>=1",
   "sphinx-copybutton",
   "sphinx-design",
+  "sphinx-gallery",
   "sphinx-tabs",
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
+  "nbsphinx",
+  "nbsphinx-link",
+  "scanpydoc",
 ]
-
-optional-dependencies.spatial = [
+spatial = [
   "scikit-image>=0.19.1",
   "scikit-learn>=1.0.2",
   "squidpy>=1.6",
 ]
-
-optional-dependencies.test = [
+test = [
   "coverage>=7.10",
   "joblib",
   "pytest",
   "pytest-cov",
 ]
 
-urls.Documentation = "https://cassiopeia-lineage.readthedocs.io/"
-urls.Homepage = "https://cassiopeia-lineage.readthedocs.io/"
-urls.Source = "https://github.com/YosefLab/Cassiopeia"
+# URLs
+[project.urls]
+Documentation = "https://cassiopeia-lineage.readthedocs.io/"
+Homepage = "https://cassiopeia-lineage.readthedocs.io/"
+Source = "https://github.com/YosefLab/Cassiopeia"
 
+# --- setuptools: src/ layout + discovery ---
 [tool.setuptools]
-# For flat layout at repo root
-package-dir = { "" = "." }
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
-where = [ "." ]
-include = [ "cassiopeia*" ]
-exclude = [ "data*", "notebooks*", "docs*", "test*" ]
+where = ["src"]
+include = ["cassiopeia*"]
+exclude = ["tests*", "docs*", "notebooks*", "data*"]
 
+# If you ship .pxd, include them:
+[tool.setuptools.package-data]
+cassiopeia = ["**/*.pxd"]
+
+# --- Hatch envs ---
 [tool.hatch.envs.default]
 installer = "uv"
-features = [ "dev" ]
+features = ["dev"]
 
 [tool.hatch.envs.docs]
-features = [ "doc" ]
+features = ["doc"]
 scripts.build = "sphinx-build -M html docs docs/_build {args}"
 scripts.open = "python -m webbrowser -t docs/_build/html/index.html"
 scripts.clean = "git clean -fdX -- {args:docs}"
 
-[[tool.hatch.envs.hatch-test.matrix]]
-deps = [ "stable" ]
-python = [ "3.10", "3.13" ]
-
-[[tool.hatch.envs.hatch-test.matrix]]
-deps = [ "pre" ]
-python = [ "3.13" ]
-
+# Define the hatch-test env BEFORE its matrix (important for TOML parsing)
 [tool.hatch.envs.hatch-test]
-features = [ "dev", "test" ]
+features = ["dev", "test"]
+skip-install = false
+
+# Matrix entries for hatch-test
+[[tool.hatch.envs.hatch-test.matrix]]
+deps = ["stable"]
+python = ["3.10", "3.13"]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+deps = ["pre"]
+python = ["3.13"]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.deps.env-vars = [
-  { key = "UV_PRERELEASE", value = "allow", if = [ "pre" ] },
+  { key = "UV_PRERELEASE", value = "allow", if = ["pre"] },
 ]
 
+# --- Ruff / Pytest / Coverage ---
 [tool.ruff]
 line-length = 120
-src = [ "cassiopeia" ]                                                                                           # adjust to your layout; if flat, consider ["cassiopeia"]
-extend-include = [ "*.ipynb" ]
+src = ["src"]
+extend-include = ["*.ipynb"]
 format.docstring-code-format = true
-lint.select = [ "B", "BLE", "C4", "D", "E", "F", "I", "RUF100", "TID", "UP", "W" ]
-lint.ignore = [ "B008", "D100", "D104", "D105", "D107", "D203", "D213", "D400", "D401", "E501", "E731", "E741" ]
-lint.per-file-ignores."*/__init__.py" = [ "F401" ]
-lint.per-file-ignores."docs/*" = [ "I" ]
-lint.per-file-ignores."test/*" = [ "D" ]
+lint.select = ["B","BLE","C4","D","E","F","I","RUF100","TID","UP","W"]
+lint.ignore = ["B008","D100","D104","D105","D107","D203","D213","D400","D401","E501","E731","E741"]
+lint.per-file-ignores."*/__init__.py" = ["F401"]
+lint.per-file-ignores."docs/*" = ["I"]
+lint.per-file-ignores."tests/*" = ["D"]
 lint.pydocstyle.convention = "numpy"
 
 [tool.pytest.ini_options]
-testpaths = [ "test" ]
+testpaths = ["tests"]
 xfail_strict = true
-addopts = [ "--import-mode=importlib" ]
+addopts = ["--import-mode=importlib"]
+pythonpath = ["src"]
 
 [tool.coverage.run]
-source = [ "cassiopeia" ]
-patch = [ "subprocess" ]
-omit = [ "**/test_*.py" ]
+source = ["cassiopeia"]
+omit = ["**/test_*.py"]
 
 [tool.cruft]
 skip = [
-  "test",
+  "tests",
   "src/**/__init__.py",
-  "src/**/basic.py",
-  "docs/api.md",
-  "docs/changelog.md",
-  "docs/references.bib",
-  "docs/references.md",
-  "docs/notebooks/example.ipynb",
 ]
