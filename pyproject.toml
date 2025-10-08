@@ -130,11 +130,11 @@ skip-install = false
 # Matrix entries for hatch-test
 [[tool.hatch.envs.hatch-test.matrix]]
 deps = [ "stable" ]
-python = [ "3.10", "3.13" ]
+python = [ "3.10", "3.12" ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 deps = [ "pre" ]
-python = [ "3.13" ]
+python = [ "3.12" ]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.deps.env-vars = [
