@@ -579,18 +579,9 @@ class TestDataUtilities(unittest.TestCase):
         obs_tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
     
         self.assertIsNone(obs_tdata.X)
-        self.assertIn("lineage", obs_tdata.obst)
-        self.assertEqual(obs_tdata.obsm["character_matrix"].shape, (4, 3))
-        self.assertEqual(len(obs_tdata.obst["lineage"].nodes), 7)
-    
-    def test_no_metadata(self):
-        graph = nx.DiGraph()
-        graph.add_edge('0', '1')
-        cm = pd.DataFrame([[1]], index=['1'], columns=['char1'])
-        cas_tree = CassiopeiaTree(tree=graph, character_matrix=cm)
-        tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
-        self.assertIsNotNone(tdata.obs)  # Should create minimal obs
-        self.assertIsNotNone(tdata.var)  # Should create minimal var
+        self.assertIn("tree", obs_tdata.obst)
+        self.assertEqual(obs_tdata.obsm["characters"].shape, (4, 3))
+        self.assertEqual(len(obs_tdata.obst["tree"].nodes), 7)
     
     def test_missing_cm_tree(self):
         cas_tree = CassiopeiaTree()
