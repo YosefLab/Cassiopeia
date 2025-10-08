@@ -732,13 +732,24 @@ def cassiopeia_to_treedata(
 
     obst = {}
 
-    tree_topology = cassiopeia_tree.get_tree_topology()
-    if tree_topology is not None:
-        obst[tree_key] = tree_topology
-    elif cassiopeia_tree.character_matrix is None:
-        raise CassiopeiaError(
-            "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
-        )
+    # tree_topology = cassiopeia_tree.get_tree_topology()
+    # if tree_topology is not None:
+    #     obst[tree_key] = tree_topology
+    # elif cassiopeia_tree.character_matrix is None:
+    #     raise CassiopeiaError(
+    #         "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
+    #     )
+
+    try:
+        tree_topology = cassiopeia_tree.get_tree_topology()
+        if tree_topology is not None:
+            obst[tree_key] = tree_topology
+    except CassiopeiaTreeError:
+        if cassiopeia_tree.character_matrix is None:
+            raise CassiopeiaError(
+                "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
+            )
+
 
     # Extract observation metadata (obs)
     if preserve_metadata and cassiopeia_tree.cell_meta is not None:
