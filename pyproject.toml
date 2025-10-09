@@ -163,7 +163,6 @@ addopts = [ "--import-mode=importlib" ]
 
 [tool.coverage.run]
 source = [ "cassiopeia" ]
-patch = [ "subprocess" ]
 omit = [ "**/test_*.py" ]
 
 [tool.cruft]
