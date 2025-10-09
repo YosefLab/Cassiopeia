@@ -1,7 +1,4 @@
-"""
-This file stores functions for scoring metrics on a tree.
-Currently, we'll support parsimony and likelihood calculations.
-"""
+"""File containing functions for scoring metrics on a tree."""
 
 from collections.abc import Callable
 
