@@ -1,5 +1,5 @@
-"""
-This file contains functions pertaining to calling lineage groups.
+"""Module containing functions pertaining to calling lineage groups.
+
 Invoked through pipeline.py and supports the call_lineage_group function.
 """
 
@@ -79,6 +79,7 @@ def find_top_lg(
     kinship_thresh: float = 0.2,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Algorithm to creates lineage groups from a pivot table of UMI counts
+
     for each cellBC-intBC pair.
 
     First, identifies the most frequent intBC. Then, selects all intBCs that
@@ -260,8 +261,7 @@ def annotate_lineage_groups(
     max_kinship_LG: pd.DataFrame,
     master_intBCs: dict[int, pd.DataFrame],
 ) -> pd.DataFrame:
-    """
-    Assign cells in the allele table to a lineage group.
+    """Assign cells in the allele table to a lineage group.
 
     Takes in an allele table and a DataFrame identifying the chosen
     lineage group for each cell and annotates the lineage groups in the
@@ -352,6 +352,7 @@ def filtered_lineage_group_to_allele_table(
     filtered_lgs: list[pd.DataFrame],
 ) -> pd.DataFrame:
     """Produces the final allele table as a DataFrame to be used for
+
     reconstruction.
 
     Takes a list of alignment DataFrames annotated with lineage groups and

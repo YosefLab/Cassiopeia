@@ -1,5 +1,5 @@
-"""
-File storing functionality for computing coupling statistics between meta
+"""File storing functionality for computing coupling statistics between meta
+
 variables on a tree.
 """
 

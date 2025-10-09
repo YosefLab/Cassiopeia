@@ -1,5 +1,5 @@
-"""
-This file stores a subclass of DistanceSolver, UPGMA. The inference procedure is
+"""Module defining a subclass of DistanceSolver, UPGMA. The inference procedure is
+
 a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
 iteratively joins together samples with the minimum dissimilarity.
 """
@@ -18,8 +18,7 @@ from cassiopeia.solver import DistanceSolver, dissimilarity_functions
 
 
 class UPGMASolver(DistanceSolver.DistanceSolver):
-    """
-    UPGMA CassiopeiaSolver.
+    """UPGMA CassiopeiaSolver.
 
     Implements the UPGMA algorithm described as a derived class of
     DistanceSolver. This class inherits the generic `solve` method, but

@@ -1,5 +1,5 @@
-"""
-A Cas9-based lineage tracing data simulator. This is a sublcass of the
+"""A Cas9-based lineage tracing data simulator. This is a sublcass of the
+
 LineageTracingDataSimulator that simulates the data produced from Cas9-based
 technologies (e.g, as described in Chan et al, Nature 2019 or McKenna et al,
 Science 2016). This simulator implements the method `overlay_data` which takes

@@ -1,5 +1,4 @@
-"""
-A subclass of LeafSubsampler, the SpatialLeafSubsampler.
+"""A subclass of LeafSubsampler, the SpatialLeafSubsampler.
 
 Uniformly samples leaves within a region of interest of a CassiopeiaTree
 with spatial information and produces a new CassiopeiaTree containing the
@@ -20,6 +19,14 @@ from cassiopeia.simulator.LeafSubsampler import (
 
 
 class SpatialLeafSubsampler(LeafSubsampler):
+    """
+    Subsample leaves within spatial regions of interest.
+
+    Returns
+    -------
+    SpatialLeafSubsampler - Configured subsampler instance.
+    """
+
     def __init__(
         self,
         bounding_box: list[tuple] | None = None,
@@ -132,8 +139,8 @@ class SpatialLeafSubsampler(LeafSubsampler):
         # Check that the tree has spatial information
         try:
             coordinates = tree.get_attribute(tree.leaves[0], attribute)
-        except CassiopeiaTreeError:
-            raise LeafSubsamplerError(f"Attribute {attribute} not present in the tree.")
+        except CassiopeiaTreeError as error:
+            raise LeafSubsamplerError(f"Attribute {attribute} not present in the tree.") from error
 
         if bounding_box is not None:
             # Check the dimensions of coordinates and bounding box match

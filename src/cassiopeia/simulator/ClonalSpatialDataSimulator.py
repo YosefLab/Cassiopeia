@@ -1,5 +1,5 @@
-"""
-This file defines the ClonalSpatialDataSimulator, which is a subclass of
+"""Module defining the ClonalSpatialDataSimulator, which is a subclass of
+
 the SpatialDataSimulator. The ClonalSpatialDataSimulator simulates spatial
 coordinates with a spatial constraints that clonal populations (i.e. subclones)
 are spatially localized together.
@@ -20,8 +20,7 @@ neighbors = try_import("sklearn.neighbors")
 
 
 class ClonalSpatialDataSimulator(SpatialDataSimulator):
-    """
-    Simulate spatial data with a clonal spatial autocorrelation constraint.
+    """Simulate spatial data with a clonal spatial autocorrelation constraint.
 
     This subclass of `SpatialDataSimulator` simulates the spatial coordinates of
     each cell in the provided `CassiopeiaTree` with spatial constraints such
@@ -94,6 +93,7 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
     @staticmethod
     def __triangulation_graph(points: np.ndarray) -> nx.Graph:
         """Compute a fully-connected Delaunay triangulation graph from a set of
+
         points.
 
         Args:

@@ -1,5 +1,4 @@
-"""
-A subclass of LeafSubsampler, the UniformLeafSubsampler.
+"""A subclass of LeafSubsampler, the UniformLeafSubsampler.
 
 Takes a uniform random sample of the leaves of a CassiopeiaTree and produces a
 new CassiopeiaTree that keeps only the lineages pertaining to the sample.
@@ -15,13 +14,20 @@ from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class UniformLeafSubsampler(LeafSubsampler):
+    """
+    Uniformly subsample leaves from a CassiopeiaTree.
+
+    Returns
+    -------
+    UniformLeafSubsampler - Configured sampler for uniform selection.
+    """
+
     def __init__(
         self,
         ratio: float | None = None,
         number_of_leaves: int | None = None,
     ):
-        """
-        Uniformly subsample leaf samples of a CassiopeiaTree.
+        """Uniformly subsample leaf samples of a CassiopeiaTree.
 
         If 'ratio' is provided, samples 'ratio' of the leaves, rounded down,
         uniformly at random. If instead 'number_of_leaves' is provided,

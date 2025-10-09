@@ -1,5 +1,4 @@
-"""
-Implements the Cassiopeia-ILP solver, as described in Jones et al, Genome Biol 2020.
+"""Implements the Cassiopeia-ILP solver, as described in Jones et al, Genome Biol 2020.
 
 Briefly, this algorithm infers the maximum parsimony tree by solving for
 a Steiner Tree over an inferred potential graph of potential intermediate
@@ -28,8 +27,7 @@ from cassiopeia.solver import (
 
 
 class ILPSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    The Cassiopeia ILP-based maximum parsimony solver.
+    """The Cassiopeia ILP-based maximum parsimony solver.
 
     ILPSolver is a subclass of CassiopeiaSolver and implements the
     Cassiopeia-ILP algorithm described in Jones et al, Genome Biol 2020. The

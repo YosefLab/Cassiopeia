@@ -1,5 +1,5 @@
-"""
-This file stores a general phylogenetic tree simulator using forward birth-death
+"""Module implementing a general phylogenetic tree simulator using forward birth-death
+
 process, including differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
@@ -335,6 +335,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         observed_nodes: list[str],
     ) -> None:
         """A helper function that samples an event for a lineage.
+
         Takes a lineage and determines the next event in that lineage's
         future. Simulates the lifespan of a new descendant. Birth and
         death waiting times are sampled, representing how long the

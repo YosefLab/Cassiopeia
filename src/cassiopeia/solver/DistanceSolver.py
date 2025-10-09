@@ -1,5 +1,5 @@
-"""
-This file stores a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
+"""Module defining a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
+
 the inference procedures that inherit from this method will need to implement
 methods for selecting "cherries" and updating the dissimilarity map. Methods
 that will inherit from this class by default are Neighbor-Joining and UPGMA.
@@ -26,8 +26,7 @@ from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    Distance based solver class.
+    """Distance based solver class.
 
     This solver serves as a generic Distance-based solver. Briefly, all of the
     classes that derive from this class will use a dissimilarity map to
@@ -213,6 +212,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
         method: str = "dnj",
     ) -> None:
         """Solves a tree using fast distance-based algorithms implemented by
+
         CCPhylo. To call this method the CCPhlyo package must be installed
         and the ccphylo_path must be set in the config file. The method
         attribute specifies which algorithm to use. The function will update the
@@ -278,6 +278,7 @@ class DistanceSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def _setup_ccphylo(self) -> None:
         """Sets up the ccphylo solver by getting the ccphylo_path from the
+
         config file and checking that it is valid.
         """
         # get ccphylo path

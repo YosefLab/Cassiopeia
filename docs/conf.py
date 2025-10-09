@@ -217,6 +217,7 @@ class AutoAutoSummary(Autosummary):
 
     @staticmethod
     def get_members(obj, typ, include_public=None):
+        """Return public members of ``obj`` matching ``typ``."""
         if not include_public:
             include_public = []
         items = []
@@ -231,6 +232,7 @@ class AutoAutoSummary(Autosummary):
         return public, items
 
     def run(self):
+        """Populate the autosummary directive with methods and attributes."""
         clazz = str(self.arguments[0])
         try:
             (module_name, class_name) = clazz.rsplit(".", 1)
@@ -243,9 +245,11 @@ class AutoAutoSummary(Autosummary):
             if "attributes" in self.options:
                 _, attribs = self.get_members(c, "attribute")
                 self.content = [f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")]
-        finally:
+        except (ImportError, AttributeError):
             return super().run()
+        return super().run()
 
 
 def setup(app):
+    """Register custom Sphinx directives used in the documentation build."""
     app.add_directive("autoautosummary", AutoAutoSummary)

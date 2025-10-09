@@ -1,5 +1,5 @@
-"""
-This file defines the BrownianSpatialDataSimulator, which is a subclass of
+"""Module defining the BrownianSpatialDataSimulator, which is a subclass of
+
 the SpatialDataSimulator. The BrownianSpatialDataSimulator simulates spatial
 coordinates by simulating Brownian motion of each cell.
 """
@@ -13,8 +13,7 @@ from cassiopeia.simulator.SpatialDataSimulator import SpatialDataSimulator
 
 
 class BrownianSpatialDataSimulator(SpatialDataSimulator):
-    """
-    Simulate spatial data with a Brownian motion process.
+    """Simulate spatial data with a Brownian motion process.
 
     This subclass of `SpatialDataSimulator` simulates the spatial coordinates of
     each cell in the provided `CassiopeiaTree` through a Brownian motion process.

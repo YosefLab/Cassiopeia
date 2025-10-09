@@ -1,5 +1,5 @@
-"""
-This file stores a subclass of GreedySolver, the VanillaGreedySolver. The
+"""Module defining a subclass of GreedySolver, the VanillaGreedySolver. The
+
 inference procedure here is the "vanilla" Cassiopeia-Greedy, originally proposed
 in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
@@ -19,8 +19,7 @@ from cassiopeia.solver import (
 
 
 class VanillaGreedySolver(GreedySolver.GreedySolver):
-    """
-    A class for the basic Cassiopeia-Greedy solver.
+    """A class for the basic Cassiopeia-Greedy solver.
 
     The VanillaGreedySolver implements a top-down algorithm that optimizes
     for parsimony by recursively splitting the sample set based on the most

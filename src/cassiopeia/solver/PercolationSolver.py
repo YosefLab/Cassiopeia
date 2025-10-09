@@ -17,8 +17,7 @@ from cassiopeia.solver import (
 
 
 class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    A top-down percolatin-based CassiopeiaSolver.
+    """A top-down percolatin-based CassiopeiaSolver.
 
     The PercolationSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity in the observed mutations.
@@ -81,6 +80,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         logfile: str = "stdout.log",
     ):
         """Implements a solving procedure for the Percolation Algorithm.
+
         The procedure recursively splits a set of samples to build a tree. At
         each partition of the samples produced by the percolation procedure,
         an ancestral node is created and each side of the partition is placed
@@ -193,6 +193,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         missing_state_indicator: int = -1,
     ) -> tuple[list[str], list[str]]:
         """The function used by the percolation algorithm to partition the
+
         set of samples in two.
         First, a pairwise similarity graph is generated with samples as nodes
         such that edges between a pair of nodes is some provided function on
@@ -319,6 +320,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         node_name_generator: Generator[str, None, None],
     ) -> nx.DiGraph:
         """Takes duplicate samples and places them in the tree.
+
         Places samples removed in removing duplicates in the tree as sisters
         to the corresponding cells that share the same mutations.
         Args:

@@ -1,5 +1,5 @@
-"""
-A library that stores functions for comparing two trees to one another.
+"""A library that stores functions for comparing two trees to one another.
+
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """

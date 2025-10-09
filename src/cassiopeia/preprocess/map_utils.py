@@ -1,5 +1,5 @@
-"""
-This file contains functions pertaining to mapping intBCs.
+"""Module containing functions pertaining to mapping intBCs.
+
 Invoked through pipeline.py and supports the filter_molecule_table function.
 """
 

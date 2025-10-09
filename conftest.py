@@ -2,6 +2,7 @@ import pytest
 
 
 def pytest_addoption(parser):
+    """Register command-line options used for optional test groups."""
     parser.addoption(
         "--runslow",
         action="store_true",
@@ -17,11 +18,13 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    """Declare custom markers so pytest does not raise unknown marker errors."""
     config.addinivalue_line("markers", "slow: mark test as slow to run")
     config.addinivalue_line("markers", "spatial: mark test as spatial to run")
 
 
 def pytest_collection_modifyitems(config, items):
+    """Skip marked tests unless the corresponding command-line flag is set."""
     run_slow = config.getoption("--runslow")
     run_spatial = config.getoption("--runspatial")
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")

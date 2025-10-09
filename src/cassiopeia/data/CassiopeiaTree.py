@@ -1,5 +1,5 @@
-"""
-This file stores the basic data structure for Cassiopeia - the
+"""Module describing the basic data structure for Cassiopeia - the
+
 CassiopeiaTree. This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
@@ -224,6 +224,7 @@ class CassiopeiaTree:
 
     @property
     def character_matrix(self) -> pd.DataFrame:
+        """Return the character matrix currently associated with the tree."""
         return self._character_matrix
 
     @character_matrix.setter
@@ -233,19 +234,7 @@ class CassiopeiaTree:
         Args:
             character_matrix: Character matrix of mutation observations.
         """
-        if not all(type(i) == str for i in character_matrix.index):
-            raise CassiopeiaTreeError("Index of character matrix must consist of strings.")
-
-        self._character_matrix = character_matrix.copy()
-
-    @character_matrix.setter
-    def character_matrix(self, character_matrix: pd.DataFrame):
-        """Initializes a character matrix in the object.
-
-        Args:
-            character_matrix: Character matrix of mutation observations.
-        """
-        if not all(type(i) == str for i in character_matrix.index):
+        if not all(isinstance(i, str) for i in character_matrix.index):
             raise CassiopeiaTreeError("Index of character matrix must consist of strings.")
 
         self._character_matrix = character_matrix.copy()
@@ -363,6 +352,7 @@ class CassiopeiaTree:
 
     @property
     def parameters(self) -> pd.DataFrame:
+        """Return the tree-level parameters associated with the object."""
         return self._parameters
 
     def reset_parameters(self):
@@ -1283,8 +1273,7 @@ class CassiopeiaTree:
             return None
 
     def _get_node_depths(self) -> list[float]:
-        """
-        Computes the depth of each node in the tree.
+        """Computes the depth of each node in the tree.
 
         Returns
         -------
@@ -1319,8 +1308,7 @@ class CassiopeiaTree:
         return np.mean(self._get_node_depths())
 
     def get_max_depth_of_tree(self) -> float:
-        """
-        Computes the maximum depth of the tree (in terms of time).
+        """Computes the maximum depth of the tree (in terms of time).
 
         The maximum depth of the tree (in terms of time) is defined as the
         greatest time distance of any leaf of the tree from the root. Because
@@ -1911,10 +1899,22 @@ class CassiopeiaTree:
 
         try:
             return self.__network.nodes[node][attribute_name]
-        except KeyError:
-            raise CassiopeiaTreeError(f"Attribute {attribute_name} not detected for this node.")
+        except KeyError as error:
+            raise CassiopeiaTreeError(f"Attribute {attribute_name} not detected for this node.") from error
 
     def filter_nodes(self, condition: Callable[[str], bool]) -> list[str]:
+        """
+        Return nodes that satisfy a provided predicate.
+
+        Parameters
+        ----------
+        condition
+            Function applied to each node identifier to determine membership.
+
+        Returns
+        -------
+        list[str] - Nodes for which the condition evaluates to ``True``.
+        """
         self.__check_network_initialized()
 
         _filter = []
@@ -2044,8 +2044,7 @@ class CassiopeiaTree:
         }
 
     def scale_to_unit_length(self) -> None:
-        """
-        Scales the tree to have unit length.
+        """Scales the tree to have unit length.
 
         The longest path from root to leaf will have length 1 after the
         scaling.
@@ -2065,8 +2064,7 @@ class CassiopeiaTree:
         self.set_times(new_times)
 
     def get_unmutated_characters_along_edge(self, parent: str, child: str) -> list[int]:
-        """
-        List of unmutated characters along edge.
+        """List of unmutated characters along edge.
 
         A character is considered to not mutate if it goes from the zero state
         to the zero state.
@@ -2094,8 +2092,7 @@ class CassiopeiaTree:
         return copy.deepcopy(self)
 
     def impute_deducible_missing_states(self):
-        """
-        Impute deducible missing states.
+        """Impute deducible missing states.
 
         If a state is missing in a node but present in its parent,
         then it can be imputed as the parent's state.

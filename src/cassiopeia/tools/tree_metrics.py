@@ -15,8 +15,7 @@ def calculate_parsimony(
     infer_ancestral_characters: bool = False,
     treat_missing_as_mutation: bool = False,
 ) -> int:
-    """
-    Calculates the number of mutations that have occurred on a tree.
+    """Calculates the number of mutations that have occurred on a tree.
 
     Calculates the parsimony, defined as the number of character/state
     mutations that occur on edges of the tree, from the character state
@@ -431,8 +430,7 @@ def calculate_likelihood_discrete(
     use_internal_character_states: bool = False,
     layer: str | None = None,
 ) -> float:
-    """
-    Calculates the log likelihood of a tree under a discrete process.
+    """Calculates the log likelihood of a tree under a discrete process.
 
     A wrapper function for `get_lineage_tracing_parameters` and
     `log_likelihood_of_character` under a discrete model of lineage tracing.
@@ -523,8 +521,7 @@ def calculate_likelihood_continuous(
     use_internal_character_states: bool = False,
     layer: str | None = None,
 ) -> float:
-    """
-    Calculates the log likelihood of a tree under a continuous process.
+    """Calculates the log likelihood of a tree under a continuous process.
 
     A wrapper function for `get_lineage_tracing_parameters` and
     `log_likelihood_of_character` under a continuous model of lineage tracing.

@@ -1,5 +1,5 @@
-"""
-This file stores a subclass of CassiopeiaSolver, the HybridSolver. This solver
+"""Module defining a subclass of CassiopeiaSolver, the HybridSolver. This solver
+
 consists of two sub-solvers -- a top (greedy) and a bottom solver. The greedy
 solver will be applied until a certain criteria is reached (be it a maximum LCA
 distance or a number of cells) and then another solver is employed to
@@ -30,8 +30,7 @@ from cassiopeia.solver import (
 
 
 class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    The Hybrid Cassiopeia solver.
+    """The Hybrid Cassiopeia solver.
 
     HybridSolver is an class representing the structure of Cassiopeia Hybrid
     inference algorithms. The solver procedure contains logic for building tree

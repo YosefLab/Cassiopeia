@@ -108,7 +108,7 @@ def impute_single_state(
 
         state = character_matrix.loc[node].iloc[character]
         if distance <= max_neighbor_distance and state != -1:
-            if type(state) == tuple:
+            if isinstance(state, tuple):
                 for _state in state:
                     votes.append(_state)
             else:

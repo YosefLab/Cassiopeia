@@ -1,10 +1,4 @@
-"""
-A Sequential lineage tracing data simulator. This is a subclass of the
-LineageTracingDataSimulator that simulates the data produced from sequential
-Cas9-based technologies (e.g, Typewriter described in Choi et al, Nature 2022).
-This simulator implements the method `overlay_data` which takes
-in a CassiopeiaTree with edge lengths and overlays states.
-"""
+"""Sequential lineage tracing data simulator built on LineageTracingDataSimulator."""
 
 import math
 
