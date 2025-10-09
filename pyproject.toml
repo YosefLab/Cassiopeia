@@ -30,6 +30,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
   "anndata>=0.11",
@@ -159,7 +160,6 @@ lint.pydocstyle.convention = "numpy"
 testpaths = [ "tests" ]
 xfail_strict = true
 addopts = [ "--import-mode=importlib" ]
-pythonpath = [ "src" ]
 
 [tool.coverage.run]
 source = [ "cassiopeia" ]

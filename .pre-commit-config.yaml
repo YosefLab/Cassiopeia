@@ -5,6 +5,12 @@ default_stages:
   - pre-commit
   - pre-push
 minimum_pre_commit_version: 2.16.0
+exclude: |
+  (?x)^(
+    src/cassiopeia/.*\.c$ |
+    src/cassiopeia/.*\.cpp$ |
+    src/cassiopeia/.*\.so$
+  )$
 repos:
   - repo: https://github.com/biomejs/pre-commit
     rev: v2.2.5
