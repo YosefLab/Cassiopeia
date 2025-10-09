@@ -2,6 +2,7 @@
 Test ILPSolver in Cassiopeia.solver.
 """
 
+import importlib.util
 import itertools
 import os
 import pathlib as pl
@@ -15,11 +16,7 @@ import cassiopeia as cas
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
 
-GUROBI_INSTALLED = True
-try:
-    import gurobipy
-except ModuleNotFoundError:
-    GUROBI_INSTALLED = False
+GUROBI_INSTALLED = importlib.util.find_spec("gurobipy") is not None
 
 
 def find_triplet_structure(triplet, T):
