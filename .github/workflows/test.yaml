@@ -85,11 +85,17 @@ jobs:
           test -f .coverage || uvx hatch run ${{ matrix.env.name }}:cov-combine
           uvx hatch run ${{ matrix.env.name }}:cov-report   # report visibly
           uvx hatch run ${{ matrix.env.name }}:coverage xml # create report for upload
+          # Quick sanity check
+          grep -m1 'filename=' -n coverage.xml || { echo "coverage.xml missing filenames"; exit 1; }
       - name: Upload coverage
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          commit_sha: ${{ github.sha }}
+          files: ./coverage.xml
+          verbose: true
 
   # Check that all tests defined above pass. This makes it easy to set a single "required" test in branch
   # protection instead of having to update it frequently. See https://github.com/re-actors/alls-green#why.
