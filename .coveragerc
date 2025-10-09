@@ -11,5 +11,5 @@ omit =
 # Make coverage treat these as the same source tree
 source =
     .
-    */site-packages/cassiopeia-lineage
-    */.venv/lib/*/site-packages/cassiopeia-lineage
+    */site-packages/cassiopeia
+    */.venv/lib/*/site-packages/cassiopeia
