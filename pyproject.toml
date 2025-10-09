@@ -160,7 +160,6 @@ lint.pydocstyle.convention = "numpy"
 testpaths = [ "tests" ]
 xfail_strict = true
 addopts = [ "--import-mode=importlib" ]
-pythonpath = [ "src" ]
 
 [tool.coverage.run]
 source = [ "cassiopeia" ]
