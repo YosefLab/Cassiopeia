@@ -1,9 +1,8 @@
-"""
-This file stores a subclass of DistanceSolver, SpectralNeighborJoining. This
-algorithm is based on the one developed by Jaffe, et al. (2021) in their paper
+"""Module defining a subclass of DistanceSolver, SpectralNeighborJoining.
+
+This algorithm is based on the one developed by Jaffe, et al. (2021) in their paper
 titled "Spectral neighbor joining for reconstruction of latent tree models",
 published in the SIAM Journal for Math and Data Science.
-
 """
 
 import itertools
@@ -23,8 +22,7 @@ from cassiopeia.solver import (
 
 
 class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """
-    Spectral Neighbor-Joining class for Cassiopeia.
+    """Spectral Neighbor-Joining class for Cassiopeia.
 
     Implements a variation on the Spectral Neighbor-Joining (abbrev SNJ)
     algorithm described by Jaffe et al. in their 2020 paper. This class

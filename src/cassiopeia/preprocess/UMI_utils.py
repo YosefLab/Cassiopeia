@@ -1,5 +1,5 @@
-"""
-This file contains all functions pertaining to UMI collapsing and preprocessing.
+"""Module containing all functions pertaining to UMI collapsing and preprocessing.
+
 Invoked through pipeline.py and supports the collapseUMIs and
 errorCorrectUMIs functions.
 """
@@ -143,6 +143,7 @@ def sort_bam(
     n_threads: int = 1,
 ) -> (int, int):
     """Sorts aligned segments (representing a read) in the BAM file according
+
     to a specified key.
 
     Splits the BAM file into chunks and sorts relevant aligned sequences within
@@ -216,6 +217,7 @@ def form_collapsed_clusters(
     n_threads: int = 1,
 ):
     """Aggregates together aligned segments (reads) that share UMIs if their
+
     sequences are close.
 
     Clusters aligned segments within a UMI and with sequences are less than a
@@ -453,6 +455,7 @@ def form_clusters_likelihood(
 
 def align_clusters(first: pysam.AlignedSegment, second: pysam.AlignedSegment) -> (int, int):
     """Calculates the number of indel mismatches and high quality mismatches
+
       between the sequences of 2 aligned segments (reads).
 
     Args:
@@ -479,6 +482,7 @@ def within_radius_of_seed(
     seed: str, als: list[pysam.AlignedSegment], max_hq_mismatches: int
 ) -> (list[pysam.AlignedSegment], list[pysam.AlignedSegment]):
     """Returns the aligned segments (reads) in a list with sequences that are
+
     close enough to specified seed
 
     Finds the aligned segments in the input list that have fewer than a specified
@@ -562,6 +566,7 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
 
 def call_consensus(als: list[pysam.AlignedSegment], max_read_length: int) -> pysam.AlignedSegment:
     """Generates a consensus annotated aligned segment for a list of aligned
+
     segments (reads).
 
     For a list of aligned segments, creates a consensus sequence by taking the
@@ -647,8 +652,7 @@ def merge_annotated_clusters(biggest: pysam.AlignedSegment, other: pysam.Aligned
 
 
 def correct_umis_in_group(cell_group: pd.DataFrame, max_umi_distance: int = 2) -> tuple[pd.DataFrame, int]:
-    """
-    Given a group of alignments, collapses UMIs that have close sequences.
+    """Given a group of alignments, collapses UMIs that have close sequences.
 
     Given a group of alignments (that share a cellBC and intBC if from
     error_correct_umis), determines which UMIs are to be merged into which.

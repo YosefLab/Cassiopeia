@@ -1,7 +1,6 @@
-"""
-This file contains all high-level functionality for preprocessing sequencing
-data into character matrices ready for phylogenetic inference. This file
-is mainly invoked by cassiopeia_preprocess.py.
+"""Module containing all high-level functionality for preprocessing sequencing data.
+
+This file is mainly invoked by cassiopeia_preprocess.py.
 """
 
 import os
@@ -173,12 +172,6 @@ def error_correct_cellbcs_to_whitelist(
         output_directory: The output directory where the corrected BAM will be
             written to. This directory must exist prior to calling this function.
         n_threads: Number of threads to use. Defaults to 1.
-
-    Todo:
-        Currently, the user must provide their own whitelist, and Cassiopeia
-        does not use any of the whitelists provided by the ngs-tools library.
-        At some point, we should update the pipeline so that if ngs-tools
-        provides a pre-packaged whitelists, it uses that for those chemistries.
 
     Returns
     -------

@@ -1,7 +1,4 @@
-"""
-File storing functionality for computing coupling statistics between meta
-variables on a tree.
-"""
+"""File storing functionality for computing coupling statistics between meta variables on a tree."""
 
 from collections import defaultdict
 from collections.abc import Callable

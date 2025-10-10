@@ -1,5 +1,5 @@
-"""
-A library that stores functions for comparing two trees to one another.
+"""A library that stores functions for comparing two trees to one another.
+
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """
@@ -36,14 +36,11 @@ def triplets_correct(
 
     Returns
     -------
-        Four dictionaries storing triplet information at each depth:
-            all_triplets_correct: the total triplets correct
-            resolvable_triplets_correct: the triplets correct for resolvable
-                triplets
-            unresolved_triplets_correct: the triplets correct for unresolvable
-                triplets
-            proportion_resolvable: the proportion of unresolvable triplets per
-                depth
+        A tuple of four dictionaries storing triplet statistics at each depth:
+            all_triplets_correct: Total proportion of triplets correct.
+            resolvable_triplets_correct: Proportion correct among resolvable triplets.
+            unresolved_triplets_correct: Proportion correct among unresolvable triplets.
+            proportion_resolvable: Proportion of triplets that are resolvable at each depth.
     """
     # keep dictionary of triplets correct
     all_triplets_correct = defaultdict(int)

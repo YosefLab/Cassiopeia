@@ -1,5 +1,4 @@
-"""
-Abstract class CassiopeiaSolver, for the phylogenetic inference module.
+"""Abstract class CassiopeiaSolver, for the phylogenetic inference module.
 
 All algorithms are derived classes of this abstract class, and at a minimum
 store an input character matrix and implement a method called `solve`. Each
@@ -13,8 +12,8 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class CassiopeiaSolver(abc.ABC):
-    """
-    CassiopeiaSolver is an abstract class that all inference algorithms derive
+    """CassiopeiaSolver is an abstract class that all inference algorithms derive
+
     from. At minimum, all CassiopeiaSolver subclasses will store a character
     matrix and implement a solver procedure.
 

@@ -1,6 +1,6 @@
-"""
-This file stores the basic data structure for Cassiopeia - the
-CassiopeiaTree. This data structure will typically contain a character
+"""Module describing the basic data structure for Cassiopeia - the CassiopeiaTree.
+
+This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data
@@ -42,12 +42,12 @@ class CassiopeiaTree:
 
     This object stores the key attributes and functionalities a user might want
     for working with lineage tracing experiments. At its core, it stores
-    three main items - a tree, a character matrix, and meta data associated
+    three main items — a tree, a character matrix, and meta data associated
     with the data.
 
     The tree can be fed into the object via Ete3, Networkx, or can be inferred
     using one of the CassiopeiaSolver algorithms in the `solver` module. The
-    tree here is only used for obtaining the _topology_ of the tree.
+    tree here is only used for obtaining the *topology* of the tree.
 
     A character matrix can be stored in the object, containing the states
     observed for each cell. In typical lineage tracing experiments, these are
@@ -59,9 +59,9 @@ class CassiopeiaTree:
     is updated when the character states of leaves are changed.
 
     Some reconstruction algorithms will make use of dissimilarities between
-    cells. To this end, we store these `dissimilarity maps` in the
+    cells. To this end, we store these *dissimilarity maps* in the
     CassiopeiaTree class itself. For users trying to diagnose the reconstruction
-    accuracy with a known groundtruth, they can compare this dissimilarity
+    accuracy with a known ground truth, they can compare this dissimilarity
     map to the phylogenetic distance on the tree.
 
     Meta data for cells or characters can also be stored in this object. These
@@ -73,20 +73,12 @@ class CassiopeiaTree:
     data are the proportion of missing data for each character or the entropy
     of states. These are good statistics to have for feature selection.
 
-    TODO(rzhang): Add check upon initialization that input tree is valid tree.
-    TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315): Add utility methods to compute the colless index
-        and the cophenetic correlation wrt to some cell meta item
-    TODO(mattjones315): Add bulk set_states method.
-    TODO(mattjones): Add boolean to `get_tree_topology` which will include
-        all attributes (e.g., node times)
-
     Args:
         character_matrix: The character matrix for the lineage.
         missing_state_indicator: An indicator for missing states in the
             character matrix.
-        cell_meta: Per-cell meta data
-        character_meta: Per-character meta data
+        cell_meta: Per-cell meta data.
+        character_meta: Per-character meta data.
         priors: A dictionary storing the probability of each character mutating
             to a particular state.
         tree: A tree for the lineage.
@@ -224,6 +216,7 @@ class CassiopeiaTree:
 
     @property
     def character_matrix(self) -> pd.DataFrame:
+        """Return the character matrix currently associated with the tree."""
         return self._character_matrix
 
     @character_matrix.setter
@@ -233,19 +226,7 @@ class CassiopeiaTree:
         Args:
             character_matrix: Character matrix of mutation observations.
         """
-        if not all(type(i) == str for i in character_matrix.index):
-            raise CassiopeiaTreeError("Index of character matrix must consist of strings.")
-
-        self._character_matrix = character_matrix.copy()
-
-    @character_matrix.setter
-    def character_matrix(self, character_matrix: pd.DataFrame):
-        """Initializes a character matrix in the object.
-
-        Args:
-            character_matrix: Character matrix of mutation observations.
-        """
-        if not all(type(i) == str for i in character_matrix.index):
+        if not all(isinstance(i, str) for i in character_matrix.index):
             raise CassiopeiaTreeError("Index of character matrix must consist of strings.")
 
         self._character_matrix = character_matrix.copy()
@@ -363,6 +344,7 @@ class CassiopeiaTree:
 
     @property
     def parameters(self) -> pd.DataFrame:
+        """Return the tree-level parameters associated with the object."""
         return self._parameters
 
     def reset_parameters(self):
@@ -1283,8 +1265,7 @@ class CassiopeiaTree:
             return None
 
     def _get_node_depths(self) -> list[float]:
-        """
-        Computes the depth of each node in the tree.
+        """Computes the depth of each node in the tree.
 
         Returns
         -------
@@ -1319,8 +1300,7 @@ class CassiopeiaTree:
         return np.mean(self._get_node_depths())
 
     def get_max_depth_of_tree(self) -> float:
-        """
-        Computes the maximum depth of the tree (in terms of time).
+        """Computes the maximum depth of the tree (in terms of time).
 
         The maximum depth of the tree (in terms of time) is defined as the
         greatest time distance of any leaf of the tree from the root. Because
@@ -1911,10 +1891,22 @@ class CassiopeiaTree:
 
         try:
             return self.__network.nodes[node][attribute_name]
-        except KeyError:
-            raise CassiopeiaTreeError(f"Attribute {attribute_name} not detected for this node.")
+        except KeyError as error:
+            raise CassiopeiaTreeError(f"Attribute {attribute_name} not detected for this node.") from error
 
     def filter_nodes(self, condition: Callable[[str], bool]) -> list[str]:
+        """
+        Return nodes that satisfy a provided predicate.
+
+        Parameters
+        ----------
+        condition
+            Function applied to each node identifier to determine membership.
+
+        Returns
+        -------
+        list[str] - Nodes for which the condition evaluates to ``True``.
+        """
         self.__check_network_initialized()
 
         _filter = []
@@ -2044,8 +2036,7 @@ class CassiopeiaTree:
         }
 
     def scale_to_unit_length(self) -> None:
-        """
-        Scales the tree to have unit length.
+        """Scales the tree to have unit length.
 
         The longest path from root to leaf will have length 1 after the
         scaling.
@@ -2065,8 +2056,7 @@ class CassiopeiaTree:
         self.set_times(new_times)
 
     def get_unmutated_characters_along_edge(self, parent: str, child: str) -> list[int]:
-        """
-        List of unmutated characters along edge.
+        """List of unmutated characters along edge.
 
         A character is considered to not mutate if it goes from the zero state
         to the zero state.
@@ -2094,8 +2084,7 @@ class CassiopeiaTree:
         return copy.deepcopy(self)
 
     def impute_deducible_missing_states(self):
-        """
-        Impute deducible missing states.
+        """Impute deducible missing states.
 
         If a state is missing in a node but present in its parent,
         then it can be imputed as the parent's state.
