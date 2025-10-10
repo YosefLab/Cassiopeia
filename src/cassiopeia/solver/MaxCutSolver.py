@@ -1,6 +1,6 @@
-"""Module defining a subclass of GreedySolver, the MaxCutSolver. This subclass
+"""Module defining a subclass of GreedySolver, the MaxCutSolver.
 
-implements an inference procedure inspired by Snir and Rao (2006) that
+This subclass implements an inference procedure inspired by Snir and Rao (2006) that
 approximates the max-cut problem on a connectivity graph generated from the
 observed mutations on a group of samples. The connectivity graph represents a
 supertree generated over phylogenetic trees for each individual character, and

@@ -1,7 +1,4 @@
-"""A library that contains dissimilarity functions for the purpose of comparing
-
-phylogenetic samples.
-"""
+"""A library that contains dissimilarity functions for the purpose of comparing phylogenetic samples."""
 
 import itertools
 from collections.abc import Callable
@@ -80,9 +77,7 @@ def hamming_similarity_without_missing(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """A function to return the number of (non-missing) character/state
-
-    mutations shared by two samples.
+    """A function to return the number of (non-missing) character/state mutations shared by two samples.
 
     Args:
         s1: Character states of the first sample

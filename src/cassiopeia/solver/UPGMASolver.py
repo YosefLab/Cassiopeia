@@ -1,6 +1,6 @@
-"""Module defining a subclass of DistanceSolver, UPGMA. The inference procedure is
+"""Module defining a subclass of DistanceSolver, UPGMA.
 
-a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
+The inference procedure is a hierarchical clustering algorithm proposed by Sokal and Michener (1958) that
 iteratively joins together samples with the minimum dissimilarity.
 """
 

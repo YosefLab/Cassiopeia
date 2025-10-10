@@ -1,6 +1,6 @@
-"""Module describing the SharedMutationJoiningSolver. The inference procedure is
+"""Module describing the SharedMutationJoiningSolver.
 
-an agglomerative clustering procedure that joins samples that share the most
+The inference procedure is an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
 

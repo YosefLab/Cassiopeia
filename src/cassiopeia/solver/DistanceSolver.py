@@ -1,6 +1,6 @@
-"""Module defining a subclass of CassiopeiaSolver, the DistanceSolver. Generally,
+"""Module defining a subclass of CassiopeiaSolver, the DistanceSolver.
 
-the inference procedures that inherit from this method will need to implement
+Generally, the inference procedures that inherit from this method will need to implement
 methods for selecting "cherries" and updating the dissimilarity map. Methods
 that will inherit from this class by default are Neighbor-Joining and UPGMA.
 There may be other subclasses of this. Currently also implements a method for

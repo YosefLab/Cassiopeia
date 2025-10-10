@@ -1,6 +1,6 @@
-"""Module defining a subclass of CassiopeiaSolver, the GreedySolver. This class
+"""Module defining a subclass of CassiopeiaSolver, the GreedySolver.
 
-represents the structure of top-down algorithms that build the reconstructed
+This class represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
 

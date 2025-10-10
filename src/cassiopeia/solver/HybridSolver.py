@@ -1,6 +1,6 @@
-"""Module defining a subclass of CassiopeiaSolver, the HybridSolver. This solver
+"""Module defining a subclass of CassiopeiaSolver, the HybridSolver.
 
-consists of two sub-solvers -- a top (greedy) and a bottom solver. The greedy
+This solver consists of two sub-solvers -- a top (greedy) and a bottom solver. The greedy
 solver will be applied until a certain criteria is reached (be it a maximum LCA
 distance or a number of cells) and then another solver is employed to
 infer relationships at the bottom of the phylogeny under construction.

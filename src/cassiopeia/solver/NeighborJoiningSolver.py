@@ -1,6 +1,6 @@
-"""Module defining a subclass of DistanceSolver, NeighborJoiningSolver. The
+"""Module defining a subclass of DistanceSolver, NeighborJoiningSolver.
 
-inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
+The inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """

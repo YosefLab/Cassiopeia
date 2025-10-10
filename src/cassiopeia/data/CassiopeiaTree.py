@@ -1,6 +1,6 @@
-"""Module describing the basic data structure for Cassiopeia - the
+"""Module describing the basic data structure for Cassiopeia - the CassiopeiaTree.
 
-CassiopeiaTree. This data structure will typically contain a character
+This data structure will typically contain a character
 matrix containing that character state information for all the cells in a given
 clonal population (though this is not required). Other important data is also
 stored here, like the priors for given character states as well any meta data

@@ -1,7 +1,4 @@
-"""Module storing generally important functionality for the Cassiopeia-Preprocess
-
-pipeline.
-"""
+"""Module storing generally important functionality for the Cassiopeia-Preprocess pipeline."""
 
 import functools
 import re
@@ -341,7 +338,7 @@ def convert_alleletable_to_character_matrix(
         if intBC in ignore_intbcs:
             continue
 
-        for _i, c in enumerate(cut_sites):
+        for _, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
                 filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(alleletable.loc[sample, c])
 

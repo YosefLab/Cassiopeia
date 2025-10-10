@@ -18,12 +18,10 @@ def setup(output_directory_location: str, verbose: bool) -> None:
     """
     Setup the environment for the preprocessing pipeline.
 
-    Parameters
-    ----------
-    output_directory_location
-        Directory to create or reuse for pipeline outputs.
-    verbose
-        Whether to enable verbose logging output.
+    Args:
+        output_directory_location: Where to look for, or start a new, output
+            directory
+        verbose: Whether or not to log debugging output.
 
     Returns
     -------
@@ -46,10 +44,8 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
     """
     Parse pipeline configuration settings from a string.
 
-    Parameters
-    ----------
-    config_string
-        Contents of the configuration file to interpret.
+    Args:
+        config_string: Configuration file rendered as a string.
 
     Returns
     -------
@@ -124,14 +120,10 @@ def create_pipeline(entry, _exit, stages):
     """
     Create an ordered list of pipeline stages to execute.
 
-    Parameters
-    ----------
-    entry
-        Name of the first stage to run.
-    _exit
-        Name of the final stage to include.
-    stages
-        Ordered mapping of stage names to callables.
+    Args:
+        entry: a string representing a stage in start at.
+        _exit: a string representing the stage to stop.
+        stages: a list of stages in order of the general pipeline.
 
     Returns
     -------

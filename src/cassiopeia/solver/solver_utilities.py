@@ -1,7 +1,4 @@
-"""Module containing general utilities to be called by functions throughout
-
-the solver module
-"""
+"""Module containing general utilities to be called by functions throughout the solver module"""
 
 import time
 from collections.abc import Generator

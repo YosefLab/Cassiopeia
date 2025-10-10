@@ -1,6 +1,6 @@
-"""Module defining a subclass of DistanceSolver, SpectralNeighborJoining. This
+"""Module defining a subclass of DistanceSolver, SpectralNeighborJoining.
 
-algorithm is based on the one developed by Jaffe, et al. (2021) in their paper
+This algorithm is based on the one developed by Jaffe, et al. (2021) in their paper
 titled "Spectral neighbor joining for reconstruction of latent tree models",
 published in the SIAM Journal for Math and Data Science.
 """

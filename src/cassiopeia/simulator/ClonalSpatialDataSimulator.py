@@ -1,8 +1,7 @@
-"""Module defining the ClonalSpatialDataSimulator, which is a subclass of
+"""Module defining the ClonalSpatialDataSimulator, which is a subclass of the SpatialDataSimulator.
 
-the SpatialDataSimulator. The ClonalSpatialDataSimulator simulates spatial
-coordinates with a spatial constraints that clonal populations (i.e. subclones)
-are spatially localized together.
+The ClonalSpatialDataSimulator simulates spatial coordinates with a spatial constraints that
+clonal populations (i.e. subclones) are spatially localized together.
 """
 
 import networkx as nx

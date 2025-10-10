@@ -1,6 +1,6 @@
-"""Module defining a subclass of GreedySolver, the VanillaGreedySolver. The
+"""Module defining a subclass of GreedySolver, the VanillaGreedySolver.
 
-inference procedure here is the "vanilla" Cassiopeia-Greedy, originally proposed
+The inference procedure here is the "vanilla" Cassiopeia-Greedy, originally proposed
 in Jones et al, Genome Biology (2020). In essence, the algorithm proceeds by
 recursively splitting samples into mutually exclusive groups based on the
 presence, or absence, of the most frequently occurring mutation.

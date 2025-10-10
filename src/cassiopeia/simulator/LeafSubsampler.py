@@ -1,8 +1,7 @@
-"""Abstract class LeafSubsampler. Samples the leaves of CassiopeiaTrees and
+"""Abstract class LeafSubsampler.
 
-generates a tree that keeps only the lineages pertaining to the sample.
-
-All leaf subsamplers are derived classes of this abstract class, and at a minimum
+Samples the leaves of CassiopeiaTrees and generates a tree that keeps only the
+lineages pertaining to the sample. All leaf subsamplers are derived classes of this abstract class, and at a minimum
 implement a method called `subsample_leaves`.
 """
 

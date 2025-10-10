@@ -608,7 +608,8 @@ class TestILPSolver(unittest.TestCase):
             self.ilp_solver_small.solve(self.missing_tree, logfile=self.logfile)
 
     def tearDown(self):
-        os.remove(self.logfile)
+        if os.path.isfile(self.logfile):
+            os.remove(self.logfile)
 
 
 if __name__ == "__main__":

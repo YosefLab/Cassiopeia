@@ -1,7 +1,6 @@
-"""Module containing all high-level functionality for preprocessing sequencing
+"""Module containing all high-level functionality for preprocessing sequencing data.
 
-data into character matrices ready for phylogenetic inference. This file
-is mainly invoked by cassiopeia_preprocess.py.
+This file is mainly invoked by cassiopeia_preprocess.py.
 """
 
 import os

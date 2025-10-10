@@ -1,7 +1,6 @@
-"""Module defining the BrownianSpatialDataSimulator, which is a subclass of
+"""Module defining the BrownianSpatialDataSimulator, which is a subclass of the SpatialDataSimulator.
 
-the SpatialDataSimulator. The BrownianSpatialDataSimulator simulates spatial
-coordinates by simulating Brownian motion of each cell.
+The BrownianSpatialDataSimulator simulates spatial coordinates by simulating Brownian motion of each cell.
 """
 
 import numpy as np

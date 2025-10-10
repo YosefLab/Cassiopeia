@@ -1,7 +1,4 @@
-"""Utility functions for building connectivity and similarity graphs for the
-
-Graph-Based solvers.
-"""
+"""Utility functions for building connectivity and similarity graphs for the Graph-Based solvers."""
 
 import itertools
 from collections.abc import Callable

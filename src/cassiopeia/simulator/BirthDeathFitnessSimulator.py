@@ -1,7 +1,6 @@
-"""Module implementing a general phylogenetic tree simulator using forward birth-death
+"""Module implementing a general phylogenetic tree simulator using forward birth-death process.
 
-process, including differing fitness on lineages on the tree. Allows for a
-variety of division and fitness regimes to be specified by the user.
+Allows for a variety of division and fitness regimes to be specified by the user.
 """
 
 from collections.abc import Callable, Generator
