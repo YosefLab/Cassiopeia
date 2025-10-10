@@ -173,12 +173,6 @@ def error_correct_cellbcs_to_whitelist(
             written to. This directory must exist prior to calling this function.
         n_threads: Number of threads to use. Defaults to 1.
 
-    Todo:
-        Currently, the user must provide their own whitelist, and Cassiopeia
-        does not use any of the whitelists provided by the ngs-tools library.
-        At some point, we should update the pipeline so that if ngs-tools
-        provides a pre-packaged whitelists, it uses that for those chemistries.
-
     Returns
     -------
         Path to corrected BAM

@@ -42,12 +42,12 @@ class CassiopeiaTree:
 
     This object stores the key attributes and functionalities a user might want
     for working with lineage tracing experiments. At its core, it stores
-    three main items - a tree, a character matrix, and meta data associated
+    three main items — a tree, a character matrix, and meta data associated
     with the data.
 
     The tree can be fed into the object via Ete3, Networkx, or can be inferred
     using one of the CassiopeiaSolver algorithms in the `solver` module. The
-    tree here is only used for obtaining the _topology_ of the tree.
+    tree here is only used for obtaining the *topology* of the tree.
 
     A character matrix can be stored in the object, containing the states
     observed for each cell. In typical lineage tracing experiments, these are
@@ -59,9 +59,9 @@ class CassiopeiaTree:
     is updated when the character states of leaves are changed.
 
     Some reconstruction algorithms will make use of dissimilarities between
-    cells. To this end, we store these `dissimilarity maps` in the
+    cells. To this end, we store these *dissimilarity maps* in the
     CassiopeiaTree class itself. For users trying to diagnose the reconstruction
-    accuracy with a known groundtruth, they can compare this dissimilarity
+    accuracy with a known ground truth, they can compare this dissimilarity
     map to the phylogenetic distance on the tree.
 
     Meta data for cells or characters can also be stored in this object. These
@@ -73,20 +73,12 @@ class CassiopeiaTree:
     data are the proportion of missing data for each character or the entropy
     of states. These are good statistics to have for feature selection.
 
-    TODO(rzhang): Add check upon initialization that input tree is valid tree.
-    TODO(mattjones315): Add experimental meta data as arguments.
-    TODO(mattjones315): Add utility methods to compute the colless index
-        and the cophenetic correlation wrt to some cell meta item
-    TODO(mattjones315): Add bulk set_states method.
-    TODO(mattjones): Add boolean to `get_tree_topology` which will include
-        all attributes (e.g., node times)
-
     Args:
         character_matrix: The character matrix for the lineage.
         missing_state_indicator: An indicator for missing states in the
             character matrix.
-        cell_meta: Per-cell meta data
-        character_meta: Per-character meta data
+        cell_meta: Per-cell meta data.
+        character_meta: Per-character meta data.
         priors: A dictionary storing the probability of each character mutating
             to a particular state.
         tree: A tree for the lineage.

@@ -245,7 +245,7 @@ class AutoAutoSummary(Autosummary):
             if "attributes" in self.options:
                 _, attribs = self.get_members(c, "attribute")
                 self.content = [f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")]
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, ValueError):
             return super().run()
         return super().run()
 
