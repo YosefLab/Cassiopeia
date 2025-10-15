@@ -9,6 +9,11 @@ import networkx as nx
 import cassiopeia as cas
 
 
+class MockTreeData:
+    def __init__(self):
+        self.obst = None
+
+
 class TestTreeComparisons(unittest.TestCase):
     def setUp(self):
         self.ground_truth_tree = cas.data.CassiopeiaTree(tree=nx.balanced_tree(2, 3, create_using=nx.DiGraph))
@@ -90,6 +95,15 @@ class TestTreeComparisons(unittest.TestCase):
         ground_truth_rake.add_edges_from([(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6)])
 
         self.ground_truth_rake = cas.data.CassiopeiaTree(tree=ground_truth_rake)
+
+        self.tdata = MockTreeData()
+        self.tdata.obst = {
+            "ground_truth": self.ground_truth_tree.get_tree_topology(),
+            "tree1": tree1,
+            "multifurcating": multifurcating_ground_truth,
+            "tree2": tree2,
+            "rake": ground_truth_rake,
+        }
 
     def test_out_group(self):
         out_group = cas.critique.critique_utilities.get_outgroup(self.tree1, ("11", "14", "9"))
@@ -197,11 +211,63 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertEqual(unresolved_triplets_correct[0], 1.0)
         self.assertEqual(proportion_unresolvable[0], 1.0)
 
-    def test_robinson_foulds_same_tree_bifurcating(self):
+    def test_robinson_foulds_bifurcating_same_tree(self):
         rf, max_rf = cas.critique.robinson_foulds(self.ground_truth_tree, self.ground_truth_tree)
 
         self.assertEqual(rf, 0)
         self.assertEqual(max_rf, 10)
+
+    # issue of different leaf_sets
+    # def test_robinson_foulds_bifurcating_different_trees(self):
+    #    rf, max_rf = cas.critique.robinson_foulds(self.ground_truth_tree, self.tree1)
+    #
+    #    self.assertGreater(rf, 0)
+    #    self.assertGreater(max_rf, 0)
+    #    self.assertLessEqual(rf, max_rf)
+
+    def test_robinson_foulds_multifurcating_same_tree(self):
+        rf, max_rf = cas.critique.robinson_foulds(self.multifurcating_ground_truth, self.multifurcating_ground_truth)
+
+        self.assertEqual(rf, 0)
+        self.assertGreater(max_rf, 0)
+
+    # should test multifurcating_different_trees
+
+    # redundant
+    def test_robinson_foulds_with_nx_digraph(self):
+        tree1_graph = self.ground_truth_tree.get_tree_topology()
+        tree2_graph = self.ground_truth_tree.get_tree_topology()
+
+        rf, max_rf = cas.critique.robinson_foulds(tree1_graph, tree2_graph)
+
+        self.assertEqual(rf, 0)
+        self.assertGreater(max_rf, 0)
+
+    def test_robinson_foulds_with_string_keys(self):
+        rf, max_rf = cas.critique.robinson_foulds("ground_truth", "ground_truth", tdata=self.tdata)
+
+        self.assertEqual(rf, 0)
+        self.assertGreater(max_rf, 0)
+
+    # issue of different leaf_sets
+    # def test_robinson_foulds_with_string_keys_different_trees(self):
+    #    rf, max_rf = cas.critique.robinson_foulds("ground_truth", "tree1", tdata=self.tdata)
+    #
+    #    self.assertGreater(rf, 0)
+    #    self.assertGreater(max_rf, 0)
+    #    self.assertLessEqual(rf, max_rf)
+
+    def test_robinson_foulds_type_mismatch_error(self):
+        with self.assertRaises(TypeError):
+            cas.critique.robinson_foulds(self.ground_truth_tree, self.ground_truth_tree.get_tree_topology())
+
+    def test_robinson_foulds_string_without_tdata_error(self):
+        with self.assertRaises(ValueError):
+            cas.critique.robinson_foulds("tree1", "tree2")
+
+    def test_robinson_foulds_string_with_missing_key_error(self):
+        with self.assertRaises(ValueError):
+            cas.critique.robinson_foulds("tree1", "nonexistent_tree", tdata=self.tdata)
 
 
 if __name__ == "__main__":
