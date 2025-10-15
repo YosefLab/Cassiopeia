@@ -139,37 +139,43 @@ def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
         """Return a set of canonical bitmasks representing bipartitions."""
         splits = set()
 
-        for u, v in tree.edges():
-            # Temporarily remove the edge
-            tree_copy = tree.copy()
-            tree_copy.remove_edge(u, v)
+        root = next(n for n in tree.nodes() if tree.degree[n] > 1)
 
-            comps = list(nx.connected_components(tree_copy))
-            if len(comps) != 2:
-                continue  # Should always be 2 in a tree
+        # Post-order DFS to compute leaf sets for each subtree
+        visited = set()
+        leaf_sets = {}  # Maps each node to its descendant leaf bitmask
 
-            # Compute leaf bitsets
-            bits = []
-            for comp in comps:
-                mask = 0
-                for leaf in comp:
-                    if leaf in leaf_index:
-                        mask |= 1 << leaf_index[leaf]
-                bits.append(mask)
+        def dfs(node, parent=None):
+            visited.add(node)
 
-            # Skip trivial splits (single-leaf or empty partitions)
-            if bits[0] == 0 or bits[1] == 0:
-                continue
-            if bin(bits[0]).count("1") == 1 or bin(bits[1]).count("1") == 1:
-                continue
+            # If it's a leaf, return its bitmask
+            if node in leaf_index:
+                mask = 1 << leaf_index[node]
+                leaf_sets[node] = mask
+                return mask
 
-            # Canonicalize (smaller side as representative)
-            part = min(bits)
-            # Flip if larger than complement to keep symmetry
-            if part > ((1 << n_leaves) - 1) ^ part:
-                part = ((1 << n_leaves) - 1) ^ part
-            splits.add(part)
+            # Otherwise, combine children's leaf sets
+            mask = 0
+            for neighbor in tree.neighbors(node):
+                if neighbor != parent and neighbor not in visited:
+                    child_mask = dfs(neighbor, node)
+                    mask |= child_mask
 
+            leaf_sets[node] = mask
+
+            # This edge creates a split: mask vs its complement
+            if parent is not None and mask != 0:
+                complement = ((1 << n_leaves) - 1) ^ mask
+
+                # Skip trivial splits
+                if bin(mask).count("1") > 1 and bin(complement).count("1") > 1:
+                    # Canonicalize
+                    part = min(mask, complement)
+                    splits.add(part)
+
+            return mask
+
+        dfs(root)
         return splits
 
     splits1 = get_splits(tree1_undirected)
@@ -186,12 +192,14 @@ def robinson_foulds(
 
     Computes the Robinsons-Foulds distance between two trees. Currently, this
     is the unweighted variant as most of the algorithms we use are maximum-
-    parsimony based and do not use edge weights. This is mostly just a wrapper
-    around the `robinson_foulds` method from Ete3.
-
+    parsimony based and do not use edge weights.
     Args:
-        tree1: A CassiopeiaTree representing the first tree
-        tree2: A CassiopeiaTree representing the second tree
+        tree1: The first tree. Can be one of:
+            - CassiopeiaTree: A Cassiopeia tree object
+            - str: Key to look up tree in tdata.obst
+            - nx.DiGraph: A NetworkX directed graph
+        tree2: The second tree. Must be the same type as tree1.
+        tdata: TreeData object containing trees in obst attribute. Required when tree1 and tree2 are strings.
 
     Returns
     -------
@@ -222,6 +230,7 @@ def robinson_foulds(
     elif isinstance(tree1, nx.DiGraph):
         T1 = tree1
         T2 = tree2
+
     else:
         raise TypeError("Unsupported tree type")
 
