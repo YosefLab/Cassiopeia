@@ -1,8 +1,4 @@
-"""
-This file stores a subclass of TreeSolver, the SimpleFitSubcloneSimulator. The
-SimpleFitSubcloneSimulator simulates a clonal population which develops one
-fit subclone.
-"""
+"""Implementation of a TreeSolver variant that simulates a single fit subclone."""
 
 from collections.abc import Callable, Generator
 from queue import Queue
@@ -14,8 +10,7 @@ from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
 
 class SimpleFitSubcloneSimulator(TreeSimulator):
-    r"""
-    Simulates a clonal population which develops one fit subclone.
+    r"""Simulates a clonal population which develops one fit subclone.
 
     This TreeSimulator simulates a (binary) clonal population that evolves
     neutrally with constant or generated branch length 'branch_length_neutral',

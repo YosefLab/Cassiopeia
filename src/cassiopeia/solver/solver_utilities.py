@@ -1,6 +1,4 @@
-"""This file contains general utilities to be called by functions throughout
-the solver module
-"""
+"""Module containing general utilities to be called by functions throughout the solver module"""
 
 import time
 from collections.abc import Generator
@@ -31,6 +29,7 @@ def node_name_generator() -> Generator[str, None, None]:
 
 def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
     """Collapse unifurcations.
+
     Collapse all unifurcations in the tree, namely any node with only one child
     should be removed and all children should be connected to the parent node.
     Args:

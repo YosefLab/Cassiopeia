@@ -1,8 +1,7 @@
-"""
-Abstract class LeafSubsampler. Samples the leaves of CassiopeiaTrees and
-generates a tree that keeps only the lineages pertaining to the sample.
+"""Abstract class LeafSubsampler.
 
-All leaf subsamplers are derived classes of this abstract class, and at a minimum
+Samples the leaves of CassiopeiaTrees and generates a tree that keeps only the
+lineages pertaining to the sample. All leaf subsamplers are derived classes of this abstract class, and at a minimum
 implement a method called `subsample_leaves`.
 """
 
@@ -13,8 +12,7 @@ from cassiopeia.mixins import LeafSubsamplerError  # noqa: F401
 
 
 class LeafSubsampler(abc.ABC):
-    """
-    Abstract base class for all leaf samplers.
+    """Abstract base class for all leaf samplers.
 
     A LeafSubsampler implements a method 'subsample_leaves' which, given a
     tree, generates a sample of the observed leaves in that tree and returns a
@@ -24,8 +22,7 @@ class LeafSubsampler(abc.ABC):
 
     @abc.abstractmethod
     def subsample_leaves(self, tree: CassiopeiaTree) -> CassiopeiaTree:
-        """
-        Subsamples the leaves of a CassiopeiaTree.
+        """Subsamples the leaves of a CassiopeiaTree.
 
         Returns a new CassiopeiaTree which is the result of subsampling the
         leaves in the original CassiopeiaTree and removing ancestral nodes no

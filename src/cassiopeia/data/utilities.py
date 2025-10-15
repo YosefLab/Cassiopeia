@@ -22,8 +22,7 @@ def get_lca_characters(
     vecs: list[list[int] | list[tuple[int, ...]]],
     missing_state_indicator: int,
 ) -> list[int]:
-    """Builds the character vector of the LCA of a list of character vectors,
-    obeying Camin-Sokal Parsimony.
+    """Builds the character vector of the LCA of a list of character vectors, obeying Camin-Sokal Parsimony.
 
     For each index in the reconstructed vector, imputes the non-missing
     character if only one of the constituent vectors has a missing value at that

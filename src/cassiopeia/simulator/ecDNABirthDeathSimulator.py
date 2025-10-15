@@ -1,6 +1,6 @@
-"""
-This file stores a general phylogenetic tree simulator using forward birth-death
-process, including differing fitness on lineages on the tree. Allows for a
+"""Module implementing a general phylogenetic tree simulator using forward birth-death process.
+
+This simulator allows for differing fitness on lineages on the tree. Allows for a
 variety of division and fitness regimes to be specified by the user.
 """
 
@@ -241,6 +241,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         observed_nodes: list[str],
     ) -> None:
         """A helper function that samples an event for a lineage.
+
         Takes a lineage and determines the next event in that lineage's
         future. Simulates the lifespan of a new descendant. Birth and
         death waiting times are sampled, representing how long the
@@ -491,7 +492,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         # apply noise model
         for i in range(len(self.initial_copy_number)):
             cell_metadata[f"Observed_ecDNA_{i}"] = cell_metadata.apply(
-                lambda x: np.random.binomial(x[f"ecDNA_{i}"], self.capture_efficiency),
+                lambda x, idx=i: np.random.binomial(x[f"ecDNA_{idx}"], self.capture_efficiency),
                 axis=1,
             )
 

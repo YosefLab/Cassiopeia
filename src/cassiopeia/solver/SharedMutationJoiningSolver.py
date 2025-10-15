@@ -1,6 +1,6 @@
-"""
-This file stores the SharedMutationJoiningSolver. The inference procedure is
-an agglomerative clustering procedure that joins samples that share the most
+"""Module describing the SharedMutationJoiningSolver.
+
+The inference procedure is an agglomerative clustering procedure that joins samples that share the most
 identical character/state mutations.
 """
 
@@ -26,8 +26,7 @@ from cassiopeia.solver import (
 
 
 class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    Shared-Mutation-Joining class for Cassiopeia.
+    """Shared-Mutation-Joining class for Cassiopeia.
 
     Implements an iterative, bottom-up agglomerative clustering procedure. The
     algorithm iteratively clusters the samples in the sample pool by the number

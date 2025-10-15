@@ -1,5 +1,4 @@
-"""
-Abstract class DataSimulator, for overlaying data onto a CassiopeiaTree.
+"""Abstract class DataSimulator, for overlaying data onto a CassiopeiaTree.
 
 All data simulators are derived classes of this abstract class, and at a minimum
 implement a method called `overlay_data`.
@@ -12,8 +11,7 @@ from cassiopeia.mixins import DataSimulatorError  # noqa: F401
 
 
 class DataSimulator(abc.ABC):
-    """
-    DataSimulator is an abstract class that all data overlayers derive from.
+    """DataSimulator is an abstract class that all data overlayers derive from.
 
     A DataSimulator is very generic and meant to give users the flexibility to
     overlay any kind of data onto the tree using this single API. The prime
@@ -24,8 +22,7 @@ class DataSimulator(abc.ABC):
 
     @abc.abstractmethod
     def overlay_data(self, tree: CassiopeiaTree) -> None:
-        """
-        Overlay data on a CassiopeiaTree (in-place).
+        """Overlay data on a CassiopeiaTree (in-place).
 
         The tree topology must be initialized.
 

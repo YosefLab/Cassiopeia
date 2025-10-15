@@ -1,5 +1,5 @@
-"""
-This file stores useful functions for dealing with alignments.
+"""Module storing useful functions for dealing with alignments.
+
 Invoked through pipeline.py and supports the align_sequences function.
 """
 

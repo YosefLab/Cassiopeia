@@ -1,5 +1,4 @@
-"""
-Main logic behind Cassiopeia-preprocess.
+"""Main logic behind Cassiopeia-preprocess.
 
 This file stores the main entry point for Cassiopeia-preprocess, and makes
 heavy use of the high level functionality in
@@ -37,6 +36,13 @@ STAGES = {
 @logger.namespaced("main")
 @utilities.log_runtime
 def main():
+    """
+    Execute the Cassiopeia preprocess command line interface.
+
+    Returns
+    -------
+    None - The function orchestrates pipeline execution and exits on completion.
+    """
     # --------------- Create Argument Parser & Read in Arguments -------------- #
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Specify a config file for analysis.")

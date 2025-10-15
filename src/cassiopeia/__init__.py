@@ -1,5 +1,7 @@
 """Top-level for Cassiopeia development."""
 
+import sys
+
 from . import critique, data, solver
 from . import plotting as pl
 from . import preprocess as pp
@@ -15,8 +17,6 @@ except ModuleNotFoundError:
     import importlib_metadata
 package_name = "cassiopeia-lineage"
 __version__ = importlib_metadata.version(package_name)
-
-import sys
 
 sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim", "sp"]})
 del sys

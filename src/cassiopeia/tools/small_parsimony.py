@@ -1,10 +1,4 @@
-"""
-This file contains several tools useful for using small-parsimony to analyze
-phylogenies.
-
-Amongst these tools are basic Fitch-Hartigan reconstruction, parsimony scoring,
-and the FitchCount algorithm described in Quinn, Jones et al, Science (2021).
-"""
+"""Utilities for applying small-parsimony analyses to phylogenies."""
 
 import itertools
 
@@ -223,12 +217,12 @@ def score_small_parsimony(
         try:
             if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(child, label_key):
                 parsimony += 1
-        except CassiopeiaTreeError:
+        except CassiopeiaTreeError as error:
             raise CassiopeiaError(
                 f"{label_key} does not exist for a node, "
                 "try running Fitch-Hartigan or passing "
                 "infer_ancestral_states=True."
-            )
+            ) from error
     return parsimony
 
 

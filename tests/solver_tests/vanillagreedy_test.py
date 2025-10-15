@@ -149,7 +149,7 @@ class VanillaGreedySolverTest(unittest.TestCase):
         vgsolver = VanillaGreedySolver()
         keep_rows = (
             cm.apply(
-                lambda x: [set(s) if type(s) == tuple else {s} for s in x.values],
+                lambda x: [set(s) if isinstance(s, tuple) else {s} for s in x.values],
                 axis=0,
             )
             .apply(tuple, axis=1)

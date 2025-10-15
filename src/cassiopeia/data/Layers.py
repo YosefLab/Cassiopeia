@@ -1,5 +1,4 @@
-"""
-This file stores the data structure behind layers in a CassiopeiaTree object.
+"""Module describing the data structure behind layers in a CassiopeiaTree object.
 
 Briefly, Layers are collection of character matrices that can be used to
 store multiple versions of mutation data for each cell. This can be useful,
@@ -21,6 +20,21 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class Layers(dict):
+    """
+    Container mapping layer names to character matrices.
+
+    Parameters
+    ----------
+    parent
+        Tree to which these layers belong.
+    layers
+        Optional initial mapping of layer names to data frames.
+
+    Returns
+    -------
+    Layers - Instance storing the provided layers for the parent tree.
+    """
+
     attrname = "layers"
 
     parent_mapping: Mapping[str, pd.DataFrame]
@@ -38,6 +52,13 @@ class Layers(dict):
         return list(self.keys())
 
     def copy(self):
+        """
+        Produce a shallow copy of the layers container.
+
+        Returns
+        -------
+        Layers - New container sharing the same parent tree.
+        """
         d = Layers(self._parent)
         for k, v in self.items():
             d[k] = v.copy()

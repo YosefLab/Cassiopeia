@@ -1,7 +1,7 @@
-""" "
-A file that stores general functionality for setting up a Cassiopeia
-preprocessing instance. This file supports the command line interface entrypoint
-in cassiopeia_preprocess.py.
+"""A file that stores setup utilities for Cassiopeia preprocessing.
+
+This module supports the command line interface entry point in
+``cassiopeia_preprocess.py``.
 """
 
 import ast
@@ -15,12 +15,17 @@ from cassiopeia.preprocess import constants
 
 
 def setup(output_directory_location: str, verbose: bool) -> None:
-    """Setup environment for pipeline
+    """
+    Setup the environment for the preprocessing pipeline.
 
     Args:
         output_directory_location: Where to look for, or start a new, output
             directory
         verbose: Whether or not to log debugging output.
+
+    Returns
+    -------
+    None - Configures logging handlers and directory structure.
     """
     if not os.path.isdir(output_directory_location):
         os.mkdir(output_directory_location)
@@ -36,18 +41,20 @@ def setup(output_directory_location: str, verbose: bool) -> None:
 
 
 def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
-    """Parse config for pipeline.
+    """
+    Parse pipeline configuration settings from a string.
 
     Args:
         config_string: Configuration file rendered as a string.
 
     Returns
     -------
-        A dictionary mapping parameters for each preprocessing stage.
+    dict[str, dict[str, Any]] - Mapping of stage names to their parameter dictionaries.
 
     Raises
     ------
-        UnspecifiedConfigParameterError
+    UnspecifiedConfigParameterError
+        Raised when required general configuration parameters are absent.
     """
     config = configparser.ConfigParser()
 
@@ -110,7 +117,8 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
 
 
 def create_pipeline(entry, _exit, stages):
-    """Create pipeline given an entry point.
+    """
+    Create an ordered list of pipeline stages to execute.
 
     Args:
         entry: a string representing a stage in start at.
@@ -119,7 +127,7 @@ def create_pipeline(entry, _exit, stages):
 
     Returns
     -------
-        A list of procedures to run.
+    list[str] - Ordered names of procedures to run.
     """
     stage_names = list(stages.keys())
     start = stage_names.index(entry)

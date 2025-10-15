@@ -1,4 +1,4 @@
-"""This file contains included missing data imputation methods."""
+"""Module containing included missing data imputation methods."""
 
 import numpy as np
 import pandas as pd
