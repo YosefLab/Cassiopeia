@@ -231,7 +231,20 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertEqual(rf, 0)
         self.assertGreater(max_rf, 0)
 
-    # should test multifurcating_different_trees
+    def test_robinson_foulds_different_trees_bifurcating(self):
+        rf, max_rf = cas.critique.robinson_foulds(self.ground_truth_tree, self.tree1)
+        self.assertEqual(rf, 8)
+        self.assertEqual(max_rf, 10)
+
+    def test_robinson_foulds_different_trees_multifurcating(self):
+        rf, max_rf = cas.critique.robinson_foulds(self.tree2, self.multifurcating_ground_truth)
+        self.assertEqual(rf, 4)
+        self.assertEqual(max_rf, 12)
+
+    def test_robinson_foulds_same_tree_multifurcating(self):
+        rf, max_rf = cas.critique.robinson_foulds(self.multifurcating_ground_truth, self.multifurcating_ground_truth)
+        self.assertEqual(rf, 0)
+        self.assertEqual(max_rf, 12)
 
     # redundant
     def test_robinson_foulds_with_nx_digraph(self):
