@@ -1,5 +1,6 @@
 """
 A library that stores functions for comparing two trees to one another.
+
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """
@@ -7,8 +8,9 @@ function.
 import copy
 from collections import defaultdict
 
-import ete3
+import networkx as nx
 import numpy as np
+from treedata import TreeData
 
 from cassiopeia.critique import critique_utilities
 from cassiopeia.data import CassiopeiaTree
@@ -115,7 +117,74 @@ def triplets_correct(
     )
 
 
-def robinson_foulds(tree1: CassiopeiaTree, tree2: CassiopeiaTree) -> tuple[float, float]:
+def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
+    """
+    Compute the unrooted Robinson–Foulds distance between two trees using bitset encoding.
+
+    Trees must be connected, acyclic, and have the same leaf labels.
+
+    Args:
+        tree1: An nx.DiGraph representing the first tree
+        tree2: An nx.DiGraph representing the second tree
+    """
+    tree1_undirected = tree1.to_undirected()
+    tree2_undirected = tree2.to_undirected()
+    # --- Helper: map leaves to bit positions ---
+    leaves = sorted([n for n in tree1_undirected if tree1_undirected.degree[n] == 1])
+    leaves2 = sorted([n for n in tree2_undirected if tree2_undirected.degree[n] == 1])
+    if set(leaves) != set(leaves2):
+        raise ValueError("Trees must have identical leaf sets.")
+
+    leaf_index = {leaf: i for i, leaf in enumerate(leaves)}
+    n_leaves = len(leaves)
+
+    def get_splits(tree):
+        """Return a set of canonical bitmasks representing bipartitions."""
+        splits = set()
+
+        for u, v in tree.edges():
+            # Temporarily remove the edge
+            tree_copy = tree.copy()
+            tree_copy.remove_edge(u, v)
+
+            comps = list(nx.connected_components(tree_copy))
+            if len(comps) != 2:
+                continue  # Should always be 2 in a tree
+
+            # Compute leaf bitsets
+            bits = []
+            for comp in comps:
+                mask = 0
+                for leaf in comp:
+                    if leaf in leaf_index:
+                        mask |= 1 << leaf_index[leaf]
+                bits.append(mask)
+
+            # Skip trivial splits (single-leaf or empty partitions)
+            if bits[0] == 0 or bits[1] == 0:
+                continue
+            if bin(bits[0]).count("1") == 1 or bin(bits[1]).count("1") == 1:
+                continue
+
+            # Canonicalize (smaller side as representative)
+            part = min(bits)
+            # Flip if larger than complement to keep symmetry
+            if part > ((1 << n_leaves) - 1) ^ part:
+                part = ((1 << n_leaves) - 1) ^ part
+            splits.add(part)
+
+        return splits
+
+    splits1 = get_splits(tree1_undirected)
+    splits2 = get_splits(tree2_undirected)
+
+    rf = len(splits1.symmetric_difference(splits2))
+    return rf, splits1, splits2
+
+
+def robinson_foulds(
+    tree1: CassiopeiaTree | str | nx.DiGraph, tree2: CassiopeiaTree | str | nx.DiGraph, tdata: TreeData | None = None
+) -> tuple[float, float]:
     """Compares two trees with Robinson-Foulds distance.
 
     Computes the Robinsons-Foulds distance between two trees. Currently, this
@@ -132,25 +201,34 @@ def robinson_foulds(tree1: CassiopeiaTree, tree2: CassiopeiaTree) -> tuple[float
         The Robinson-Foulds distance between the two trees and the maximum
             Robinson-Foulds distance for downstream normalization
     """
-    # create copies of the trees and collapse process
-    T1 = copy.deepcopy(tree1)
-    T2 = copy.deepcopy(tree2)
+    # argument logic
+    if type(tree1) is not type(tree2):
+        raise TypeError("tree1 and tree2 must be the same type. ")
 
-    # convert to Ete3 trees and collapse unifurcations
-    T1.collapse_unifurcations()
-    T2.collapse_unifurcations()
+    if isinstance(tree1, CassiopeiaTree):
+        T1 = tree1.get_tree_topology()
+        T2 = tree2.get_tree_topology()
 
-    T1 = ete3.Tree(T1.get_newick(), format=1)
-    T2 = ete3.Tree(T2.get_newick(), format=1)
+    elif isinstance(tree1, str):
+        if tdata is None:
+            raise ValueError("When tree1 and tree2 are strings, tdata must be provided")
+        if not hasattr(tdata, "obst") or tdata.obst is None:
+            raise ValueError("tdata does not have an 'obst' attribute")
+        if tree1 not in tdata.obst or tree2 not in tdata.obst:
+            raise ValueError(
+                f"Tree keys must exist in tdata.obst. Missing: {[k for k in [tree1, tree2] if k not in tdata.obst]}"
+            )
 
-    (
-        rf,
-        rf_max,
-        names,
-        edges_t1,
-        edges_t2,
-        discarded_edges_t1,
-        discarded_edges_t2,
-    ) = T1.robinson_foulds(T2, unrooted_trees=True)
+        T1 = tdata.obst[tree1]
+        T2 = tdata.obst[tree2]
 
-    return rf, rf_max
+    elif isinstance(tree1, nx.DiGraph):
+        T1 = tree1
+        T2 = tree2
+    else:
+        raise TypeError("Unsupported tree type")
+
+    rf, splits1, splits2 = _robinson_foulds_bitset(T1, T2)
+    max_rf = len(splits1) + len(splits2)  # Maximum possible RF distance
+
+    return rf, max_rf
