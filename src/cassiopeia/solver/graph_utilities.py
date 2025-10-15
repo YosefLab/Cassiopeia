@@ -1,7 +1,4 @@
-"""
-Utility functions for building connectivity and similarity graphs for the
-Graph-Based solvers.
-"""
+"""Utility functions for building connectivity and similarity graphs for the Graph-Based solvers."""
 
 import itertools
 from collections.abc import Callable
@@ -36,8 +33,8 @@ def construct_connectivity_graph(
     samples: list[str],
     weights: dict[int, dict[int, float]] | None = None,
 ) -> nx.Graph:
-    """
-    TODO: Optimize with numba?
+    """TODO: Optimize with numba?
+
     Generates connectivity graph for max-cut algorithm.
 
     Instantiates a graph with a node for each sample. This graph represents a
@@ -184,8 +181,8 @@ def construct_similarity_graph(
     threshold: int = 0,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> nx.Graph:
-    """
-    TODO: Optimize with numba?
+    """TODO: Optimize with numba?
+
     Generates a similarity graph on the sample set.
 
     Generates a similarity graph with the samples in the sample set as nodes.
@@ -274,6 +271,7 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
 
     def set_improvement_potential(node: int):
         """A helper function to calculate the change to the cut weight by
+
         moving the node to the other side of the partition.
 
         Args:

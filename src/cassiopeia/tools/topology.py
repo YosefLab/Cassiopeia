@@ -1,7 +1,4 @@
-"""
-Utilities to assess topological properties of a phylogeny, such as balance
-and expansion.
-"""
+"""Utilities to assess topological properties of a phylogeny, such as balance and expansion."""
 
 import math
 from collections.abc import Callable

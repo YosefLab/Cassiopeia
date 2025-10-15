@@ -1,6 +1,6 @@
-"""
-This file stores a subclass of CassiopeiaSolver, the GreedySolver. This class
-represents the structure of top-down algorithms that build the reconstructed
+"""Module defining a subclass of CassiopeiaSolver, the GreedySolver.
+
+This class represents the structure of top-down algorithms that build the reconstructed
 tree by recursively splitting the set of samples based on some split criterion.
 """
 
@@ -21,8 +21,7 @@ from cassiopeia.solver import CassiopeiaSolver, solver_utilities
 
 
 class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
-    """
-    A Greedy Cassiopeia solver.
+    """A Greedy Cassiopeia solver.
 
     GreedySolver is an abstract class representing the structure of top-down
     inference algorithms. The solver procedure contains logic to build a tree

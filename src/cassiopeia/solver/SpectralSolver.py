@@ -1,5 +1,5 @@
-"""
-This file stores a subclass of GreedySolver, the SpectralSolver.
+"""Module defining a subclass of GreedySolver, the SpectralSolver.
+
 This subclass implements an inference procedure that uses Fiedler's algorithm to
 minimize for a version of the normalized cut on a similarity graph generated from
 the observed mutations on a group of samples. The goal is to find a partition
@@ -22,8 +22,7 @@ from cassiopeia.solver import (
 
 
 class SpectralSolver(GreedySolver.GreedySolver):
-    """
-    A spectral-based CassiopeiaSolver.
+    """A spectral-based CassiopeiaSolver.
 
     The SpectralSolver implements a top-down algorithm that recursively
     partitions the sample set based on similarity. At each recursive step,

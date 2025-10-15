@@ -1,7 +1,4 @@
-"""
-This file stores generally important functionality for the Cassiopeia-Preprocess
-pipeline.
-"""
+"""Module storing generally important functionality for the Cassiopeia-Preprocess pipeline."""
 
 import functools
 import re
@@ -131,8 +128,7 @@ def filter_cells(
 
 @log_molecule_table
 def filter_umis(molecule_table: pd.DataFrame, min_reads_per_umi: int = 100) -> pd.DataFrame:
-    """
-    Filters out UMIs with too few reads.
+    """Filters out UMIs with too few reads.
 
     Filters out all UMIs with a read count <= min_reads_per_umi.
 
@@ -155,8 +151,7 @@ def error_correct_intbc(
     umi_count_thresh: int = 10,
     dist_thresh: int = 1,
 ) -> pd.DataFrame:
-    """
-    Error corrects close intBCs with small enough unique UMI counts.
+    """Error corrects close intBCs with small enough unique UMI counts.
 
     Considers each pair of intBCs sharing a cellBC in the DataFrame for
     correction. For a pair of intBCs, changes all instances of one to other if:
@@ -226,8 +221,7 @@ def error_correct_intbc(
 def record_stats(
     molecule_table: pd.DataFrame,
 ) -> tuple[np.array, np.array, np.array]:
-    """
-    Simple function to record the number of UMIs.
+    """Simple function to record the number of UMIs.
 
     Args:
         molecule_table: A DataFrame of alignments
@@ -344,7 +338,7 @@ def convert_alleletable_to_character_matrix(
         if intBC in ignore_intbcs:
             continue
 
-        for i, c in enumerate(cut_sites):
+        for _, c in enumerate(cut_sites):
             if intBC not in ignore_intbcs:
                 filtered_samples[cell].setdefault(f"{intBC}{c}", []).append(alleletable.loc[sample, c])
 
@@ -391,7 +385,7 @@ def convert_alleletable_to_character_matrix(
                 transformed_states = []
 
                 for state in states:
-                    if type(state) != str and np.isnan(state):
+                    if not isinstance(state, str) and np.isnan(state):
                         transformed_states.append(missing_data_state)
                         continue
 
@@ -621,7 +615,7 @@ def convert_character_matrix_to_allele_table(
     allele_table = pd.DataFrame(columns=["cellBC", "intBC", "allele", "r1", "UMI"])
 
     def disambiguate_allele(char, allele):
-        if type(allele) == tuple:
+        if isinstance(allele, tuple):
             if keep_ambiguous:
                 all_alleles = [state_to_indel[int(char)][a] if a != 0 else "None" for a in allele]
                 return all_alleles

@@ -1,6 +1,6 @@
-"""
-This file stores a subclass of GreedySolver, the MaxCutSolver. This subclass
-implements an inference procedure inspired by Snir and Rao (2006) that
+"""Module defining a subclass of GreedySolver, the MaxCutSolver.
+
+This subclass implements an inference procedure inspired by Snir and Rao (2006) that
 approximates the max-cut problem on a connectivity graph generated from the
 observed mutations on a group of samples. The connectivity graph represents a
 supertree generated over phylogenetic trees for each individual character, and
@@ -18,8 +18,7 @@ from cassiopeia.solver import GreedySolver, graph_utilities
 
 
 class MaxCutSolver(GreedySolver.GreedySolver):
-    """
-    A MaxCut graph-based CassiopeiaSolver.
+    """A MaxCut graph-based CassiopeiaSolver.
 
     The MaxCutSolver implements a top-down algorithm that recursively
     partitions the sample set based on connectivity. At each recursive step,

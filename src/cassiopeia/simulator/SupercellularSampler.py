@@ -1,5 +1,4 @@
-"""
-A subclass of LeafSubsampler, the SupercellularSampler.
+"""A subclass of LeafSubsampler, the SupercellularSampler.
 
 Iteratively, this subsampler randomly merges two leaves to generate a tree with
 ambiguous character states. The probability that two leaves will be merged is
@@ -16,13 +15,20 @@ from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class SupercellularSampler(LeafSubsampler):
+    """
+    Merge leaves together to simulate supercellular observations.
+
+    Returns
+    -------
+    SupercellularSampler - Configured sampler that merges leaves.
+    """
+
     def __init__(
         self,
         ratio: float | None = None,
         number_of_merges: float | None = None,
     ):
-        """
-        Merge leaves in a tree to generate a new tree with ambiguous states.
+        """Merge leaves in a tree to generate a new tree with ambiguous states.
 
         Note that according to this procedure, an already merged (and therefore
         ambiguous leaf) may be merged again.

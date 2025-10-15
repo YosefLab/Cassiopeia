@@ -1,9 +1,4 @@
-"""
-This file stores an abstract subclass of DataSimulator, the
-SpatialDataSimulator. A SpatialDataSimulator overlays spatial data onto a
-Cassiopeiatree, i.e. it sets the spatial coordinates of a CassiopeiaTree
-(in particular, as attributes of the nodes of the tree and the cell meta).
-"""
+"""Abstract DataSimulator subclass for overlaying spatial metadata."""
 
 import abc
 
@@ -12,8 +7,8 @@ from cassiopeia.simulator.DataSimulator import DataSimulator
 
 
 class SpatialDataSimulator(DataSimulator):
-    """
-    SpatialDataSimulator is an abstract class that all spatial data simulators
+    """SpatialDataSimulator is an abstract class that all spatial data simulators
+
     derive from.
 
     A SpatialDataSimulator is useful for simulating spatial assays in silico.
@@ -26,8 +21,7 @@ class SpatialDataSimulator(DataSimulator):
 
     @abc.abstractmethod
     def overlay_data(self, tree: CassiopeiaTree) -> None:
-        """
-        Overlay spatial data onto the CassiopeiaTree (in-place).
+        """Overlay spatial data onto the CassiopeiaTree (in-place).
 
         This sets the spatial coordinates of all nodes in the tree. These
         coordinates are stored as the `spatial` node attribute. For leaves,

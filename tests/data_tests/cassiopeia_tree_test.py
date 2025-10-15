@@ -262,7 +262,7 @@ class TestCassiopeiaTree(unittest.TestCase):
 
         self.assertEqual(tree.n_cell, 10)
         with self.assertRaises(CassiopeiaTreeError):
-            tree.n_character
+            _ = tree.n_character
 
         test_nodes = tree.nodes
         expected_nodes = list(self.test_network.nodes())
@@ -704,7 +704,7 @@ class TestCassiopeiaTree(unittest.TestCase):
         """
         tree = cas.data.CassiopeiaTree(character_matrix=self.character_matrix)
         with self.assertRaises(CassiopeiaTreeError):
-            tree.root
+            _ = tree.root
 
     def test_cache_internals_not_exposed(self):
         r"""

@@ -1,6 +1,6 @@
-"""
-This file stores a subclass of DistanceSolver, NeighborJoiningSolver. The
-inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
+"""Module defining a subclass of DistanceSolver, NeighborJoiningSolver.
+
+The inference procedure is the Neighbor-Joining algorithm proposed by Saitou and
 Nei (1987) that iteratively joins together samples that minimize the Q-criterion
 on the dissimilarity map.
 """
@@ -22,8 +22,7 @@ from cassiopeia.solver import (
 
 
 class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
-    """
-    Neighbor-Joining class for Cassiopeia.
+    """Neighbor-Joining class for Cassiopeia.
 
     Implements the Neighbor-Joining algorithm described by Saitou and Nei (1987)
     as a derived class of DistanceSolver. This class inherits the generic

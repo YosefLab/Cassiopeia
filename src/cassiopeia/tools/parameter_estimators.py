@@ -1,7 +1,4 @@
-"""
-This file stores functions for estimating lineage tracing parameters.
-Currently, we'll support the estimation of mutation and missing data rates.
-"""
+"""Utilities for estimating lineage tracing parameters."""
 
 import numpy as np
 
@@ -169,8 +166,7 @@ def estimate_missing_data_rates(
     heritable_missing_rate: float | None = None,
     layer: str | None = None,
 ) -> tuple[float, float]:
-    """
-    Estimates both missing data parameters given one of the two from a tree.
+    """Estimates both missing data parameters given one of the two from a tree.
 
     The stochastic missing probability is the probability that any given
     cell/character pair acquires stochastic missing data in the character

@@ -1,7 +1,4 @@
-"""
-A library that contains dissimilarity functions for the purpose of comparing
-phylogenetic samples.
-"""
+"""A library that contains dissimilarity functions for the purpose of comparing phylogenetic samples."""
 
 import itertools
 from collections.abc import Callable
@@ -80,8 +77,7 @@ def hamming_similarity_without_missing(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """A function to return the number of (non-missing) character/state
-    mutations shared by two samples.
+    """A function to return the number of (non-missing) character/state mutations shared by two samples.
 
     Args:
         s1: Character states of the first sample
@@ -114,8 +110,8 @@ def hamming_similarity_normalized_over_missing(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """
-    A function to return the number of (non-missing) character/state mutations
+    """A function to return the number of (non-missing) character/state mutations
+
     shared by two samples, normalized over the amount of missing data.
 
     Args:
@@ -195,6 +191,7 @@ def weighted_hamming_similarity(
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     """A function to return the weighted number of (non-missing) character/state
+
     mutations shared by two samples.
 
     Args:
@@ -238,8 +235,7 @@ def exponential_negative_hamming_distance(
     missing_state_indicator=-1,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """
-    Gives a similarity function from the inverse of weighted hamming distance.
+    """Gives a similarity function from the inverse of weighted hamming distance.
 
     This simply returns exp(-d(i,j)) where d is the weighted_hamming_distance
     function as above where no weights are passed in.  In other words, we

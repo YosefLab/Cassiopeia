@@ -1,6 +1,6 @@
-"""
-This file defines the CompleteBinarySimulator, which inherits TreeSimulator,
-that simulates complte binary trees. In this sense, this is the simplest tree
+"""Module defining the CompleteBinarySimulator, which inherits TreeSimulator.
+
+The CompleteBinarySimulator simulates complete binary trees. In this sense, this is the simplest tree
 simulator.
 """
 

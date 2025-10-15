@@ -1,5 +1,5 @@
-"""
-This file contains functions pertaining to filtering cell doublets.
+"""Module containing functions pertaining to filtering cell doublets.
+
 Invoked through pipeline.py and supports the filter_molecule_table and
 call_lineage_groups functions.
 """
