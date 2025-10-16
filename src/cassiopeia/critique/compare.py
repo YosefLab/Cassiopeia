@@ -208,7 +208,7 @@ def robinson_foulds(
     """
     # argument logic
     if type(tree1) is not type(tree2):
-        raise TypeError("tree1 and tree2 must be the same type. ")
+        raise TypeError("tree1 and tree2 must be the same type.")
 
     if isinstance(tree1, CassiopeiaTree):
         T1 = tree1.get_tree_topology()
@@ -216,9 +216,9 @@ def robinson_foulds(
 
     elif isinstance(tree1, str):
         if tdata is None:
-            raise ValueError("When tree1 and tree2 are strings, tdata must be provided")
-        if not hasattr(tdata, "obst") or tdata.obst is None:
-            raise ValueError("tdata does not have an 'obst' attribute")
+            raise ValueError("When tree1 and tree2 are strings, tdata must be provided.")
+        if not hasattr(tdata, "obst") or not tdata.obst_keys():
+            raise ValueError("tdata does not have an 'obst' attribute.")
         if tree1 not in tdata.obst or tree2 not in tdata.obst:
             raise ValueError(
                 f"Tree keys must exist in tdata.obst. Missing: {[k for k in [tree1, tree2] if k not in tdata.obst]}"
@@ -232,7 +232,7 @@ def robinson_foulds(
         T2 = tree2
 
     else:
-        raise TypeError("Unsupported tree type")
+        raise TypeError("Unsupported tree type.")
 
     rf, splits1, splits2 = _robinson_foulds_bitset(T1, T2)
     max_rf = len(splits1) + len(splits2)  # Maximum possible RF distance

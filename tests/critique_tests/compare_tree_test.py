@@ -232,6 +232,15 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertEqual(rf, 0)
         self.assertEqual(max_rf, 12)
 
+    def test_robinson_foulds_different_leaf_sets_error(self):
+        different_leaves_tree = nx.DiGraph()
+        different_leaves_tree.add_edges_from([(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+
+        with self.assertRaises(ValueError) as context:
+            cas.critique.robinson_foulds(self.ground_truth_tree.get_tree_topology(), different_leaves_tree)
+
+        self.assertIn("identical leaf sets", str(context.exception))
+
     def test_robinson_foulds_with_nx_digraph(self):
         tree1_graph = self.ground_truth_tree.get_tree_topology()
         tree2_graph = self.ground_truth_tree.get_tree_topology()
@@ -248,24 +257,34 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertGreater(max_rf, 0)
 
     def test_robinson_foulds_type_mismatch_error(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as context:
             cas.critique.robinson_foulds(self.ground_truth_tree, self.ground_truth_tree.get_tree_topology())
 
+        self.assertIn("must be the same type", str(context.exception))
+
     def test_robinson_foulds_string_without_tdata_error(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as context:
             cas.critique.robinson_foulds("tree1", "tree2")
 
+        self.assertIn("tdata must be provided", str(context.exception))
+
     def test_robinson_foulds_string_with_missing_key_error(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as context:
             cas.critique.robinson_foulds("tree1", "nonexistent_tree", tdata=self.tdata)
 
+        self.assertIn("Tree keys must exist in tdata.obst", str(context.exception))
+
     def test_robinson_foulds_wrong_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as context:
             cas.critique.robinson_foulds(["unsupported_list"], ["unsupported_list"])
 
+        self.assertIn("Unsupported tree type", str(context.exception))
+
     def test_robinson_foulds_missing_tdata_obst(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as context:
             cas.critique.robinson_foulds("tree1", "tree2", tdata=self.emptytdata)
+
+        self.assertIn("does not have an 'obst' attribute.", str(context.exception))
 
 
 if __name__ == "__main__":
