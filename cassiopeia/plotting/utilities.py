@@ -497,6 +497,7 @@ def rgb_to_hex(rgb) -> str:
 
 def prepare_alleletable(
     allele_table: pd.DataFrame,
+    lineage_profile: Optional[pd.DataFrame],
     leaves: List[str],
     indel_priors: Optional[pd.DataFrame] = None,
     random_state: Optional[np.random.RandomState] = None,
@@ -512,11 +513,12 @@ def prepare_alleletable(
     Returns:
         The lineage profile and indel colors as two pandas dataframes.
     """
-    lineage_profile = (
-        preprocess_utilities.convert_alleletable_to_lineage_profile(
-            allele_table
+    if lineage_profile is None:
+        lineage_profile = (
+            preprocess_utilities.convert_alleletable_to_lineage_profile(
+                allele_table
+            )
         )
-    )
     clustered_linprof = lineage_profile.loc[leaves[::-1]]
     if indel_priors is None:
         indel_colors = get_random_indel_colors(lineage_profile, random_state)

@@ -177,6 +177,7 @@ def create_continuous_colorstrip(
 
 def create_indel_heatmap(
     allele_table: pd.DataFrame,
+    lineage_profile: Optional[pd.DataFrame],
     anchor_coords: Dict[str, Tuple[float, float]],
     width: float,
     height: float,
@@ -216,8 +217,9 @@ def create_indel_heatmap(
             coordinates) and a dictionary of new anchor coordinates.
     """
     clustered_linprof, _indel_colors = utilities.prepare_alleletable(
-        allele_table, list(anchor_coords.keys()), indel_priors, random_state
+        allele_table, lineage_profile, list(anchor_coords.keys()), indel_priors, random_state
     )
+
     if indel_colors is None:
         indel_colors = _indel_colors
 
@@ -294,6 +296,7 @@ def place_tree_and_annotations(
     depth_key: Optional[str] = None,
     meta_data: Optional[List[str]] = None,
     allele_table: Optional[pd.DataFrame] = None,
+    lineage_profile: Optional[pd.DataFrame] = None,
     indel_colors: Optional[pd.DataFrame] = None,
     indel_priors: Optional[pd.DataFrame] = None,
     orient: Union[Literal["up", "down", "left", "right"], float] = 90.0,
@@ -392,9 +395,10 @@ def place_tree_and_annotations(
 
     # Place indel heatmap
     colorstrips = []
-    if allele_table is not None:
+    if (allele_table is not None) or (lineage_profile is not None):
         heatmap, anchor_coords = create_indel_heatmap(
             allele_table,
+            lineage_profile,
             anchor_coords,
             width,
             tight_height,
@@ -462,6 +466,7 @@ def plot_matplotlib(
     depth_key: Optional[str] = None,
     meta_data: Optional[List[str]] = None,
     allele_table: Optional[pd.DataFrame] = None,
+    lineage_profile: Optional[pd.DataFrame] = None,
     indel_colors: Optional[pd.DataFrame] = None,
     indel_priors: Optional[pd.DataFrame] = None,
     orient: Union[Literal["up", "down", "left", "right"], float] = 90.0,
@@ -560,6 +565,7 @@ def plot_matplotlib(
         depth_key,
         meta_data,
         allele_table,
+        lineage_profile,
         indel_colors,
         indel_priors,
         orient,
