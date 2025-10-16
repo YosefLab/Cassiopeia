@@ -3,7 +3,9 @@
 import itertools
 import math
 from collections import defaultdict
+from typing import Any
 
+import networkx as nx
 import numpy as np
 
 from cassiopeia.data import CassiopeiaTree
@@ -61,7 +63,8 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
 
 
 def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
-    """Infers the outgroup of a triplet from a CassioepiaTree.
+    """
+    Infers the outgroup of a triplet from a CassioepiaTree.
 
     Finds the outgroup based on the depth of the latest-common-ancestors
     of each pair of items. The pair with the deepest LCA is the
@@ -183,3 +186,273 @@ def sample_triplet_at_depth(
         )
 
     return (str(in_group[0]), str(in_group[1]), str(out_group)), out_group
+
+
+def to_nx_tree(tree_like: Any) -> "nx.DiGraph":
+    """
+    Convert CassiopeiaTree / TreeData-like / nx.DiGraph into a rooted nx.DiGraph.
+    Directed edges are parent -> child; sets G.graph['root'].
+    """
+    if nx is None:
+        raise ImportError("networkx is required for NX helpers.")
+
+    # Already networkx?
+    if isinstance(tree_like, nx.DiGraph):
+        G = tree_like.copy()
+        root = next((n for n in G.nodes if G.in_degree(n) == 0), None)
+        if root is None:
+            raise ValueError("nx.DiGraph has no in-degree-0 root.")
+        G.graph["root"] = root
+        return G
+
+    # Cassiopeia-like (duck-typed): needs .root and .children(u)
+    needed = ["root", "children"]
+    if not all(hasattr(tree_like, m) for m in needed):
+        raise TypeError("Unsupported tree object: need nx.DiGraph or Cassiopeia-like (root, children).")
+
+    G = nx.DiGraph()
+    root = tree_like.root
+    G.add_node(root)
+    q = [root]
+    seen = {root}
+    while q:
+        u = q.pop()
+        for v in tree_like.children(u):
+            if v not in seen:
+                seen.add(v)
+                q.append(v)
+                G.add_node(v)
+            G.add_edge(u, v)
+    G.graph["root"] = root
+    return G
+
+
+def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
+    """
+    In-place: remove internal nodes with a single child (splice parent(s) -> child),
+    mirroring CassiopeiaTree.collapse_unifurcations().
+    """
+    changed = True
+    while changed:
+        changed = False
+        for v in list(G.nodes):
+            if v not in G or G.out_degree(v) != 1:
+                continue
+            child = next(G.successors(v))
+            parents = list(G.predecessors(v))
+            # Redirect parents to child
+            if parents:
+                for p in parents:
+                    if not G.has_edge(p, child):
+                        G.add_edge(p, child)
+            else:
+                # v is root; promote child to root
+                if G.in_degree(v) == 0:
+                    G.graph["root"] = child
+            # Remove v
+            if v in G:
+                G.remove_node(v)
+                changed = True
+
+
+def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
+    """
+    Compute and write:
+      - node['depth']
+      - node['number_of_triplets'] = C(sum child_subtree_leaf_sizes, 3) - sum C(child_subtree_leaf_size, 3)
+    Returns depth -> [nodes] mapping.
+    """
+    if nx is None:
+        raise ImportError("networkx is required for NX helpers.")
+
+    # Root
+    root = G.graph.get("root")
+    if root is None:
+        root = next((n for n in G.nodes if G.in_degree(n) == 0), None)
+        if root is None:
+            raise ValueError("No root found for depth annotation.")
+
+    # 1) Depths via BFS
+    from collections import defaultdict, deque
+
+    depth_to_nodes: dict[int, list[Any]] = defaultdict(list)
+    dq = deque([(root, 0)])
+    seen = set()
+    while dq:
+        u, d = dq.popleft()
+        if u in seen:
+            continue
+        seen.add(u)
+        G.nodes[u]["depth"] = d
+        depth_to_nodes[d].append(u)
+        for v in G.successors(u):
+            dq.append((v, d + 1))
+
+    # 2) Subtree leaf sizes via one bottom-up DP (topological order)
+    leaf_sz: dict[Any, int] = {}
+    for u in reversed(list(nx.topological_sort(G))):
+        kids = list(G.successors(u))
+        if not kids:
+            leaf_sz[u] = 1
+        else:
+            leaf_sz[u] = sum(leaf_sz[c] for c in kids)
+
+    # 3) number_of_triplets using children's subtree sizes (matches your original)
+    for u in G.nodes:
+        kids = list(G.successors(u))
+        total_leaves = sum(leaf_sz[c] for c in kids)
+        correction = sum(nCr(leaf_sz[c], 3) for c in kids)
+        G.nodes[u]["number_of_triplets"] = nCr(total_leaves, 3) - correction
+
+    return dict(depth_to_nodes)
+
+
+def get_outgroup_nx(G: "nx.DiGraph", triplet: tuple[Any, Any, Any]) -> str:
+    """Determine outgroup via #shared ancestors per pair; return 'None' on ties."""
+    if nx is None:
+        raise ImportError("networkx is required for NX helpers.")
+
+    i, j, k = triplet
+    i_anc = set(nx.ancestors(G, i))
+    j_anc = set(nx.ancestors(G, j))
+    k_anc = set(nx.ancestors(G, k))
+
+    ij_common = len(i_anc & j_anc)
+    ik_common = len(i_anc & k_anc)
+    jk_common = len(j_anc & k_anc)
+
+    if ij_common > jk_common and ij_common > ik_common:
+        return str(k)
+    if ik_common > jk_common and ik_common > ij_common:
+        return str(j)
+    if jk_common > ij_common and jk_common > ik_common:
+        return str(i)
+    return "None"
+
+
+def sample_triplet_at_depth_nx(
+    G: "nx.DiGraph",
+    depth: int,
+    depth_to_nodes: dict[int, list[Any]] | None = None,
+) -> tuple[tuple[str, str, str], str]:
+    """
+    Sample ((i,j,k), out_group) at a given depth with the same distribution
+    as your original sampler. Returns out_group='None' when unresolved.
+    """
+    # candidates at this depth
+    if depth_to_nodes is None:
+        candidates = [n for n, d in G.nodes(data=True) if d.get("depth") == depth]
+    else:
+        candidates = depth_to_nodes.get(depth, [])
+    if not candidates:
+        raise ValueError(f"No nodes at depth {depth}.")
+
+    total_triplets = int(sum(G.nodes[v].get("number_of_triplets", 0) for v in candidates))
+    if total_triplets > 0:
+        probs = [G.nodes[v].get("number_of_triplets", 0) / total_triplets for v in candidates]
+        node = np.random.choice(candidates, size=1, replace=False, p=probs)[0]
+    else:
+        node = candidates[0]  # fallback; likely unresolved
+
+    # Precomputed subtree leaf sizes from annotate_tree_depths_nx:
+    # If user calls this after annotate_tree_depths_nx (like in your main), we can reuse.
+    # But for safety, compute on the fly if missing (cheap with topo DP).
+    if "subtree_leaf_size" not in next(iter(G.nodes(data=True)))[1]:
+        # compute and stash (optional; we won't store, we just derive sizes locally)
+        leaf_sz: dict[Any, int] = {}
+        for u in reversed(list(nx.topological_sort(G))):
+            kids = list(G.successors(u))
+            if not kids:
+                leaf_sz[u] = 1
+            else:
+                leaf_sz[u] = sum(leaf_sz[c] for c in kids)
+    else:
+        # not used here; left as a hook if you later store it
+        leaf_sz = {u: d["subtree_leaf_size"] for u, d in G.nodes(data=True)}
+
+    def subtree_leaf_size(u: Any) -> int:
+        # Prefer cached leaf_sz if present, else derive quickly
+        if u in leaf_sz:
+            return leaf_sz[u]
+        kids = list(G.successors(u))
+        if not kids:
+            leaf_sz[u] = 1
+        else:
+            leaf_sz[u] = sum(subtree_leaf_size(c) for c in kids)
+        return leaf_sz[u]
+
+    # daughter clade combos
+    kids = list(G.successors(node))
+    combos: list[tuple[Any, Any, Any]] = []
+    weights: list[int] = []
+    denom = 0
+
+    for a, b, c in itertools.combinations_with_replacement(kids, 3):
+        if a == b == c:
+            continue
+        combos.append((a, b, c))
+        sa, sb, sc = (subtree_leaf_size(a), subtree_leaf_size(b), subtree_leaf_size(c))
+        if a == b:
+            w = nCr(sa, 2) * sc
+        elif b == c:
+            w = nCr(sb, 2) * sa
+        elif a == c:
+            w = nCr(sc, 2) * sb
+        else:
+            w = sa * sb * sc
+        weights.append(w)
+        denom += w
+
+    if denom == 0 or not combos:
+        # not enough structure; sample any 3 leaves under node and mark unresolved
+        leaves: list[Any] = []
+        stack = [node]
+        while stack:
+            x = stack.pop()
+            ch = list(G.successors(x))
+            if not ch:
+                leaves.append(x)
+            else:
+                stack.extend(ch)
+        if len(leaves) < 3:
+            raise ValueError("Not enough leaves to form a triplet at this depth.")
+        pick = np.random.choice(leaves, 3, replace=False)
+        return (str(pick[0]), str(pick[1]), str(pick[2])), "None"
+
+    probs = [w / denom for w in weights]
+    idx = int(np.random.choice(len(combos), size=1, replace=False, p=probs)[0])
+    a, b, c = combos[idx]
+
+    # draw leaves according to combo
+    def leaves_in_subtree(u: Any) -> list[Any]:
+        leaves: list[Any] = []
+        st = [u]
+        while st:
+            x = st.pop()
+            ch = list(G.successors(x))
+            if not ch:
+                leaves.append(x)
+            else:
+                st.extend(ch)
+        return leaves
+
+    if a == b:
+        in_group = np.random.choice(leaves_in_subtree(a), 2, replace=False)
+        out_group = np.random.choice(leaves_in_subtree(c))
+    elif b == c:
+        in_group = np.random.choice(leaves_in_subtree(b), 2, replace=False)
+        out_group = np.random.choice(leaves_in_subtree(a))
+    elif a == c:
+        in_group = np.random.choice(leaves_in_subtree(c), 2, replace=False)  # no replacement
+        out_group = np.random.choice(leaves_in_subtree(b))
+    else:
+        return (
+            (
+                str(np.random.choice(leaves_in_subtree(a))),
+                str(np.random.choice(leaves_in_subtree(b))),
+                str(np.random.choice(leaves_in_subtree(c))),
+            ),
+            "None",
+        )
+
+    return (str(in_group[0]), str(in_group[1]), str(out_group)), str(out_group)
