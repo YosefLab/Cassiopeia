@@ -1606,32 +1606,41 @@ class CassiopeiaTree:
         """
         self.__check_network_initialized()
 
-        if source is None:
-            source = self.root
+        from cassiopeia import utils
 
-        for node in list(self.depth_first_traverse_nodes(postorder=True, source=source)):
-            if self.is_leaf(node):
-                continue
-            elif node == source:
-                successors = self.children(node)
-                if len(successors) == 1:
-                    child = successors[0]
-                    t = self.get_branch_length(node, child)
-                    for grandchild in self.children(child):
-                        t_ = self.get_branch_length(child, grandchild)
-                        self.__add_edge(node, grandchild)
-                        self.__set_branch_length(node, grandchild, t + t_)
-                    self.__remove_node(child)
+        start = source if source is not None else self.root
+        if start not in self.__network:
+            raise CassiopeiaTreeError(f"Node {start} does not exist in the tree.")
+
+        subtree_nodes = {start}
+        subtree_nodes.update(nx.descendants(self.__network, start))
+        if len(subtree_nodes) <= 1:
+            return
+
+        collapsed_subtree = utils.collapse_unifurcations(
+            self.__network.subgraph(subtree_nodes).copy()
+        )
+
+        nodes_to_remove = subtree_nodes - set(collapsed_subtree.nodes)
+        for node in nodes_to_remove:
+            self.__remove_node(node)
+
+        remaining_nodes = subtree_nodes & set(collapsed_subtree.nodes)
+        for u, v in list(self.__network.edges()):
+            if u in remaining_nodes and v in remaining_nodes:
+                self.__remove_edge(u, v)
+
+        for node, data in collapsed_subtree.nodes(data=True):
+            if node not in self.__network:
+                self.__add_node(node)
+            self.__network.nodes[node].update(data)
+
+        for u, v, data in collapsed_subtree.edges(data=True):
+            if not self.__network.has_edge(u, v):
+                self.__add_edge(u, v)
             else:
-                successors = self.children(node)
-                if len(successors) == 1:
-                    child = successors[0]
-                    parent = self.parent(node)
-                    t = self.get_branch_length(parent, node)
-                    t_ = self.get_branch_length(node, child)
-                    self.__add_edge(parent, child)
-                    self.__set_branch_length(parent, child, t + t_)
-                    self.__remove_node(node)
+                self.__network[u][v].clear()
+            self.__network[u][v].update(data)
 
         # reset cache because we've changed the tree topology
         self.__cache = {}

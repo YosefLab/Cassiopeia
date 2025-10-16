@@ -12,6 +12,7 @@ import networkx as nx
 import numpy as np
 from treedata import TreeData
 
+from cassiopeia import utils
 from cassiopeia.critique import critique_utilities
 from cassiopeia.data import CassiopeiaTree
 
@@ -115,15 +116,7 @@ def triplets_correct(
 
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
-    """
-    Compute the unrooted Robinson–Foulds distance between two trees using bitset encoding.
-
-    Trees must be connected, acyclic, and have the same leaf labels.
-
-    Args:
-        tree1: An nx.DiGraph representing the first tree
-        tree2: An nx.DiGraph representing the second tree
-    """
+    """Compute the unrooted Robinson–Foulds distance using bitsets."""
     leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
     leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
     if set(leaves1) != set(leaves2):
@@ -170,55 +163,62 @@ def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
 
 
 def robinson_foulds(
-    tree1: CassiopeiaTree | str | nx.DiGraph, tree2: CassiopeiaTree | str | nx.DiGraph, tdata: TreeData | None = None
+    tree1: CassiopeiaTree | str | nx.DiGraph,
+    tree2: CassiopeiaTree | str | nx.DiGraph,
+    tdata: TreeData | None = None,
 ) -> tuple[float, float]:
-    """Compares two trees with Robinson-Foulds distance.
+    """Compute the Robinson–Foulds distance between two trees.
 
-    Computes the Robinsons-Foulds distance between two trees. Currently, this
-    is the unweighted variant as most of the algorithms we use are maximum-
-    parsimony based and do not use edge weights.
     Args:
-        tree1: The first tree. Can be one of:
-            - CassiopeiaTree: A Cassiopeia tree object
-            - str: Key to look up tree in tdata.obst
-            - nx.DiGraph: A NetworkX directed graph
-        tree2: The second tree. Must be the same type as tree1.
-        tdata: TreeData object containing trees in obst attribute. Required when tree1 and tree2 are strings.
+        tree1: The first tree. Supported inputs include
+            :class:`cassiopeia.data.CassiopeiaTree`, :class:`networkx.DiGraph`,
+            or a string key referencing a tree in ``tdata.obst``.
+        tree2: The second tree. Supports the same types as ``tree1`` and may
+            differ from ``tree1``.
+        tdata: A :class:`treedata.TreeData` instance containing the reference
+            trees in ``obst`` when either ``tree1`` or ``tree2`` is provided as
+            a string key.
 
-    Returns
-    -------
-        The Robinson-Foulds distance between the two trees and the maximum
-            Robinson-Foulds distance for downstream normalization
+    Returns:
+        tuple[float, float]: The Robinson–Foulds distance and the maximum
+        possible distance for the pair of trees.
+
+    Raises:
+        TypeError: If either tree is of an unsupported type.
+        ValueError: If string inputs are provided without ``tdata`` or if the
+            selected trees do not have identical leaf sets.
     """
-    # argument logic
-    if type(tree1) is not type(tree2):
-        raise TypeError("tree1 and tree2 must be the same type.")
 
-    if isinstance(tree1, CassiopeiaTree):
-        T1 = tree1.get_tree_topology()
-        T2 = tree2.get_tree_topology()
+    def _resolve(tree: CassiopeiaTree | str | nx.DiGraph) -> nx.DiGraph:
+        if isinstance(tree, str):
+            if tdata is None:
+                raise ValueError("If tree1 or tree2 is a string, tdata must be provided.")
+            if not hasattr(tdata, "obst"):
+                raise ValueError("tdata does not have an 'obst' attribute.")
+            keys = list(tdata.obst_keys())
+            if not keys:
+                raise ValueError("TreeData object does not contain any trees in 'obst'.")
+            if tree not in tdata.obst:
+                missing = [key for key in [tree] if key not in tdata.obst]
+                raise ValueError(
+                    f"Tree keys must exist in tdata.obst. Missing: {missing}"
+                )
+            return utils._to_networkx(tdata.obst[tree])
 
-    elif isinstance(tree1, str):
-        if tdata is None:
-            raise ValueError("When tree1 and tree2 are strings, tdata must be provided.")
-        if not hasattr(tdata, "obst") or not tdata.obst_keys():
-            raise ValueError("tdata does not have an 'obst' attribute.")
-        if tree1 not in tdata.obst or tree2 not in tdata.obst:
-            raise ValueError(
-                f"Tree keys must exist in tdata.obst. Missing: {[k for k in [tree1, tree2] if k not in tdata.obst]}"
-            )
+        try:
+            return utils._to_networkx(tree)
+        except TypeError as exc:
+            raise TypeError("Unsupported tree type.") from exc
 
-        T1 = tdata.obst[tree1]
-        T2 = tdata.obst[tree2]
+    T1 = _resolve(tree1)
+    T2 = _resolve(tree2)
 
-    elif isinstance(tree1, nx.DiGraph):
-        T1 = tree1
-        T2 = tree2
-
-    else:
-        raise TypeError("Unsupported tree type.")
+    leaves1 = set(utils.get_leaves(T1))
+    leaves2 = set(utils.get_leaves(T2))
+    if leaves1 != leaves2:
+        raise ValueError("Trees must have identical leaf sets.")
 
     rf, splits1, splits2 = _robinson_foulds_bitset(T1, T2)
-    max_rf = len(splits1) + len(splits2)  # Maximum possible RF distance
+    max_rf = len(splits1) + len(splits2)
 
     return rf, max_rf

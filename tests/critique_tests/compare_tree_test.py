@@ -251,16 +251,23 @@ class TestTreeComparisons(unittest.TestCase):
         self.assertGreater(max_rf, 0)
 
     def test_robinson_foulds_with_string_keys(self):
-        rf, max_rf = cas.critique.robinson_foulds("ground_truth", "ground_truth", tdata=self.tdata)
+        rf, max_rf = cas.critique.robinson_foulds(
+            "ground_truth",
+            "ground_truth",
+            tdata=self.tdata,
+        )
 
         self.assertEqual(rf, 0)
         self.assertGreater(max_rf, 0)
 
-    def test_robinson_foulds_type_mismatch_error(self):
-        with self.assertRaises(TypeError) as context:
-            cas.critique.robinson_foulds(self.ground_truth_tree, self.ground_truth_tree.get_tree_topology())
+    def test_robinson_foulds_mixed_types(self):
+        rf, max_rf = cas.critique.robinson_foulds(
+            self.ground_truth_tree,
+            self.ground_truth_tree.get_tree_topology(),
+        )
 
-        self.assertIn("must be the same type", str(context.exception))
+        self.assertEqual(rf, 0)
+        self.assertGreater(max_rf, 0)
 
     def test_robinson_foulds_string_without_tdata_error(self):
         with self.assertRaises(ValueError) as context:
@@ -276,7 +283,7 @@ class TestTreeComparisons(unittest.TestCase):
 
     def test_robinson_foulds_wrong_type(self):
         with self.assertRaises(TypeError) as context:
-            cas.critique.robinson_foulds(["unsupported_list"], ["unsupported_list"])
+            cas.critique.robinson_foulds(["unsupported"], ["unsupported"])
 
         self.assertIn("Unsupported tree type", str(context.exception))
 
@@ -284,7 +291,7 @@ class TestTreeComparisons(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             cas.critique.robinson_foulds("tree1", "tree2", tdata=self.emptytdata)
 
-        self.assertIn("does not have an 'obst' attribute.", str(context.exception))
+        self.assertIn("does not contain any trees", str(context.exception))
 
 
 if __name__ == "__main__":
