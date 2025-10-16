@@ -1617,9 +1617,7 @@ class CassiopeiaTree:
         if len(subtree_nodes) <= 1:
             return
 
-        collapsed_subtree = utils.collapse_unifurcations(
-            self.__network.subgraph(subtree_nodes).copy()
-        )
+        collapsed_subtree = utils.collapse_unifurcations(self.__network.subgraph(subtree_nodes).copy())
 
         nodes_to_remove = subtree_nodes - set(collapsed_subtree.nodes)
         for node in nodes_to_remove:

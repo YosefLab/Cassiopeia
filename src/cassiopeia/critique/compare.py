@@ -179,11 +179,13 @@ def robinson_foulds(
             trees in ``obst`` when either ``tree1`` or ``tree2`` is provided as
             a string key.
 
-    Returns:
+    Returns
+    -------
         tuple[float, float]: The Robinson–Foulds distance and the maximum
         possible distance for the pair of trees.
 
-    Raises:
+    Raises
+    ------
         TypeError: If either tree is of an unsupported type.
         ValueError: If string inputs are provided without ``tdata`` or if the
             selected trees do not have identical leaf sets.
@@ -200,9 +202,7 @@ def robinson_foulds(
                 raise ValueError("TreeData object does not contain any trees in 'obst'.")
             if tree not in tdata.obst:
                 missing = [key for key in [tree] if key not in tdata.obst]
-                raise ValueError(
-                    f"Tree keys must exist in tdata.obst. Missing: {missing}"
-                )
+                raise ValueError(f"Tree keys must exist in tdata.obst. Missing: {missing}")
             return utils._to_networkx(tdata.obst[tree])
 
         try:
