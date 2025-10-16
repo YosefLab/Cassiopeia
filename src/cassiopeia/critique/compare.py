@@ -124,62 +124,46 @@ def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
         tree1: An nx.DiGraph representing the first tree
         tree2: An nx.DiGraph representing the second tree
     """
-    tree1_undirected = tree1.to_undirected()
-    tree2_undirected = tree2.to_undirected()
-    # --- Helper: map leaves to bit positions ---
-    leaves = sorted([n for n in tree1_undirected if tree1_undirected.degree[n] == 1])
-    leaves2 = sorted([n for n in tree2_undirected if tree2_undirected.degree[n] == 1])
-    if set(leaves) != set(leaves2):
+    leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
+    leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
+    if set(leaves1) != set(leaves2):
         raise ValueError("Trees must have identical leaf sets.")
 
-    leaf_index = {leaf: i for i, leaf in enumerate(leaves)}
-    n_leaves = len(leaves)
+    leaf_index = {leaf: i for i, leaf in enumerate(leaves1)}
 
-    def get_splits(tree):
+    def get_splits(tree, leaf_index):
         """Return a set of canonical bitmasks representing bipartitions."""
+        topo = list(nx.topological_sort(tree))
+        bitset = {}
+        # postorder accumulation of leaf bitsets
+        for n in reversed(topo):
+            if tree.out_degree(n) == 0:
+                bitset[n] = (1 << leaf_index[n]) if n in leaf_index else 0
+            else:
+                m = 0
+                for c in tree.successors(n):
+                    m |= bitset[c]
+                bitset[n] = m
+
+        all_mask = bitset[topo[0]]
+        length = all_mask.bit_count()
+        # For unrooted splits, each internal edge defines a bipartition.
+        # Canonicalize by mapping each side to min(side, complement),
+        # so the split is independent of rooting.
         splits = set()
-
-        root = next(n for n in tree.nodes() if tree.degree[n] > 1)
-
-        # Post-order DFS to compute leaf sets for each subtree
-        visited = set()
-        leaf_sets = {}  # Maps each node to its descendant leaf bitmask
-
-        def dfs(node, parent=None):
-            visited.add(node)
-
-            # If it's a leaf, return its bitmask
-            if node in leaf_index:
-                mask = 1 << leaf_index[node]
-                leaf_sets[node] = mask
-                return mask
-
-            # Otherwise, combine children's leaf sets
-            mask = 0
-            for neighbor in tree.neighbors(node):
-                if neighbor != parent and neighbor not in visited:
-                    child_mask = dfs(neighbor, node)
-                    mask |= child_mask
-
-            leaf_sets[node] = mask
-
-            # This edge creates a split: mask vs its complement
-            if parent is not None and mask != 0:
-                complement = ((1 << n_leaves) - 1) ^ mask
-
-                # Skip trivial splits
-                if bin(mask).count("1") > 1 and bin(complement).count("1") > 1:
-                    # Canonicalize
-                    part = min(mask, complement)
-                    splits.add(part)
-
-            return mask
-
-        dfs(root)
+        for _, c in tree.edges:
+            bs = bitset[c]
+            k = bs.bit_count()
+            # exclude trivial: 1 or length-1 leaves
+            if 1 < k < length - 0:  # k<length and k>1
+                comp = all_mask ^ bs
+                # exclude complement-trivial as well; the test above already ensures k<length
+                if comp != 0 and comp != all_mask:
+                    splits.add(min(bs, comp))
         return splits
 
-    splits1 = get_splits(tree1_undirected)
-    splits2 = get_splits(tree2_undirected)
+    splits1 = get_splits(tree1, leaf_index)
+    splits2 = get_splits(tree2, leaf_index)
 
     rf = len(splits1.symmetric_difference(splits2))
     return rf, splits1, splits2
