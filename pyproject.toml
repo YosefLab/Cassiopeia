@@ -53,6 +53,7 @@ dependencies = [
   "pyyaml>=3.12",
   "scipy>=1.2",
   "tqdm>=4",
+  "treedata>=0.2.2",
   "typing-extensions>=3.7.4",
 ]
 
