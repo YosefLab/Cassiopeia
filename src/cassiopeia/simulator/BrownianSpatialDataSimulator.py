@@ -37,9 +37,8 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             have unit length in all dimensions. Defaults to `True`.
         random_seed: A seed for reproducibility
 
-    Raises
-    ------
-        DataSimulatorError if `dim` is less than equal to zero, or the diffusion
+    Raises:
+            DataSimulatorError if `dim` is less than equal to zero, or the diffusion
             coefficient is negative.
     """
 
@@ -107,7 +106,9 @@ class BrownianSpatialDataSimulator(SpatialDataSimulator):
             tree.set_attribute(node, attribute_key, tuple(loc))
 
         # Set cell meta
-        cell_meta = tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
+        cell_meta = (
+            tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
+        )
         columns = [f"{attribute_key}_{i}" for i in range(self.dim)]
         cell_meta[columns] = np.nan
         for leaf in tree.leaves:

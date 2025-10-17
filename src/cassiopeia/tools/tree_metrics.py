@@ -36,16 +36,14 @@ def calculate_parsimony(
         tree: The tree to calculate parsimony over
         infer_ancestral_characters: Whether to infer the ancestral
             characters states of the tree
-        treat_missing_as_mutations: Whether to treat missing states as
+        treat_missing_as_mutation: Whether to treat missing states as
             mutations
 
-    Returns
-    -------
-        The number of mutations that have occurred on the tree
+    Returns:
+            The number of mutations that have occurred on the tree
 
-    Raises
-    ------
-        TreeMetricError if the tree has not been initialized or if
+    Raises:
+            TreeMetricError if the tree has not been initialized or if
             a node does not have character states initialized
     """
     if infer_ancestral_characters:
@@ -119,9 +117,8 @@ def log_transition_probability(
             probability of a lineage acquiring heritable missing data within a
             given time
 
-    Returns
-    -------
-        The log transition probability between the states
+    Returns:
+            The log transition probability between the states
     """
     if s_ == tree.missing_state_indicator:
         if s == tree.missing_state_indicator:
@@ -221,9 +218,8 @@ def log_likelihood_of_character(
         implicit_root_branch_length: The length of the implicit root branch.
             Used if the implicit root needs to be added
 
-    Returns
-    -------
-        The log likelihood of the tree on one character
+    Returns:
+            The log likelihood of the tree on one character
     """
     # This dictionary uses a nested dictionary structure. Each node is mapped
     # to a dictionary storing the likelihood for each possible state
@@ -295,13 +291,20 @@ def log_likelihood_of_character(
                         if s_ == tree.missing_state_indicator and s != tree.missing_state_indicator:
                             likelihood_s_ = np.log(
                                 np.exp(likelihood_s_)
-                                + (1 - missing_probability_function_of_time(tree.get_branch_length(n, child)))
+                                + (
+                                    1
+                                    - missing_probability_function_of_time(
+                                        tree.get_branch_length(n, child)
+                                    )
+                                )
                                 * stochastic_missing_probability
                             )
                         if s_ != tree.missing_state_indicator:
                             likelihood_s_ += np.log(1 - stochastic_missing_probability)
                     likelihoods_for_s_marginalize_over_s_.append(likelihood_s_)
-                likelihood_for_s += scipy.special.logsumexp(np.array(likelihoods_for_s_marginalize_over_s_))
+                likelihood_for_s += scipy.special.logsumexp(
+                    np.array(likelihoods_for_s_marginalize_over_s_)
+                )
             likelihoods_per_state_at_n[s] = likelihood_for_s
 
         likelihoods_at_nodes[n] = likelihoods_per_state_at_n
@@ -329,7 +332,9 @@ def log_likelihood_of_character(
                 + likelihoods_at_nodes[tree.root][s_]
                 for s_ in likelihoods_at_nodes[tree.root]
             ]
-            likelihood_at_implicit_root = scipy.special.logsumexp(likelihood_contribution_from_each_root_state)
+            likelihood_at_implicit_root = scipy.special.logsumexp(
+                likelihood_contribution_from_each_root_state
+            )
 
             return likelihood_at_implicit_root
 
@@ -377,14 +382,12 @@ def get_lineage_tracing_parameters(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns
-    -------
-        The mutation rate, the heritable missing rate, and the stochastic
+    Returns:
+            The mutation rate, the heritable missing rate, and the stochastic
             missing probability
 
-    Raises
-    ------
-        TreeMetricError if one of the provided parameters is invalid
+    Raises:
+            TreeMetricError if one of the provided parameters is invalid
     """
     # Here we attempt to consume the lineage tracing parameters from the tree.
     # If the attributes are not populated, then the parameters are inferred.
@@ -394,7 +397,10 @@ def get_lineage_tracing_parameters(
         )
     else:
         mutation_rate = tree.parameters["mutation_rate"]
-    if not ("stochastic_missing_probability" in tree.parameters and "heritable_missing_rate" in tree.parameters):
+    if not (
+        "stochastic_missing_probability" in tree.parameters
+        and "heritable_missing_rate" in tree.parameters
+    ):
         (
             stochastic_missing_probability,
             heritable_missing_rate,
@@ -455,13 +461,11 @@ def calculate_likelihood_discrete(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns
-    -------
-        The log likelihood of the tree given the observed character states.
+    Returns:
+            The log likelihood of the tree given the observed character states.
 
-    Raises
-    ------
-        CassiopeiaError if the parameters consumed from the tree are invalid,
+    Raises:
+            CassiopeiaError if the parameters consumed from the tree are invalid,
             if the tree priors are not populated, or if character states
             annotations are missing at a node.
     """
@@ -549,13 +553,11 @@ def calculate_likelihood_continuous(
             If this is None, then the current `character_matrix` variable will
             be used.
 
-    Returns
-    -------
-        The log likelihood of the tree given the observed character states.
+    Returns:
+            The log likelihood of the tree given the observed character states.
 
-    Raises
-    ------
-        CassiopeiaError if the tree priors are not populated, or if character
+    Raises:
+            CassiopeiaError if the tree priors are not populated, or if character
             state annotations are missing at a node.
     """
     if tree.priors is None:

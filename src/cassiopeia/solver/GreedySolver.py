@@ -38,9 +38,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes
-    ----------
-        prior_transformation: Function to use when transforming priors into
+    Attributes:
+    ---        prior_transformation: Function to use when transforming priors into
             weights.
     """
 
@@ -64,9 +63,8 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
         pass
 
@@ -148,7 +146,9 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, self.prior_transformation
+            )
 
         # extract character matrix
         if layer:
@@ -157,8 +157,13 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix = cassiopeia_tree.character_matrix.copy()
 
         # Raise exception if the character matrix has ambiguous states.
-        if any(is_ambiguous_state(state) for state in character_matrix.values.flatten()) and not self.allow_ambiguous:
-            raise GreedySolverError("Ambiguous states are not currently supported with this solver.")
+        if (
+            any(is_ambiguous_state(state) for state in character_matrix.values.flatten())
+            and not self.allow_ambiguous
+        ):
+            raise GreedySolverError(
+                "Ambiguous states are not currently supported with this solver."
+            )
 
         keep_rows = (
             character_matrix.apply(
@@ -245,10 +250,10 @@ class GreedySolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
+            node_name_generator: Generator that produces unique node names
 
-        Returns
-        -------
-            The tree with duplicates added
+        Returns:
+                    The tree with duplicates added
         """
         duplicate_mappings = find_duplicate_groups(character_matrix)
 

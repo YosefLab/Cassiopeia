@@ -47,9 +47,8 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes
-    ----------
-        prior_transformation: Function to transform priors, if these are
+    Attributes:
+            prior_transformation: Function to transform priors, if these are
             available.
         missing_data_classifier: Function to classify missing data during
             character splits.
@@ -85,12 +84,15 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            character_matrix.index, samples
+        )
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         best_frequency = 0
         chosen_character = 0
@@ -104,12 +106,18 @@ class MaxCutGreedySolver(GreedySolver.GreedySolver):
                         < len(samples) - mutation_frequencies[character][missing_state_indicator]
                     ):
                         if weights:
-                            if mutation_frequencies[character][state] * weights[character][state] > best_frequency:
+                            if (
+                                mutation_frequencies[character][state] * weights[character][state]
+                                > best_frequency
+                            ):
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = mutation_frequencies[character][state] * weights[character][state]
+                                best_frequency = (
+                                    mutation_frequencies[character][state]
+                                    * weights[character][state]
+                                )
                         else:
                             if mutation_frequencies[character][state] > best_frequency:
                                 chosen_character, chosen_state = (

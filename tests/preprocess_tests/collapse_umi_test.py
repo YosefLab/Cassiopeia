@@ -20,7 +20,10 @@ class TestCollapseUMIs(unittest.TestCase):
 
         self.test_file = dir_path + "/test_files/test.bam"
         sorted_file_name = Path(
-            dir_path + "/test_files/" + ".".join(self.test_file.split("/")[-1].split(".")[:-1]) + "_sorted.bam"
+            dir_path
+            + "/test_files/"
+            + ".".join(self.test_file.split("/")[-1].split(".")[:-1])
+            + "_sorted.bam"
         )
         self.sorted_file_name = sorted_file_name
         self.collapsed_file_name = sorted_file_name.with_suffix(".collapsed.bam")
@@ -51,7 +54,9 @@ class TestCollapseUMIs(unittest.TestCase):
             + "_sorted.bam"
         )
         self.uncorrected_sorted_file_name = uncorrected_sorted_file_name
-        self.uncorrected_collapsed_file_name = uncorrected_sorted_file_name.with_suffix(".collapsed.bam")
+        self.uncorrected_collapsed_file_name = uncorrected_sorted_file_name.with_suffix(
+            ".collapsed.bam"
+        )
 
         _, _ = UMI_utils.sort_bam(
             str(self.uncorrected_test_file),
@@ -165,7 +170,9 @@ class TestCollapseUMIs(unittest.TestCase):
         self.assertEqual(37, quals[2][0])
 
     def test_collapse_bam_uncorrected(self):
-        collapsed_bam = pysam.AlignmentFile(self.uncorrected_collapsed_file_name, "rb", check_sq=False)
+        collapsed_bam = pysam.AlignmentFile(
+            self.uncorrected_collapsed_file_name, "rb", check_sq=False
+        )
 
         cellBCs = []
         UMIs = []

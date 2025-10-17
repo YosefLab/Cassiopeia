@@ -112,9 +112,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             in the same cassette in a single iteration. This option only takes
             effect when `size_of_cassette` is greater than 1. Defaults to True.
 
-    Raises
-    ------
-        DataSimulatorError if assumptions about the system are broken.
+    Raises:
+            DataSimulatorError if assumptions about the system are broken.
     """
 
     def __init__(
@@ -181,7 +180,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             elif isinstance(state_priors, list):
                 # check that all elements are dictionaries
                 if not all(isinstance(item, dict) for item in state_priors):
-                    raise DataSimulatorError("State priors needs to be a dictionary or a list of dictionaries.")
+                    raise DataSimulatorError(
+                        "State priors needs to be a dictionary or a list of dictionaries."
+                    )
                 if len(state_priors) == number_of_characters:
                     self.mutation_priors_per_character = state_priors
                 elif len(state_priors) == self.size_of_cassette:
@@ -193,7 +194,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
                         " or the number of cassettes."
                     )
             else:
-                raise DataSimulatorError("State priors needs to be a dictionary or a list of dictionaries.")
+                raise DataSimulatorError(
+                    "State priors needs to be a dictionary or a list of dictionaries."
+                )
 
             for prior in self.mutation_priors_per_character:
                 Z = np.sum(list(prior.values()))
@@ -228,7 +231,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         # use this for all future simulations.
         if self.mutation_priors_per_character is None:
             self.mutation_priors = {}
-            probabilites = [self.state_generating_distribution() for _ in range(self.number_of_states)]
+            probabilites = [
+                self.state_generating_distribution() for _ in range(self.number_of_states)
+            ]
             Z = np.sum(probabilites)
             for i in range(self.number_of_states):
                 self.mutation_priors[i + 1] = probabilites[i] / Z
@@ -286,7 +291,9 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
 
         tree.set_all_character_states(character_matrix)
 
-    def collapse_sites(self, character_array: list[int], cuts: list[int]) -> tuple[list[int], list[int]]:
+    def collapse_sites(
+        self, character_array: list[int], cuts: list[int]
+    ) -> tuple[list[int], list[int]]:
         """Collapses cassettes.
 
         Given a character array and a new set of cuts that Cas9 is inducing,
@@ -297,9 +304,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             character_array: Character array in progress
             cuts: Sites in the character array that are being cut.
 
-        Returns
-        -------
-            The updated character array and sites that are not part of a
+        Returns:
+                    The updated character array and sites that are not part of a
                 cassette collapse.
         """
         updated_character_array = character_array.copy()
@@ -332,9 +338,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             character_array: Character array
             cuts: Loci being cut
 
-        Returns
-        -------
-            An updated character array.
+        Returns:
+                    An updated character array.
         """
         updated_character_array = character_array.copy()
 
@@ -362,9 +367,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
             silencing_rate: Silencing rate.
             missing_state: State to use for encoding missing data.
 
-        Returns
-        -------
-            An updated character array.
+        Returns:
+                    An updated character array.
 
         """
         updated_character_array = character_array.copy()
@@ -387,9 +391,8 @@ class Cas9LineageTracingDataSimulator(LineageTracingDataSimulator):
         A helper function that returns the indices that correpspond to the
         independent cassettes in the experiment.
 
-        Returns
-        -------
-            An array of indices corresponding to the start positions of the
+        Returns:
+                    An array of indices corresponding to the start positions of the
                 cassettes.
         """
         cassettes = [(self.size_of_cassette * j) for j in range(0, self.number_of_cassettes)]

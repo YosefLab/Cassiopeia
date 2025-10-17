@@ -1,4 +1,4 @@
-"""Module containing general utilities to be called by functions throughout the solver module"""
+"""Module containing general utilities to be called by functions throughout the solver module."""
 
 import time
 from collections.abc import Generator
@@ -17,9 +17,8 @@ def node_name_generator() -> Generator[str, None, None]:
     Creates a generator object that produces unique node names by hashing
     timestamps.
 
-    Returns
-    -------
-        A generator object
+    Returns:
+            A generator object
     """
     while True:
         k = str(time.time()).encode("utf-8")
@@ -32,6 +31,7 @@ def collapse_unifurcations(tree: ete3.Tree) -> ete3.Tree:
 
     Collapse all unifurcations in the tree, namely any node with only one child
     should be removed and all children should be connected to the parent node.
+
     Args:
         tree: tree to be collapsed
     Returns:
@@ -68,9 +68,8 @@ def transform_priors(
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Returns
-    -------
-        A dictionary of weights for each character/state pair
+    Returns:
+            A dictionary of weights for each character/state pair
     """
     if prior_transformation not in [
         "negative_log",
@@ -92,7 +91,9 @@ def transform_priors(
         for state in priors[character]:
             p = priors[character][state]
             if p <= 0.0 or p > 1.0:
-                raise PriorTransformationError("Please make sure all priors have a value between 0 and 1")
+                raise PriorTransformationError(
+                    "Please make sure all priors have a value between 0 and 1"
+                )
             state_weights[state] = prior_function(p)
         weights[character] = state_weights
     return weights
@@ -110,9 +111,8 @@ def convert_sample_names_to_indices(names: list[str], samples: list[str]) -> lis
         samples: A list of sample names representing the subset to be mapped to
             integer indices
 
-    Returns
-    -------
-        A list of samples mapped to integer indices
+    Returns:
+            A list of samples mapped to integer indices
     """
     name_to_index = dict(zip(names, range(len(names)), strict=False))
 
@@ -126,8 +126,7 @@ def save_dissimilarity_as_phylip(dissimilarity_map: pd.DataFrame, path: str) -> 
         dissimilarity_map: A dissimilarity map
         path: The path to save the phylip file
 
-    Returns
-    -------
+    Returns:
         None
     """
     dissimilarity_np = dissimilarity_map.to_numpy()

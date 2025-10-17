@@ -17,3 +17,4 @@ Import Cassiopeia as::
    simulator
    spatial
    tools
+   utils

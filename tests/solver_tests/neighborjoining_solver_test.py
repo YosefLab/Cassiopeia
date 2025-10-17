@@ -74,7 +74,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         self.cm = cm
         self.basic_dissimilarity_map = delta
-        self.basic_tree = cas.data.CassiopeiaTree(character_matrix=cm, dissimilarity_map=delta, root_sample_name="b")
+        self.basic_tree = cas.data.CassiopeiaTree(
+            character_matrix=cm, dissimilarity_map=delta, root_sample_name="b"
+        )
 
         self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True)
 
@@ -94,7 +96,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
 
         self.pp_tree = cas.data.CassiopeiaTree(character_matrix=pp_cm)
 
-        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(dissimilarity_function=delta_fn, add_root=True)
+        self.nj_solver_delta = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=delta_fn, add_root=True
+        )
 
         # ------------- CM with Duplictes -----------------------
         duplicates_cm = pd.DataFrame.from_dict(
@@ -124,7 +128,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         self.assertIsNotNone(self.nj_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
 
-        nothing_solver = cas.solver.NeighborJoiningSolver(dissimilarity_function=None, add_root=False)
+        nothing_solver = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=None, add_root=False
+        )
 
         no_root_tree = cas.data.CassiopeiaTree(
             character_matrix=self.cm,
@@ -134,7 +140,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(no_root_tree)
 
-        no_root_solver = cas.solver.NeighborJoiningSolver(dissimilarity_function=None, add_root=True)
+        no_root_solver = cas.solver.NeighborJoiningSolver(
+            dissimilarity_function=None, add_root=True
+        )
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             no_root_solver.solve(no_root_tree)
@@ -144,7 +152,9 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(root_only_tree)
 
-        nj_solver_fn = cas.solver.NeighborJoiningSolver(add_root=True, dissimilarity_function=delta_fn)
+        nj_solver_fn = cas.solver.NeighborJoiningSolver(
+            add_root=True, dissimilarity_function=delta_fn
+        )
         nj_solver_fn.solve(self.basic_tree)
 
         self.assertEqual(self.basic_tree.get_dissimilarity_map().loc["a", "b"], 15)

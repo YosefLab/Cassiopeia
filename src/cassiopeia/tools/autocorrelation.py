@@ -49,9 +49,8 @@ def compute_morans_i(
         inverse_weight_fn: Inverse function to apply to the weights, if the
             weight matrix must be computed.
 
-    Returns
-    -------
-        Moran's I statistic
+    Returns:
+            Moran's I statistic
     """
     if X is None and meta_columns is None:
         raise AutocorrelationError("Specify data for computing autocorrelations.")
@@ -70,14 +69,18 @@ def compute_morans_i(
 
     # check to make sure all values are numerical
     if not np.all(_X.apply(lambda s: pd.to_numeric(s, errors="coerce").notnull().all())):
-        raise AutocorrelationError("There are some columns that are not numeric in the specified data.")
+        raise AutocorrelationError(
+            "There are some columns that are not numeric in the specified data."
+        )
 
     # cast to numeric
     _X = _X.apply(lambda s: pd.to_numeric(s, errors="coerce"))
 
     # instantiate the weight matrix if None is specified
     if W is None:
-        W = utilities.compute_phylogenetic_weight_matrix(tree, inverse=True, inverse_fn=inverse_weight_fn)
+        W = utilities.compute_phylogenetic_weight_matrix(
+            tree, inverse=True, inverse_fn=inverse_weight_fn
+        )
 
     # make sure that W has the correct indices
     if len(np.intersect1d(tree.leaves, W.index)) != tree.n_cell:

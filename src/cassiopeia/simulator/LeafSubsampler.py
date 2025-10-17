@@ -33,8 +33,7 @@ class LeafSubsampler(abc.ABC):
         Args:
             tree: The CassiopeiaTree for which to subsample leaves
 
-        Returns
-        -------
-            A new CassiopeiaTree that is the induced subtree on a sample of the
+        Returns:
+                    A new CassiopeiaTree that is the induced subtree on a sample of the
             leaves in the given tree.
         """

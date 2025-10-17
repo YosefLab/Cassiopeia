@@ -44,9 +44,8 @@ def fitch_hartigan(
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
 
-    Returns
-    -------
-        A new CassiopeiaTree if the copy is set to True, else None.
+    Returns:
+            A new CassiopeiaTree if the copy is set to True, else None.
     """
     cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
 
@@ -78,13 +77,11 @@ def fitch_hartigan_bottom_up(
         add_key: Key to add for bottom-up reconstruction
         copy: Modify the tree in place or not.
 
-    Returns
-    -------
-        A new CassiopeiaTree if the copy is set to True, else None.
+    Returns:
+            A new CassiopeiaTree if the copy is set to True, else None.
 
-    Raises
-    ------
-        CassiopeiaError if the tree does not have the specified meta data
+    Raises:
+            CassiopeiaError if the tree does not have the specified meta data
             or the meta data is not categorical.
     """
     if meta_item not in cassiopeia_tree.cell_meta.columns:
@@ -110,7 +107,9 @@ def fitch_hartigan_bottom_up(
                 child_assignment = cassiopeia_tree.get_attribute(children[0], add_key)
                 cassiopeia_tree.set_attribute(node, add_key, [child_assignment])
 
-            all_labels = np.concatenate([cassiopeia_tree.get_attribute(child, add_key) for child in children])
+            all_labels = np.concatenate(
+                [cassiopeia_tree.get_attribute(child, add_key) for child in children]
+            )
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
@@ -126,7 +125,7 @@ def fitch_hartigan_top_down(
     label_key: str = "label",
     copy: bool = False,
 ) -> CassiopeiaTree | None:
-    """Run Fitch-Hartigan top-down refinement
+    """Run Fitch-Hartigan top-down refinement.
 
     Runs the Fitch-Hartigan top-down algorithm which selects an optimal solution
     from the tree rooted at the specified root.
@@ -142,13 +141,11 @@ def fitch_hartigan_top_down(
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
 
-    Returns
-    -------
-        A new CassiopeiaTree if the copy is set to True, else None.
+    Returns:
+            A new CassiopeiaTree if the copy is set to True, else None.
 
-    Raises
-    ------
-        A CassiopeiaTreeError if Fitch-Hartigan bottom-up has not been called
+    Raises:
+            A CassiopeiaTreeError if Fitch-Hartigan bottom-up has not been called
         or if the state_key does not exist for a node.
     """
     # assign root
@@ -199,13 +196,11 @@ def score_small_parsimony(
         label_key: If ancestral states have already been inferred, this key
             indicates the name of the attribute they're stored in.
 
-    Returns
-    -------
-        The parsimony score.
+    Returns:
+            The parsimony score.
 
-    Raises
-    ------
-        CassiopeiaError if label_key has not been populated.
+    Raises:
+            CassiopeiaError if label_key has not been populated.
     """
     cassiopeia_tree = cassiopeia_tree.copy()
 
@@ -215,7 +210,9 @@ def score_small_parsimony(
     parsimony = 0
     for parent, child in cassiopeia_tree.depth_first_traverse_edges(source=root):
         try:
-            if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(child, label_key):
+            if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(
+                child, label_key
+            ):
                 parsimony += 1
         except CassiopeiaTreeError as error:
             raise CassiopeiaError(
@@ -261,9 +258,8 @@ def fitch_count(
             If this is not provided, we take the unique values in
             `cell_meta[meta_item]` to be the state space.
 
-    Returns
-    -------
-        An MxM count matrix indicating the number of edges that contained a
+    Returns:
+            An MxM count matrix indicating the number of edges that contained a
             transition between two states across all equally parsimonious
             solutions returned by Fitch-Hartigan.
     """
@@ -273,7 +269,9 @@ def fitch_count(
         unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
     else:
         if len(np.setdiff1d(cassiopeia_tree.cell_meta[meta_item].unique(), unique_states)) > 0:
-            raise FitchCountError("Specified state space does not span the set of states that appear in the meta data.")
+            raise FitchCountError(
+                "Specified state space does not span the set of states that appear in the meta data."
+            )
 
     if root != cassiopeia_tree.root:
         cassiopeia_tree.subset_clade(root)
@@ -334,9 +332,8 @@ def _N_fitch_count(
         state_key: Attribute name in the CassiopeiaTree storing the possible
             states for each node, as inferred with the Fitch-Hartigan algorithm
 
-    Returns
-    -------
-        A 2-dimensional array storing N[v, s] - the number of
+    Returns:
+            A 2-dimensional array storing N[v, s] - the number of
             equally-parsimonious solutions below node v, given v takes on
             state s
     """
@@ -393,9 +390,8 @@ def _C_fitch_count(
         state_key: Attribute name in the CassiopeiaTree storing the possible
             states for each node, as inferred with the Fitch-Hartigan algorithm
 
-    Returns
-    -------
-        A 4-dimensional array storing C[v, s, s1, s2] - the number of
+    Returns:
+            A 4-dimensional array storing C[v, s, s1, s2] - the number of
             transitions from state s1 to s2 below a node v given v takes on
             the state s.
     """

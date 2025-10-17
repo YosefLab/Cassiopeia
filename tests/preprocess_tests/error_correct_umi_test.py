@@ -101,7 +101,9 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.multi_case["allele"] = self.multi_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.multi_case["allele"] = self.multi_case.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         self.ambiguous = pd.DataFrame.from_dict(
             {
@@ -127,7 +129,9 @@ class TestErrorCorrectUMISequence(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.ambiguous["allele"] = self.ambiguous.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.ambiguous["allele"] = self.ambiguous.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
     def test_format(self):
         aln_df = cassiopeia.pp.error_correct_umis(self.multi_case, max_umi_distance=1)

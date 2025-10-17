@@ -146,7 +146,7 @@ matrix.deps.env-vars = [
 # --- Ruff / Pytest / Coverage ---
 
 [tool.ruff]
-line-length = 120
+line-length = 100
 src = [ "src" ]
 extend-include = [ "*.ipynb" ]
 format.docstring-code-format = true
@@ -155,7 +155,7 @@ lint.ignore = [ "B008", "D100", "D104", "D105", "D107", "D203", "D213", "D400", 
 lint.per-file-ignores."*/__init__.py" = [ "F401" ]
 lint.per-file-ignores."docs/*" = [ "I" ]
 lint.per-file-ignores."tests/*" = [ "D" ]
-lint.pydocstyle.convention = "numpy"
+lint.pydocstyle.convention = "google"
 
 [tool.pytest.ini_options]
 testpaths = [ "tests" ]

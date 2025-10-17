@@ -41,7 +41,9 @@ class TestCassiopeiaTree(unittest.TestCase):
             orient="index",
         )
         priors1 = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
-        self.discrete_tree = cas.data.CassiopeiaTree(tree=small_net, character_matrix=cm1, priors=priors1)
+        self.discrete_tree = cas.data.CassiopeiaTree(
+            tree=small_net, character_matrix=cm1, priors=priors1
+        )
 
         cm2 = pd.DataFrame.from_dict(
             {
@@ -58,7 +60,9 @@ class TestCassiopeiaTree(unittest.TestCase):
             1: {1: 0.2, 2: 0.7, 3: 0.1},
             2: {1: 0.2, 2: 0.7, 3: 0.1},
         }
-        self.continuous_tree = cas.data.CassiopeiaTree(tree=small_net, character_matrix=cm2, priors=priors2)
+        self.continuous_tree = cas.data.CassiopeiaTree(
+            tree=small_net, character_matrix=cm2, priors=priors2
+        )
         self.continuous_tree.set_branch_length("node5", "node0", 1.5)
         self.continuous_tree.set_branch_length("node6", "node3", 2)
 
@@ -86,7 +90,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
         self.assertTrue(np.isclose(mut_rate, 0.5917517095361371))
 
-        mut_rate = parameter_estimators.estimate_mutation_rate(self.continuous_tree, continuous=True)
+        mut_rate = parameter_estimators.estimate_mutation_rate(
+            self.continuous_tree, continuous=True
+        )
         self.assertTrue(np.isclose(mut_rate, 0.5917110077950752))
 
         mut_rate = parameter_estimators.estimate_mutation_rate(
@@ -129,7 +135,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(np.isclose(s_missing_prob, 0.0518518518518518))
 
         self.discrete_tree.parameters["heritable_missing_rate"] = 0.25
-        s_missing_prob = parameter_estimators.estimate_missing_data_rates(self.discrete_tree, continuous=False)[0]
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree, continuous=False
+        )[0]
         self.assertTrue(np.isclose(s_missing_prob, 0.0518518518518518))
 
         s_missing_prob = parameter_estimators.estimate_missing_data_rates(
@@ -145,7 +153,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(np.isclose(s_missing_prob, 0.046322071416968195))
 
         self.continuous_tree.parameters["heritable_missing_rate"] = 0.05
-        s_missing_prob = parameter_estimators.estimate_missing_data_rates(self.continuous_tree, continuous=True)[0]
+        s_missing_prob = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree, continuous=True
+        )[0]
         self.assertTrue(np.isclose(s_missing_prob, 0.046322071416968195))
 
         s_missing_prob = parameter_estimators.estimate_missing_data_rates(
@@ -164,7 +174,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(np.isclose(h_missing_rate, 0.23111904017137075))
 
         self.discrete_tree.parameters["stochastic_missing_probability"] = 0.2
-        h_missing_rate = parameter_estimators.estimate_missing_data_rates(self.discrete_tree, continuous=False)[1]
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.discrete_tree, continuous=False
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.2062994740159002))
 
         h_missing_rate = parameter_estimators.estimate_missing_data_rates(
@@ -182,7 +194,9 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.assertTrue(np.isclose(h_missing_rate, 0.05188011778689765))
 
         self.continuous_tree.parameters["stochastic_missing_probability"] = 0.1
-        h_missing_rate = parameter_estimators.estimate_missing_data_rates(self.continuous_tree, continuous=True)[1]
+        h_missing_rate = parameter_estimators.estimate_missing_data_rates(
+            self.continuous_tree, continuous=True
+        )[1]
         self.assertTrue(np.isclose(h_missing_rate, 0.0335154979510034))
 
         h_missing_rate = parameter_estimators.estimate_missing_data_rates(

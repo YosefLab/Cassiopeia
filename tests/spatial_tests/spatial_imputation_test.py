@@ -33,7 +33,9 @@ class TestSpatialImputation(unittest.TestCase):
             ]
         )
 
-        adata = anndata.AnnData(obs=pd.DataFrame(index=[f"cell_{x}" for x in range(len(coordinates))]))
+        adata = anndata.AnnData(
+            obs=pd.DataFrame(index=[f"cell_{x}" for x in range(len(coordinates))])
+        )
         adata.obsm["spatial"] = coordinates
 
         self.spatial_adata = adata
@@ -93,7 +95,9 @@ class TestSpatialImputation(unittest.TestCase):
     def test_anndata_to_graph_radius(self):
         """Tests the radius constructor of anndata to spatial graph."""
 
-        spatial_graph = cas.sp.get_spatial_graph_from_anndata(self.spatial_adata, neighborhood_radius=10)
+        spatial_graph = cas.sp.get_spatial_graph_from_anndata(
+            self.spatial_adata, neighborhood_radius=10
+        )
 
         expected_graph = nx.Graph()
         for edge in [
@@ -116,7 +120,9 @@ class TestSpatialImputation(unittest.TestCase):
     def test_anndata_to_graph_size(self):
         """Tests the radius constructor of anndata to spatial graph."""
 
-        spatial_graph = cas.sp.get_spatial_graph_from_anndata(self.spatial_adata, neighborhood_size=3)
+        spatial_graph = cas.sp.get_spatial_graph_from_anndata(
+            self.spatial_adata, neighborhood_size=3
+        )
 
         expected_graph = nx.Graph()
         for edge in [

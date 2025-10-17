@@ -47,9 +47,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             that controls the sparsity of the graph by filtering low
             similarities.
 
-    Attributes
-    ----------
-        joining_solver: The CassiopeiaSolver that is used to cluster groups of
+    Attributes:
+            joining_solver: The CassiopeiaSolver that is used to cluster groups of
             samples after percolation steps that produce more than two groups
         prior_transformation: Function to use when transforming priors into
             weights.
@@ -62,7 +61,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         self,
         joining_solver: CassiopeiaSolver.CassiopeiaSolver,
         prior_transformation: str = "negative_log",
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float]
+        similarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]] | None], float
+        ]
         | None = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: int | None = 0,
     ):
@@ -154,7 +155,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights = None
         priors = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, self.prior_transformation
+            )
             priors = cassiopeia_tree.priors
 
         # extract character matrix
@@ -192,9 +195,8 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         weights: dict[int, dict[int, float]] | None = None,
         missing_state_indicator: int = -1,
     ) -> tuple[list[str], list[str]]:
-        """The function used by the percolation algorithm to partition the
+        """The function used by the percolation algorithm to partition the set of samples in two.
 
-        set of samples in two.
         First, a pairwise similarity graph is generated with samples as nodes
         such that edges between a pair of nodes is some provided function on
         the number of character/state mutations shared. Then, the algorithm
@@ -205,6 +207,7 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
         obeying Camin-Sokal Parsimony, and then clustering the groups of samples
         based on their LCAs. The provided solver is used to cluster the groups
         into two clusters.
+
         Args:
             character_matrix: Character matrix
             samples: A list of samples to partition
@@ -214,11 +217,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            character_matrix.index, samples
+        )
         unique_character_array = character_matrix.to_numpy()
 
         G = nx.Graph()
@@ -265,7 +269,9 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
             for ind in range(len(connected_components)):
                 component_identifier = "component" + str(ind)
                 component_to_nodes[component_identifier] = connected_components[ind]
-                character_vectors = [list(i) for i in list(unique_character_array[connected_components[ind], :])]
+                character_vectors = [
+                    list(i) for i in list(unique_character_array[connected_components[ind], :])
+                ]
                 lcas[component_identifier] = data_utilities.get_lca_characters(
                     character_vectors, missing_state_indicator
                 )
@@ -323,9 +329,12 @@ class PercolationSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         Places samples removed in removing duplicates in the tree as sisters
         to the corresponding cells that share the same mutations.
+
         Args:
             tree: The tree to have duplicates added to
             character_matrix: Character matrix
+            node_name_generator: Generator that produces unique node names
+
         Returns:
             The tree with duplicates added
         """

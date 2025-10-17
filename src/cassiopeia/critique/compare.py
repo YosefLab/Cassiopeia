@@ -1,5 +1,4 @@
-"""
-A library that stores functions for comparing two trees to one another.
+"""A library that stores functions for comparing two trees to one another.
 
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
@@ -10,10 +9,11 @@ from collections import defaultdict
 
 import networkx as nx
 import numpy as np
-from treedata import TreeData
 
 from cassiopeia.critique import critique_utilities
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.typing import TreeLike
+from cassiopeia.utils import _get_digraph, get_leaves
 
 
 def triplets_correct(
@@ -36,9 +36,8 @@ def triplets_correct(
         min_triplets_at_depth: The minimum number of triplets needed with LCA
             at a depth for that depth to be included
 
-    Returns
-    -------
-        A tuple of four dictionaries storing triplet statistics at each depth:
+    Returns:
+            A tuple of four dictionaries storing triplet statistics at each depth:
             all_triplets_correct: Total proportion of triplets correct.
             resolvable_triplets_correct: Proportion correct among resolvable triplets.
             unresolved_triplets_correct: Proportion correct among unresolvable triplets.
@@ -73,7 +72,9 @@ def triplets_correct(
             continue
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(T1, depth, depth_to_nodes)
+            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
+                T1, depth, depth_to_nodes
+            )
 
             reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
 
@@ -115,15 +116,7 @@ def triplets_correct(
 
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
-    """
-    Compute the unrooted Robinson–Foulds distance between two trees using bitset encoding.
-
-    Trees must be connected, acyclic, and have the same leaf labels.
-
-    Args:
-        tree1: An nx.DiGraph representing the first tree
-        tree2: An nx.DiGraph representing the second tree
-    """
+    """Compute the unrooted Robinson–Foulds distance using bitsets."""
     leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
     leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
     if set(leaves1) != set(leaves2):
@@ -166,59 +159,41 @@ def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     splits2 = get_splits(tree2, leaf_index)
 
     rf = len(splits1.symmetric_difference(splits2))
-    return rf, splits1, splits2
+    max_rf = len(splits1) + len(splits2)
+    return rf, max_rf
 
 
 def robinson_foulds(
-    tree1: CassiopeiaTree | str | nx.DiGraph, tree2: CassiopeiaTree | str | nx.DiGraph, tdata: TreeData | None = None
+    tree1: TreeLike,
+    tree2: TreeLike | None = None,
+    key1: str | None = None,
+    key2: str | None = None,
 ) -> tuple[float, float]:
-    """Compares two trees with Robinson-Foulds distance.
+    """Compute the Robinson–Foulds distance between two trees.
 
-    Computes the Robinsons-Foulds distance between two trees. Currently, this
-    is the unweighted variant as most of the algorithms we use are maximum-
-    parsimony based and do not use edge weights.
     Args:
-        tree1: The first tree. Can be one of:
-            - CassiopeiaTree: A Cassiopeia tree object
-            - str: Key to look up tree in tdata.obst
-            - nx.DiGraph: A NetworkX directed graph
-        tree2: The second tree. Must be the same type as tree1.
-        tdata: TreeData object containing trees in obst attribute. Required when tree1 and tree2 are strings.
+        tree1: The tree object.
+        tree2: The tree object to compare against. If ``None``, ``key1`` and ``key2``
+            are used to select two trees from the `tree1` object.
+        key1: If ``tree1`` is a :class:`treedata.TreeData`, specifies the ``obst`` key to use.
+            Only required if multiple trees are present.
+        key2: The ``obst`` key to compare against. Selects from ``tree2`` if provided,
+            otherwise selects from ``tree1``. Only required if multiple trees are present.
 
-    Returns
-    -------
-        The Robinson-Foulds distance between the two trees and the maximum
-            Robinson-Foulds distance for downstream normalization
+    Returns:
+        tuple[float, float]: The Robinson–Foulds distance and the maximum
+        possible distance for the pair of trees.
     """
-    # argument logic
-    if type(tree1) is not type(tree2):
-        raise TypeError("tree1 and tree2 must be the same type.")
+    if tree2 is None and (key1 is None or key2 is None):
+        raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
+    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t2, _ = (
+        _get_digraph(tree2, tree_key=key2)
+        if tree2 is not None
+        else _get_digraph(tree1, tree_key=key2)
+    )
 
-    if isinstance(tree1, CassiopeiaTree):
-        T1 = tree1.get_tree_topology()
-        T2 = tree2.get_tree_topology()
+    if set(get_leaves(t1)) != set(get_leaves(t2)):
+        raise ValueError("Trees must have identical leaf sets.")
 
-    elif isinstance(tree1, str):
-        if tdata is None:
-            raise ValueError("When tree1 and tree2 are strings, tdata must be provided.")
-        if not hasattr(tdata, "obst") or not tdata.obst_keys():
-            raise ValueError("tdata does not have an 'obst' attribute.")
-        if tree1 not in tdata.obst or tree2 not in tdata.obst:
-            raise ValueError(
-                f"Tree keys must exist in tdata.obst. Missing: {[k for k in [tree1, tree2] if k not in tdata.obst]}"
-            )
-
-        T1 = tdata.obst[tree1]
-        T2 = tdata.obst[tree2]
-
-    elif isinstance(tree1, nx.DiGraph):
-        T1 = tree1
-        T2 = tree2
-
-    else:
-        raise TypeError("Unsupported tree type.")
-
-    rf, splits1, splits2 = _robinson_foulds_bitset(T1, T2)
-    max_rf = len(splits1) + len(splits2)  # Maximum possible RF distance
-
-    return rf, max_rf
+    return _robinson_foulds_bitset(t1, t2)

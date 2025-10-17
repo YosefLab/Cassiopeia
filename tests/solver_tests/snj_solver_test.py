@@ -42,7 +42,9 @@ def find_triplet_structure(triplet, T):
     return structure
 
 
-def assertTripletCorrectness(self, nodes: list[str], expected_tree: DiGraph, observed_tree: DiGraph):
+def assertTripletCorrectness(
+    self, nodes: list[str], expected_tree: DiGraph, observed_tree: DiGraph
+):
     """Checks if two trees are isomorphic.
 
     Args:
@@ -175,7 +177,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         self.assertIsNotNone(self.snj_solver.dissimilarity_function)
         self.assertIsNotNone(self.tree_general.get_dissimilarity_map())
 
-        nothing_solver = cas.solver.SpectralNeighborJoiningSolver(similarity_function=None, add_root=False)
+        nothing_solver = cas.solver.SpectralNeighborJoiningSolver(
+            similarity_function=None, add_root=False
+        )
 
         no_root_tree = cas.data.CassiopeiaTree(
             character_matrix=self.cm_general,
@@ -185,12 +189,16 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(no_root_tree)
 
-        no_root_solver = cas.solver.SpectralNeighborJoiningSolver(similarity_function=None, add_root=True)
+        no_root_solver = cas.solver.SpectralNeighborJoiningSolver(
+            similarity_function=None, add_root=True
+        )
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             no_root_solver.solve(no_root_tree)
 
-        root_only_tree = cas.data.CassiopeiaTree(character_matrix=self.cm_general, root_sample_name="b")
+        root_only_tree = cas.data.CassiopeiaTree(
+            character_matrix=self.cm_general, root_sample_name="b"
+        )
 
         with self.assertRaises(cas.solver.DistanceSolver.DistanceSolverError):
             nothing_solver.solve(root_only_tree)
@@ -210,7 +218,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
         for j_idx, i_idx in itertools.combinations(range(N), 2):
-            svd2_val = self.snj_solver._compute_svd2(pair=(i_idx, j_idx), lambda_indices=lambda_indices)
+            svd2_val = self.snj_solver._compute_svd2(
+                pair=(i_idx, j_idx), lambda_indices=lambda_indices
+            )
 
             lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
         np.fill_diagonal(lambda_matrix_arr, np.inf)
@@ -267,7 +277,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
         N = len(lambda_indices)
         lambda_matrix_arr = np.zeros([N, N])
         for j_idx, i_idx in itertools.combinations(range(N), 2):
-            svd2_val = self.snj_solver._compute_svd2(pair=(i_idx, j_idx), lambda_indices=lambda_indices)
+            svd2_val = self.snj_solver._compute_svd2(
+                pair=(i_idx, j_idx), lambda_indices=lambda_indices
+            )
 
             lambda_matrix_arr[i_idx, j_idx] = lambda_matrix_arr[j_idx, i_idx] = svd2_val
         np.fill_diagonal(lambda_matrix_arr, np.inf)
@@ -292,7 +304,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             lambda_matrix.index[1],
         )
 
-        svd2_vals = self.snj_solver.update_dissimilarity_map(lambda_matrix, (node_i, node_j), "new_node")
+        svd2_vals = self.snj_solver.update_dissimilarity_map(
+            lambda_matrix, (node_i, node_j), "new_node"
+        )
 
         expected_lambda = np.array(
             [
@@ -358,7 +372,9 @@ class TestSpectralNeighborJoiningSolver(unittest.TestCase):
             lambda_matrix.index[1],
         )
 
-        svd2_vals = self.snj_solver.update_dissimilarity_map(lambda_matrix, (node_i, node_j), "new_node")
+        svd2_vals = self.snj_solver.update_dissimilarity_map(
+            lambda_matrix, (node_i, node_j), "new_node"
+        )
 
         expected_lambda = np.zeros([2, 2])
 

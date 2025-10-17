@@ -27,9 +27,8 @@ class CompleteBinarySimulator(TreeSimulator):
             depth of the tree will be `log2(num_cells)`.
         depth: Depth of the tree. The number of cells will be `2^depth`.
 
-    Raises
-    ------
-        TreeSimulatorError if neither or both ``num_cells`` or ``depth`` are
+    Raises:
+            TreeSimulatorError if neither or both ``num_cells`` or ``depth`` are
             provided, if ``num_cells`` is not a power of 2, or if the calculated
             depth is not greater than 0.
     """
@@ -51,9 +50,8 @@ class CompleteBinarySimulator(TreeSimulator):
     ) -> CassiopeiaTree:
         """Simulates a complete binary tree.
 
-        Returns
-        -------
-            A CassiopeiaTree with the tree topology initialized with the
+        Returns:
+                    A CassiopeiaTree with the tree topology initialized with the
             simulated tree
         """
 
@@ -75,6 +73,9 @@ class CompleteBinarySimulator(TreeSimulator):
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 
         # Initialize branch lengths
-        time_dict = {node: cassiopeia_tree.get_time(node) / (self.depth + 1) for node in cassiopeia_tree.nodes}
+        time_dict = {
+            node: cassiopeia_tree.get_time(node) / (self.depth + 1)
+            for node in cassiopeia_tree.nodes
+        }
         cassiopeia_tree.set_times(time_dict)
         return cassiopeia_tree

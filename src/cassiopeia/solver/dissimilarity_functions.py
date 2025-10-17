@@ -37,9 +37,8 @@ def weighted_hamming_distance(
             another dictionary storing the weight of each observed state.
             (Character -> State -> Weight)
 
-    Returns
-    -------
-        A dissimilarity score.
+    Returns:
+            A dissimilarity score.
 
     """
     d = 0
@@ -92,7 +91,12 @@ def hamming_similarity_without_missing(
     # TODO Optimize this using masks
     similarity = 0
     for i in range(len(s1)):
-        if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator or s1[i] == 0 or s2[i] == 0:
+        if (
+            s1[i] == missing_state_indicator
+            or s2[i] == missing_state_indicator
+            or s1[i] == 0
+            or s2[i] == 0
+        ):
             continue
 
         if s1[i] == s2[i]:
@@ -110,8 +114,9 @@ def hamming_similarity_normalized_over_missing(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """A function to return the number of (non-missing) character/state mutations
+    """Number of shared mutations normalized over missing data.
 
+    The number of (non-missing) character/state mutations
     shared by two samples, normalized over the amount of missing data.
 
     Args:
@@ -121,9 +126,8 @@ def hamming_similarity_normalized_over_missing(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns
-    -------
-        The number of shared mutations between two samples normalized over the
+    Returns:
+            The number of shared mutations between two samples normalized over the
             number of missing data events, weighted or unweighted
     """
     # TODO Optimize this using masks
@@ -152,8 +156,8 @@ def hamming_similarity_normalized_over_missing(
 
 @numba.jit(nopython=True)
 def hamming_distance(
-    s1: np.array(int),
-    s2: np.array(int),
+    s1: np.ndarray,
+    s2: np.ndarray,
     ignore_missing_state: bool = False,
     missing_state_indicator: int = -1,
 ) -> int:
@@ -169,14 +173,15 @@ def hamming_distance(
             indicator
         missing_state_indicator: Indicator for missing data.
 
-    Returns
-    -------
-        The number of positions two nodes disagree at.
+    Returns:
+            The number of positions two nodes disagree at.
     """
     dist = 0
     for i in range(len(s1)):
         if s1[i] != s2[i]:
-            if (s1[i] == missing_state_indicator or s2[i] == missing_state_indicator) and ignore_missing_state:
+            if (
+                s1[i] == missing_state_indicator or s2[i] == missing_state_indicator
+            ) and ignore_missing_state:
                 dist += 0
             else:
                 dist += 1
@@ -190,9 +195,7 @@ def weighted_hamming_similarity(
     missing_state_indicator: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
-    """A function to return the weighted number of (non-missing) character/state
-
-    mutations shared by two samples.
+    """The weighted number of (non-missing) character/state mutations shared by two samples.
 
     Args:
         s1: Character states of the first sample
@@ -201,9 +204,8 @@ def weighted_hamming_similarity(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns
-    -------
-        The weighted number of shared mutations between two samples
+    Returns:
+            The weighted number of shared mutations between two samples
     """
     d = 0
     num_present = 0
@@ -255,9 +257,8 @@ def exponential_negative_hamming_distance(
             another dictionary storing the weight of each observed state.
             (Character -> State -> Weight)
 
-    Returns
-    -------
-        A similarity score.
+    Returns:
+            A similarity score.
     """
     d = 0
     num_present = 0
@@ -291,7 +292,9 @@ def exponential_negative_hamming_distance(
 
 
 def cluster_dissimilarity(
-    dissimilarity_function: Callable[[list[int], list[int], int, dict[int, dict[int, float]]], float],
+    dissimilarity_function: Callable[
+        [list[int], list[int], int, dict[int, dict[int, float]]], float
+    ],
     s1: list[int] | list[tuple[int, ...]],
     s2: list[int] | list[tuple[int, ...]],
     missing_state_indicator: int,
@@ -352,9 +355,8 @@ def cluster_dissimilarity(
         normalize: Whether to normalize to the proportion of sites present in
             both strings.
 
-    Returns
-    -------
-        The dissimilarity between the two ambiguous samples
+    Returns:
+            The dissimilarity between the two ambiguous samples
     """
     # Make any unambiguous character strings into pseudo-ambiguous so that we
     # can easily use itertools.product
@@ -427,9 +429,8 @@ def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
         weights: A set of optional weights to weight the similarity of a
             mutation
 
-    Returns
-    -------
-        The dissimilarity between the two ambiguous samples
+    Returns:
+            The dissimilarity between the two ambiguous samples
     """
     # Make any unambiguous character strings into pseudo-ambiguous so that we
     # can easily iterate through combinations
@@ -452,7 +453,9 @@ def cluster_dissimilarity_weighted_hamming_distance_min_linkage(
                 if _c1 != missing_state_indicator and _c2 != missing_state_indicator:
                     present += 1
 
-                if (_c1 != _c2) and (_c1 != missing_state_indicator and _c2 != missing_state_indicator):
+                if (_c1 != _c2) and (
+                    _c1 != missing_state_indicator and _c2 != missing_state_indicator
+                ):
                     if _c1 == 0 or _c2 == 0:
                         if weights:
                             if _c1 != 0:

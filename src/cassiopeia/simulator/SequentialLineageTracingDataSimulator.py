@@ -68,9 +68,8 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             `overlay_data`, thereby producing deterministic simulations every
             time this function is called.
 
-    Raises
-    ------
-        DataSimulatorError if assumptions about the system are broken.
+    Raises:
+            DataSimulatorError if assumptions about the system are broken.
     """
 
     def __init__(
@@ -196,7 +195,9 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
 
         tree.set_all_character_states(character_matrix)
 
-    def edit_site(self, character_array: list[int], site: int, state_priors: dict[int, float]) -> list[int]:
+    def edit_site(
+        self, character_array: list[int], site: int, state_priors: dict[int, float]
+    ) -> list[int]:
         """Edits a site.
 
         Args:
@@ -226,9 +227,8 @@ class SequentialLineageTracingDataSimulator(LineageTracingDataSimulator):
             silencing_rate: Silencing rate.
             missing_state: State to use for encoding missing data.
 
-        Returns
-        -------
-            An updated character array.
+        Returns:
+                    An updated character array.
 
         """
         updated_character_array = character_array.copy()

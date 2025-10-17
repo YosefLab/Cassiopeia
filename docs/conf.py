@@ -105,6 +105,8 @@ intersphinx_mapping = {
     "numpy": ("https://docs.scipy.org/doc/numpy/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "python": ("https://docs.python.org/3", None),
+    "networkx": ("https://networkx.org/documentation/stable/", None),
+    "treedata": ("https://treedata.readthedocs.io/en/latest/", None),
 }
 
 # General information about the project.
@@ -241,10 +243,14 @@ class AutoAutoSummary(Autosummary):
             if "methods" in self.options:
                 _, methods = self.get_members(c, "method", ["__init__"])
 
-                self.content = [f"~{clazz}.{method}" for method in methods if not method.startswith("_")]
+                self.content = [
+                    f"~{clazz}.{method}" for method in methods if not method.startswith("_")
+                ]
             if "attributes" in self.options:
                 _, attribs = self.get_members(c, "attribute")
-                self.content = [f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")]
+                self.content = [
+                    f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")
+                ]
         except (ImportError, AttributeError, ValueError):
             return super().run()
         return super().run()

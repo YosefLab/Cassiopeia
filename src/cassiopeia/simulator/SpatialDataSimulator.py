@@ -7,9 +7,7 @@ from cassiopeia.simulator.DataSimulator import DataSimulator
 
 
 class SpatialDataSimulator(DataSimulator):
-    """SpatialDataSimulator is an abstract class that all spatial data simulators
-
-    derive from.
+    """An abstract class that all spatial data simulators derive from.
 
     A SpatialDataSimulator is useful for simulating spatial assays in silico.
     In a typical simulation pipeline, a SpatialDataSimulator is used to overlay
