@@ -39,7 +39,9 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.base_filter_case["allele"] = self.base_filter_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.base_filter_case["allele"] = self.base_filter_case.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         self.doublets_case = pd.DataFrame.from_dict(
             {
@@ -71,7 +73,9 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.doublets_case["allele"] = self.doublets_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.doublets_case["allele"] = self.doublets_case.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         self.intBC_case = pd.DataFrame.from_dict(
             {
@@ -103,7 +107,9 @@ class TestFilterMolculeTable(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.intBC_case["allele"] = self.intBC_case.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.intBC_case["allele"] = self.intBC_case.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         # set up temporary directory
         self.temporary_directory = tempfile.mkdtemp()

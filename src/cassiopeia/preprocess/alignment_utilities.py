@@ -27,9 +27,8 @@ def align_local(
         gap_open_penalty: Gap open penalty.
         gap_extend_penalty: Gap extend penalty.
 
-    Returns
-    -------
-        A tuple containing the CIGAR string, query sequence start position,
+    Returns:
+            A tuple containing the CIGAR string, query sequence start position,
             reference sequence start position, alignment score, and query
             sequence
     """
@@ -64,9 +63,8 @@ def align_global(
         gap_open_penalty: Gap open penalty.
         gap_extend_penalty: Gap extend penalty.
 
-    Returns
-    -------
-        A tuple containing the CIGAR string, query sequence start position,
+    Returns:
+            A tuple containing the CIGAR string, query sequence start position,
             reference sequence start position, alignment score, and query
             sequence
     """
@@ -122,9 +120,8 @@ def parse_cigar(
         context: Include nucleotide sequence around indels
         context_size: Number of bases to report for context
 
-    Returns
-    -------
-        The intBC and a list storing the indel observed at each cutsite.
+    Returns:
+            The intBC and a list storing the indel observed at each cutsite.
     """
     cutsite_lims = [(site - cutsite_window, site + cutsite_window) for site in cutsites]
     indels = ["" for site in cutsites]
@@ -175,12 +172,20 @@ def parse_cigar(
                         uncut_indels[i] = "None"
 
             # account for partial deletions of the intBC
-            if pos_start >= barcode_interval[0] and pos_start <= barcode_interval[1] and pos_end > barcode_interval[1]:
+            if (
+                pos_start >= barcode_interval[0]
+                and pos_start <= barcode_interval[1]
+                and pos_end > barcode_interval[1]
+            ):
                 new_intbc_len = barcode_interval[1] - pos_start + 1
                 intbc_end_index = query_pointer + new_intbc_len
                 intBC = seq[query_pointer:intbc_end_index]
 
-            if pos_end >= barcode_interval[0] and pos_end <= barcode_interval[1] and pos_start < barcode_interval[0]:
+            if (
+                pos_end >= barcode_interval[0]
+                and pos_end <= barcode_interval[1]
+                and pos_start < barcode_interval[0]
+            ):
                 new_intbc_len = pos_end - barcode_interval[0] + 1
                 intBC_offset = barcode_interval[0] - pos_start
                 intbc_end_index = query_pointer + intBC_offset + new_intbc_len

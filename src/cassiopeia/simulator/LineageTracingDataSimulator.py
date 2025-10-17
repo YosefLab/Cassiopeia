@@ -7,9 +7,7 @@ from cassiopeia.simulator.DataSimulator import DataSimulator
 
 
 class LineageTracingDataSimulator(DataSimulator):
-    """LineageTracingDataSimulator is an abstract class that all lineage tracing
-
-    data simulators derive from.
+    """An abstract class that all lineage tracing data simulators derive from.
 
     A LineageTracingDataSimulator is useful for simulating lineage tracing
     assays in silico, allowing us to explore the utility of lineage tracing

@@ -28,7 +28,9 @@ class TestAlignSequence(unittest.TestCase):
                 ],
             }
         )
-        self.queries["readName"] = self.queries.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
+        self.queries["readName"] = self.queries.apply(
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
+        )
 
         self.reference = "AACCTTGG"
 

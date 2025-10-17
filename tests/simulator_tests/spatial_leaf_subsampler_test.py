@@ -111,13 +111,23 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         np.random.seed(10)
         sampler = SpatialLeafSubsampler(bounding_box=self.bounding_box_3d)
         res = sampler.subsample_leaves(self.tree_3d)
-        expected_edges = [("node0", "node1"), ("node0", "node5"), ("node1", "node3"), ("node1", "node4")]
+        expected_edges = [
+            ("node0", "node1"),
+            ("node0", "node5"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+        ]
         self.assertEqual(set(res.edges), set(expected_edges))
         # test subsampling using space
         np.random.seed(10)
         sampler = SpatialLeafSubsampler(space=self.space_3d)
         res = sampler.subsample_leaves(self.tree_3d)
-        expected_edges = [("node0", "node1"), ("node0", "node5"), ("node1", "node3"), ("node1", "node4")]
+        expected_edges = [
+            ("node0", "node1"),
+            ("node0", "node5"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+        ]
         self.assertEqual(set(res.edges), set(expected_edges))
 
     def test_subsample_2d_tree(self):
@@ -125,13 +135,23 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         np.random.seed(10)
         sampler = SpatialLeafSubsampler(bounding_box=self.bounding_box_2d)
         res = sampler.subsample_leaves(self.tree_2d)
-        expected_edges = [("node0", "node1"), ("node0", "node5"), ("node1", "node3"), ("node1", "node4")]
+        expected_edges = [
+            ("node0", "node1"),
+            ("node0", "node5"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+        ]
         self.assertEqual(set(res.edges), set(expected_edges))
         # test subsampling using space
         np.random.seed(10)
         sampler = SpatialLeafSubsampler(space=self.space_2d)
         res = sampler.subsample_leaves(self.tree_2d)
-        expected_edges = [("node0", "node1"), ("node0", "node5"), ("node1", "node3"), ("node1", "node4")]
+        expected_edges = [
+            ("node0", "node1"),
+            ("node0", "node5"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+        ]
 
     def test_keep_singular_root_edge(self):
         # tree
@@ -160,7 +180,12 @@ class SpatialLeafSubsamplerTest(unittest.TestCase):
         self.assertEqual(set(res.edges), set(expected_edges))
         # test keep_singular_root_edge=False
         res = sampler.subsample_leaves(tree, keep_singular_root_edge=False)
-        expected_edges = [("root", "node1"), ("root", "node5"), ("node1", "node3"), ("node1", "node4")]
+        expected_edges = [
+            ("root", "node1"),
+            ("root", "node5"),
+            ("node1", "node3"),
+            ("node1", "node4"),
+        ]
         self.assertEqual(set(res.edges), set(expected_edges))
 
     def test_subsample_with_ratio(self):

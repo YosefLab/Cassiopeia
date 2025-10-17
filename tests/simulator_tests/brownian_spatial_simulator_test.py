@@ -116,7 +116,9 @@ class TestBrownianSpatialDataSimulator(unittest.TestCase):
         pd.testing.assert_frame_equal(self.basic_tree.cell_meta, expected_cell_meta)
 
     def test_overlay_data_without_scale(self):
-        simulator = BrownianSpatialDataSimulator(dim=2, diffusion_coefficient=1, scale_unit_area=False)
+        simulator = BrownianSpatialDataSimulator(
+            dim=2, diffusion_coefficient=1, scale_unit_area=False
+        )
         simulator.overlay_data(self.basic_tree)
 
         expected_coordinates = {

@@ -10,15 +10,14 @@ from cassiopeia.data import CassiopeiaTree
 
 
 def nCr(n: int, r: int) -> float:
-    """Computes nCr
+    """Computes nCr.
 
     Args:
         n: Total number
         r: Number to sample
 
-    Returns
-    -------
-        nCr
+    Returns:
+            nCr
     """
     if r > n or n < 0 or r < 0:
         return 0
@@ -36,9 +35,8 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     Args:
         tree: An ete3 Tree
 
-    Returns
-    -------
-        A dictionary mapping depth to the list of nodes at that depth.
+    Returns:
+            A dictionary mapping depth to the list of nodes at that depth.
     """
     depth_to_nodes = defaultdict(list)
     for n in tree.depth_first_traverse_nodes(source=tree.root, postorder=False):
@@ -72,9 +70,8 @@ def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
         tree: CassiopeiaTree
         triplet: A tuple of three leaves constituting a triplet.
 
-    Returns
-    -------
-        The outgroup (i.e. the most distal leaf in the triplet.)
+    Returns:
+            The outgroup (i.e. the most distal leaf in the triplet.)
     """
     i, j, k = triplet[0], triplet[1], triplet[2]
 
@@ -111,9 +108,8 @@ def sample_triplet_at_depth(
         depth_to_nodes: An optional dictionary that maps a depth to the nodes
             that appear at that depth. This speeds up the function considerably.
 
-    Returns
-    -------
-        A list of three leaves corresponding to the triplet name of the outgroup
+    Returns:
+            A list of three leaves corresponding to the triplet name of the outgroup
             of the triplet.
     """
     if depth_to_nodes is None:

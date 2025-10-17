@@ -70,7 +70,9 @@ class TestDataUtilities(unittest.TestCase):
 
         # Test allele table without normal cassiopeia columns
         self.non_cassiopeia_allele_table = self.allele_table.copy()
-        self.non_cassiopeia_allele_table.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+        self.non_cassiopeia_allele_table.rename(
+            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
 
     def test_bootstrap_character_matrices_no_priors(self):
         random_state = np.random.RandomState(123431235)
@@ -424,7 +426,9 @@ class TestDataUtilities(unittest.TestCase):
 
         tree = CassiopeiaTree(tree=tree, cell_meta=meta_data)
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(tree, meta_item="CellType")
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            tree, meta_item="CellType"
+        )
 
         expected_distances = pd.DataFrame.from_dict(
             {"TypeA": [0.15, 1.0], "TypeB": [1.0, 0.35]},

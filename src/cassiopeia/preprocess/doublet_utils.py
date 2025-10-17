@@ -24,9 +24,8 @@ def filter_intra_doublets(molecule_table: pd.DataFrame, prop: float = 0.1) -> pd
         prop: The threshold representing the minimum proportion of conflicting
         UMIs needed to filter out a cellBC from the DataFrame
 
-    Returns
-    -------
-        A filtered molecule table
+    Returns:
+            A filtered molecule table
     """
     umis_per_allele = (
         molecule_table.groupby(["cellBC", "intBC", "allele"])["UMI"]
@@ -36,11 +35,15 @@ def filter_intra_doublets(molecule_table: pd.DataFrame, prop: float = 0.1) -> pd
     )
     umis_per_allele_unique = umis_per_allele.drop_duplicates(["cellBC", "intBC"])
     umis_per_cellBC = umis_per_allele.groupby("cellBC")["UMI"].sum()
-    conflicting_umis_per_cellBC = umis_per_cellBC - umis_per_allele_unique.groupby("cellBC")["UMI"].sum()
+    conflicting_umis_per_cellBC = (
+        umis_per_cellBC - umis_per_allele_unique.groupby("cellBC")["UMI"].sum()
+    )
     prop_multi_alleles_per_cellBC = conflicting_umis_per_cellBC / umis_per_cellBC
     passing_mask = prop_multi_alleles_per_cellBC <= prop
     passing_cellBCs = set(prop_multi_alleles_per_cellBC.index[passing_mask])
-    logger.debug(f"Filtered {(~passing_mask).sum()} cellBCs with too much conflicitng allele information.")
+    logger.debug(
+        f"Filtered {(~passing_mask).sum()} cellBCs with too much conflicitng allele information."
+    )
     return molecule_table[molecule_table["cellBC"].isin(passing_cellBCs)]
 
 
@@ -57,9 +60,8 @@ def get_intbc_set(lg: pd.DataFrame, thresh: int = None) -> tuple[set[str], dict[
             have an intBC needed in each lineage group in order for that intBC
             to be included in the intBC set
 
-    Returns
-    -------
-        A list containing the intBCs in the lineage group, and a dictionary
+    Returns:
+            A list containing the intBCs in the lineage group, and a dictionary
             with intBCs as keys and the proportion of cells that do not have
             that intBC in each lineage group as values.
     """
@@ -88,9 +90,8 @@ def compute_lg_membership(
         lg_dropouts: A dictionary of the cell proportion of cells that do not
             have that intBC for each lineage group
 
-    Returns
-    -------
-        A kinship score for each lineage group
+    Returns:
+            A kinship score for each lineage group
     """
     lg_mem = {}
 
@@ -132,9 +133,8 @@ def filter_inter_doublets(at: pd.DataFrame, rule: float = 0.35) -> pd.DataFrame:
         rule: The minimum kinship threshold which a cell needs to pass in order
             to be included in the final DataFrame
 
-    Returns
-    -------
-        A filtered allele table
+    Returns:
+            A filtered allele table
     """
     ibc_sets = {}
     dropouts = {}

@@ -57,7 +57,9 @@ class TestDataUtilities(unittest.TestCase):
             number_of_shuffles=10,
         )
 
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(self.tree, meta_item="CellType")
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            self.tree, meta_item="CellType"
+        )
 
         # background computed with random seed set above and 10 shuffles
         # (state1, state2): (mean, sd)
@@ -163,7 +165,9 @@ class TestDataUtilities(unittest.TestCase):
         self.assertCountEqual(expected_types, evolutionary_coupling.columns)
 
         # make sure couplings are correct
-        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(self.tree, meta_item="CellType")
+        inter_cluster_distances = data_utilities.compute_inter_cluster_distances(
+            self.tree, meta_item="CellType"
+        )
 
         inter_cluster_distances = inter_cluster_distances.loc[expected_types, expected_types]
 

@@ -54,11 +54,14 @@ def compute_evolutionary_coupling(
         **comparison_kwargs: Extra arguments to pass to the cluster comparison
             function.
 
-    Returns
-    -------
-        A K x K evolutionary coupling dataframe.
+    Returns:
+            A K x K evolutionary coupling dataframe.
     """
-    W = data_utilities.compute_phylogenetic_weight_matrix(tree) if (dissimilarity_map is None) else dissimilarity_map
+    W = (
+        data_utilities.compute_phylogenetic_weight_matrix(tree)
+        if (dissimilarity_map is None)
+        else dissimilarity_map
+    )
 
     meta_data = tree.cell_meta[meta_variable]
 
@@ -66,7 +69,9 @@ def compute_evolutionary_coupling(
     if minimum_proportion > 0:
         filter_threshold = int(len(tree.leaves) * minimum_proportion)
         category_frequencies = meta_data.value_counts()
-        passing_categories = category_frequencies[category_frequencies > filter_threshold].index.values
+        passing_categories = category_frequencies[
+            category_frequencies > filter_threshold
+        ].index.values
         meta_data = meta_data[meta_data.isin(passing_categories)]
         W = W.loc[meta_data.index.values, meta_data.index.values]
 

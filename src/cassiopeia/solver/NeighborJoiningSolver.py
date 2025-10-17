@@ -55,9 +55,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             "ccphylo_nj": CCPhylo implementation of the Neighbor-Joining.
         threads: Number of threads to use for solver.
 
-    Attributes
-    ----------
-        dissimilarity_function: Function used to compute dissimilarity between
+    Attributes:
+            dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
@@ -68,7 +67,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
+        dissimilarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
+        ]
         | None = dissimilarity_functions.weighted_hamming_distance,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
@@ -94,7 +95,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             threads=threads,
         )
 
-    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]) -> nx.DiGraph():
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
+    ) -> nx.DiGraph:
         """Roots a tree produced by Neighbor-Joining at the specified root.
 
         Uses the specified root to root the tree passed in
@@ -104,9 +107,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             root_sample: Sample to treat as the root
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns
-        -------
-            A rooted tree
+        Returns:
+                    A rooted tree
         """
         tree.add_edge(remaining_samples[0], remaining_samples[1])
 
@@ -125,9 +127,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_matrix: A sample x sample dissimilarity matrix
 
-        Returns
-        -------
-            A tuple of intgers representing rows in the dissimilarity matrix
+        Returns:
+                    A tuple of intgers representing rows in the dissimilarity matrix
                 to join.
         """
         q = self.compute_q(dissimilarity_matrix)
@@ -137,7 +138,7 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     @staticmethod
     @numba.jit(nopython=True)
-    def compute_q(dissimilarity_map: np.array(int)) -> np.array:
+    def compute_q(dissimilarity_map: np.ndarray) -> np.array:
         """Computes the Q-criterion for every pair of samples.
 
         Computes the Q-criterion defined by Saitou and Nei (1987):
@@ -147,9 +148,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_map: A sample x sample dissimilarity map
 
-        Returns
-        -------
-            A matrix storing the Q-criterion for every pair of samples.
+        Returns:
+                    A matrix storing the Q-criterion for every pair of samples.
         """
         q = np.zeros(dissimilarity_map.shape)
         n = dissimilarity_map.shape[0]
@@ -179,19 +179,22 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             cherry: A tuple of indices in the dissimilarity map that are joining
             new_node: New node name, to be added to the new dissimilarity map
 
-        Returns
-        -------
-            A new dissimilarity map, updated with the new node
+        Returns:
+                    A new dissimilarity map, updated with the new node
         """
         i, j = (
             np.where(dissimilarity_map.index == cherry[0])[0][0],
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.__update_dissimilarity_map_numba(dissimilarity_map.to_numpy(), i, j)
+        dissimilarity_array = self.__update_dissimilarity_map_numba(
+            dissimilarity_map.to_numpy(), i, j
+        )
         sample_names = list(dissimilarity_map.index) + [new_node]
 
-        dissimilarity_map = pd.DataFrame(dissimilarity_array, index=sample_names, columns=sample_names)
+        dissimilarity_map = pd.DataFrame(
+            dissimilarity_array, index=sample_names, columns=sample_names
+        )
 
         # drop out cherry from dissimilarity map
         dissimilarity_map.drop(
@@ -204,7 +207,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     @staticmethod
     @numba.jit(nopython=True)
-    def __update_dissimilarity_map_numba(dissimilarity_map: np.array, cherry_i: int, cherry_j: int) -> np.array:
+    def __update_dissimilarity_map_numba(
+        dissimilarity_map: np.array, cherry_i: int, cherry_j: int
+    ) -> np.array:
         """A private, optimized function for updating dissimilarities.
 
         A faster implementation of updating the dissimilarity map for Neighbor
@@ -215,9 +220,8 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
 
-        Returns
-        -------
-            An updated dissimilarity map
+        Returns:
+                    An updated dissimilarity map
 
         """
         # add new row & column for incoming sample
@@ -233,7 +237,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             if v == cherry_i or v == cherry_j:
                 continue
             updated_map[v, new_node_index] = updated_map[new_node_index, v] = 0.5 * (
-                dissimilarity_map[v, cherry_i] + dissimilarity_map[v, cherry_j] - dissimilarity_map[cherry_i, cherry_j]
+                dissimilarity_map[v, cherry_i]
+                + dissimilarity_map[v, cherry_j]
+                - dissimilarity_map[cherry_i, cherry_j]
             )
 
         updated_map[new_node_index, new_node_index] = 0
@@ -275,7 +281,9 @@ class NeighborJoiningSolver(DistanceSolver.DistanceSolver):
             for leaf in character_matrix.index:
                 weights = None
                 if cassiopeia_tree.priors:
-                    weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+                    weights = solver_utilities.transform_priors(
+                        cassiopeia_tree.priors, self.prior_transformation
+                    )
                 dissimilarity[leaf] = self.dissimilarity_function(
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,

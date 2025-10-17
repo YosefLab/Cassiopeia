@@ -20,19 +20,14 @@ from cassiopeia.data import CassiopeiaTree
 
 
 class Layers(dict):
-    """
-    Container mapping layer names to character matrices.
+    """Container mapping layer names to character matrices.
 
-    Parameters
-    ----------
-    parent
-        Tree to which these layers belong.
-    layers
-        Optional initial mapping of layer names to data frames.
+    Args:
+        parent: Tree to which these layers belong.
+        layers: Optional initial mapping of layer names to data frames.
 
-    Returns
-    -------
-    Layers - Instance storing the provided layers for the parent tree.
+    Returns:
+        Layers - Instance storing the provided layers for the parent tree.
     """
 
     attrname = "layers"
@@ -52,12 +47,10 @@ class Layers(dict):
         return list(self.keys())
 
     def copy(self):
-        """
-        Produce a shallow copy of the layers container.
+        """Produce a shallow copy of the layers container.
 
-        Returns
-        -------
-        Layers - New container sharing the same parent tree.
+        Returns:
+                Layers - New container sharing the same parent tree.
         """
         d = Layers(self._parent)
         for k, v in self.items():

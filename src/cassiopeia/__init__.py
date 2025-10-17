@@ -18,7 +18,9 @@ except ModuleNotFoundError:
 package_name = "cassiopeia-lineage"
 __version__ = importlib_metadata.version(package_name)
 
-sys.modules.update({f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim", "sp", "utils"]})
+sys.modules.update(
+    {f"{__name__}.{m}": globals()[m] for m in ["tl", "pp", "pl", "sim", "sp", "utils"]}
+)
 del sys
 
 __all__ = ["pp", "solver", "pl", "data", "critique", "sim", "sp", "tl", "utils"]

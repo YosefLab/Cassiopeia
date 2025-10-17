@@ -59,7 +59,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[np.ndarray, np.ndarray, int, dict[int, dict[int, float]]], float]
+        similarity_function: Callable[
+            [np.ndarray, np.ndarray, int, dict[int, dict[int, float]]], float
+        ]
         | None = dissimilarity_functions.exponential_negative_hamming_distance,
         # type: ignore
         add_root: bool = False,
@@ -76,7 +78,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         self._similarity_map = None
         self._lambda_indices = None
 
-    def get_dissimilarity_map(self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None) -> pd.DataFrame:
+    def get_dissimilarity_map(
+        self, cassiopeia_tree: CassiopeiaTree, layer: str | None = None
+    ) -> pd.DataFrame:
         """Outputs the first lambda matrix.
 
         The lambda matrix is a k x k matrix indexed by the k subsets
@@ -92,9 +96,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
 
-        Returns
-        -------
-            DataFrame object of the lambda matrix, but similar in structure to
+        Returns:
+                    DataFrame object of the lambda matrix, but similar in structure to
                 DistanceSolver's dissimilarity_map.
         """
         # get dissimilarity map and save it as private instance variable
@@ -132,12 +135,11 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
         in the lambda matrix.
 
         Args:
-            dissimilarity_matrix: Lambda matrix
+            dissimilarity_map: Lambda matrix
 
-        Returns
-        -------
+        Returns:
             A tuple of integers representing rows in the
-                dissimilarity matrix to join.
+            dissimilarity matrix to join.
         """
         return np.unravel_index(np.argmin(dissimilarity_map, axis=None), dissimilarity_map.shape)
 
@@ -158,9 +160,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             lambda_indices: the list of subsets for
                 which 'pair' refers to.
 
-        Returns
-        -------
-            The second largest singular value of the pair's RA matrix.
+        Returns:
+            The second largest singular value of the RA matrix.
         """
         i_idx, j_idx = pair
         i_sub, j_sub = lambda_indices[i_idx], lambda_indices[j_idx]
@@ -196,13 +197,11 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         Args:
             similarity_map: lambda matrix to update
-            cherry1: One of the children to join.
-            cherry2: One of the children to join.
+            cherry: Pair of subsets to be joined into a cherry
             new_node: New node name to add to the dissimilarity map
 
-        Returns
-        -------
-            An updated lambda matrix.
+        Returns:
+                    An updated lambda matrix.
         """
         # get cherry nodes in index of lambda matrix
         i, j = (
@@ -229,7 +228,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             return pd.DataFrame(np.zeros([N, N]), index=node_names, columns=node_names)
 
         # get the old lambda matrix
-        lambda_matrix_arr = similarity_map.drop(index=[cherry[0], cherry[1]], columns=[cherry[0], cherry[1]]).values
+        lambda_matrix_arr = similarity_map.drop(
+            index=[cherry[0], cherry[1]], columns=[cherry[0], cherry[1]]
+        ).values
 
         # add new col + row to lambda matrix
         new_row = np.array([0.0] * (N - 1))
@@ -279,13 +280,17 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         dissimilarity_map = cassiopeia_tree.get_dissimilarity_map()
         if dissimilarity_map is None:
-            cassiopeia_tree.compute_dissimilarity_map(self.dissimilarity_function, self.prior_transformation)
+            cassiopeia_tree.compute_dissimilarity_map(
+                self.dissimilarity_function, self.prior_transformation
+            )
         else:
             dissimilarity = {"root": 0}
             for leaf in character_matrix.index:
                 weights = None
                 if cassiopeia_tree.priors:
-                    weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+                    weights = solver_utilities.transform_priors(
+                        cassiopeia_tree.priors, self.prior_transformation
+                    )
                 dissimilarity[leaf] = self.dissimilarity_function(
                     rooted_character_matrix.loc["root"].values,
                     rooted_character_matrix.loc[leaf].values,
@@ -296,7 +301,9 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
 
         cassiopeia_tree.character_matrix = character_matrix
 
-    def root_tree(self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]) -> nx.DiGraph:
+    def root_tree(
+        self, tree: nx.Graph, root_sample: str, remaining_samples: list[str]
+    ) -> nx.DiGraph:
         """Assigns a node as the root of the solved tree.
 
         Finds a location on the tree to place a root and converts the general
@@ -307,9 +314,8 @@ class SpectralNeighborJoiningSolver(DistanceSolver.DistanceSolver):
             root_sample: Sample to treat as the root
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns
-        -------
-            A rooted tree
+        Returns:
+                    A rooted tree
         """
         tree.add_edge(remaining_samples[0], remaining_samples[1])
 

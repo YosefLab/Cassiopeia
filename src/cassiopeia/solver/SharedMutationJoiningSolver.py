@@ -49,9 +49,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes
-    ----------
-        similarity_function: Function used to compute similarity between
+    Attributes:
+            similarity_function: Function used to compute similarity between
             samples.
         prior_transformation: Function to use when transforming priors into
             weights.
@@ -59,7 +58,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]] | None], float]
+        similarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]] | None], float
+        ]
         | None = dissimilarity_functions.hamming_similarity_without_missing,
         prior_transformation: str = "negative_log",
     ):
@@ -121,7 +122,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, self.prior_transformation
+            )
 
         similarity_map = data_utilities.compute_dissimilarity_map(
             character_matrix.to_numpy(),
@@ -192,9 +195,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             similarity_matrix: A sample x sample similarity matrix
 
-        Returns
-        -------
-            A tuple of integers representing rows in the similarity matrix
+        Returns:
+                    A tuple of integers representing rows in the similarity matrix
             to join.
         """
         similarity_matrix = similarity_matrix.astype(float)
@@ -205,7 +207,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
     def update_similarity_map_and_character_matrix(
         self,
         character_matrix: pd.DataFrame,
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float],
+        similarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
+        ],
         similarity_map: pd.DataFrame,
         cherry: tuple[str, str],
         new_node: str,
@@ -230,9 +234,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
 
-        Returns
-        -------
-            A new similarity map, updated with the new node
+        Returns:
+                    A new similarity map, updated with the new node
         """
         character_i, character_j = (
             np.where(character_matrix.index == cherry[0])[0][0],
@@ -243,7 +246,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         similarity_array = similarity_map.to_numpy()
         i_characters = character_array[character_i, :]
         j_characters = character_array[character_j, :]
-        lca = data_utilities.get_lca_characters([i_characters, j_characters], missing_state_indicator)
+        lca = data_utilities.get_lca_characters(
+            [i_characters, j_characters], missing_state_indicator
+        )
         character_matrix.loc[new_node] = lca
 
         similarity_array_updated = self.__update_similarity_map(
@@ -257,7 +262,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         sample_names = list(similarity_map.index) + [new_node]
 
-        similarity_map = pd.DataFrame(similarity_array_updated, index=sample_names, columns=sample_names)
+        similarity_map = pd.DataFrame(
+            similarity_array_updated, index=sample_names, columns=sample_names
+        )
 
         # drop out cherry from similarity map and character matrix
         similarity_map.drop(
@@ -275,7 +282,9 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
         character_matrix: np.array,
         similarity_map: np.array,
         lca: np.array,
-        similarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float],
+        similarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
+        ],
         missing_state_indicator: int = -1,
         weights=None,
     ) -> np.array:
@@ -294,9 +303,8 @@ class SharedMutationJoiningSolver(CassiopeiaSolver.CassiopeiaSolver):
             weights: Weighting of each (character, state) pair. Typically a
                 transformation of the priors.
 
-        Returns
-        -------
-            An updated similarity map
+        Returns:
+                    An updated similarity map
         """
         C = similarity_map.shape[0]
         new_row = np.zeros(C, dtype=np.float64)

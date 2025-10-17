@@ -54,7 +54,9 @@ class TestCallLineageGroup(unittest.TestCase):
             lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
         )
 
-        self.basic_grouping["allele"] = self.basic_grouping.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.basic_grouping["allele"] = self.basic_grouping.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         self.reassign = pd.DataFrame.from_dict(
             {
@@ -128,9 +130,13 @@ class TestCallLineageGroup(unittest.TestCase):
                 "Referencebegin": [0] * 13,
             }
         )
-        self.reassign["readName"] = self.reassign.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
+        self.reassign["readName"] = self.reassign.apply(
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
+        )
 
-        self.reassign["allele"] = self.reassign.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
+        self.reassign["allele"] = self.reassign.apply(
+            lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1
+        )
 
         self.filter_and_reassign = pd.DataFrame.from_dict(
             {
@@ -244,7 +250,9 @@ class TestCallLineageGroup(unittest.TestCase):
                 "Referencebegin": [0] * 11,
             }
         )
-        self.doublet["readName"] = self.doublet.apply(lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1)
+        self.doublet["readName"] = self.doublet.apply(
+            lambda x: "_".join([x.cellBC, x.UMI, str(x.readCount)]), axis=1
+        )
 
         self.doublet["allele"] = self.doublet.apply(lambda x: "_".join([x.r1, x.r2, x.r3]), axis=1)
 

@@ -57,9 +57,8 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes
-    ----------
-        similarity_function: A function that calculates a similarity score
+    Attributes:
+            similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         weights: Weights on character/mutation pairs, derived from priors
         threshold: A minimum similarity threshold
@@ -71,7 +70,9 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
     def __init__(
         self,
         missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
-        similarity_function: Callable[[list[int], list[int], int, dict[int, dict[int, float]] | None], float]
+        similarity_function: Callable[
+            [list[int], list[int], int, dict[int, dict[int, float]] | None], float
+        ]
         | None = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: int | None = 0,
         prior_transformation: str = "negative_log",
@@ -105,12 +106,15 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
-        sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        sample_indices = solver_utilities.convert_sample_names_to_indices(
+            character_matrix.index, samples
+        )
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         best_frequency = 0
         chosen_character = 0
@@ -124,12 +128,18 @@ class SpectralGreedySolver(GreedySolver.GreedySolver):
                         < len(samples) - mutation_frequencies[character][missing_state_indicator]
                     ):
                         if weights:
-                            if mutation_frequencies[character][state] * weights[character][state] > best_frequency:
+                            if (
+                                mutation_frequencies[character][state] * weights[character][state]
+                                > best_frequency
+                            ):
                                 chosen_character, chosen_state = (
                                     character,
                                     state,
                                 )
-                                best_frequency = mutation_frequencies[character][state] * weights[character][state]
+                                best_frequency = (
+                                    mutation_frequencies[character][state]
+                                    * weights[character][state]
+                                )
                         else:
                             if mutation_frequencies[character][state] > best_frequency:
                                 chosen_character, chosen_state = (

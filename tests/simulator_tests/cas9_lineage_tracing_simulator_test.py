@@ -68,15 +68,17 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             random_seed=123412232,
         )
 
-        self.basic_lineage_tracing_data_simulator_no_collapse = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
-            heritable_silencing_rate=0,
-            stochastic_silencing_rate=0,
-            random_seed=123412232,
-            collapse_sites_on_cassette=False,
+        self.basic_lineage_tracing_data_simulator_no_collapse = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_priors={1: 0.1, 2: 0.1, 3: 0.75, 4: 0.05},
+                heritable_silencing_rate=0,
+                stochastic_silencing_rate=0,
+                random_seed=123412232,
+                collapse_sites_on_cassette=False,
+            )
         )
 
         self.basic_lineage_tracing_no_resection = cas.sim.Cas9LineageTracingDataSimulator(
@@ -89,15 +91,17 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             random_seed=123412232,
         )
 
-        self.lineage_tracing_data_simulator_state_distribution = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=3,
-            size_of_cassette=3,
-            mutation_rate=0.3,
-            state_generating_distribution=lambda: np.random.exponential(1e-5),
-            number_of_states=10,
-            heritable_silencing_rate=1e-5,
-            stochastic_silencing_rate=1e-2,
-            random_seed=123412232,
+        self.lineage_tracing_data_simulator_state_distribution = (
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=3,
+                size_of_cassette=3,
+                mutation_rate=0.3,
+                state_generating_distribution=lambda: np.random.exponential(1e-5),
+                number_of_states=10,
+                heritable_silencing_rate=1e-5,
+                stochastic_silencing_rate=1e-2,
+                random_seed=123412232,
+            )
         )
 
         self.lineage_tracing_data_simulator_missing_data = cas.sim.Cas9LineageTracingDataSimulator(
@@ -129,7 +133,9 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
             self.basic_lineage_tracing_data_simulator.stochastic_silencing_rate,
         )
 
-        self.assertEqual(9, len(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character))
+        self.assertEqual(
+            9, len(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character)
+        )
 
         self.assertEqual(4, len(self.basic_lineage_tracing_data_simulator.mutation_priors))
 
@@ -141,7 +147,13 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         for i in range(number_of_characters):
             self.assertAlmostEqual(
                 1.0,
-                np.sum(list(self.basic_lineage_tracing_data_simulator.mutation_priors_per_character[i].values())),
+                np.sum(
+                    list(
+                        self.basic_lineage_tracing_data_simulator.mutation_priors_per_character[
+                            i
+                        ].values()
+                    )
+                ),
             )
 
     def test_setup_errors(self):
@@ -161,11 +173,15 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         # test for invalid mutation rate type
         with self.assertRaises(DataSimulatorError):
-            cas.sim.Cas9LineageTracingDataSimulator(number_of_cassettes=2, size_of_cassette=2, mutation_rate="invalid")
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2, mutation_rate="invalid"
+            )
 
         # test for positive mutation rates
         with self.assertRaises(DataSimulatorError):
-            cas.sim.Cas9LineageTracingDataSimulator(number_of_cassettes=2, size_of_cassette=2, mutation_rate=-0.2)
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2, mutation_rate=-0.2
+            )
 
         # test mutation rates list too sort
         with self.assertRaises(DataSimulatorError):
@@ -225,7 +241,9 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         # incorrect state prior type
         with self.assertRaises(DataSimulatorError):
-            cas.sim.Cas9LineageTracingDataSimulator(number_of_cassettes=2, size_of_cassette=2, state_priors=[1, 1, 1])
+            cas.sim.Cas9LineageTracingDataSimulator(
+                number_of_cassettes=2, size_of_cassette=2, state_priors=[1, 1, 1]
+            )
 
     def test_get_cassettes(self):
         cassettes = self.basic_lineage_tracing_data_simulator.get_cassettes()
@@ -254,7 +272,9 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         character_array = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        updated_character_array = self.basic_lineage_tracing_data_simulator.silence_cassettes(character_array, 0.1)
+        updated_character_array = self.basic_lineage_tracing_data_simulator.silence_cassettes(
+            character_array, 0.1
+        )
 
         expected_character_array = [0, 0, 0, 0, 0, 0, -1, -1, -1]
 
@@ -407,7 +427,11 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
         self.assertEqual(
             10,
-            len(self.lineage_tracing_data_simulator_state_distribution.mutation_priors_per_character[0]),
+            len(
+                self.lineage_tracing_data_simulator_state_distribution.mutation_priors_per_character[
+                    0
+                ]
+            ),
         )
 
         character_matrix = self.basic_tree.character_matrix
@@ -434,7 +458,10 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
 
     def test_simulator_with_per_character_priors(self):
         sim_from_dictionary = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=2, size_of_cassette=3, number_of_states=4, state_priors=dict.fromkeys(range(4), 0.25)
+            number_of_cassettes=2,
+            size_of_cassette=3,
+            number_of_states=4,
+            state_priors=dict.fromkeys(range(4), 0.25),
         )
 
         sim_from_array_len_3 = cas.sim.Cas9LineageTracingDataSimulator(
@@ -452,11 +479,13 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
 
         self.assertEqual(
-            sim_from_dictionary.mutation_priors_per_character, sim_from_array_len_3.mutation_priors_per_character
+            sim_from_dictionary.mutation_priors_per_character,
+            sim_from_array_len_3.mutation_priors_per_character,
         )
 
         self.assertEqual(
-            sim_from_array_len_3.mutation_priors_per_character, sim_from_array_len_6.mutation_priors_per_character
+            sim_from_array_len_3.mutation_priors_per_character,
+            sim_from_array_len_6.mutation_priors_per_character,
         )
 
     def test_simulator_with_per_character_rates(self):
@@ -469,13 +498,20 @@ class TestCas9LineageTracingDataSimulator(unittest.TestCase):
         )
 
         sim_from_array_len_6 = cas.sim.Cas9LineageTracingDataSimulator(
-            number_of_cassettes=2, size_of_cassette=3, number_of_states=4, mutation_rate=np.array([0.1] * 6)
+            number_of_cassettes=2,
+            size_of_cassette=3,
+            number_of_states=4,
+            mutation_rate=np.array([0.1] * 6),
         )
 
-        self.assertEqual(sim_from_float.mutation_rate_per_character, sim_from_array_len_3.mutation_rate_per_character)
+        self.assertEqual(
+            sim_from_float.mutation_rate_per_character,
+            sim_from_array_len_3.mutation_rate_per_character,
+        )
 
         self.assertEqual(
-            sim_from_array_len_3.mutation_rate_per_character, sim_from_array_len_6.mutation_rate_per_character
+            sim_from_array_len_3.mutation_rate_per_character,
+            sim_from_array_len_6.mutation_rate_per_character,
         )
 
 

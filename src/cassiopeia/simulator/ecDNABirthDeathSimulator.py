@@ -121,9 +121,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         capture_efficiency: Probability of observing an ecDNA species. Used as
             the the probability of a binomial process.
 
-    Raises
-    ------
-        TreeSimulatorError if invalid stopping conditions are provided or if a
+    Raises:
+            TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
 
@@ -181,7 +180,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
     # update to store cn_array in node. (tree.nodes[root]["cn_array"])
     def initialize_tree(self, names) -> nx.DiGraph:
-        """Initializes a tree (nx.DiGraph() object with one node)"""
+        """Initializes a tree (nx.DiGraph() object with one node)."""
         if self.initial_tree:
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
@@ -189,7 +188,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                     self.initial_tree.get_attribute(node, "ecdna_array")
                 )
                 tree.nodes[node]["time"] = self.initial_tree.get_attribute(node, "time")
-                tree.nodes[node]["ecdna_array"] = self.initial_tree.get_attribute(node, "ecdna_array")
+                tree.nodes[node]["ecdna_array"] = self.initial_tree.get_attribute(
+                    node, "ecdna_array"
+                )
             return tree
 
         tree = nx.DiGraph()
@@ -212,16 +213,16 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         Args:
             ecdna_array: The birth_scale to be updated
 
-        Returns
-        -------
-            The updated birth_scale
+        Returns:
+                    The updated birth_scale
 
-        Raises
-        ------
-            TreeSimulatorError if a negative number of mutations is sampled
+        Raises:
+                    TreeSimulatorError if a negative number of mutations is sampled
         """
         if self.fitness_function is None:
-            return self.initial_birth_scale * (1.0 + self.fitness_array[tuple((ecdna_array > 0).astype(int))])
+            return self.initial_birth_scale * (
+                1.0 + self.fitness_array[tuple((ecdna_array > 0).astype(int))]
+            )
         else:
             return self.initial_birth_scale * (
                 1.0
@@ -260,6 +261,7 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
         the lifespan is cut off at the experiment time and a final observed
         sample is added to the tree. In this case the lineage is marked as
         inactive as well.
+
         Args:
             unique_id: The unique ID number to be used to name a new node
                 added to the tree
@@ -303,7 +305,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             tree.nodes[unique_id]["birth_scale"] = updated_birth_scale
             tree.add_edge(lineage["id"], unique_id)
             tree.nodes[unique_id]["time"] = birth_waiting_time + lineage["total_time"]
-            tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]]["ecdna_array"]  # child_ecdna_array
+            tree.nodes[unique_id]["ecdna_array"] = tree.nodes[lineage["id"]][
+                "ecdna_array"
+            ]  # child_ecdna_array
 
             current_lineages.put(
                 (
@@ -401,9 +405,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
             parent_id: ID of parent in the generated tree.
             tree: The in-progress tree.
 
-        Returns
-        -------
-            Numpy array corresponding to the ecDNA copy numbers for the child.
+        Returns:
+                    Numpy array corresponding to the ecDNA copy numbers for the child.
         """
         parental_ecdna_array = 2 * tree.nodes[parent_id]["ecdna_array"]
 
@@ -429,12 +432,17 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 )
                 sister_cell_cosegregating = int(
                     self.cosegregation_coefficient
-                    * ((parental_ecdna_array[0] - new_ecdna_array[0]) / max(1, parental_ecdna_array[0]))
+                    * (
+                        (parental_ecdna_array[0] - new_ecdna_array[0])
+                        / max(1, parental_ecdna_array[0])
+                    )
                     * parental_ecdna_array[species]
                 )
 
                 random_compartment = (
-                    parental_ecdna_array[species] - cosegregating_compartment - sister_cell_cosegregating
+                    parental_ecdna_array[species]
+                    - cosegregating_compartment
+                    - sister_cell_cosegregating
                 )
 
                 inherited_fraction = self.splitting_function(
@@ -450,7 +458,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         return new_ecdna_array
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: list[str]) -> CassiopeiaTree:
+    def populate_tree_from_simulation(
+        self, tree: nx.DiGraph, observed_nodes: list[str]
+    ) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
 
         Args:
@@ -458,9 +468,8 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
                 as attributes.
             observed_nodes: The observed leaves of the tree.
 
-        Returns
-        -------
-            A CassiopeiaTree with relevant node attributes filled in.
+        Returns:
+                    A CassiopeiaTree with relevant node attributes filled in.
         """
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 
@@ -498,7 +507,9 @@ class ecDNABirthDeathSimulator(BirthDeathFitnessSimulator):
 
         cassiopeia_tree.cell_meta = cell_metadata.astype(int).copy()
 
-        cassiopeia_tree.cell_meta["Observed"] = ["False" if n in to_remove else "True" for n in cassiopeia_tree.leaves]
+        cassiopeia_tree.cell_meta["Observed"] = [
+            "False" if n in to_remove else "True" for n in cassiopeia_tree.leaves
+        ]
 
         # If only implicit root remains after pruning dead lineages, error
         if len(cassiopeia_tree.nodes) == 1:

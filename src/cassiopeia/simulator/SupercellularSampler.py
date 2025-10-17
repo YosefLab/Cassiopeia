@@ -15,12 +15,10 @@ from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class SupercellularSampler(LeafSubsampler):
-    """
-    Merge leaves together to simulate supercellular observations.
+    """Merge leaves together to simulate supercellular observations.
 
-    Returns
-    -------
-    SupercellularSampler - Configured sampler that merges leaves.
+    Returns:
+        SupercellularSampler - Configured sampler that merges leaves.
     """
 
     def __init__(
@@ -42,7 +40,9 @@ class SupercellularSampler(LeafSubsampler):
             number_of_merges: Explicit number of merges to perform.
         """
         if (ratio is None) == (number_of_merges is None):
-            raise LeafSubsamplerError("Exactly one of 'ratio' and 'number_of_merges' must be specified.")
+            raise LeafSubsamplerError(
+                "Exactly one of 'ratio' and 'number_of_merges' must be specified."
+            )
 
         self.__ratio = ratio
         self.__number_of_merges = number_of_merges
@@ -75,14 +75,19 @@ class SupercellularSampler(LeafSubsampler):
                 states, so that only unique character states are present in each
                 ambiguous state. Defaults to True.
 
-        Raises
-        ------
-            LeafSubsamplerError if the number of merges exceeds the number of
+        Raises:
+                    LeafSubsamplerError if the number of merges exceeds the number of
                 leaves in the tree or no merges will be performed.
         """
-        n_merges = self.__number_of_merges if self.__number_of_merges is not None else int(tree.n_cell * self.__ratio)
+        n_merges = (
+            self.__number_of_merges
+            if self.__number_of_merges is not None
+            else int(tree.n_cell * self.__ratio)
+        )
         if n_merges >= len(tree.leaves):
-            raise LeafSubsamplerError("Number of required merges exceeds number of leaves in the tree.")
+            raise LeafSubsamplerError(
+                "Number of required merges exceeds number of leaves in the tree."
+            )
         if n_merges == 0:
             raise LeafSubsamplerError("No merges to be performed.")
         # Tree needs to have character matrix defined

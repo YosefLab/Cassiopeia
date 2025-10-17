@@ -77,7 +77,9 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
 
     def test_10xv2(self):
         # NOTE: using 10xv3 fastqs just for testing
-        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(self.fastq_10xv3_fps, "10xv2", tempfile.mkdtemp(), name="test")
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
+            self.fastq_10xv3_fps, "10xv2", tempfile.mkdtemp(), name="test"
+        )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
         self.assertEqual(2, len(alignments))
@@ -118,7 +120,9 @@ class TestConvertFastqsToUnmappedBam(unittest.TestCase):
         )
 
     def test_10xv3(self):
-        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test")
+        bam_fp = pipeline.convert_fastqs_to_unmapped_bam(
+            self.fastq_10xv3_fps, "10xv3", tempfile.mkdtemp(), name="test"
+        )
         with pysam.AlignmentFile(bam_fp, "rb", check_sq=False) as f:
             alignments = list(f.fetch(until_eof=True))
         self.assertEqual(2, len(alignments))

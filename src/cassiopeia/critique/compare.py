@@ -1,5 +1,4 @@
-"""
-A library that stores functions for comparing two trees to one another.
+"""A library that stores functions for comparing two trees to one another.
 
 Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
@@ -10,11 +9,11 @@ from collections import defaultdict
 
 import networkx as nx
 import numpy as np
-from treedata import TreeData
 
-from cassiopeia import utils
 from cassiopeia.critique import critique_utilities
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.typing import TreeLike
+from cassiopeia.utils import _get_digraph, get_leaves
 
 
 def triplets_correct(
@@ -37,9 +36,8 @@ def triplets_correct(
         min_triplets_at_depth: The minimum number of triplets needed with LCA
             at a depth for that depth to be included
 
-    Returns
-    -------
-        A tuple of four dictionaries storing triplet statistics at each depth:
+    Returns:
+            A tuple of four dictionaries storing triplet statistics at each depth:
             all_triplets_correct: Total proportion of triplets correct.
             resolvable_triplets_correct: Proportion correct among resolvable triplets.
             unresolved_triplets_correct: Proportion correct among unresolvable triplets.
@@ -74,7 +72,9 @@ def triplets_correct(
             continue
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(T1, depth, depth_to_nodes)
+            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
+                T1, depth, depth_to_nodes
+            )
 
             reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
 
@@ -159,66 +159,41 @@ def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     splits2 = get_splits(tree2, leaf_index)
 
     rf = len(splits1.symmetric_difference(splits2))
-    return rf, splits1, splits2
+    max_rf = len(splits1) + len(splits2)
+    return rf, max_rf
 
 
 def robinson_foulds(
-    tree1: CassiopeiaTree | str | nx.DiGraph,
-    tree2: CassiopeiaTree | str | nx.DiGraph,
-    tdata: TreeData | None = None,
+    tree1: TreeLike,
+    tree2: TreeLike | None = None,
+    key1: str | None = None,
+    key2: str | None = None,
 ) -> tuple[float, float]:
     """Compute the Robinson–Foulds distance between two trees.
 
     Args:
-        tree1: The first tree. Supported inputs include
-            :class:`cassiopeia.data.CassiopeiaTree`, :class:`networkx.DiGraph`,
-            or a string key referencing a tree in ``tdata.obst``.
-        tree2: The second tree. Supports the same types as ``tree1`` and may
-            differ from ``tree1``.
-        tdata: A :class:`treedata.TreeData` instance containing the reference
-            trees in ``obst`` when either ``tree1`` or ``tree2`` is provided as
-            a string key.
+        tree1: The tree object.
+        tree2: The tree object to compare against. If ``None``, ``key1`` and ``key2``
+            are used to select two trees from the `tree1` object.
+        key1: If ``tree1`` is a :class:`treedata.TreeData`, specifies the ``obst`` key to use.
+            Only required if multiple trees are present.
+        key2: The ``obst`` key to compare against. Selects from ``tree2`` if provided,
+            otherwise selects from ``tree1``. Only required if multiple trees are present.
 
-    Returns
-    -------
+    Returns:
         tuple[float, float]: The Robinson–Foulds distance and the maximum
         possible distance for the pair of trees.
-
-    Raises
-    ------
-        TypeError: If either tree is of an unsupported type.
-        ValueError: If string inputs are provided without ``tdata`` or if the
-            selected trees do not have identical leaf sets.
     """
+    if tree2 is None and (key1 is None or key2 is None):
+        raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
+    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t2, _ = (
+        _get_digraph(tree2, tree_key=key2)
+        if tree2 is not None
+        else _get_digraph(tree1, tree_key=key2)
+    )
 
-    def _resolve(tree: CassiopeiaTree | str | nx.DiGraph) -> nx.DiGraph:
-        if isinstance(tree, str):
-            if tdata is None:
-                raise ValueError("If tree1 or tree2 is a string, tdata must be provided.")
-            if not hasattr(tdata, "obst"):
-                raise ValueError("tdata does not have an 'obst' attribute.")
-            keys = list(tdata.obst_keys())
-            if not keys:
-                raise ValueError("TreeData object does not contain any trees in 'obst'.")
-            if tree not in tdata.obst:
-                missing = [key for key in [tree] if key not in tdata.obst]
-                raise ValueError(f"Tree keys must exist in tdata.obst. Missing: {missing}")
-            return utils._to_networkx(tdata.obst[tree])
-
-        try:
-            return utils._to_networkx(tree)
-        except TypeError as exc:
-            raise TypeError("Unsupported tree type.") from exc
-
-    T1 = _resolve(tree1)
-    T2 = _resolve(tree2)
-
-    leaves1 = set(utils.get_leaves(T1))
-    leaves2 = set(utils.get_leaves(T2))
-    if leaves1 != leaves2:
+    if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")
 
-    rf, splits1, splits2 = _robinson_foulds_bitset(T1, T2)
-    max_rf = len(splits1) + len(splits2)
-
-    return rf, max_rf
+    return _robinson_foulds_bitset(t1, t2)

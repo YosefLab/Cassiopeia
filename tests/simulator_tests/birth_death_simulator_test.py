@@ -110,11 +110,15 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         death_wd = lambda: np.random.exponential(0.6)
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(birth_wd, 0.5, death_wd, num_extant=8, random_seed=5)
+            bd_sim = BirthDeathFitnessSimulator(
+                birth_wd, 0.5, death_wd, num_extant=8, random_seed=5
+            )
             bd_sim.simulate_tree()
 
         with self.assertRaises(TreeSimulatorError):
-            bd_sim = BirthDeathFitnessSimulator(birth_wd, 0.5, death_wd, experiment_time=2, random_seed=5)
+            bd_sim = BirthDeathFitnessSimulator(
+                birth_wd, 0.5, death_wd, experiment_time=2, random_seed=5
+            )
             bd_sim.simulate_tree()
 
     def test_single_lineage(self):
@@ -185,7 +189,9 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         self.assertNotIn("9", tree.nodes)
         self.assertNotIn("2", tree.nodes)
 
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 0.5, death_wd, experiment_time=2, random_seed=1234)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 0.5, death_wd, experiment_time=2, random_seed=1234
+        )
         tree = bd_sim.simulate_tree()
         results = extract_tree_statistics(tree)
         for i in results[0]:
@@ -395,7 +401,9 @@ class BirthDeathSimulatorTest(unittest.TestCase):
         # initialize simulator with tree without default initial birth scales
         birth_wd = lambda scale: np.random.exponential(scale)
 
-        bd_sim = BirthDeathFitnessSimulator(birth_wd, 1, num_extant=16, random_seed=54, initial_tree=initial_tree)
+        bd_sim = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=16, random_seed=54, initial_tree=initial_tree
+        )
         final_tree = bd_sim.simulate_tree()
 
         self.assertEqual(16, len(final_tree.leaves))
@@ -409,7 +417,9 @@ class BirthDeathSimulatorTest(unittest.TestCase):
 
         initial_tree = bd_sim_1.simulate_tree()
 
-        bd_sim_2 = BirthDeathFitnessSimulator(birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_tree)
+        bd_sim_2 = BirthDeathFitnessSimulator(
+            birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_tree
+        )
         final_tree = bd_sim_2.simulate_tree()
 
         self.assertEqual(100, len(final_tree.leaves))

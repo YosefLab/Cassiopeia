@@ -100,7 +100,9 @@ class TestAutocorrelation(unittest.TestCase):
         )
 
         # check all leaves are accounted for
-        new_row = pd.DataFrame.from_dict({"E": [5, 5, 5]}, orient="index", columns=["nUMI", "GeneX", "GeneY"])
+        new_row = pd.DataFrame.from_dict(
+            {"E": [5, 5, 5]}, orient="index", columns=["nUMI", "GeneX", "GeneY"]
+        )
 
         X = pd.concat([self.X, new_row], axis=1)
 
@@ -131,7 +133,9 @@ class TestAutocorrelation(unittest.TestCase):
             orient="index",
             columns=["A", "B", "C"],
         )
-        self.assertRaises(AutocorrelationError, cas.tl.compute_morans_i, self.basic_tree, None, self.X, W)
+        self.assertRaises(
+            AutocorrelationError, cas.tl.compute_morans_i, self.basic_tree, None, self.X, W
+        )
 
 
 if __name__ == "__main__":

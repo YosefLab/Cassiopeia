@@ -47,9 +47,8 @@ def compute_expansion_pvalues(
             in number of nodes from the root, not branch lengths.
         copy: Return copy.
 
-    Returns
-    -------
-        If copy is set to False, returns the tree with attributes added
+    Returns:
+            If copy is set to False, returns the tree with attributes added
             in place. Else, returns a new CassiopeiaTree.
     """
     tree = tree.copy() if copy else tree
@@ -118,9 +117,8 @@ def compute_cophenetic_correlation(
             CassiopeiaTree, then this function will be used to compute the
             dissimilarities between samples.
 
-    Returns
-    -------
-        The cophenetic correlation value and significance for the tree.
+    Returns:
+            The cophenetic correlation value and significance for the tree.
     """
     # set phylogenetic weight matrix
     W = compute_phylogenetic_weight_matrix(tree) if (weights is None) else weights
@@ -168,9 +166,8 @@ def nCk(n: int, k: int) -> float:
         n: Number of items total.
         k: Number of items to choose.
 
-    Returns
-    -------
-        The number of ways to choose k items from n.
+    Returns:
+            The number of ways to choose k items from n.
     """
     if k > n:
         raise CassiopeiaError("Argument k cannot be larger than n.")

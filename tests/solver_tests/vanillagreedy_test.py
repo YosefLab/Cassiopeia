@@ -190,7 +190,9 @@ class VanillaGreedySolverTest(unittest.TestCase):
             columns=["a", "b", "c", "d", "e"],
         )
 
-        left_set, right_set = missing_data_methods.assign_missing_average(cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"])
+        left_set, right_set = missing_data_methods.assign_missing_average(
+            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"]
+        )
         self.assertEqual(left_set, ["c1", "c2", "c3"])
         self.assertEqual(right_set, ["c4", "c5"])
 

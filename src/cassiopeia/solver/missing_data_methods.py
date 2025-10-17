@@ -36,9 +36,8 @@ def assign_missing_average(
             represented by their names in the original character matrix
         weights: A set of optional weights for character/state mutation pairs
 
-    Returns
-    -------
-        A tuple of lists, representing the left and right partitions with
+    Returns:
+            A tuple of lists, representing the left and right partitions with
         missing samples imputed
     """
     # A helper function to calculate the number of shared character/state pairs
@@ -76,7 +75,8 @@ def assign_missing_average(
 
     for sample_index in missing_indices:
         all_states_for_sample = [
-            unravel_ambiguous_states([character_array[sample_index, char]]) for char in range(character_array.shape[1])
+            unravel_ambiguous_states([character_array[sample_index, char]])
+            for char in range(character_array.shape[1])
         ]
 
         left_score = score_side(

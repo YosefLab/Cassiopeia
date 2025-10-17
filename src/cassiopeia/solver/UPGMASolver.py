@@ -43,9 +43,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             "ccphylo_upgma": Uses the fast UPGMA implementation from CCPhylo.
         threads: Number of threads to use for dissimilarity map computation.
 
-    Attributes
-    ----------
-        dissimilarity_function: Function used to compute dissimilarity between
+    Attributes:
+            dissimilarity_function: Function used to compute dissimilarity between
             samples.
         add_root: Whether or not to add an implicit root the tree.
         prior_transformation: Function to use when transforming priors into
@@ -55,7 +54,9 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
 
     def __init__(
         self,
-        dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
+        dissimilarity_function: Callable[
+            [np.array, np.array, int, dict[int, dict[int, float]]], float
+        ]
         | None = dissimilarity_functions.weighted_hamming_distance,
         prior_transformation: str = "negative_log",
         fast: bool = False,
@@ -66,7 +67,9 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             if implementation in ["ccphylo_upgma"]:
                 self._implementation = implementation
             else:
-                raise DistanceSolverError("Invalid fast implementation of UPGMA. Options are: 'ccphylo_upgma'")
+                raise DistanceSolverError(
+                    "Invalid fast implementation of UPGMA. Options are: 'ccphylo_upgma'"
+                )
         else:
             self._implementation = "generic_upgma"
 
@@ -91,9 +94,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             root_sample: Ignored in this case, the root is known in this case
             remaining_samples: The last two unjoined nodes in the tree
 
-        Returns
-        -------
-            A rooted tree.
+        Returns:
+                    A rooted tree.
         """
         tree.add_node("root")
         tree.add_edges_from([("root", remaining_samples[0]), ("root", remaining_samples[1])])
@@ -113,9 +115,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         Args:
             dissimilarity_matrix: A sample x sample dissimilarity matrix
 
-        Returns
-        -------
-            A tuple of integers representing rows in the dissimilarity matrix
+        Returns:
+                    A tuple of integers representing rows in the dissimilarity matrix
                 to join.
         """
         dissimilarity_matrix = dissimilarity_matrix.astype(float)
@@ -147,9 +148,8 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             cherry: A tuple of indices in the dissimilarity map that are joining
             new_node: New node name, to be added to the new dissimilarity map
 
-        Returns
-        -------
-            A new dissimilarity map, updated with the new node
+        Returns:
+            An updated dissimilarity map
         """
         i_size, j_size = (
             max(1, self.__cluster_to_cluster_size[cherry[0]]),
@@ -163,10 +163,14 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             np.where(dissimilarity_map.index == cherry[1])[0][0],
         )
 
-        dissimilarity_array = self.__update_dissimilarity_map_numba(dissimilarity_map.to_numpy(), i, j, i_size, j_size)
+        dissimilarity_array = self.__update_dissimilarity_map_numba(
+            dissimilarity_map.to_numpy(), i, j, i_size, j_size
+        )
         sample_names = list(dissimilarity_map.index) + [new_node]
 
-        dissimilarity_map = pd.DataFrame(dissimilarity_array, index=sample_names, columns=sample_names)
+        dissimilarity_map = pd.DataFrame(
+            dissimilarity_array, index=sample_names, columns=sample_names
+        )
 
         # drop out cherry from dissimilarity map
         dissimilarity_map.drop(
@@ -195,9 +199,10 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             dissimilarity_map: A matrix of dissimilarities to update
             cherry_i: Index of the first item in the cherry
             cherry_j: Index of the second item in the cherry
+            size_i: Size of the cluster represented by cherry_i
+            size_j: Size of the cluster represented by cherry_j
 
-        Returns
-        -------
+        Returns:
             An updated dissimilarity map
 
         """

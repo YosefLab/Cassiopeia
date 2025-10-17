@@ -71,9 +71,8 @@ def impute_alleles_from_spatial_data(
             of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
             of the form `{connect_key}_connectivities`.
 
-    Returns
-    -------
-        An imputed character matrix.
+    Returns:
+            An imputed character matrix.
     """
     if (not spatial_graph) and (not adata):
         raise Exception("One of the following must be specified: `spatial_graph` or `adata`.")
@@ -100,16 +99,22 @@ def impute_alleles_from_spatial_data(
             zip(missing_indices[0], missing_indices[1], strict=False),
             total=len(missing_indices[0]),
         ):
-            (imputed_value, proportion_of_votes, number_of_votes) = spatial_utilities.impute_single_state(
-                prev_character_matrix_imputed.index.values[i],
-                j,
-                prev_character_matrix_imputed,
-                neighborhood_graph=spatial_graph,
-                number_of_hops=imputation_hops,
-                max_neighbor_distance=max_neighbor_distance,
-                coordinates=coordinates,
+            (imputed_value, proportion_of_votes, number_of_votes) = (
+                spatial_utilities.impute_single_state(
+                    prev_character_matrix_imputed.index.values[i],
+                    j,
+                    prev_character_matrix_imputed,
+                    neighborhood_graph=spatial_graph,
+                    number_of_hops=imputation_hops,
+                    max_neighbor_distance=max_neighbor_distance,
+                    coordinates=coordinates,
+                )
             )
-            if proportion_of_votes >= imputation_concordance and imputed_value != -1 and imputed_value != 0:
+            if (
+                proportion_of_votes >= imputation_concordance
+                and imputed_value != -1
+                and imputed_value != 0
+            ):
                 character_matrix_imputed.iloc[i, j] = int(imputed_value)
 
         prev_character_matrix_imputed = character_matrix_imputed.copy()

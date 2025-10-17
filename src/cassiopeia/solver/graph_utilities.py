@@ -19,9 +19,8 @@ def check_if_cut(u: int, v: int, cut: list[int]) -> bool:
         cut: A set of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns
-    -------
-        Whether nodes u and v are on the same side of the partition
+    Returns:
+            Whether nodes u and v are on the same side of the partition
     """
     return ((u in cut) and (v not in cut)) or ((v in cut) and (u not in cut))
 
@@ -56,11 +55,12 @@ def construct_connectivity_graph(
             their names in the original character matrix
         weights: A set of optional weights for edges in the connectivity graph
 
-    Returns
-    -------
-        A connectivity graph constructed over the sample set
+    Returns:
+            A connectivity graph constructed over the sample set
     """
-    sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
     character_array = character_matrix.to_numpy()
 
     k = character_matrix.shape[1]
@@ -75,7 +75,9 @@ def construct_connectivity_graph(
         for l in range(k):
             x = character_array[i, l]
             y = character_array[j, l]
-            if (x != missing_state_indicator and y != missing_state_indicator) and (x != 0 or y != 0):
+            if (x != missing_state_indicator and y != missing_state_indicator) and (
+                x != 0 or y != 0
+            ):
                 if weights is not None:
                     if x == y:
                         score -= (
@@ -92,13 +94,15 @@ def construct_connectivity_graph(
                     elif y == 0:
                         score += weights[l][x] * (mutation_frequencies[l][x] - 1)
                     else:
-                        score += weights[l][x] * (mutation_frequencies[l][x] - 1) + weights[l][y] * (
-                            mutation_frequencies[l][y] - 1
-                        )
+                        score += weights[l][x] * (mutation_frequencies[l][x] - 1) + weights[l][
+                            y
+                        ] * (mutation_frequencies[l][y] - 1)
                 else:
                     if x == y:
                         score -= 3 * (
-                            len(samples) - mutation_frequencies[l][x] - mutation_frequencies[l][missing_state_indicator]
+                            len(samples)
+                            - mutation_frequencies[l][x]
+                            - mutation_frequencies[l][missing_state_indicator]
                         )
                     elif x == 0:
                         score += mutation_frequencies[l][y] - 1
@@ -109,7 +113,9 @@ def construct_connectivity_graph(
         if score != 0:
             G.add_edge(i, j, weight=score)
 
-    G_names = nx.relabel_nodes(G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False)))
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
+    )
     return G_names
 
 
@@ -129,9 +135,8 @@ def max_cut_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns
-    -------
-        A new partition that is a local maximum to the max-cut criterion
+    Returns:
+            A new partition that is a local maximum to the max-cut criterion
     """
     ip = {}
     new_cut = cut.copy()
@@ -207,11 +212,12 @@ def construct_similarity_graph(
         threshold: A minimum similarity threshold
         weights: A set of optional weights for edges in the similarity graph
 
-    Returns
-    -------
-        A similarity graph constructed over the sample set
+    Returns:
+            A similarity graph constructed over the sample set
     """
-    sample_indices = solver_utilities.convert_sample_names_to_indices(character_matrix.index, samples)
+    sample_indices = solver_utilities.convert_sample_names_to_indices(
+        character_matrix.index, samples
+    )
     character_array = character_matrix.to_numpy()
 
     G = nx.Graph()
@@ -242,7 +248,9 @@ def construct_similarity_graph(
         for edge in to_remove:
             G.remove_edge(edge[0], edge[1])
 
-    G_names = nx.relabel_nodes(G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False)))
+    G_names = nx.relabel_nodes(
+        G, dict(zip(range(character_matrix.shape[0]), character_matrix.index, strict=False))
+    )
     return G_names
 
 
@@ -264,22 +272,18 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
         cut: A list of nodes that represents one of the sides of a partition
             on the graph
 
-    Returns
-    -------
-        A new partition that is a local minimum to the objective function
+    Returns:
+            A new partition that is a local minimum to the objective function
     """
 
     def set_improvement_potential(node: int):
-        """A helper function to calculate the change to the cut weight by
-
-        moving the node to the other side of the partition.
+        """Calculate the change to the cut weight by moving the node to the other side of the partition.
 
         Args:
             node: The index of a sample and its respective node in the graph G
 
-        Returns
-        -------
-            None. Annotates the improvement_potentials dictionary
+        Returns:
+                    None. Annotates the improvement_potentials dictionary
         """
         # If moving a node across the cut would result in one side having 0
         # weight, that move is disallowed
@@ -304,7 +308,9 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
     improvement_potentials = {}
     new_cut = cut.copy()
     total_weight = 2 * sum([G[e[0]][e[1]]["weight"] for e in G.edges()])
-    numerator = sum([G[e[0]][e[1]]["weight"] for e in G.edges() if check_if_cut(e[0], e[1], new_cut)])
+    numerator = sum(
+        [G[e[0]][e[1]]["weight"] for e in G.edges() if check_if_cut(e[0], e[1], new_cut)]
+    )
     weight_within_side = sum([sum([G[u][v]["weight"] for v in G.neighbors(u)]) for u in new_cut])
     if numerator == 0:
         return new_cut
@@ -314,7 +320,11 @@ def spectral_improve_cut(G: nx.Graph, cut: list[str]) -> list[str]:
         # the weight within a side of the cut
         neighbor_weight = sum([G[node1][node2]["weight"] for node2 in G.neighbors(node1)])
         cut_weight = sum(
-            [G[node1][node2]["weight"] for node2 in G.neighbors(node1) if check_if_cut(node1, node2, new_cut)]
+            [
+                G[node1][node2]["weight"]
+                for node2 in G.neighbors(node1)
+                if check_if_cut(node1, node2, new_cut)
+            ]
         )
         delta_numerator[node1] = neighbor_weight - 2 * cut_weight
         if node1 in new_cut:

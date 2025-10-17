@@ -19,9 +19,8 @@ def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
     Args:
         molecule_table: A molecule table of cellBC-UMI pairs to be filtered
 
-    Returns
-    -------
-        An allele table with one allele per cellBC-intBC pair
+    Returns:
+            An allele table with one allele per cellBC-intBC pair
     """
     # Have to drop out all intBCs that are NaN
     molecule_table = molecule_table.dropna(subset=["intBC"])
@@ -36,11 +35,15 @@ def map_intbcs(molecule_table: pd.DataFrame) -> pd.DataFrame:
     )
     duplicated_mask = allele_table.duplicated(["cellBC", "intBC"])
     mapped_alleles = set(
-        allele_table[~duplicated_mask][["cellBC", "intBC", "allele"]].itertuples(index=False, name=None)
+        allele_table[~duplicated_mask][["cellBC", "intBC", "allele"]].itertuples(
+            index=False, name=None
+        )
     )
 
     # True for rows that contain the mapped allele; False for ones to filter out
-    selection_mask = molecule_table[["cellBC", "intBC", "allele"]].apply(tuple, axis=1).isin(mapped_alleles)
+    selection_mask = (
+        molecule_table[["cellBC", "intBC", "allele"]].apply(tuple, axis=1).isin(mapped_alleles)
+    )
 
     mapped_table = molecule_table[selection_mask]
     logger.debug(f"Alleles removed: {duplicated_mask.sum()}")

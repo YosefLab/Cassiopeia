@@ -14,12 +14,10 @@ from cassiopeia.simulator.LeafSubsampler import LeafSubsampler
 
 
 class UniformLeafSubsampler(LeafSubsampler):
-    """
-    Uniformly subsample leaves from a CassiopeiaTree.
+    """Uniformly subsample leaves from a CassiopeiaTree.
 
-    Returns
-    -------
-    UniformLeafSubsampler - Configured sampler for uniform selection.
+    Returns:
+        UniformLeafSubsampler - Configured sampler for uniform selection.
     """
 
     def __init__(
@@ -40,13 +38,19 @@ class UniformLeafSubsampler(LeafSubsampler):
             number_of_leaves: Explicitly specifies the number of leaves to be sampled
         """
         if ratio is None and number_of_leaves is None:
-            raise LeafSubsamplerError("At least one of 'ratio' and 'number_of_leaves' must be specified.")
+            raise LeafSubsamplerError(
+                "At least one of 'ratio' and 'number_of_leaves' must be specified."
+            )
         if ratio is not None and number_of_leaves is not None:
-            raise LeafSubsamplerError("Exactly one of 'ratio' and 'number_of_leaves'must be specified.")
+            raise LeafSubsamplerError(
+                "Exactly one of 'ratio' and 'number_of_leaves'must be specified."
+            )
         self.__ratio = ratio
         self.__number_of_leaves = number_of_leaves
 
-    def subsample_leaves(self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True) -> CassiopeiaTree:
+    def subsample_leaves(
+        self, tree: CassiopeiaTree, keep_singular_root_edge: bool = True
+    ) -> CassiopeiaTree:
         """Uniformly subsample leaf samples of a given tree.
 
         Generates a uniform random sample on the leaves of the given
@@ -67,14 +71,12 @@ class UniformLeafSubsampler(LeafSubsampler):
             keep_singular_root_edge: Whether or not to collapse the single edge
                 leading from the root in the subsample, if it exists
 
-        Returns
-        -------
-            A new CassiopeiaTree that is the induced subtree on a sample of the
+        Returns:
+                    A new CassiopeiaTree that is the induced subtree on a sample of the
                 leaves in the given tree
 
-        Raises
-        ------
-            LeafSubsamplerError if the sample size is <= 0, or larger than the
+        Raises:
+                    LeafSubsamplerError if the sample size is <= 0, or larger than the
                 number of leaves in the tree
         """
         ratio = self.__ratio

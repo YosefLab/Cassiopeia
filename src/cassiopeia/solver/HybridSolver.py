@@ -74,7 +74,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         progress_bar: bool = True,
     ):
         if lca_cutoff is None and cell_cutoff is None:
-            raise HybridSolverError("Please specify a cutoff, either through lca_cutoff or cell_cutoff")
+            raise HybridSolverError(
+                "Please specify a cutoff, either through lca_cutoff or cell_cutoff"
+            )
 
         super().__init__(prior_transformation)
 
@@ -127,7 +129,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
 
         weights = None
         if cassiopeia_tree.priors:
-            weights = solver_utilities.transform_priors(cassiopeia_tree.priors, self.prior_transformation)
+            weights = solver_utilities.transform_priors(
+                cassiopeia_tree.priors, self.prior_transformation
+            )
 
         tree = nx.DiGraph()
         # call top-down solver until a desired cutoff is reached.
@@ -173,10 +177,14 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
                     cassiopeia_tree,
                     subproblem[0],
                     subproblem[1],
-                    None if logfile is None else f"{logfile.split('.log')[0]}-{next(logfile_names)}.log",
+                    None
+                    if logfile is None
+                    else f"{logfile.split('.log')[0]}-{next(logfile_names)}.log",
                     layer,
                 )
-                for subproblem in tqdm(subproblems, total=len(subproblems), disable=not self.progress_bar)
+                for subproblem in tqdm(
+                    subproblems, total=len(subproblems), disable=not self.progress_bar
+                )
             ]
 
         for result in results:
@@ -236,16 +244,19 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             missing_state_indicator: Indicator for missing data
             root: Node ID of the root in the subtree containing the samples.
 
-        Returns
-        -------
-            The ID of the node serving as the root of the tree containing the
+        Returns:
+                    The ID of the node serving as the root of the tree containing the
                 samples, and a list of subproblems in the form
                 [subtree-root, subtree-samples].
         """
         if len(samples) == 1:
             return samples[0], [samples], tree
 
-        clades = list(self.top_solver.perform_split(character_matrix, samples, weights, missing_state_indicator))
+        clades = list(
+            self.top_solver.perform_split(
+                character_matrix, samples, weights, missing_state_indicator
+            )
+        )
 
         root = next(node_name_generator)
         tree.add_node(root)
@@ -308,9 +319,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             layer: Layer storing the character matrix for solving. If None, the
                 default character matrix is used in the CassiopeiaTree.
 
-        Returns
-        -------
-            A tree in the form of a Networkx graph and the original root
+        Returns:
+                    A tree in the form of a Networkx graph and the original root
                 identifier
 
         """
@@ -358,9 +368,8 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             character_matrix: Character matrix
             missing_state_indicator: Indicator for missing data.
 
-        Returns
-        -------
-            True if the cutoff is reached, False if not.
+        Returns:
+                    True if the cutoff is reached, False if not.
         """
         if self.cell_cutoff is None:
             root_states = data_utilities.get_lca_characters(
@@ -369,7 +378,9 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
             )
 
             lca_distances = [
-                dissimilarity_functions.hamming_distance(np.array(root_states), character_matrix.loc[u].values)
+                dissimilarity_functions.hamming_distance(
+                    np.array(root_states), character_matrix.loc[u].values
+                )
                 for u in samples
             ]
 
@@ -399,10 +410,10 @@ class HybridSolver(CassiopeiaSolver.CassiopeiaSolver):
         Args:
             tree: The tree after solving
             character_matrix: Character matrix
+            node_name_generator: Generator that produces unique node names
 
-        Returns
-        -------
-            The tree with duplicates added and spurious leaves pruned
+        Returns:
+                    The tree with duplicates added and spurious leaves pruned
         """
         duplicate_mappings = find_duplicate_groups(character_matrix)
 

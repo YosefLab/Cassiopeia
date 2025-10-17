@@ -107,7 +107,9 @@ class SimpleFitSubcloneSimulator(TreeSimulator):
         while not q.empty():
             # Pop next node
             (node, time, node_fitness, generation) = q.get()
-            time_till_division = branch_length_neutral() if node_fitness == "neutral" else branch_length_fit()
+            time_till_division = (
+                branch_length_neutral() if node_fitness == "neutral" else branch_length_fit()
+            )
             time_of_division = time + time_till_division
             if time_of_division >= experiment_duration:
                 # Not enough time left for the individual to divide.
