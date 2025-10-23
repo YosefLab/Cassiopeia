@@ -6,9 +6,13 @@ import warnings
 from typing import Any
 
 import networkx as nx
+import pandas as pd
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins.errors import (
+    CassiopeiaError,
+)
 
 from .typing import TreeLike
 
@@ -180,3 +184,19 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
         child_length = child_edge.get("length", 0)
         new_edge["length"] = parent_length + child_length
     return new_edge
+
+
+def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
+    """Return the cell metadata DataFrame from a CassiopeiaTree or TreeData.
+
+    For CassiopeiaTree, this is `tree.cell_meta`.
+    For TreeData, this is `tree.obs`.
+    Raises a CassiopeiaError if neither attribute exists.
+    """
+    if isinstance(tree, CassiopeiaTree) and isinstance(tree.cell_meta, pd.DataFrame):
+        return tree.cell_meta
+    if isinstance(tree, TreeData) and isinstance(tree.obs, pd.DataFrame):
+        return tree.obs
+    raise CassiopeiaError(
+        "Tree object does not have .cell_meta (CassiopeiaTree) or .obs (TreeData)."
+    )
