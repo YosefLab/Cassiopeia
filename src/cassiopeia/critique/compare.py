@@ -96,7 +96,6 @@ def run_triplets_correct_nx(
             depth to be included.
 
     Returns:
-    -------
         A tuple of four dicts keyed by depth:
             all_triplets_correct: Total proportion of triplets correct.
             resolvable_triplets_correct: Proportion correct among resolvable triplets.
