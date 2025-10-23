@@ -61,7 +61,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
 
 
 def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
-    """Infers the outgroup of a triplet from a CassioepiaTree.
+    """Infers the outgroup of a triplet from a CassiopeiaTree.
 
     Finds the outgroup based on the depth of the latest-common-ancestors
     of each pair of items. The pair with the deepest LCA is the
@@ -183,50 +183,8 @@ def sample_triplet_at_depth(
     return (str(in_group[0]), str(in_group[1]), str(out_group)), out_group
 
 
-def to_nx_tree(tree_like: Any) -> "nx.DiGraph":
-    """Convert CassiopeiaTree / TreeData-like / nx.DiGraph into a rooted nx.DiGraph.
-    Directed edges are parent -> child; sets G.graph['root'].
-    """
-    if nx is None:
-        raise ImportError("networkx is required for NX helpers.")
-
-    # Already networkx?
-    if isinstance(tree_like, nx.DiGraph):
-        G = tree_like.copy()
-        root = next((n for n in G.nodes if G.in_degree(n) == 0), None)
-        if root is None:
-            raise ValueError("nx.DiGraph has no in-degree-0 root.")
-        G.graph["root"] = root
-        return G
-
-    # Cassiopeia-like (duck-typed): needs .root and .children(u)
-    needed = ["root", "children"]
-    if not all(hasattr(tree_like, m) for m in needed):
-        raise TypeError(
-            "Unsupported tree object: need nx.DiGraph or Cassiopeia-like (root, children)."
-        )
-
-    G = nx.DiGraph()
-    root = tree_like.root
-    G.add_node(root)
-    q = [root]
-    seen = {root}
-    while q:
-        u = q.pop()
-        for v in tree_like.children(u):
-            if v not in seen:
-                seen.add(v)
-                q.append(v)
-                G.add_node(v)
-            G.add_edge(u, v)
-    G.graph["root"] = root
-    return G
-
-
 def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
-    """In-place: remove internal nodes with a single child (splice parent(s) -> child),
-    mirroring CassiopeiaTree.collapse_unifurcations().
-    """
+    """Collapses unifurcations in-place in a networkx DiGraph, mirroring CassiopeiaTree.collapse_unifurcations()."""
     changed = True
     while changed:
         changed = False
@@ -251,10 +209,17 @@ def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
 
 
 def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
-    """Compute and write:
-      - node['depth']
-      - node['number_of_triplets'] = C(sum child_subtree_leaf_sizes, 3) - sum C(child_subtree_leaf_size, 3)
-    Returns depth -> [nodes] mapping.
+    """Annotates tree depth at every node for a networkx DiGraph.
+
+    Adds two attributes to the tree: how far away each node is from the root of
+    the tree and how many triplets are rooted at that node. Modifies the tree
+    in place.
+
+    Args:
+        G: nx.DiGraph
+
+    Returns:
+            A dictionary mapping depth to the list of nodes at that depth.
     """
     if nx is None:
         raise ImportError("networkx is required for NX helpers.")
@@ -329,8 +294,20 @@ def sample_triplet_at_depth_nx(
     depth: int,
     depth_to_nodes: dict[int, list[Any]] | None = None,
 ) -> tuple[tuple[str, str, str], str]:
-    """Sample ((i,j,k), out_group) at a given depth with the same distribution
-    as your original sampler. Returns out_group='None' when unresolved.
+    """Samples a triplet at a given depth for a networkx DiGraph.
+
+    Samples a triplet of leaves such that the depth of the LCA of the triplet
+    is at the specified depth.
+
+    Args:
+        G: nx.DiGraph
+        depth: Depth at which to sample the triplet
+        depth_to_nodes: An optional dictionary that maps a depth to the nodes
+            that appear at that depth. This speeds up the function considerably.
+
+    Returns:
+            A list of three leaves corresponding to the triplet name of the outgroup
+            of the triplet.
     """
     # candidates at this depth
     if depth_to_nodes is None:
