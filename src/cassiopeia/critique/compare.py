@@ -12,7 +12,7 @@ import numpy as np
 from cassiopeia.critique.critique_utilities import (
     annotate_tree_depths_nx,
     get_outgroup_nx,
-    sample_triplet_at_depth,
+    sample_triplet_at_depth_nx,
 )
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
@@ -69,8 +69,6 @@ def triplets_correct(
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")
-    if type(tree1) is not type(tree2):
-        raise TypeError("tree1 and tree2 must be the same type. ")
 
     return run_triplets_correct_nx(
         t1, t2, number_of_trials=number_of_trials, min_triplets_at_depth=min_triplets_at_depth
@@ -106,14 +104,10 @@ def run_triplets_correct_nx(
     collapse_unifurcations(G1)
     collapse_unifurcations(G2)
 
-    # require identical leaf sets
-    leaves1 = {n for n in G1.nodes if G1.out_degree(n) == 0}
-    leaves2 = {n for n in G2.nodes if G2.out_degree(n) == 0}
-    if leaves1 != leaves2:
-        raise ValueError("Trees must have identical leaf sets to compare triplets.")
-
     # annotate depths and per-node triplet counts (on G1)
     depth_to_nodes = annotate_tree_depths_nx(G1)
+
+    print(G1.nodes(data=True))
 
     # max depth from G1
     depths = [d for _, d in G1.nodes(data="depth") if d is not None]
@@ -139,13 +133,13 @@ def run_triplets_correct_nx(
         num_unres = 0
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = sample_triplet_at_depth(G1, depth, depth_to_nodes)
+            (i, j, k), out_group = sample_triplet_at_depth_nx(G1, depth, depth_to_nodes)
 
             is_resolvable = out_group != "None"
             if not is_resolvable:
                 num_unres += 1
 
-            reconstructed = get_outgroup_nx(G2, i, j, k)
+            reconstructed = get_outgroup_nx(G2, (i, j, k))
             score = int(reconstructed == out_group)
             score_sum += score
             if is_resolvable:

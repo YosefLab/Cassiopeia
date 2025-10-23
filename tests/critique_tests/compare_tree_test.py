@@ -122,16 +122,14 @@ def tdata(ground_truth_tree, tree1, multifurcating_ground_truth, tree2, ground_t
 
 
 # ---------- Tests ----------
-@pytest.mark.skip
 def test_out_group(tree1, ground_truth_rake):
-    out_group = cas.critique.critique_utilities.get_outgroup(tree1, ("11", "14", "9"))
+    out_group = cas.critique.critique_utilities.get_outgroup_nx(tree1, ("11", "14", "9"))
     assert out_group == "9"
 
-    out_group = cas.critique.critique_utilities.get_outgroup(ground_truth_rake, ("4", "5", "6"))
+    out_group = cas.critique.critique_utilities.get_outgroup_nx(ground_truth_rake, ("4", "5", "6"))
     assert out_group == "None"
 
 
-@pytest.mark.skip
 def test_same_tree_gives_perfect_triplets_correct(ground_truth_tree):
     (
         all_triplets,
@@ -148,7 +146,6 @@ def test_same_tree_gives_perfect_triplets_correct(ground_truth_tree):
         assert proportion_unresolvable[depth] == 0.0
 
 
-@pytest.mark.skip
 def test_triplets_correct_different_trees(ground_truth_tree, tree1):
     (
         all_triplets,
@@ -163,7 +160,6 @@ def test_triplets_correct_different_trees(ground_truth_tree, tree1):
     assert proportion_unresolvable[1] == 0.0
 
 
-@pytest.mark.skip
 def test_triplets_correct_multifurcating_same_tree(multifurcating_ground_truth):
     (
         all_triplets,
@@ -188,7 +184,6 @@ def test_triplets_correct_multifurcating_same_tree(multifurcating_ground_truth):
     assert pytest.approx(proportion_unresolvable[1], abs=0.05) == expected_unresolvable_triplets
 
 
-@pytest.mark.skip
 def test_triplets_correct_multifurcating_different_trees(multifurcating_ground_truth, tree2):
     (
         all_triplets,
@@ -205,8 +200,7 @@ def test_triplets_correct_multifurcating_different_trees(multifurcating_ground_t
     assert pytest.approx(all_triplets[1], abs=0.05) == prob_of_sampling_left
 
 
-@pytest.mark.skip
-def test_rake_tree(ground_truth_rake):
+def test_triplets_correct_rake_tree(ground_truth_rake):
     (
         all_triplets,
         resolvable_triplets_correct,
@@ -220,6 +214,23 @@ def test_rake_tree(ground_truth_rake):
     assert all_triplets[0] == 1.0
     assert unresolved_triplets_correct[0] == 1.0
     assert proportion_unresolvable[0] == 1.0
+
+
+def test_triplets_correct_with_string_keys(tdata):
+    all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
+        tdata, key1="ground_truth", key2="ground_truth"
+    )
+    assert len(all_tc) > 0
+    assert all(v == 1.0 for v in all_tc.values())
+
+
+def test_triplets_correct_different_leaf_sets_error(ground_truth_tree):
+    different_leaves_tree = nx.DiGraph()
+    different_leaves_tree.add_edges_from([(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+
+    with pytest.raises(ValueError) as exc:
+        cas.critique.triplets_correct(ground_truth_tree, different_leaves_tree)
+    assert "identical leaf sets" in str(exc.value)
 
 
 def test_robinson_foulds_bifurcating_same_tree(ground_truth_tree):
@@ -271,96 +282,6 @@ def test_robinson_foulds_mixed_types(tdata, ground_truth_tree):
     )
     assert rf == 0
     assert max_rf > 0
-
-    def test_triplets_correct_different_trees_bifurcating(self):
-        all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
-            self.ground_truth_tree, self.tree1
-        )
-        # Not a perfect match across all depths
-        self.assertTrue(any(v < 1.0 for v in all_tc.values()))
-        # Sanity: values are within [0,1]
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in all_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in res_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in unres_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in prop_unres.values()))
-
-    def test_triplets_correct_different_trees_multifurcating(self):
-        all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
-            self.tree2, self.multifurcating_ground_truth
-        )
-        # Multifurcations → some unresolved; not all depths perfect
-        self.assertTrue(any(v < 1.0 for v in all_tc.values()))
-        # Sanity bounds
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in all_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in res_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in unres_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in prop_unres.values()))
-
-    def test_triplets_correct_same_tree_multifurcating(self):
-        all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
-            self.multifurcating_ground_truth, self.multifurcating_ground_truth
-        )
-        # Identical trees → perfect agreement at every depth
-        self.assertTrue(len(all_tc) > 0)
-        self.assertTrue(all(v == 1.0 for v in all_tc.values()))
-        # Sanity bounds on other outputs
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in res_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in unres_tc.values()))
-        self.assertTrue(all(0.0 <= v <= 1.0 for v in prop_unres.values()))
-
-    def test_triplets_correct_different_leaf_sets_error(self):
-        different_leaves_tree = nx.DiGraph()
-        different_leaves_tree.add_edges_from([(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
-
-        with self.assertRaises(ValueError) as context:
-            cas.critique.triplets_correct(
-                self.ground_truth_tree.get_tree_topology(), different_leaves_tree
-            )
-        self.assertIn("identical leaf sets", str(context.exception))
-
-    def test_triplets_correct_with_nx_digraph(self):
-        tree1_graph = self.ground_truth_tree.get_tree_topology()
-        tree2_graph = self.ground_truth_tree.get_tree_topology()
-
-        all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
-            tree1_graph, tree2_graph
-        )
-        self.assertTrue(len(all_tc) > 0)
-        self.assertTrue(all(v == 1.0 for v in all_tc.values()))
-
-    def test_triplets_correct_with_string_keys(self):
-        all_tc, res_tc, unres_tc, prop_unres = cas.critique.triplets_correct(
-            "ground_truth", "ground_truth", tdata=self.tdata
-        )
-        self.assertTrue(len(all_tc) > 0)
-        self.assertTrue(all(v == 1.0 for v in all_tc.values()))
-
-    def test_triplets_correct_type_mismatch_error(self):
-        with self.assertRaises(TypeError) as context:
-            cas.critique.triplets_correct(
-                self.ground_truth_tree, self.ground_truth_tree.get_tree_topology()
-            )
-        self.assertIn("must be the same type", str(context.exception))
-
-    def test_triplets_correct_string_without_tdata_error(self):
-        with self.assertRaises(ValueError) as context:
-            cas.critique.triplets_correct("tree1", "tree2")
-        self.assertIn("tdata must be provided", str(context.exception))
-
-    def test_triplets_correct_string_with_missing_key_error(self):
-        with self.assertRaises(ValueError) as context:
-            cas.critique.triplets_correct("tree1", "nonexistent_tree", tdata=self.tdata)
-        self.assertIn("Tree keys must exist in tdata.obst", str(context.exception))
-
-    def test_triplets_correct_wrong_type(self):
-        with self.assertRaises(TypeError) as context:
-            cas.critique.triplets_correct(["unsupported_list"], ["unsupported_list"])
-        self.assertIn("Unsupported", str(context.exception))
-
-    def test_triplets_correct_missing_tdata_obst(self):
-        with self.assertRaises(ValueError) as context:
-            cas.critique.triplets_correct("tree1", "tree2", tdata=self.emptytdata)
-        self.assertIn("does not have an 'obst' attribute", str(context.exception))
 
 
 if __name__ == "__main__":
