@@ -44,9 +44,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
         iterations: The number of iterations in updating the embeddings.
             Acts as a hyperparameter
 
-    Attributes
-    ----------
-        prior_transformation: Function to use when transforming priors into
+    Attributes:
+            prior_transformation: Function to use when transforming priors into
             weights.
         sdimension: The number of dimensions to use for the embedding space
         iterations: The number of iterations in updating the embeddings
@@ -90,11 +89,12 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
-        mutation_frequencies = self.compute_mutation_frequencies(samples, character_matrix, missing_state_indicator)
+        mutation_frequencies = self.compute_mutation_frequencies(
+            samples, character_matrix, missing_state_indicator
+        )
 
         G = graph_utilities.construct_connectivity_graph(
             character_matrix,
@@ -159,9 +159,8 @@ class MaxCutSolver(GreedySolver.GreedySolver):
                 on the graph
             G: The graph the cut is over
 
-        Returns
-        -------
-            The weight of the cut
+        Returns:
+                    The weight of the cut
         """
         cut_score = 0
         for e in G.edges():

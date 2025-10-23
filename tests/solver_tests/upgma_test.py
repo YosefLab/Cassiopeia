@@ -80,7 +80,9 @@ class TestUPGMASolver(unittest.TestCase):
 
         self.pp_tree = CassiopeiaTree(character_matrix=pp_cm)
 
-        self.upgma_solver_delta = UPGMASolver(dissimilarity_function=dissimilarity_functions.weighted_hamming_distance)
+        self.upgma_solver_delta = UPGMASolver(
+            dissimilarity_function=dissimilarity_functions.weighted_hamming_distance
+        )
 
         # ------------- CM with Duplicates and Missing Data -----------------------
         duplicates_cm = pd.DataFrame.from_dict(

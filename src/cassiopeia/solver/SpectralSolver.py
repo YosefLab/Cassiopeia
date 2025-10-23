@@ -51,9 +51,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 "square_root_inverse": Transforms each probability by the
                     the square root of 1/p
 
-    Attributes
-    ----------
-        similarity_function: A function that calculates a similarity score
+    Attributes:
+            similarity_function: A function that calculates a similarity score
             between two given samples and their observed mutations
         threshold: A minimum similarity threshold
         prior_transformation: Function to use when transforming priors into
@@ -62,7 +61,9 @@ class SpectralSolver(GreedySolver.GreedySolver):
 
     def __init__(
         self,
-        similarity_function: Callable[[int, int, pd.DataFrame, int, dict[int, dict[str, float]] | None], float]
+        similarity_function: Callable[
+            [int, int, pd.DataFrame, int, dict[int, dict[str, float]] | None], float
+        ]
         | None = dissimilarity_functions.hamming_similarity_without_missing,
         threshold: int | None = 0,
         prior_transformation: str = "negative_log",
@@ -101,9 +102,8 @@ class SpectralSolver(GreedySolver.GreedySolver):
                 transformation of the priors.
             missing_state_indicator: Character representing missing data.
 
-        Returns
-        -------
-            A tuple of lists, representing the left and right partition groups
+        Returns:
+                    A tuple of lists, representing the left and right partition groups
         """
         G = graph_utilities.construct_similarity_graph(
             character_matrix,

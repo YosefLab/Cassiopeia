@@ -89,7 +89,9 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 3 / 5)
 
     def test_weighted_hamming_distance_priors_negative_log(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.nlweights)
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
+            self.s1, self.s2, weights=self.nlweights
+        )
 
         expected_dissimilarity = np.sum(
             [
@@ -101,7 +103,9 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, expected_dissimilarity / 5)
 
     def test_weighted_hamming_distance_priors_inverse(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.iweights)
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
+            self.s1, self.s2, weights=self.iweights
+        )
 
         expected_dissimilarity = np.sum(
             [
@@ -113,7 +117,9 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, expected_dissimilarity / 5)
 
     def test_weighted_hamming_distance_priors_sq_inverse(self):
-        dissimilarity = dissimilarity_functions.weighted_hamming_distance(self.s1, self.s2, weights=self.sqiweights)
+        dissimilarity = dissimilarity_functions.weighted_hamming_distance(
+            self.s1, self.s2, weights=self.sqiweights
+        )
 
         expected_dissimilarity = np.sum(
             [
@@ -132,12 +138,16 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(dissimilarity, 0)
 
     def test_hamming_similarity_without_missing_identical(self):
-        similarity = dissimilarity_functions.hamming_similarity_without_missing(self.s1, self.s1, -1)
+        similarity = dissimilarity_functions.hamming_similarity_without_missing(
+            self.s1, self.s1, -1
+        )
 
         self.assertEqual(similarity, 3)
 
     def test_hamming_similarity_without_missing_no_priors(self):
-        similarity = dissimilarity_functions.hamming_similarity_without_missing(self.s1, self.s2, -1)
+        similarity = dissimilarity_functions.hamming_similarity_without_missing(
+            self.s1, self.s2, -1
+        )
 
         self.assertEqual(similarity, 2)
 
@@ -158,12 +168,16 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 0)
 
     def test_hamming_similarity_normalized_identical(self):
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(self.s1, self.s1, -1)
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s1, -1
+        )
 
         self.assertEqual(similarity, 3 / 5)
 
     def test_hamming_similarity_normalized_no_priors(self):
-        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(self.s1, self.s2, -1)
+        similarity = dissimilarity_functions.hamming_similarity_normalized_over_missing(
+            self.s1, self.s2, -1
+        )
 
         self.assertEqual(similarity, 2 / 5)
 
@@ -194,9 +208,13 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(similarity, 1)
 
     def test_weighted_hamming_similarity_priors(self):
-        similarity = dissimilarity_functions.weighted_hamming_similarity(self.s1, self.s2, -1, weights=self.nlweights)
+        similarity = dissimilarity_functions.weighted_hamming_similarity(
+            self.s1, self.s2, -1, weights=self.nlweights
+        )
 
-        expected_similarity = np.sum([-np.log(self.priors[1][1]) * 2, -np.log(self.priors[4][1]) * 2])
+        expected_similarity = np.sum(
+            [-np.log(self.priors[1][1]) * 2, -np.log(self.priors[4][1]) * 2]
+        )
 
         self.assertEqual(similarity, expected_similarity / 5)
 
@@ -222,20 +240,24 @@ class TestDissimilarityFunctions(unittest.TestCase):
         np.testing.assert_almost_equal(result, 1.2544, decimal=4)
 
     def test_cluster_dissimilarity_weighted_hamming_distance_min_linkage(self):
-        result = dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
-            self.s1,
-            self.ambiguous_no_missing,
-            -1,
-            None,
+        result = (
+            dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
+                self.s1,
+                self.ambiguous_no_missing,
+                -1,
+                None,
+            )
         )
 
         np.testing.assert_almost_equal(result, 0.4, decimal=4)
 
-        result = dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
-            self.s1,
-            self.ambiguous,
-            -1,
-            None,
+        result = (
+            dissimilarity_functions.cluster_dissimilarity_weighted_hamming_distance_min_linkage(
+                self.s1,
+                self.ambiguous,
+                -1,
+                None,
+            )
         )
 
         np.testing.assert_almost_equal(result, 0.4444, decimal=4)
@@ -246,11 +268,15 @@ class TestDissimilarityFunctions(unittest.TestCase):
         self.assertEqual(distance, 3)
 
     def test_hamming_distance_ignore_missing(self):
-        distance = dissimilarity_functions.hamming_distance(self.s1, self.s2, ignore_missing_state=True)
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.s2, ignore_missing_state=True
+        )
 
         self.assertEqual(distance, 2)
 
-        distance = dissimilarity_functions.hamming_distance(self.s1, self.all_missing, ignore_missing_state=True)
+        distance = dissimilarity_functions.hamming_distance(
+            self.s1, self.all_missing, ignore_missing_state=True
+        )
 
         self.assertEqual(distance, 0)
 

@@ -7,7 +7,6 @@ function.
 import copy
 from collections import defaultdict
 
-import ete3
 import networkx as nx
 import numpy as np
 from treedata import TreeData
@@ -15,11 +14,11 @@ from treedata import TreeData
 from cassiopeia.critique.critique_utilities import (
     annotate_tree_depths_nx,
     collapse_unifurcations_nx,
-    get_outgroup_nx,
-    sample_triplet_at_depth_nx,
     to_nx_tree,
 )
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.typing import TreeLike
+from cassiopeia.utils import _get_digraph, get_leaves
 
 
 def triplets_correct(
@@ -46,9 +45,8 @@ def triplets_correct(
         min_triplets_at_depth: Minimum number of triplets with LCA at a depth for that
             depth to be included.
 
-    Returns
-    -------
-        A tuple of four dicts keyed by depth:
+    Returns:
+            A tuple of four dictionaries storing triplet statistics at each depth:
             all_triplets_correct: Total proportion of triplets correct.
             resolvable_triplets_correct: Proportion correct among resolvable triplets.
             unresolved_triplets_correct: Proportion correct among unresolvable triplets.
@@ -83,7 +81,9 @@ def triplets_correct(
         G2 = to_nx_tree(copy.deepcopy(tree2))
 
     else:
-        raise TypeError("Unsupported input type. Expected CassiopeiaTree, str (key into tdata.obst), or nx.DiGraph.")
+        raise TypeError(
+            "Unsupported input type. Expected CassiopeiaTree, str (key into tdata.obst), or nx.DiGraph."
+        )
 
     return run_triplets_correct_nx(
         G1, G2, number_of_trials=number_of_trials, min_triplets_at_depth=min_triplets_at_depth
@@ -108,7 +108,7 @@ def run_triplets_correct_nx(
         min_triplets_at_depth: Minimum number of triplets with LCA at a depth for that
             depth to be included.
 
-    Returns
+    Returns:
     -------
         A tuple of four dicts keyed by depth:
             all_triplets_correct: Total proportion of triplets correct.
@@ -153,8 +153,9 @@ def run_triplets_correct_nx(
         num_unres = 0
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = sample_triplet_at_depth_nx(G1, depth, depth_to_nodes)
-            reconstructed = get_outgroup_nx(G2, (i, j, k))
+            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
+                T1, depth, depth_to_nodes
+            )
 
             is_resolvable = out_group != "None"
             if not is_resolvable:
@@ -189,140 +190,85 @@ def run_triplets_correct_nx(
     )
 
 
-# def triplets_correct(
-#     tree1: CassiopeiaTree,
-#     tree2: CassiopeiaTree,
-#     number_of_trials: int = 1000,
-#     min_triplets_at_depth: int = 1,
-# ) -> tuple[dict[int, float], dict[int, float], dict[int, float], dict[int, float]]:
-#     """Calculate the triplets correct accuracy between two trees.
+def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
+    """Compute the unrooted Robinson–Foulds distance using bitsets."""
+    leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
+    leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
+    if set(leaves1) != set(leaves2):
+        raise ValueError("Trees must have identical leaf sets.")
 
-#     Takes in two newick strings and computes the proportion of triplets in the
-#     tree (defined as a set of three leaves) that are the same across the two
-#     trees. This procedure samples the same number of triplets at every depth
-#     such as to reduce the amount of bias of sampling triplets randomly.
+    leaf_index = {leaf: i for i, leaf in enumerate(leaves1)}
 
-#     Args:
-#         tree1: Input CassiopeiaTree
-#         tree2: CassiopeiaTree to be compared to the first tree.
-#         number_of_trials: Number of triplets to sample at each depth
-#         min_triplets_at_depth: The minimum number of triplets needed with LCA
-#             at a depth for that depth to be included
+    def get_splits(tree, leaf_index):
+        """Return a set of canonical bitmasks representing bipartitions."""
+        topo = list(nx.topological_sort(tree))
+        bitset = {}
+        # postorder accumulation of leaf bitsets
+        for n in reversed(topo):
+            if tree.out_degree(n) == 0:
+                bitset[n] = (1 << leaf_index[n]) if n in leaf_index else 0
+            else:
+                m = 0
+                for c in tree.successors(n):
+                    m |= bitset[c]
+                bitset[n] = m
 
-#     Returns
-#     -------
-#         A tuple of four dictionaries storing triplet statistics at each depth:
-#             all_triplets_correct: Total proportion of triplets correct.
-#             resolvable_triplets_correct: Proportion correct among resolvable triplets.
-#             unresolved_triplets_correct: Proportion correct among unresolvable triplets.
-#             proportion_resolvable: Proportion of triplets that are resolvable at each depth.
-#     """
-#     # keep dictionary of triplets correct
-#     all_triplets_correct = defaultdict(int)
-#     unresolved_triplets_correct = defaultdict(int)
-#     resolvable_triplets_correct = defaultdict(int)
-#     proportion_unresolvable = defaultdict(int)
+        all_mask = bitset[topo[0]]
+        length = all_mask.bit_count()
+        # For unrooted splits, each internal edge defines a bipartition.
+        # Canonicalize by mapping each side to min(side, complement),
+        # so the split is independent of rooting.
+        splits = set()
+        for _, c in tree.edges:
+            bs = bitset[c]
+            k = bs.bit_count()
+            # exclude trivial: 1 or length-1 leaves
+            if 1 < k < length - 0:  # k<length and k>1
+                comp = all_mask ^ bs
+                # exclude complement-trivial as well; the test above already ensures k<length
+                if comp != 0 and comp != all_mask:
+                    splits.add(min(bs, comp))
+        return splits
 
-#     # create copies of the trees and collapse process
-#     T1 = copy.deepcopy(tree1)
-#     T2 = copy.deepcopy(tree2)
+    splits1 = get_splits(tree1, leaf_index)
+    splits2 = get_splits(tree2, leaf_index)
 
-#     T1.collapse_unifurcations()
-#     T2.collapse_unifurcations()
-
-#     # set depths in T1 and compute number of triplets that are rooted at
-#     # ancestors at each depth
-#     depth_to_nodes = critique_utilities.annotate_tree_depths(T1)
-
-#     max_depth = np.max([T1.get_attribute(n, "depth") for n in T1.nodes])
-#     for depth in range(max_depth):
-#         score = 0
-#         number_unresolvable_triplets = 0
-
-#         # check that there are enough triplets at this depth
-#         candidate_nodes = depth_to_nodes[depth]
-#         total_triplets = sum([T1.get_attribute(v, "number_of_triplets") for v in candidate_nodes])
-#         if total_triplets < min_triplets_at_depth:
-#             continue
-
-#         for _ in range(number_of_trials):
-#             (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(T1, depth, depth_to_nodes)
-
-#             reconstructed_outgroup = critique_utilities.get_outgroup(T2, (i, j, k))
-
-#             is_resolvable = True
-#             if out_group == "None":
-#                 number_unresolvable_triplets += 1
-#                 is_resolvable = False
-
-#             # increment score if the reconstructed outgroup is the same as the
-#             # ground truth
-#             score = int(reconstructed_outgroup == out_group)
-
-#             all_triplets_correct[depth] += score
-#             if is_resolvable:
-#                 resolvable_triplets_correct[depth] += score
-#             else:
-#                 unresolved_triplets_correct[depth] += score
-
-#         all_triplets_correct[depth] /= number_of_trials
-
-#         if number_unresolvable_triplets == 0:
-#             unresolved_triplets_correct[depth] = 1.0
-#         else:
-#             unresolved_triplets_correct[depth] /= number_unresolvable_triplets
-
-#         proportion_unresolvable[depth] = number_unresolvable_triplets / number_of_trials
-
-#         if proportion_unresolvable[depth] < 1:
-#             resolvable_triplets_correct[depth] /= number_of_trials - number_unresolvable_triplets
-#         else:
-#             resolvable_triplets_correct[depth] = 1.0
-
-#     return (
-#         all_triplets_correct,
-#         resolvable_triplets_correct,
-#         unresolved_triplets_correct,
-#         proportion_unresolvable,
-#     )
+    rf = len(splits1.symmetric_difference(splits2))
+    max_rf = len(splits1) + len(splits2)
+    return rf, max_rf
 
 
-def robinson_foulds(tree1: CassiopeiaTree, tree2: CassiopeiaTree) -> tuple[float, float]:
-    """Compares two trees with Robinson-Foulds distance.
-
-    Computes the Robinsons-Foulds distance between two trees. Currently, this
-    is the unweighted variant as most of the algorithms we use are maximum-
-    parsimony based and do not use edge weights. This is mostly just a wrapper
-    around the `robinson_foulds` method from Ete3.
+def robinson_foulds(
+    tree1: TreeLike,
+    tree2: TreeLike | None = None,
+    key1: str | None = None,
+    key2: str | None = None,
+) -> tuple[float, float]:
+    """Compute the Robinson–Foulds distance between two trees.
 
     Args:
-        tree1: A CassiopeiaTree representing the first tree
-        tree2: A CassiopeiaTree representing the second tree
+        tree1: The tree object.
+        tree2: The tree object to compare against. If ``None``, ``key1`` and ``key2``
+            are used to select two trees from the `tree1` object.
+        key1: If ``tree1`` is a :class:`treedata.TreeData`, specifies the ``obst`` key to use.
+            Only required if multiple trees are present.
+        key2: The ``obst`` key to compare against. Selects from ``tree2`` if provided,
+            otherwise selects from ``tree1``. Only required if multiple trees are present.
 
-    Returns
-    -------
-        The Robinson-Foulds distance between the two trees and the maximum
-            Robinson-Foulds distance for downstream normalization
+    Returns:
+        tuple[float, float]: The Robinson–Foulds distance and the maximum
+        possible distance for the pair of trees.
     """
-    # create copies of the trees and collapse process
-    T1 = copy.deepcopy(tree1)
-    T2 = copy.deepcopy(tree2)
+    if tree2 is None and (key1 is None or key2 is None):
+        raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
+    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t2, _ = (
+        _get_digraph(tree2, tree_key=key2)
+        if tree2 is not None
+        else _get_digraph(tree1, tree_key=key2)
+    )
 
-    # convert to Ete3 trees and collapse unifurcations
-    T1.collapse_unifurcations()
-    T2.collapse_unifurcations()
+    if set(get_leaves(t1)) != set(get_leaves(t2)):
+        raise ValueError("Trees must have identical leaf sets.")
 
-    T1 = ete3.Tree(T1.get_newick(), format=1)
-    T2 = ete3.Tree(T2.get_newick(), format=1)
-
-    (
-        rf,
-        rf_max,
-        names,
-        edges_t1,
-        edges_t2,
-        discarded_edges_t1,
-        discarded_edges_t2,
-    ) = T1.robinson_foulds(T2, unrooted_trees=True)
-
-    return rf, rf_max
+    return _robinson_foulds_bitset(t1, t2)

@@ -99,7 +99,9 @@ class TestCollapseUMIs(unittest.TestCase):
         entry_point = parameters["general"]["entry"]
         exit_point = parameters["general"]["exit"]
 
-        pipeline_procedures = setup_utilities.create_pipeline(entry_point, exit_point, cassiopeia_preprocess.STAGES)
+        pipeline_procedures = setup_utilities.create_pipeline(
+            entry_point, exit_point, cassiopeia_preprocess.STAGES
+        )
 
         expected_procedures = [
             "convert",
@@ -125,7 +127,9 @@ class TestCollapseUMIs(unittest.TestCase):
         entry_point = parameters["general"]["entry"]
         exit_point = parameters["general"]["exit"]
 
-        pipeline_procedures = setup_utilities.create_pipeline(entry_point, exit_point, cassiopeia_preprocess.STAGES)
+        pipeline_procedures = setup_utilities.create_pipeline(
+            entry_point, exit_point, cassiopeia_preprocess.STAGES
+        )
 
         expected_procedures = [
             "align",

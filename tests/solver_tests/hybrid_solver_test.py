@@ -96,13 +96,19 @@ class TestHybridSolver(unittest.TestCase):
         ilp_solver = cas.solver.ILPSolver(mip_gap=0.0)
 
         greedy_solver = cas.solver.VanillaGreedySolver()
-        self.hybrid_pp_solver = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
+        self.hybrid_pp_solver = cas.solver.HybridSolver(
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
+        )
 
         ## larger hybrid solver
-        self.hybrid_pp_solver_large = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
+        self.hybrid_pp_solver_large = cas.solver.HybridSolver(
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
+        )
 
         ## hybrid solver with missing data
-        self.hybrid_pp_solver_missing = cas.solver.HybridSolver(greedy_solver, ilp_solver, cell_cutoff=3, threads=2)
+        self.hybrid_pp_solver_missing = cas.solver.HybridSolver(
+            greedy_solver, ilp_solver, cell_cutoff=3, threads=2
+        )
 
         ## hybrid solver with MaxCut Greedy
         greedy_maxcut_solver = cas.solver.MaxCutGreedySolver()
@@ -152,7 +158,9 @@ class TestHybridSolver(unittest.TestCase):
             True,
         )
         self.assertFalse(
-            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c", "d"], character_matrix, missing_state),
+            self.hybrid_pp_solver.assess_cutoff(
+                ["a", "b", "c", "d"], character_matrix, missing_state
+            ),
             False,
         )
 
@@ -160,8 +168,12 @@ class TestHybridSolver(unittest.TestCase):
         self.hybrid_pp_solver.cell_cutoff = None
         self.hybrid_pp_solver.lca_cutoff = 2
 
-        self.assertTrue(self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state))
-        self.assertFalse(self.hybrid_pp_solver.assess_cutoff(["c", "d"], character_matrix, missing_state))
+        self.assertTrue(
+            self.hybrid_pp_solver.assess_cutoff(["a", "b", "c"], character_matrix, missing_state)
+        )
+        self.assertFalse(
+            self.hybrid_pp_solver.assess_cutoff(["c", "d"], character_matrix, missing_state)
+        )
 
     def test_top_down_split_manual(self):
         character_matrix = self.pp_tree.character_matrix.copy()
@@ -179,7 +191,9 @@ class TestHybridSolver(unittest.TestCase):
         }
         self.assertDictEqual(mutation_frequencies, expected_dictionary)
 
-        clades = self.hybrid_pp_solver.top_solver.perform_split(character_matrix, ["a", "b", "c", "d", "e"])
+        clades = self.hybrid_pp_solver.top_solver.perform_split(
+            character_matrix, ["a", "b", "c", "d", "e"]
+        )
 
         expected_split = (["a", "b", "c"], ["d", "e"])
         for expected_clade in expected_split:
@@ -299,7 +313,9 @@ class TestHybridSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-        self.hybrid_pp_solver.solve(self.pp_tree, logfile=self.logfile, collapse_mutationless_edges=True)
+        self.hybrid_pp_solver.solve(
+            self.pp_tree, logfile=self.logfile, collapse_mutationless_edges=True
+        )
         tree = self.pp_tree.get_tree_topology()
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, expected_tree)
@@ -537,7 +553,9 @@ class TestHybridSolver(unittest.TestCase):
             self.assertEqual(expected_triplet, observed_triplet)
 
     def test_greedy_over_greedy_maxcut_missing(self):
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(self.missing_tree, collapse_mutationless_edges=True)
+        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(
+            self.missing_tree, collapse_mutationless_edges=True
+        )
 
         tree = self.missing_tree.get_tree_topology()
 

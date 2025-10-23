@@ -97,7 +97,9 @@ class TestILPSolver(unittest.TestCase):
 
         # for the purposes of making sure we throw an error when a potential
         # graph cannot be solved
-        self.ilp_solver_small = cas.solver.ILPSolver(mip_gap=0.0, maximum_potential_graph_layer_size=3)
+        self.ilp_solver_small = cas.solver.ILPSolver(
+            mip_gap=0.0, maximum_potential_graph_layer_size=3
+        )
 
     def test_raises_error_on_ambiguous(self):
         cm = pd.DataFrame.from_dict(
@@ -120,11 +122,15 @@ class TestILPSolver(unittest.TestCase):
         # test single sample
         cm = self.missing_tree.character_matrix.copy().astype(str)
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["a"].values, cm.loc["b"].values, 4, "-1")
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
+        )
 
         self.assertEqual(lca, "1|3|1|1")
 
-        lca = ilp_solver_utilities.get_lca_characters_cython(cm.loc["h"].values, cm.loc["b"].values, 4, "-1")
+        lca = ilp_solver_utilities.get_lca_characters_cython(
+            cm.loc["h"].values, cm.loc["b"].values, 4, "-1"
+        )
         self.assertEqual(lca, "0|0|0|0")
 
     def test_cython_hamming_dist(self):
@@ -173,7 +179,9 @@ class TestILPSolver(unittest.TestCase):
             columns=["x1", "x2", "x3"],
         )
 
-        pd.testing.assert_frame_equal(expected_character_matrix, self.pp_tree.character_matrix.copy())
+        pd.testing.assert_frame_equal(
+            expected_character_matrix, self.pp_tree.character_matrix.copy()
+        )
 
     def test_get_layer_for_potential_graph(self):
         unique_character_matrix = self.pp_tree.character_matrix.drop_duplicates()
@@ -330,7 +338,9 @@ class TestILPSolver(unittest.TestCase):
                 ((1, 0, 0), (1, 1, 1)),
             ]
         )
-        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(tree, cm)
+        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(
+            tree, cm
+        )
 
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
@@ -389,7 +399,9 @@ class TestILPSolver(unittest.TestCase):
                 self.pp_tree.get_character_states(e[0]),
                 self.pp_tree.get_character_states(e[1]),
             )
-            observed_parsimony += cas.solver.dissimilarity.hamming_distance(np.array(c1), np.array(c2))
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 
@@ -490,7 +502,9 @@ class TestILPSolver(unittest.TestCase):
         self.assertEqual(len(multi_parents), 0)
 
         # make sure the resulting tree has no unifurcations
-        one_child = [n for n in self.duplicates_tree.nodes if len(self.duplicates_tree.children(n)) == 1]
+        one_child = [
+            n for n in self.duplicates_tree.nodes if len(self.duplicates_tree.children(n)) == 1
+        ]
         self.assertEqual(len(one_child), 0)
 
         # expected parsimony
@@ -503,7 +517,9 @@ class TestILPSolver(unittest.TestCase):
                 self.duplicates_tree.get_character_states(e[0]),
                 self.duplicates_tree.get_character_states(e[1]),
             )
-            observed_parsimony += cas.solver.dissimilarity.hamming_distance(np.array(c1), np.array(c2))
+            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+                np.array(c1), np.array(c2)
+            )
 
         self.assertEqual(observed_parsimony, expected_parsimony)
 

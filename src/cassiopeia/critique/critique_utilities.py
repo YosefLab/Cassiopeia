@@ -12,15 +12,14 @@ from cassiopeia.data import CassiopeiaTree
 
 
 def nCr(n: int, r: int) -> float:
-    """Computes nCr
+    """Computes nCr.
 
     Args:
         n: Total number
         r: Number to sample
 
-    Returns
-    -------
-        nCr
+    Returns:
+            nCr
     """
     if r > n or n < 0 or r < 0:
         return 0
@@ -38,9 +37,8 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
     Args:
         tree: An ete3 Tree
 
-    Returns
-    -------
-        A dictionary mapping depth to the list of nodes at that depth.
+    Returns:
+            A dictionary mapping depth to the list of nodes at that depth.
     """
     depth_to_nodes = defaultdict(list)
     for n in tree.depth_first_traverse_nodes(source=tree.root, postorder=False):
@@ -63,8 +61,7 @@ def annotate_tree_depths(tree: CassiopeiaTree) -> None:
 
 
 def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
-    """
-    Infers the outgroup of a triplet from a CassioepiaTree.
+    """Infers the outgroup of a triplet from a CassioepiaTree.
 
     Finds the outgroup based on the depth of the latest-common-ancestors
     of each pair of items. The pair with the deepest LCA is the
@@ -75,9 +72,8 @@ def get_outgroup(tree: CassiopeiaTree, triplet: tuple[str, str, str]) -> str:
         tree: CassiopeiaTree
         triplet: A tuple of three leaves constituting a triplet.
 
-    Returns
-    -------
-        The outgroup (i.e. the most distal leaf in the triplet.)
+    Returns:
+            The outgroup (i.e. the most distal leaf in the triplet.)
     """
     i, j, k = triplet[0], triplet[1], triplet[2]
 
@@ -114,9 +110,8 @@ def sample_triplet_at_depth(
         depth_to_nodes: An optional dictionary that maps a depth to the nodes
             that appear at that depth. This speeds up the function considerably.
 
-    Returns
-    -------
-        A list of three leaves corresponding to the triplet name of the outgroup
+    Returns:
+            A list of three leaves corresponding to the triplet name of the outgroup
             of the triplet.
     """
     if depth_to_nodes is None:
@@ -189,8 +184,7 @@ def sample_triplet_at_depth(
 
 
 def to_nx_tree(tree_like: Any) -> "nx.DiGraph":
-    """
-    Convert CassiopeiaTree / TreeData-like / nx.DiGraph into a rooted nx.DiGraph.
+    """Convert CassiopeiaTree / TreeData-like / nx.DiGraph into a rooted nx.DiGraph.
     Directed edges are parent -> child; sets G.graph['root'].
     """
     if nx is None:
@@ -208,7 +202,9 @@ def to_nx_tree(tree_like: Any) -> "nx.DiGraph":
     # Cassiopeia-like (duck-typed): needs .root and .children(u)
     needed = ["root", "children"]
     if not all(hasattr(tree_like, m) for m in needed):
-        raise TypeError("Unsupported tree object: need nx.DiGraph or Cassiopeia-like (root, children).")
+        raise TypeError(
+            "Unsupported tree object: need nx.DiGraph or Cassiopeia-like (root, children)."
+        )
 
     G = nx.DiGraph()
     root = tree_like.root
@@ -228,8 +224,7 @@ def to_nx_tree(tree_like: Any) -> "nx.DiGraph":
 
 
 def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
-    """
-    In-place: remove internal nodes with a single child (splice parent(s) -> child),
+    """In-place: remove internal nodes with a single child (splice parent(s) -> child),
     mirroring CassiopeiaTree.collapse_unifurcations().
     """
     changed = True
@@ -256,8 +251,7 @@ def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
 
 
 def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
-    """
-    Compute and write:
+    """Compute and write:
       - node['depth']
       - node['number_of_triplets'] = C(sum child_subtree_leaf_sizes, 3) - sum C(child_subtree_leaf_size, 3)
     Returns depth -> [nodes] mapping.
@@ -335,8 +329,7 @@ def sample_triplet_at_depth_nx(
     depth: int,
     depth_to_nodes: dict[int, list[Any]] | None = None,
 ) -> tuple[tuple[str, str, str], str]:
-    """
-    Sample ((i,j,k), out_group) at a given depth with the same distribution
+    """Sample ((i,j,k), out_group) at a given depth with the same distribution
     as your original sampler. Returns out_group='None' when unresolved.
     """
     # candidates at this depth

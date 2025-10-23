@@ -38,9 +38,8 @@ def get_lca_characters(
         vecs: A list of character vectors to generate an LCA for
         missing_state_indicator: The character representing missing values
 
-    Returns
-    -------
-        A list representing the character vector of the LCA
+    Returns:
+            A list representing the character vector of the LCA
 
     """
     k = len(vecs[0])
@@ -85,9 +84,8 @@ def newick_to_networkx(newick_string: str) -> nx.DiGraph:
     Args:
         newick_string: A newick string.
 
-    Returns
-    -------
-        A networkx DiGraph.
+    Returns:
+            A networkx DiGraph.
     """
     tree = ete3.Tree(newick_string, 1)
     return ete3_to_networkx(tree)
@@ -99,9 +97,8 @@ def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
     Args:
         tree: an ete3 Tree object
 
-    Returns
-    -------
-        a networkx DiGraph
+    Returns:
+            a networkx DiGraph
     """
     g = nx.DiGraph()
     internal_node_iter = 0
@@ -132,9 +129,8 @@ def to_newick(
         record_node_names: Whether to record internal node names on the tree in
             the newick string
 
-    Returns
-    -------
-        A newick string representing the topology of the tree
+    Returns:
+            A newick string representing the topology of the tree
     """
 
     def _to_newick_str(g, node):
@@ -168,14 +164,14 @@ def to_newick(
 
 
 def compute_dissimilarity_map(
-    cm: np.array([[]]),
+    cm: np.ndarray,
     C: int,
     dissimilarity_function: Callable,
     weights: dict[int, dict[int, float]] | None = None,
     missing_state_indicator: int = -1,
     threads: int = 1,
 ) -> np.array:
-    """Compute the dissimilarity between all samples
+    """Compute the dissimilarity between all samples.
 
     An optimized function for computing pairwise dissimilarities between
     samples in a character matrix according to the dissimilarity function.
@@ -189,9 +185,8 @@ def compute_dissimilarity_map(
         missing_state_indicator: State indicating missing data
         threads: Number of threads to use for distance computation.
 
-    Returns
-    -------
-        A dissimilarity mapping as a flattened array.
+    Returns:
+            A dissimilarity mapping as a flattened array.
     """
     # check to see if any ambiguous characters are present
     ambiguous_present = np.any([(cm[:, i].dtype == "object") for i in range(cm.shape[1])])
@@ -224,7 +219,10 @@ def compute_dissimilarity_map(
     if threads > 1:
         dm = np.zeros(C * (C - 1) // 2, dtype=np.float64)
         k, m = divmod(len(dm), threads)
-        batches = [np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(threads)]
+        batches = [
+            np.arange(len(dm))[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)]
+            for i in range(threads)
+        ]
 
         # load character matrix into shared memory
         shm = shared_memory.SharedMemory(create=True, size=cm.nbytes)
@@ -273,13 +271,13 @@ def compute_dissimilarity_map(
 
 def __compute_dissimilarity_map_wrapper(
     dissimilarity_func: Callable,
-    cm: np.array([[]]),
-    batch_indices: np.array([]),
+    cm: np.ndarray,
+    batch_indices: np.ndarray,
     weights: dict[int, dict[int, float]] | None = None,
     missing_state_indicator: int = -1,
     numbaize: bool = True,
     ambiguous_present: bool = False,
-) -> tuple[np.array, np.array]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Wrapper function for parallel computation of dissimilarity maps.
 
     This is a wrapper function that is intended to interface with
@@ -305,9 +303,8 @@ def __compute_dissimilarity_map_wrapper(
             was compatible with jit-compilation.
         ambiguous_present: Whether or not ambiguous states are present.
 
-    Returns
-    -------
-        A tuple of (batch_indices, batch_results) indicating the dissimilarities
+    Returns:
+            A tuple of (batch_indices, batch_results) indicating the dissimilarities
             for the comparisons specified by batch_indices.
     """
     nb_weights = numba.typed.Dict.empty(
@@ -384,9 +381,8 @@ def sample_bootstrap_character_matrices(
         num_bootstraps: Number of bootstrap samples to create.
         random_state: A numpy random state to from which to draw samples
 
-    Returns
-    -------
-        A list of bootstrap samples in the form
+    Returns:
+            A list of bootstrap samples in the form
             (bootstrap_character_matrix, bootstrap_priors).
     """
     bootstrap_samples = []
@@ -442,16 +438,17 @@ def sample_bootstrap_allele_tables(
             we assume that the cut-sites are denoted by columns of the form
             "r{int}" (e.g. "r1")
 
-    Returns
-    -------
-        A list of bootstrap samples in the form of tuples
+    Returns:
+            A list of bootstrap samples in the form of tuples
             (bootstrapped character matrix, prior dictionary,
             state to indel mapping, bootstrapped intBC set)
     """
     if cut_sites is None:
         cut_sites = preprocessing_utilities.get_default_cut_site_columns(allele_table)
 
-    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(allele_table, cut_sites)
+    lineage_profile = preprocessing_utilities.convert_alleletable_to_lineage_profile(
+        allele_table, cut_sites
+    )
 
     intbcs = allele_table["intBC"].unique()
     M = len(intbcs)
@@ -474,7 +471,9 @@ def sample_bootstrap_allele_tables(
             bootstrapped_character_matrix,
             priors,
             state_to_indel,
-        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(b_sample, indel_priors=indel_priors)
+        ) = preprocessing_utilities.convert_lineage_profile_to_character_matrix(
+            b_sample, indel_priors=indel_priors
+        )
 
         bootstrap_samples.append(
             (
@@ -499,9 +498,8 @@ def resolve_most_abundant(state: tuple[int, ...]) -> int:
     Args:
         state: Ambiguous state as a tuple of integers
 
-    Returns
-    -------
-        Selected state as a single integer
+    Returns:
+            Selected state as a single integer
     """
     most_common = collections.Counter(state).most_common()
     return np.random.choice([state for state, count in most_common if count == most_common[0][1]])
@@ -527,9 +525,8 @@ def compute_phylogenetic_weight_matrix(
         inverse: Convert distances to proximities
         inverse_fn: Inverse function (default = 1 / x)
 
-    Returns
-    -------
-        An NxN phylogenetic weight matrix
+    Returns:
+            An NxN phylogenetic weight matrix
     """
     N = tree.n_cell
     W = pd.DataFrame(np.zeros((N, N)), index=tree.leaves, columns=tree.leaves)
@@ -548,7 +545,9 @@ def compute_phylogenetic_weight_matrix(
 
 
 @numba.jit(nopython=True)
-def net_relatedness_index(dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array) -> float:
+def net_relatedness_index(
+    dissimilarity_map: np.array, indices_1: np.array, indices_2: np.array
+) -> float:
     """Computes the net relatedness index between indices.
 
     Using the dissimilarity map specified and the indices of samples, compute
@@ -561,9 +560,8 @@ def net_relatedness_index(dissimilarity_map: np.array, indices_1: np.array, indi
         indices_1: Indices corresponding to the first group.
         indices_2: Indices corresponding to the second group.
 
-    Returns
-    -------
-        The Net Relatedness Index (NRI)
+    Returns:
+            The Net Relatedness Index (NRI)
     """
     nri = 0
     for i in indices_1:
@@ -599,14 +597,11 @@ def compute_inter_cluster_distances(
             priority over meta_item.
         dissimilarity_map: Dissimilarity map to use for distances. If this is
             specified, the phylogenetic weight matrix is not computed.
-        number_of_neighbors: Number of nearest neighbors to use for computing
-            the mean distances. If this is not specified, then all cells are
-            used.
+        distance_function: Function to compute distance between two clusters.
         **kwargs: Arguments to pass to the distance function.
 
-    Returns
-    -------
-        A K x K distance matrix.
+    Returns:
+            A K x K distance matrix.
     """
     meta_data = tree.cell_meta[meta_item] if (meta_data is None) else meta_data
 
@@ -614,11 +609,17 @@ def compute_inter_cluster_distances(
     if not pd.api.types.is_string_dtype(meta_data):
         raise CassiopeiaError("Meta data must be categorical or a string.")
 
-    D = compute_phylogenetic_weight_matrix(tree) if (dissimilarity_map is None) else dissimilarity_map
+    D = (
+        compute_phylogenetic_weight_matrix(tree)
+        if (dissimilarity_map is None)
+        else dissimilarity_map
+    )
 
     unique_states = meta_data.unique()
     K = len(unique_states)
-    inter_cluster_distances = pd.DataFrame(np.zeros((K, K)), index=unique_states, columns=unique_states)
+    inter_cluster_distances = pd.DataFrame(
+        np.zeros((K, K)), index=unique_states, columns=unique_states
+    )
 
     # align distance matrix and meta_data
     D = D.loc[meta_data.index.values, meta_data.index.values]

@@ -80,7 +80,9 @@ class TestCCPhyloSolver(unittest.TestCase):
         self.basic_tree = cas.data.CassiopeiaTree(character_matrix=cm)
 
         self.nj_solver = cas.solver.NeighborJoiningSolver(add_root=True, fast=False)
-        self.ccphylo_nj_solver = cas.solver.NeighborJoiningSolver(add_root=True, fast=True, implementation="ccphylo_nj")
+        self.ccphylo_nj_solver = cas.solver.NeighborJoiningSolver(
+            add_root=True, fast=True, implementation="ccphylo_nj"
+        )
         self.ccphylo_dnj_solver = cas.solver.NeighborJoiningSolver(
             add_root=True, fast=True, implementation="ccphylo_dnj"
         )
@@ -188,7 +190,9 @@ class TestCCPhyloSolver(unittest.TestCase):
         triplets = itertools.combinations(["a", "c", "d", "e"], 3)
         for triplet in triplets:
             expected_triplet = find_triplet_structure(triplet, upgma_tree.get_tree_topology())
-            observed_triplet = find_triplet_structure(triplet, ccphylo_upgma_tree.get_tree_topology())
+            observed_triplet = find_triplet_structure(
+                triplet, ccphylo_upgma_tree.get_tree_topology()
+            )
             self.assertEqual(expected_triplet, observed_triplet)
 
     @unittest.skipUnless(CCPHYLO_CONFIGURED, "CCPhylo not configured.")

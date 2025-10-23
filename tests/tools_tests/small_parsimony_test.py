@@ -214,7 +214,9 @@ class TestSmallParsimony(unittest.TestCase):
             "label",
         )
 
-        parsimony = cas.tl.score_small_parsimony(self.binary_tree, "nucleotide", infer_ancestral_states=True)
+        parsimony = cas.tl.score_small_parsimony(
+            self.binary_tree, "nucleotide", infer_ancestral_states=True
+        )
         self.assertEqual(parsimony, 3)
 
         fitch_tree = cas.tl.fitch_hartigan(
@@ -283,7 +285,9 @@ class TestSmallParsimony(unittest.TestCase):
             self.assertCountEqual(node_states, expected_labels[n])
 
     def test_general_tree_parsimony(self):
-        parsimony = cas.tl.score_small_parsimony(self.general_tree, "nucleotide", infer_ancestral_states=True)
+        parsimony = cas.tl.score_small_parsimony(
+            self.general_tree, "nucleotide", infer_ancestral_states=True
+        )
         self.assertEqual(parsimony, 5)
 
     def test_fitch_count_basic_binary(self):
@@ -312,7 +316,9 @@ class TestSmallParsimony(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_matrix, fitch_matrix_no_ancestral_state_inferred)
 
     def test_fitch_count_basic_binary_custom_state_space(self):
-        fitch_matrix = cas.tl.fitch_count(self.binary_tree, "nucleotide", unique_states=["A", "G", "C", "N"])
+        fitch_matrix = cas.tl.fitch_count(
+            self.binary_tree, "nucleotide", unique_states=["A", "G", "C", "N"]
+        )
 
         expected_matrix = pd.DataFrame.from_dict(
             {"A": [9, 2, 1, 0], "G": [0, 2, 0, 0], "C": [0, 0, 0, 0], "N": [0, 0, 0, 0]},
@@ -323,7 +329,9 @@ class TestSmallParsimony(unittest.TestCase):
         pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
 
         with self.assertRaises(FitchCountError):
-            fitch_matrix = cas.tl.fitch_count(self.binary_tree, "nucleotide", unique_states=["A", "G"])
+            fitch_matrix = cas.tl.fitch_count(
+                self.binary_tree, "nucleotide", unique_states=["A", "G"]
+            )
 
     def test_fitch_count_basic_binary_internal_node(self):
         fitch_matrix = cas.tl.fitch_count(self.binary_tree, "nucleotide", root="5")

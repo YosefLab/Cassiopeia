@@ -19,12 +19,10 @@ from cassiopeia.simulator.LeafSubsampler import (
 
 
 class SpatialLeafSubsampler(LeafSubsampler):
-    """
-    Subsample leaves within spatial regions of interest.
+    """Subsample leaves within spatial regions of interest.
 
-    Returns
-    -------
-    SpatialLeafSubsampler - Configured subsampler instance.
+    Returns:
+        SpatialLeafSubsampler - Configured subsampler instance.
     """
 
     def __init__(
@@ -61,9 +59,8 @@ class SpatialLeafSubsampler(LeafSubsampler):
                 same pixel in the space. If True, cells are merged to create a
                 new cell with ambiguous character states centered at the pixel.
 
-        Raises
-        ------
-            LeafSubsamplerError if invalid inputs are provided.
+        Raises:
+                    LeafSubsamplerError if invalid inputs are provided.
         """
         # check that exactly one of bounding_box or space is provided
         if (bounding_box is None) == (space is None):
@@ -119,14 +116,12 @@ class SpatialLeafSubsampler(LeafSubsampler):
                 states, so that only unique character states are present in each
                 ambiguous state. Defaults to True.
 
-        Returns
-        -------
-            A new CassiopeiaTree that is the induced subtree on a sample of the
+        Returns:
+                    A new CassiopeiaTree that is the induced subtree on a sample of the
                 leaves in the given tree
 
-        Raises
-        ------
-            LeafSubsamplerError if invalid region of number of leaves
+        Raises:
+                    LeafSubsamplerError if invalid region of number of leaves
         """
         attribute = self.__attribute_key
         bounding_box = self.__bounding_box

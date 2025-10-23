@@ -36,12 +36,10 @@ STAGES = {
 @logger.namespaced("main")
 @utilities.log_runtime
 def main():
-    """
-    Execute the Cassiopeia preprocess command line interface.
+    """Execute the Cassiopeia preprocess command line interface.
 
-    Returns
-    -------
-    None - The function orchestrates pipeline execution and exits on completion.
+    Returns:
+        None - The function orchestrates pipeline execution and exits on completion.
     """
     # --------------- Create Argument Parser & Read in Arguments -------------- #
     parser = argparse.ArgumentParser()
@@ -101,12 +99,20 @@ def main():
     # ---------------------- Run Pipeline ---------------------- #
     for stage in pipeline_stages:
         # Skip barcode correction if whitelist was not provided
-        if stage == "error_correct_cellbcs_to_whitelist" and not pipeline_parameters[stage].get("whitelist"):
-            logger.warning("Skipping barcode error correction because no whitelist was provided in the configuration.")
+        if stage == "error_correct_cellbcs_to_whitelist" and not pipeline_parameters[stage].get(
+            "whitelist"
+        ):
+            logger.warning(
+                "Skipping barcode error correction because no whitelist was provided in the configuration."
+            )
             continue
         # Skip intBC correction to whitelist if whitelist was not provided
-        if stage == "error_correct_intbcs_to_whitelist" and not pipeline_parameters[stage].get("whitelist"):
-            logger.warning("Skipping intBC error correction because no whitelist was provided in the configuration.")
+        if stage == "error_correct_intbcs_to_whitelist" and not pipeline_parameters[stage].get(
+            "whitelist"
+        ):
+            logger.warning(
+                "Skipping intBC error correction because no whitelist was provided in the configuration."
+            )
             continue
 
         # If intBC correction was performed, don't correct in the

@@ -84,9 +84,8 @@ def detect_cell_bc_tag(bam_fp: str) -> str:
     Args:
         bam_fp: Path to the BAM file
 
-    Returns
-    -------
-        The BAM tag to use as the barcode
+    Returns:
+            The BAM tag to use as the barcode
     """
     raw_tag = BAM_CONSTANTS["RAW_CELL_BC_TAG"]
     corrected_tag = BAM_CONSTANTS["CELL_BC_TAG"]
@@ -115,9 +114,8 @@ def group_bam_by_key(
         sort_key: Function that yields a key, given a single alignment.
         n_threads: Number of threads to use.
 
-    Returns
-    -------
-        A generator yielding tuple of two elements, where the first element is
+    Returns:
+            A generator yielding tuple of two elements, where the first element is
         the grouping key, and the second is a list of alignments with that key.
     """
     with pysam.AlignmentFile(sorted_fn, check_sq=False, threads=8) as bam:
@@ -142,9 +140,7 @@ def sort_bam(
     filter_func: Callable[[pysam.AlignedSegment], str] = filter_func,
     n_threads: int = 1,
 ) -> (int, int):
-    """Sorts aligned segments (representing a read) in the BAM file according
-
-    to a specified key.
+    """Sorts aligned segments (representing a read) in the BAM file according to a specified key.
 
     Splits the BAM file into chunks and sorts relevant aligned sequences within
     chunks, filtering relevant aligned sequences with a specified key.
@@ -157,9 +153,8 @@ def sort_bam(
             irrelevant sequences.
         n_threads: Number of threads to use.
 
-    Returns
-    -------
-        The max read length and the the total number of relevant reads sorted.
+    Returns:
+            The max read length and the the total number of relevant reads sorted.
     """
     Path(sorted_fn).parent.mkdir(exist_ok=True)
 
@@ -183,7 +178,9 @@ def sort_bam(
                     fh.write(al)
             chunk_fns.append(chunk_fn)
 
-        chunk_fhs = [pysam.AlignmentFile(str(fn), check_header=False, check_sq=False) for fn in chunk_fns]
+        chunk_fhs = [
+            pysam.AlignmentFile(str(fn), check_header=False, check_sq=False) for fn in chunk_fns
+        ]
 
         with pysam.AlignmentFile(sorted_fn, "wb", template=bam_fh, threads=n_threads) as fh:
             merged_chunks = heapq.merge(*chunk_fhs, key=sort_key)
@@ -216,9 +213,7 @@ def form_collapsed_clusters(
     method: Literal["cutoff", "likelihood"] = "cutoff",
     n_threads: int = 1,
 ):
-    """Aggregates together aligned segments (reads) that share UMIs if their
-
-    sequences are close.
+    """Aggregates together aligned segments (reads) that share UMIs if their sequences are close.
 
     Clusters aligned segments within a UMI and with sequences are less than a
     threshold of mismatches from one another, effectively determining the
@@ -285,7 +280,9 @@ def form_collapsed_clusters(
         if method == "cutoff" or len(UMI_group) > 10000:
             clusters = form_clusters(UMI_group, max_read_length, max_hq_mismatches)
         elif method == "likelihood":
-            clusters = form_clusters_likelihood(UMI_group, proportion=max_hq_mismatches / max_read_length)
+            clusters = form_clusters_likelihood(
+                UMI_group, proportion=max_hq_mismatches / max_read_length
+            )
         else:
             raise PreprocessError(f"Unknown method to form UMI clusters: {method}")
         clusters = sorted(clusters, key=lambda c: c.get_tag(NUM_READS_TAG), reverse=True)
@@ -326,17 +323,23 @@ def form_collapsed_clusters(
 
     # Because pysam alignments can not be pickled, we need to pass them as
     # dictionaries.
-    all_clusters = ngs.utils.ParallelWithProgress(n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs")(
+    all_clusters = ngs.utils.ParallelWithProgress(
+        n_jobs=n_threads, total=len(cellBC_UMIs), desc="Collapsing UMIs"
+    )(
         delayed(cluster_group)(
             cell_BC,
             UMI,
             [aln.to_string() for aln in UMI_group],
             bam_header,
         )
-        for (cell_BC, UMI), UMI_group in group_bam_by_key(sorted_fn, cellBC_UMI_func, n_threads=n_threads)
+        for (cell_BC, UMI), UMI_group in group_bam_by_key(
+            sorted_fn, cellBC_UMI_func, n_threads=n_threads
+        )
     )
 
-    with pysam.AlignmentFile(collapsed_fn, "wb", header=empty_header, threads=n_threads) as collapsed_fh:
+    with pysam.AlignmentFile(
+        collapsed_fn, "wb", header=empty_header, threads=n_threads
+    ) as collapsed_fh:
         for clusters in progress(all_clusters, desc="Writing collapsed UMIs"):
             for cluster in clusters:
                 collapsed_fh.write(pysam.AlignedSegment.fromstring(cluster, empty_header))
@@ -362,9 +365,8 @@ def form_clusters(
             quality mismatches between the seqeunces of 2 aligned segments to be
             collapsed.
 
-    Returns
-    -------
-        A list of annotated aligned segments representing the consensus of each
+    Returns:
+            A list of annotated aligned segments representing the consensus of each
             cluster.
     """
     if len(als) == 0:
@@ -420,9 +422,8 @@ def form_clusters_likelihood(
         proportion: Proportion of each sequence to allow mismatched bases to be
             above ``q_threshold``. Defaults to 0.05.
 
-    Returns
-    -------
-        A list of annotated aligned segments representing the consensus of each
+    Returns:
+            A list of annotated aligned segments representing the consensus of each
             cluster.
     """
     sequences = []
@@ -454,17 +455,14 @@ def form_clusters_likelihood(
 
 
 def align_clusters(first: pysam.AlignedSegment, second: pysam.AlignedSegment) -> (int, int):
-    """Calculates the number of indel mismatches and high quality mismatches
-
-      between the sequences of 2 aligned segments (reads).
+    """Calculates the number of mismatches between the sequences of 2 aligned segments (reads).
 
     Args:
         first: The first aligned segment.
         second: The second aligned segment.
 
-    Returns
-    -------
-        The number of differing indels and the number of high quality
+    Returns:
+            The number of differing indels and the number of high quality
             mismatches.
     """
     al = sw.global_alignment(first.query_sequence, second.query_sequence)
@@ -480,10 +478,8 @@ def align_clusters(first: pysam.AlignedSegment, second: pysam.AlignedSegment) ->
 
 def within_radius_of_seed(
     seed: str, als: list[pysam.AlignedSegment], max_hq_mismatches: int
-) -> (list[pysam.AlignedSegment], list[pysam.AlignedSegment]):
-    """Returns the aligned segments (reads) in a list with sequences that are
-
-    close enough to specified seed
+) -> tuple[list[pysam.AlignedSegment], list[pysam.AlignedSegment]]:
+    """Returns the aligned segments (reads) in a list with sequences that are close enough to specified seed.
 
     Finds the aligned segments in the input list that have fewer than a specified
     threshold of high quality mismatches between their sequence and the seed
@@ -493,16 +489,18 @@ def within_radius_of_seed(
         seed: A specified sequence.
         als: A list of aligned segments.
         max_hq_mismatches: A threshold specifying the maximum number of high quality
-            mismatches between the seqeunces of 2 aligned segments to be collapsed.
+            mismatches between the sequences of 2 aligned segments to be collapsed.
 
-    Returns
-    -------
-        A list of aligned segments with sequences that are within radius of seed
+    Returns:
+            A list of aligned segments with sequences that are within radius of seed
             and a list of aligned segments with sequences that are not within
             radius of seed.
     """
     seed_b = seed.encode()
-    ds = [hq_mismatches_from_seed(seed_b, al.query_sequence.encode(), al.query_qualities, 20) for al in als]
+    ds = [
+        hq_mismatches_from_seed(seed_b, al.query_sequence.encode(), al.query_qualities, 20)
+        for al in als
+    ]
 
     near_seed = []
     remaining = []
@@ -529,9 +527,8 @@ def propose_seed(als: list[pysam.AlignedSegment], max_read_length: int) -> str:
         als: A list of aligned segments.
         max_read_length: the max read length in the sorted BAM.
 
-    Returns
-    -------
-        A sequence as the seed.
+    Returns:
+            A sequence as the seed.
     """
     seq, count = Counter(al.query_sequence for al in als).most_common(1)[0]
 
@@ -553,9 +550,8 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
     Args:
         al: The single aligned segment.
 
-    Returns
-    -------
-        A single annotated aligned segment representing the singleton cluster.
+    Returns:
+            A single annotated aligned segment representing the singleton cluster.
     """
     singleton = pysam.AlignedSegment(empty_header)
     singleton.query_sequence = al.query_sequence
@@ -565,9 +561,7 @@ def make_singleton_cluster(al: pysam.AlignedSegment) -> pysam.AlignedSegment:
 
 
 def call_consensus(als: list[pysam.AlignedSegment], max_read_length: int) -> pysam.AlignedSegment:
-    """Generates a consensus annotated aligned segment for a list of aligned
-
-    segments (reads).
+    """Generates a consensus annotated aligned segment for a list of aligned segments (reads).
 
     For a list of aligned segments, creates a consensus sequence by taking the
     most frequent high quality base for each index in the sequence. Then it
@@ -583,9 +577,8 @@ def call_consensus(als: list[pysam.AlignedSegment], max_read_length: int) -> pys
         als: A list of aligned segments.
         max_read_length: The max read length in the dataset.
 
-    Returns
-    -------
-        A consensus annotated aligned segment.
+    Returns:
+            A consensus annotated aligned segment.
     """
     statistics = fastq.quality_and_complexity(als, max_read_length, alignments=True, min_q=30)
 
@@ -623,7 +616,9 @@ def call_consensus(als: list[pysam.AlignedSegment], max_read_length: int) -> pys
     return consensus
 
 
-def merge_annotated_clusters(biggest: pysam.AlignedSegment, other: pysam.AlignedSegment) -> pysam.AlignedSegment:
+def merge_annotated_clusters(
+    biggest: pysam.AlignedSegment, other: pysam.AlignedSegment
+) -> pysam.AlignedSegment:
     """Merges 2 annotated clusters together.
 
     Merges 2 annotated aligned segments, each representing a cluster. Merges the
@@ -633,9 +628,8 @@ def merge_annotated_clusters(biggest: pysam.AlignedSegment, other: pysam.Aligned
         biggest: The larger of the 2 clusters, with a higher read number.
         other: The smaller of the 2 clusters, with a lower read number.
 
-    Returns
-    -------
-        The annotated aligned segment representing the merged cluster.
+    Returns:
+            The annotated aligned segment representing the merged cluster.
     """
     merged_id = biggest.get_tag(CLUSTER_ID_TAG)
     if not merged_id.endswith("+"):
@@ -651,7 +645,9 @@ def merge_annotated_clusters(biggest: pysam.AlignedSegment, other: pysam.Aligned
 ####################Utils for Error Correcting UMIs#####################
 
 
-def correct_umis_in_group(cell_group: pd.DataFrame, max_umi_distance: int = 2) -> tuple[pd.DataFrame, int]:
+def correct_umis_in_group(
+    cell_group: pd.DataFrame, max_umi_distance: int = 2
+) -> tuple[pd.DataFrame, int]:
     """Given a group of alignments, collapses UMIs that have close sequences.
 
     Given a group of alignments (that share a cellBC and intBC if from
@@ -670,14 +666,12 @@ def correct_umis_in_group(cell_group: pd.DataFrame, max_umi_distance: int = 2) -
         max_umi_distance: Maximum Hamming distance between UMIs
             for error correction.
 
-    Returns
-    -------
-        A DataFrame of error corrected UMIs within the grouping, and the
+    Returns:
+            A DataFrame of error corrected UMIs within the grouping, and the
             number of corrected UMIs
 
-    Raises
-    ------
-        PreprocessError if there are duplicate UMIs
+    Raises:
+            PreprocessError if there are duplicate UMIs
     """
     UMIs = list(cell_group["UMI"])
     if len(UMIs) != len(set(UMIs)):

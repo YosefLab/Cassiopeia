@@ -108,7 +108,9 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
         self.assertTrue(current_lineages.qsize() == 1)
 
         _, _, new_lineage = current_lineages.get()
-        self.assertTrue(np.all(tree.nodes[root]["ecdna_array"] == tree.nodes[new_lineage["id"]]["ecdna_array"]))
+        self.assertTrue(
+            np.all(tree.nodes[root]["ecdna_array"] == tree.nodes[new_lineage["id"]]["ecdna_array"])
+        )
 
     def test_basic_sample_lineage_events(self):
         """Checks that sample_lineage_event behaves as expected under edge cases."""
@@ -273,8 +275,12 @@ class ecDNABirthDeathSimulatorTest(unittest.TestCase):
 
         print(tree.nodes[child_lineage_1["id"]]["ecdna_array"])
 
-        self.assertTrue(np.all(tree.nodes[child_lineage_1["id"]]["ecdna_array"] == expected_child_1_array))
-        self.assertTrue(np.all(tree.nodes[child_lineage_2["id"]]["ecdna_array"] == expected_child_2_array))
+        self.assertTrue(
+            np.all(tree.nodes[child_lineage_1["id"]]["ecdna_array"] == expected_child_1_array)
+        )
+        self.assertTrue(
+            np.all(tree.nodes[child_lineage_2["id"]]["ecdna_array"] == expected_child_2_array)
+        )
 
     def test_perfect_cosegregation(self):
         np.random.seed(41)

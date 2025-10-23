@@ -59,7 +59,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
 
         ## set up non-cassiopeia allele table
         self.noncassiopeia_alleletable = self.alleletable_basic.copy()
-        self.noncassiopeia_alleletable.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
+        self.noncassiopeia_alleletable.rename(
+            columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True
+        )
 
         # allele table with conflicts
         at_dict = {
@@ -148,7 +150,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_conflict, collapse_duplicates=False)
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_conflict, collapse_duplicates=False
+        )
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 9)
 
@@ -169,7 +173,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, ignore_intbcs=["B"])
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_basic, ignore_intbcs=["B"]
+        )
 
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 6)
@@ -191,7 +197,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, allele_rep_thresh=0.99)
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_basic, allele_rep_thresh=0.99
+        )
 
         self.assertEqual(character_matrix.shape[0], 3)
         self.assertEqual(character_matrix.shape[1], 2)
@@ -209,7 +217,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, mutation_priors=self.mutation_priors)
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_basic, mutation_priors=self.mutation_priors
+        )
 
         expected_priors_dictionary = {
             2: {1: 0.5, 2: 0.1},
@@ -230,7 +240,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             indel_states,
-        ) = cas.pp.convert_alleletable_to_character_matrix(self.alleletable_basic, mutation_priors=self.mutation_priors)
+        ) = cas.pp.convert_alleletable_to_character_matrix(
+            self.alleletable_basic, mutation_priors=self.mutation_priors
+        )
 
         expected_state_mapping_dictionary = {
             2: {1: "ATC", 2: "ATA"},
@@ -519,7 +531,9 @@ class TestCharacterMatrixFormation(unittest.TestCase):
             character_matrix,
             priors,
             state_to_indel,
-        ) = cas.pp.convert_lineage_profile_to_character_matrix(lineage_profile, self.mutation_priors)
+        ) = cas.pp.convert_lineage_profile_to_character_matrix(
+            lineage_profile, self.mutation_priors
+        )
 
         self.assertEqual(len(priors), 7)
         self.assertEqual(len(state_to_indel), 9)

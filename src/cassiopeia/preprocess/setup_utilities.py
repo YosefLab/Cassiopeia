@@ -15,17 +15,15 @@ from cassiopeia.preprocess import constants
 
 
 def setup(output_directory_location: str, verbose: bool) -> None:
-    """
-    Setup the environment for the preprocessing pipeline.
+    """Setup the environment for the preprocessing pipeline.
 
     Args:
         output_directory_location: Where to look for, or start a new, output
             directory
         verbose: Whether or not to log debugging output.
 
-    Returns
-    -------
-    None - Configures logging handlers and directory structure.
+    Returns:
+        None - Configures logging handlers and directory structure.
     """
     if not os.path.isdir(output_directory_location):
         os.mkdir(output_directory_location)
@@ -41,19 +39,16 @@ def setup(output_directory_location: str, verbose: bool) -> None:
 
 
 def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
-    """
-    Parse pipeline configuration settings from a string.
+    """Parse pipeline configuration settings from a string.
 
     Args:
         config_string: Configuration file rendered as a string.
 
-    Returns
-    -------
-    dict[str, dict[str, Any]] - Mapping of stage names to their parameter dictionaries.
+    Returns:
+        dict[str, dict[str, Any]] - Mapping of stage names to their parameter dictionaries.
 
-    Raises
-    ------
-    UnspecifiedConfigParameterError
+    Raises:
+        UnspecifiedConfigParameterError
         Raised when required general configuration parameters are absent.
     """
     config = configparser.ConfigParser()
@@ -88,8 +83,12 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
     parameters["convert"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["filter_bam"]["output_directory"] = parameters["general"]["output_directory"]
     parameters["filter_bam"]["n_threads"] = parameters["general"]["n_threads"]
-    parameters["error_correct_cellbcs_to_whitelist"]["output_directory"] = parameters["general"]["output_directory"]
-    parameters["error_correct_cellbcs_to_whitelist"]["n_threads"] = parameters["general"]["n_threads"]
+    parameters["error_correct_cellbcs_to_whitelist"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
+    parameters["error_correct_cellbcs_to_whitelist"]["n_threads"] = parameters["general"][
+        "n_threads"
+    ]
     parameters["collapse"]["output_directory"] = parameters["general"]["output_directory"]
     parameters["collapse"]["n_threads"] = parameters["general"]["n_threads"]
     parameters["resolve"]["output_directory"] = parameters["general"]["output_directory"]
@@ -106,7 +105,9 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
     )
     parameters["error_correct_umis"]["n_threads"] = parameters["general"]["n_threads"]
 
-    parameters["filter_molecule_table"]["output_directory"] = parameters["general"]["output_directory"]
+    parameters["filter_molecule_table"]["output_directory"] = parameters["general"][
+        "output_directory"
+    ]
     parameters["filter_molecule_table"]["allow_allele_conflicts"] = parameters["general"].get(
         "allow_allele_conflicts", False
     )
@@ -117,17 +118,15 @@ def parse_config(config_string: str) -> dict[str, dict[str, Any]]:
 
 
 def create_pipeline(entry, _exit, stages):
-    """
-    Create an ordered list of pipeline stages to execute.
+    """Create an ordered list of pipeline stages to execute.
 
     Args:
         entry: a string representing a stage in start at.
         _exit: a string representing the stage to stop.
         stages: a list of stages in order of the general pipeline.
 
-    Returns
-    -------
-    list[str] - Ordered names of procedures to run.
+    Returns:
+        list[str] - Ordered names of procedures to run.
     """
     stage_names = list(stages.keys())
     start = stage_names.index(entry)

@@ -100,9 +100,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             selection may change over time (for example, in the presence
             or absence of a drug pressure).
 
-    Raises
-    ------
-        TreeSimulatorError if invalid stopping conditions are provided or if a
+    Raises:
+            TreeSimulatorError if invalid stopping conditions are provided or if a
         fitness distribution is not provided when a mutation distribution isn't
     """
 
@@ -163,7 +162,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             tree = self.initial_tree.get_tree_topology()
             for node in self.initial_tree.nodes:
                 try:
-                    tree.nodes[node]["birth_scale"] = self.initial_tree.get_attribute(node, "birth_scale")
+                    tree.nodes[node]["birth_scale"] = self.initial_tree.get_attribute(
+                        node, "birth_scale"
+                    )
                 except CassiopeiaTreeError:
                     tree.nodes[node]["birth_scale"] = self.initial_birth_scale
                 tree.nodes[node]["time"] = self.initial_tree.get_attribute(node, "time")
@@ -184,11 +185,10 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         an initial lineage dict
 
         Args:
-            id_value: name of new lineage
+            tree: The tree object being constructed by the simulator
 
-        Returns
-        -------
-            A lineage dict
+        Returns:
+                    A lineage dict
         """
         leaves = [node for node in tree if tree.out_degree(node) == 0]
         current_lineages = PriorityQueue()
@@ -222,9 +222,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             total_time: age of lineage
             active_flag: bool to indicate whether lineage is active
 
-        Returns
-        -------
-            A dict (lineage) with the parameter values under the hard-coded keys
+        Returns:
+                    A dict (lineage) with the parameter values under the hard-coded keys
 
         """
         lineage_dict = {
@@ -249,14 +248,12 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         their multiplicative coefficients. This updated birth scale passed
         onto successors.
 
-        Returns
-        -------
-            A CassiopeiaTree with the tree topology initialized with the
+        Returns:
+                    A CassiopeiaTree with the tree topology initialized with the
             simulated tree
 
-        Raises
-        ------
-            TreeSimulatorError if all lineages die before a stopping condition
+        Raises:
+                    TreeSimulatorError if all lineages die before a stopping condition
         """
 
         def node_name_generator(start=0) -> Generator[str, None, None]:
@@ -287,7 +284,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         if len(tree.nodes) == 1:
             # Sample the waiting time until the first division
-            self.sample_lineage_event(starting_lineage, current_lineages, tree, names, observed_nodes)
+            self.sample_lineage_event(
+                starting_lineage, current_lineages, tree, names, observed_nodes
+            )
         else:
             current_lineages = starting_lineage
 
@@ -319,7 +318,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
             # This represents the time at which the lineage dies.
             if lineage["active"]:
                 for _i in range(2):
-                    self.sample_lineage_event(lineage, current_lineages, tree, names, observed_nodes)
+                    self.sample_lineage_event(
+                        lineage, current_lineages, tree, names, observed_nodes
+                    )
 
         cassiopeia_tree = self.populate_tree_from_simulation(tree, observed_nodes)
 
@@ -353,6 +354,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         the lifespan is cut off at the experiment time and a final observed
         sample is added to the tree. In this case the lineage is marked as
         inactive as well.
+
         Args:
             unique_id: The unique ID number to be used to name a new node
                 added to the tree
@@ -469,13 +471,11 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         Args:
             birth_scale: The birth_scale to be updated
 
-        Returns
-        -------
-            The updated birth_scale
+        Returns:
+                    The updated birth_scale
 
-        Raises
-        ------
-            TreeSimulatorError if a negative number of mutations is sampled
+        Raises:
+                    TreeSimulatorError if a negative number of mutations is sampled
         """
         base_selection_coefficient = 1
         if self.mutation_distribution:
@@ -486,7 +486,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 base_selection_coefficient *= self.fitness_base ** self.fitness_distribution()
         return birth_scale * base_selection_coefficient
 
-    def populate_tree_from_simulation(self, tree: nx.DiGraph, observed_nodes: list[str]) -> CassiopeiaTree:
+    def populate_tree_from_simulation(
+        self, tree: nx.DiGraph, observed_nodes: list[str]
+    ) -> CassiopeiaTree:
         """Populates tree with appropriate meta data.
 
         Args:
@@ -494,9 +496,8 @@ class BirthDeathFitnessSimulator(TreeSimulator):
                 attributes.
             observed_nodes: The observed leaves of the tree.
 
-        Returns
-        -------
-            A CassiopeiaTree with relevant node attributes filled in.
+        Returns:
+                    A CassiopeiaTree with relevant node attributes filled in.
         """
         cassiopeia_tree = CassiopeiaTree(tree=tree)
 

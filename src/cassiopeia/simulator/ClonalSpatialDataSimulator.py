@@ -45,9 +45,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             indicated with True.
         random_seed: A seed for reproducibility
 
-    Raises
-    ------
-        DataSimulatorError if neither `shape` nor `space` are provided
+    Raises:
+            DataSimulatorError if neither `shape` nor `space` are provided
     """
 
     def __init__(
@@ -91,16 +90,13 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
 
     @staticmethod
     def __triangulation_graph(points: np.ndarray) -> nx.Graph:
-        """Compute a fully-connected Delaunay triangulation graph from a set of
-
-        points.
+        """Compute a fully-connected Delaunay triangulation graph from a set of points.
 
         Args:
             points: Points to triangulate
 
-        Returns
-        -------
-            Networkx graph
+        Returns:
+                    Networkx graph
         """
         tri = spatial.Delaunay(points)
         G = nx.Graph()
@@ -119,9 +115,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             points: Point coordinates
             k: Number of nearest neighbors
 
-        Returns
-        -------
-            Networkx graph
+        Returns:
+                    Networkx graph
         """
         distances = neighbors.kneighbors_graph(points, k, mode="distance")
         G = nx.from_scipy_sparse_array(distances)
@@ -142,9 +137,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         Args:
             points: Points
 
-        Returns
-        -------
-            Networkx graph
+        Returns:
+                    Networkx graph
         """
         return (
             cls.__triangulation_graph(points)
@@ -165,14 +159,15 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
             G: Graph to partition
             sizes: Tuple of integers indicating the partition sizes
 
-        Returns
-        -------
-            Obtained node partition as a tuple of lists of integers
+        Returns:
+                    Obtained node partition as a tuple of lists of integers
         """
         if not nx.is_connected(G):
             raise DataSimulatorError("Graph is not connected.")
         if sum(sizes) != len(G.nodes):
-            raise DataSimulatorError(f"Can not obtain node partition {sizes} for graph of {{len(G.nodes)}} nodes.")
+            raise DataSimulatorError(
+                f"Can not obtain node partition {sizes} for graph of {{len(G.nodes)}} nodes."
+            )
 
         # Find seeds
         seeds = dict(zip(np.random.choice(G.nodes, len(sizes), replace=False), sizes, strict=False))
@@ -185,7 +180,9 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         # iterating through a sorted list of all distances and assigning each
         # node one at a time.
         distance_seed_nodes = sorted(
-            (distance, seed, node) for seed, distances in seed_distances.items() for node, distance in distances.items()
+            (distance, seed, node)
+            for seed, distances in seed_distances.items()
+            for node, distance in distances.items()
         )
         assigned = set()
         assignments = {}
@@ -208,9 +205,8 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         Args:
             n: Number of points to sample.
 
-        Returns
-        -------
-            `n` sampled points within `shape`
+        Returns:
+                    `n` sampled points within `shape`
         """
         shape = self.space.shape
         radius = (min(shape) / (n ** (1 / self.dim))) / 2
@@ -276,7 +272,9 @@ class ClonalSpatialDataSimulator(SpatialDataSimulator):
         for node, loc in locations.items():
             tree.set_attribute(node, attribute_key, tuple(loc))
         # Set cell meta
-        cell_meta = tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
+        cell_meta = (
+            tree.cell_meta.copy() if tree.cell_meta is not None else pd.DataFrame(index=tree.leaves)
+        )
         columns = [f"{attribute_key}_{i}" for i in range(self.dim)]
         cell_meta[columns] = np.nan
         for leaf in tree.leaves:

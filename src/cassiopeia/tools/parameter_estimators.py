@@ -18,13 +18,11 @@ def get_proportion_of_missing_data(tree: CassiopeiaTree, layer: str | None = Non
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns
-    -------
-        The proportion of missing cell/character entries
+    Returns:
+            The proportion of missing cell/character entries
 
-    Raises
-    ------
-        ParameterEstimateError if character matrix or layer doesn't exist
+    Raises:
+            ParameterEstimateError if character matrix or layer doesn't exist
     """
     if layer:
         character_matrix = tree.layers[layer]
@@ -51,13 +49,11 @@ def get_proportion_of_mutation(tree: CassiopeiaTree, layer: str | None = None) -
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns
-    -------
-        The proportion of non-missing cell/character entries that are mutated
+    Returns:
+            The proportion of non-missing cell/character entries that are mutated
 
-    Raises
-    ------
-        ParameterEstimateError if character matrix or layer doesn't exist
+    Raises:
+            ParameterEstimateError if character matrix or layer doesn't exist
     """
     if layer:
         character_matrix = tree.layers[layer]
@@ -69,8 +65,14 @@ def get_proportion_of_mutation(tree: CassiopeiaTree, layer: str | None = None) -
 
     num_dropped = (character_matrix.values == tree.missing_state_indicator).sum()
 
-    num_mut = character_matrix.shape[0] * character_matrix.shape[1] - num_dropped - (character_matrix.values == 0).sum()
-    mutation_proportion = num_mut / (character_matrix.shape[0] * character_matrix.shape[1] - num_dropped)
+    num_mut = (
+        character_matrix.shape[0] * character_matrix.shape[1]
+        - num_dropped
+        - (character_matrix.values == 0).sum()
+    )
+    mutation_proportion = num_mut / (
+        character_matrix.shape[0] * character_matrix.shape[1] - num_dropped
+    )
     return mutation_proportion
 
 
@@ -127,13 +129,11 @@ def estimate_mutation_rate(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns
-    -------
-        The estimated mutation rate
+    Returns:
+            The estimated mutation rate
 
-    Raises
-    ------
-        ParameterEstimateError if the `mutation_proportion` parameter is not
+    Raises:
+            ParameterEstimateError if the `mutation_proportion` parameter is not
             between 0 and 1
     """
     if "mutated_proportion" not in tree.parameters:
@@ -249,14 +249,12 @@ def estimate_missing_data_rates(
         layer: Layer to use for character matrix. If this is None,
             then the current `character_matrix` variable will be used.
 
-    Returns
-    -------
-        The stochastic missing probability and heritable missing rate. One of
+    Returns:
+            The stochastic missing probability and heritable missing rate. One of
         these will be the parameter as provided, the other will be an estimate
 
-    Raises
-    ------
-        ParameterEstimateError if the `total_missing_proportion`,
+    Raises:
+            ParameterEstimateError if the `total_missing_proportion`,
             `stochastic_missing_probability`, or `heritable_missing_rate` that
             are provided have invalid values, or if both or neither of
             `stochastic_missing_probability`, and `heritable_missing_rate` are
@@ -305,9 +303,9 @@ def estimate_missing_data_rates(
             # from the root, if it is to be added
             if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
                 mean_depth += 1
-            heritable_missing_rate = 1 - ((1 - total_missing_proportion) / (1 - stochastic_missing_probability)) ** (
-                1 / mean_depth
-            )
+            heritable_missing_rate = 1 - (
+                (1 - total_missing_proportion) / (1 - stochastic_missing_probability)
+            ) ** (1 / mean_depth)
 
         else:
             times = tree.get_times()
@@ -315,7 +313,8 @@ def estimate_missing_data_rates(
             if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
                 mean_time += np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
             heritable_missing_rate = (
-                -np.log((1 - total_missing_proportion) / (1 - stochastic_missing_probability)) / mean_time
+                -np.log((1 - total_missing_proportion) / (1 - stochastic_missing_probability))
+                / mean_time
             )
 
     if stochastic_missing_probability is None:
@@ -341,7 +340,9 @@ def estimate_missing_data_rates(
 
             heritable_proportion = 1 - np.exp(-heritable_missing_rate * mean_time)
 
-        stochastic_missing_probability = (total_missing_proportion - heritable_proportion) / (1 - heritable_proportion)
+        stochastic_missing_probability = (total_missing_proportion - heritable_proportion) / (
+            1 - heritable_proportion
+        )
 
     if stochastic_missing_probability < 0:
         raise ParameterEstimateWarning(

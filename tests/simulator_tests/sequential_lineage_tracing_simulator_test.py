@@ -82,7 +82,8 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
 
     def test_basic_setup(self):
         number_of_characters = (
-            self.tracing_data_simulator.number_of_cassettes * self.tracing_data_simulator.size_of_cassette
+            self.tracing_data_simulator.number_of_cassettes
+            * self.tracing_data_simulator.size_of_cassette
         )
         self.assertEqual(9, number_of_characters)
 
@@ -128,25 +129,37 @@ class TestSequentialLineageTracingDataSimulator(unittest.TestCase):
         # test for invalid continuation rate type
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, continuation_rate="invalid", state_priors=self.priors
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                continuation_rate="invalid",
+                state_priors=self.priors,
             )
 
         # test for invalid initiation rate type
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, initiation_rate="invalid", state_priors=self.priors
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                initiation_rate="invalid",
+                state_priors=self.priors,
             )
 
         # test for positive continuation rate
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, continuation_rate=-0.2, state_priors=self.priors
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                continuation_rate=-0.2,
+                state_priors=self.priors,
             )
 
         # test for positive initiation rate
         with self.assertRaises(DataSimulatorError):
             cas.sim.SequentialLineageTracingDataSimulator(
-                number_of_cassettes=2, size_of_cassette=2, initiation_rate=-0.2, state_priors=self.priors
+                number_of_cassettes=2,
+                size_of_cassette=2,
+                initiation_rate=-0.2,
+                state_priors=self.priors,
             )
 
         # test that state distribution adds up to 1
