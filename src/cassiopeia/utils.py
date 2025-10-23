@@ -231,3 +231,68 @@ def depth_first_traverse_nodes_treelike(
         return nx.dfs_postorder_nodes(_get_digraph(tree), source=source)
     else:
         return nx.dfs_preorder_nodes(_get_digraph(tree), source=source)
+
+
+def set_attribute_treelike(
+    tree: CassiopeiaTree | TreeData, node: str, attribute_name: str, value: Any
+) -> None:
+    """Sets an attribute in the tree.
+
+    Args:
+        tree: The tree object.
+        node: Node name
+        attribute_name: Name for the new attribute
+        value: Value for the attribute.
+
+    Raises:
+        CassiopeiaTreeError if the tree has not been initialized.
+        KeyError if the node is not found in the tree.
+        TypeError if the tree type is unsupported.
+    """
+    if isinstance(tree, CassiopeiaTree):
+        tree._CassiopeiaTree__check_network_initialized()
+        if node not in tree._CassiopeiaTree__network.nodes:
+            raise KeyError(f"Node {node} not found in CassiopeiaTree.")
+        tree._CassiopeiaTree__network.nodes[node][attribute_name] = value
+
+    elif isinstance(tree, TreeData):
+        if node not in tree.obs_names:
+            raise KeyError(f"Node {node} not found in TreeData.")
+        tree.obs.loc[node, attribute_name] = value
+
+    else:
+        raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
+
+
+def get_attribute_treelike(tree: CassiopeiaTree | TreeData, node: str, attribute_name: str) -> Any:
+    """Retrieves the value of an attribute for a node.
+
+    Args:
+        tree: The tree object.
+        node: Node name
+        attribute_name: Name of the attribute.
+
+    Returns:
+        The value of the attribute for that node.
+
+    Raises:
+        CassiopeiaTreeError if the attribute has not been set for this node.
+        KeyError if the node is not found in the tree.
+        TypeError if the tree type is unsupported.
+    """
+    if isinstance(tree, CassiopeiaTree):
+        tree._CassiopeiaTree__check_network_initialized()
+        try:
+            return tree._CassiopeiaTree__network.nodes[node][attribute_name]
+        except KeyError as error:
+            raise KeyError(f"Attribute {attribute_name} not detected for node {node}.") from error
+
+    elif isinstance(tree, TreeData):
+        if attribute_name not in tree.obs.columns:
+            raise KeyError(f"Attribute {attribute_name} not detected in TreeData.obs.")
+        if node not in tree.obs_names:
+            raise KeyError(f"Node {node} not found in TreeData.")
+        return tree.obs.loc[node, attribute_name]
+
+    else:
+        raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
