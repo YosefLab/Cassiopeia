@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_categorical_dtype, is_numeric_dtype
+from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins.errors import (
@@ -15,13 +16,13 @@ from cassiopeia.mixins.errors import (
 
 
 def fitch_hartigan(
-    cassiopeia_tree: CassiopeiaTree,
-    meta_item: str,
+    tree: CassiopeiaTree | TreeData,
+    key: str,
     root: str | None = None,
     state_key: str = "S1",
     label_key: str = "label",
     copy: bool = False,
-) -> CassiopeiaTree | None:
+) -> TreeData | None:
     """Run the Fitch-Hartigan algorithm.
 
     Performs the full Fitch-Hartigan small parsimony algorithm which, given
@@ -32,9 +33,9 @@ def fitch_hartigan(
     if `copy=False`.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree that has been processed with the
+        tree: CassiopeiaTree that has been processed with the
             Fitch-Hartigan bottom-up algorithm.
-        meta_item: A column in the CassiopeiaTree cell meta corresponding to a
+        key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         root: Root from which to begin this refinement. Only the subtree below
             this node will be considered.
@@ -47,21 +48,21 @@ def fitch_hartigan(
     Returns:
             A new CassiopeiaTree if the copy is set to True, else None.
     """
-    cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
+    tree = tree.copy() if copy else tree
 
-    fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, state_key)
+    fitch_hartigan_bottom_up(tree, key, state_key)
 
-    fitch_hartigan_top_down(cassiopeia_tree, root, state_key, label_key)
+    fitch_hartigan_top_down(tree, root, state_key, label_key)
 
-    return cassiopeia_tree if copy else None
+    return tree if copy else None
 
 
 def fitch_hartigan_bottom_up(
-    cassiopeia_tree: CassiopeiaTree,
-    meta_item: str,
+    tree: CassiopeiaTree | TreeData,
+    key: str,
     add_key: str = "S1",
     copy: bool = False,
-) -> CassiopeiaTree | None:
+) -> TreeData | None:
     """Performs Fitch-Hartigan bottom-up ancestral reconstruction.
 
     Performs the bottom-up phase of the Fitch-Hartigan small parsimony
@@ -71,8 +72,8 @@ def fitch_hartigan_bottom_up(
 
 
     Args:
-        cassiopeia_tree: CassiopeiaTree object with cell meta data.
-        meta_item: A column in the CassiopeiaTree cell meta corresponding to a
+        tree: CassiopeiaTree object with cell meta data.
+        key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         add_key: Key to add for bottom-up reconstruction
         copy: Modify the tree in place or not.
@@ -84,10 +85,14 @@ def fitch_hartigan_bottom_up(
             CassiopeiaError if the tree does not have the specified meta data
             or the meta data is not categorical.
     """
-    if meta_item not in cassiopeia_tree.cell_meta.columns:
-        raise CassiopeiaError("Meta item does not exist in the cassiopeia tree")
+    if type(tree) is CassiopeiaTree:
+        if key not in tree.cell_meta.columns:
+            raise CassiopeiaError("Meta item does not exist in the Cassiopeia tree")
+    if type(tree) is TreeData:
+        if key not in tree.obs.columns:
+            raise CassiopeiaError("Meta item does not exist in the treedata object")
 
-    meta = cassiopeia_tree.cell_meta[meta_item]
+    meta = tree.cell_meta[key]
 
     if is_numeric_dtype(meta):
         raise CassiopeiaError("Meta item is not a categorical variable.")
@@ -95,43 +100,41 @@ def fitch_hartigan_bottom_up(
     if not is_categorical_dtype(meta):
         meta = meta.astype("category")
 
-    cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
+    tree = tree.copy() if copy else tree
 
-    for node in cassiopeia_tree.depth_first_traverse_nodes():
-        if cassiopeia_tree.is_leaf(node):
-            cassiopeia_tree.set_attribute(node, add_key, [meta.loc[node]])
+    for node in tree.depth_first_traverse_nodes():
+        if tree.is_leaf(node):
+            tree.set_attribute(node, add_key, [meta.loc[node]])
 
         else:
-            children = cassiopeia_tree.children(node)
+            children = tree.children(node)
             if len(children) == 1:
-                child_assignment = cassiopeia_tree.get_attribute(children[0], add_key)
-                cassiopeia_tree.set_attribute(node, add_key, [child_assignment])
+                child_assignment = tree.get_attribute(children[0], add_key)
+                tree.set_attribute(node, add_key, [child_assignment])
 
-            all_labels = np.concatenate(
-                [cassiopeia_tree.get_attribute(child, add_key) for child in children]
-            )
+            all_labels = np.concatenate([tree.get_attribute(child, add_key) for child in children])
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
-            cassiopeia_tree.set_attribute(node, add_key, S1)
+            tree.set_attribute(node, add_key, S1)
 
-    return cassiopeia_tree if copy else None
+    return tree if copy else None
 
 
 def fitch_hartigan_top_down(
-    cassiopeia_tree: CassiopeiaTree,
+    tree: CassiopeiaTree | TreeData,
     root: str | None = None,
     state_key: str = "S1",
     label_key: str = "label",
     copy: bool = False,
-) -> CassiopeiaTree | None:
+) -> TreeData | None:
     """Run Fitch-Hartigan top-down refinement.
 
     Runs the Fitch-Hartigan top-down algorithm which selects an optimal solution
     from the tree rooted at the specified root.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree that has been processed with the
+        tree: CassiopeiaTree that has been processed with the
             Fitch-Hartigan bottom-up algorithm.
         root: Root from which to begin this refinement. Only the subtree below
             this node will be considered.
@@ -149,32 +152,32 @@ def fitch_hartigan_top_down(
         or if the state_key does not exist for a node.
     """
     # assign root
-    root = cassiopeia_tree.root if (root is None) else root
+    root = tree.root if (root is None) else root
 
-    cassiopeia_tree = cassiopeia_tree.copy() if copy else cassiopeia_tree
+    tree = tree.copy() if copy else tree
 
-    for node in cassiopeia_tree.depth_first_traverse_nodes(source=root, postorder=False):
+    for node in tree.depth_first_traverse_nodes(source=root, postorder=False):
         if node == root:
-            root_states = cassiopeia_tree.get_attribute(root, state_key)
-            cassiopeia_tree.set_attribute(root, label_key, np.random.choice(root_states))
+            root_states = tree.get_attribute(root, state_key)
+            tree.set_attribute(root, label_key, np.random.choice(root_states))
             continue
 
-        parent = cassiopeia_tree.parent(node)
-        parent_label = cassiopeia_tree.get_attribute(parent, label_key)
-        optimal_node_states = cassiopeia_tree.get_attribute(node, state_key)
+        parent = tree.parent(node)
+        parent_label = tree.get_attribute(parent, label_key)
+        optimal_node_states = tree.get_attribute(node, state_key)
 
         if parent_label in optimal_node_states:
-            cassiopeia_tree.set_attribute(node, label_key, parent_label)
+            tree.set_attribute(node, label_key, parent_label)
 
         else:
-            cassiopeia_tree.set_attribute(node, label_key, np.random.choice(optimal_node_states))
+            tree.set_attribute(node, label_key, np.random.choice(optimal_node_states))
 
-    return cassiopeia_tree if copy else None
+    return tree if copy else None
 
 
 def score_small_parsimony(
-    cassiopeia_tree: CassiopeiaTree,
-    meta_item: str,
+    tree: CassiopeiaTree | TreeData,
+    key: str,
     root: str | None = None,
     infer_ancestral_states: bool = True,
     label_key: str | None = "label",
@@ -185,8 +188,8 @@ def score_small_parsimony(
     parsimony score of the tree.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree object with cell meta data.
-        meta_item: A column in the CassiopeiaTree cell meta corresponding to a
+        tree: CassiopeiaTree object with cell meta data.
+        key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         root: Node to treat as the root. Only the subtree below
             this node will be considered.
@@ -202,17 +205,15 @@ def score_small_parsimony(
     Raises:
             CassiopeiaError if label_key has not been populated.
     """
-    cassiopeia_tree = cassiopeia_tree.copy()
+    tree = tree.copy()
 
     if infer_ancestral_states:
-        fitch_hartigan(cassiopeia_tree, meta_item, root, label_key=label_key)
+        fitch_hartigan(tree, key, root, label_key=label_key)
 
     parsimony = 0
-    for parent, child in cassiopeia_tree.depth_first_traverse_edges(source=root):
+    for parent, child in tree.depth_first_traverse_edges(source=root):
         try:
-            if cassiopeia_tree.get_attribute(parent, label_key) != cassiopeia_tree.get_attribute(
-                child, label_key
-            ):
+            if tree.get_attribute(parent, label_key) != tree.get_attribute(child, label_key):
                 parsimony += 1
         except CassiopeiaTreeError as error:
             raise CassiopeiaError(
@@ -224,13 +225,13 @@ def score_small_parsimony(
 
 
 def fitch_count(
-    cassiopeia_tree: CassiopeiaTree,
-    meta_item: str,
+    tree: CassiopeiaTree | TreeData,
+    key: str,
     root: str | None = None,
     infer_ancestral_states: bool = True,
     state_key: str = "S1",
     unique_states: list[str] | None = None,
-):
+) -> pd.DataFrame:
     """Runs the FitchCount algorithm.
 
     Performs the FitchCount algorithm for inferring the number of times that
@@ -245,8 +246,8 @@ def fitch_count(
     an error.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree object with a tree and cell meta data.
-        meta_item: A column in the CassiopeiaTree cell meta corresponding to a
+        tree: CassiopeiaTree object with a tree and cell meta data.
+        key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         root: Node to treat as the root. Only the subtree below this node will
             be considered for the procedure.
@@ -256,40 +257,40 @@ def fitch_count(
             argument specifies what the attribute name is in the CassiopeiaTree
         unique_states: State space that can be optionally provided by the user.
             If this is not provided, we take the unique values in
-            `cell_meta[meta_item]` to be the state space.
+            `cell_meta[key]` to be the state space.
 
     Returns:
             An MxM count matrix indicating the number of edges that contained a
             transition between two states across all equally parsimonious
             solutions returned by Fitch-Hartigan.
     """
-    cassiopeia_tree = cassiopeia_tree.copy()
+    tree = tree.copy()
 
     if unique_states is None:
-        unique_states = cassiopeia_tree.cell_meta[meta_item].unique()
+        unique_states = tree.cell_meta[key].unique()
     else:
-        if len(np.setdiff1d(cassiopeia_tree.cell_meta[meta_item].unique(), unique_states)) > 0:
+        if len(np.setdiff1d(tree.cell_meta[key].unique(), unique_states)) > 0:
             raise FitchCountError(
                 "Specified state space does not span the set of states that appear in the meta data."
             )
 
-    if root != cassiopeia_tree.root:
-        cassiopeia_tree.subset_clade(root)
+    if root != tree.root:
+        tree.subset_clade(root)
 
     if infer_ancestral_states:
-        fitch_hartigan_bottom_up(cassiopeia_tree, meta_item, add_key=state_key)
+        fitch_hartigan_bottom_up(tree, key, add_key=state_key)
 
     # create mapping from nodes to integers
-    bfs_postorder = [cassiopeia_tree.root]
-    for _, e1 in cassiopeia_tree.breadth_first_traverse_edges():
+    bfs_postorder = [tree.root]
+    for _, e1 in tree.breadth_first_traverse_edges():
         bfs_postorder.append(e1)
 
     node_to_i = dict(zip(bfs_postorder, range(len(bfs_postorder)), strict=False))
     label_to_j = dict(zip(unique_states, range(len(unique_states)), strict=False))
 
-    N = _N_fitch_count(cassiopeia_tree, unique_states, node_to_i, label_to_j, state_key)
+    N = _N_fitch_count(tree, unique_states, node_to_i, label_to_j, state_key)
 
-    C = _C_fitch_count(cassiopeia_tree, N, unique_states, node_to_i, label_to_j, state_key)
+    C = _C_fitch_count(tree, N, unique_states, node_to_i, label_to_j, state_key)
 
     M = pd.DataFrame(np.zeros((N.shape[1], N.shape[1])))
     M.columns = unique_states
@@ -300,7 +301,7 @@ def fitch_count(
         for s2 in unique_states:
             M.loc[s1, s2] = np.sum(
                 C[
-                    node_to_i[cassiopeia_tree.root],
+                    node_to_i[tree.root],
                     :,
                     label_to_j[s1],
                     label_to_j[s2],
@@ -311,19 +312,19 @@ def fitch_count(
 
 
 def _N_fitch_count(
-    cassiopeia_tree: CassiopeiaTree,
+    tree: CassiopeiaTree | TreeData,
     unique_states: list[str],
     node_to_i: dict[str, int],
     label_to_j: dict[str, int],
     state_key: str = "S1",
-) -> np.array(int):
+) -> np.ndarray:
     """Fill in the dynamic programming table N for FitchCount.
 
     Computes N[v, s], corresponding to the number of solutions below
     a node v in the tree given v takes on the state s.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree object
+        tree: CassiopeiaTree object
         unique_states: The state space that a node can take on
         node_to_i: Helper array storing a mapping of each node to a unique
             integer
@@ -340,38 +341,38 @@ def _N_fitch_count(
 
     def _fill(v: str, s: str):
         """Helper function to fill in a single entry in N."""
-        if cassiopeia_tree.is_leaf(v):
+        if tree.is_leaf(v):
             return 1
 
-        children = cassiopeia_tree.children(v)
+        children = tree.children(v)
         A = np.zeros(len(children))
 
         legal_states = []
         for i, u in zip(range(len(children)), children, strict=False):
-            if s not in cassiopeia_tree.get_attribute(u, state_key):
-                legal_states = cassiopeia_tree.get_attribute(u, state_key)
+            if s not in tree.get_attribute(u, state_key):
+                legal_states = tree.get_attribute(u, state_key)
             else:
                 legal_states = [s]
 
             A[i] = np.sum([N[node_to_i[u], label_to_j[sp]] for sp in legal_states])
         return np.prod([A[u] for u in range(len(A))])
 
-    N = np.full((len(cassiopeia_tree.nodes), len(unique_states)), 0.0)
-    for n in cassiopeia_tree.depth_first_traverse_nodes():
-        for s in cassiopeia_tree.get_attribute(n, state_key):
+    N = np.full((len(tree.nodes), len(unique_states)), 0.0)
+    for n in tree.depth_first_traverse_nodes():
+        for s in tree.get_attribute(n, state_key):
             N[node_to_i[n], label_to_j[s]] = _fill(n, s)
 
     return N
 
 
 def _C_fitch_count(
-    cassiopeia_tree: CassiopeiaTree,
+    tree: CassiopeiaTree | TreeData,
     N: np.array,
     unique_states: list[str],
     node_to_i: dict[str, int],
     label_to_j: dict[str, int],
     state_key: str = "S1",
-) -> np.array(int):
+) -> np.ndarray:
     """Fill in the dynamic programming table C for FitchCount.
 
     Computes C[v, s, s1, s2], the number of transitions from state s1 to
@@ -379,7 +380,7 @@ def _C_fitch_count(
     state s.
 
     Args:
-        cassiopeia_tree: CassiopeiaTree object
+        tree: CassiopeiaTree object
         N: N array computed during FitchCount storing the number of solutions
             below a node v given v takes on state s
         unique_states: The state space that a node can take on
@@ -398,18 +399,18 @@ def _C_fitch_count(
 
     def _fill(v: str, s: str, s1: str, s2: str) -> int:
         """Helper function to fill in a single entry in C."""
-        if cassiopeia_tree.is_leaf(v):
+        if tree.is_leaf(v):
             return 0
 
-        children = cassiopeia_tree.children(v)
+        children = tree.children(v)
         A = np.zeros(len(children))
         LS = [[]] * len(children)
 
         for i, u in zip(range(len(children)), children, strict=False):
-            if s in cassiopeia_tree.get_attribute(u, state_key):
+            if s in tree.get_attribute(u, state_key):
                 LS[i] = [s]
             else:
-                LS[i] = cassiopeia_tree.get_attribute(u, state_key)
+                LS[i] = tree.get_attribute(u, state_key)
 
             A[i] = np.sum(
                 [
@@ -443,10 +444,10 @@ def _C_fitch_count(
 
         return np.sum(parts)
 
-    C = np.zeros((len(cassiopeia_tree.nodes), N.shape[1], N.shape[1], N.shape[1]))
+    C = np.zeros((len(tree.nodes), N.shape[1], N.shape[1], N.shape[1]))
 
-    for n in cassiopeia_tree.depth_first_traverse_nodes():
-        for s in cassiopeia_tree.get_attribute(n, state_key):
+    for n in tree.depth_first_traverse_nodes():
+        for s in tree.get_attribute(n, state_key):
             for s1, s2 in itertools.product(unique_states, repeat=2):
                 C[node_to_i[n], label_to_j[s], label_to_j[s1], label_to_j[s2]] = _fill(n, s, s1, s2)
 
