@@ -18,7 +18,9 @@ from cassiopeia.mixins.errors import (
 from .typing import TreeLike
 
 
-def _get_digraph(tree: TreeLike, tree_key: str | None = None, copy=False) -> nx.DiGraph:
+def _get_digraph(
+    tree: TreeLike, tree_key: str | None = None, copy=False
+) -> tuple[nx.DiGraph, str | None]:
     """Logic for getting `nx.DiGraph` from inputs.
 
     Args:
