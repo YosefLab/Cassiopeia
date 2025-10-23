@@ -4,27 +4,26 @@ Currently, we'll support a triplets correct function and a Robinson-Foulds
 function.
 """
 
-import copy
 from collections import defaultdict
 
 import networkx as nx
 import numpy as np
-from treedata import TreeData
 
 from cassiopeia.critique.critique_utilities import (
     annotate_tree_depths_nx,
     collapse_unifurcations_nx,
-    to_nx_tree,
+    get_outgroup_nx,
+    sample_triplet_at_depth,
 )
-from cassiopeia.data import CassiopeiaTree
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import _get_digraph, get_leaves
 
 
 def triplets_correct(
-    tree1: CassiopeiaTree | str | nx.DiGraph,
-    tree2: CassiopeiaTree | str | nx.DiGraph,
-    tdata: TreeData | None = None,
+    tree1: TreeLike,
+    tree2: TreeLike | None = None,
+    key1: str | None = None,
+    key2: str | None = None,
     number_of_trials: int = 1000,
     min_triplets_at_depth: int = 1,
 ) -> tuple[dict[int, float], dict[int, float], dict[int, float], dict[int, float]]:
@@ -38,9 +37,13 @@ def triplets_correct(
     Trees must have identical leaf sets.
 
     Args:
-        tree1: First tree (`CassiopeiaTree`, `nx.DiGraph`, or str key into `tdata.obst`).
-        tree2: Second tree of the same type as `tree1`.
-        tdata: Required only when `tree1` and `tree2` are string keys; must provide `.obst`.
+        tree1: The tree object.
+        tree2: The tree object to compare against. If ``None``, ``key1`` and ``key2``
+            are used to select two trees from the `tree1` object.
+        key1: If ``tree1`` is a :class:`treedata.TreeData`, specifies the ``obst`` key to use.
+            Only required if multiple trees are present.
+        key2: The ``obst`` key to compare against. Selects from ``tree2`` if provided,
+            otherwise selects from ``tree1``. Only required if multiple trees are present.
         number_of_trials: Number of triplets to sample at each depth.
         min_triplets_at_depth: Minimum number of triplets with LCA at a depth for that
             depth to be included.
@@ -52,41 +55,22 @@ def triplets_correct(
             unresolved_triplets_correct: Proportion correct among unresolvable triplets.
             proportion_unresolvable: Proportion of triplets that are unresolvable at each depth.
     """
+    if tree2 is None and (key1 is None or key2 is None):
+        raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
+    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t2, _ = (
+        _get_digraph(tree2, tree_key=key2)
+        if tree2 is not None
+        else _get_digraph(tree1, tree_key=key2)
+    )
+
+    if set(get_leaves(t1)) != set(get_leaves(t2)):
+        raise ValueError("Trees must have identical leaf sets.")
     if type(tree1) is not type(tree2):
         raise TypeError("tree1 and tree2 must be the same type. ")
 
-    if isinstance(tree1, CassiopeiaTree):
-        G1 = to_nx_tree(copy.deepcopy(tree1))
-        G2 = to_nx_tree(copy.deepcopy(tree2))
-
-    elif isinstance(tree1, str):
-        if tdata is None:
-            raise ValueError("When tree1 and tree2 are strings, tdata must be provided")
-        if not hasattr(tdata, "obst") or tdata.obst is None or len(tdata.obst) == 0:
-            raise ValueError("tdata does not have an 'obst' attribute")
-        if tree1 not in tdata.obst or tree2 not in tdata.obst:
-            raise ValueError(
-                f"Tree keys must exist in tdata.obst. Missing: {[k for k in [tree1, tree2] if k not in tdata.obst]}"
-            )
-
-        # tdata key triplets correct
-        raw1 = tdata.obst[tree1]
-        raw2 = tdata.obst[tree2]
-        G1 = to_nx_tree(copy.deepcopy(raw1))
-        G2 = to_nx_tree(copy.deepcopy(raw2))
-
-    elif isinstance(tree1, nx.DiGraph):
-        # nx.DiGraph triplets correct
-        G1 = to_nx_tree(copy.deepcopy(tree1))
-        G2 = to_nx_tree(copy.deepcopy(tree2))
-
-    else:
-        raise TypeError(
-            "Unsupported input type. Expected CassiopeiaTree, str (key into tdata.obst), or nx.DiGraph."
-        )
-
     return run_triplets_correct_nx(
-        G1, G2, number_of_trials=number_of_trials, min_triplets_at_depth=min_triplets_at_depth
+        t1, t2, number_of_trials=number_of_trials, min_triplets_at_depth=min_triplets_at_depth
     )
 
 
@@ -153,14 +137,13 @@ def run_triplets_correct_nx(
         num_unres = 0
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = critique_utilities.sample_triplet_at_depth(
-                T1, depth, depth_to_nodes
-            )
+            (i, j, k), out_group = sample_triplet_at_depth(G1, depth, depth_to_nodes)
 
             is_resolvable = out_group != "None"
             if not is_resolvable:
                 num_unres += 1
 
+            reconstructed = get_outgroup_nx(G2, i, j, k)
             score = int(reconstructed == out_group)
             score_sum += score
             if is_resolvable:
