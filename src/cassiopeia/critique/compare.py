@@ -11,12 +11,15 @@ import numpy as np
 
 from cassiopeia.critique.critique_utilities import (
     annotate_tree_depths_nx,
-    collapse_unifurcations_nx,
     get_outgroup_nx,
     sample_triplet_at_depth,
 )
 from cassiopeia.typing import TreeLike
-from cassiopeia.utils import _get_digraph, get_leaves
+from cassiopeia.utils import (
+    _get_digraph,
+    collapse_unifurcations,
+    get_leaves,
+)
 
 
 def triplets_correct(
@@ -101,8 +104,8 @@ def run_triplets_correct_nx(
             proportion_unresolvable: Proportion of triplets that are unresolvable at each depth.
     """
     # collapse unifurcations
-    collapse_unifurcations_nx(G1)
-    collapse_unifurcations_nx(G2)
+    collapse_unifurcations(G1)
+    collapse_unifurcations(G2)
 
     # require identical leaf sets
     leaves1 = {n for n in G1.nodes if G1.out_degree(n) == 0}

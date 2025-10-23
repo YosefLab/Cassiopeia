@@ -183,31 +183,6 @@ def sample_triplet_at_depth(
     return (str(in_group[0]), str(in_group[1]), str(out_group)), out_group
 
 
-def collapse_unifurcations_nx(G: "nx.DiGraph") -> None:
-    """Collapses unifurcations in-place in a networkx DiGraph, mirroring CassiopeiaTree.collapse_unifurcations()."""
-    changed = True
-    while changed:
-        changed = False
-        for v in list(G.nodes):
-            if v not in G or G.out_degree(v) != 1:
-                continue
-            child = next(G.successors(v))
-            parents = list(G.predecessors(v))
-            # Redirect parents to child
-            if parents:
-                for p in parents:
-                    if not G.has_edge(p, child):
-                        G.add_edge(p, child)
-            else:
-                # v is root; promote child to root
-                if G.in_degree(v) == 0:
-                    G.graph["root"] = child
-            # Remove v
-            if v in G:
-                G.remove_node(v)
-                changed = True
-
-
 def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
     """Annotates tree depth at every node for a networkx DiGraph.
 
