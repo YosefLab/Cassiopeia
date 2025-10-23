@@ -204,7 +204,7 @@ def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
 
 
 def depth_first_traverse_nodes_treelike(
-    tree: TreeLike, source: str | None = None, postorder: bool = True
+    tree: TreeLike, tree_key: str | None, source: str | None = None, postorder: bool = True
 ) -> Iterator[str]:
     """Nodes from depth first traversal of the tree (type TreeLike).
 
@@ -212,6 +212,8 @@ def depth_first_traverse_nodes_treelike(
 
     Args:
         tree: The tree object.
+        tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
+            Only required if multiple trees are present.
         source: Where to begin the depth first traversal.
         postorder: Return the nodes in postorder. If False, returns in
             preorder.
@@ -222,15 +224,15 @@ def depth_first_traverse_nodes_treelike(
     Raises:
         CassiopeiaTreeError if the tree has not been initialized.
     """
-    tree.__check_network_initialized()
+    G, _ = _get_digraph(tree, tree_key)
 
     if source is None:
-        source = tree.root
+        source = get_root(tree, tree_key)
 
     if postorder:
-        return nx.dfs_postorder_nodes(_get_digraph(tree), source=source)
+        return nx.dfs_postorder_nodes(G, source=source)
     else:
-        return nx.dfs_preorder_nodes(_get_digraph(tree), source=source)
+        return nx.dfs_preorder_nodes(G, source=source)
 
 
 def set_attribute_treelike(
