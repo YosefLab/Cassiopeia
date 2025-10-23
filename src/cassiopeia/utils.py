@@ -296,3 +296,25 @@ def get_attribute_treelike(tree: CassiopeiaTree | TreeData, node: str, attribute
 
     else:
         raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
+
+
+def is_leaf_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> bool:
+    """Returns whether a node is a leaf for any tree-like object.
+
+    Args:
+        tree: The tree object.
+        node: Node name.
+        tree_key: Optional obst key if `tree` is a TreeData containing multiple trees.
+
+    Returns:
+        True if the node is a leaf (out-degree == 0), False otherwise.
+
+    Raises:
+        KeyError: If the node does not exist in the tree.
+    """
+    G, _ = _get_digraph(tree, tree_key)
+
+    if node not in G:
+        raise KeyError(f"Node {node} not found in tree.")
+
+    return G.out_degree(node) == 0
