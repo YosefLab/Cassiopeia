@@ -183,7 +183,7 @@ def sample_triplet_at_depth(
     return (str(in_group[0]), str(in_group[1]), str(out_group)), out_group
 
 
-def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
+def annotate_tree_depths_nx(G: nx.DiGraph) -> dict[int, list[Any]]:
     """Annotates tree depth at every node for a networkx DiGraph.
 
     Adds two attributes to the tree: how far away each node is from the root of
@@ -196,47 +196,29 @@ def annotate_tree_depths_nx(G: "nx.DiGraph") -> dict[int, list[Any]]:
     Returns:
             A dictionary mapping depth to the list of nodes at that depth.
     """
-    if nx is None:
-        raise ImportError("networkx is required for NX helpers.")
-
-    # Root
-    root = G.graph.get("root")
+    root = G.graph.get("root") or next((n for n in G.nodes if G.in_degree(n) == 0), None)
     if root is None:
-        root = next((n for n in G.nodes if G.in_degree(n) == 0), None)
-        if root is None:
-            raise ValueError("No root found for depth annotation.")
+        raise ValueError("No root found for depth annotation.")
 
-    # 1) Depths via BFS
-    from collections import defaultdict, deque
+    # depth
+    depths = nx.single_source_shortest_path_length(G, root)
+    depth_to_nodes = defaultdict(list)
+    for node, depth in depths.items():
+        G.nodes[node]["depth"] = depth
+        depth_to_nodes[depth].append(node)
 
-    depth_to_nodes: dict[int, list[Any]] = defaultdict(list)
-    dq = deque([(root, 0)])
-    seen = set()
-    while dq:
-        u, d = dq.popleft()
-        if u in seen:
-            continue
-        seen.add(u)
-        G.nodes[u]["depth"] = d
-        depth_to_nodes[d].append(u)
-        for v in G.successors(u):
-            dq.append((v, d + 1))
-
-    # 2) Subtree leaf sizes via one bottom-up DP (topological order)
-    leaf_sz: dict[Any, int] = {}
+    # leaf sizes
+    leaf_sz = {}
     for u in reversed(list(nx.topological_sort(G))):
         kids = list(G.successors(u))
-        if not kids:
-            leaf_sz[u] = 1
-        else:
-            leaf_sz[u] = sum(leaf_sz[c] for c in kids)
+        leaf_sz[u] = 1 if not kids else sum(leaf_sz[c] for c in kids)
 
-    # 3) number_of_triplets using children's subtree sizes (matches your original)
+    # triplet count
     for u in G.nodes:
         kids = list(G.successors(u))
-        total_leaves = sum(leaf_sz[c] for c in kids)
+        total = sum(leaf_sz[c] for c in kids)
         correction = sum(nCr(leaf_sz[c], 3) for c in kids)
-        G.nodes[u]["number_of_triplets"] = nCr(total_leaves, 3) - correction
+        G.nodes[u]["number_of_triplets"] = nCr(total, 3) - correction
 
     return dict(depth_to_nodes)
 
