@@ -13,6 +13,14 @@ from cassiopeia.mixins.errors import (
     CassiopeiaTreeError,
     FitchCountError,
 )
+from cassiopeia.utils import (
+    depth_first_traverse_nodes_treelike,
+    get_attribute_treelike,
+    get_cell_meta,
+    get_children,
+    is_leaf_treelike,
+    set_attribute_treelike,
+)
 
 
 def fitch_hartigan(
@@ -62,7 +70,7 @@ def fitch_hartigan_bottom_up(
     key: str,
     add_key: str = "S1",
     copy: bool = False,
-) -> TreeData | None:
+) -> CassiopeiaTree | TreeData | None:
     """Performs Fitch-Hartigan bottom-up ancestral reconstruction.
 
     Performs the bottom-up phase of the Fitch-Hartigan small parsimony
@@ -85,12 +93,9 @@ def fitch_hartigan_bottom_up(
             CassiopeiaError if the tree does not have the specified meta data
             or the meta data is not categorical.
     """
-    if type(tree) is CassiopeiaTree:
-        if key not in tree.cell_meta.columns:
-            raise CassiopeiaError("Meta item does not exist in the Cassiopeia tree")
-    if type(tree) is TreeData:
-        if key not in tree.obs.columns:
-            raise CassiopeiaError("Meta item does not exist in the treedata object")
+    meta_df = get_cell_meta(tree)
+    if key not in meta_df.columns:
+        raise CassiopeiaError("Meta item does not exist in the tree object.")
 
     meta = tree.cell_meta[key]
 
@@ -102,21 +107,23 @@ def fitch_hartigan_bottom_up(
 
     tree = tree.copy() if copy else tree
 
-    for node in tree.depth_first_traverse_nodes():
-        if tree.is_leaf(node):
-            tree.set_attribute(node, add_key, [meta.loc[node]])
+    for node in depth_first_traverse_nodes_treelike(tree, key):
+        if is_leaf_treelike(tree, node):
+            set_attribute_treelike(tree, node, add_key, [meta.loc[node]])
 
         else:
-            children = tree.children(node)
+            children = get_children(tree, node, key)
             if len(children) == 1:
-                child_assignment = tree.get_attribute(children[0], add_key)
-                tree.set_attribute(node, add_key, [child_assignment])
+                child_assignment = get_attribute_treelike(tree, children[0], add_key)
+                set_attribute_treelike(tree, node, add_key, [child_assignment])
 
-            all_labels = np.concatenate([tree.get_attribute(child, add_key) for child in children])
+            all_labels = np.concatenate(
+                [get_attribute_treelike(tree, child, add_key) for child in children]
+            )
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
-            tree.set_attribute(node, add_key, S1)
+            set_attribute_treelike(tree, node, add_key, S1)
 
     return tree if copy else None
 
