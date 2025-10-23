@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Iterator
 from typing import Any
 
 import networkx as nx
@@ -200,3 +201,33 @@ def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     raise CassiopeiaError(
         "Tree object does not have .cell_meta (CassiopeiaTree) or .obs (TreeData)."
     )
+
+
+def depth_first_traverse_nodes_treelike(
+    tree: TreeLike, source: str | None = None, postorder: bool = True
+) -> Iterator[str]:
+    """Nodes from depth first traversal of the tree (type TreeLike).
+
+    Returns the nodes from a DFS on the tree.
+
+    Args:
+        tree: The tree object.
+        source: Where to begin the depth first traversal.
+        postorder: Return the nodes in postorder. If False, returns in
+            preorder.
+
+    Returns:
+        A list of nodes from the depth first traversal.
+
+    Raises:
+        CassiopeiaTreeError if the tree has not been initialized.
+    """
+    tree.__check_network_initialized()
+
+    if source is None:
+        source = tree.root
+
+    if postorder:
+        return nx.dfs_postorder_nodes(_get_digraph(tree), source=source)
+    else:
+        return nx.dfs_preorder_nodes(_get_digraph(tree), source=source)
