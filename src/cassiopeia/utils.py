@@ -318,3 +318,27 @@ def is_leaf_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> 
         raise KeyError(f"Node {node} not found in tree.")
 
     return G.out_degree(node) == 0
+
+
+def get_children(tree: TreeLike, node: str, tree_key: str | None = None) -> list[str]:
+    """Gets the children of a given node for any tree-like object.
+
+    Args:
+        tree: The tree object.
+        node: A node in the tree.
+        tree_key: Optional obst key if `tree` is a TreeData containing multiple trees.
+
+    Returns:
+        A list of nodes that are direct children of the input node.
+
+    Raises:
+        KeyError: If the node does not exist in the tree.
+        TypeError: If the input tree type is unsupported.
+        ValueError: If a TreeData has multiple trees and no tree_key is given.
+    """
+    G, _ = _get_digraph(tree, tree_key)
+
+    if node not in G:
+        raise KeyError(f"Node {node} not found in tree.")
+
+    return list(G.successors(node))
