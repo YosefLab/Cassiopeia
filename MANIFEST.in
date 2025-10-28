@@ -1,2 +1,5 @@
-include LICENSE
-recursive-include cassiopeia *
+include src/cassiopeia/preprocess/collapse_cython.c
+include src/cassiopeia/solver/ilp_solver_utilities.c
+include src/cassiopeia/**/*.pxd
+exclude src/cassiopeia/preprocess/collapse_cython.pyx
+exclude src/cassiopeia/solver/ilp_solver_utilities.pyx

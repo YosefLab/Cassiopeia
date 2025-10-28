@@ -1,8 +1,22 @@
-#!/usr/bin/env python
+import numpy
+from setuptools import Extension, setup
 
-# This is a shim to hopefully allow Github to detect the package, build is done with poetry
+ext_modules = [
+    Extension(
+        "cassiopeia.preprocess.collapse_cython",
+        sources=["src/cassiopeia/preprocess/collapse_cython.c"],
+        include_dirs=[numpy.get_include()],
+        language="c",
+    ),
+    Extension(
+        "cassiopeia.solver.ilp_solver_utilities",
+        sources=["src/cassiopeia/solver/ilp_solver_utilities.c"],
+        include_dirs=[numpy.get_include()],
+        language="c",
+    ),
+]
 
-import setuptools
-
-if __name__ == "__main__":
-    setuptools.setup(name="cassiopeia")
+setup(
+    ext_modules=ext_modules,
+    include_dirs=[numpy.get_include()],
+)

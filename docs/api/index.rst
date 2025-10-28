@@ -16,5 +16,5 @@ Import Cassiopeia as::
    solver
    simulator
    spatial
-   plotting
    tools
+   utils

@@ -40,7 +40,7 @@ These simulators are subclasses of the `SpatialSimulator` class and implement th
 
    sim.BrownianSpatialDataSimulator
    sim.ClonalSpatialDataSimulator
-   
+
 
 Leaf SubSamplers
 ~~~~~~~~~~~~~~~~~~~

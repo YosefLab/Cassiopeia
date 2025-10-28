@@ -1,134 +1,174 @@
-[tool.poetry]
-authors = ["Matthew Jones <mattjones315@berkeley.edu>", "Alex Khodaverdian", "Richard Zhang", "Sebastian Prillo", "Joseph Min"]
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "oldest-supported-numpy",
+  "setuptools>=64",
+  "wheel",
+]
+
+[project]
+name = "cassiopeia-lineage"
+version = "3.0.0"
+description = "Single Cell Lineage Reconstruction with Cas9-Enabled Lineage Recorders"
+readme = "README.md"
+license = "MIT"
+maintainers = [
+  { name = "Matthew Jones", email = "mgjones@mit.edu" },
+  { name = "William Colgan", email = "wcolgan@mit.edu" },
+]
+authors = [
+  { name = "Matthew Jones" },
+  { name = "William Colgan" },
+  { name = "Alex Khodaverdian" },
+  { name = "Richard Zhang" },
+  { name = "Sebastian Prillo" },
+  { name = "Joseph Min" },
+]
+requires-python = ">=3.10"
 classifiers = [
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: Science/Research",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Operating System :: MacOS :: MacOS X",
-  "Operating System :: Microsoft :: Windows",
-  "Operating System :: POSIX :: Linux",
-  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
-description = "Single Cell Lineage Reconstruction with Cas9-Enabled Lineage Recorders"
-documentation = "https://cassiopeia-lineage.readthedocs.io/"
-homepage = "https://github.com/YosefLab/Cassiopeia"
-keywords = ['scLT']
-license = "MIT"
-name = "cassiopeia-lineage"
-readme = 'README.md'
-repository = "https://github.com/YosefLab/Cassiopeia"
-version = "2.1.0"
-
-include = [
-  {path = "cassiopeia/preprocess/*.so", format = "wheel"},
-  {path = "cassiopeia/preprocess/*.pyx", format = "wheel"},
-  {path = "cassiopeia/solver/*.so", format = "wheel"},
-  {path = "cassiopeia/solver/*.pyx", format = "wheel"},
-  {path = "cassiopeia/tools/branch_length_estimator/*.so", format = "wheel"},
-  {path = "cassiopeia/tools/branch_length_estimator/*.pyx", format = "wheel"},
-  {path = "cassiopeia/config.ini"},
+dependencies = [
+  "anndata>=0.11",
+  "biopython>=1.71",
+  "bokeh>=0.12.15",
+  "cvxpy",
+  "ecos",
+  "ete3>=3.1.1",
+  "hits",
+  "itolapi",
+  "matplotlib>=2.2.2",
+  "networkx>=3.1",
+  "ngs-tools>=1.5.6",
+  "numba>=0.51",
+  "numpy>=2",
+  "pandas>=2.2.1",
+  "parameterized",
+  "pysam>=0.14.1",
+  "pyseq-align>=1.0.2",
+  "pyyaml>=3.12",
+  "scipy>=1.2",
+  "tqdm>=4",
+  "treedata>=0.2.2",
+  "typing-extensions>=3.7.4",
 ]
-packages = [
-  {include = "cassiopeia"},
+
+optional-dependencies.dev = [
+  "cython>=3.0.6", # for regenerating .c from .pyx when releasing
+  "pre-commit",
+  "twine>=4.0.2",
 ]
-
-[tool.poetry.dependencies]
-anndata = ">=0.11.0"
-Biopython = ">=1.71"
-Cython = ">=3.0.6"
-PyYAML = ">=3.12"
-black = {version = ">=20.8b1", optional = true}
-bokeh = ">=0.12.15"
-cchardet = {version = "==2.2.0a2", optional = true}
-codecov = {version = ">=2.0.8", optional = true}
-cvxpy = "*"
-ecos = "*"
-ete3 = ">=3.1.1"
-hits = "*"
-ipython = {version = ">=7.20", optional = true}
-isort = {version = ">=5.7", optional = true}
-itolapi = "*"
-jupyter = {version = ">=1.0", optional = true}
-matplotlib = ">=2.2.2"
-nbconvert = {version = ">=5.4.0", optional = true}
-nbformat = {version = ">=4.4.0", optional = true}
-nbsphinx = {version = "*", optional = true}
-nbsphinx-link = {version = "*", optional = true}
-networkx = ">=3.1"
-ngs-tools = ">=1.5.6"
-numba = ">=0.51.0"
-numpy = ">=1.22, <3.0"
-opencv-python = {version = ">=4.5.4.60", optional = true}
-pandas = ">=2.2.1"
-parameterized = "*"
-plotly = ">=5.0.0"
-poisson-disc = {version = ">=0.2.1", optional = true}
-pre-commit = {version = ">=2.7.1", optional = true}
-pydata-sphinx-theme = {version = ">=0.4.3", optional = true}
-pysam = ">=0.14.1"
-pyseq-align = ">=1.0.2"
-pytest = {version = ">=4.4", optional = true}
-python = ">=3.10,<4.0"
-pyvista = {version = ">=0.43.0", optional = true}
-scanpydoc = {version = ">=0.5", optional = true}
-scikit-image = {version = ">=0.19.1", optional = true}
-scikit-learn = {version = ">=1.0.2", optional = true}
-scipy = ">=1.2.0"
-sphinx = {version = ">=3.4", optional = true}
-sphinx-autodoc-typehints = {version = "*", optional = true}
-sphinx-gallery = {version = ">0.6", optional = true}
-squidpy = {version=">=1.6.0", optional = true}
-trame = {version = ">=3.2.4", optional = true}
-trame-vtk = {version = ">=2.5.8", optional = true}
-trame-vuetify = {version = ">=2.3.1", optional = true}
-treedata = ">=0.2.2"
-tqdm = ">=4"
-typing-extensions = ">=3.7.4"
-typing_extensions = {version = "*", python = "<3.8", optional = true}
-vtk = {version = "==9.3", optional = true}
-
-[tool.poetry.build]
-generate-setup-file = false
-script = "build.py"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.7", "Cython>=3.0.6", "numpy>=1.19.5", "setuptools", "pip>=22.0.0"]
-
-[tool.poetry.scripts]
-cassiopeia-preprocess = 'cassiopeia.preprocess.cassiopeia_preprocess:main'
-
-[tool.poetry.extras]
-dev = ["black", "pytest", "flake8", "codecov", "jupyter", "pre-commit", "isort"]
-docs = [
-  "sphinx",
-  "scanpydoc",
-  "nbconvert",
-  "nbformat",
+optional-dependencies.doc = [
+  "docutils>=0.8,!=0.18.*,!=0.19.*",
+  "ipykernel",
+  "ipython",
+  "myst-nb>=1.1",
   "nbsphinx",
   "nbsphinx-link",
-  "ipython",
-  "pydata-sphinx-theme",
-  "typing_extensions",
+  "pandas",
+  "pandoc",
+  "scanpydoc",
+  "setuptools",
+  "sphinx>=8.1",
   "sphinx-autodoc-typehints",
-  "sphinx_gallery"
+  "sphinx-book-theme>=1",
+  "sphinx-copybutton",
+  "sphinx-design",
+  "sphinx-gallery",
+  "sphinx-tabs",
+  "sphinxcontrib-bibtex>=1",
+  "sphinxext-opengraph",
+]
+optional-dependencies.spatial = [
+  "scikit-image>=0.19.1",
+  "scikit-learn>=1.0.2",
+  "squidpy>=1.6",
+]
+optional-dependencies.test = [
+  "coverage>=7.10",
+  "joblib",
+  "pytest",
+  "pytest-cov",
+]
+# URLs
+urls.Documentation = "https://cassiopeia-lineage.readthedocs.io/"
+urls.Homepage = "https://cassiopeia-lineage.readthedocs.io/"
+
+# --- setuptools: src/ layout + discovery ---
+urls.Source = "https://github.com/YosefLab/Cassiopeia"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = [ "src" ]
+include = [ "cassiopeia*" ]
+exclude = [ "tests*", "docs*", "notebooks*", "data*" ]
+
+# If you ship .pxd, include them:
+[tool.setuptools.package-data]
+cassiopeia = [ "**/*.pxd" ]
+
+# --- Hatch envs ---
+
+[tool.hatch.envs.default]
+installer = "uv"
+features = [ "dev" ]
+
+[tool.hatch.envs.docs]
+features = [ "doc" ]
+scripts.build = "sphinx-build -M html docs docs/_build {args}"
+scripts.open = "python -m webbrowser -t docs/_build/html/index.html"
+scripts.clean = "git clean -fdX -- {args:docs}"
+
+[tool.hatch.envs.hatch-test]
+features = [ "dev", "test" ]
+skip-install = false
+
+# Matrix entries for hatch-test
+[[tool.hatch.envs.hatch-test.matrix]]
+deps = [ "stable" ]
+python = [ "3.10", "3.12" ]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+deps = [ "pre" ]
+python = [ "3.12" ]
+
+[tool.hatch.envs.hatch-test.overrides]
+matrix.deps.env-vars = [
+  { key = "UV_PRERELEASE", value = "allow", if = [ "pre" ] },
 ]
 
-spatial = [
-  "Cython",
-  "opencv-python",
-  "poisson-disc",
-  "vtk",
-  "scikit-image", 
-  "scikit-learn",
-  "trame", 
-  "trame-vuetify", 
-  "trame-vtk", 
-  "cchardet",
-  "squidpy",
-  "pyvista",
+# --- Ruff / Pytest / Coverage ---
+
+[tool.ruff]
+line-length = 100
+src = [ "src" ]
+extend-include = [ "*.ipynb" ]
+format.docstring-code-format = true
+lint.select = [ "B", "BLE", "C4", "D", "E", "F", "I", "RUF100", "TID", "UP", "W" ]
+lint.ignore = [ "B008", "D100", "D104", "D105", "D107", "D203", "D213", "D400", "D401", "E501", "E731", "E741" ]
+lint.per-file-ignores."*/__init__.py" = [ "F401" ]
+lint.per-file-ignores."docs/*" = [ "I" ]
+lint.per-file-ignores."tests/*" = [ "D" ]
+lint.pydocstyle.convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = [ "tests" ]
+xfail_strict = true
+addopts = [ "--import-mode=importlib" ]
+
+[tool.coverage.run]
+source = [ "cassiopeia" ]
+patch = [ "subprocess" ]
+omit = [ "**/test_*.py" ]
+
+[tool.cruft]
+skip = [
+  "tests",
+  "src/**/__init__.py",
 ]
