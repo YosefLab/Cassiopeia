@@ -206,11 +206,11 @@ def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
 
 
 def depth_first_traverse_nodes_treelike(
-    tree: TreeLike, tree_key: str | None, source: str | None = None, postorder: bool = True
+    tree: TreeLike, tree_key: str | None = None, source: str | None = None, postorder: bool = True
 ) -> Iterator[str]:
     """Nodes from depth first traversal of the tree (type TreeLike).
 
-    Returns the nodes from a DFS on the tree.
+    Returns the nodes from a (default postorder, otherwise preorder) DFS on the tree.
 
     Args:
         tree: The tree object.
@@ -238,7 +238,7 @@ def depth_first_traverse_nodes_treelike(
 
 
 def set_attribute_treelike(
-    tree: CassiopeiaTree | TreeData, node: str, attribute_name: str, value: Any
+    tree: TreeLike, node: str, attribute_name: str, value: Any | None = None
 ) -> None:
     """Sets an attribute in the tree.
 
@@ -248,12 +248,18 @@ def set_attribute_treelike(
         attribute_name: Name for the new attribute
         value: Value for the attribute.
 
+
     Raises:
         CassiopeiaTreeError if the tree has not been initialized.
         KeyError if the node is not found in the tree.
         TypeError if the tree type is unsupported.
     """
-    if isinstance(tree, CassiopeiaTree):
+    if isinstance(tree, nx.DiGraph):
+        if node not in tree.nodes:
+            raise KeyError(f"Node {node} not found in DiGraph.")
+        nx.set_node_attributes(tree, {node: {attribute_name: value}})
+
+    elif isinstance(tree, CassiopeiaTree):
         tree._CassiopeiaTree__check_network_initialized()
         if node not in tree._CassiopeiaTree__network.nodes:
             raise KeyError(f"Node {node} not found in CassiopeiaTree.")
@@ -268,7 +274,7 @@ def set_attribute_treelike(
         raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
 
 
-def get_attribute_treelike(tree: CassiopeiaTree | TreeData, node: str, attribute_name: str) -> Any:
+def get_attribute_treelike(tree: TreeLike, node: str, attribute_name: str) -> Any:
     """Retrieves the value of an attribute for a node.
 
     Args:
@@ -284,7 +290,12 @@ def get_attribute_treelike(tree: CassiopeiaTree | TreeData, node: str, attribute
         KeyError if the node is not found in the tree.
         TypeError if the tree type is unsupported.
     """
-    if isinstance(tree, CassiopeiaTree):
+    if isinstance(tree, nx.DiGraph):
+        try:
+            return tree.nodes[node][attribute_name]
+        except KeyError as error:
+            raise KeyError(f"Attribute {attribute_name} not detected for node {node}.") from error
+    elif isinstance(tree, CassiopeiaTree):
         tree._CassiopeiaTree__check_network_initialized()
         try:
             return tree._CassiopeiaTree__network.nodes[node][attribute_name]
@@ -324,7 +335,7 @@ def is_leaf_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> 
     return G.out_degree(node) == 0
 
 
-def get_children(tree: TreeLike, node: str, tree_key: str | None = None) -> list[str]:
+def get_children_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> list[str]:
     """Gets the children of a given node for any tree-like object.
 
     Args:

@@ -2,6 +2,7 @@
 
 import itertools
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_categorical_dtype, is_numeric_dtype
@@ -13,11 +14,13 @@ from cassiopeia.mixins.errors import (
     CassiopeiaTreeError,
     FitchCountError,
 )
+from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
+    _get_digraph,
     depth_first_traverse_nodes_treelike,
     get_attribute_treelike,
     get_cell_meta,
-    get_children,
+    get_children_treelike,
     is_leaf_treelike,
     set_attribute_treelike,
 )
@@ -66,11 +69,12 @@ def fitch_hartigan(
 
 
 def fitch_hartigan_bottom_up(
-    tree: CassiopeiaTree | TreeData,
+    tree: TreeLike,
     key: str,
     add_key: str = "S1",
     copy: bool = False,
-) -> CassiopeiaTree | TreeData | None:
+    meta_df: pd.DataFrame | None = None,
+) -> TreeLike | None:
     """Performs Fitch-Hartigan bottom-up ancestral reconstruction.
 
     Performs the bottom-up phase of the Fitch-Hartigan small parsimony
@@ -83,21 +87,24 @@ def fitch_hartigan_bottom_up(
         tree: CassiopeiaTree object with cell meta data.
         key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
+        meta_df: Optional DataFrame containing cell meta data. Only pass in if using networkx DiGraph.
         add_key: Key to add for bottom-up reconstruction
         copy: Modify the tree in place or not.
 
     Returns:
-            A new CassiopeiaTree if the copy is set to True, else None.
+            A new CassiopeiaTree/TreeData/nx DiGraph + meta_df if the copy is set to True, else None.
 
     Raises:
             CassiopeiaError if the tree does not have the specified meta data
             or the meta data is not categorical.
     """
-    meta_df = get_cell_meta(tree)
-    if key not in meta_df.columns:
-        raise CassiopeiaError("Meta item does not exist in the tree object.")
+    if meta_df is None:
+        meta_df = get_cell_meta(tree)
 
-    meta = tree.cell_meta[key]
+    if key not in meta_df.columns:
+        raise CassiopeiaError("Key variable does not exist in the metadata for the tree object.")
+
+    meta = meta_df[key]
 
     if is_numeric_dtype(meta):
         raise CassiopeiaError("Meta item is not a categorical variable.")
@@ -106,24 +113,30 @@ def fitch_hartigan_bottom_up(
         meta = meta.astype("category")
 
     tree = tree.copy() if copy else tree
+    g, _ = _get_digraph(tree)
+    g = g.copy() if copy else g
 
-    for node in depth_first_traverse_nodes_treelike(tree, key):
-        if is_leaf_treelike(tree, node):
-            set_attribute_treelike(tree, node, add_key, [meta.loc[node]])
+    for node in depth_first_traverse_nodes_treelike(g):
+        if is_leaf_treelike(g, node):
+            set_attribute_treelike(g, node, add_key, [meta.loc[node]])
 
         else:
-            children = get_children(tree, node, key)
-            if len(children) == 1:
-                child_assignment = get_attribute_treelike(tree, children[0], add_key)
-                set_attribute_treelike(tree, node, add_key, [child_assignment])
-
+            children = get_children_treelike(g, node)
             all_labels = np.concatenate(
-                [get_attribute_treelike(tree, child, add_key) for child in children]
+                [get_attribute_treelike(g, child, add_key) for child in children]
             )
+
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
-            set_attribute_treelike(tree, node, add_key, S1)
+            set_attribute_treelike(g, node, add_key, S1)
+
+    if isinstance(tree, CassiopeiaTree) or isinstance(tree, TreeData):
+        for node in g.nodes:
+            set_attribute_treelike(tree, node, add_key, get_attribute_treelike(g, node, add_key))
+        return tree if copy else None
+    elif isinstance(tree, nx.DiGraph):
+        return g if copy else None
 
     return tree if copy else None
 
