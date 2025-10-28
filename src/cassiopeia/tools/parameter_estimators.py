@@ -1,74 +1,73 @@
 """Utilities for estimating lineage tracing parameters."""
 
-import numpy as np
+import warnings
 
+import numpy as np
+from treedata import TreeData
+
+from cassiopeia import utils
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 
 
-def get_proportion_of_missing_data(tree: CassiopeiaTree, layer: str | None = None) -> float:
-    """Calculates the proportion of missing entries in the character matrix.
+def get_proportion_of_missing_data(
+    tree: CassiopeiaTree | TreeData,
+    characters_key: str = "characters",
+) -> float:
+    """Calculate the proportion of missing entries in the character matrix.
 
     Calculates the proportion of cell/character entries in the character matrix
-    that have a non-missing state, with the missing state being indicated by
-    `tree.missing_state_indicator`.
+    that have a missing state, with the missing state being indicated by
+    the tree's missing_state_indicator.
 
     Args:
-        tree: The CassiopeiaTree specifying the tree and the character matrix
-        layer: Layer to use for character matrix. If this is None,
-            then the current `character_matrix` variable will be used.
+        tree: CassiopeiaTree or TreeData object containing the character matrix
+        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
+            uses the default character_matrix attribute; otherwise looks in layers.
+            For TreeData, specifies the obsm key. Default is "characters".
 
     Returns:
-            The proportion of missing cell/character entries
+        Proportion of missing cell/character entries (between 0 and 1)
 
     Raises:
-            ParameterEstimateError if character matrix or layer doesn't exist
+        ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if layer:
-        character_matrix = tree.layers[layer]
-    else:
-        character_matrix = tree.character_matrix
+    character_matrix = utils._get_character_matrix(tree, characters_key)
+    missing_state_indicator = utils._get_missing_state_indicator(tree)
 
-    if character_matrix is None:
-        raise ParameterEstimateError("No character matrix is detected in this tree.")
-
-    num_dropped = (character_matrix.values == tree.missing_state_indicator).sum()
+    num_dropped = (character_matrix == missing_state_indicator).sum()
     missing_proportion = num_dropped / (character_matrix.shape[0] * character_matrix.shape[1])
     return missing_proportion
 
 
-def get_proportion_of_mutation(tree: CassiopeiaTree, layer: str | None = None) -> float:
-    """Calculates the proportion of mutated entries in the character matrix.
+def get_proportion_of_mutation(tree: CassiopeiaTree, characters_key: str = "characters") -> float:
+    """Calculate the proportion of mutated entries in the character matrix.
 
     Calculates the proportion of cell/character entries in the character matrix
     that have a non-uncut (non-0) state, normalizing over non-missing entries.
     Hence, missing entries are not considered in calculating the proportion.
 
     Args:
-        tree: The CassiopeiaTree specifying the tree and the character matrix
-        layer: Layer to use for character matrix. If this is None,
-            then the current `character_matrix` variable will be used.
+        tree: CassiopeiaTree or TreeData object containing the character matrix
+        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
+            uses the default character_matrix attribute; otherwise looks in layers.
+            For TreeData, specifies the obsm key. Default is "characters".
 
     Returns:
-            The proportion of non-missing cell/character entries that are mutated
+        Proportion of non-missing cell/character entries that are mutated (between 0 and 1)
 
     Raises:
-            ParameterEstimateError if character matrix or layer doesn't exist
+        ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if layer:
-        character_matrix = tree.layers[layer]
-    else:
-        character_matrix = tree.character_matrix
+    character_matrix = utils._get_character_matrix(tree, characters_key)
+    missing_state_indicator = utils._get_missing_state_indicator(tree)
 
-    if character_matrix is None:
-        raise ParameterEstimateError("No character matrix is detected in this tree.")
-
-    num_dropped = (character_matrix.values == tree.missing_state_indicator).sum()
+    num_dropped = (character_matrix == missing_state_indicator).sum()
 
     num_mut = (
         character_matrix.shape[0] * character_matrix.shape[1]
         - num_dropped
-        - (character_matrix.values == 0).sum()
+        - (character_matrix == 0).sum()
     )
     mutation_proportion = num_mut / (
         character_matrix.shape[0] * character_matrix.shape[1] - num_dropped
@@ -77,94 +76,89 @@ def get_proportion_of_mutation(tree: CassiopeiaTree, layer: str | None = None) -
 
 
 def estimate_mutation_rate(
-    tree: CassiopeiaTree,
+    tree: CassiopeiaTree | TreeData,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
-    layer: str | None = None,
+    characters_key: str = "characters",
+    depth_key: str = "depth",
+    tree_key: str = "tree",
 ) -> float:
-    """Estimates the mutation rate from a tree and character matrix.
+    """Calculate the proportion of mutated entries in the character matrix.
 
-    Infers the mutation rate using the proportion of the cell/character
-    entries in the leaves that have a non-uncut (non-0) state and the node
-    depth/the total time of the tree. The mutation rate is either a
-    continuous or per-generation rate according to which lineages accumulate
-    mutations.
-
-    In estimating the mutation rate, we use the observed proportion of mutated
-    entries in the character matrix as an estimate of the probability that a
-    mutation occurs on a lineage. Using this probability, we can then infer
-    the mutation rate.
-
-    This function attempts to consume the observed mutation proportion as
-    `mutation_proportion` in `tree.parameters`. If this field is not populated,
-    it is inferred using `get_proportion_of_mutation`.
-
-    In the case where the rate is per-generation (probability a mutation occurs
-    on an edge), it is estimated using:
-
-        mutated proportion = 1 - (1 - mutation_rate) ^ (average depth of tree)
-
-    In the case when the rate is continuous, it is estimated using:
-
-        mutated proportion = ExponentialCDF(average time of tree, mutation rate)
-
-    Note that these naive estimates perform better when the tree is ultrametric
-    in depth or time. The average depth/lineage time of the tree is used as a
-    proxy for the depth/total time when the tree is not ultrametric.
-
-    In the inference, we need to consider whether to assume an implicit root,
-    specified by `assume_root_implicit_branch`. In the case where the tree does
-    not have a single leading edge from the root representing the progenitor
-    cell before cell division begins, this additional edge is added to the
-    total time in calculating the estimate if `assume_root_implicit_branch` is
-    True.
+    Calculates the proportion of cell/character entries in the character matrix
+    that have a non-uncut (non-0) state, normalizing over non-missing entries.
+    Hence, missing entries are not considered in calculating the proportion.
 
     Args:
-        tree: The CassiopeiaTree specifying the tree and the character matrix
-        continuous: Whether to calculate a continuous mutation rate,
-            accounting for branch lengths. Otherwise, calculates a
-            discrete mutation rate using the node depths
-        assume_root_implicit_branch: Whether to assume that there is an
-            implicit branch leading from the root, if it doesn't exist
-        layer: Layer to use for character matrix. If this is None,
-            then the current `character_matrix` variable will be used.
+        tree: CassiopeiaTree or TreeData object containing tree topology and character matrix
+        continuous: If True, calculate a continuous mutation rate accounting for branch
+            lengths. If False, calculate a discrete mutation rate using node depths.
+            Default is True.
+        assume_root_implicit_branch: If True, assume an implicit branch leading from
+            the root if it doesn't exist (i.e., if root has multiple children). This
+            branch is added to the total time when calculating the estimate. Default is True.
+        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
+            uses the default character_matrix attribute; otherwise looks in layers.
+            For TreeData, specifies the obsm key. Default is "characters".
+        depth_key: Node attribute key containing depth values (e.g., "depth" for
+            generation count, "time" for evolutionary time). Default is "depth".
+        tree_key: Tree key to use if tree is a TreeData object with multiple trees.
+            Only required if multiple trees are present. Default is "tree".
 
     Returns:
-            The estimated mutation rate
+        Proportion of non-missing cell/character entries that are mutated (between 0 and 1)
+
+    Warns:
+        UserWarning: If continuous=True but branch lengths are integers, suggesting
+            a mismatch between the continuous parameter and discrete branch lengths.
 
     Raises:
-            ParameterEstimateError if the `mutation_proportion` parameter is not
-            between 0 and 1
+        ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if "mutated_proportion" not in tree.parameters:
-        mutation_proportion = get_proportion_of_mutation(tree, layer)
-    else:
-        mutation_proportion = tree.parameters["mutated_proportion"]
+    t, _ = utils._get_digraph(tree, tree_key=tree_key)
+    mutation_proportion = utils._get_tree_parameter(tree, "mutation_proportions")
+    if mutation_proportion is None:
+        mutation_proportion = get_proportion_of_mutation(tree, characters_key)
+
     if mutation_proportion < 0 or mutation_proportion > 1:
         raise ParameterEstimateError("Mutation proportion must be between 0 and 1.")
+
+    edges = list(t.edges())
+    u, v = edges[0]
+    branch = t[u][v]["length"]
+
+    mean_depth = utils.get_mean_depth(t, depth_key, tree_key=tree_key)
+    if continuous and float(branch).is_integer():
+        warnings.warn(
+            "continuous=True with discrete branches may produce incorrect estimates "
+            "Consider using continuous=False",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    root = utils.get_root(t, tree_key=tree_key)
+    if assume_root_implicit_branch and t.out_degree(root) != 1:
+        mean_depth += (
+            1 if not continuous else np.mean(np.mean([t[u][v]["length"] for u, v in edges]))
+        )
+
     if not continuous:
-        mean_depth = tree.get_mean_depth_of_tree()
-        # We account for the added depth of the implicit branch leading
-        # from the root, if it is to be added
-        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
-            mean_depth += 1
         mutation_rate = 1 - (1 - mutation_proportion) ** (1 / mean_depth)
     else:
-        times = tree.get_times()
-        mean_time = np.mean([times[l] for l in tree.leaves])
-        if assume_root_implicit_branch and len(tree.children(tree.root)) != 1:
-            mean_time += np.mean([tree.get_branch_length(u, v) for u, v in tree.edges])
-        mutation_rate = -np.log(1 - mutation_proportion) / mean_time
+        mutation_rate = -np.log(1 - mutation_proportion) / mean_depth
+
     return mutation_rate
 
 
 def estimate_missing_data_rates(
-    tree: CassiopeiaTree,
+    tree: CassiopeiaTree | TreeData,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
     stochastic_missing_probability: float | None = None,
     heritable_missing_rate: float | None = None,
-    layer: str | None = None,
+    characters_key: str = "characters",
+    depth_key: str = "depth",
+    tree_key: str = "tree",
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
 
@@ -246,8 +240,14 @@ def estimate_missing_data_rates(
             stochastic missing data range between 10-20%
         heritable_missing_rate: The heritable missing rate. Will override the
             value on the tree
-        layer: Layer to use for character matrix. If this is None,
-            then the current `character_matrix` variable will be used.
+        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
+            uses the default character_matrix attribute; otherwise looks in layers.
+            For TreeData, specifies the obsm key. Default is "characters".
+        depth_key: Node attribute key containing depth values (e.g., "depth" for
+            generation count, "time" for evolutionary time). Default is "depth".
+        tree_key: Tree key to use if tree is a TreeData object with multiple trees.
+            Only required if multiple trees are present. Default is "tree".
+
 
     Returns:
             The stochastic missing probability and heritable missing rate. One of
@@ -262,9 +262,9 @@ def estimate_missing_data_rates(
             negative
     """
     if "missing_proportion" not in tree.parameters:
-        total_missing_proportion = get_proportion_of_missing_data(tree, layer)
+        total_missing_proportion = get_proportion_of_missing_data(tree, characters_key)
     else:
-        total_missing_proportion = tree.parameters["missing_proportion"]
+        total_missing_proportion = tree.parameters["missing_proportion"]  # what
     if total_missing_proportion < 0 or total_missing_proportion > 1:
         raise ParameterEstimateError("Missing proportion must be between 0 and 1.")
 

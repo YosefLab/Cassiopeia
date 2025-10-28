@@ -6,6 +6,7 @@ import warnings
 from typing import Any
 
 import networkx as nx
+import numpy as np
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
@@ -180,3 +181,54 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
         child_length = child_edge.get("length", 0)
         new_edge["length"] = parent_length + child_length
     return new_edge
+
+
+def _get_character_matrix(tree, characters_key: str = "characters") -> np.ndarray:
+    """Get character matrix from a tree object."""
+    if isinstance(tree, CassiopeiaTree):
+        if characters_key == "characters":
+            character_matrix = tree.character_matrix
+        else:
+            character_matrix = tree.layers[characters_key]
+    elif isinstance(tree, TreeData):
+        character_matrix = tree.obsm[characters_key]
+    return np.asarray(character_matrix)
+
+
+def _get_missing_state_indicator(tree: TreeLike) -> int:
+    """Get the missing state indicator from a tree object."""
+    if isinstance(tree, CassiopeiaTree):
+        return tree.missing_state_indicator
+    elif isinstance(tree, TreeData):
+        return tree.uns.get("missing_state_indicator", -1)
+
+
+def _get_tree_parameter(tree, param_name: str, default=None):
+    """Get a parameter from CassiopeiaTree or TreeData."""
+    if isinstance(tree, CassiopeiaTree):
+        return tree.parameters.get(param_name, default)
+    elif isinstance(tree, TreeData):
+        return tree.uns.get("cassiopeia_parameters", {}).get(param_name, default)
+    return default
+
+
+def get_mean_depth(tree: TreeLike, depth_key, tree_key: str | None = None) -> float:
+    """Compute the mean depth of a tree's leaves.
+
+    Calculates the average depth across all leaf nodes in the tree. Depth is
+    retrieved from the node attribute specified by depth_key. This can represent
+    either discrete generations (e.g., number of divisions) or continuous time
+    (e.g., evolutionary time).
+
+    Args:
+        tree: Tree object (CassiopeiaTree, TreeData, or nx.DiGraph)
+        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
+        tree_key: Tree key to use if tree is a TreeData object with multiple trees
+
+    Returns:
+        float: Mean depth of the tree's leaves
+    """
+    t, _ = _get_digraph(tree, tree_key=tree_key)
+    leaves = get_leaves(tree, tree_key=tree_key)
+    depths = [t.nodes[leaf][depth_key] for leaf in leaves]
+    return float(np.mean(depths))
