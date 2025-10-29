@@ -7,6 +7,7 @@ from typing import Any
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
@@ -183,7 +184,9 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
     return new_edge
 
 
-def _get_character_matrix(tree, characters_key: str = "characters") -> np.ndarray:
+def _get_character_matrix(
+    tree: CassiopeiaTree | TreeData, characters_key: str = "characters"
+) -> np.ndarray:
     """Get character matrix from a tree object."""
     if isinstance(tree, CassiopeiaTree):
         if characters_key == "characters":
@@ -192,23 +195,30 @@ def _get_character_matrix(tree, characters_key: str = "characters") -> np.ndarra
             character_matrix = tree.layers[characters_key]
     elif isinstance(tree, TreeData):
         character_matrix = tree.obsm[characters_key]
-    return np.asarray(character_matrix)
+
+    if isinstance(character_matrix, np.ndarray):
+        character_matrix = pd.DataFrame(character_matrix)
+    return character_matrix
 
 
-def _get_missing_state_indicator(tree: TreeLike) -> int:
+def _get_missing_state_indicator(tree: CassiopeiaTree | TreeData, missing_state=None) -> int:
     """Get the missing state indicator from a tree object."""
+    if missing_state is None:
+        missing_state = [-1, "-1", "NA", "-"]
     if isinstance(tree, CassiopeiaTree):
         return tree.missing_state_indicator
     elif isinstance(tree, TreeData):
-        return tree.uns.get("missing_state_indicator", -1)
+        return tree.uns.get("missing_state_indicator", missing_state)
+    else:
+        return missing_state
 
 
-def _get_tree_parameter(tree, param_name: str, default=None):
+def _get_tree_parameter(tree: CassiopeiaTree | TreeData, param_name: str, default=None):
     """Get a parameter from CassiopeiaTree or TreeData."""
     if isinstance(tree, CassiopeiaTree):
         return tree.parameters.get(param_name, default)
     elif isinstance(tree, TreeData):
-        return tree.uns.get("cassiopeia_parameters", {}).get(param_name, default)
+        return tree.uns.get(param_name, default)
     return default
 
 
@@ -232,3 +242,40 @@ def get_mean_depth(tree: TreeLike, depth_key, tree_key: str | None = None) -> fl
     leaves = get_leaves(tree, tree_key=tree_key)
     depths = [t.nodes[leaf][depth_key] for leaf in leaves]
     return float(np.mean(depths))
+
+
+def _count_entries(character_matrix: pd.DataFrame, indicator) -> int:
+    """Counts the instances of the character matrix that matches the indicator."""
+    if not isinstance(indicator, (list, tuple, set)):
+        mask = character_matrix == indicator
+    else:
+        if pd.api.types.is_integer_dtype(character_matrix.values.dtype):
+            indicator = [x for x in indicator if isinstance(x, (int, np.integer))]
+        else:
+            indicator = [str(x) for x in indicator]
+        if not indicator:
+            return 0
+        mask = np.isin(character_matrix, indicator)
+
+    return int(mask.sum().sum())
+
+
+def _check_continuous_not_int(
+    tree: TreeLike,
+    edges: list,
+    continuous: bool = True,
+) -> None:
+    """Warn if continuous=True but branch lengths are discrete integers."""
+    if not edges:
+        return
+
+    u, v = edges[0]
+    branch = tree[u][v]["length"]
+
+    if continuous and float(branch).is_integer():
+        warnings.warn(
+            "continuous=True with discrete branches may produce incorrect estimates. "
+            "Consider using continuous=False",
+            UserWarning,
+            stacklevel=2,
+        )
