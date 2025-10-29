@@ -1,6 +1,7 @@
 """General utilities for the datasets encountered in Cassiopeia."""
 
 import collections
+import copy
 import multiprocessing
 import warnings
 from collections.abc import Callable
@@ -668,32 +669,19 @@ def cassiopeia_to_treedata(
         - obst[tree_key] = tree topology (if present)
         - obsp[dissimilarity_map_key] = dissimilarity map (if present)
     """
-    # X is None - typically RNA data which CassiopeiaTree doesn't have
-    X = None
-    var = None
-
-    # Validate that we have both character matrix and tree
+    # Extract character matrix into obsm
     obsm = {}
-    obs = None
     if cassiopeia_tree.character_matrix is not None:
-        character_matrix = cassiopeia_tree.character_matrix
-        obsm[characters_key] = character_matrix.values
-        obs = pd.DataFrame(index=character_matrix.index)
+        obsm[characters_key] = cassiopeia_tree.character_matrix
+        obs = pd.DataFrame(index=cassiopeia_tree.character_matrix.index)
 
+    # Extract tree topology into obst
     obst = {}
-
-    # tree_topology = cassiopeia_tree.get_tree_topology()
-    # if tree_topology is not None:
-    #     obst[tree_key] = tree_topology
-    # elif cassiopeia_tree.character_matrix is None:
-    #     raise CassiopeiaError(
-    #         "CassiopeiaTree must have either a character matrix or a tree to convert to TreeData."
-    #     )
-
     try:
         tree_topology = cassiopeia_tree.get_tree_topology()
         if tree_topology is not None:
             obst[tree_key] = tree_topology
+            obs = pd.DataFrame(index=cassiopeia_tree.leaves)
     except CassiopeiaTreeError as err:
         if cassiopeia_tree.character_matrix is None:
             raise CassiopeiaError(
@@ -702,16 +690,13 @@ def cassiopeia_to_treedata(
 
     # Extract observation metadata (obs)
     if preserve_metadata and cassiopeia_tree.cell_meta is not None:
-        if obs is None:
-            obs = cassiopeia_tree.cell_meta.copy()
-        else:
-            obs = obs.join(cassiopeia_tree.cell_meta.copy(), how="left")
+        obs = cassiopeia_tree.cell_meta.copy()
 
     # Extract character matrix layers into obsm
     if preserve_layers and hasattr(cassiopeia_tree, "layers"):
         for layer_name, layer_data in cassiopeia_tree.layers.items():
             if layer_data is not None:
-                obsm[f"layer_{layer_name}"] = layer_data.values
+                obsm[f"layer_{layer_name}"] = layer_data
 
     # Store dissimilarity map if it exists
     obsp = {}
@@ -723,35 +708,19 @@ def cassiopeia_to_treedata(
     uns = {}
     if preserve_metadata:
         # Store CassiopeiaTree-specific data in uns
-        if hasattr(cassiopeia_tree, "priors") and cassiopeia_tree.priors is not None:
-            uns["priors"] = cassiopeia_tree.priors
-
-        if hasattr(cassiopeia_tree, "parameters") and cassiopeia_tree.parameters is not None:
-            uns["cassiopeia_parameters"] = cassiopeia_tree.parameters
-
-        if hasattr(cassiopeia_tree, "missing_state_indicator"):
-            uns["missing_state_indicator"] = cassiopeia_tree.missing_state_indicator
-
-        if (
-            hasattr(cassiopeia_tree, "root_sample_name")
-            and cassiopeia_tree.root_sample_name is not None
-        ):
-            uns["root_sample_name"] = cassiopeia_tree.root_sample_name
-
-        if (
-            hasattr(cassiopeia_tree, "character_meta")
-            and cassiopeia_tree.character_meta is not None
-        ):
-            uns["character_meta"] = cassiopeia_tree.character_meta.copy()
-
-        # Add conversion metadata
+        for key, value in cassiopeia_tree.parameters.items():
+            uns[key] = copy.deepcopy(value)
+        for key in ["priors", "missing_state_indicator", "root_sample_name", "character_meta"]:
+            if hasattr(cassiopeia_tree, key):
+                value = getattr(cassiopeia_tree, key)
+                if value is not None:
+                    uns[key] = copy.deepcopy(value)
         uns["converted_from"] = "CassiopeiaTree"
 
     # Create TreeData object
     treedata_obj = TreeData(
-        X=X,
+        X=None,
         obs=obs,
-        var=var,
         obst=obst if obst else None,
         obsm=obsm if obsm else None,
         obsp=obsp if obsp else None,

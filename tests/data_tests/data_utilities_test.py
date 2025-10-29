@@ -7,6 +7,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
@@ -497,7 +498,7 @@ class TestDataUtilities(unittest.TestCase):
             atol=0.001,
         )
 
-    def test_cassiopeiatree_to_treedata(self):
+    def test_to_treedata(self):
         graph = nx.DiGraph()
         graph.add_edges_from(
             [("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"), ("2", "5"), ("2", "6")]
@@ -507,50 +508,50 @@ class TestDataUtilities(unittest.TestCase):
             index=["3", "4", "5", "6"],
             columns=["char1", "char2", "char3"],
         )
-        cas_tree = CassiopeiaTree(tree=graph, character_matrix=cm)
-
-        obs_tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
-
-        self.assertIsNone(obs_tdata.X)
-        self.assertIn("tree", obs_tdata.obst)
-        self.assertEqual(obs_tdata.obsm["characters"].shape, (4, 3))
-        self.assertEqual(len(obs_tdata.obst["tree"].nodes), 7)
-
-    def test_missing_cm(self):
-        graph = nx.DiGraph()
-        graph.add_edges_from(
-            [("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"), ("2", "5"), ("2", "6")]
-        )
         dissim_map = pd.DataFrame([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        cas_tree = CassiopeiaTree(tree=graph, character_matrix=None, dissimilarity_map=dissim_map)
-        obs_tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
+        cas_tree = CassiopeiaTree(tree=graph, character_matrix=cm, dissimilarity_map=dissim_map)
+        cas_tree.priors = {1: 0.1}
+        cas_tree.parameters["param"] = 42
+        cas_tree.layers["foo"] = cm * 2
+        tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
 
-        # tests if dissimilarity map is still copied, even if no character matrix
-        self.assertIn("distances", obs_tdata.obsp)
-        # self.assertTrue(obs_tdata.obsp["distances"].equals(dissim_map))
-        np.testing.assert_array_equal(
-            obs_tdata.obsp["distances"], dissim_map.values
-        )  # actually dissim_map is stored as a numpy array not a pandas dataframe?
+        self.assertIsNone(tdata.X)
+        self.assertIn("tree", tdata.obst)
+        self.assertEqual(tdata.obsm["characters"].shape, (4, 3))
+        self.assertEqual(len(tdata.obst["tree"].nodes), 7)
+        np.testing.assert_array_equal(tdata.obsp["distances"], dissim_map.values)
+        self.assertEqual(tdata.uns["priors"], {1: 0.1})
+        self.assertEqual(tdata.uns["param"], 42)
+        pd.testing.assert_frame_equal(
+            tdata.obsm["layer_foo"],
+            cm * 2,
+        )
 
-    # def test_missing_tree(self):
-    #     graph = nx.DiGraph()
-    #     graph.add_edges_from([('0','1'),('0','2'),('1','3'),('1','4'),('2','5'),('2','6')])
-    #     cm = pd.DataFrame(
-    #         [[0, 1, 3],
-    #         [0, 1, 4],
-    #         [1, 0, 1],
-    #         [1, 0, 2]],
-    #         index= ['3', '4', '5', '6'],
-    #         columns=['char1', 'char2', 'char3']
-    #     )
-    #     dissim_map = pd.DataFrame([[1, 2], [3, 4]])
-    #     cas_tree = CassiopeiaTree(tree=None, character_matrix=cm, dissimilarity_map = dissim_map)
-    #     obs_tdata = data_utilities.cassiopeia_to_treedata(cas_tree)
+        # missing character matrix
+        cas_tree = CassiopeiaTree(tree=graph)
+        tdata = cas_tree.to_treedata()
+        self.assertNotIn("characters", tdata.obsm)
+        self.assertEqual(tdata.obs_names.tolist(), ["3", "4", "5", "6"])
 
-    #     #tests if dissimilarity map is still copied, even if no tree
-    #     self.assertIn("distances", obs_tdata.obsp)
-    #     np.testing.assert_array_equal(obs_tdata.obsp["distances"], dissim_map.values)
+        # missing topology
+        cas_tree = CassiopeiaTree(character_matrix=cm)
+        tdata = cas_tree.to_treedata()
+        self.assertNotIn("tree", tdata.obst)
+        self.assertEqual(tdata.obs_names.tolist(), ["3", "4", "5", "6"])
+
+        # with metadata
+        meta = pd.DataFrame(index=["3", "4", "5", "6"], data={"cell_type": ["A", "A", "B", "B"]})
+        cas_tree = CassiopeiaTree(tree=graph, cell_meta=meta, character_matrix=cm)
+        tdata = cas_tree.to_treedata()
+        self.assertIn("cell_type", tdata.obs.columns)
+
+        # missing both
+        self.assertRaises(
+            CassiopeiaError,
+            data_utilities.cassiopeia_to_treedata,
+            CassiopeiaTree(),
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__])
