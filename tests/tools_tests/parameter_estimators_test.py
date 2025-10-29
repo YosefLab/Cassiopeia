@@ -210,5 +210,37 @@ def test_estimate_heritable_missing_data_rate(cassiopeia_trees):
     assert np.isclose(h_missing_rate, 0.05121001550277538)
 
 
+def test_mutation_proportion_out_of_bounds(cassiopeia_trees):
+    """Test that invalid mutation proportions raise ParameterEstimateError."""
+    discrete_tree, _ = cassiopeia_trees
+
+    discrete_tree.parameters["mutation_proportion"] = 1.5
+    with pytest.raises(ParameterEstimateError, match="Mutation proportion must be between 0 and 1"):
+        parameter_estimators.estimate_mutation_rate(discrete_tree)
+
+    discrete_tree.parameters["mutation_proportion"] = -0.5
+    with pytest.raises(ParameterEstimateError, match="Mutation proportion must be between 0 and 1"):
+        parameter_estimators.estimate_mutation_rate(discrete_tree)
+
+
+def test_deprecation_in_all_functions(cassiopeia_trees):
+    """Test that layer deprecation warning appears in all relevant functions."""
+    discrete_tree, _ = cassiopeia_trees
+
+    with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
+        parameter_estimators.get_proportion_of_mutation(discrete_tree, layer="characters")
+
+    with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
+        parameter_estimators.get_proportion_of_missing_data(discrete_tree, layer="characters")
+
+    with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
+        parameter_estimators.estimate_mutation_rate(discrete_tree, layer="characters")
+
+    with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
+        parameter_estimators.estimate_missing_data_rates(
+            discrete_tree, stochastic_missing_probability=0.1, layer="characters"
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

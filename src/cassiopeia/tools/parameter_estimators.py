@@ -174,7 +174,7 @@ def estimate_mutation_rate(
         characters_key = kwargs.pop("layer")
 
     t, _ = utils._get_digraph(tree, tree_key=tree_key)
-    mutation_proportion = utils._get_tree_parameter(tree, "mutation_proportions")
+    mutation_proportion = utils._get_tree_parameter(tree, "mutation_proportion")
     if mutation_proportion is None:
         mutation_proportion = get_proportion_of_mutation(
             tree, characters_key, missing_state, unmodified_state
