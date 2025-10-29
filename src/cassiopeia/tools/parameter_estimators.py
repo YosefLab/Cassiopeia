@@ -185,7 +185,7 @@ def estimate_mutation_rate(
 
     edges = list(t.edges())
 
-    utils.check_continuous_not_int(t, edges, continuous)
+    utils._check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
     mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
@@ -364,7 +364,7 @@ def estimate_missing_data_rates(
 
     edges = list(t.edges())
 
-    utils.check_continuous_not_int(t, edges, continuous)
+    utils._check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
     mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
