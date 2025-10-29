@@ -208,3 +208,7 @@ def test_estimate_heritable_missing_data_rate(cassiopeia_trees):
         continuous_tree, continuous=True, assume_root_implicit_branch=False
     )[1]
     assert np.isclose(h_missing_rate, 0.05121001550277538)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
