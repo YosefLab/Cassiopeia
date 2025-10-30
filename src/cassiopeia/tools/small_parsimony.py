@@ -16,13 +16,12 @@ from cassiopeia.mixins.errors import (
 )
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
+    _get_attribute_treelike,
+    _get_cell_meta,
+    _get_children_treelike,
     _get_digraph,
-    get_attribute_treelike,
-    get_cell_meta,
-    get_children_treelike,
+    _set_attribute_treelike,
     get_root,
-    is_leaf_treelike,
-    set_attribute_treelike,
 )
 
 
@@ -108,7 +107,7 @@ def fitch_hartigan_bottom_up(
             or the meta data is not categorical.
     """
     if meta_df is None:
-        meta_df = get_cell_meta(tree)
+        meta_df = _get_cell_meta(tree)
 
     if key not in meta_df.columns:
         raise CassiopeiaError("Key variable does not exist in the metadata for the tree object.")
@@ -126,23 +125,23 @@ def fitch_hartigan_bottom_up(
     g = g.copy() if copy else g
 
     for node in nx.dfs_postorder_nodes(g):
-        if is_leaf_treelike(g, node):
-            set_attribute_treelike(g, node, add_key, [meta.loc[node]])
+        if g.out_degree(node) == 0:
+            _set_attribute_treelike(g, node, add_key, [meta.loc[node]])
 
         else:
-            children = get_children_treelike(g, node)
+            children = _get_children_treelike(g, node)
             all_labels = np.concatenate(
-                [get_attribute_treelike(g, child, add_key) for child in children]
+                [_get_attribute_treelike(g, child, add_key) for child in children]
             )
 
             states, frequencies = np.unique(all_labels, return_counts=True)
 
             S1 = states[np.where(frequencies == np.max(frequencies))]
-            set_attribute_treelike(g, node, add_key, S1)
+            _set_attribute_treelike(g, node, add_key, S1)
 
     if isinstance(tree, CassiopeiaTree) or isinstance(tree, TreeData):
         for node in g.nodes:
-            set_attribute_treelike(tree, node, add_key, get_attribute_treelike(g, node, add_key))
+            _set_attribute_treelike(tree, node, add_key, _get_attribute_treelike(g, node, add_key))
         return tree if copy else None
     elif isinstance(tree, nx.DiGraph):
         return g if copy else None
@@ -194,23 +193,23 @@ def fitch_hartigan_top_down(
 
     for node in nx.dfs_preorder_nodes(g, source=root):
         if node == root:
-            root_states = get_attribute_treelike(g, root, state_key)
-            set_attribute_treelike(g, root, label_key, np.random.choice(root_states))
+            root_states = _get_attribute_treelike(g, root, state_key)
+            _set_attribute_treelike(g, root, label_key, np.random.choice(root_states))
             continue
 
         parent = next(g.predecessors(node))
-        parent_label = get_attribute_treelike(g, parent, label_key)
-        optimal_node_states = get_attribute_treelike(g, node, state_key)
+        parent_label = _get_attribute_treelike(g, parent, label_key)
+        optimal_node_states = _get_attribute_treelike(g, node, state_key)
 
         if parent_label in optimal_node_states:
-            set_attribute_treelike(g, node, label_key, parent_label)
+            _set_attribute_treelike(g, node, label_key, parent_label)
 
         else:
-            set_attribute_treelike(g, node, label_key, np.random.choice(optimal_node_states))
+            _set_attribute_treelike(g, node, label_key, np.random.choice(optimal_node_states))
 
     if isinstance(tree, CassiopeiaTree) or isinstance(tree, TreeData):
         for n in g.nodes:
-            set_attribute_treelike(tree, n, label_key, get_attribute_treelike(g, n, label_key))
+            _set_attribute_treelike(tree, n, label_key, _get_attribute_treelike(g, n, label_key))
         return tree if copy else None
     elif isinstance(tree, nx.DiGraph):
         return g if copy else None

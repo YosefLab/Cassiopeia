@@ -188,7 +188,7 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
     return new_edge
 
 
-def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
+def _get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     """Return the cell metadata DataFrame from a CassiopeiaTree or TreeData.
 
     For CassiopeiaTree, this is `tree.cell_meta`.
@@ -204,7 +204,7 @@ def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     )
 
 
-def set_attribute_treelike(
+def _set_attribute_treelike(
     tree: TreeLike, node: str, attribute_name: str, value: Any | None = None
 ) -> None:
     """Sets an attribute in the tree.
@@ -241,7 +241,7 @@ def set_attribute_treelike(
         raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
 
 
-def get_attribute_treelike(tree: TreeLike, node: str, attribute_name: str) -> Any:
+def _get_attribute_treelike(tree: TreeLike, node: str, attribute_name: str) -> Any:
     """Retrieves the value of an attribute for a node.
 
     Args:
@@ -280,7 +280,7 @@ def get_attribute_treelike(tree: TreeLike, node: str, attribute_name: str) -> An
         raise TypeError("Unsupported tree type. Must be CassiopeiaTree or TreeData.")
 
 
-def get_children_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> list[str]:
+def _get_children_treelike(tree: TreeLike, node: str, tree_key: str | None = None) -> list[str]:
     """Gets the children of a given node for any tree-like object.
 
     Args:
