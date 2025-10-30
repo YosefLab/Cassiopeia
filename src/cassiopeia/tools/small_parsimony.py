@@ -17,7 +17,6 @@ from cassiopeia.mixins.errors import (
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
     _get_digraph,
-    depth_first_traverse_nodes_treelike,
     get_attribute_treelike,
     get_cell_meta,
     get_children_treelike,
@@ -126,7 +125,7 @@ def fitch_hartigan_bottom_up(
     g, _ = _get_digraph(tree, treedata_key)
     g = g.copy() if copy else g
 
-    for node in depth_first_traverse_nodes_treelike(g):
+    for node in nx.dfs_postorder_nodes(g):
         if is_leaf_treelike(g, node):
             set_attribute_treelike(g, node, add_key, [meta.loc[node]])
 
@@ -193,7 +192,7 @@ def fitch_hartigan_top_down(
     inferred_root = get_root(g)
     root = inferred_root if (root is None) else root
 
-    for node in depth_first_traverse_nodes_treelike(g, source=root, postorder=False):
+    for node in nx.dfs_preorder_nodes(g, source=root):
         if node == root:
             root_states = get_attribute_treelike(g, root, state_key)
             set_attribute_treelike(g, root, label_key, np.random.choice(root_states))

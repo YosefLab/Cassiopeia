@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
 from typing import Any
 
 import networkx as nx
@@ -205,38 +204,6 @@ def get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     )
 
 
-def depth_first_traverse_nodes_treelike(
-    tree: TreeLike, tree_key: str | None = None, source: str | None = None, postorder: bool = True
-) -> Iterator[str]:
-    """Nodes from depth first traversal of the tree (type TreeLike).
-
-    Returns the nodes from a (default postorder, otherwise preorder) DFS on the tree.
-
-    Args:
-        tree: The tree object.
-        tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
-            Only required if multiple trees are present.
-        source: Where to begin the depth first traversal.
-        postorder: Return the nodes in postorder. If False, returns in
-            preorder.
-
-    Returns:
-        A list of nodes from the depth first traversal.
-
-    Raises:
-        CassiopeiaTreeError if the tree has not been initialized.
-    """
-    G, _ = _get_digraph(tree, tree_key)
-
-    if source is None:
-        source = get_root(tree, tree_key)
-
-    if postorder:
-        return nx.dfs_postorder_nodes(G, source=source)
-    else:
-        return nx.dfs_preorder_nodes(G, source=source)
-
-
 def set_attribute_treelike(
     tree: TreeLike, node: str, attribute_name: str, value: Any | None = None
 ) -> None:
@@ -357,3 +324,6 @@ def get_children_treelike(tree: TreeLike, node: str, tree_key: str | None = None
         raise KeyError(f"Node {node} not found in tree.")
 
     return list(G.successors(node))
+
+
+# nuke is_leaf, nuke depth_first_traverse_nodes_treelike,
