@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import warnings
 from typing import Any
 
@@ -185,9 +186,18 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
 
 
 def _get_character_matrix(
-    tree: CassiopeiaTree | TreeData, characters_key: str = "characters"
+    tree: CassiopeiaTree | TreeData, characters_key: str = "characters", **kwargs
 ) -> np.ndarray:
     """Get character matrix from a tree object."""
+    if "layer" in kwargs:
+        warnings.warn(
+            "'layer' is deprecated and will be removed in a future version. "
+            "Use 'characters_key' instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        characters_key = kwargs.pop("layer")
+
     if isinstance(tree, CassiopeiaTree):
         if characters_key == "characters":
             character_matrix = tree.character_matrix
@@ -201,10 +211,13 @@ def _get_character_matrix(
     return character_matrix
 
 
-def _get_missing_state_indicator(tree: CassiopeiaTree | TreeData, missing_state=None) -> int:
+def _get_missing_state_indicator(
+    tree: CassiopeiaTree | TreeData,
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+) -> str | list[str] | None:
     """Get the missing state indicator from a tree object."""
-    if missing_state is None:
-        missing_state = [-1, "-1", "NA", "-"]
+    if missing_state != [-1, "-1", "NA", "-"]:
+        return missing_state
     if isinstance(tree, CassiopeiaTree):
         return tree.missing_state_indicator
     elif isinstance(tree, TreeData):
@@ -222,7 +235,7 @@ def _get_tree_parameter(tree: CassiopeiaTree | TreeData, param_name: str, defaul
     return default
 
 
-def get_mean_depth(tree: TreeLike, depth_key, tree_key: str | None = None) -> float:
+def get_mean_depth(tree: TreeLike, depth_key: str, tree_key: str | None = None) -> float:
     """Compute the mean depth of a tree's leaves.
 
     Calculates the average depth across all leaf nodes in the tree. Depth is
@@ -239,43 +252,24 @@ def get_mean_depth(tree: TreeLike, depth_key, tree_key: str | None = None) -> fl
         float: Mean depth of the tree's leaves
     """
     t, _ = _get_digraph(tree, tree_key=tree_key)
+    _check_tree_has_key(t, depth_key)
     leaves = get_leaves(tree, tree_key=tree_key)
     depths = [t.nodes[leaf][depth_key] for leaf in leaves]
     return float(np.mean(depths))
 
 
-def _count_entries(character_matrix: pd.DataFrame, indicator) -> int:
-    """Counts the instances of the character matrix that matches the indicator."""
-    if not isinstance(indicator, (list, tuple, set)):
-        mask = character_matrix == indicator
-    else:
-        if pd.api.types.is_integer_dtype(character_matrix.values.dtype):
-            indicator = [x for x in indicator if isinstance(x, (int, np.integer))]
-        else:
-            indicator = [str(x) for x in indicator]
-        if not indicator:
-            return 0
-        mask = np.isin(character_matrix, indicator)
+def _check_tree_has_key(tree: nx.DiGraph, key: str):
+    """Checks that tree nodes have a given key.
 
-    return int(mask.sum().sum())
+    Args:
+        tree: NetworkX DiGraph
+        key: Node attribute key to check for
 
-
-def _check_continuous_not_int(
-    tree: TreeLike,
-    edges: list,
-    continuous: bool = True,
-) -> None:
-    """Warn if continuous=True but branch lengths are discrete integers."""
-    if not edges:
-        return
-
-    u, v = edges[0]
-    branch = tree[u][v]["length"]
-
-    if continuous and float(branch).is_integer():
-        warnings.warn(
-            "continuous=True with discrete branches may produce incorrect estimates. "
-            "Consider using continuous=False",
-            UserWarning,
-            stacklevel=2,
-        )
+    Raises:
+        ValueError: If key is not present in one or more nodes
+    """
+    sampled_nodes = random.sample(list(tree.nodes), min(10, len(tree.nodes)))
+    for node in sampled_nodes:
+        if key not in tree.nodes[node]:
+            message = f"One or more nodes do not have '{key}' attribute."
+            raise ValueError(message)

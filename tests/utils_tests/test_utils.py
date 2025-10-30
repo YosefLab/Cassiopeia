@@ -148,20 +148,13 @@ def test_get_tree_parameter(tree):
     assert result == "default_val"
 
 
-def test_count_entries():
-    """Test counting entries with string conversion and empty indicators."""
-    cm_str = pd.DataFrame([["0", "1", "NA"], ["1", "0", "NA"]])
-    result = utils._count_entries(cm_str, [0, "0", "*"])
-    assert result == 2
-    cm_int = pd.DataFrame([[0, 1, -1]])
-    result = utils._count_entries(cm_int, [])
-    assert result == 0
-
-
-def test_check_continuous_not_int_empty_edges():
-    """Test that empty edges list returns early without error."""
+def test_check_tree_has_key_missing():
+    """Test that _check_tree_has_key raises ValueError when key is missing."""
     tree = nx.DiGraph()
-    utils._check_continuous_not_int(tree, [], continuous=True)
+    tree.add_edges_from([("root", "A"), ("root", "B")])
+
+    with pytest.raises(ValueError, match="One or more nodes do not have 'depth' attribute"):
+        utils._check_tree_has_key(tree, "depth")
 
 
 if __name__ == "__main__":

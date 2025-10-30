@@ -2,7 +2,9 @@
 
 import warnings
 
+import networkx as nx
 import numpy as np
+import pandas as pd
 from treedata import TreeData
 
 from cassiopeia import utils
@@ -13,7 +15,7 @@ from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 def get_proportion_of_missing_data(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state=None,
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
     **kwargs,
 ) -> float:
     """Calculate the proportion of missing entries in the character matrix.
@@ -38,19 +40,10 @@ def get_proportion_of_missing_data(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if "layer" in kwargs:
-        warnings.warn(
-            "'layer' is deprecated and will be removed in a future version. "
-            "Use 'characters_key' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        characters_key = kwargs.pop("layer")
-
-    character_matrix = utils._get_character_matrix(tree, characters_key)
+    character_matrix = utils._get_character_matrix(tree, characters_key, **kwargs)
     missing_state_indicator = utils._get_missing_state_indicator(tree, missing_state)
 
-    num_dropped = utils._count_entries(character_matrix, missing_state_indicator)
+    num_dropped = _count_entries(character_matrix, missing_state_indicator)
     missing_proportion = num_dropped / (character_matrix.shape[0] * character_matrix.shape[1])
     return missing_proportion
 
@@ -58,8 +51,8 @@ def get_proportion_of_missing_data(
 def get_proportion_of_mutation(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state=None,
-    unmodified_state=None,
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    unmodified_state: str | list[str] | None = [0, "0", "*"],
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -88,23 +81,11 @@ def get_proportion_of_mutation(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if "layer" in kwargs:
-        warnings.warn(
-            "'layer' is deprecated and will be removed in a future version. "
-            "Use 'characters_key' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        characters_key = kwargs.pop("layer")
-
-    character_matrix = utils._get_character_matrix(tree, characters_key)
+    character_matrix = utils._get_character_matrix(tree, characters_key, **kwargs)
     missing_state_indicator = utils._get_missing_state_indicator(tree, missing_state)
 
-    if unmodified_state is None:
-        unmodified_state = [0, "0", "*"]
-
-    num_dropped = utils._count_entries(character_matrix, missing_state_indicator)
-    num_unmodified = utils._count_entries(character_matrix, unmodified_state)
+    num_dropped = _count_entries(character_matrix, missing_state_indicator)
+    num_unmodified = _count_entries(character_matrix, unmodified_state)
 
     num_mut = character_matrix.shape[0] * character_matrix.shape[1] - num_dropped - num_unmodified
     mutation_proportion = num_mut / (
@@ -120,8 +101,8 @@ def estimate_mutation_rate(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state=None,
-    unmodified_state=None,
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    unmodified_state: str | list[str] | None = [0, "0", "*"],
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -164,20 +145,11 @@ def estimate_mutation_rate(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    if "layer" in kwargs:
-        warnings.warn(
-            "'layer' is deprecated and will be removed in a future version. "
-            "Use 'characters_key' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        characters_key = kwargs.pop("layer")
-
     t, _ = utils._get_digraph(tree, tree_key=tree_key)
     mutation_proportion = utils._get_tree_parameter(tree, "mutation_proportion")
     if mutation_proportion is None:
         mutation_proportion = get_proportion_of_mutation(
-            tree, characters_key, missing_state, unmodified_state
+            tree, characters_key, missing_state, unmodified_state, **kwargs
         )
 
     if mutation_proportion < 0 or mutation_proportion > 1:
@@ -185,7 +157,7 @@ def estimate_mutation_rate(
 
     edges = list(t.edges())
 
-    utils._check_continuous_not_int(t, edges, continuous)
+    _check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
     mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
@@ -212,7 +184,7 @@ def estimate_missing_data_rates(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state=None,
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
     **kwargs,
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
@@ -320,20 +292,11 @@ def estimate_missing_data_rates(
         ParameterEstimateWarning: If the estimated parameter is negative, suggesting
             that the provided parameter may be too high.
     """
-    if "layer" in kwargs:
-        warnings.warn(
-            "'layer' is deprecated and will be removed in a future version. "
-            "Use 'characters_key' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        characters_key = kwargs.pop("layer")
-
     t, _ = utils._get_digraph(tree, tree_key=tree_key)
     total_missing_proportion = utils._get_tree_parameter(tree, "missing_proportion")
     if total_missing_proportion is None:
         total_missing_proportion = get_proportion_of_missing_data(
-            tree, characters_key, missing_state
+            tree, characters_key, missing_state, **kwargs
         )
 
     if total_missing_proportion < 0 or total_missing_proportion > 1:
@@ -364,7 +327,7 @@ def estimate_missing_data_rates(
 
     edges = list(t.edges())
 
-    utils._check_continuous_not_int(t, edges, continuous)
+    _check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
     mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
@@ -431,3 +394,40 @@ def estimate_missing_data_rates(
         )
 
     return stochastic_missing_probability, heritable_missing_rate
+
+
+def _count_entries(character_matrix: pd.DataFrame, indicator) -> int:
+    """Counts the instances of the character matrix that matches the indicator."""
+    if not isinstance(indicator, (list, tuple, set)):
+        mask = character_matrix == indicator
+    else:
+        if pd.api.types.is_integer_dtype(character_matrix.values.dtype):
+            indicator = [x for x in indicator if isinstance(x, (int, np.integer))]
+        else:
+            indicator = [str(x) for x in indicator]
+        if not indicator:
+            return 0
+        mask = np.isin(character_matrix, indicator)
+
+    return int(mask.sum().sum())
+
+
+def _check_continuous_not_int(
+    tree: nx.DiGraph,
+    edges: list,
+    continuous: bool = True,
+) -> None:
+    """Warn if continuous=True but branch lengths are discrete integers."""
+    if not edges:
+        return
+
+    u, v = edges[0]
+    branch = tree[u][v]["length"]
+
+    if continuous and float(branch).is_integer():
+        warnings.warn(
+            "continuous=True with discrete branches may produce incorrect estimates. "
+            "Consider using continuous=False",
+            UserWarning,
+            stacklevel=2,
+        )

@@ -242,5 +242,75 @@ def test_deprecation_in_all_functions(cassiopeia_trees):
         )
 
 
+def test_count_entries():
+    """Test counting entries with string conversion and empty indicators."""
+    cm_str = pd.DataFrame([["0", "1", "NA"], ["1", "0", "NA"]])
+    result = parameter_estimators._count_entries(cm_str, [0, "0", "*"])
+    assert result == 2
+    cm_int = pd.DataFrame([[0, 1, -1]])
+    result = parameter_estimators._count_entries(cm_int, [])
+    assert result == 0
+
+
+def test_check_continuous_not_int_empty_edges():
+    """Test that empty edges list returns early without error."""
+    tree = nx.DiGraph()
+    parameter_estimators._check_continuous_not_int(tree, [], continuous=True)
+
+
+def test_get_proportion_of_missing_data_various_missing_states():
+    """Test get_proportion_of_missing_data with str and list[str] input types."""
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "A"), ("root", "B")])
+    cm_int = pd.DataFrame({"A": [0, 1, -1], "B": [1, -2, -1]}).T
+    cas_tree_int = cas.data.CassiopeiaTree(tree=tree, character_matrix=cm_int)
+    result = parameter_estimators.get_proportion_of_missing_data(cas_tree_int, missing_state=-1)
+    assert result == pytest.approx(2 / 6)
+    result = parameter_estimators.get_proportion_of_missing_data(
+        cas_tree_int, missing_state=[-1, -2]
+    )
+    assert result == pytest.approx(3 / 6)
+
+    tree2 = nx.DiGraph()
+    tree2.add_edges_from([("root", "C"), ("root", "D")])
+    cm_str = pd.DataFrame({"C": ["0", "1", "NA"], "D": ["1", "-", "NA"]}).T
+    cas_tree_str = cas.data.CassiopeiaTree(tree=tree2, character_matrix=cm_str)
+    result = parameter_estimators.get_proportion_of_missing_data(cas_tree_str, missing_state="NA")
+    assert result == pytest.approx(2 / 6)
+    result = parameter_estimators.get_proportion_of_missing_data(
+        cas_tree_str, missing_state=["NA", "-"]
+    )
+    assert result == pytest.approx(3 / 6)
+
+
+def test_get_proportion_of_mutation_various_unmodified_states():
+    """Test get_proportion_of_mutation with str and list[str] input types."""
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "A"), ("root", "B")])
+    cm_int = pd.DataFrame({"A": [0, 1, -1], "B": [99, 0, -1]}).T
+    cas_tree_int = cas.data.CassiopeiaTree(tree=tree, character_matrix=cm_int)
+    result = parameter_estimators.get_proportion_of_mutation(
+        cas_tree_int, missing_state=-1, unmodified_state=0
+    )
+    assert result == pytest.approx(2 / 4)
+    result = parameter_estimators.get_proportion_of_mutation(
+        cas_tree_int, missing_state=-1, unmodified_state=[0, 99]
+    )
+    assert result == pytest.approx(1 / 4)
+
+    tree2 = nx.DiGraph()
+    tree2.add_edges_from([("root", "C"), ("root", "D")])
+    cm_str = pd.DataFrame({"C": ["0", "1", "NA"], "D": ["*", "0", "NA"]}).T
+    cas_tree_str = cas.data.CassiopeiaTree(tree=tree2, character_matrix=cm_str)
+    result = parameter_estimators.get_proportion_of_mutation(
+        cas_tree_str, missing_state="NA", unmodified_state="0"
+    )
+    assert result == pytest.approx(2 / 4)
+    result = parameter_estimators.get_proportion_of_mutation(
+        cas_tree_str, missing_state="NA", unmodified_state=["0", "*"]
+    )
+    assert result == pytest.approx(1 / 4)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
