@@ -21,6 +21,7 @@ from cassiopeia.utils import (
     get_attribute_treelike,
     get_cell_meta,
     get_children_treelike,
+    get_root,
     is_leaf_treelike,
     set_attribute_treelike,
 )
@@ -142,12 +143,13 @@ def fitch_hartigan_bottom_up(
 
 
 def fitch_hartigan_top_down(
-    tree: CassiopeiaTree | TreeData,
+    tree: TreeLike,
     root: str | None = None,
     state_key: str = "S1",
     label_key: str = "label",
     copy: bool = False,
-) -> TreeData | None:
+    treedata_key: str = None,
+) -> TreeLike | None:
     """Run Fitch-Hartigan top-down refinement.
 
     Runs the Fitch-Hartigan top-down algorithm which selects an optimal solution
@@ -163,6 +165,7 @@ def fitch_hartigan_top_down(
         label_key: Key to add that stores the maximum-parsimony assignment
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
+        treedata_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
 
     Returns:
             A new CassiopeiaTree if the copy is set to True, else None.
@@ -176,22 +179,33 @@ def fitch_hartigan_top_down(
 
     tree = tree.copy() if copy else tree
 
-    for node in tree.depth_first_traverse_nodes(source=root, postorder=False):
+    g, _ = _get_digraph(tree)
+    g = g.copy() if copy else g
+    inferred_root = get_root(tree, treedata_key)
+    root = inferred_root if (root is None) else root
+
+    for node in depth_first_traverse_nodes_treelike(g, source=root, postorder=False):
         if node == root:
-            root_states = tree.get_attribute(root, state_key)
-            tree.set_attribute(root, label_key, np.random.choice(root_states))
+            root_states = get_attribute_treelike(g, root, state_key)
+            set_attribute_treelike(g, root, label_key, np.random.choice(root_states))
             continue
 
-        parent = tree.parent(node)
-        parent_label = tree.get_attribute(parent, label_key)
-        optimal_node_states = tree.get_attribute(node, state_key)
+        parent = next(g.predecessors(node))
+        parent_label = get_attribute_treelike(g, parent, label_key)
+        optimal_node_states = get_attribute_treelike(g, node, state_key)
 
         if parent_label in optimal_node_states:
-            tree.set_attribute(node, label_key, parent_label)
+            set_attribute_treelike(g, node, label_key, parent_label)
 
         else:
-            tree.set_attribute(node, label_key, np.random.choice(optimal_node_states))
+            set_attribute_treelike(g, node, label_key, np.random.choice(optimal_node_states))
 
+    if isinstance(tree, CassiopeiaTree) or isinstance(tree, TreeData):
+        for n in g.nodes:
+            set_attribute_treelike(tree, n, label_key, get_attribute_treelike(g, n, label_key))
+        return tree if copy else None
+    elif isinstance(tree, nx.DiGraph):
+        return g if copy else None
     return tree if copy else None
 
 
