@@ -15,7 +15,7 @@ from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 def get_proportion_of_missing_data(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],  # noqa: B006
     **kwargs,
 ) -> float:
     """Calculate the proportion of missing entries in the character matrix.
@@ -51,8 +51,8 @@ def get_proportion_of_missing_data(
 def get_proportion_of_mutation(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
-    unmodified_state: str | list[str] | None = [0, "0", "*"],
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],  # noqa: B006
+    unmodified_state: str | list[str] | None = [0, "0", "*"],  # noqa: B006
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -101,8 +101,8 @@ def estimate_mutation_rate(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
-    unmodified_state: str | list[str] | None = [0, "0", "*"],
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],  # noqa: B006
+    unmodified_state: str | list[str] | None = [0, "0", "*"],  # noqa: B006
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -184,7 +184,7 @@ def estimate_missing_data_rates(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],  # noqa: B006
     **kwargs,
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
