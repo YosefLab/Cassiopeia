@@ -60,7 +60,7 @@ def triplets_correct(
     """
     if tree2 is None and (key1 is None or key2 is None):
         raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
-    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t1, _ = _get_digraph(tree1, tree_key=key1, copy=True)
     t2, _ = (
         _get_digraph(tree2, tree_key=key2)
         if tree2 is not None
@@ -70,12 +70,12 @@ def triplets_correct(
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")
 
-    return run_triplets_correct_nx(
+    return _run_triplets_correct(
         t1, t2, number_of_trials=number_of_trials, min_triplets_at_depth=min_triplets_at_depth
     )
 
 
-def run_triplets_correct_nx(
+def _run_triplets_correct(
     G1: nx.DiGraph,
     G2: nx.DiGraph,
     *,
@@ -106,8 +106,6 @@ def run_triplets_correct_nx(
 
     # annotate depths and per-node triplet counts (on G1)
     depth_to_nodes = annotate_tree_depths_nx(G1)
-
-    print(G1.nodes(data=True))
 
     # max depth from G1
     depths = [d for _, d in G1.nodes(data="depth") if d is not None]
@@ -156,8 +154,7 @@ def run_triplets_correct_nx(
             unresolved_triplets_correct[depth] = unres_sum / num_unres
 
         if proportion_unresolvable[depth] < 1.0:
-            denom = number_of_trials - num_unres
-            resolvable_triplets_correct[depth] = res_sum / denom
+            resolvable_triplets_correct[depth] = res_sum / (number_of_trials - num_unres)
         else:
             resolvable_triplets_correct[depth] = 1.0
 

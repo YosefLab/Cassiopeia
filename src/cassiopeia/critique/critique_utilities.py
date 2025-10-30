@@ -186,9 +186,10 @@ def sample_triplet_at_depth(
 def annotate_tree_depths_nx(G: nx.DiGraph) -> dict[int, list[Any]]:
     """Annotates tree depth at every node for a networkx DiGraph.
 
-    Adds two attributes to the tree: how far away each node is from the root of
-    the tree and how many triplets are rooted at that node. Modifies the tree
-    in place.
+    Adds three attributes to each node of the tree: "depth", "subtree_leaf_size"
+    (the number of leaves in the subtree rooted at that node), and "number_of_triplets"
+    (how many triplets are rooted at that node.)
+    Modifies the tree in place.
 
     Args:
         G: nx.DiGraph
@@ -212,6 +213,7 @@ def annotate_tree_depths_nx(G: nx.DiGraph) -> dict[int, list[Any]]:
     for u in reversed(list(nx.topological_sort(G))):
         kids = list(G.successors(u))
         leaf_sz[u] = 1 if not kids else sum(leaf_sz[c] for c in kids)
+        G.nodes[u]["subtree_leaf_size"] = leaf_sz[u]
 
     # triplet count
     for u in G.nodes:
@@ -266,11 +268,16 @@ def sample_triplet_at_depth_nx(
             A list of three leaves corresponding to the triplet name of the outgroup
             of the triplet.
     """
-    # candidates at this depth
-    if depth_to_nodes is None:
-        candidates = [n for n, d in G.nodes(data=True) if d.get("depth") == depth]
+    annotated_depth_to_nodes = annotate_tree_depths_nx(
+        G
+    )  # edits G in place so nodes have all three attributes
+    if depth_to_nodes is not None:
+        if depth_to_nodes != annotated_depth_to_nodes:
+            raise ValueError("Provided depth_to_nodes does not match the graph structure.")
     else:
-        candidates = depth_to_nodes.get(depth, [])
+        depth_to_nodes = annotated_depth_to_nodes
+
+    candidates = depth_to_nodes.get(depth, [])
     if not candidates:
         raise ValueError(f"No nodes at depth {depth}.")
 
@@ -279,34 +286,9 @@ def sample_triplet_at_depth_nx(
         probs = [G.nodes[v].get("number_of_triplets", 0) / total_triplets for v in candidates]
         node = np.random.choice(candidates, size=1, replace=False, p=probs)[0]
     else:
-        node = candidates[0]  # fallback; likely unresolved
+        node = candidates[0]
 
-    # Precomputed subtree leaf sizes from annotate_tree_depths_nx:
-    # If user calls this after annotate_tree_depths_nx (like in your main), we can reuse.
-    # But for safety, compute on the fly if missing (cheap with topo DP).
-    if "subtree_leaf_size" not in next(iter(G.nodes(data=True)))[1]:
-        # compute and stash (optional; we won't store, we just derive sizes locally)
-        leaf_sz: dict[Any, int] = {}
-        for u in reversed(list(nx.topological_sort(G))):
-            kids = list(G.successors(u))
-            if not kids:
-                leaf_sz[u] = 1
-            else:
-                leaf_sz[u] = sum(leaf_sz[c] for c in kids)
-    else:
-        # not used here; left as a hook if you later store it
-        leaf_sz = {u: d["subtree_leaf_size"] for u, d in G.nodes(data=True)}
-
-    def subtree_leaf_size(u: Any) -> int:
-        # Prefer cached leaf_sz if present, else derive quickly
-        if u in leaf_sz:
-            return leaf_sz[u]
-        kids = list(G.successors(u))
-        if not kids:
-            leaf_sz[u] = 1
-        else:
-            leaf_sz[u] = sum(subtree_leaf_size(c) for c in kids)
-        return leaf_sz[u]
+    subtree_leaf_size = {u: G.nodes[u]["subtree_leaf_size"] for u in G.nodes}
 
     # daughter clade combos
     kids = list(G.successors(node))
@@ -318,7 +300,7 @@ def sample_triplet_at_depth_nx(
         if a == b == c:
             continue
         combos.append((a, b, c))
-        sa, sb, sc = (subtree_leaf_size(a), subtree_leaf_size(b), subtree_leaf_size(c))
+        sa, sb, sc = (subtree_leaf_size[a], subtree_leaf_size[b], subtree_leaf_size[c])
         if a == b:
             w = nCr(sa, 2) * sc
         elif b == c:
