@@ -28,13 +28,14 @@ from cassiopeia.utils import (
 
 
 def fitch_hartigan(
-    tree: CassiopeiaTree | TreeData,
+    tree: TreeLike,
     key: str,
     root: str | None = None,
     state_key: str = "S1",
     label_key: str = "label",
     copy: bool = False,
-) -> TreeData | None:
+    treedata_key: str = None,
+) -> TreeLike | None:
     """Run the Fitch-Hartigan algorithm.
 
     Performs the full Fitch-Hartigan small parsimony algorithm which, given
@@ -56,9 +57,10 @@ def fitch_hartigan(
         label_key: Key to add that stores the maximum-parsimony assignment
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
+        treedata_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
 
     Returns:
-            A new CassiopeiaTree if the copy is set to True, else None.
+            A new CassiopeiaTree/TreeData/nx DiGraph + meta_df if the copy is set to True, else None.
     """
     tree = tree.copy() if copy else tree
 
@@ -171,7 +173,7 @@ def fitch_hartigan_top_down(
         treedata_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
 
     Returns:
-            A new CassiopeiaTree if the copy is set to True, else None.
+            A new CassiopeiaTree/TreeData/nx DiGraph + meta_df if the copy is set to True, else None.
 
     Raises:
             A CassiopeiaTreeError if Fitch-Hartigan bottom-up has not been called
