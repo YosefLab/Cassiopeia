@@ -133,9 +133,15 @@ def test_get_missing_state_indicator(tree):
     """Test getting missing state indicator from TreeData and non-tree objects."""
     tdata = TreeData(obst={"tree": tree})
     result = utils._get_missing_state_indicator(tdata)
-    assert result == [-1, "-1", "NA", "-"]
-    result = utils._get_missing_state_indicator(None, missing_state=-999)
-    assert result == -999
+    assert result == (-1, "-1", "NA", "-")
+
+    tdata.uns["missing_state_indicator"] = -99
+    result = utils._get_missing_state_indicator(tdata)
+    assert result == -99
+
+    with pytest.warns(UserWarning, match="differs from tree's missing_state_indicator"):
+        result = utils._get_missing_state_indicator(tdata, missing_state="custom")
+    assert result == "custom"
 
 
 def test_get_tree_parameter(tree):

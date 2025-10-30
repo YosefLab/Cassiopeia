@@ -1,6 +1,7 @@
 """Utilities for estimating lineage tracing parameters."""
 
 import warnings
+from collections.abc import Sequence
 
 import networkx as nx
 import numpy as np
@@ -15,7 +16,7 @@ from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
 def get_proportion_of_missing_data(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
     **kwargs,
 ) -> float:
     """Calculate the proportion of missing entries in the character matrix.
@@ -30,8 +31,8 @@ def get_proportion_of_missing_data(
             uses the default character_matrix attribute; otherwise looks in layers.
             For TreeData, specifies the obsm key. Default is "characters".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a list of values. If None, uses the tree's missing_state_indicator
-            attribute, or defaults to [-1, "-1", "NA", "-"]. Default is None.
+            or a sequence of values. If not provided, uses the tree's missing_state_indicator
+            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
@@ -51,8 +52,8 @@ def get_proportion_of_missing_data(
 def get_proportion_of_mutation(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
-    unmodified_state: str | list[str] | None = [0, "0", "*"],
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
+    unmodified_state: str | int | Sequence[str | int] | None = (0, "0", "*"),
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -67,12 +68,11 @@ def get_proportion_of_mutation(
             uses the default character_matrix attribute; otherwise looks in layers.
             For TreeData, specifies the obsm key. Default is "characters".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a list of values. If None, uses the tree's missing_state_indicator
-            attribute, or defaults to [-1, "-1", "NA", "-"]. Default is None.
+            or a sequence of values. If not provided, uses the tree's missing_state_indicator
+            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
-            a single value or a list of values. If None, defaults to [0, "0", "*"]
-            for flexibility with both integer and string character matrices.
-            Default is None.
+            a single value or a sequence of values. If not provided, defaults to (0, "0", "*").
+            Default is (0, "0", "*").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
@@ -101,8 +101,8 @@ def estimate_mutation_rate(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
-    unmodified_state: str | list[str] | None = [0, "0", "*"],
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
+    unmodified_state: str | int | Sequence[str | int] | None = (0, "0", "*"),
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -127,12 +127,11 @@ def estimate_mutation_rate(
         tree_key: Tree key to use if tree is a TreeData object with multiple trees.
             Only required if multiple trees are present. Default is "tree".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a list of values. If None, uses the tree's missing_state_indicator
-            attribute, or defaults to [-1, "-1", "NA", "-"]. Default is None.
+            or a sequence of values. If not provided, uses the tree's missing_state_indicator
+            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
-            a single value or a list of values. If None, defaults to [0, "0", "*"]
-            for flexibility with both integer and string character matrices.
-            Default is None.
+            a single value or a sequence of values. If not provided, defaults to (0, "0", "*").
+            Default is (0, "0", "*").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
@@ -184,7 +183,7 @@ def estimate_missing_data_rates(
     characters_key: str = "characters",
     depth_key: str = "depth",
     tree_key: str = "tree",
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
     **kwargs,
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
@@ -273,12 +272,8 @@ def estimate_missing_data_rates(
         tree_key: Tree key to use if tree is a TreeData object with multiple trees.
             Only required if multiple trees are present. Default is "tree".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a list of values. If None, uses the tree's missing_state_indicator
-            attribute, or defaults to [-1, "-1", "NA", "-"]. Default is None.
-        unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
-            a single value or a list of values. If None, defaults to [0, "0", "*"]
-            for flexibility with both integer and string character matrices.
-            Default is None.
+            or a sequence of values. If not provided, uses the tree's missing_state_indicator
+            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Warns:

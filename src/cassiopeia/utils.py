@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 import warnings
+from collections.abc import Sequence
 from typing import Any
 
 import networkx as nx
@@ -213,17 +214,24 @@ def _get_character_matrix(
 
 def _get_missing_state_indicator(
     tree: CassiopeiaTree | TreeData,
-    missing_state: str | list[str] | None = [-1, "-1", "NA", "-"],
-) -> str | list[str] | None:
-    """Get the missing state indicator from a tree object."""
-    if missing_state != [-1, "-1", "NA", "-"]:
-        return missing_state
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
+) -> str | int | Sequence[str | int] | None:
+    user_provided = missing_state != (-1, "-1", "NA", "-")
+    tree_value = None
     if isinstance(tree, CassiopeiaTree):
-        return tree.missing_state_indicator
+        tree_value = tree.missing_state_indicator
     elif isinstance(tree, TreeData):
-        return tree.uns.get("missing_state_indicator", missing_state)
-    else:
+        if "missing_state_indicator" in tree.uns:
+            tree_value = tree.uns["missing_state_indicator"]
+    if user_provided and tree_value is not None and missing_state != tree_value:
+        warnings.warn(
+            f"User-provided missing_state ({missing_state}) differs from tree's "
+            f"missing_state_indicator ({tree_value}). Using user-provided value.",
+            UserWarning,
+            stacklevel=3,
+        )
         return missing_state
+    return tree_value if tree_value is not None else missing_state
 
 
 def _get_tree_parameter(tree: CassiopeiaTree | TreeData, param_name: str, default=None):
