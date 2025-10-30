@@ -34,6 +34,7 @@ def fitch_hartigan(
     state_key: str = "S1",
     label_key: str = "label",
     copy: bool = False,
+    meta_df: pd.DataFrame | None = None,
     treedata_key: str = None,
 ) -> TreeLike | None:
     """Run the Fitch-Hartigan algorithm.
@@ -57,6 +58,7 @@ def fitch_hartigan(
         label_key: Key to add that stores the maximum-parsimony assignment
             inferred from the Fitch-Hartigan top-down refinement.
         copy: Modify the tree in place or not.
+        meta_df: Optional DataFrame containing cell meta data. Only pass in if using networkx DiGraph.
         treedata_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
 
     Returns:
@@ -64,9 +66,11 @@ def fitch_hartigan(
     """
     tree = tree.copy() if copy else tree
 
-    fitch_hartigan_bottom_up(tree, key, state_key)
+    fitch_hartigan_bottom_up(
+        tree, key, state_key, copy=False, meta_df=meta_df, treedata_key=treedata_key
+    )
 
-    fitch_hartigan_top_down(tree, root, state_key, label_key)
+    fitch_hartigan_top_down(tree, root, state_key, label_key, copy=False, treedata_key=treedata_key)
 
     return tree if copy else None
 
