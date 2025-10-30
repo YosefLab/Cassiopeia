@@ -75,6 +75,7 @@ def fitch_hartigan_bottom_up(
     add_key: str = "S1",
     copy: bool = False,
     meta_df: pd.DataFrame | None = None,
+    treedata_key: str = None,
 ) -> TreeLike | None:
     """Performs Fitch-Hartigan bottom-up ancestral reconstruction.
 
@@ -91,6 +92,8 @@ def fitch_hartigan_bottom_up(
         meta_df: Optional DataFrame containing cell meta data. Only pass in if using networkx DiGraph.
         add_key: Key to add for bottom-up reconstruction
         copy: Modify the tree in place or not.
+        treedata_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
+
 
     Returns:
             A new CassiopeiaTree/TreeData/nx DiGraph + meta_df if the copy is set to True, else None.
@@ -114,7 +117,7 @@ def fitch_hartigan_bottom_up(
         meta = meta.astype("category")
 
     tree = tree.copy() if copy else tree
-    g, _ = _get_digraph(tree)
+    g, _ = _get_digraph(tree, treedata_key)
     g = g.copy() if copy else g
 
     for node in depth_first_traverse_nodes_treelike(g):
@@ -179,9 +182,9 @@ def fitch_hartigan_top_down(
 
     tree = tree.copy() if copy else tree
 
-    g, _ = _get_digraph(tree)
+    g, _ = _get_digraph(tree, treedata_key)
     g = g.copy() if copy else g
-    inferred_root = get_root(tree, treedata_key)
+    inferred_root = get_root(g)
     root = inferred_root if (root is None) else root
 
     for node in depth_first_traverse_nodes_treelike(g, source=root, postorder=False):
