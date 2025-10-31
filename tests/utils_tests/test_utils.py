@@ -1,4 +1,6 @@
 import networkx as nx
+import numpy as np
+import pandas as pd
 import pytest
 from treedata import TreeData
 
@@ -90,6 +92,75 @@ def test_collapse_unifurcations(tree):
     assert set(tdata.obst["tree"].successors("0")) == {"2", "3"}
     assert tdata.obst["tree"]["0"]["2"]["length"] == pytest.approx(2.0)
     assert tdata.obst["tree"]["0"]["3"]["length"] == pytest.approx(2.0)
+
+
+def test_get_character_matrix_cassiopeia_layer():
+    """Test getting character matrix from CassiopeiaTree layer."""
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "A")])
+    cm = pd.DataFrame({"A": [0, 1, -1]}).T
+    cas_tree = cas.data.CassiopeiaTree(tree=tree, character_matrix=cm)
+    cas_tree.layers["alternative"] = cm * 2
+    result = utils._get_character_matrix(cas_tree, "alternative")
+    assert isinstance(result, pd.DataFrame)
+
+
+def test_get_character_matrix_treedata(tree):
+    """Test getting character matrix from TreeData obsm."""
+    tdata = TreeData(obst={"tree": tree})
+    obs_order = tdata.obs_names.tolist()
+    cm = pd.DataFrame([[0, 1, -1], [1, 0, -1], [1, 1, 0]], index=obs_order)
+    tdata.obsm["characters"] = cm
+    result = utils._get_character_matrix(tdata)
+    assert isinstance(result, pd.DataFrame)
+
+
+def test_get_character_matrix_converts_numpy_array():
+    """Test that numpy arrays are converted to DataFrames."""
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "A"), ("root", "B")])
+    leaves = sorted([n for n in tree.nodes() if tree.out_degree(n) == 0])
+    cm_array = np.array([[0, 1, -1], [1, 0, -1]])
+    tdata = TreeData(
+        obst={"tree": tree}, obsm={"characters": cm_array}, obs=pd.DataFrame(index=leaves)
+    )
+    result = utils._get_character_matrix(tdata)
+    assert isinstance(result, pd.DataFrame)
+    assert result.shape == (2, 3)
+
+
+def test_get_missing_state_indicator(tree):
+    """Test getting missing state indicator from TreeData and non-tree objects."""
+    tdata = TreeData(obst={"tree": tree})
+    result = utils._get_missing_state_indicator(tdata)
+    assert result == (-1, "-1", "NA", "-")
+
+    tdata.uns["missing_state_indicator"] = -99
+    result = utils._get_missing_state_indicator(tdata)
+    assert result == -99
+
+    with pytest.warns(UserWarning, match="differs from tree's missing_state_indicator"):
+        result = utils._get_missing_state_indicator(tdata, missing_state="custom")
+    assert result == "custom"
+
+
+def test_get_tree_parameter(tree):
+    """Test getting parameter from TreeData and non-tree objects."""
+    tdata = TreeData(obst={"tree": tree})
+    tdata.uns["mutation_rate"] = 0.75
+    result = utils._get_tree_parameter(tdata, "mutation_rate")
+    assert result == 0.75
+    result = utils._get_tree_parameter(None, "param", default="default_val")
+    assert result == "default_val"
+
+
+def test_check_tree_has_key_missing():
+    """Test that _check_tree_has_key raises ValueError when key is missing."""
+    tree = nx.DiGraph()
+    tree.add_edges_from([("root", "A"), ("root", "B")])
+
+    with pytest.raises(ValueError, match="One or more nodes do not have 'depth' attribute"):
+        utils._check_tree_has_key(tree, "depth")
 
 
 if __name__ == "__main__":

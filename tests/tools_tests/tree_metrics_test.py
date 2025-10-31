@@ -8,6 +8,7 @@ import unittest
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
 
 import cassiopeia as cas
 from cassiopeia.mixins import TreeMetricError
@@ -720,4 +721,4 @@ class TestCassiopeiaTree(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__])

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import random
 import warnings
+from collections.abc import Sequence
 from typing import Any
 
 import networkx as nx
+import numpy as np
+import pandas as pd
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
@@ -180,3 +184,100 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
         child_length = child_edge.get("length", 0)
         new_edge["length"] = parent_length + child_length
     return new_edge
+
+
+def _get_character_matrix(
+    tree: CassiopeiaTree | TreeData, characters_key: str = "characters", **kwargs
+) -> np.ndarray:
+    """Get character matrix from a tree object."""
+    if "layer" in kwargs:
+        warnings.warn(
+            "'layer' is deprecated and will be removed in a future version. "
+            "Use 'characters_key' instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        characters_key = kwargs.pop("layer")
+
+    if isinstance(tree, CassiopeiaTree):
+        if characters_key == "characters":
+            character_matrix = tree.character_matrix
+        else:
+            character_matrix = tree.layers[characters_key]
+    elif isinstance(tree, TreeData):
+        character_matrix = tree.obsm[characters_key]
+
+    if isinstance(character_matrix, np.ndarray):
+        character_matrix = pd.DataFrame(character_matrix)
+    return character_matrix
+
+
+def _get_missing_state_indicator(
+    tree: CassiopeiaTree | TreeData,
+    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
+) -> str | int | Sequence[str | int] | None:
+    user_provided = missing_state != (-1, "-1", "NA", "-")
+    tree_value = None
+    if isinstance(tree, CassiopeiaTree):
+        tree_value = tree.missing_state_indicator
+    elif isinstance(tree, TreeData):
+        if "missing_state_indicator" in tree.uns:
+            tree_value = tree.uns["missing_state_indicator"]
+    if user_provided and tree_value is not None and missing_state != tree_value:
+        warnings.warn(
+            f"User-provided missing_state ({missing_state}) differs from tree's "
+            f"missing_state_indicator ({tree_value}). Using user-provided value.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return missing_state
+    return tree_value if tree_value is not None else missing_state
+
+
+def _get_tree_parameter(tree: CassiopeiaTree | TreeData, param_name: str, default=None):
+    """Get a parameter from CassiopeiaTree or TreeData."""
+    if isinstance(tree, CassiopeiaTree):
+        return tree.parameters.get(param_name, default)
+    elif isinstance(tree, TreeData):
+        return tree.uns.get(param_name, default)
+    return default
+
+
+def get_mean_depth(tree: TreeLike, depth_key: str, tree_key: str | None = None) -> float:
+    """Compute the mean depth of a tree's leaves.
+
+    Calculates the average depth across all leaf nodes in the tree. Depth is
+    retrieved from the node attribute specified by depth_key. This can represent
+    either discrete generations (e.g., number of divisions) or continuous time
+    (e.g., evolutionary time).
+
+    Args:
+        tree: Tree object (CassiopeiaTree, TreeData, or nx.DiGraph)
+        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
+        tree_key: Tree key to use if tree is a TreeData object with multiple trees
+
+    Returns:
+        float: Mean depth of the tree's leaves
+    """
+    t, _ = _get_digraph(tree, tree_key=tree_key)
+    _check_tree_has_key(t, depth_key)
+    leaves = get_leaves(tree, tree_key=tree_key)
+    depths = [t.nodes[leaf][depth_key] for leaf in leaves]
+    return float(np.mean(depths))
+
+
+def _check_tree_has_key(tree: nx.DiGraph, key: str):
+    """Checks that tree nodes have a given key.
+
+    Args:
+        tree: NetworkX DiGraph
+        key: Node attribute key to check for
+
+    Raises:
+        ValueError: If key is not present in one or more nodes
+    """
+    sampled_nodes = random.sample(list(tree.nodes), min(10, len(tree.nodes)))
+    for node in sampled_nodes:
+        if key not in tree.nodes[node]:
+            message = f"One or more nodes do not have '{key}' attribute."
+            raise ValueError(message)
