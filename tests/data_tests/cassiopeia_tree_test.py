@@ -8,6 +8,7 @@ from functools import partial
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
 
 import cassiopeia as cas
 from cassiopeia.data import utilities as data_utilities
@@ -1945,4 +1946,4 @@ class TestCassiopeiaTree(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__])

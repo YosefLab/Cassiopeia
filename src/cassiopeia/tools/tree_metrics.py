@@ -361,7 +361,8 @@ def get_lineage_tracing_parameters(
     tree: CassiopeiaTree,
     continuous: bool,
     assume_root_implicit_branch: bool,
-    layer: str | None = None,
+    layer: str | None = "characters",
+    depth_key: str = "time",
 ) -> tuple[float, float, float]:
     """Gets the lineage tracing parameters from a tree.
 
@@ -381,6 +382,7 @@ def get_lineage_tracing_parameters(
         layer: Layer to use for the character matrix in estimating parameters.
             If this is None, then the current `character_matrix` variable will
             be used.
+        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
 
     Returns:
             The mutation rate, the heritable missing rate, and the stochastic
@@ -393,7 +395,7 @@ def get_lineage_tracing_parameters(
     # If the attributes are not populated, then the parameters are inferred.
     if "mutation_rate" not in tree.parameters:
         mutation_rate = parameter_estimators.estimate_mutation_rate(
-            tree, continuous, assume_root_implicit_branch, layer
+            tree, continuous, assume_root_implicit_branch, characters_key=layer, depth_key=depth_key
         )
     else:
         mutation_rate = tree.parameters["mutation_rate"]
@@ -405,10 +407,7 @@ def get_lineage_tracing_parameters(
             stochastic_missing_probability,
             heritable_missing_rate,
         ) = parameter_estimators.estimate_missing_data_rates(
-            tree,
-            continuous,
-            assume_root_implicit_branch,
-            layer=layer,
+            tree, continuous, assume_root_implicit_branch, characters_key=layer, depth_key=depth_key
         )
     else:
         stochastic_missing_probability = tree.parameters["stochastic_missing_probability"]
@@ -434,7 +433,8 @@ def get_lineage_tracing_parameters(
 def calculate_likelihood_discrete(
     tree: CassiopeiaTree,
     use_internal_character_states: bool = False,
-    layer: str | None = None,
+    layer: str | None = "characters",
+    depth_key: str = "time",
 ) -> float:
     """Calculates the log likelihood of a tree under a discrete process.
 
@@ -460,6 +460,7 @@ def calculate_likelihood_discrete(
         layer: Layer to use for the character matrix in estimating parameters.
             If this is None, then the current `character_matrix` variable will
             be used.
+        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
 
     Returns:
             The log likelihood of the tree given the observed character states.
@@ -499,6 +500,7 @@ def calculate_likelihood_discrete(
         False,
         (not use_internal_character_states),
         layer,
+        depth_key,
     )
 
     mutation_probability_function_of_time = lambda t: mutation_rate
@@ -523,7 +525,8 @@ def calculate_likelihood_discrete(
 def calculate_likelihood_continuous(
     tree: CassiopeiaTree,
     use_internal_character_states: bool = False,
-    layer: str | None = None,
+    layer: str | None = "characters",
+    depth_key: str = "time",
 ) -> float:
     """Calculates the log likelihood of a tree under a continuous process.
 
@@ -552,6 +555,7 @@ def calculate_likelihood_continuous(
         layer: Layer to use for the character matrix in estimating parameters.
             If this is None, then the current `character_matrix` variable will
             be used.
+        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
 
     Returns:
             The log likelihood of the tree given the observed character states.
@@ -590,6 +594,7 @@ def calculate_likelihood_continuous(
         True,
         (not use_internal_character_states),
         layer,
+        depth_key,
     )
 
     mutation_probability_function_of_time = lambda t: 1 - np.exp(-mutation_rate * t)

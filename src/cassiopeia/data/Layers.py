@@ -12,14 +12,14 @@ This data structure is inspired by AnnData's layer functionality for scRNA-seq
 count matrices. Much of the code and logic is derived from the AnnData project.
 """
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, MutableMapping
 
 import pandas as pd
 
 from cassiopeia.data import CassiopeiaTree
 
 
-class Layers(dict):
+class Layers(MutableMapping[str, pd.DataFrame]):
     """Container mapping layer names to character matrices.
 
     Args:
