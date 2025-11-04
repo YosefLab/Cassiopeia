@@ -217,11 +217,13 @@ def fitch_hartigan_top_down(
 
 
 def score_small_parsimony(
-    tree: CassiopeiaTree | TreeData,
+    tree: TreeLike,
     key: str,
     root: str | None = None,
     infer_ancestral_states: bool = True,
     label_key: str | None = "label",
+    meta_df: pd.DataFrame | None = None,
+    tree_key: str | None = None,
 ) -> int:
     """Computes the small-parsimony of the tree.
 
@@ -229,7 +231,7 @@ def score_small_parsimony(
     parsimony score of the tree.
 
     Args:
-        tree: CassiopeiaTree object with cell meta data.
+        tree: TreeLike object.
         key: A column in the CassiopeiaTree cell meta corresponding to a
             categorical variable.
         root: Node to treat as the root. Only the subtree below
@@ -239,6 +241,8 @@ def score_small_parsimony(
             the tree.)
         label_key: If ancestral states have already been inferred, this key
             indicates the name of the attribute they're stored in.
+        meta_df: Optional DataFrame containing cell meta data. Only pass in if using networkx DiGraph.
+        tree_key: If tree is a TreeData object, specify the key corresponding to the tree to process.
 
     Returns:
             The parsimony score.
@@ -252,9 +256,11 @@ def score_small_parsimony(
         fitch_hartigan(tree, key, root, label_key=label_key)
 
     parsimony = 0
-    for parent, child in tree.depth_first_traverse_edges(source=root):
+    g, _ = _get_digraph(tree, tree_key)
+
+    for parent, child in nx.dfs_edges(g, source=root):
         try:
-            if tree.get_attribute(parent, label_key) != tree.get_attribute(child, label_key):
+            if g.nodes[parent][label_key] != g.nodes[child][label_key]:
                 parsimony += 1
         except CassiopeiaTreeError as error:
             raise CassiopeiaError(
