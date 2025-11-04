@@ -123,10 +123,10 @@ def tdata(ground_truth_tree, tree1, multifurcating_ground_truth, tree2, ground_t
 
 # ---------- Tests ----------
 def test_out_group(tree1, ground_truth_rake):
-    out_group = cas.critique.critique_utilities.get_outgroup_nx(tree1, ("11", "14", "9"))
+    out_group = cas.critique.critique_utilities.get_outgroup(tree1, ("11", "14", "9"))
     assert out_group == "9"
 
-    out_group = cas.critique.critique_utilities.get_outgroup_nx(ground_truth_rake, ("4", "5", "6"))
+    out_group = cas.critique.critique_utilities.get_outgroup(ground_truth_rake, ("4", "5", "6"))
     assert out_group == "None"
 
 

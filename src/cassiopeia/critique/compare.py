@@ -10,9 +10,9 @@ import networkx as nx
 import numpy as np
 
 from cassiopeia.critique.critique_utilities import (
-    annotate_tree_depths_nx,
-    get_outgroup_nx,
-    sample_triplet_at_depth_nx,
+    annotate_tree_depths,
+    get_outgroup,
+    sample_triplet_at_depth,
 )
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
@@ -33,11 +33,11 @@ def triplets_correct(
     """Calculate triplets-correct accuracy between two trees.
 
     Accepts inputs as `CassiopeiaTree`, `networkx.DiGraph` (rooted, edges parent→child),
-    or string keys referencing trees stored in `tdata.obst`. Computes the proportion of
-    triplets (sets of three leaves) that agree between the two trees. Sampling is
-    stratified by depth (same number of triplets per depth) to reduce bias from
-    purely random triplet sampling. Unifurcations are collapsed before evaluation.
-    Trees must have identical leaf sets.
+    or `TreeData` (in which case string keys referencing trees stored in `tdata.obst` should
+    be passed in. Computes the proportion of triplets (sets of three leaves) that
+    agree between the two trees. Sampling is stratified by depth
+    (same number of triplets per depth) to reduce bias from purely random triplet sampling.
+    Unifurcations are collapsed before evaluation. Trees must have identical leaf sets.
 
     Args:
         tree1: The tree object.
@@ -62,9 +62,9 @@ def triplets_correct(
         raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
     t1, _ = _get_digraph(tree1, tree_key=key1, copy=True)
     t2, _ = (
-        _get_digraph(tree2, tree_key=key2)
+        _get_digraph(tree2, tree_key=key2, copy=True)
         if tree2 is not None
-        else _get_digraph(tree1, tree_key=key2)
+        else _get_digraph(tree1, tree_key=key2, copy=True)
     )
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
@@ -84,7 +84,7 @@ def _run_triplets_correct(
 ) -> tuple[dict[int, float], dict[int, float], dict[int, float], dict[int, float]]:
     """Compute depth-stratified triplets-correct metrics on two rooted nx.DiGraph trees.
 
-    This is the NX backend used by `triplets_correct`.
+    This is the networkx backend used by `triplets_correct`.
 
     Args:
         G1: First rooted tree as an `nx.DiGraph` (edges parent→child).
@@ -105,7 +105,7 @@ def _run_triplets_correct(
     collapse_unifurcations(G2)
 
     # annotate depths and per-node triplet counts (on G1)
-    depth_to_nodes = annotate_tree_depths_nx(G1)
+    depth_to_nodes = annotate_tree_depths(G1)
 
     # max depth from G1
     depths = [d for _, d in G1.nodes(data="depth") if d is not None]
@@ -131,13 +131,13 @@ def _run_triplets_correct(
         num_unres = 0
 
         for _ in range(number_of_trials):
-            (i, j, k), out_group = sample_triplet_at_depth_nx(G1, depth, depth_to_nodes)
+            (i, j, k), out_group = sample_triplet_at_depth(G1, depth, depth_to_nodes)
 
             is_resolvable = out_group != "None"
             if not is_resolvable:
                 num_unres += 1
 
-            reconstructed = get_outgroup_nx(G2, (i, j, k))
+            reconstructed = get_outgroup(G2, (i, j, k))
             score = int(reconstructed == out_group)
             score_sum += score
             if is_resolvable:
@@ -237,11 +237,11 @@ def robinson_foulds(
     """
     if tree2 is None and (key1 is None or key2 is None):
         raise ValueError("If tree2 is None, both key1 and key2 must be provided.")
-    t1, _ = _get_digraph(tree1, tree_key=key1)
+    t1, _ = _get_digraph(tree1, tree_key=key1, copy=True)
     t2, _ = (
-        _get_digraph(tree2, tree_key=key2)
+        _get_digraph(tree2, tree_key=key2, copy=True)
         if tree2 is not None
-        else _get_digraph(tree1, tree_key=key2)
+        else _get_digraph(tree1, tree_key=key2, copy=True)
     )
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
