@@ -8,8 +8,6 @@ from typing import Any
 import networkx as nx
 import numpy as np
 
-from cassiopeia.data import CassiopeiaTree
-
 
 def nCr(n: int, r: int) -> float:
     """Computes nCr.
