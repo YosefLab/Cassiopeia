@@ -8,6 +8,7 @@ from queue import PriorityQueue
 
 import networkx as nx
 import numpy as np
+import treedata as td
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import CassiopeiaTreeError, TreeSimulatorError
@@ -118,6 +119,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         collapse_unifurcations: bool = True,
         random_seed: int = None,
         initial_tree: CassiopeiaTree | None = None,
+        alignment: str = "leaves",
     ):
         if num_extant is None and experiment_time is None:
             raise TreeSimulatorError("Please specify at least one stopping condition")
@@ -140,6 +142,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
         self.experiment_time = experiment_time
         self.collapse_unifurcations = collapse_unifurcations
         self.random_seed = random_seed
+        self.alignment = alignment
 
         # useful for resuming a simulation, perhaps under different pressures.
         self.initial_tree = initial_tree
@@ -236,7 +239,7 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
     def simulate_tree(
         self,
-    ) -> CassiopeiaTree:
+    ) -> td.TreeData:
         """Simulates trees from a general birth/death process with fitness.
 
         A forward-time birth/death process is simulated by tracking a series of
@@ -324,7 +327,9 @@ class BirthDeathFitnessSimulator(TreeSimulator):
 
         cassiopeia_tree = self.populate_tree_from_simulation(tree, observed_nodes)
 
-        return cassiopeia_tree
+        return td.TreeData(
+            obst={"tree": cassiopeia_tree.get_tree_topology()}, alignment=self.alignment
+        )
 
     def sample_lineage_event(
         self,
