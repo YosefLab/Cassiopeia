@@ -168,12 +168,7 @@ def _run_triplets_correct(
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     """Compute the unrooted Robinson–Foulds distance using bitsets."""
-    leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
-    leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
-    if set(leaves1) != set(leaves2):
-        raise ValueError("Trees must have identical leaf sets.")
-
-    leaf_index = {leaf: i for i, leaf in enumerate(leaves1)}
+    leaf_index = {leaf: i for i, leaf in enumerate(get_leaves(tree1))}
 
     def get_splits(tree, leaf_index):
         """Return a set of canonical bitmasks representing bipartitions."""
