@@ -7,6 +7,7 @@ from .ClonalSpatialDataSimulator import ClonalSpatialDataSimulator
 from .CompleteBinarySimulator import CompleteBinarySimulator
 from .DataSimulator import DataSimulator
 from .ecDNABirthDeathSimulator import ecDNABirthDeathSimulator
+from .expression import brownian_expression, fate_tree_expression
 from .LeafSubsampler import LeafSubsampler
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
 from .SequentialLineageTracingDataSimulator import (
@@ -32,4 +33,6 @@ __all__ = [
     "SupercellularSampler",
     "TreeSimulator",
     "UniformLeafSubsampler",
+    "brownian_expression",
+    "fate_tree_expression",
 ]

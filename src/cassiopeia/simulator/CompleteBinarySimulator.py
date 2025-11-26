@@ -26,6 +26,8 @@ class CompleteBinarySimulator(TreeSimulator):
         num_cells: Number of cells to simulate. Needs to be a power of 2. The
             depth of the tree will be `log2(num_cells)`.
         depth: Depth of the tree. The number of cells will be `2^depth`.
+        alignment: The alignment of the returned TreeData. Can be either
+            "nodes" or "leaves".
 
     Raises:
             TreeSimulatorError if neither or both ``num_cells`` or ``depth`` are
@@ -33,7 +35,7 @@ class CompleteBinarySimulator(TreeSimulator):
             depth is not greater than 0.
     """
 
-    def __init__(self, num_cells: int | None = None, depth: int | None = None):
+    def __init__(self, num_cells: int | None = None, depth: int | None = None, alignment="leaves"):
         if (num_cells is None) == (depth is None):
             raise TreeSimulatorError("One of `num_cells` or `depth` must be provided.")
         if num_cells is not None:
@@ -44,6 +46,7 @@ class CompleteBinarySimulator(TreeSimulator):
         if depth <= 0:
             raise TreeSimulatorError("`depth` must be grater than 0.")
         self.depth = depth
+        self.alignment = alignment
 
     def simulate_tree(
         self,
@@ -75,4 +78,4 @@ class CompleteBinarySimulator(TreeSimulator):
         times = {node: depth / max_depth for node, depth in depths.items()}
         nx.set_node_attributes(tree, times, "time")
 
-        return td.TreeData(obst={tree_key: tree})
+        return td.TreeData(obst={tree_key: tree}, alignment=self.alignment)
