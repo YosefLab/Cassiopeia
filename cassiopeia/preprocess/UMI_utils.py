@@ -396,27 +396,27 @@ def form_clusters(
             cluster.
     """
 
-    if len(als) == 0:
-        clusters = []
+    clusters: List[pysam.AlignedSegment] = []
+    remaining = list(als)
 
-    elif len(als) == 1:
-        clusters = [make_singleton_cluster(al) for al in als]
-
-    else:
-        seed = propose_seed(als, max_read_length)
-        near_seed, remaining = within_radius_of_seed(
-            seed, als, max_hq_mismatches
+    # Keep pulling off clusters of size ≥2 until we can no longer make progress
+    while len(remaining) > 1:
+        seed = propose_seed(remaining, max_read_length)
+        near_seed, new_remaining = within_radius_of_seed(
+            seed, remaining, max_hq_mismatches
         )
 
-        if len(near_seed) == 0:
-            # didn't make progress, so give up
-            clusters = [make_singleton_cluster(al) for al in als]
+        if not near_seed:
+            # no multi-read cluster found ⇒ stop trying
+            break
 
-        else:
-            clusters = [
-                call_consensus(near_seed, max_read_length)
-            ] + form_clusters(remaining, max_read_length, max_hq_mismatches)
+        # build consensus for this cluster and record it
+        clusters.append(call_consensus(near_seed, max_read_length))
+        # update remaining reads
+        remaining = new_remaining
 
+    # any reads we never clustered in a multi-read group become singletons
+    clusters.extend(make_singleton_cluster(al) for al in remaining)
     return clusters
 
 
