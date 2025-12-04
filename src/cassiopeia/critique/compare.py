@@ -117,8 +117,8 @@ def triplets_correct(
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     """Compute the unrooted Robinson–Foulds distance using bitsets."""
-    leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
-    leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
+    leaves1 = sorted([n for n in tree1 if tree1.out_degree(n) == 0])
+    leaves2 = sorted([n for n in tree2 if tree2.out_degree(n) == 0])
     if set(leaves1) != set(leaves2):
         raise ValueError("Trees must have identical leaf sets.")
 
