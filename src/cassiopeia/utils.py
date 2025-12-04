@@ -284,7 +284,7 @@ def _check_tree_has_key(tree: nx.DiGraph, key: str):
             raise ValueError(message)
 
 
-def reconstruct_ancestral_characters(g, missing_state_indicator) -> None:
+def reconstruct_ancestral_characters(g) -> None:
     """Reconstruct ancestral character states.
 
     Reconstructs ancestral states (i.e., those character states in the
@@ -292,8 +292,9 @@ def reconstruct_ancestral_characters(g, missing_state_indicator) -> None:
     irreversibility). Operates on the tree in place.
 
     Raises:
-        AttributeError if the tree has not been initialized.
+        CassiopeiaTreeError if the tree has not been initialized.
     """
+    missing_state_indicator = _get_missing_state_indicator(g)
     for n in nx.dfs_postorder_nodes(g):
         if g.out_degree(n) == 0:
             if g.nodes[n]["character_states"][:] == []:
@@ -308,65 +309,3 @@ def reconstruct_ancestral_characters(g, missing_state_indicator) -> None:
         character_states = [g.nodes[c]["character_states"][:] for c in children]
         reconstructed = get_lca_characters(character_states, missing_state_indicator)
         g.nodes[n]["character_states"] = reconstructed
-
-
-def get_mutations_along_edge_nx(
-    g,
-    parent: str,
-    child: str,
-    treat_missing_as_mutations: bool = False,
-    missing_state_indicator: str | int = -1,
-) -> list[tuple[int, int]]:
-    """Gets the mutations along an edge of interest.
-
-    Returns a list of tuples (character, state) of mutations that occur
-    along an edge. Characters are 0-indexed.
-
-    Note that parent states can be ambiguous if all child states have the
-    same ambiguous state. If this is the case, there will not be a mutation
-    detected along an edge, but we handle this case so as to not throw
-    an error handling ambiguous states.
-
-    Args:
-        g: networkx Digraph tree
-        parent: parent in tree
-        child: child in tree
-        treat_missing_as_mutations: Whether to treat missing states as
-            mutations.
-        missing_state_indicator: Missing state indicator to pass in from parent CassiopeiaTree/TreeData.
-
-    Returns:
-        A list of (character, state) tuples indicating which character
-            mutated and to which state.
-
-    Raises:
-        ValueError if the edge does not exist or if the tree is
-            not initialized.
-    """
-    if not g.has_edge(parent, child):
-        raise ValueError("Edge does not exist.")
-
-    parent_states = g.nodes[parent].get("character_states", None)
-    child_states = g.nodes[child].get("character_states", None)
-
-    n_character = len(parent_states)
-    mutations = []
-
-    for i in range(n_character):
-        parent_state = (
-            list(parent_states[i]) if isinstance(parent_states[i], tuple) else [parent_states[i]]
-        )
-        child_state = (
-            list(child_states[i]) if isinstance(child_states[i], tuple) else [child_states[i]]
-        )
-
-        if len(np.intersect1d(parent_state, child_state)) < 1:
-            if treat_missing_as_mutations:
-                mutations.append((i, child_states[i]))
-            elif (
-                parent_states[i] != missing_state_indicator
-                and child_states[i] != missing_state_indicator
-            ):
-                mutations.append((i, child_states[i]))
-
-    return mutations
