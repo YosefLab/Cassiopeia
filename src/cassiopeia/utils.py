@@ -13,7 +13,6 @@ import pandas as pd
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
-from cassiopeia.data.utilities import get_lca_characters
 
 from .typing import TreeLike
 
@@ -282,30 +281,3 @@ def _check_tree_has_key(tree: nx.DiGraph, key: str):
         if key not in tree.nodes[node]:
             message = f"One or more nodes do not have '{key}' attribute."
             raise ValueError(message)
-
-
-def reconstruct_ancestral_characters(g) -> None:
-    """Reconstruct ancestral character states.
-
-    Reconstructs ancestral states (i.e., those character states in the
-    internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
-    irreversibility). Operates on the tree in place.
-
-    Raises:
-        CassiopeiaTreeError if the tree has not been initialized.
-    """
-    missing_state_indicator = _get_missing_state_indicator(g)
-    for n in nx.dfs_postorder_nodes(g):
-        if g.out_degree(n) == 0:
-            if g.nodes[n]["character_states"][:] == []:
-                raise AttributeError(
-                    "Character states have not been initialized at leaves."
-                    " Use set_character_states_at_leaves or populate_tree"
-                    " with the character matrix that specifies the leaf"
-                    " character states."
-                )
-            continue
-        children = g.successors(n)
-        character_states = [g.nodes[c]["character_states"][:] for c in children]
-        reconstructed = get_lca_characters(character_states, missing_state_indicator)
-        g.nodes[n]["character_states"] = reconstructed
