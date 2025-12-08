@@ -8,12 +8,21 @@ import scipy
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import TreeMetricError
 from cassiopeia.tools import parameter_estimators
+from cassiopeia.utils import (
+    _get_digraph,
+    _get_missing_state_indicator,
+    get_mutations_along_edge_nx,
+    get_root,
+    reconstruct_ancestral_characters,
+)
+from cassiopeia.typing import TreeLike
 
 
 def calculate_parsimony(
-    tree: CassiopeiaTree,
+    tree: TreeLike,
     infer_ancestral_characters: bool = False,
     treat_missing_as_mutation: bool = False,
+    
 ) -> int:
     """Calculates the number of mutations that have occurred on a tree.
 
