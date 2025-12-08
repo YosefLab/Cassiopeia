@@ -2,12 +2,20 @@
 
 from collections.abc import Callable
 
+import networkx as nx
 import numpy as np
 import scipy
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import TreeMetricError
 from cassiopeia.tools import parameter_estimators
+from cassiopeia.utils import (
+    _get_digraph,
+    _get_missing_state_indicator,
+    get_mutations_along_edge_nx,
+    get_root,
+    reconstruct_ancestral_characters,
+)
 
 
 def calculate_parsimony(
@@ -46,21 +54,31 @@ def calculate_parsimony(
             TreeMetricError if the tree has not been initialized or if
             a node does not have character states initialized
     """
+    g, _ = _get_digraph(tree)
+    root = get_root(g)
+
+    try:
+        missing_state_indicator = _get_missing_state_indicator(tree)[0]
+    except (TypeError, IndexError):
+        missing_state_indicator = _get_missing_state_indicator(tree)
+
     if infer_ancestral_characters:
         tree.reconstruct_ancestral_characters()
+        reconstruct_ancestral_characters(g, missing_state_indicator)
 
     parsimony = 0
 
-    if tree.get_character_states(tree.root) == []:
+    states = g.nodes[root].get("character_states", None)
+    if states is None or states == []:
         raise TreeMetricError(
             "Character states empty at internal node. Annotate"
             " character states or infer ancestral characters by"
             " setting infer_ancestral_characters=True."
         )
 
-    for u, v in tree.depth_first_traverse_edges():
-        if tree.get_character_states(v) == []:
-            if tree.is_leaf(v):
+    for u, v in nx.dfs_edges(g, source=root):
+        if g.nodes[v].get("character_states") == [] or g.nodes[v].get("character_states") is None:
+            if g.out_degree(v) == 0:
                 raise TreeMetricError(
                     "Character states have not been initialized at leaves."
                     " Use set_character_states_at_leaves or populate_tree"
@@ -73,8 +91,9 @@ def calculate_parsimony(
                     " character states or infer ancestral characters by"
                     " setting infer_ancestral_characters=True."
                 )
-
-        parsimony += len(tree.get_mutations_along_edge(u, v, treat_missing_as_mutation))
+        parsimony += len(
+            get_mutations_along_edge_nx(g, u, v, treat_missing_as_mutation, missing_state_indicator)
+        )
 
     return parsimony
 
