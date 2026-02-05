@@ -87,7 +87,7 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
         self.__cluster_to_cluster_size = defaultdict(int)
 
     def root_tree(
-        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str]
+        self, tree: nx.Graph, root_sample: str, remaining_samples: List[str], length: Optional[float] = None
     ):
         """Roots a tree produced by UPGMA.
 
@@ -99,19 +99,25 @@ class UPGMASolver(DistanceSolver.DistanceSolver):
             tree: Networkx object representing the tree topology
             root_sample: Ignored in this case, the root is known in this case
             remaining_samples: The last two unjoined nodes in the tree
+            length: length of the edge to the root node.
 
         Returns:
             A rooted tree.
         """
 
-        tree.add_node("root")
-        tree.add_edges_from(
-            [("root", remaining_samples[0]), ("root", remaining_samples[1])]
-        )
+        tree.add_node(root_sample)
+        if length is not None:
+            tree.add_edge(root_sample, remaining_samples[0], length=length/2)
+            tree.add_edge(root_sample, remaining_samples[1], length=length/2)
+        else:
+            tree.add_edges_from(
+                [(root_sample, remaining_samples[0]), (root_sample, remaining_samples[1])]
+            )
 
         rooted_tree = nx.DiGraph()
-        for e in nx.dfs_edges(tree, source="root"):
-            rooted_tree.add_edge(e[0], e[1])
+        for u, v in nx.dfs_edges(tree, source=root_sample):
+            edge_data = tree.get_edge_data(u, v)
+            rooted_tree.add_edge(u, v, **edge_data)
 
         return rooted_tree
 
