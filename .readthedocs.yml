@@ -11,6 +11,3 @@ python:
       path: .
       extra_requirements:
       - docs
-      - spatial
-      pip_args:
-      - --use-deprecated=legacy-resolver
