@@ -13,4 +13,4 @@ python:
       - docs
       - spatial
       pip_args:
-        - --use-deprecated=legacy-resolver
+      - --use-deprecated=legacy-resolver
