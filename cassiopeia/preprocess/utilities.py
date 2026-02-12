@@ -523,7 +523,7 @@ def convert_alleletable_to_lineage_profile(
             val = tuple(val)
             if len(val) == 1:
                 val = val[0]
-            allele_piv.loc[j[0]][j[1], cutsite] = val
+            allele_piv.loc[j[0], (j[1], cutsite)] = val
 
     allele_piv2 = pd.pivot_table(
         allele_table,
