@@ -149,23 +149,11 @@ class TestSampleSpatial:
         with pytest.raises(LeafSubsamplerError):
             sample_spatial(tdata)
 
-    def test_bad_params_both_count(self):
-        tdata = _make_spatial_tdata()
-        space = np.ones((10, 10), dtype=bool)
-        with pytest.raises(LeafSubsamplerError):
-            sample_spatial(tdata, space=space, ratio=0.5, number_of_leaves=2)
-
     def test_bad_ratio(self):
         tdata = _make_spatial_tdata()
         space = np.ones((10, 10), dtype=bool)
         with pytest.raises(LeafSubsamplerError):
             sample_spatial(tdata, space=space, ratio=2.0)
-
-    def test_bad_number_of_leaves(self):
-        tdata = _make_spatial_tdata()
-        space = np.ones((10, 10), dtype=bool)
-        with pytest.raises(LeafSubsamplerError):
-            sample_spatial(tdata, space=space, number_of_leaves=0)
 
     def test_missing_spatial_key(self):
         tdata = _make_tdata()
@@ -208,7 +196,7 @@ class TestSampleSpatial:
     def test_obsm_preserved(self):
         tdata = _make_spatial_tdata(n_leaves=8)
         space = np.ones((10, 10), dtype=bool)
-        sub = sample_spatial(tdata, space=space, number_of_leaves=4, random_seed=1)
+        sub = sample_spatial(tdata, space=space, ratio=0.5, random_seed=1)
         assert "characters" in sub.obsm
         assert "spatial" in sub.obsm
         assert sub.obsm["characters"].shape == (4, 3)
@@ -236,10 +224,11 @@ class TestSampleSpatial:
             sample_spatial(tdata, space=space, random_seed=1)
 
     def test_no_merge_cells_param(self):
-        """sample_spatial no longer has merge_cells — compose with sample_supercellular."""
+        """sample_spatial has neither merge_cells nor number_of_leaves."""
         import inspect
         sig = inspect.signature(sample_spatial)
         assert "merge_cells" not in sig.parameters
+        assert "number_of_leaves" not in sig.parameters
 
     def test_composed_spatial_pixel_merge(self):
         """sample_spatial → sample_supercellular(spatial_key=...) pipeline."""

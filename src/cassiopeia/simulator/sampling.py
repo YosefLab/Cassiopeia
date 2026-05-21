@@ -70,7 +70,6 @@ def sample_spatial(
     bounding_box: list[tuple] | None = None,
     space: np.ndarray | None = None,
     ratio: float | None = None,
-    number_of_leaves: int | None = None,
     spatial_key: str = "spatial",
     keep_root_edge: bool = True,
     random_seed: int | None = None,
@@ -79,11 +78,13 @@ def sample_spatial(
     """Subsample leaves within a spatial region of interest.
 
     Subsets leaves to those within a bounding box or binary mask, then
-    optionally downsamples uniformly. Spatial coordinates are read from
-    ``tdata.obsm[spatial_key]``. To merge cells at the same pixel after
-    spatial filtering, compose with :func:`sample_supercellular`::
+    optionally downsamples by ``ratio``. Spatial coordinates are read from
+    ``tdata.obsm[spatial_key]``. To select an exact leaf count, compose with
+    :func:`sample_uniform`; to merge cells at the same pixel, compose with
+    :func:`sample_supercellular`::
 
         tdata = sample_spatial(tdata, space=mask)
+        tdata = sample_uniform(tdata, number_of_leaves=100)
         tdata = sample_supercellular(tdata, spatial_key="spatial")
 
     Args:
@@ -97,9 +98,7 @@ def sample_spatial(
             ``space[tuple(int_coords)]`` is ``True``. Mutually exclusive
             with ``bounding_box``.
         ratio: Fraction of region-of-interest leaves to keep after spatial
-            filtering.
-        number_of_leaves: Exact number of leaves to keep after spatial
-            filtering.
+            filtering (rounded down). If ``None``, all region leaves are kept.
         spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
         keep_root_edge: Preserve root's single child edge after pruning.
         random_seed: NumPy random seed for reproducibility.
@@ -115,14 +114,8 @@ def sample_spatial(
         raise LeafSubsamplerError(
             "Specify exactly one of `bounding_box` or `space`."
         )
-    if ratio is not None and number_of_leaves is not None:
-        raise LeafSubsamplerError(
-            "Specify at most one of `ratio` or `number_of_leaves`."
-        )
     if ratio is not None and (ratio <= 0 or ratio > 1):
         raise LeafSubsamplerError("`ratio` must be in (0, 1].")
-    if number_of_leaves is not None and number_of_leaves <= 0:
-        raise LeafSubsamplerError("`number_of_leaves` must be > 0.")
     if spatial_key not in tdata.obsm:
         raise LeafSubsamplerError(
             f"Spatial key `{spatial_key}` not present in tdata.obsm."
@@ -183,19 +176,10 @@ def sample_spatial(
     # Downsample within region
     if ratio is not None:
         n_keep = int(len(leaf_keep) * ratio)
-    elif number_of_leaves is not None:
-        n_keep = number_of_leaves
-    else:
-        n_keep = len(leaf_keep)
+        if n_keep <= 0:
+            raise LeafSubsamplerError("Number of leaves to keep is <= 0.")
+        leaf_keep = [str(x) for x in np.random.choice(leaf_keep, n_keep, replace=False)]
 
-    if n_keep <= 0:
-        raise LeafSubsamplerError("Number of leaves to keep is <= 0.")
-    if n_keep > len(leaf_keep):
-        raise LeafSubsamplerError(
-            f"Number of leaves to keep ({n_keep}) exceeds region size ({len(leaf_keep)})."
-        )
-
-    leaf_keep = [str(x) for x in np.random.choice(leaf_keep, n_keep, replace=False)]
     return _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
 
 
@@ -222,7 +206,7 @@ def sample_supercellular(
 
     **Pixel mode** (``spatial_key`` provided): leaves that share the same
     integer pixel in ``tdata.obsm[spatial_key]`` are merged in one pass.
-    Intended to be composed after :func:`sample_spatial`::
+    Can be composed after :func:`sample_spatial`::
 
         tdata = sample_spatial(tdata, space=mask)
         tdata = sample_supercellular(tdata, spatial_key="spatial")
