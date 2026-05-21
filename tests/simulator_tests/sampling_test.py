@@ -15,7 +15,6 @@ from cassiopeia.simulator import (
     sample_uniform,
 )
 
-
 # --- Shared fixture helpers ---
 
 
@@ -114,7 +113,9 @@ def test_uniform_obsm_preserved():
     assert "characters" in sub.obsm
     assert sub.obsm["characters"].shape == (4, 3)
     for leaf in sub.obs_names:
-        assert tdata.obsm["characters"].loc[leaf].tolist() == sub.obsm["characters"].loc[leaf].tolist()
+        assert (
+            tdata.obsm["characters"].loc[leaf].tolist() == sub.obsm["characters"].loc[leaf].tolist()
+        )
 
 
 def test_uniform_uns_preserved():
@@ -218,7 +219,8 @@ def test_spatial_warn_bad_scale():
     leaves = list(tdata.obs_names)
     tdata.obsm["spatial"] = pd.DataFrame(
         [[0.1, 0.1], [0.1, 0.2], [0.2, 0.1], [0.2, 0.2]],
-        index=leaves, columns=["x", "y"],
+        index=leaves,
+        columns=["x", "y"],
     )
     space = np.zeros((1000, 1000), dtype=bool)
     space[:100, :100] = True
@@ -309,7 +311,10 @@ def test_supercellular_characters_preserved_for_unmerged():
     sub = sample_supercellular(tdata, number_of_merges=1, random_seed=5)
     for leaf in sub.obs_names:
         if "-" not in leaf:
-            assert tdata.obsm["characters"].loc[leaf].tolist() == sub.obsm["characters"].loc[leaf].tolist()
+            assert (
+                tdata.obsm["characters"].loc[leaf].tolist()
+                == sub.obsm["characters"].loc[leaf].tolist()
+            )
 
 
 def test_supercellular_merged_states_contain_pipe():
@@ -378,7 +383,11 @@ def test_supercellular_inverse_distance_weighting():
     sibling_rates, second_cousin_rates = [], []
     for (l1, l2), count in pair_counts.items():
         lca = nx.lowest_common_ancestor(orig_tree, l1, l2)
-        d = orig_tree.nodes[l1]["time"] + orig_tree.nodes[l2]["time"] - 2 * orig_tree.nodes[lca]["time"]
+        d = (
+            orig_tree.nodes[l1]["time"]
+            + orig_tree.nodes[l2]["time"]
+            - 2 * orig_tree.nodes[lca]["time"]
+        )
         if d <= 2:
             sibling_rates.append(count)
         elif d >= 6:
@@ -513,4 +522,3 @@ def test_pixel_mode_composed_after_spatial():
     filtered = sample_spatial(tdata, space=space)
     merged = sample_supercellular(filtered, spatial_key="spatial")
     assert len(merged.obs_names) == 5
-

@@ -136,7 +136,8 @@ class SequentialLineageTracingDataSimulator:
 class LeafSubsampler:
     """Deprecated abstract base. Use :func:`cassiopeia.simulator.sample_uniform`,
     :func:`cassiopeia.simulator.sample_spatial`, or
-    :func:`cassiopeia.simulator.sample_supercellular` instead."""
+    :func:`cassiopeia.simulator.sample_supercellular` instead.
+    """
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -247,7 +248,8 @@ class ClonalSpatialDataSimulator:
 class TreeSimulator:
     """Deprecated. Use :func:`cassiopeia.simulator.birth_death_process`,
     :func:`cassiopeia.simulator.complete_binary`, or
-    :func:`cassiopeia.simulator.simple_fit_subclone` instead."""
+    :func:`cassiopeia.simulator.simple_fit_subclone` instead.
+    """
 
     def __init__(self, *args, **kwargs):
         warnings.warn(

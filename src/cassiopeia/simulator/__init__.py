@@ -6,7 +6,6 @@ from .deprecated import (
     Cas9LineageTracingDataSimulator,
     ClonalSpatialDataSimulator,
     CompleteBinarySimulator,
-    ecDNABirthDeathSimulator,
     LeafSubsampler,
     LineageTracingDataSimulator,
     SequentialLineageTracingDataSimulator,
@@ -15,6 +14,7 @@ from .deprecated import (
     SupercellularSampler,
     TreeSimulator,
     UniformLeafSubsampler,
+    ecDNABirthDeathSimulator,
 )
 from .sampling import sample_spatial, sample_supercellular, sample_uniform
 from .spatial import brownian_spatial, clonal_spatial

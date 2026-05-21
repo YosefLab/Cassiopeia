@@ -45,9 +45,7 @@ def sample_uniform(
         LeafSubsamplerError: On invalid parameters or sample size.
     """
     if (ratio is None) == (number_of_leaves is None):
-        raise LeafSubsamplerError(
-            "Specify exactly one of `ratio` or `number_of_leaves`."
-        )
+        raise LeafSubsamplerError("Specify exactly one of `ratio` or `number_of_leaves`.")
     if random_seed is not None:
         np.random.seed(random_seed)
 
@@ -105,13 +103,9 @@ def sample_spatial(
         LeafSubsamplerError: On invalid parameters or empty region.
     """
     if (bounding_box is None) == (space is None):
-        raise LeafSubsamplerError(
-            "Specify exactly one of `bounding_box` or `space`."
-        )
+        raise LeafSubsamplerError("Specify exactly one of `bounding_box` or `space`.")
     if spatial_key not in tdata.obsm:
-        raise LeafSubsamplerError(
-            f"Spatial key `{spatial_key}` not present in tdata.obsm."
-        )
+        raise LeafSubsamplerError(f"Spatial key `{spatial_key}` not present in tdata.obsm.")
 
     leaves = list(tdata.obs_names)
     coords_raw = tdata.obsm[spatial_key]
@@ -130,15 +124,15 @@ def sample_spatial(
                 f"({len(bounding_box)}) do not match."
             )
         leaf_keep = [
-            leaf for leaf in leaves
+            leaf
+            for leaf in leaves
             if all(lo <= leaf_coords[leaf][d] <= hi for d, (lo, hi) in enumerate(bounding_box))
         ]
     else:
         ndim = len(leaf_coords[leaves[0]])
         if len(space.shape) != ndim:
             raise LeafSubsamplerError(
-                f"Coordinate dimensions ({ndim}) and space rank "
-                f"({len(space.shape)}) do not match."
+                f"Coordinate dimensions ({ndim}) and space rank ({len(space.shape)}) do not match."
             )
         max_coord = max(np.max(np.abs(c)) for c in leaf_coords.values()) if leaf_coords else 0
         if max_coord > 0 and max_coord * 10 < np.max(space.shape):
@@ -152,7 +146,7 @@ def sample_spatial(
         leaf_keep = []
         for leaf in leaves:
             c = tuple(int(x) for x in leaf_coords[leaf])
-            if any(x < 0 or x >= s for x, s in zip(c, space.shape)):
+            if any(x < 0 or x >= s for x, s in zip(c, space.shape, strict=False)):
                 raise LeafSubsamplerError(
                     f"Coordinates {c} for leaf '{leaf}' are outside the space."
                 )
@@ -227,29 +221,21 @@ def sample_supercellular(
                 "(when `spatial_key` is provided)."
             )
         if spatial_key not in tdata.obsm:
-            raise LeafSubsamplerError(
-                f"Spatial key `{spatial_key}` not present in tdata.obsm."
-            )
+            raise LeafSubsamplerError(f"Spatial key `{spatial_key}` not present in tdata.obsm.")
         return _pixel_merge(tdata, spatial_key, keep_root_edge, collapse_duplicates, tree_key)
 
     # Iterative mode
     if (ratio is None) == (number_of_merges is None):
-        raise LeafSubsamplerError(
-            "Specify exactly one of `ratio` or `number_of_merges`."
-        )
+        raise LeafSubsamplerError("Specify exactly one of `ratio` or `number_of_merges`.")
 
     if random_seed is not None:
         np.random.seed(random_seed)
 
     leaves = list(tdata.obs_names)
-    n_merges = (
-        number_of_merges if number_of_merges is not None else int(len(leaves) * ratio)
-    )
+    n_merges = number_of_merges if number_of_merges is not None else int(len(leaves) * ratio)
 
     if n_merges >= len(leaves):
-        raise LeafSubsamplerError(
-            "Number of merges must be less than the number of leaves."
-        )
+        raise LeafSubsamplerError("Number of merges must be less than the number of leaves.")
     if n_merges <= 0:
         raise LeafSubsamplerError("Number of merges must be > 0.")
 
@@ -268,17 +254,13 @@ def sample_supercellular(
         leaf1 = str(np.random.choice(current_leaves))
         other = [l for l in current_leaves if l != leaf1]
 
-        distances = np.array(
-            [_leaf_distance(working_tree, leaf1, l) for l in other]
-        )
+        distances = np.array([_leaf_distance(working_tree, leaf1, l) for l in other])
         weights = 1.0 / np.maximum(distances, 1e-10)
         probs = weights / weights.sum()
         leaf2 = str(np.random.choice(other, p=probs))
 
         lca = nx.lowest_common_ancestor(working_tree, leaf1, leaf2)
-        new_time = (
-            working_tree.nodes[leaf1]["time"] + working_tree.nodes[leaf2]["time"]
-        ) / 2
+        new_time = (working_tree.nodes[leaf1]["time"] + working_tree.nodes[leaf2]["time"]) / 2
         new_leaf = f"{leaf1}-{leaf2}"
 
         working_tree.add_node(new_leaf, time=new_time)
@@ -288,7 +270,7 @@ def sample_supercellular(
             s1 = obsm_data[key][leaf1]
             s2 = obsm_data[key][leaf2]
             obsm_data[key][new_leaf] = [
-                _merge_state(a, b, collapse_duplicates) for a, b in zip(s1, s2)
+                _merge_state(a, b, collapse_duplicates) for a, b in zip(s1, s2, strict=False)
             ]
 
         current_leaves = [l for l in current_leaves if l != leaf1 and l != leaf2]
@@ -324,9 +306,7 @@ def _prune_tdata(
 ) -> td.TreeData:
     """Return new TreeData pruned to keep_leaves with unifurcations collapsed."""
     sub = tdata[list(keep_leaves)].copy()
-    pruned = collapse_unifurcations(
-        sub.obst[tree_key], collapse_root=not keep_root_edge
-    )
+    pruned = collapse_unifurcations(sub.obst[tree_key], collapse_root=not keep_root_edge)
     sub.obst[tree_key] = pruned
     return sub
 
@@ -368,13 +348,14 @@ def _pixel_merge(
         return _prune_tdata(tdata, leaves, keep_root_edge, tree_key)
 
     final_leaves = single_leaves + list(merge_map.keys())
-    new_tree = _build_merged_tree(
-        tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge
-    )
+    new_tree = _build_merged_tree(tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge)
     new_obs = pd.DataFrame(index=final_leaves)
     new_obsm = _merge_obsm(
-        tdata.obsm, final_leaves, merge_map,
-        spatial_key=spatial_key, pixel_of=pixel_of,
+        tdata.obsm,
+        final_leaves,
+        merge_map,
+        spatial_key=spatial_key,
+        pixel_of=pixel_of,
         collapse_duplicates=collapse_duplicates,
     )
     return td.TreeData(
@@ -388,11 +369,7 @@ def _pixel_merge(
 def _leaf_distance(tree: nx.DiGraph, leaf1: str, leaf2: str) -> float:
     """Branch distance between two leaves via their LCA."""
     lca = nx.lowest_common_ancestor(tree, leaf1, leaf2)
-    return (
-        tree.nodes[leaf1]["time"]
-        + tree.nodes[leaf2]["time"]
-        - 2 * tree.nodes[lca]["time"]
-    )
+    return tree.nodes[leaf1]["time"] + tree.nodes[leaf2]["time"] - 2 * tree.nodes[lca]["time"]
 
 
 def _merge_state(s1: str, s2: str, collapse_duplicates: bool) -> str:
@@ -465,10 +442,8 @@ def _merge_obsm(
                 else:
                     col_vals = [list(val.loc[l].astype(str)) for l in old_leaves]
                     merged_row = []
-                    for group in zip(*col_vals):
-                        merged_row.append(
-                            _merge_state_multi(list(group), collapse_duplicates)
-                        )
+                    for group in zip(*col_vals, strict=False):
+                        merged_row.append(_merge_state_multi(list(group), collapse_duplicates))
                     rows[leaf] = merged_row
 
         if rows:

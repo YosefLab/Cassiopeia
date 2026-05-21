@@ -1,11 +1,9 @@
 """Tests for simple_fit_subclone."""
 
 import numpy as np
-import pytest
 import treedata as td
 
 from cassiopeia.simulator import simple_fit_subclone
-
 
 # ============================================================
 # simple_fit_subclone
@@ -20,9 +18,7 @@ def test_deterministic_nodes_and_edges():
         generations_until_fit_subclone=1,
     )
     tree = tdata.obst["tree"]
-    assert list(tree.nodes) == [
-        "0_neutral", "1_neutral", "2_fit", "3_neutral", "4_fit", "5_fit"
-    ]
+    assert list(tree.nodes) == ["0_neutral", "1_neutral", "2_fit", "3_neutral", "4_fit", "5_fit"]
     assert list(tree.edges) == [
         ("0_neutral", "1_neutral"),
         ("1_neutral", "2_fit"),
@@ -100,9 +96,9 @@ def test_exactly_one_fit_subclone_root():
     tree = tdata.obst["tree"]
     # Find internal nodes whose children include a "_fit" node
     fit_parents = [
-        n for n in tree
-        if any(c.endswith("_fit") for c in tree.successors(n))
-        and not n.endswith("_fit")
+        n
+        for n in tree
+        if any(c.endswith("_fit") for c in tree.successors(n)) and not n.endswith("_fit")
     ]
     assert len(fit_parents) == 1
 
