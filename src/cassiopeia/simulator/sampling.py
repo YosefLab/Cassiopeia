@@ -71,25 +71,24 @@ def sample_spatial(
     space: np.ndarray | None = None,
     ratio: float | None = None,
     number_of_leaves: int | None = None,
-    attribute_key: str = "spatial",
-    merge_cells: bool = False,
+    spatial_key: str = "spatial",
     keep_root_edge: bool = True,
-    collapse_duplicates: bool = True,
     random_seed: int | None = None,
     tree_key: str = "tree",
 ) -> td.TreeData:
     """Subsample leaves within a spatial region of interest.
 
     Subsets leaves to those within a bounding box or binary mask, then
-    optionally downsamples uniformly. When ``merge_cells=True`` and a
-    ``space`` mask is provided, leaves that map to the same integer pixel
-    are merged into a single observation with combined character states.
+    optionally downsamples uniformly. Spatial coordinates are read from
+    ``tdata.obsm[spatial_key]``. To merge cells at the same pixel after
+    spatial filtering, compose with :func:`sample_supercellular`::
 
-    Spatial coordinates are read from ``tdata.obsm[attribute_key]``.
+        tdata = sample_spatial(tdata, space=mask)
+        tdata = sample_supercellular(tdata, spatial_key="spatial")
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]`` and spatial
-            coordinates in ``obsm[attribute_key]``.
+            coordinates in ``obsm[spatial_key]``.
         bounding_box: List of ``(min, max)`` tuples, one per spatial
             dimension. Leaves within these bounds are kept. Mutually
             exclusive with ``space``.
@@ -101,17 +100,13 @@ def sample_spatial(
             filtering.
         number_of_leaves: Exact number of leaves to keep after spatial
             filtering.
-        attribute_key: Key in ``tdata.obsm`` holding spatial coordinates.
-        merge_cells: If ``True``, merge leaves that share a pixel. Requires
-            ``space``. Merged character state strings are joined with ``"|"``.
+        spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
         keep_root_edge: Preserve root's single child edge after pruning.
-        collapse_duplicates: Remove duplicate state tokens in merged cells
-            (e.g., ``"1|1|2"`` → ``"1|2"``).
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
 
     Returns:
-        A new TreeData with spatially subsampled (and optionally merged) leaves.
+        A new TreeData with spatially filtered leaves.
 
     Raises:
         LeafSubsamplerError: On invalid parameters or empty region.
@@ -128,18 +123,16 @@ def sample_spatial(
         raise LeafSubsamplerError("`ratio` must be in (0, 1].")
     if number_of_leaves is not None and number_of_leaves <= 0:
         raise LeafSubsamplerError("`number_of_leaves` must be > 0.")
-    if merge_cells and space is None:
-        raise LeafSubsamplerError("`merge_cells` requires `space`.")
-    if attribute_key not in tdata.obsm:
+    if spatial_key not in tdata.obsm:
         raise LeafSubsamplerError(
-            f"Attribute `{attribute_key}` not present in tdata.obsm."
+            f"Spatial key `{spatial_key}` not present in tdata.obsm."
         )
 
     if random_seed is not None:
         np.random.seed(random_seed)
 
     leaves = list(tdata.obs_names)
-    coords_raw = tdata.obsm[attribute_key]
+    coords_raw = tdata.obsm[spatial_key]
     if isinstance(coords_raw, pd.DataFrame):
         coords_arr = coords_raw.values
     else:
@@ -203,76 +196,54 @@ def sample_spatial(
         )
 
     leaf_keep = [str(x) for x in np.random.choice(leaf_keep, n_keep, replace=False)]
-
-    if not merge_cells:
-        return _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
-
-    # Group leaves by pixel
-    pixel_groups: dict[tuple, list[str]] = defaultdict(list)
-    for leaf in leaf_keep:
-        pixel = tuple(int(x) for x in leaf_coords[leaf])
-        pixel_groups[pixel].append(leaf)
-
-    # Build merge map
-    merge_map: dict[str, list[str]] = {}
-    single_leaves: list[str] = []
-    pixel_of: dict[str, tuple] = {}
-
-    for pixel, group in pixel_groups.items():
-        if len(group) == 1:
-            single_leaves.append(group[0])
-        else:
-            new_name = "-".join(sorted(group))
-            merge_map[new_name] = group
-            pixel_of[new_name] = pixel
-
-    final_leaves = single_leaves + list(merge_map.keys())
-    new_tree = _build_merged_tree(
-        tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge
-    )
-    new_obs = pd.DataFrame(index=final_leaves)
-    new_obsm = _merge_obsm(
-        tdata.obsm, final_leaves, merge_map,
-        spatial_key=attribute_key, pixel_of=pixel_of,
-        collapse_duplicates=collapse_duplicates,
-    )
-    return td.TreeData(
-        obs=new_obs,
-        obsm=new_obsm,
-        obst={tree_key: new_tree},
-        uns=dict(tdata.uns),
-    )
+    return _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
 
 
 def sample_supercellular(
     tdata: td.TreeData,
     ratio: float | None = None,
     number_of_merges: int | None = None,
+    spatial_key: str | None = None,
     keep_root_edge: bool = True,
     collapse_duplicates: bool = True,
     random_seed: int | None = None,
     tree_key: str = "tree",
 ) -> td.TreeData:
-    """Iteratively merge pairs of leaves to simulate supercellular observations.
+    """Merge pairs of leaves to simulate supercellular observations.
 
-    Pairs of leaves are selected and merged iteratively until a stopping
-    condition is met. The first leaf is chosen uniformly at random; the second
-    is chosen with probability inversely proportional to branch distance from
-    the first. Merged leaves can be selected for further merging in subsequent
-    rounds. Character states are combined with ``"|"`` separating tokens from
-    each source leaf.
+    Two merging modes are available, selected by ``spatial_key``:
+
+    **Iterative mode** (``spatial_key=None``, default): pairs of leaves are
+    selected and merged iteratively until a stopping condition is met. The
+    first leaf is chosen uniformly at random; the second is chosen with
+    probability inversely proportional to branch distance from the first.
+    Merged leaves can be selected for further merging in subsequent rounds.
+    Requires exactly one of ``ratio`` or ``number_of_merges``.
+
+    **Pixel mode** (``spatial_key`` provided): leaves that share the same
+    integer pixel in ``tdata.obsm[spatial_key]`` are merged in one pass.
+    Intended to be composed after :func:`sample_spatial`::
+
+        tdata = sample_spatial(tdata, space=mask)
+        tdata = sample_supercellular(tdata, spatial_key="spatial")
+
+    In both modes, character states from merged leaves are combined with
+    ``"|"`` separating the contributing state tokens.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``. Nodes must have a
             ``"time"`` attribute.
         ratio: Number of merges as a fraction of the total leaf count.
-            Mutually exclusive with ``number_of_merges``.
-        number_of_merges: Exact number of merge operations. Mutually exclusive
-            with ``ratio``.
+            Iterative mode only; mutually exclusive with ``number_of_merges``.
+        number_of_merges: Exact number of merge operations. Iterative mode
+            only; mutually exclusive with ``ratio``.
+        spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
+            When provided, activates pixel mode and ``ratio`` /
+            ``number_of_merges`` must not be set.
         keep_root_edge: Preserve root's single child edge after pruning.
         collapse_duplicates: If ``True``, deduplicate repeated state tokens
             within a merged state string (e.g., ``"1|1|2"`` → ``"1|2"``).
-        random_seed: NumPy random seed for reproducibility.
+        random_seed: NumPy random seed for reproducibility (iterative mode).
         tree_key: Key in ``tdata.obst`` for the tree.
 
     Returns:
@@ -281,6 +252,21 @@ def sample_supercellular(
     Raises:
         LeafSubsamplerError: On invalid parameters.
     """
+    pixel_mode = spatial_key is not None
+
+    if pixel_mode:
+        if ratio is not None or number_of_merges is not None:
+            raise LeafSubsamplerError(
+                "`ratio` and `number_of_merges` must not be set in pixel mode "
+                "(when `spatial_key` is provided)."
+            )
+        if spatial_key not in tdata.obsm:
+            raise LeafSubsamplerError(
+                f"Spatial key `{spatial_key}` not present in tdata.obsm."
+            )
+        return _pixel_merge(tdata, spatial_key, keep_root_edge, collapse_duplicates, tree_key)
+
+    # Iterative mode
     if (ratio is None) == (number_of_merges is None):
         raise LeafSubsamplerError(
             "Specify exactly one of `ratio` or `number_of_merges`."
@@ -379,6 +365,60 @@ def _prune_tdata(
     return sub
 
 
+def _pixel_merge(
+    tdata: td.TreeData,
+    spatial_key: str,
+    keep_root_edge: bool,
+    collapse_duplicates: bool,
+    tree_key: str,
+) -> td.TreeData:
+    """Merge leaves that share the same integer pixel coordinate."""
+    leaves = list(tdata.obs_names)
+    coords_raw = tdata.obsm[spatial_key]
+    if isinstance(coords_raw, pd.DataFrame):
+        coords_arr = coords_raw.values
+    else:
+        coords_arr = np.asarray(coords_raw)
+    leaf_coords = {leaf: coords_arr[i] for i, leaf in enumerate(leaves)}
+
+    pixel_groups: dict[tuple, list[str]] = defaultdict(list)
+    for leaf in leaves:
+        pixel = tuple(int(x) for x in leaf_coords[leaf])
+        pixel_groups[pixel].append(leaf)
+
+    merge_map: dict[str, list[str]] = {}
+    single_leaves: list[str] = []
+    pixel_of: dict[str, tuple] = {}
+
+    for pixel, group in pixel_groups.items():
+        if len(group) == 1:
+            single_leaves.append(group[0])
+        else:
+            new_name = "-".join(sorted(group))
+            merge_map[new_name] = group
+            pixel_of[new_name] = pixel
+
+    if not merge_map:
+        return _prune_tdata(tdata, leaves, keep_root_edge, tree_key)
+
+    final_leaves = single_leaves + list(merge_map.keys())
+    new_tree = _build_merged_tree(
+        tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge
+    )
+    new_obs = pd.DataFrame(index=final_leaves)
+    new_obsm = _merge_obsm(
+        tdata.obsm, final_leaves, merge_map,
+        spatial_key=spatial_key, pixel_of=pixel_of,
+        collapse_duplicates=collapse_duplicates,
+    )
+    return td.TreeData(
+        obs=new_obs,
+        obsm=new_obsm,
+        obst={tree_key: new_tree},
+        uns=dict(tdata.uns),
+    )
+
+
 def _leaf_distance(tree: nx.DiGraph, leaf1: str, leaf2: str) -> float:
     """Branch distance between two leaves via their LCA."""
     lca = nx.lowest_common_ancestor(tree, leaf1, leaf2)
@@ -440,7 +480,7 @@ def _merge_obsm(
     pixel_of: dict[str, tuple],
     collapse_duplicates: bool,
 ) -> dict:
-    """Build merged obsm for spatial merges."""
+    """Build merged obsm for pixel merges."""
     new_obsm = {}
     for key, val in obsm.items():
         if not isinstance(val, pd.DataFrame):
