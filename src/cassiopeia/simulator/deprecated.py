@@ -1,0 +1,97 @@
+"""Deprecated OO tree simulator classes.
+
+Thin wrappers around the functional implementations in
+:mod:`cassiopeia.simulator.topology` emit a :class:`DeprecationWarning` and
+delegate all work to the underlying functions.
+
+Removed classes raise :class:`NotImplementedError` and direct users to install
+cassiopeia v2 for the legacy implementation.
+"""
+
+import warnings
+from collections.abc import Callable
+
+import networkx as nx
+import numpy as np
+
+from cassiopeia.simulator.topology import birth_death_process, complete_binary
+
+
+class CompleteBinarySimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.complete_binary` instead."""
+
+    def __init__(self, num_cells: int | None = None, depth: int | None = None):
+        warnings.warn(
+            "CompleteBinarySimulator is deprecated and will be removed in a future release. "
+            "Use complete_binary() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._num_cells = num_cells
+        self._depth = depth
+
+    def simulate_tree(self, tree_key: str = "tree"):
+        return complete_binary(num_cells=self._num_cells, depth=self._depth, tree_key=tree_key)
+
+
+class BirthDeathFitnessSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.birth_death_process` instead."""
+
+    def __init__(
+        self,
+        birth_waiting_distribution: Callable[[float], float],
+        initial_birth_scale: float,
+        death_waiting_distribution: Callable[[], float] = lambda: np.inf,
+        mutation_distribution: Callable[[], int] | None = None,
+        fitness_distribution: Callable[[], float] | None = None,
+        fitness_base: float = np.e,
+        num_extant: int | None = None,
+        experiment_time: float | None = None,
+        collapse_unifurcations: bool = True,
+        random_seed: int | None = None,
+        initial_tree: nx.DiGraph | None = None,
+    ):
+        warnings.warn(
+            "BirthDeathFitnessSimulator is deprecated and will be removed in a future release. "
+            "Use birth_death_process() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._birth_waiting_distribution = birth_waiting_distribution
+        self._initial_birth_scale = initial_birth_scale
+        self._death_waiting_distribution = death_waiting_distribution
+        self._mutation_distribution = mutation_distribution
+        self._fitness_distribution = fitness_distribution
+        self._fitness_base = fitness_base
+        self._num_extant = num_extant
+        self._experiment_time = experiment_time
+        self._collapse_unifurcations = collapse_unifurcations
+        self._random_seed = random_seed
+        self._initial_tree = initial_tree
+
+    def simulate_tree(self, tree_key: str = "tree"):
+        return birth_death_process(
+            birth_waiting_distribution=self._birth_waiting_distribution,
+            initial_birth_scale=self._initial_birth_scale,
+            death_waiting_distribution=self._death_waiting_distribution,
+            mutation_distribution=self._mutation_distribution,
+            fitness_distribution=self._fitness_distribution,
+            fitness_base=self._fitness_base,
+            num_extant=self._num_extant,
+            experiment_time=self._experiment_time,
+            collapse_unifurcations=self._collapse_unifurcations,
+            random_seed=self._random_seed,
+            initial_tree=self._initial_tree,
+            tree_key=tree_key,
+        )
+
+
+class ecDNABirthDeathSimulator:
+    """Removed simulator for extrachromosomal DNA birth-death processes."""
+
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError(
+            "ecDNABirthDeathSimulator was removed in v3.0.0. "
+            "Install cassiopeia v2 to use this simulator: "
+            "pip install 'cassiopeia-lineage<3.0.0'"
+        )

@@ -116,7 +116,10 @@ def get_root(tree: TreeLike, tree_key: str | None = None) -> str:
 
 
 def collapse_unifurcations(
-    tree: TreeLike, tree_key: str | None = None, inplace: bool = False
+    tree: TreeLike,
+    tree_key: str | None = None,
+    inplace: bool = False,
+    collapse_root: bool = True,
 ) -> nx.DiGraph:
     """Return a copy of ``tree`` with all unifurcations collapsed.
 
@@ -129,6 +132,9 @@ def collapse_unifurcations(
         tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
             Only required if multiple trees are present.
         inplace: Whether to modify the graph in place or return a new graph.
+        collapse_root: When ``True`` (default), collapse the root's single child
+            into the root if the root is a unifurcation. When ``False``, the
+            root's direct child is preserved even if it is a unifurcation.
 
     Returns:
         nx.DiGraph: A directed graph with all unifurcations collapsed.
@@ -150,6 +156,8 @@ def collapse_unifurcations(
         child = children[0]
         # Root case: bypass a single child by wiring root -> grandchildren
         if node == root:
+            if not collapse_root:
+                continue
             parent_edge = dict(t.get_edge_data(node, child, default={}))
             for gc in list(t.successors(child)):
                 child_edge = dict(t.get_edge_data(child, gc, default={}))

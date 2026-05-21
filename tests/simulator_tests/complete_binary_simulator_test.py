@@ -1,28 +1,33 @@
+"""Tests for complete_binary()."""
+
 import networkx as nx
 import pytest
 
 from cassiopeia.mixins import TreeSimulatorError
-from cassiopeia.simulator import CompleteBinarySimulator
+from cassiopeia.simulator import complete_binary
 
 
 @pytest.fixture
 def tdata():
-    """A precomputed tree from the depth-2 simulator."""
-    return CompleteBinarySimulator(depth=2).simulate_tree()
+    return complete_binary(depth=2)
 
+
+# --- complete_binary() tests ---
 
 @pytest.mark.parametrize("kwargs", [{}, {"num_cells": 3}, {"depth": 0}])
-def test_init_raises(kwargs):
+def test_complete_binary_raises(kwargs):
     with pytest.raises(TreeSimulatorError):
-        CompleteBinarySimulator(**kwargs)
+        complete_binary(**kwargs)
 
 
-def test_init_num_cells_sets_depth():
-    simulator = CompleteBinarySimulator(num_cells=4)
-    assert simulator.depth == 2
+def test_complete_binary_num_cells_sets_depth():
+    tdata = complete_binary(num_cells=4)
+    tree = tdata.obst["tree"]
+    leaves = [n for n in tree if tree.out_degree(n) == 0]
+    assert len(leaves) == 4
 
 
-def test_binary_tree_structure(tdata):
+def test_complete_binary_tree_structure(tdata):
     tree = tdata.obst["tree"]
     assert set(tree.nodes) == {"root", "1", "2", "3", "4", "5", "6", "7"}
     assert set(tree.edges) == {
@@ -36,7 +41,7 @@ def test_binary_tree_structure(tdata):
     }
 
 
-def test_binary_branch_lengths(tdata):
+def test_complete_binary_branch_lengths(tdata):
     tree = tdata.obst["tree"]
     assert nx.get_node_attributes(tree, "time") == {
         "root": 0.0,
@@ -58,6 +63,12 @@ def test_binary_branch_lengths(tdata):
         "6": 3,
         "7": 3,
     }
+
+
+def test_complete_binary_custom_tree_key():
+    tdata = complete_binary(depth=2, tree_key="mytree")
+    assert "mytree" in tdata.obst
+    assert "tree" not in tdata.obst
 
 
 if __name__ == "__main__":
