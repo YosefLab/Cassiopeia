@@ -69,19 +69,16 @@ def sample_spatial(
     tdata: td.TreeData,
     bounding_box: list[tuple] | None = None,
     space: np.ndarray | None = None,
-    ratio: float | None = None,
     spatial_key: str = "spatial",
     keep_root_edge: bool = True,
-    random_seed: int | None = None,
     tree_key: str = "tree",
 ) -> td.TreeData:
     """Subsample leaves within a spatial region of interest.
 
-    Subsets leaves to those within a bounding box or binary mask, then
-    optionally downsamples by ``ratio``. Spatial coordinates are read from
-    ``tdata.obsm[spatial_key]``. To select an exact leaf count, compose with
-    :func:`sample_uniform`; to merge cells at the same pixel, compose with
-    :func:`sample_supercellular`::
+    Subsets leaves to those within a bounding box or binary mask. Spatial
+    coordinates are read from ``tdata.obsm[spatial_key]``. To select an
+    exact leaf count, compose with :func:`sample_uniform`; to merge cells
+    at the same pixel, compose with :func:`sample_supercellular`::
 
         tdata = sample_spatial(tdata, space=mask)
         tdata = sample_uniform(tdata, number_of_leaves=100)
@@ -97,11 +94,8 @@ def sample_spatial(
             Coordinates are cast to integers; a leaf is kept when
             ``space[tuple(int_coords)]`` is ``True``. Mutually exclusive
             with ``bounding_box``.
-        ratio: Fraction of region-of-interest leaves to keep after spatial
-            filtering (rounded down). If ``None``, all region leaves are kept.
         spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
         keep_root_edge: Preserve root's single child edge after pruning.
-        random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
 
     Returns:
@@ -114,15 +108,10 @@ def sample_spatial(
         raise LeafSubsamplerError(
             "Specify exactly one of `bounding_box` or `space`."
         )
-    if ratio is not None and (ratio <= 0 or ratio > 1):
-        raise LeafSubsamplerError("`ratio` must be in (0, 1].")
     if spatial_key not in tdata.obsm:
         raise LeafSubsamplerError(
             f"Spatial key `{spatial_key}` not present in tdata.obsm."
         )
-
-    if random_seed is not None:
-        np.random.seed(random_seed)
 
     leaves = list(tdata.obs_names)
     coords_raw = tdata.obsm[spatial_key]
@@ -172,13 +161,6 @@ def sample_spatial(
 
     if len(leaf_keep) == 0:
         raise LeafSubsamplerError("No leaves within the specified region.")
-
-    # Downsample within region
-    if ratio is not None:
-        n_keep = int(len(leaf_keep) * ratio)
-        if n_keep <= 0:
-            raise LeafSubsamplerError("Number of leaves to keep is <= 0.")
-        leaf_keep = [str(x) for x in np.random.choice(leaf_keep, n_keep, replace=False)]
 
     return _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
 
