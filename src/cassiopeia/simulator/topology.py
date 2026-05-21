@@ -1,5 +1,6 @@
 """Functional tree topology simulators for Cassiopeia."""
 
+import warnings
 from collections.abc import Callable, Generator
 from queue import PriorityQueue
 
@@ -143,54 +144,22 @@ def birth_death_process(
             yield str(i)
             i += 1
 
-    names = _name_gen(starting_index)
-
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    tree = _initialize_bd_tree(initial_tree, initial_birth_scale, names)
+    _max_attempts = 10
+    for _attempt in range(_max_attempts):
+        names = _name_gen(starting_index)
+        tree = _initialize_bd_tree(initial_tree, initial_birth_scale, names)
+        current_lineages: PriorityQueue = PriorityQueue()
+        observed_nodes: list[str] = []
 
-    current_lineages: PriorityQueue = PriorityQueue()
-    observed_nodes: list[str] = []
+        starting_lineage = _make_initial_lineages(tree)
 
-    starting_lineage = _make_initial_lineages(tree)
-
-    if len(tree.nodes) == 1:
-        _sample_lineage_event(
-            starting_lineage,
-            current_lineages,
-            tree,
-            names,
-            observed_nodes,
-            birth_waiting_distribution,
-            death_waiting_distribution,
-            experiment_time,
-            mutation_distribution,
-            fitness_distribution,
-            fitness_base,
-        )
-    else:
-        current_lineages = starting_lineage
-
-    while not current_lineages.empty():
-        if num_extant and current_lineages.qsize() == num_extant:
-            remaining = []
-            while not current_lineages.empty():
-                _, _, lineage = current_lineages.get()
-                remaining.append(lineage)
-            min_time = remaining[0]["total_time"]
-            for lineage in remaining:
-                parent = list(tree.predecessors(lineage["id"]))[0]
-                tree.nodes[lineage["id"]]["time"] += min_time - lineage["total_time"]
-                tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[parent]["birth_scale"]
-                observed_nodes.append(lineage["id"])
-            break
-
-        _, _, lineage = current_lineages.get()
-        if lineage["active"]:
-            for _ in range(2):
+        try:
+            if len(tree.nodes) == 1:
                 _sample_lineage_event(
-                    lineage,
+                    starting_lineage,
                     current_lineages,
                     tree,
                     names,
@@ -202,9 +171,52 @@ def birth_death_process(
                     fitness_distribution,
                     fitness_base,
                 )
+            else:
+                current_lineages = starting_lineage
 
-    result = _build_tree(tree, observed_nodes, collapse_unifurcations)
-    return td.TreeData(obst={tree_key: result})
+            while not current_lineages.empty():
+                if num_extant and current_lineages.qsize() == num_extant:
+                    remaining = []
+                    while not current_lineages.empty():
+                        _, _, lineage = current_lineages.get()
+                        remaining.append(lineage)
+                    min_time = remaining[0]["total_time"]
+                    for lineage in remaining:
+                        parent = list(tree.predecessors(lineage["id"]))[0]
+                        tree.nodes[lineage["id"]]["time"] += min_time - lineage["total_time"]
+                        tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[parent]["birth_scale"]
+                        observed_nodes.append(lineage["id"])
+                    break
+
+                _, _, lineage = current_lineages.get()
+                if lineage["active"]:
+                    for _ in range(2):
+                        _sample_lineage_event(
+                            lineage,
+                            current_lineages,
+                            tree,
+                            names,
+                            observed_nodes,
+                            birth_waiting_distribution,
+                            death_waiting_distribution,
+                            experiment_time,
+                            mutation_distribution,
+                            fitness_distribution,
+                            fitness_base,
+                        )
+
+            result = _build_tree(tree, observed_nodes, collapse_unifurcations)
+            return td.TreeData(obst={tree_key: result})
+
+        except TreeSimulatorError as e:
+            if "All lineages died" not in str(e) or _attempt == _max_attempts - 1:
+                raise
+            if _attempt == 0:
+                warnings.warn(
+                    "All lineages died before stopping condition; retrying simulation.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
 
 def _initialize_bd_tree(

@@ -81,11 +81,15 @@ def test_dead_before_end():
     birth_wd = lambda scale: np.random.exponential(scale)
     death_wd = lambda: np.random.exponential(0.6)
 
-    with pytest.raises(TreeSimulatorError):
-        birth_death_process(birth_wd, 0.5, death_wd, num_extant=8, random_seed=5)
+    with pytest.warns(UserWarning, match="retrying"):
+        tdata = birth_death_process(birth_wd, 0.5, death_wd, num_extant=8, random_seed=5)
+    times, n_leaves, correct = _tree_stats(tdata)
+    assert n_leaves == 8
 
-    with pytest.raises(TreeSimulatorError):
-        birth_death_process(birth_wd, 0.5, death_wd, experiment_time=2, random_seed=5)
+    with pytest.warns(UserWarning, match="retrying"):
+        tdata = birth_death_process(birth_wd, 0.5, death_wd, experiment_time=2, random_seed=5)
+    times, n_leaves, correct = _tree_stats(tdata)
+    assert all(np.isclose(t, 2) for t in times)
 
 
 # --- Correct simulation results ---
