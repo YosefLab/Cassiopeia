@@ -131,3 +131,78 @@ class SequentialLineageTracingDataSimulator:
             "SequentialLineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
         )
+
+
+class LeafSubsampler:
+    """Deprecated abstract base. Use :func:`cassiopeia.simulator.sample_uniform`,
+    :func:`cassiopeia.simulator.sample_spatial`, or
+    :func:`cassiopeia.simulator.sample_supercellular` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeafSubsampler is deprecated and will be removed in a future release. "
+            "Use sample_uniform(), sample_spatial(), or sample_supercellular() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def subsample_leaves(self, tree, **kwargs):
+        raise NotImplementedError(
+            "LeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.sample_uniform(), sample_spatial(), or "
+            "sample_supercellular() with TreeData instead."
+        )
+
+
+class UniformLeafSubsampler:
+    """Deprecated. Use :func:`cassiopeia.simulator.sample_uniform` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "UniformLeafSubsampler is deprecated and will be removed in a future release. "
+            "Use sample_uniform() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def subsample_leaves(self, tree, **kwargs):
+        raise NotImplementedError(
+            "UniformLeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.sample_uniform() with TreeData instead."
+        )
+
+
+class SpatialLeafSubsampler:
+    """Deprecated. Use :func:`cassiopeia.simulator.sample_spatial` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SpatialLeafSubsampler is deprecated and will be removed in a future release. "
+            "Use sample_spatial() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def subsample_leaves(self, tree, **kwargs):
+        raise NotImplementedError(
+            "SpatialLeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.sample_spatial() with TreeData instead."
+        )
+
+
+class SupercellularSampler:
+    """Deprecated. Use :func:`cassiopeia.simulator.sample_supercellular` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SupercellularSampler is deprecated and will be removed in a future release. "
+            "Use sample_supercellular() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def subsample_leaves(self, tree, **kwargs):
+        raise NotImplementedError(
+            "SupercellularSampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.sample_supercellular() with TreeData instead."
+        )

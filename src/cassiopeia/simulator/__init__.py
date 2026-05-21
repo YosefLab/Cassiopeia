@@ -8,17 +8,18 @@ from .deprecated import (
     Cas9LineageTracingDataSimulator,
     CompleteBinarySimulator,
     ecDNABirthDeathSimulator,
+    LeafSubsampler,
     SequentialLineageTracingDataSimulator,
+    SpatialLeafSubsampler,
+    SupercellularSampler,
+    UniformLeafSubsampler,
 )
-from .LeafSubsampler import LeafSubsampler
 from .LineageTracingDataSimulator import LineageTracingDataSimulator
+from .sampling import sample_spatial, sample_supercellular, sample_uniform
 from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
-from .SpatialLeafSubsampler import SpatialLeafSubsampler
-from .SupercellularSampler import SupercellularSampler
 from .topology import birth_death_process, complete_binary
 from .tracing import missing_data, stochastic_tracing
 from .TreeSimulator import TreeSimulator
-from .UniformLeafSubsampler import UniformLeafSubsampler
 
 __all__ = [
     "birth_death_process",
@@ -32,6 +33,9 @@ __all__ = [
     "LeafSubsampler",
     "LineageTracingDataSimulator",
     "missing_data",
+    "sample_spatial",
+    "sample_supercellular",
+    "sample_uniform",
     "SequentialLineageTracingDataSimulator",
     "SimpleFitSubcloneSimulator",
     "SpatialLeafSubsampler",
