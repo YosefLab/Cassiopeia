@@ -10,10 +10,6 @@ import treedata as td
 
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
 from cassiopeia.simulator import (
-    LeafSubsampler,
-    SpatialLeafSubsampler,
-    SupercellularSampler,
-    UniformLeafSubsampler,
     sample_spatial,
     sample_supercellular,
     sample_uniform,
@@ -518,35 +514,3 @@ def test_pixel_mode_composed_after_spatial():
     merged = sample_supercellular(filtered, spatial_key="spatial")
     assert len(merged.obs_names) == 5
 
-
-# ============================================================
-# Deprecation stubs
-# ============================================================
-
-
-def test_leaf_subsampler_deprecated():
-    with pytest.warns(DeprecationWarning, match="sample_uniform"):
-        sampler = LeafSubsampler()
-    with pytest.raises(NotImplementedError):
-        sampler.subsample_leaves(None)
-
-
-def test_uniform_leaf_subsampler_deprecated():
-    with pytest.warns(DeprecationWarning, match="sample_uniform"):
-        sampler = UniformLeafSubsampler()
-    with pytest.raises(NotImplementedError):
-        sampler.subsample_leaves(None)
-
-
-def test_spatial_leaf_subsampler_deprecated():
-    with pytest.warns(DeprecationWarning, match="sample_spatial"):
-        sampler = SpatialLeafSubsampler()
-    with pytest.raises(NotImplementedError):
-        sampler.subsample_leaves(None)
-
-
-def test_supercellular_sampler_deprecated():
-    with pytest.warns(DeprecationWarning, match="sample_supercellular"):
-        sampler = SupercellularSampler()
-    with pytest.raises(NotImplementedError):
-        sampler.subsample_leaves(None)

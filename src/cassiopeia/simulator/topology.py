@@ -2,7 +2,7 @@
 
 import warnings
 from collections.abc import Callable, Generator
-from queue import PriorityQueue
+from queue import PriorityQueue, Queue
 
 import networkx as nx
 import numpy as np
@@ -375,3 +375,88 @@ def _build_tree(
         raise TreeSimulatorError("All lineages died before stopping condition")
 
     return tree
+
+
+def simple_fit_subclone(
+    branch_length_neutral: float | Callable[[], float],
+    branch_length_fit: float | Callable[[], float],
+    experiment_duration: float,
+    generations_until_fit_subclone: int,
+    tree_key: str = "tree",
+) -> td.TreeData:
+    """Simulate a clonal population that develops one fit subclone.
+
+    All cells evolve neutrally until generation ``generations_until_fit_subclone``,
+    at which point exactly one lineage gains fitness and begins dividing at the
+    faster ``branch_length_fit`` rate. The tree grows via BFS until
+    ``experiment_duration`` is reached.
+
+    Leaf nodes are named ``"{id}_neutral"`` or ``"{id}_fit"`` depending on which
+    population they belong to. All leaf times equal ``experiment_duration``.
+
+    Args:
+        branch_length_neutral: Branch length for neutrally evolving cells.
+            May be a scalar or a zero-argument callable for stochastic lengths.
+        branch_length_fit: Branch length for the fit subclone. May be a scalar
+            or a zero-argument callable.
+        experiment_duration: Total experiment length; cells that have not yet
+            divided by this time become leaves.
+        generations_until_fit_subclone: Generation at which one lineage gains
+            fitness.
+        tree_key: Key under which the tree is stored in ``obst``.
+
+    Returns:
+        A TreeData with the simulated tree in ``obst[tree_key]``. All nodes
+        have a ``"time"`` attribute.
+    """
+    if isinstance(branch_length_neutral, (int, float)):
+        _bl_neutral: Callable[[], float] = lambda: branch_length_neutral  # type: ignore[arg-type]
+    else:
+        _bl_neutral = branch_length_neutral
+    if isinstance(branch_length_fit, (int, float)):
+        _bl_fit: Callable[[], float] = lambda: branch_length_fit  # type: ignore[arg-type]
+    else:
+        _bl_fit = branch_length_fit
+
+    def _name_gen() -> Generator[str, None, None]:
+        i = 0
+        while True:
+            yield str(i)
+            i += 1
+
+    tree: nx.DiGraph = nx.DiGraph()
+    names = _name_gen()
+    q: Queue = Queue()
+    times: dict[str, float] = {}
+
+    root = next(names) + "_neutral"
+    tree.add_node(root)
+    times[root] = 0.0
+
+    root_child = next(names) + "_neutral"
+    tree.add_edge(root, root_child)
+    q.put((root_child, 0.0, "neutral", 0))
+
+    subclone_started = False
+    while not q.empty():
+        node, time, fitness, generation = q.get()
+        bl = _bl_neutral() if fitness == "neutral" else _bl_fit()
+        division_time = time + bl
+        if division_time >= experiment_duration:
+            times[node] = experiment_duration
+            continue
+        times[node] = division_time
+        left_fitness = fitness
+        right_fitness = fitness
+        if not subclone_started and generation + 1 == generations_until_fit_subclone:
+            subclone_started = True
+            left_fitness = "fit"
+        left_child = next(names) + "_" + left_fitness
+        right_child = next(names) + "_" + right_fitness
+        tree.add_nodes_from([left_child, right_child])
+        tree.add_edges_from([(node, left_child), (node, right_child)])
+        q.put((left_child, division_time, left_fitness, generation + 1))
+        q.put((right_child, division_time, right_fitness, generation + 1))
+
+    nx.set_node_attributes(tree, times, "time")
+    return td.TreeData(obst={tree_key: tree})

@@ -242,3 +242,21 @@ class ClonalSpatialDataSimulator:
             "ClonalSpatialDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.clonal_spatial() with TreeData instead."
         )
+
+
+class SimpleFitSubcloneSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.simple_fit_subclone` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SimpleFitSubcloneSimulator is deprecated and will be removed in a future release. "
+            "Use simple_fit_subclone() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def simulate_tree(self):
+        raise NotImplementedError(
+            "SimpleFitSubcloneSimulator.simulate_tree() requires CassiopeiaTree which is "
+            "deprecated. Use cassiopeia.simulator.simple_fit_subclone() with TreeData instead."
+        )
