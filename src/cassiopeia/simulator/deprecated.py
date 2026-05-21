@@ -95,3 +95,39 @@ class ecDNABirthDeathSimulator:
             "Install cassiopeia v2 to use this simulator: "
             "pip install 'cassiopeia-lineage<3.0.0'"
         )
+
+
+class Cas9LineageTracingDataSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.stochastic_tracing` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "Cas9LineageTracingDataSimulator is deprecated and will be removed in a future release. "
+            "Use stochastic_tracing() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def overlay_data(self, tree):
+        raise NotImplementedError(
+            "Cas9LineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is "
+            "deprecated. Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
+        )
+
+
+class SequentialLineageTracingDataSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.stochastic_tracing` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SequentialLineageTracingDataSimulator is deprecated and will be removed in a future "
+            "release. Use stochastic_tracing() with initiation_rate set instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def overlay_data(self, tree):
+        raise NotImplementedError(
+            "SequentialLineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is "
+            "deprecated. Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
+        )
