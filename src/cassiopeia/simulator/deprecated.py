@@ -206,3 +206,39 @@ class SupercellularSampler:
             "SupercellularSampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.sample_supercellular() with TreeData instead."
         )
+
+
+class BrownianSpatialDataSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.brownian_spatial` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "BrownianSpatialDataSimulator is deprecated and will be removed in a future release. "
+            "Use brownian_spatial() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def overlay_data(self, tree):
+        raise NotImplementedError(
+            "BrownianSpatialDataSimulator.overlay_data() requires CassiopeiaTree which is "
+            "deprecated. Use cassiopeia.simulator.brownian_spatial() with TreeData instead."
+        )
+
+
+class ClonalSpatialDataSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.clonal_spatial` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "ClonalSpatialDataSimulator is deprecated and will be removed in a future release. "
+            "Use clonal_spatial() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def overlay_data(self, tree):
+        raise NotImplementedError(
+            "ClonalSpatialDataSimulator.overlay_data() requires CassiopeiaTree which is "
+            "deprecated. Use cassiopeia.simulator.clonal_spatial() with TreeData instead."
+        )
