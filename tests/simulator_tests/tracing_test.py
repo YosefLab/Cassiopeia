@@ -441,5 +441,37 @@ def test_composed_pipeline(tdata):
     assert set(df.values.flatten()).issubset({"-", "*", "1", "2", "3"})
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+# ---------------------------------------------------------------------------
+# copy parameter
+# ---------------------------------------------------------------------------
+
+
+def test_stochastic_tracing_copy_false_modifies_inplace(tdata):
+    original = tdata
+    result = stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=2,
+                                state_priors=SIMPLE_PRIORS, random_seed=1, copy=False)
+    assert result is original
+    assert "characters" in original.obsm
+
+
+def test_stochastic_tracing_copy_true_returns_new(tdata):
+    result = stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=2,
+                                state_priors=SIMPLE_PRIORS, random_seed=1, copy=True)
+    assert result is not tdata
+    assert "characters" not in tdata.obsm
+    assert "characters" in result.obsm
+
+
+def test_missing_data_copy_false_modifies_inplace(tdata):
+    stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=2,
+                       state_priors=SIMPLE_PRIORS, random_seed=1)
+    original = tdata
+    result = missing_data(tdata, random_seed=1, copy=False)
+    assert result is original
+
+
+def test_missing_data_copy_true_returns_new(tdata):
+    stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=2,
+                       state_priors=SIMPLE_PRIORS, random_seed=1)
+    result = missing_data(tdata, random_seed=1, copy=True)
+    assert result is not tdata

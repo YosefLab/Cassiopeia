@@ -318,3 +318,46 @@ def test_clonal_spatial_data_simulator_deprecated():
         sim = ClonalSpatialDataSimulator()
     with pytest.raises(NotImplementedError):
         sim.overlay_data(None)
+
+
+# ---------------------------------------------------------------------------
+# copy parameter
+# ---------------------------------------------------------------------------
+
+
+def test_brownian_copy_false_modifies_inplace():
+    tdata = _make_tdata()
+    original = tdata
+    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0,
+                              random_seed=0, copy=False)
+    assert result is original
+    assert "spatial" in original.obsm
+
+
+def test_brownian_copy_true_returns_new():
+    tdata = _make_tdata()
+    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0,
+                              random_seed=0, copy=True)
+    assert result is not tdata
+    assert "spatial" not in tdata.obsm
+    assert "spatial" in result.obsm
+
+
+def test_clonal_copy_false_modifies_inplace():
+    pytest.importorskip("cv2")
+    pytest.importorskip("poisson_disc")
+    tdata = _make_tdata()
+    original = tdata
+    result = clonal_spatial(tdata, shape=(100, 100), random_seed=0, copy=False)
+    assert result is original
+    assert "spatial" in original.obsm
+
+
+def test_clonal_copy_true_returns_new():
+    pytest.importorskip("cv2")
+    pytest.importorskip("poisson_disc")
+    tdata = _make_tdata()
+    result = clonal_spatial(tdata, shape=(100, 100), random_seed=0, copy=True)
+    assert result is not tdata
+    assert "spatial" not in tdata.obsm
+    assert "spatial" in result.obsm

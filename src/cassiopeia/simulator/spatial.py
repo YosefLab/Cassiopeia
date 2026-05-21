@@ -21,6 +21,7 @@ def brownian_spatial(
     random_seed: int | None = None,
     tree_key: str = "tree",
     spatial_key: str = "spatial",
+    copy: bool = False,
 ) -> td.TreeData:
     """Overlay spatial coordinates via Brownian motion along the tree.
 
@@ -45,9 +46,12 @@ def brownian_spatial(
         tree_key: Key in ``tdata.obst`` for the tree.
         spatial_key: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in-place.
 
     Returns:
-        tdata modified in-place with spatial coordinates added.
+        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
+        input modified in-place.
 
     Raises:
         DataSimulatorError: If ``dim`` <= 0 or ``diffusion_coefficient`` < 0.
@@ -56,6 +60,9 @@ def brownian_spatial(
         raise DataSimulatorError("Number of dimensions must be positive.")
     if diffusion_coefficient < 0:
         raise DataSimulatorError("Diffusion coefficient must be non-negative.")
+
+    if copy:
+        tdata = tdata.copy()
 
     if random_seed is not None:
         np.random.seed(random_seed)
@@ -100,6 +107,7 @@ def clonal_spatial(
     random_seed: int | None = None,
     tree_key: str = "tree",
     spatial_key: str = "spatial",
+    copy: bool = False,
 ) -> td.TreeData:
     """Overlay spatial coordinates with clonal spatial autocorrelation.
 
@@ -127,9 +135,12 @@ def clonal_spatial(
         tree_key: Key in ``tdata.obst`` for the tree.
         spatial_key: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in-place.
 
     Returns:
-        tdata modified in-place with spatial coordinates added.
+        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
+        input modified in-place.
 
     Raises:
         DataSimulatorError: If spatial extras are missing, or if neither/both
@@ -143,6 +154,9 @@ def clonal_spatial(
 
     if (shape is None) == (space is None):
         raise DataSimulatorError("Specify exactly one of `shape` or `space`.")
+
+    if copy:
+        tdata = tdata.copy()
 
     if random_seed is not None:
         np.random.seed(random_seed)

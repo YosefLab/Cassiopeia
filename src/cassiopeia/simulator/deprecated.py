@@ -244,6 +244,45 @@ class ClonalSpatialDataSimulator:
         )
 
 
+class TreeSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.birth_death_process`,
+    :func:`cassiopeia.simulator.complete_binary`, or
+    :func:`cassiopeia.simulator.simple_fit_subclone` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "TreeSimulator is deprecated and will be removed in a future release. "
+            "Use birth_death_process(), complete_binary(), or simple_fit_subclone() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def simulate_tree(self):
+        raise NotImplementedError(
+            "TreeSimulator.simulate_tree() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.birth_death_process(), complete_binary(), or "
+            "simple_fit_subclone() with TreeData instead."
+        )
+
+
+class LineageTracingDataSimulator:
+    """Deprecated. Use :func:`cassiopeia.simulator.stochastic_tracing` instead."""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LineageTracingDataSimulator is deprecated and will be removed in a future release. "
+            "Use stochastic_tracing() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    def overlay_data(self, tree):
+        raise NotImplementedError(
+            "LineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is deprecated. "
+            "Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
+        )
+
+
 class SimpleFitSubcloneSimulator:
     """Deprecated. Use :func:`cassiopeia.simulator.simple_fit_subclone` instead."""
 

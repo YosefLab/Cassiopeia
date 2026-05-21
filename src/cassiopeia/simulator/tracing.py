@@ -25,6 +25,7 @@ def stochastic_tracing(
     random_seed: int | None = None,
     tree_key: str = "tree",
     characters_key: str = "characters",
+    copy: bool = False,
 ) -> td.TreeData:
     """Simulate stochastic lineage tracing data on a tree.
 
@@ -113,9 +114,12 @@ def stochastic_tracing(
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
         characters_key: Key used for ``obsm`` and node attributes.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in-place.
 
     Returns:
-        The same ``tdata`` object, modified in-place.
+        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
+        input modified in-place.
 
     Raises:
         DataSimulatorError: On invalid parameters.
@@ -143,6 +147,9 @@ def stochastic_tracing(
         state_priors, state_generating_distribution, number_of_states,
         n_chars, size_of_cassette,
     )
+
+    if copy:
+        tdata = tdata.copy()
 
     if random_seed is not None:
         np.random.seed(random_seed)
@@ -222,6 +229,7 @@ def missing_data(
     random_seed: int | None = None,
     tree_key: str = "tree",
     characters_key: str = "characters",
+    copy: bool = False,
 ) -> td.TreeData:
     """Apply heritable and stochastic missing data to a traced tree.
 
@@ -275,12 +283,18 @@ def missing_data(
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
         characters_key: Key to read character data from.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in-place.
 
     Returns:
-        The same ``tdata`` object, modified in-place.
+        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
+        input modified in-place.
     """
     if unmodified_state is None:
         unmodified_state = tdata.uns.get("unmodified_state", "*")
+
+    if copy:
+        tdata = tdata.copy()
 
     if random_seed is not None:
         np.random.seed(random_seed)
