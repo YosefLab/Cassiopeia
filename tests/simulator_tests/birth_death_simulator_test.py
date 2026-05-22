@@ -27,6 +27,7 @@ def _tree_stats(tdata) -> tuple[list[float], int, bool]:
 
 # --- Validation errors ---
 
+
 def test_bad_waiting_distributions():
     with pytest.raises(TreeSimulatorError):
         birth_death_process(lambda _: -1, 1, experiment_time=1)
@@ -42,7 +43,9 @@ def test_bad_waiting_distributions():
 
     with pytest.raises(TreeSimulatorError):
         birth_death_process(
-            lambda _: 1, 1, lambda: 0,
+            lambda _: 1,
+            1,
+            lambda: 0,
             mutation_distribution=lambda: -1,
             fitness_distribution=lambda: 1,
             experiment_time=1,
@@ -93,6 +96,7 @@ def test_dead_before_end():
 
 
 # --- Correct simulation results ---
+
 
 def test_single_lineage():
     tdata = birth_death_process(lambda _: 1, 1, num_extant=1)
@@ -175,8 +179,7 @@ def test_nonconstant_birth_death_process_no_unifurcation_collapsing():
     assert not correct
 
     tdata = birth_death_process(
-        birth_wd, 0.5, death_wd,
-        experiment_time=1.3, collapse_unifurcations=False, random_seed=12
+        birth_wd, 0.5, death_wd, experiment_time=1.3, collapse_unifurcations=False, random_seed=12
     )
     times, n_leaves, correct = _tree_stats(tdata)
     assert all(np.isclose(t, 1.3) for t in times)
@@ -187,14 +190,18 @@ def test_nonconstant_birth_death_process_both_stopping_conditions():
     birth_wd = lambda scale: np.random.exponential(scale)
     death_wd = lambda: np.random.exponential(1.5)
 
-    tdata = birth_death_process(birth_wd, 0.5, death_wd, num_extant=8, experiment_time=2, random_seed=17)
+    tdata = birth_death_process(
+        birth_wd, 0.5, death_wd, num_extant=8, experiment_time=2, random_seed=17
+    )
     times, n_leaves, correct = _tree_stats(tdata)
     assert all(np.isclose(t, times[0]) for t in times)
     assert all(t > 1 for t in times)
     assert n_leaves == 8
     assert correct
 
-    tdata = birth_death_process(birth_wd, 0.5, death_wd, num_extant=8, experiment_time=1, random_seed=17)
+    tdata = birth_death_process(
+        birth_wd, 0.5, death_wd, num_extant=8, experiment_time=1, random_seed=17
+    )
     times, n_leaves, correct = _tree_stats(tdata)
     assert all(np.isclose(t, 1) for t in times)
     assert n_leaves == 3
@@ -202,7 +209,7 @@ def test_nonconstant_birth_death_process_both_stopping_conditions():
 
 
 def test_nonconstant_yule_with_predictable_fitness():
-    multiplier = 0.98 ** 2  # 2 mutations per division, fitness_base=0.98
+    multiplier = 0.98**2  # 2 mutations per division, fitness_base=0.98
 
     def check_fitness(tree: nx.DiGraph):
         """Check birth_scale = 0.5 * multiplier^d (internal) or ^(d-1) (leaf)
@@ -218,7 +225,7 @@ def test_nonconstant_yule_with_predictable_fitness():
             if node in leaves:
                 expected = 0.5 * multiplier ** (d - 1)
             else:
-                expected = 0.5 * multiplier ** d
+                expected = 0.5 * multiplier**d
             assert np.isclose(tree.nodes[node]["birth_scale"], expected), (
                 f"node={node} depth={d} leaf={node in leaves} "
                 f"actual={tree.nodes[node]['birth_scale']:.6f} expected={expected:.6f}"
@@ -227,7 +234,8 @@ def test_nonconstant_yule_with_predictable_fitness():
     birth_wd = lambda scale: np.random.exponential(scale)
 
     tdata = birth_death_process(
-        birth_wd, 0.5,
+        birth_wd,
+        0.5,
         mutation_distribution=lambda: 2,
         fitness_distribution=lambda: 1,
         fitness_base=0.98,
@@ -241,7 +249,8 @@ def test_nonconstant_yule_with_predictable_fitness():
     check_fitness(tdata.obst["tree"])
 
     tdata = birth_death_process(
-        birth_wd, 0.5,
+        birth_wd,
+        0.5,
         mutation_distribution=lambda: 2,
         fitness_distribution=lambda: 1,
         fitness_base=0.98,
@@ -269,8 +278,7 @@ def test_nonconstant_birth_death_process_with_variable_fitness():
     assert correct
 
     tdata = birth_death_process(
-        birth_wd, 0.5, death_wd, mut_dist, fit_dist, 1.5,
-        experiment_time=3, random_seed=12364
+        birth_wd, 0.5, death_wd, mut_dist, fit_dist, 1.5, experiment_time=3, random_seed=12364
     )
     times, n_leaves, correct = _tree_stats(tdata)
     assert all(np.isclose(t, 3) for t in times)
@@ -279,11 +287,16 @@ def test_nonconstant_birth_death_process_with_variable_fitness():
 
 def test_no_initial_birth_scale():
     topology = nx.DiGraph()
-    topology.add_edges_from([
-        ("0", "1"), ("0", "2"),
-        ("1", "3"), ("1", "4"),
-        ("2", "5"), ("2", "6"),
-    ])
+    topology.add_edges_from(
+        [
+            ("0", "1"),
+            ("0", "2"),
+            ("1", "3"),
+            ("1", "4"),
+            ("2", "5"),
+            ("2", "6"),
+        ]
+    )
     birth_wd = lambda scale: np.random.exponential(scale)
 
     tdata = birth_death_process(birth_wd, 1, num_extant=16, random_seed=54, initial_tree=topology)
@@ -303,7 +316,9 @@ def test_birth_scale_chaining():
     initial_graph = tdata1.obst["tree"]
     initial_leaves = {n for n in initial_graph if initial_graph.out_degree(n) == 0}
 
-    tdata2 = birth_death_process(birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_graph)
+    tdata2 = birth_death_process(
+        birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_graph
+    )
     tree2 = tdata2.obst["tree"]
 
     assert len([n for n in tree2 if tree2.out_degree(n) == 0]) == 100

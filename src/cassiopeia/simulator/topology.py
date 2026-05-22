@@ -55,9 +55,7 @@ def complete_binary(
     names = _name_gen()
     tree = nx.balanced_tree(2, depth, create_using=nx.DiGraph)
     tree.add_edge("root", 0)
-    nx.relabel_nodes(
-        tree, {node: next(names) for node in tree.nodes if node != "root"}, copy=False
-    )
+    nx.relabel_nodes(tree, {node: next(names) for node in tree.nodes if node != "root"}, copy=False)
     depths = nx.single_source_shortest_path_length(tree, "root")
     nx.set_node_attributes(tree, depths, "depth")
     max_depth = max(depths.values())
@@ -68,7 +66,9 @@ def complete_binary(
 
 
 def birth_death_process(
-    birth_waiting_distribution: Callable[[float], float] = lambda scale: np.random.exponential(scale=scale),
+    birth_waiting_distribution: Callable[[float], float] = lambda scale: np.random.exponential(
+        scale=scale
+    ),
     initial_birth_scale: float = 1.0,
     death_waiting_distribution: Callable[[], float] = lambda: np.inf,
     mutation_distribution: Callable[[], int] | None = None,
@@ -320,11 +320,13 @@ def _sample_lineage_event(
     ):
         tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
         tree.nodes[unique_id]["time"] = experiment_time
-        current_lineages.put((
-            experiment_time,
-            unique_id,
-            _make_lineage_dict(unique_id, lineage["birth_scale"], experiment_time, False),
-        ))
+        current_lineages.put(
+            (
+                experiment_time,
+                unique_id,
+                _make_lineage_dict(unique_id, lineage["birth_scale"], experiment_time, False),
+            )
+        )
         observed_nodes.append(unique_id)
 
     elif birth_wait < death_wait:
@@ -334,21 +336,25 @@ def _sample_lineage_event(
         new_time = birth_wait + lineage["total_time"]
         tree.nodes[unique_id]["birth_scale"] = updated_scale
         tree.nodes[unique_id]["time"] = new_time
-        current_lineages.put((
-            new_time,
-            unique_id,
-            _make_lineage_dict(unique_id, updated_scale, new_time, True),
-        ))
+        current_lineages.put(
+            (
+                new_time,
+                unique_id,
+                _make_lineage_dict(unique_id, updated_scale, new_time, True),
+            )
+        )
 
     else:
         new_time = death_wait + lineage["total_time"]
         tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
         tree.nodes[unique_id]["time"] = new_time
-        current_lineages.put((
-            new_time,
-            unique_id,
-            _make_lineage_dict(unique_id, lineage["birth_scale"], new_time, False),
-        ))
+        current_lineages.put(
+            (
+                new_time,
+                unique_id,
+                _make_lineage_dict(unique_id, lineage["birth_scale"], new_time, False),
+            )
+        )
 
 
 def _prune_dead_lineages(tree: nx.DiGraph, observed_nodes: list[str]) -> None:

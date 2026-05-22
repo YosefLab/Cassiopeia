@@ -14,7 +14,6 @@ from cassiopeia.simulator import (
     clonal_spatial,
 )
 
-
 # ---------------------------------------------------------------------------
 # Shared helper
 # ---------------------------------------------------------------------------
@@ -191,6 +190,7 @@ def test_clonal_coords_in_space():
     pytest.importorskip("cv2")
     pytest.importorskip("poisson_disc")
     import cv2 as _cv2
+
     shape = (100, 100)
     center_x = shape[1] // 2
     center_y = shape[0] // 2
@@ -198,7 +198,11 @@ def test_clonal_coords_in_space():
         np.zeros(shape, dtype=np.uint8),
         (center_x, center_y),
         (center_x, center_y),
-        0, 0, 360, 1, -1,
+        0,
+        0,
+        360,
+        1,
+        -1,
     ).astype(bool)
     tdata = _make_tdata()
     clonal_spatial(tdata, shape=shape, random_seed=0)
@@ -259,7 +263,7 @@ def test_clonal_spatial_autocorrelation():
                 sibling_pairs.append(pair)
 
     for i, l1 in enumerate(leaves):
-        for l2 in leaves[i + 1:]:
+        for l2 in leaves[i + 1 :]:
             pair = tuple(sorted([l1, l2]))
             if pair not in sibling_pairs:
                 non_sibling_pairs.append(pair)
@@ -273,8 +277,7 @@ def test_clonal_spatial_autocorrelation():
         coords = td_test.obsm["spatial"]
 
         sibling_d = [
-            np.linalg.norm(coords.loc[a].values - coords.loc[b].values)
-            for a, b in sibling_pairs
+            np.linalg.norm(coords.loc[a].values - coords.loc[b].values) for a, b in sibling_pairs
         ]
         non_sibling_d = [
             np.linalg.norm(coords.loc[a].values - coords.loc[b].values)
@@ -328,16 +331,14 @@ def test_clonal_spatial_data_simulator_deprecated():
 def test_brownian_copy_false_modifies_inplace():
     tdata = _make_tdata()
     original = tdata
-    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0,
-                              random_seed=0, copy=False)
+    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, copy=False)
     assert result is original
     assert "spatial" in original.obsm
 
 
 def test_brownian_copy_true_returns_new():
     tdata = _make_tdata()
-    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0,
-                              random_seed=0, copy=True)
+    result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, copy=True)
     assert result is not tdata
     assert "spatial" not in tdata.obsm
     assert "spatial" in result.obsm

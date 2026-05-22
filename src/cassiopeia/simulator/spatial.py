@@ -87,7 +87,7 @@ def brownian_spatial(
         max_val = all_coords.max()
         if max_val > 0:
             all_coords /= max_val
-        locations = dict(zip(locations.keys(), all_coords))
+        locations = dict(zip(locations.keys(), all_coords, strict=False))
 
     for node, loc in locations.items():
         tree.nodes[node][spatial_key] = loc
@@ -170,7 +170,11 @@ def clonal_spatial(
                 np.zeros(shape, dtype=np.uint8),
                 (center_x, center_y),
                 (center_x, center_y),
-                0, 0, 360, 1, -1,
+                0,
+                0,
+                360,
+                1,
+                -1,
             ).astype(bool)
         else:
             actual_space = np.ones(shape, dtype=bool)
@@ -192,19 +196,15 @@ def clonal_spatial(
             continue
 
         children = list(tree.successors(node))
-        node_idx = np.array(
-            [i for i, assign in enumerate(point_assignments) if assign == node]
-        )
+        node_idx = np.array([i for i, assign in enumerate(point_assignments) if assign == node])
         node_points = points[node_idx]
         locations[node] = node_points.mean(axis=0)
 
         G = _points_to_graph(node_points)
-        sizes = tuple(
-            _n_leaves_in_subtree(tree, child) for child in children
-        )
+        sizes = tuple(_n_leaves_in_subtree(tree, child) for child in children)
         assignments = _split_graph(G, sizes)
 
-        for child, partition in zip(children, assignments):
+        for child, partition in zip(children, assignments, strict=False):
             for i in node_idx[partition]:
                 point_assignments[i] = child
 
@@ -278,19 +278,15 @@ def _split_graph(G: nx.Graph, sizes: tuple[int, ...]) -> tuple[list[int], ...]:
     if not nx.is_connected(G):
         raise DataSimulatorError("Graph is not connected.")
     if sum(sizes) != len(G.nodes):
-        raise DataSimulatorError(
-            f"Cannot partition {len(G.nodes)} nodes into sizes {sizes}."
-        )
+        raise DataSimulatorError(f"Cannot partition {len(G.nodes)} nodes into sizes {sizes}.")
 
-    seeds = dict(zip(np.random.choice(list(G.nodes), len(sizes), replace=False), sizes))
-    seed_distances = {
-        seed: nx.single_source_dijkstra_path_length(G, seed) for seed in seeds
-    }
+    seeds = dict(
+        zip(np.random.choice(list(G.nodes), len(sizes), replace=False), sizes, strict=False)
+    )
+    seed_distances = {seed: nx.single_source_dijkstra_path_length(G, seed) for seed in seeds}
 
     distance_seed_nodes = sorted(
-        (dist, seed, node)
-        for seed, dists in seed_distances.items()
-        for node, dist in dists.items()
+        (dist, seed, node) for seed, dists in seed_distances.items() for node, dist in dists.items()
     )
 
     assigned: set = set()

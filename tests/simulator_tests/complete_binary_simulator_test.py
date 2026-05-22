@@ -14,6 +14,7 @@ def tdata():
 
 # --- complete_binary() tests ---
 
+
 @pytest.mark.parametrize("kwargs", [{}, {"num_cells": 3}, {"depth": 0}])
 def test_complete_binary_raises(kwargs):
     with pytest.raises(TreeSimulatorError):

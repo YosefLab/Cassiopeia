@@ -58,7 +58,6 @@ def stochastic_tracing(
     handled separately — call :func:`missing_data` after this function.
 
     Examples:
-
         Chan et al. Cas9 indels (Chan et al., Nature Methods 2019)::
 
             stochastic_tracing(tdata, number_of_cassettes=10, size_of_cassette=3)
@@ -144,8 +143,11 @@ def stochastic_tracing(
         rate_per_char = _resolve_mutation_rate(mutation_rate, number_of_cassettes, size_of_cassette)
 
     priors_per_char = _resolve_state_priors(
-        state_priors, state_generating_distribution, number_of_states,
-        n_chars, size_of_cassette,
+        state_priors,
+        state_generating_distribution,
+        number_of_states,
+        n_chars,
+        size_of_cassette,
     )
 
     if copy:
@@ -155,9 +157,7 @@ def stochastic_tracing(
         np.random.seed(random_seed)
 
     tree = tdata.obst[tree_key]
-    char_arrays: dict[str, list[str]] = {
-        node: [unmodified_state] * n_chars for node in tree.nodes
-    }
+    char_arrays: dict[str, list[str]] = {node: [unmodified_state] * n_chars for node in tree.nodes}
 
     for node in nx.topological_sort(tree):
         if tree.in_degree(node) == 0:
@@ -170,7 +170,8 @@ def stochastic_tracing(
         if not sequential:
             open_sites = [i for i, s in enumerate(array) if s == unmodified_state]
             new_cuts = [
-                site for site in open_sites
+                site
+                for site in open_sites
                 if np.random.uniform() < 1 - np.exp(-branch_len * rate_per_char[site])
             ]
             array = _introduce_states(array, new_cuts, priors_per_char)
@@ -203,7 +204,7 @@ def stochastic_tracing(
         char_arrays[node] = array
 
     for node in tree.nodes:
-        tree.nodes[node][characters_key] = dict(zip(columns, char_arrays[node]))
+        tree.nodes[node][characters_key] = dict(zip(columns, char_arrays[node], strict=False))
 
     obs_names = list(tdata.obs_names)
     tdata.obsm[characters_key] = pd.DataFrame(
@@ -310,9 +311,7 @@ def missing_data(
         node: dict(tree.nodes[node][characters_key]) for node in tree.nodes
     }
     # Working copy — all modifications go here
-    chars: dict[str, dict[str, str]] = {
-        node: dict(d) for node, d in original_chars.items()
-    }
+    chars: dict[str, dict[str, str]] = {node: dict(d) for node, d in original_chars.items()}
 
     # --- Resection (collapse) ---
     # Detected per-branch by comparing original chars of each node to its parent.
@@ -331,10 +330,13 @@ def missing_data(
                 # New cuts on this branch: unmodified in parent, edited in child,
                 # and not already collapsed from an ancestor
                 new_cuts = [
-                    i for i in range(start, end)
-                    if (i not in collapsed_sites[parent]
+                    i
+                    for i in range(start, end)
+                    if (
+                        i not in collapsed_sites[parent]
                         and original_chars[parent][columns[i]] == unmodified_state
-                        and original_chars[node][columns[i]] != unmodified_state)
+                        and original_chars[node][columns[i]] != unmodified_state
+                    )
                 ]
                 if len(new_cuts) > 1:
                     for i in range(new_cuts[0], new_cuts[-1] + 1):
