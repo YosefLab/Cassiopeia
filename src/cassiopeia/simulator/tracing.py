@@ -24,7 +24,7 @@ def stochastic_tracing(
     continuation_rate: float | None = None,
     unmodified_state: str = "*",
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
     characters_key: str = "characters",
     copy: bool = False,
 ) -> td.TreeData:
@@ -229,7 +229,7 @@ def missing_data(
     unmodified_state: str | None = None,
     key_added: str | None = None,
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
     characters_key: str = "characters",
     copy: bool = False,
 ) -> td.TreeData:

@@ -42,7 +42,7 @@ def _make_tree() -> td.TreeData:
         times[leaf] = 3
     nx.set_node_attributes(tree, times, "time")
 
-    return td.TreeData(obst={"tree": tree})
+    return td.TreeData(obst={"simulated": tree})
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def test_cas9_inheritance(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=2
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         for parent in tree.predecessors(node):
             parent_chars = tree.nodes[parent]["characters"]
@@ -137,7 +137,7 @@ def test_cas9_inheritance(tdata):
 
 def test_cas9_node_attributes(tdata):
     stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=3, random_seed=0)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     expected_cols = {"0-0", "0-1", "0-2", "1-0", "1-1", "1-2"}
     for node in tree.nodes:
         assert "characters" in tree.nodes[node]
@@ -148,7 +148,7 @@ def test_cas9_leaf_obsm_matches_node_attrs(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=3
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     df = tdata.obsm["characters"]
     for leaf in df.index:
         node_chars = tree.nodes[leaf]["characters"]
@@ -221,8 +221,8 @@ def test_cas9_collapse_sites(tdata):
     )
     missing_data(
         tdata,
-        heritable_missing_rate=0.0,
-        stochastic_missing_rate=0.0,
+        heritable_rate=0.0,
+        stochastic_rate=0.0,
         collapse_sites_on_cassette=True,
         random_seed=7,
     )
@@ -256,7 +256,7 @@ def test_cas9_custom_characters_key(tdata):
         random_seed=0,
     )
     assert "edits" in tdata.obsm
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         assert "edits" in tree.nodes[node]
 
@@ -299,8 +299,8 @@ def test_collapse_custom_missing_state(tdata):
     )
     missing_data(
         tdata,
-        heritable_missing_rate=0.0,
-        stochastic_missing_rate=0.0,
+        heritable_rate=0.0,
+        stochastic_rate=0.0,
         collapse_sites_on_cassette=True,
         missing_state="DEL",
         random_seed=7,
@@ -322,7 +322,7 @@ def test_missing_data_default_missing_state(tdata):
         mutation_rate=0.0,
         random_seed=0,
     )
-    missing_data(tdata, heritable_missing_rate=0.0, stochastic_missing_rate=1.0, random_seed=0)
+    missing_data(tdata, heritable_rate=0.0, stochastic_rate=1.0, random_seed=0)
     df = tdata.obsm["characters"]
     assert all(v == "-" for v in df.values.flatten())
 
@@ -390,7 +390,7 @@ def test_sequential_ordering_constraint(tdata):
         state_priors=SIMPLE_PRIORS,
         random_seed=20,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         chars = tree.nodes[node]["characters"]
         for cassette in range(2):
@@ -417,7 +417,7 @@ def test_sequential_inheritance(tdata):
         state_priors=SIMPLE_PRIORS,
         random_seed=21,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         for parent in tree.predecessors(node):
             for col in ["0-0", "0-1", "0-2"]:
@@ -453,8 +453,8 @@ def test_heritable_silencing_on_internal_nodes(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=30
     )
-    missing_data(tdata, heritable_missing_rate=10.0, stochastic_missing_rate=0.0, random_seed=30)
-    tree = tdata.obst["tree"]
+    missing_data(tdata, heritable_rate=10.0, stochastic_rate=0.0, random_seed=30)
+    tree = tdata.obst["simulated"]
     internal_nodes = [n for n in tree.nodes if tree.out_degree(n) > 0 and tree.in_degree(n) > 0]
     all_vals = set()
     for node in internal_nodes:
@@ -467,8 +467,8 @@ def test_heritable_silencing_propagates(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=31
     )
-    missing_data(tdata, heritable_missing_rate=10.0, stochastic_missing_rate=0.0, random_seed=31)
-    tree = tdata.obst["tree"]
+    missing_data(tdata, heritable_rate=10.0, stochastic_rate=0.0, random_seed=31)
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         chars = tree.nodes[node]["characters"]
         for parent in tree.predecessors(node):
@@ -493,8 +493,8 @@ def test_stochastic_silencing_leaves_only(tdata):
         mutation_rate=0.0,
         random_seed=40,
     )
-    missing_data(tdata, heritable_missing_rate=0.0, stochastic_missing_rate=1.0, random_seed=40)
-    tree = tdata.obst["tree"]
+    missing_data(tdata, heritable_rate=0.0, stochastic_rate=1.0, random_seed=40)
+    tree = tdata.obst["simulated"]
     # All leaves should be fully silenced (rate=1.0)
     for leaf in [n for n in tree.nodes if tree.out_degree(n) == 0]:
         assert all(v == "-" for v in tree.nodes[leaf]["characters"].values())
@@ -508,8 +508,8 @@ def test_missing_data_cassette_level(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=50
     )
-    missing_data(tdata, heritable_missing_rate=10.0, stochastic_missing_rate=1.0, random_seed=50)
-    tree = tdata.obst["tree"]
+    missing_data(tdata, heritable_rate=10.0, stochastic_rate=1.0, random_seed=50)
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         chars = tree.nodes[node]["characters"]
         for cassette in range(2):
@@ -527,8 +527,8 @@ def test_obsm_rebuilt_after_missing_data(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=SIMPLE_PRIORS, random_seed=60
     )
-    missing_data(tdata, heritable_missing_rate=1.0, stochastic_missing_rate=0.5, random_seed=60)
-    tree = tdata.obst["tree"]
+    missing_data(tdata, heritable_rate=1.0, stochastic_rate=0.5, random_seed=60)
+    tree = tdata.obst["simulated"]
     df = tdata.obsm["characters"]
     for leaf in df.index:
         node_chars = tree.nodes[leaf]["characters"]
@@ -543,8 +543,8 @@ def test_missing_data_custom_missing_state(tdata):
     )
     missing_data(
         tdata,
-        heritable_missing_rate=10.0,
-        stochastic_missing_rate=1.0,
+        heritable_rate=10.0,
+        stochastic_rate=1.0,
         missing_state="X",
         random_seed=70,
     )
@@ -562,8 +562,8 @@ def test_missing_data_key_added(tdata):
     orig_df = tdata.obsm["characters"].copy()
     missing_data(
         tdata,
-        heritable_missing_rate=10.0,
-        stochastic_missing_rate=1.0,
+        heritable_rate=10.0,
+        stochastic_rate=1.0,
         key_added="characters_missing",
         random_seed=90,
     )
@@ -571,7 +571,7 @@ def test_missing_data_key_added(tdata):
     assert tdata.obsm["characters"].equals(orig_df)
     # New key was created
     assert "characters_missing" in tdata.obsm
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         assert "characters_missing" in tree.nodes[node]
         assert "characters" in tree.nodes[node]
@@ -592,7 +592,7 @@ def test_composed_pipeline(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=3, size_of_cassette=2, state_priors=SIMPLE_PRIORS, random_seed=80
     )
-    missing_data(tdata, heritable_missing_rate=0.1, stochastic_missing_rate=0.1, random_seed=80)
+    missing_data(tdata, heritable_rate=0.1, stochastic_rate=0.1, random_seed=80)
     df = tdata.obsm["characters"]
     assert df.shape == (8, 6)
     assert list(df.columns) == ["0-0", "0-1", "1-0", "1-1", "2-0", "2-1"]

@@ -36,7 +36,7 @@ def _make_tdata(n_leaves=8, seed=42) -> td.TreeData:
 
     leaves = [n for n in tree if tree.out_degree(n) == 0]
     obs = pd.DataFrame(index=leaves)
-    return td.TreeData(obs=obs, obst={"tree": tree})
+    return td.TreeData(obs=obs, obst={"simulated": tree})
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def test_brownian_scale_unit_area():
 def test_brownian_no_scale_root_origin():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, scale_unit_area=False, random_seed=0)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     root = next(n for n in tree if tree.in_degree(n) == 0)
     np.testing.assert_array_equal(tree.nodes[root]["spatial"], np.zeros(2))
 
@@ -116,7 +116,7 @@ def test_brownian_different_seeds():
 def test_brownian_node_attrs():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         assert "spatial" in tree.nodes[node]
         assert len(tree.nodes[node]["spatial"]) == 2
@@ -134,7 +134,7 @@ def test_brownian_spatial_key():
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, spatial_key="coords")
     assert "coords" in tdata.obsm
     assert "spatial" not in tdata.obsm
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     root = next(n for n in tree if tree.in_degree(n) == 0)
     assert "coords" in tree.nodes[root]
 
@@ -237,7 +237,7 @@ def test_clonal_node_attrs():
     pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     clonal_spatial(tdata, shape=(100, 100), random_seed=0)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     internal_nodes = [n for n in tree if tree.out_degree(n) > 0]
     for node in internal_nodes:
         assert "spatial" in tree.nodes[node], f"Node {node} missing spatial attribute"
@@ -248,7 +248,7 @@ def test_clonal_spatial_autocorrelation():
     pytest.importorskip("poisson_disc")
     n_leaves = 8
     tdata = _make_tdata(n_leaves=n_leaves)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
 
     # Collect sibling pairs: leaves that share the same immediate parent
     leaves = [n for n in tree if tree.out_degree(n) == 0]
@@ -299,7 +299,7 @@ def test_clonal_spatial_key():
     clonal_spatial(tdata, shape=(100, 100), random_seed=0, spatial_key="mycoords")
     assert "mycoords" in tdata.obsm
     assert "spatial" not in tdata.obsm
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     root = next(n for n in tree if tree.in_degree(n) == 0)
     assert "mycoords" in tree.nodes[root]
 

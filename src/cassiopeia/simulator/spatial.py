@@ -19,7 +19,7 @@ def brownian_spatial(
     diffusion_coefficient: float,
     scale_unit_area: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
     spatial_key: str = "spatial",
     copy: bool = False,
 ) -> td.TreeData:
@@ -105,7 +105,7 @@ def clonal_spatial(
     shape: tuple[int, ...] | None = None,
     space: np.ndarray | None = None,
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
     spatial_key: str = "spatial",
     copy: bool = False,
 ) -> td.TreeData:

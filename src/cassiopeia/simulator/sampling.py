@@ -18,7 +18,7 @@ def sample_uniform(
     number_of_leaves: int | None = None,
     keep_root_edge: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Uniformly subsample leaves from a TreeData.
 
@@ -69,7 +69,7 @@ def sample_spatial(
     space: np.ndarray | None = None,
     spatial_key: str = "spatial",
     keep_root_edge: bool = True,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Subsample leaves within a spatial region of interest.
 
@@ -167,7 +167,7 @@ def sample_supercellular(
     keep_root_edge: bool = True,
     collapse_duplicates: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Merge pairs of leaves to simulate supercellular observations.
 

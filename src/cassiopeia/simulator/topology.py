@@ -15,7 +15,7 @@ from cassiopeia.utils import collapse_unifurcations as _collapse_unifurcations
 def complete_binary(
     num_cells: int | None = None,
     depth: int | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Simulate a complete binary tree.
 
@@ -79,7 +79,7 @@ def birth_death_process(
     collapse_unifurcations: bool = True,
     random_seed: int | None = None,
     initial_tree: nx.DiGraph | None = None,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Simulate a phylogenetic tree via a forward birth-death process with fitness.
 
@@ -388,7 +388,7 @@ def simple_fit_subclone(
     branch_length_fit: float | Callable[[], float],
     experiment_duration: float,
     generations_until_fit_subclone: int,
-    tree_key: str = "tree",
+    tree_key: str = "simulated",
 ) -> td.TreeData:
     """Simulate a clonal population that develops one fit subclone.
 

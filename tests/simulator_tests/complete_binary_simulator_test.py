@@ -23,13 +23,13 @@ def test_complete_binary_raises(kwargs):
 
 def test_complete_binary_num_cells_sets_depth():
     tdata = complete_binary(num_cells=4)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     leaves = [n for n in tree if tree.out_degree(n) == 0]
     assert len(leaves) == 4
 
 
 def test_complete_binary_tree_structure(tdata):
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     assert set(tree.nodes) == {"root", "1", "2", "3", "4", "5", "6", "7"}
     assert set(tree.edges) == {
         ("root", "1"),
@@ -43,7 +43,7 @@ def test_complete_binary_tree_structure(tdata):
 
 
 def test_complete_binary_branch_lengths(tdata):
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     assert nx.get_node_attributes(tree, "time") == {
         "root": 0.0,
         "1": 1 / 3,

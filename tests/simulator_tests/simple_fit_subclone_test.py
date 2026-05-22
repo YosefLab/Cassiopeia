@@ -17,7 +17,7 @@ def test_deterministic_nodes_and_edges():
         experiment_duration=1.9,
         generations_until_fit_subclone=1,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     assert list(tree.nodes) == ["0_neutral", "1_neutral", "2_fit", "3_neutral", "4_fit", "5_fit"]
     assert list(tree.edges) == [
         ("0_neutral", "1_neutral"),
@@ -35,7 +35,7 @@ def test_deterministic_times():
         experiment_duration=1.9,
         generations_until_fit_subclone=1,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     times = {n: tree.nodes[n]["time"] for n in tree.nodes}
     assert times == {
         "0_neutral": 0.0,
@@ -65,7 +65,7 @@ def test_leaves_at_experiment_duration():
         experiment_duration=experiment_duration,
         generations_until_fit_subclone=2,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     leaves = [n for n in tree if tree.out_degree(n) == 0]
     for leaf in leaves:
         assert tree.nodes[leaf]["time"] == experiment_duration
@@ -78,7 +78,7 @@ def test_leaf_labels_neutral_and_fit():
         experiment_duration=3.0,
         generations_until_fit_subclone=2,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     leaves = [n for n in tree if tree.out_degree(n) == 0]
     assert all(l.endswith("_neutral") or l.endswith("_fit") for l in leaves)
     assert any(l.endswith("_fit") for l in leaves)
@@ -93,7 +93,7 @@ def test_exactly_one_fit_subclone_root():
         experiment_duration=4.0,
         generations_until_fit_subclone=2,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     # Find internal nodes whose children include a "_fit" node
     fit_parents = [
         n
@@ -119,7 +119,7 @@ def test_stochastic_branch_lengths():
         experiment_duration=4.9,
         generations_until_fit_subclone=2,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     internal_bls = [
         tree.nodes[c]["time"] - tree.nodes[p]["time"]
         for p, c in tree.edges
@@ -147,7 +147,7 @@ def test_all_nodes_have_time():
         experiment_duration=3.0,
         generations_until_fit_subclone=2,
     )
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     for node in tree.nodes:
         assert "time" in tree.nodes[node]
 
@@ -167,8 +167,8 @@ def test_later_subclone_generation():
         generations_until_fit_subclone=3,
     )
     # More fit leaves when subclone starts earlier (more generations to expand)
-    tree_early = tdata_early.obst["tree"]
-    tree_late = tdata_late.obst["tree"]
+    tree_early = tdata_early.obst["simulated"]
+    tree_late = tdata_late.obst["simulated"]
     fit_early = sum(1 for n in tree_early if tree_early.out_degree(n) == 0 and n.endswith("_fit"))
     fit_late = sum(1 for n in tree_late if tree_late.out_degree(n) == 0 and n.endswith("_fit"))
     assert fit_early >= fit_late

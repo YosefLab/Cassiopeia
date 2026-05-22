@@ -31,7 +31,7 @@ def _make_tdata(n_leaves: int = 8, with_chars: bool = True, seed: int = 42) -> t
         tree.nodes[node]["time"] = float(depth)
 
     obs = pd.DataFrame(index=leaves)
-    tdata = td.TreeData(obs=obs, obst={"tree": tree})
+    tdata = td.TreeData(obs=obs, obst={"simulated": tree})
 
     if with_chars:
         char_data = {}
@@ -127,7 +127,7 @@ def test_uniform_uns_preserved():
 def test_uniform_tree_valid():
     tdata = _make_tdata(n_leaves=8)
     sub = sample_uniform(tdata, number_of_leaves=4, random_seed=5)
-    tree = sub.obst["tree"]
+    tree = sub.obst["simulated"]
     assert len([n for n in tree if tree.out_degree(n) == 0]) == 4
     root = next(n for n in tree if tree.in_degree(n) == 0)
     for node in tree:
@@ -339,7 +339,7 @@ def test_supercellular_collapse_duplicates():
 def test_supercellular_tree_valid():
     tdata = _make_tdata(n_leaves=8)
     sub = sample_supercellular(tdata, number_of_merges=3, random_seed=1)
-    tree = sub.obst["tree"]
+    tree = sub.obst["simulated"]
     assert {n for n in tree if tree.out_degree(n) == 0} == set(sub.obs_names)
     root = next(n for n in tree if tree.in_degree(n) == 0)
     for node in tree:
@@ -349,10 +349,10 @@ def test_supercellular_tree_valid():
 
 def test_supercellular_merged_time_is_mean():
     tdata = _make_tdata(n_leaves=4)
-    orig_tree = tdata.obst["tree"]
+    orig_tree = tdata.obst["simulated"]
     orig_times = {n: orig_tree.nodes[n]["time"] for n in orig_tree.nodes}
     sub = sample_supercellular(tdata, number_of_merges=1, random_seed=3)
-    tree = sub.obst["tree"]
+    tree = sub.obst["simulated"]
     for merged in [n for n in sub.obs_names if "-" in n]:
         parts = merged.split("-")
         if all(p in orig_times for p in parts) and merged in tree.nodes:
@@ -363,7 +363,7 @@ def test_supercellular_merged_time_is_mean():
 def test_supercellular_inverse_distance_weighting():
     """Per pair, siblings (dist 2) should be merged more than second-cousins (dist 6)."""
     tdata = _make_tdata(n_leaves=8)
-    orig_tree = tdata.obst["tree"]
+    orig_tree = tdata.obst["simulated"]
     leaves = list(tdata.obs_names)
     pair_counts: dict[tuple, int] = {}
 
@@ -502,7 +502,7 @@ def test_pixel_mode_tree_valid():
         [[1, 1], [1, 1], [2, 2], [3, 3]], index=leaves, columns=["x", "y"]
     )
     sub = sample_supercellular(tdata, spatial_key="spatial")
-    tree = sub.obst["tree"]
+    tree = sub.obst["simulated"]
     assert {n for n in tree if tree.out_degree(n) == 0} == set(sub.obs_names)
 
 

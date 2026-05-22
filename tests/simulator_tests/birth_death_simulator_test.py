@@ -10,7 +10,7 @@ from cassiopeia.simulator import birth_death_process
 
 def _tree_stats(tdata) -> tuple[list[float], int, bool]:
     """Extract (leaf times, num leaves, all internal degrees in {0,2}) from a TreeData."""
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     times = []
     out_degrees = []
     for node in tree.nodes:
@@ -101,7 +101,7 @@ def test_dead_before_end():
 def test_single_lineage():
     tdata = birth_death_process(lambda _: 1, 1, num_extant=1)
     times, n_leaves, _ = _tree_stats(tdata)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     root = next(n for n in tree if tree.in_degree(n) == 0)
     leaf = next(n for n in tree if tree.out_degree(n) == 0)
     assert n_leaves == 1
@@ -111,7 +111,7 @@ def test_single_lineage():
 
     tdata = birth_death_process(lambda _: 1, 1, experiment_time=1)
     times, n_leaves, _ = _tree_stats(tdata)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     root = next(n for n in tree if tree.in_degree(n) == 0)
     leaf = next(n for n in tree if tree.out_degree(n) == 0)
     assert n_leaves == 1
@@ -141,7 +141,7 @@ def test_nonconstant_yule():
     assert all(np.isclose(t, times[0]) for t in times)
     assert n_leaves == 16
     assert correct
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     assert max(int(n) for n in tree.nodes if n != "root") == 31
 
     tdata = birth_death_process(birth_wd, 1, experiment_time=2, random_seed=54)
@@ -246,7 +246,7 @@ def test_nonconstant_yule_with_predictable_fitness():
     assert all(np.isclose(t, times[0]) for t in times)
     assert n_leaves == 8
     assert correct
-    check_fitness(tdata.obst["tree"])
+    check_fitness(tdata.obst["simulated"])
 
     tdata = birth_death_process(
         birth_wd,
@@ -260,7 +260,7 @@ def test_nonconstant_yule_with_predictable_fitness():
     times, n_leaves, correct = _tree_stats(tdata)
     assert all(np.isclose(t, 0.6) for t in times)
     assert correct
-    check_fitness(tdata.obst["tree"])
+    check_fitness(tdata.obst["simulated"])
 
 
 def test_nonconstant_birth_death_process_with_variable_fitness():
@@ -300,7 +300,7 @@ def test_no_initial_birth_scale():
     birth_wd = lambda scale: np.random.exponential(scale)
 
     tdata = birth_death_process(birth_wd, 1, num_extant=16, random_seed=54, initial_tree=topology)
-    tree = tdata.obst["tree"]
+    tree = tdata.obst["simulated"]
     assert len([n for n in tree if tree.out_degree(n) == 0]) == 16
 
     initial_leaves = {"3", "4", "5", "6"}
@@ -313,13 +313,13 @@ def test_birth_scale_chaining():
     birth_wd = lambda scale: np.random.exponential(scale)
 
     tdata1 = birth_death_process(birth_wd, 1, num_extant=16, random_seed=54)
-    initial_graph = tdata1.obst["tree"]
+    initial_graph = tdata1.obst["simulated"]
     initial_leaves = {n for n in initial_graph if initial_graph.out_degree(n) == 0}
 
     tdata2 = birth_death_process(
         birth_wd, 1, num_extant=100, random_seed=54, initial_tree=initial_graph
     )
-    tree2 = tdata2.obst["tree"]
+    tree2 = tdata2.obst["simulated"]
 
     assert len([n for n in tree2 if tree2.out_degree(n) == 0]) == 100
 
