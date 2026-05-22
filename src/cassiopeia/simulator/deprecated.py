@@ -137,7 +137,7 @@ class SequentialLineageTracingDataSimulator:
 
 
 class LeafSubsampler:
-    """Deprecated abstract base"""
+    """Deprecated abstract base."""
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -252,7 +252,7 @@ class ClonalSpatialDataSimulator:
 
 
 class TreeSimulator:
-    """Deprecated abstract base"""
+    """Deprecated abstract base."""
 
     def __init__(self, *args, **kwargs):
         warnings.warn(

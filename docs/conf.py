@@ -21,7 +21,10 @@ import sys
 from pathlib import Path
 
 from sphinx.ext.autosummary import Autosummary
-from sphinx.ext.autosummary import get_documenter
+try:
+    from sphinx.ext.autosummary import _get_documenter as get_documenter
+except ImportError:
+    from sphinx.ext.autosummary import get_documenter
 from docutils.parsers.rst import directives
 from sphinx.util.inspect import safe_getattr
 

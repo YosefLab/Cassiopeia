@@ -61,6 +61,7 @@ jobs:
 
     name: ${{ matrix.env.label }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.env.allow_failure }}
 
     steps:
       - uses: actions/checkout@v4
