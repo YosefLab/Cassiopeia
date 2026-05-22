@@ -44,6 +44,7 @@ jobs:
                     name: .key,
                     label: (if (.key | contains("pre")) then .key + " (PRE-RELEASE DEPENDENCIES)" else .key end),
                     python: .value.python
+                    allow_failure: (.key | contains("pre"))
                   }
               )')
           echo "envs=${ENVS_JSON}" | tee $GITHUB_OUTPUT
