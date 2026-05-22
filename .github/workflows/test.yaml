@@ -43,7 +43,7 @@ jobs:
                 | {
                     name: .key,
                     label: (if (.key | contains("pre")) then .key + " (PRE-RELEASE DEPENDENCIES)" else .key end),
-                    python: .value.python
+                    python: .value.python,
                     allow_failure: (.key | contains("pre"))
                   }
               )')

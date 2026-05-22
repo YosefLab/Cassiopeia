@@ -31,6 +31,7 @@ class CompleteBinarySimulator:
         self._depth = depth
 
     def simulate_tree(self, tree_key: str = "tree"):
+        """Simulate a complete binary tree."""
         return complete_binary(num_cells=self._num_cells, depth=self._depth, tree_key=tree_key)
 
 
@@ -52,8 +53,7 @@ class BirthDeathFitnessSimulator:
         initial_tree: nx.DiGraph | None = None,
     ):
         warnings.warn(
-            "BirthDeathFitnessSimulator is deprecated and will be removed in a future release. "
-            "Use birth_death_process() instead.",
+            "Deprecated. Use birth_death_process() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -70,6 +70,7 @@ class BirthDeathFitnessSimulator:
         self._initial_tree = initial_tree
 
     def simulate_tree(self, tree_key: str = "tree"):
+        """Simulate a birth-death tree."""
         return birth_death_process(
             birth_waiting_distribution=self._birth_waiting_distribution,
             initial_birth_scale=self._initial_birth_scale,
@@ -109,6 +110,7 @@ class Cas9LineageTracingDataSimulator:
         )
 
     def overlay_data(self, tree):
+        """Overlay Cas9 lineage tracing data onto the tree."""
         raise NotImplementedError(
             "Cas9LineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
@@ -127,6 +129,7 @@ class SequentialLineageTracingDataSimulator:
         )
 
     def overlay_data(self, tree):
+        """Overlay sequential lineage tracing data onto the tree."""
         raise NotImplementedError(
             "SequentialLineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
@@ -134,10 +137,7 @@ class SequentialLineageTracingDataSimulator:
 
 
 class LeafSubsampler:
-    """Deprecated abstract base. Use :func:`cassiopeia.simulator.sample_uniform`,
-    :func:`cassiopeia.simulator.sample_spatial`, or
-    :func:`cassiopeia.simulator.sample_supercellular` instead.
-    """
+    """Deprecated abstract base"""
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -148,6 +148,7 @@ class LeafSubsampler:
         )
 
     def subsample_leaves(self, tree, **kwargs):
+        """Subsample leaves from the tree."""
         raise NotImplementedError(
             "LeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.sample_uniform(), sample_spatial(), or "
@@ -167,6 +168,7 @@ class UniformLeafSubsampler:
         )
 
     def subsample_leaves(self, tree, **kwargs):
+        """Subsample leaves uniformly at random from the tree."""
         raise NotImplementedError(
             "UniformLeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.sample_uniform() with TreeData instead."
@@ -185,6 +187,7 @@ class SpatialLeafSubsampler:
         )
 
     def subsample_leaves(self, tree, **kwargs):
+        """Subsample leaves from the tree based on spatial coordinates."""
         raise NotImplementedError(
             "SpatialLeafSubsampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.sample_spatial() with TreeData instead."
@@ -203,6 +206,7 @@ class SupercellularSampler:
         )
 
     def subsample_leaves(self, tree, **kwargs):
+        """Subsample leaves from the tree based on supercellular sampling."""
         raise NotImplementedError(
             "SupercellularSampler.subsample_leaves() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.sample_supercellular() with TreeData instead."
@@ -221,6 +225,7 @@ class BrownianSpatialDataSimulator:
         )
 
     def overlay_data(self, tree):
+        """Overlay Brownian spatial data onto the tree."""
         raise NotImplementedError(
             "BrownianSpatialDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.brownian_spatial() with TreeData instead."
@@ -239,6 +244,7 @@ class ClonalSpatialDataSimulator:
         )
 
     def overlay_data(self, tree):
+        """Overlay clonal spatial data onto the tree."""
         raise NotImplementedError(
             "ClonalSpatialDataSimulator.overlay_data() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.clonal_spatial() with TreeData instead."
@@ -246,10 +252,7 @@ class ClonalSpatialDataSimulator:
 
 
 class TreeSimulator:
-    """Deprecated. Use :func:`cassiopeia.simulator.birth_death_process`,
-    :func:`cassiopeia.simulator.complete_binary`, or
-    :func:`cassiopeia.simulator.simple_fit_subclone` instead.
-    """
+    """Deprecated abstract base"""
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -260,6 +263,7 @@ class TreeSimulator:
         )
 
     def simulate_tree(self):
+        """Simulate a tree."""
         raise NotImplementedError(
             "TreeSimulator.simulate_tree() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.birth_death_process(), complete_binary(), or "
@@ -279,6 +283,7 @@ class LineageTracingDataSimulator:
         )
 
     def overlay_data(self, tree):
+        """Overlay lineage tracing data onto the tree."""
         raise NotImplementedError(
             "LineageTracingDataSimulator.overlay_data() requires CassiopeiaTree which is deprecated. "
             "Use cassiopeia.simulator.stochastic_tracing() with TreeData instead."
@@ -297,6 +302,7 @@ class SimpleFitSubcloneSimulator:
         )
 
     def simulate_tree(self):
+        """Simulate a tree with a fit subclone."""
         raise NotImplementedError(
             "SimpleFitSubcloneSimulator.simulate_tree() requires CassiopeiaTree which is "
             "deprecated. Use cassiopeia.simulator.simple_fit_subclone() with TreeData instead."
