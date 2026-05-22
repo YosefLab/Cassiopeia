@@ -68,7 +68,6 @@ optional-dependencies.doc = [
   "ipython",
   "myst-nb>=1.1",
   "nbsphinx",
-  "nbsphinx-link",
   "pandas",
   "pandoc",
   "scanpydoc",
