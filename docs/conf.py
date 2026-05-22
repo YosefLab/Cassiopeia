@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 from sphinx.ext.autosummary import Autosummary
+
 try:
     from sphinx.ext.autosummary import _get_documenter as get_documenter
 except ImportError:
