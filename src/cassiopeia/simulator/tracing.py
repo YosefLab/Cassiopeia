@@ -1,6 +1,7 @@
 """Functional lineage tracing data simulators for Cassiopeia."""
 
 import math
+import warnings
 from collections.abc import Callable
 
 import networkx as nx
@@ -58,22 +59,13 @@ def stochastic_tracing(
     handled separately — call :func:`missing_data` after this function.
 
     Examples:
-        Chan et al. Cas9 indels (Chan et al., Nature Methods 2019)::
-
-            stochastic_tracing(tdata, number_of_cassettes=10, size_of_cassette=3)
-
         GESTALT (McKenna et al., Science 2016)::
 
             stochastic_tracing(tdata, number_of_cassettes=3, size_of_cassette=10)
 
-        PEtracer (Koblan et al., Science 2025)::
+        Chan et al. Cas9 indels (Chan et al., Nature 2019)::
 
-            stochastic_tracing(
-                tdata,
-                number_of_cassettes=10,
-                size_of_cassette=3,
-                state_priors={str(i): 1 / 8 for i in range(1, 9)},
-            )
+            stochastic_tracing(tdata, number_of_cassettes=10, size_of_cassette=3)
 
         DNA Typewriter (Choi et al., Nature 2022)::
 
@@ -84,6 +76,15 @@ def stochastic_tracing(
                 initiation_rate=0.01,
                 continuation_rate=0.2,
                 state_priors={str(i): 1 / 16 for i in range(1, 17)},
+            )
+
+        PEtracer (Koblan et al., Science 2025)::
+
+            stochastic_tracing(
+                tdata,
+                number_of_cassettes=10,
+                size_of_cassette=3,
+                state_priors={str(i): 1 / 8 for i in range(1, 9)},
             )
 
     Args:
@@ -221,8 +222,8 @@ def stochastic_tracing(
 
 def missing_data(
     tdata: td.TreeData,
-    heritable_missing_rate: float = 1e-4,
-    stochastic_missing_rate: float = 1e-2,
+    heritable_rate: float = 0.0,
+    stochastic_rate: float = 0.0,
     collapse_sites_on_cassette: bool = False,
     missing_state: str = "-",
     unmodified_state: str | None = None,
@@ -237,13 +238,13 @@ def missing_data(
     Intended to be composed after :func:`stochastic_tracing`. Applies three
     types of missing data at the cassette level:
 
-    **Heritable silencing** (``heritable_missing_rate``): cassette-level
+    **Heritable silencing** (``heritable_rate``): cassette-level
     transcriptional silencing modelled as an exponential process per branch.
     Silencing propagates from parent to all descendants — once a cassette is
     silenced at a node, all descendant nodes also have it silenced. Both
     internal nodes and leaves are affected.
 
-    **Stochastic dropout** (``stochastic_missing_rate``): assay-level cassette
+    **Stochastic dropout** (``stochastic_rate``): assay-level cassette
     dropout applied only to leaf nodes with a fixed per-cassette probability.
 
     **Resection** (``collapse_sites_on_cassette=True``): when two or more sites
@@ -264,9 +265,9 @@ def missing_data(
 
     Args:
         tdata: TreeData previously processed by :func:`stochastic_tracing`.
-        heritable_missing_rate: Per-branch exponential rate of cassette
+        heritable_rate: Per-branch exponential rate of cassette
             transcriptional silencing (heritable, propagates to descendants).
-        stochastic_missing_rate: Per-cassette dropout probability applied
+        stochastic_rate: Per-cassette dropout probability applied
             independently to each leaf (stochastic, assay sensitivity).
         collapse_sites_on_cassette: If ``True``, detect multi-cut cassettes by
             comparing each node to its parent and mark intermediate sites as
@@ -293,6 +294,13 @@ def missing_data(
     """
     if unmodified_state is None:
         unmodified_state = tdata.uns.get("unmodified_state", "*")
+
+    if (heritable_rate == 0) and (stochastic_rate == 0) and not collapse_sites_on_cassette:
+        warnings.warn(
+            "No missing data will be applied since all rates are zero and "
+            "collapse_sites_on_cassette is False. Returning original tdata.",
+            stacklevel=2,
+        )
 
     if copy:
         tdata = tdata.copy()
@@ -353,7 +361,7 @@ def missing_data(
             continue
         parent = next(iter(tree.predecessors(node)))
         branch_len = tree.nodes[node]["time"] - tree.nodes[parent]["time"]
-        p = 1 - np.exp(-branch_len * heritable_missing_rate)
+        p = 1 - np.exp(-branch_len * heritable_rate)
         new_silenced = {c for c in range(n_cassettes) if np.random.uniform() < p}
         silenced[node] = silenced[parent] | new_silenced
         for c in silenced[node]:
@@ -365,7 +373,7 @@ def missing_data(
         if tree.out_degree(node) != 0:
             continue
         for c in range(n_cassettes):
-            if np.random.uniform() < stochastic_missing_rate:
+            if np.random.uniform() < stochastic_rate:
                 for i in range(c * cassette_size, (c + 1) * cassette_size):
                     chars[node][columns[i]] = missing_state
 
