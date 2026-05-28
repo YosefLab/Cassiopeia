@@ -10,10 +10,6 @@ from cassiopeia.mixins import (
     CassiopeiaError,
     FitchCountError,
 )
-from cassiopeia.tools.small_parsimony import (
-    fitch_hartigan_bottom_up,
-    fitch_hartigan_top_down,
-)
 
 
 @pytest.fixture
@@ -107,16 +103,14 @@ def meta():
     )
 
 
-def test_fitch_hartigan_bottom_up_errors(binary_tree):
+def test_fitch_hartigan_errors(binary_tree):
     with pytest.raises(CassiopeiaError):
-        fitch_hartigan_bottom_up(binary_tree, "quality")
+        cas.tl.fitch_hartigan(binary_tree, "quality")
     with pytest.raises(CassiopeiaError):
-        fitch_hartigan_bottom_up(binary_tree, "imaginary_column")
+        cas.tl.fitch_hartigan(binary_tree, "imaginary_column")
 
 
-def test_fitch_hartigan_bottom_up(binary_tree, binary_meta):
-    fitch_tree = fitch_hartigan_bottom_up(binary_tree, "nucleotide", meta_df=binary_meta, copy=True)
-
+def test_fitch_hartigan_digraph(binary_tree, binary_meta):
     expected_sets = {
         "0": ["A"],
         "1": ["A"],
@@ -134,26 +128,6 @@ def test_fitch_hartigan_bottom_up(binary_tree, binary_meta):
         "13": ["G"],
         "14": ["G"],
     }
-
-    for n in fitch_tree.nodes:
-        node_states = fitch_tree.nodes[n]["S1"]
-        assert set(node_states) == set(expected_sets[n])
-
-    # Custom key name
-    fitch_hartigan_bottom_up(
-        binary_tree, "nucleotide", meta_df=binary_meta, add_key="possible_states"
-    )
-    for n in fitch_tree.nodes:
-        with pytest.raises(KeyError):
-            binary_tree.nodes[n]["S1"]
-        node_states = binary_tree.nodes[n]["possible_states"]
-        assert set(node_states) == set(expected_sets[n])
-
-
-def test_fitch_hartigan_top_down(binary_tree, binary_meta):
-    fitch_tree = fitch_hartigan_bottom_up(binary_tree, "nucleotide", meta_df=binary_meta, copy=True)
-    fitch_hartigan_top_down(fitch_tree)
-
     expected_labels = {
         "0": "A",
         "1": "A",
@@ -172,19 +146,29 @@ def test_fitch_hartigan_top_down(binary_tree, binary_meta):
         "14": "G",
     }
 
+    # copy=True returns a new DiGraph with both S1 and label set
+    fitch_tree = cas.tl.fitch_hartigan(binary_tree, "nucleotide", meta_df=binary_meta, copy=True)
     for n in fitch_tree.nodes:
-        node_state = fitch_tree.nodes[n]["label"]
-        assert node_state == expected_labels[n]
+        assert set(fitch_tree.nodes[n]["S1"]) == set(expected_sets[n])
+        assert fitch_tree.nodes[n]["label"] == expected_labels[n]
 
-    # Custom label key
-    fitch_hartigan_bottom_up(binary_tree, "nucleotide")
-    fitch_hartigan_top_down(binary_tree, label_key="nucleotide_assignment")
-
-    for n in binary_tree.nodes:
+    # custom state_key: "possible_states" is set on the copy, "S1" is not
+    fitch_tree2 = cas.tl.fitch_hartigan(
+        binary_tree, "nucleotide", meta_df=binary_meta, state_key="possible_states", copy=True
+    )
+    for n in fitch_tree2.nodes:
         with pytest.raises(KeyError):
-            binary_tree.nodes[n]["label"]
-        node_state = binary_tree.nodes[n]["nucleotide_assignment"]
-        assert node_state == expected_labels[n]
+            fitch_tree2.nodes[n]["S1"]
+        assert set(fitch_tree2.nodes[n]["possible_states"]) == set(expected_sets[n])
+
+    # custom label_key: "nucleotide_assignment" is set on the copy, "label" is not
+    fitch_tree3 = cas.tl.fitch_hartigan(
+        binary_tree, "nucleotide", meta_df=binary_meta, label_key="nucleotide_assignment", copy=True
+    )
+    for n in fitch_tree3.nodes:
+        with pytest.raises(KeyError):
+            fitch_tree3.nodes[n]["label"]
+        assert fitch_tree3.nodes[n]["nucleotide_assignment"] == expected_labels[n]
 
 
 def test_fitch_hartigan(binary_tdata):
@@ -208,7 +192,7 @@ def test_fitch_hartigan(binary_tdata):
         "14": "G",
     }
 
-    for n, node_state in nx.get_node_attributes(binary_tdata.trees["binary"], "label").items():
+    for n, node_state in nx.get_node_attributes(binary_tdata.obst["binary"], "label").items():
         assert node_state == expected_labels[n]
 
 
@@ -222,9 +206,7 @@ def test_score_parsimony(binary_tdata):
     assert parsimony == 3
 
 
-def test_tree_fitch_bottom_up(tree, meta):
-    fitch_hartigan_bottom_up(tree, "nucleotide", meta_df=meta)
-
+def test_tree_fitch_hartigan(tree, meta):
     expected_sets = {
         "0": ["G"],
         "1": ["G", "A"],
@@ -242,14 +224,6 @@ def test_tree_fitch_bottom_up(tree, meta):
         "15": ["G"],
         "16": ["A"],
     }
-
-    for n, node_states in nx.get_node_attributes(tree, "S1").items():
-        assert set(node_states) == set(expected_sets[n])
-
-
-def test_tree_fitch_hartigan(tree, meta):
-    cas.tl.fitch_hartigan(tree, "nucleotide", meta_df=meta)
-
     expected_labels = {
         "0": "G",
         "1": "G",
@@ -268,8 +242,12 @@ def test_tree_fitch_hartigan(tree, meta):
         "16": "A",
     }
 
-    for n, node_states in nx.get_node_attributes(tree, "label").items():
-        assert set(node_states) == set(expected_labels[n])
+    cas.tl.fitch_hartigan(tree, "nucleotide", meta_df=meta)
+
+    for n, node_states in nx.get_node_attributes(tree, "S1").items():
+        assert set(node_states) == set(expected_sets[n])
+    for n, node_state in nx.get_node_attributes(tree, "label").items():
+        assert node_state == expected_labels[n]
 
 
 def test_tree_parsimony(tree, meta):
@@ -294,7 +272,7 @@ def test_fitch_count_basic_binary(binary_tdata):
     pd.testing.assert_frame_equal(expected_matrix, fitch_matrix)
 
     # If ancestral states already assigned
-    fitch_hartigan_bottom_up(binary_tdata, "nucleotide", add_key="nucleotide_sets")
+    cas.tl.fitch_hartigan(binary_tdata, "nucleotide", state_key="nucleotide_sets")
     fitch_matrix_no_infer = cas.tl.fitch_count(
         binary_tdata,
         "nucleotide",
