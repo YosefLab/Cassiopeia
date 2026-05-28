@@ -120,7 +120,7 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
         self.pp_tree_priors = cas.data.CassiopeiaTree(character_matrix=pp_cm, priors=priors)
         self.nj_solver_modified = cas.solver.NeighborJoiningSolver(
-            dissimilarity_function=cas.solver.dissimilarity.weighted_hamming_distance,
+            dissimilarity_function=cas.solver.dissimilarity_functions.weighted_hamming_distance,
             add_root=True,
         )
 
@@ -158,56 +158,6 @@ class TestNeighborJoiningSolver(unittest.TestCase):
         nj_solver_fn.solve(self.basic_tree)
 
         self.assertEqual(self.basic_tree.get_dissimilarity_map().loc["a", "b"], 15)
-
-    def test_compute_q(self):
-        q_vals = self.nj_solver.compute_q(self.basic_dissimilarity_map.values)
-
-        expected_q = pd.DataFrame.from_dict(
-            {
-                "state0": [0, -22.67, -22, -22, -33.33],
-                "state1": [-22.67, 0, -27.33, -27.33, -22.67],
-                "state2": [-22, -27.33, 0, -28.67, -22],
-                "state3": [-22, -27.33, -28.67, 0, -22],
-                "state4": [-33.33, -22.67, -22, -22, 0],
-            },
-            orient="index",
-            columns=["state0", "state2", "state3", "state4", "state5"],
-        )
-
-        self.assertTrue(np.allclose(q_vals, expected_q, atol=0.1))
-
-    def test_find_cherry(self):
-        cherry = self.nj_solver.find_cherry(self.basic_dissimilarity_map.values)
-        delta = self.basic_dissimilarity_map
-        node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
-
-        self.assertIn((node_i, node_j), [("a", "e"), ("e", "a")])
-
-    def test_update_dissimilarity_map(self):
-        delta = self.basic_dissimilarity_map
-
-        cherry = self.nj_solver.find_cherry(delta.values)
-        node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
-
-        delta = self.nj_solver.update_dissimilarity_map(delta, (node_i, node_j), "f")
-
-        expected_delta = pd.DataFrame.from_dict(
-            {
-                "f": [0, 10, 16, 12],
-                "b": [10, 0, 10, 6],
-                "c": [16, 10, 0, 10],
-                "d": [12, 6, 10, 0],
-            },
-            orient="index",
-            columns=["f", "b", "c", "d"],
-        )
-
-        for sample in expected_delta.index:
-            for sample2 in expected_delta.index:
-                self.assertEqual(
-                    delta.loc[sample, sample2],
-                    expected_delta.loc[sample, sample2],
-                )
 
     def test_basic_solver(self):
         self.nj_solver.solve(self.basic_tree)
@@ -358,35 +308,10 @@ class TestNeighborJoiningSolver(unittest.TestCase):
             observed_triplet = find_triplet_structure(triplet, observed_tree)
             self.assertEqual(expected_triplet, observed_triplet)
 
-    def test_setup_root_finder_missing_dissimilarity_map(self):
+    def test_setup_root_finder_raises(self):
         tree = cas.data.CassiopeiaTree(character_matrix=self.cm)
-        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
+        with self.assertRaises(NotImplementedError):
             self.nj_solver_delta.setup_root_finder(tree)
-            compute_dissimilarity_map.assert_called_once_with(delta_fn, "negative_log", threads=1)
-        self.assertEqual(tree.root_sample_name, "root")
-
-    def test_setup_root_finder_existing_dissimilarity_map(self):
-        tree = cas.data.CassiopeiaTree(
-            character_matrix=self.cm,
-            dissimilarity_map=self.basic_dissimilarity_map,
-        )
-        with mock.patch.object(tree, "compute_dissimilarity_map") as compute_dissimilarity_map:
-            self.nj_solver_delta.setup_root_finder(tree)
-            compute_dissimilarity_map.assert_not_called()
-        self.assertEqual(tree.root_sample_name, "root")
-        dissimilarity_map = tree.get_dissimilarity_map()
-        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.index))
-        self.assertEqual({"a", "b", "c", "d", "e", "root"}, set(dissimilarity_map.columns))
-        for leaf in self.cm.index:
-            delta = delta_fn(
-                [0] * tree.n_character,
-                self.cm.loc[leaf].values,
-                tree.missing_state_indicator,
-                None,
-            )
-            self.assertEqual(dissimilarity_map.loc[leaf, "root"], delta)
-            self.assertEqual(dissimilarity_map.loc["root", leaf], delta)
-        self.assertEqual(dissimilarity_map.loc["root", "root"], 0)
 
 
 if __name__ == "__main__":

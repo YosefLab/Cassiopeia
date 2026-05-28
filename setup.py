@@ -14,6 +14,12 @@ ext_modules = [
         include_dirs=[numpy.get_include()],
         language="c",
     ),
+    Extension(
+        "cassiopeia.solver.nj_solver_utilities",
+        sources=["src/cassiopeia/solver/nj_solver_utilities.c"],
+        include_dirs=[numpy.get_include()],
+        language="c",
+    ),
 ]
 
 setup(

@@ -399,7 +399,7 @@ class TestILPSolver(unittest.TestCase):
                 self.pp_tree.get_character_states(e[0]),
                 self.pp_tree.get_character_states(e[1]),
             )
-            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+            observed_parsimony += cas.solver.dissimilarity_functions.hamming_distance(
                 np.array(c1), np.array(c2)
             )
 
@@ -517,7 +517,7 @@ class TestILPSolver(unittest.TestCase):
                 self.duplicates_tree.get_character_states(e[0]),
                 self.duplicates_tree.get_character_states(e[1]),
             )
-            observed_parsimony += cas.solver.dissimilarity.hamming_distance(
+            observed_parsimony += cas.solver.dissimilarity_functions.hamming_distance(
                 np.array(c1), np.array(c2)
             )
 

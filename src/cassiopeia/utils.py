@@ -17,6 +17,31 @@ from cassiopeia.data import CassiopeiaTree
 from .typing import TreeLike
 
 
+def _get_characters(
+    tree: TreeLike,
+    key: str | None = None,
+) -> pd.DataFrame | None:
+    """Return the character matrix from a tree-like object.
+
+    Args:
+        tree: A :class:`~cassiopeia.data.CassiopeiaTree`, :class:`~treedata.TreeData`,
+            or ``nx.DiGraph``.
+        key: For :class:`~treedata.TreeData`, the ``obsm`` key to look up
+            (default ``"characters"``).  For :class:`~cassiopeia.data.CassiopeiaTree`,
+            the layer name (default: the primary character matrix).
+
+    Returns:
+        pd.DataFrame or None if no character matrix is available.
+    """
+    if isinstance(tree, TreeData):
+        return tree.obsm.get(key or "characters")
+    if isinstance(tree, CassiopeiaTree):
+        if key:
+            return tree.layers.get(key)
+        return tree.character_matrix
+    return None
+
+
 def _get_digraph(tree: TreeLike, tree_key: str | None = None, copy=False) -> nx.DiGraph:
     """Logic for getting `nx.DiGraph` from inputs.
 

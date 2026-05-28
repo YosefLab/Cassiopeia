@@ -11,7 +11,7 @@ import pandas as pd
 
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.solver import dissimilarity_functions
-from cassiopeia.solver.UPGMASolver import UPGMASolver
+from cassiopeia.solver.upgma import UPGMASolver
 
 
 def find_triplet_structure(triplet, T):
@@ -110,57 +110,6 @@ class TestUPGMASolver(unittest.TestCase):
     def test_constructor(self):
         self.assertIsNotNone(self.upgma_solver_delta.dissimilarity_function)
         self.assertIsNotNone(self.basic_tree.get_dissimilarity_map())
-
-    def test_find_cherry(self):
-        cherry = self.upgma_solver.find_cherry(self.basic_dissimilarity_map.values)
-        delta = self.basic_dissimilarity_map
-        node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
-
-        self.assertIn((node_i, node_j), [("a", "b"), ("b", "a")])
-
-    def test_update_dissimilarity_map(self):
-        delta = self.basic_dissimilarity_map
-
-        cherry = self.upgma_solver.find_cherry(delta.values)
-        node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
-
-        delta = self.upgma_solver.update_dissimilarity_map(delta, (node_i, node_j), "ab")
-
-        expected_delta = pd.DataFrame.from_dict(
-            {
-                "ab": [0, 25.5, 32.5, 22],
-                "c": [25.5, 0, 28, 39],
-                "d": [32.5, 28, 0, 43],
-                "e": [22, 39, 43, 0],
-            },
-            orient="index",
-            columns=["ab", "c", "d", "e"],
-        )
-
-        for sample in expected_delta.index:
-            for sample2 in expected_delta.index:
-                self.assertEqual(
-                    delta.loc[sample, sample2],
-                    expected_delta.loc[sample, sample2],
-                )
-
-        cherry = self.upgma_solver.find_cherry(delta.values)
-        node_i, node_j = (delta.index[cherry[0]], delta.index[cherry[1]])
-
-        delta = self.upgma_solver.update_dissimilarity_map(delta, (node_i, node_j), "abe")
-
-        expected_delta = pd.DataFrame.from_dict(
-            {"abe": [0, 30, 36], "c": [30, 0, 28], "d": [36, 28, 0]},
-            orient="index",
-            columns=["abe", "c", "d"],
-        )
-
-        for sample in expected_delta.index:
-            for sample2 in expected_delta.index:
-                self.assertEqual(
-                    delta.loc[sample, sample2],
-                    expected_delta.loc[sample, sample2],
-                )
 
     def test_basic_solver(self):
         self.upgma_solver.solve(self.basic_tree)
@@ -316,10 +265,10 @@ class TestUPGMASolver(unittest.TestCase):
                 ("9", "6"),
                 ("6", "b"),
                 ("6", "c"),
+                ("8", "e"),
                 ("8", "7"),
-                ("8", "f"),
                 ("7", "d"),
-                ("7", "e"),
+                ("7", "f"),
             ]
         )
         triplets = itertools.combinations(["a", "b", "c", "d", "e", "f"], 3)

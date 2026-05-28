@@ -5,6 +5,7 @@ from collections.abc import Generator
 from hashlib import blake2b
 
 import ete3
+import networkx as nx
 import numpy as np
 import pandas as pd
 
@@ -119,21 +120,78 @@ def convert_sample_names_to_indices(names: list[str], samples: list[str]) -> lis
     return [name_to_index[x] for x in samples]
 
 
-def save_dissimilarity_as_phylip(dissimilarity_map: pd.DataFrame, path: str) -> None:
-    """Saves a dissimilarity map as a phylip file.
+# ── Data-object helpers ───────────────────────────────────────────────────────
+
+
+def _get_characters(data, characters_key=None):
+    """Return the character matrix as a pd.DataFrame, or None if unavailable.
+
+    Thin wrapper around :func:`cassiopeia.utils._get_characters` that maps the
+    ``characters_key`` parameter name used throughout the solver module.
+    """
+    from cassiopeia.utils import _get_characters as _utils_get_characters
+    return _utils_get_characters(data, key=characters_key)
+
+
+def _get_digraph(data, tree_key=None):
+    """Return the stored tree DiGraph, or None if not yet populated.
 
     Args:
-        dissimilarity_map: A dissimilarity map
-        path: The path to save the phylip file
-
-    Returns:
-        None
+        data: CassiopeiaTree or TreeData.
+        tree_key: For TreeData, the obst key to look up.  Ignored for CassiopeiaTree.
     """
-    dissimilarity_np = dissimilarity_map.to_numpy()
-    n = dissimilarity_np.shape[0]
-    with open(path, "w") as f:
-        f.write(f"{n}\n")
-        for i in range(n):
-            row = dissimilarity_np[i, : i + 1]
-            formatted_values = "\t".join(map("{:.4f}".format, row))
-            f.write(f"{dissimilarity_map.index[i]}\t{formatted_values}\n")
+    from treedata import TreeData
+    if isinstance(data, TreeData):
+        return data.obst.get(tree_key) if tree_key else None
+    return data.get_tree_topology()
+
+
+def _set_tree(data, rooted, characters_key=None, tree_key=None):
+    """Store *rooted* DiGraph in *data*, handling both CassiopeiaTree and TreeData.
+
+    For CassiopeiaTree: infers the root node, drops it from the character matrix
+    if it was an original sample (e.g. ``root_sample_name`` or synthetic ``'root'``),
+    then calls ``populate_tree`` and ``collapse_unifurcations``.
+
+    For TreeData: assigns ``rooted`` to ``data.obst[tree_key]``.
+
+    Args:
+        data: CassiopeiaTree or TreeData to modify in-place.
+        rooted: Directed tree DiGraph to store.
+        characters_key: Layer name for CassiopeiaTree's populate_tree.
+        tree_key: obst key for TreeData.
+    """
+    from treedata import TreeData
+    if isinstance(data, TreeData):
+        data.obst[tree_key] = rooted
+    else:
+        roots = [n for n in rooted.nodes() if rooted.in_degree(n) == 0]
+        root_node = roots[0] if roots else None
+        if root_node is not None and root_node in data.character_matrix.index:
+            data.character_matrix = data.character_matrix.drop(index=root_node)
+        data.root_sample_name = root_node
+        data.populate_tree(rooted, layer=characters_key)
+        data.collapse_unifurcations()
+
+
+def collapse_mutationless_edges(data, characters_key=None, tree_key=None):
+    """Collapse edges with no inferred mutations (CassiopeiaTree only).
+
+    Calls ``data.collapse_mutationless_edges(infer_ancestral_characters=True)``.
+
+    Args:
+        data: CassiopeiaTree to modify in-place.
+        characters_key: Unused; present for API symmetry with other utils.
+        tree_key: Unused; present for API symmetry with other utils.
+
+    Raises:
+        NotImplementedError: If *data* is a TreeData object.
+    """
+    from treedata import TreeData
+    if isinstance(data, TreeData):
+        raise NotImplementedError(
+            "collapse_mutationless_edges is not supported for TreeData."
+        )
+    data.collapse_mutationless_edges(infer_ancestral_characters=True)
+
+
