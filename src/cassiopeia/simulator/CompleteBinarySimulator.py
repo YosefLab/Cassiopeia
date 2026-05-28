@@ -8,8 +8,8 @@ from collections.abc import Generator
 
 import networkx as nx
 import numpy as np
+import treedata as td
 
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import TreeSimulatorError
 from cassiopeia.simulator.TreeSimulator import TreeSimulator
 
@@ -47,17 +47,17 @@ class CompleteBinarySimulator(TreeSimulator):
 
     def simulate_tree(
         self,
-    ) -> CassiopeiaTree:
+        tree_key: str = "tree",
+    ) -> td.TreeData:
         """Simulates a complete binary tree.
 
         Returns:
-                    A CassiopeiaTree with the tree topology initialized with the
-            simulated tree
+            A TreeData object with .obst[`tree_key`] containing the simulated tree.
         """
 
         def node_name_generator() -> Generator[str, None, None]:
             """Generates unique node names for the tree."""
-            i = 0
+            i = 1
             while True:
                 yield str(i)
                 i += 1
@@ -65,17 +65,14 @@ class CompleteBinarySimulator(TreeSimulator):
         names = node_name_generator()
 
         tree = nx.balanced_tree(2, self.depth, create_using=nx.DiGraph)
-        mapping = {"root": next(names)}
-        mapping.update({node: next(names) for node in tree.nodes})
-        # Add root, which indicates the initiating cell
         tree.add_edge("root", 0)
-        nx.relabel_nodes(tree, mapping, copy=False)
-        cassiopeia_tree = CassiopeiaTree(tree=tree)
+        nx.relabel_nodes(
+            tree, {node: next(names) for node in tree.nodes if node != "root"}, copy=False
+        )
+        depths = nx.single_source_shortest_path_length(tree, "root")
+        nx.set_node_attributes(tree, depths, "depth")
+        max_depth = max(depths.values())
+        times = {node: depth / max_depth for node, depth in depths.items()}
+        nx.set_node_attributes(tree, times, "time")
 
-        # Initialize branch lengths
-        time_dict = {
-            node: cassiopeia_tree.get_time(node) / (self.depth + 1)
-            for node in cassiopeia_tree.nodes
-        }
-        cassiopeia_tree.set_times(time_dict)
-        return cassiopeia_tree
+        return td.TreeData(obst={tree_key: tree})

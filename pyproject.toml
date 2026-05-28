@@ -111,7 +111,7 @@ exclude = [ "tests*", "docs*", "notebooks*", "data*" ]
 
 # If you ship .pxd, include them:
 [tool.setuptools.package-data]
-cassiopeia = [ "**/*.pxd" ]
+cassiopeia = [ "**/*.pxd", "config.ini" ]
 
 # --- Hatch envs ---
 
