@@ -11,8 +11,9 @@ import pandas as pd
 from cassiopeia.solver import dissimilarity_functions as _dissimilarity_functions
 
 if TYPE_CHECKING:
-    from cassiopeia.data import CassiopeiaTree
     from treedata import TreeData
+
+    from cassiopeia.data import CassiopeiaTree
 
 
 def _resolve_dissimilarity(
@@ -37,17 +38,16 @@ def _resolve_dissimilarity(
         fn = getattr(_dissimilarity_functions, dissimilarity, None)
         if fn is None:
             available = sorted(
-                name for name in dir(_dissimilarity_functions)
+                name
+                for name in dir(_dissimilarity_functions)
                 if callable(getattr(_dissimilarity_functions, name)) and not name.startswith("_")
             )
             raise ValueError(
-                f"Unknown dissimilarity function {dissimilarity!r}. "
-                f"Available: {available}"
+                f"Unknown dissimilarity function {dissimilarity!r}. Available: {available}"
             )
         return fn
     raise TypeError(
-        f"dissimilarity must be a string, callable, or None, "
-        f"got {type(dissimilarity).__name__!r}"
+        f"dissimilarity must be a string, callable, or None, got {type(dissimilarity).__name__!r}"
     )
 
 
@@ -77,6 +77,7 @@ def _compute_from_chars(
         Symmetric pairwise distance ``pd.DataFrame``.
     """
     from cassiopeia.data import CassiopeiaTree
+
     temp = CassiopeiaTree(
         character_matrix=characters,
         missing_state_indicator=missing,
@@ -120,9 +121,7 @@ def _get_distances(
     if isinstance(tdata, TreeData):
         if characters is None:
             if dist_key is None:
-                raise ValueError(
-                    "TreeData: provide dist_key or characters."
-                )
+                raise ValueError("TreeData: provide dist_key or characters.")
             leaf_names = list(tdata.obs_names)
             return pd.DataFrame(
                 np.array(tdata.obsp[dist_key], dtype=np.float64),
@@ -132,22 +131,24 @@ def _get_distances(
         # Compute from provided characters
         if dissimilarity_fn is None:
             from cassiopeia.mixins import DistanceSolverError
+
             raise DistanceSolverError(
-                "Please provide a dissimilarity_function or a precomputed "
-                "dissimilarity map."
+                "Please provide a dissimilarity_function or a precomputed dissimilarity map."
             )
         missing = tdata.uns.get("missing_state_indicator", -1)
         priors = tdata.uns.get("priors", None)
-        return _compute_from_chars(characters, missing, priors, dissimilarity_fn, prior_transformation, threads)
+        return _compute_from_chars(
+            characters, missing, priors, dissimilarity_fn, prior_transformation, threads
+        )
 
     else:  # CassiopeiaTree
         if characters is not None:
             # Augmented or layer-specific characters — compute fresh (no cache update)
             if dissimilarity_fn is None:
                 from cassiopeia.mixins import DistanceSolverError
+
                 raise DistanceSolverError(
-                    "Please provide a dissimilarity_function or a precomputed "
-                    "dissimilarity map."
+                    "Please provide a dissimilarity_function or a precomputed dissimilarity map."
                 )
             return _compute_from_chars(
                 characters,
@@ -162,9 +163,9 @@ def _get_distances(
             return tdata.get_dissimilarity_map()
         if dissimilarity_fn is None:
             from cassiopeia.mixins import DistanceSolverError
+
             raise DistanceSolverError(
-                "Please provide a dissimilarity_function or a precomputed "
-                "dissimilarity map."
+                "Please provide a dissimilarity_function or a precomputed dissimilarity map."
             )
         tdata.compute_dissimilarity_map(dissimilarity_fn, prior_transformation, threads=threads)
         return tdata.get_dissimilarity_map()
@@ -207,6 +208,7 @@ def dissimilarity(
 
     if isinstance(tdata, TreeData):
         from cassiopeia.solver import solver_utilities
+
         chars = solver_utilities._get_characters(tdata, characters_key)
         if chars is None:
             raise ValueError(

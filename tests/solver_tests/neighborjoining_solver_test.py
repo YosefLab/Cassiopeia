@@ -4,7 +4,6 @@ Test NeighborJoiningSolver in Cassiopeia.solver.
 
 import itertools
 import unittest
-from unittest import mock
 
 import networkx as nx
 import numpy as np

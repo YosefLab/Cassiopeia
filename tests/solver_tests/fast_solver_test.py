@@ -5,7 +5,6 @@ import unittest
 import warnings
 
 import networkx as nx
-import numpy as np
 import pandas as pd
 import treedata as td
 
@@ -178,7 +177,9 @@ class TestFastSolverTreeData(unittest.TestCase):
 
     def test_nj_treedata_groups_cluster_correctly(self):
         # Named outgroup: dist_key is used and "e" is inserted as outgroup leaf
-        cas.solver.nj(self.tdata, dist_key="distances", root="outgroup", outgroup="e", tree_key="nj")
+        cas.solver.nj(
+            self.tdata, dist_key="distances", root="outgroup", outgroup="e", tree_key="nj"
+        )
         tree = self.tdata.obst["nj"]
         structure = find_triplet_structure(("a", "b", "c"), tree)
         self.assertEqual(structure, "ab")
@@ -211,9 +212,7 @@ class TestBackwardCompatWrappers(unittest.TestCase):
     def test_deprecated_implementation_kwarg_nj(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            solver = cas.solver.NeighborJoiningSolver(
-                add_root=True, implementation="ccphylo_dnj"
-            )
+            solver = cas.solver.NeighborJoiningSolver(add_root=True, implementation="ccphylo_dnj")
             self.assertEqual(len(w), 1)
             self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
@@ -274,6 +273,7 @@ class TestRootingModule(unittest.TestCase):
 
     def test_unknown_procedure_raises(self):
         import cassiopeia as cas
+
         tree = cas.data.CassiopeiaTree(character_matrix=SMALL_CM)
         with self.assertRaises(ValueError):
             cas.solver.nj(tree, root="does_not_exist")

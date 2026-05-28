@@ -14,8 +14,9 @@ from cassiopeia.solver import dissimilarity_functions, rooting, solver_utilities
 from cassiopeia.solver.dissimilarity import _get_distances, _resolve_dissimilarity
 
 if TYPE_CHECKING:
-    from cassiopeia.data import CassiopeiaTree
     from treedata import TreeData
+
+    from cassiopeia.data import CassiopeiaTree
 
 
 def _build_graph(
@@ -45,7 +46,7 @@ def _build_graph(
     tree = nx.Graph()
     for name in sample_names:
         tree.add_node(name)
-    for p, c in zip(parents, children):
+    for p, c in zip(parents, children, strict=False):
         tree.add_edge(id_to_name[int(p)], id_to_name[int(c)])
 
     # Add the final edge between the last two unmerged nodes
@@ -129,8 +130,12 @@ def nj(
     # retrieved from dist_key / cache.
     effective_dist_key = None if synthetic_root else dist_key
     dist_df = _get_distances(
-        tdata, effective_dist_key, dissimilarity_fn, characters,
-        prior_transformation, threads,
+        tdata,
+        effective_dist_key,
+        dissimilarity_fn,
+        characters,
+        prior_transformation,
+        threads,
     )
 
     node_gen = solver_utilities.node_name_generator()

@@ -15,8 +15,9 @@ import networkx as nx
 from cassiopeia.mixins import DistanceSolverError
 
 if TYPE_CHECKING:
-    from cassiopeia.data import CassiopeiaTree
     from treedata import TreeData
+
+    from cassiopeia.data import CassiopeiaTree
 
 # Registry: name → callable(graph: nx.Graph, **kwargs) → nx.DiGraph
 _PROCEDURES: dict[str, Callable] = {}
@@ -32,9 +33,11 @@ def register(name: str) -> Callable:
     where *graph* is the complete undirected NJ tree and the return value is a
     rooted directed tree.
     """
+
     def decorator(fn: Callable) -> Callable:
         _PROCEDURES[name] = fn
         return fn
+
     return decorator
 
 
@@ -69,20 +72,19 @@ def apply(
         return rooted
     if procedure not in _PROCEDURES:
         raise ValueError(
-            f"Unknown rooting procedure {procedure!r}. "
-            f"Available: {sorted(_PROCEDURES)}"
+            f"Unknown rooting procedure {procedure!r}. Available: {sorted(_PROCEDURES)}"
         )
     return _PROCEDURES[procedure](graph, **kwargs)
 
 
 def _default_root(data: CassiopeiaTree | TreeData) -> str:
     from treedata import TreeData
+
     if isinstance(data, TreeData):
         return list(data.obs_names)[0]
     if data.root_sample_name is None:
         raise DistanceSolverError(
-            "No root is set on the CassiopeiaTree. "
-            "Set root_sample_name or pass root='outgroup'."
+            "No root is set on the CassiopeiaTree. Set root_sample_name or pass root='outgroup'."
         )
     return data.root_sample_name
 
@@ -126,8 +128,7 @@ def outgroup(
     # its single internal neighbour.
     if outgroup not in graph.nodes:
         raise ValueError(
-            f"Outgroup {outgroup!r} not found in the tree. "
-            f"Available nodes: {sorted(graph.nodes)}"
+            f"Outgroup {outgroup!r} not found in the tree. Available nodes: {sorted(graph.nodes)}"
         )
     neighbors = list(graph.neighbors(outgroup))
     if len(neighbors) != 1:

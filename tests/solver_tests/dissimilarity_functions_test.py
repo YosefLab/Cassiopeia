@@ -4,10 +4,8 @@ module.
 """
 
 import unittest
-from unittest import mock
 
 import numpy as np
-import pandas as pd
 
 from cassiopeia.solver import dissimilarity_functions, solver_utilities
 

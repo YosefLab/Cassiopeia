@@ -5,9 +5,7 @@ from collections.abc import Generator
 from hashlib import blake2b
 
 import ete3
-import networkx as nx
 import numpy as np
-import pandas as pd
 
 from cassiopeia.mixins import PriorTransformationError
 
@@ -130,6 +128,7 @@ def _get_characters(data, characters_key=None):
     ``characters_key`` parameter name used throughout the solver module.
     """
     from cassiopeia.utils import _get_characters as _utils_get_characters
+
     return _utils_get_characters(data, key=characters_key)
 
 
@@ -141,6 +140,7 @@ def _get_digraph(data, tree_key=None):
         tree_key: For TreeData, the obst key to look up.  Ignored for CassiopeiaTree.
     """
     from treedata import TreeData
+
     if isinstance(data, TreeData):
         return data.obst.get(tree_key) if tree_key else None
     return data.get_tree_topology()
@@ -162,6 +162,7 @@ def _set_tree(data, rooted, characters_key=None, tree_key=None):
         tree_key: obst key for TreeData.
     """
     from treedata import TreeData
+
     if isinstance(data, TreeData):
         data.obst[tree_key] = rooted
     else:
@@ -188,10 +189,7 @@ def collapse_mutationless_edges(data, characters_key=None, tree_key=None):
         NotImplementedError: If *data* is a TreeData object.
     """
     from treedata import TreeData
+
     if isinstance(data, TreeData):
-        raise NotImplementedError(
-            "collapse_mutationless_edges is not supported for TreeData."
-        )
+        raise NotImplementedError("collapse_mutationless_edges is not supported for TreeData.")
     data.collapse_mutationless_edges(infer_ancestral_characters=True)
-
-

@@ -14,8 +14,9 @@ from cassiopeia.solver import dissimilarity_functions, solver_utilities
 from cassiopeia.solver.dissimilarity import _get_distances, _resolve_dissimilarity
 
 if TYPE_CHECKING:
-    from cassiopeia.data import CassiopeiaTree
     from treedata import TreeData
+
+    from cassiopeia.data import CassiopeiaTree
 
 
 def _build_graph(
@@ -45,7 +46,7 @@ def _build_graph(
     graph = nx.Graph()
     for name in sample_names:
         graph.add_node(name)
-    for p, c in zip(parents, children):
+    for p, c in zip(parents, children, strict=False):
         graph.add_edge(id_to_name[int(p)], id_to_name[int(c)])
 
     # Add root node above the two remaining unmerged nodes
