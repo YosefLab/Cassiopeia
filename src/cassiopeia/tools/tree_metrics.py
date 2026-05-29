@@ -1,17 +1,91 @@
 """File containing functions for scoring metrics on a tree."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
+import networkx as nx
 import numpy as np
 import scipy
+from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.mixins import TreeMetricError
-from cassiopeia.tools import parameter_estimators
+from cassiopeia.tools import parameter_estimators, reconstruct_ancestral_characters
+from cassiopeia.utils import (
+    _get_digraph,
+    _get_missing_state_indicator,
+    get_root,
+)
+
+
+def _mutations_along_edge(
+    g,
+    parent: str,
+    child: str,
+    treat_missing_as_mutations: bool = False,
+    missing_state_indicator: str | int | Iterable[str | int] = -1,
+) -> list[tuple[int, int]]:
+    """Gets the mutations along an edge of interest.
+
+    Returns a list of tuples (character, state) of mutations that occur
+    along an edge. Characters are 0-indexed.
+
+    Note that parent states can be ambiguous if all child states have the
+    same ambiguous state. If this is the case, there will not be a mutation
+    detected along an edge, but we handle this case so as to not throw
+    an error handling ambiguous states.
+
+    Args:
+        g: networkx Digraph tree
+        parent: parent in tree
+        child: child in tree
+        treat_missing_as_mutations: Whether to treat missing states as
+            mutations.
+        missing_state_indicator: Missing state indicator(s) to pass in
+            from parent CassiopeiaTree/TreeData. Can be a single value
+            or an iterable of values.
+
+    Returns:
+        A list of (character, state) tuples indicating which character
+            mutated and to which state.
+
+    Raises:
+        ValueError if the edge does not exist or if the tree is
+            not initialized.
+    """
+    if not g.has_edge(parent, child):
+        raise ValueError("Edge does not exist.")
+
+    parent_states = g.nodes[parent].get("character_states", None)
+    child_states = g.nodes[child].get("character_states", None)
+
+    # Normalize missing indicators into a set
+    if isinstance(missing_state_indicator, (str, int)):
+        missing_states = {missing_state_indicator}
+    else:
+        missing_states = set(missing_state_indicator)
+
+    n_character = len(parent_states)
+    mutations = []
+
+    for i in range(n_character):
+        parent_state = (
+            list(parent_states[i]) if isinstance(parent_states[i], tuple) else [parent_states[i]]
+        )
+        child_state = (
+            list(child_states[i]) if isinstance(child_states[i], tuple) else [child_states[i]]
+        )
+
+        if len(np.intersect1d(parent_state, child_state)) < 1:
+            if treat_missing_as_mutations:
+                mutations.append((i, child_states[i]))
+            elif parent_states[i] not in missing_states and child_states[i] not in missing_states:
+                mutations.append((i, child_states[i]))
+
+    return mutations
 
 
 def calculate_parsimony(
-    tree: CassiopeiaTree,
+    tree: TreeData | CassiopeiaTree,
     infer_ancestral_characters: bool = False,
     treat_missing_as_mutation: bool = False,
 ) -> int:
@@ -46,21 +120,27 @@ def calculate_parsimony(
             TreeMetricError if the tree has not been initialized or if
             a node does not have character states initialized
     """
+    g, _ = _get_digraph(tree)
+    root = get_root(g)
+    missing_state_indicator = _get_missing_state_indicator(tree)
+
     if infer_ancestral_characters:
         tree.reconstruct_ancestral_characters()
+        reconstruct_ancestral_characters(g, missing_state_indicator)
 
     parsimony = 0
 
-    if tree.get_character_states(tree.root) == []:
+    states = g.nodes[root].get("character_states", None)
+    if states is None or states == []:
         raise TreeMetricError(
             "Character states empty at internal node. Annotate"
             " character states or infer ancestral characters by"
             " setting infer_ancestral_characters=True."
         )
 
-    for u, v in tree.depth_first_traverse_edges():
-        if tree.get_character_states(v) == []:
-            if tree.is_leaf(v):
+    for u, v in nx.dfs_edges(g, source=root):
+        if g.nodes[v].get("character_states") == [] or g.nodes[v].get("character_states") is None:
+            if g.out_degree(v) == 0:
                 raise TreeMetricError(
                     "Character states have not been initialized at leaves."
                     " Use set_character_states_at_leaves or populate_tree"
@@ -73,8 +153,9 @@ def calculate_parsimony(
                     " character states or infer ancestral characters by"
                     " setting infer_ancestral_characters=True."
                 )
-
-        parsimony += len(tree.get_mutations_along_edge(u, v, treat_missing_as_mutation))
+        parsimony += len(
+            _mutations_along_edge(g, u, v, treat_missing_as_mutation, missing_state_indicator)
+        )
 
     return parsimony
 
