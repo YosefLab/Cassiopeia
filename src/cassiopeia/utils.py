@@ -310,3 +310,12 @@ def _check_tree_has_key(tree: nx.DiGraph, key: str):
         if key not in tree.nodes[node]:
             message = f"One or more nodes do not have '{key}' attribute."
             raise ValueError(message)
+
+
+def _get_leaf_data(g: nx.DiGraph, key: str) -> dict[str, Any]:
+    """Get a dictionary mapping leaf node labels to a specified node attribute."""
+    leaf_data = {}
+    for node in g.nodes:
+        if g.out_degree(node) == 0:  # Check if node is a leaf
+            leaf_data[node] = g.nodes[node].get(key)
+    return pd.Series(leaf_data)

@@ -71,20 +71,19 @@ def test_brownian_obsm_shape():
 def test_brownian_obsm_columns():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0)
-    assert list(tdata.obsm["spatial"].columns) == ["dim_0", "dim_1"]
+    assert tdata.obsm["spatial"].shape[1] == 2
 
 
 def test_brownian_leaf_coords_valid():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0)
-    leaves = list(tdata.obs_names)
-    assert set(tdata.obsm["spatial"].index) == set(leaves)
+    assert tdata.obsm["spatial"].shape[0] == len(tdata.obs_names)
 
 
 def test_brownian_scale_unit_area():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, scale_unit_area=True, random_seed=0)
-    coords = tdata.obsm["spatial"].values
+    coords = tdata.obsm["spatial"]
     assert coords.min() >= 0.0
     assert coords.max() <= 1.0
 
@@ -102,7 +101,7 @@ def test_brownian_reproducibility():
     tdata2 = _make_tdata()
     brownian_spatial(tdata1, dim=2, diffusion_coefficient=1.0, random_seed=7)
     brownian_spatial(tdata2, dim=2, diffusion_coefficient=1.0, random_seed=7)
-    pd.testing.assert_frame_equal(tdata1.obsm["spatial"], tdata2.obsm["spatial"])
+    np.testing.assert_array_equal(tdata1.obsm["spatial"], tdata2.obsm["spatial"])
 
 
 def test_brownian_different_seeds():
@@ -110,7 +109,7 @@ def test_brownian_different_seeds():
     tdata2 = _make_tdata()
     brownian_spatial(tdata1, dim=2, diffusion_coefficient=1.0, random_seed=1)
     brownian_spatial(tdata2, dim=2, diffusion_coefficient=1.0, random_seed=2)
-    assert not tdata1.obsm["spatial"].equals(tdata2.obsm["spatial"])
+    assert not np.array_equal(tdata1.obsm["spatial"], tdata2.obsm["spatial"])
 
 
 def test_brownian_node_attrs():
@@ -129,9 +128,9 @@ def test_brownian_dim_3():
     assert tdata.obsm["spatial"].shape == (n_leaves, 3)
 
 
-def test_brownian_spatial_key():
+def test_brownian_key_added():
     tdata = _make_tdata()
-    brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, spatial_key="coords")
+    brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, key_added="coords")
     assert "coords" in tdata.obsm
     assert "spatial" not in tdata.obsm
     tree = tdata.obst["simulated"]
@@ -143,18 +142,16 @@ def test_brownian_zero_diffusion():
     tdata = _make_tdata()
     brownian_spatial(tdata, dim=2, diffusion_coefficient=0.0, scale_unit_area=True, random_seed=0)
     # All nodes should have the same coordinate, so after scaling all should equal 0
-    coords = tdata.obsm["spatial"].values
+    coords = tdata.obsm["spatial"]
     assert np.all(coords == coords[0])
 
 
 # ---------------------------------------------------------------------------
-# clonal_spatial — skip if spatial deps missing
+# clonal_spatial — validation
 # ---------------------------------------------------------------------------
 
 
 def test_clonal_bad_params_both():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     space = np.ones((100, 100), dtype=bool)
     with pytest.raises(DataSimulatorError):
@@ -162,16 +159,12 @@ def test_clonal_bad_params_both():
 
 
 def test_clonal_bad_params_neither():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     with pytest.raises(DataSimulatorError):
-        clonal_spatial(tdata)
+        clonal_spatial(tdata, shape=None, space=None)
 
 
 def test_clonal_obsm_shape():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     n_leaves = 8
     tdata = _make_tdata(n_leaves=n_leaves)
     clonal_spatial(tdata, shape=(100, 100), random_seed=0)
@@ -179,52 +172,34 @@ def test_clonal_obsm_shape():
 
 
 def test_clonal_obsm_columns():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     clonal_spatial(tdata, shape=(100, 100), random_seed=0)
-    assert list(tdata.obsm["spatial"].columns) == ["dim_0", "dim_1"]
+    assert tdata.obsm["spatial"].shape[1] == 2
 
 
 def test_clonal_coords_in_space():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
-    import cv2 as _cv2
-
     shape = (100, 100)
     center_x = shape[1] // 2
     center_y = shape[0] // 2
-    space = _cv2.ellipse(
-        np.zeros(shape, dtype=np.uint8),
-        (center_x, center_y),
-        (center_x, center_y),
-        0,
-        0,
-        360,
-        1,
-        -1,
-    ).astype(bool)
+    y, x = np.ogrid[: shape[0], : shape[1]]
+    space = ((x - center_x) / center_x) ** 2 + ((y - center_y) / center_y) ** 2 <= 1
     tdata = _make_tdata()
     clonal_spatial(tdata, shape=shape, random_seed=0)
-    coords = tdata.obsm["spatial"].values
+    coords = tdata.obsm["spatial"]
     for row in coords:
         xi, yi = int(row[0]), int(row[1])
         assert space[xi, yi], f"Coordinate ({xi}, {yi}) outside space"
 
 
 def test_clonal_reproducibility():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata1 = _make_tdata()
     tdata2 = _make_tdata()
     clonal_spatial(tdata1, shape=(100, 100), random_seed=5)
     clonal_spatial(tdata2, shape=(100, 100), random_seed=5)
-    pd.testing.assert_frame_equal(tdata1.obsm["spatial"], tdata2.obsm["spatial"])
+    np.testing.assert_array_equal(tdata1.obsm["spatial"], tdata2.obsm["spatial"])
 
 
 def test_clonal_space_param():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     space = np.ones((100, 100), dtype=bool)
     tdata = _make_tdata()
     clonal_spatial(tdata, space=space, random_seed=0)
@@ -233,8 +208,6 @@ def test_clonal_space_param():
 
 
 def test_clonal_node_attrs():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     clonal_spatial(tdata, shape=(100, 100), random_seed=0)
     tree = tdata.obst["simulated"]
@@ -244,8 +217,6 @@ def test_clonal_node_attrs():
 
 
 def test_clonal_spatial_autocorrelation():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     n_leaves = 8
     tdata = _make_tdata(n_leaves=n_leaves)
     tree = tdata.obst["simulated"]
@@ -275,12 +246,14 @@ def test_clonal_spatial_autocorrelation():
         td_test = _make_tdata(n_leaves=n_leaves)
         clonal_spatial(td_test, shape=(200, 200), random_seed=seed)
         coords = td_test.obsm["spatial"]
+        obs_names = list(td_test.obs_names)
 
         sibling_d = [
-            np.linalg.norm(coords.loc[a].values - coords.loc[b].values) for a, b in sibling_pairs
+            np.linalg.norm(coords[obs_names.index(a)] - coords[obs_names.index(b)])
+            for a, b in sibling_pairs
         ]
         non_sibling_d = [
-            np.linalg.norm(coords.loc[a].values - coords.loc[b].values)
+            np.linalg.norm(coords[obs_names.index(a)] - coords[obs_names.index(b)])
             for a, b in non_sibling_pairs
         ]
         sibling_dists_across_seeds.extend(sibling_d)
@@ -292,11 +265,9 @@ def test_clonal_spatial_autocorrelation():
     )
 
 
-def test_clonal_spatial_key():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
+def test_clonal_key_added():
     tdata = _make_tdata()
-    clonal_spatial(tdata, shape=(100, 100), random_seed=0, spatial_key="mycoords")
+    clonal_spatial(tdata, shape=(100, 100), random_seed=0, key_added="mycoords")
     assert "mycoords" in tdata.obsm
     assert "spatial" not in tdata.obsm
     tree = tdata.obst["simulated"]
@@ -330,10 +301,9 @@ def test_clonal_spatial_data_simulator_deprecated():
 
 def test_brownian_copy_false_modifies_inplace():
     tdata = _make_tdata()
-    original = tdata
     result = brownian_spatial(tdata, dim=2, diffusion_coefficient=1.0, random_seed=0, copy=False)
-    assert result is original
-    assert "spatial" in original.obsm
+    assert result is None
+    assert "spatial" in tdata.obsm
 
 
 def test_brownian_copy_true_returns_new():
@@ -345,20 +315,19 @@ def test_brownian_copy_true_returns_new():
 
 
 def test_clonal_copy_false_modifies_inplace():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
-    original = tdata
     result = clonal_spatial(tdata, shape=(100, 100), random_seed=0, copy=False)
-    assert result is original
-    assert "spatial" in original.obsm
+    assert result is None
+    assert "spatial" in tdata.obsm
 
 
 def test_clonal_copy_true_returns_new():
-    pytest.importorskip("cv2")
-    pytest.importorskip("poisson_disc")
     tdata = _make_tdata()
     result = clonal_spatial(tdata, shape=(100, 100), random_seed=0, copy=True)
     assert result is not tdata
     assert "spatial" not in tdata.obsm
     assert "spatial" in result.obsm
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])

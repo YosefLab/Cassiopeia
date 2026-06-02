@@ -9,13 +9,14 @@ import numpy as np
 import treedata as td
 
 from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.utils import _get_leaf_data
 from cassiopeia.utils import collapse_unifurcations as _collapse_unifurcations
 
 
 def complete_binary(
     num_cells: int | None = None,
     depth: int | None = None,
-    tree_key: str = "simulated",
+    key_added: str = "simulated",
 ) -> td.TreeData:
     """Simulate a complete binary tree.
 
@@ -26,10 +27,10 @@ def complete_binary(
     Args:
         num_cells: Number of leaf cells. Must be a power of 2.
         depth: Depth of the tree. Number of cells will be ``2^depth``.
-        tree_key: Key under which the tree is stored in ``obst``.
+        key_added: Key under which the tree is stored in ``obst``.
 
     Returns:
-        A TreeData with the simulated tree in ``obst[tree_key]``. Each node
+        A TreeData with the simulated tree in ``obst[key_added]``. Each node
         has ``"time"`` (0 to 1, normalized) and ``"depth"`` (int) attributes.
 
     Raises:
@@ -62,12 +63,12 @@ def complete_binary(
     times = {node: d / max_depth for node, d in depths.items()}
     nx.set_node_attributes(tree, times, "time")
 
-    return td.TreeData(obst={tree_key: tree})
+    return td.TreeData(obst={key_added: tree})
 
 
 def birth_death_process(
-    birth_waiting_distribution: Callable[[float], float] = lambda scale: np.random.exponential(
-        scale=scale
+    birth_waiting_distribution: Callable[[float], float] = lambda scale: np.random.lognormal(
+        mean=np.log(scale), sigma=0.5
     ),
     initial_birth_scale: float = 1.0,
     death_waiting_distribution: Callable[[], float] = lambda: np.inf,
@@ -79,7 +80,7 @@ def birth_death_process(
     collapse_unifurcations: bool = True,
     random_seed: int | None = None,
     initial_tree: nx.DiGraph | None = None,
-    tree_key: str = "simulated",
+    key_added: str = "simulated",
 ) -> td.TreeData:
     """Simulate a phylogenetic tree via a forward birth-death process with fitness.
 
@@ -112,10 +113,10 @@ def birth_death_process(
             Leaf nodes of this tree become the starting lineages. Nodes should
             have ``"birth_scale"`` and ``"time"`` attributes (defaults to
             ``initial_birth_scale`` and 0 if absent).
-        tree_key: Key under which the result tree is stored in ``obst``.
+        key_added: Key under which the result tree is stored in ``obst``.
 
     Returns:
-        A TreeData with the simulated tree in ``obst[tree_key]``. Each node
+        A TreeData with the simulated tree in ``obst[key_added]``. Each node
         has ``"time"`` (cumulative age) and ``"birth_scale"`` attributes.
 
     Raises:
@@ -206,7 +207,10 @@ def birth_death_process(
                         )
 
             result = _build_tree(tree, observed_nodes, collapse_unifurcations)
-            return td.TreeData(obst={tree_key: result})
+            tdata = td.TreeData(obst={key_added: result}, uns={"default_depth": "time"})
+            tdata.obs["time"] = _get_leaf_data(result, "time")
+            tdata.obs["birth_scale"] = _get_leaf_data(result, "birth_scale")
+            return tdata
 
         except TreeSimulatorError as e:
             if "All lineages died" not in str(e) or _attempt == _max_attempts - 1:
@@ -384,11 +388,11 @@ def _build_tree(
 
 
 def simple_fit_subclone(
-    branch_length_neutral: float | Callable[[], float],
-    branch_length_fit: float | Callable[[], float],
-    experiment_duration: float,
-    generations_until_fit_subclone: int,
-    tree_key: str = "simulated",
+    branch_length_neutral: float | Callable[[], float] = 1.0,
+    branch_length_fit: float | Callable[[], float] = 0.5,
+    experiment_duration: float = 10.0,
+    generations_until_fit_subclone: int = 5,
+    key_added: str = "simulated",
 ) -> td.TreeData:
     """Simulate a clonal population that develops one fit subclone.
 
@@ -409,10 +413,10 @@ def simple_fit_subclone(
             divided by this time become leaves.
         generations_until_fit_subclone: Generation at which one lineage gains
             fitness.
-        tree_key: Key under which the tree is stored in ``obst``.
+        key_added: Key under which the tree is stored in ``obst``.
 
     Returns:
-        A TreeData with the simulated tree in ``obst[tree_key]``. All nodes
+        A TreeData with the simulated tree in ``obst[key_added]``. All nodes
         have a ``"time"`` attribute.
     """
     if isinstance(branch_length_neutral, (int, float)):
@@ -434,10 +438,12 @@ def simple_fit_subclone(
     names = _name_gen()
     q: Queue = Queue()
     times: dict[str, float] = {}
+    fits: dict[str, bool] = {}
 
     root = next(names) + "_neutral"
     tree.add_node(root)
     times[root] = 0.0
+    fits[root] = False
 
     root_child = next(names) + "_neutral"
     tree.add_edge(root, root_child)
@@ -446,6 +452,7 @@ def simple_fit_subclone(
     subclone_started = False
     while not q.empty():
         node, time, fitness, generation = q.get()
+        fits[node] = fitness == "fit"
         bl = _bl_neutral() if fitness == "neutral" else _bl_fit()
         division_time = time + bl
         if division_time >= experiment_duration:
@@ -465,4 +472,8 @@ def simple_fit_subclone(
         q.put((right_child, division_time, right_fitness, generation + 1))
 
     nx.set_node_attributes(tree, times, "time")
-    return td.TreeData(obst={tree_key: tree})
+    nx.set_node_attributes(tree, fits, "fit")
+    tdata = td.TreeData(obst={key_added: tree}, uns={"default_depth": "time"})
+    tdata.obs["time"] = _get_leaf_data(tree, "time")
+    tdata.obs["fit"] = _get_leaf_data(tree, "fit")
+    return tdata

@@ -128,13 +128,13 @@ def test_stochastic_branch_lengths():
     assert len(internal_bls) == len(set(internal_bls))
 
 
-def test_custom_tree_key():
+def test_custom_key_added():
     tdata = simple_fit_subclone(
         branch_length_neutral=1,
         branch_length_fit=0.5,
         experiment_duration=1.9,
         generations_until_fit_subclone=1,
-        tree_key="mytree",
+        key_added="mytree",
     )
     assert "mytree" in tdata.obst
     assert "tree" not in tdata.obst

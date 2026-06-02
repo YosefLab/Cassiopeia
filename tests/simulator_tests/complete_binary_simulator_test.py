@@ -66,8 +66,8 @@ def test_complete_binary_branch_lengths(tdata):
     }
 
 
-def test_complete_binary_custom_tree_key():
-    tdata = complete_binary(depth=2, tree_key="mytree")
+def test_complete_binary_custom_key_added():
+    tdata = complete_binary(depth=2, key_added="mytree")
     assert "mytree" in tdata.obst
     assert "tree" not in tdata.obst
 

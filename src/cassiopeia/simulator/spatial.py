@@ -2,25 +2,22 @@
 
 import networkx as nx
 import numpy as np
-import pandas as pd
 import treedata as td
 from scipy import spatial as scipy_spatial
+from scipy.stats.qmc import PoissonDisk
 
-from cassiopeia.mixins import DataSimulatorError, try_import
-
-cv2 = try_import("cv2")
-disc = try_import("poisson_disc")
-neighbors = try_import("sklearn.neighbors")
+from cassiopeia.mixins import DataSimulatorError
 
 
 def brownian_spatial(
     tdata: td.TreeData,
-    dim: int,
-    diffusion_coefficient: float,
-    scale_unit_area: bool = True,
+    dim: int = 2,
+    diffusion_coefficient: float = 1.0,
+    scale_unit_area: bool = False,
     random_seed: int | None = None,
     tree_key: str = "simulated",
-    spatial_key: str = "spatial",
+    time_key: str = "time",
+    key_added: str = "spatial",
     copy: bool = False,
 ) -> td.TreeData:
     """Overlay spatial coordinates via Brownian motion along the tree.
@@ -30,21 +27,20 @@ def brownian_spatial(
     where D is the diffusion coefficient and t is the branch length. Displacements
     are independent across dimensions and nodes.
 
-    Leaf coordinates are stored in ``tdata.obsm[spatial_key]`` as a DataFrame
-    with columns ``dim_0, dim_1, ...``. All node coordinates (including internal
-    nodes) are stored in ``tdata.obst[tree_key].nodes[node][spatial_key]``.
+    Leaf coordinates are stored in ``tdata.obsm[key_added]`` as a numpy array.
+    All node coordinates (including internal nodes) are stored in ``tdata.obst[tree_key].nodes[node][key_added]``.
 
     Args:
-        tdata: TreeData with a tree in ``obst[tree_key]``. Nodes must have a
-            ``"time"`` attribute.
+        tdata: TreeData with a tree in ``obst[tree_key]``.
         dim: Number of spatial dimensions.
         diffusion_coefficient: Diffusion coefficient D (>= 0). Variance per
             unit time is 2 * D.
-        scale_unit_area: If True (default), shift and scale all coordinates so
+        scale_unit_area: If True, shift and scale all coordinates so
             they lie in [0, 1] (all dimensions scaled by the same factor).
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
-        spatial_key: Key for storing coordinates in ``tdata.obsm`` and as node
+        time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
+        key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
             If ``False`` (default), modify ``tdata`` in-place.
@@ -75,7 +71,7 @@ def brownian_spatial(
         if node == root:
             continue
         parent = next(iter(tree.predecessors(node)))
-        branch_len = tree.nodes[node]["time"] - tree.nodes[parent]["time"]
+        branch_len = tree.nodes[node][time_key] - tree.nodes[parent][time_key]
         locations[node] = locations[parent] + np.random.normal(
             scale=np.sqrt(2 * diffusion_coefficient * branch_len),
             size=dim,
@@ -90,14 +86,14 @@ def brownian_spatial(
         locations = dict(zip(locations.keys(), all_coords, strict=False))
 
     for node, loc in locations.items():
-        tree.nodes[node][spatial_key] = loc
+        tree.nodes[node][key_added] = loc
 
     leaves = list(tdata.obs_names)
-    columns = [f"dim_{i}" for i in range(dim)]
     coords = np.array([locations[leaf] for leaf in leaves])
-    tdata.obsm[spatial_key] = pd.DataFrame(coords, index=leaves, columns=columns)
+    tdata.obsm[key_added] = coords
 
-    return tdata
+    if copy:
+        return tdata
 
 
 def clonal_spatial(
@@ -106,7 +102,7 @@ def clonal_spatial(
     space: np.ndarray | None = None,
     random_seed: int | None = None,
     tree_key: str = "simulated",
-    spatial_key: str = "spatial",
+    key_added: str = "spatial",
     copy: bool = False,
 ) -> td.TreeData:
     """Overlay spatial coordinates with clonal spatial autocorrelation.
@@ -118,11 +114,8 @@ def clonal_spatial(
     Delaunay/kNN graph), so that leaves sharing recent ancestry tend to be
     spatially clustered.
 
-    Leaf coordinates are stored in ``tdata.obsm[spatial_key]`` as a DataFrame
-    with columns ``dim_0, dim_1, ...``. Internal node coordinates (centroid of
-    their assigned points) are stored in ``tdata.obst[tree_key].nodes[node][spatial_key]``.
-
-    Requires the ``spatial`` extras: ``pip install cassiopeia-lineage[spatial]``.
+    Leaf coordinates are stored in ``tdata.obsm[key_added]`` as a numpy array.
+    Internal node coordinates (centroid of their assigned points) are stored in ``tdata.obst[tree_key].nodes[node][key_added]``.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -133,7 +126,7 @@ def clonal_spatial(
             with ``shape``.
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
-        spatial_key: Key for storing coordinates in ``tdata.obsm`` and as node
+        key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
             If ``False`` (default), modify ``tdata`` in-place.
@@ -143,15 +136,8 @@ def clonal_spatial(
         input modified in-place.
 
     Raises:
-        DataSimulatorError: If spatial extras are missing, or if neither/both
-            of ``shape`` and ``space`` are provided.
+        DataSimulatorError: If neither/both of ``shape`` and ``space`` are provided.
     """
-    if cv2 is None or disc is None or neighbors is None:
-        raise DataSimulatorError(
-            "Some required modules were not found. Install cassiopeia with "
-            "the `spatial` extras: pip install cassiopeia-lineage[spatial]"
-        )
-
     if (shape is None) == (space is None):
         raise DataSimulatorError("Specify exactly one of `shape` or `space`.")
 
@@ -166,16 +152,13 @@ def clonal_spatial(
         if dim == 2:
             center_x = shape[1] // 2
             center_y = shape[0] // 2
-            actual_space = cv2.ellipse(
-                np.zeros(shape, dtype=np.uint8),
-                (center_x, center_y),
-                (center_x, center_y),
-                0,
-                0,
-                360,
-                1,
-                -1,
-            ).astype(bool)
+            if center_x > 0 and center_y > 0:
+                y, x = np.ogrid[: shape[0], : shape[1]]
+                actual_space = ((x - center_x) / center_x) ** 2 + (
+                    (y - center_y) / center_y
+                ) ** 2 <= 1
+            else:
+                actual_space = np.ones(shape, dtype=bool)
         else:
             actual_space = np.ones(shape, dtype=bool)
     else:
@@ -211,14 +194,14 @@ def clonal_spatial(
     locations.update({node: points[i] for i, node in enumerate(point_assignments)})
 
     for node, loc in locations.items():
-        tree.nodes[node][spatial_key] = loc
+        tree.nodes[node][key_added] = loc
 
     leaves = list(tdata.obs_names)
-    columns = [f"dim_{i}" for i in range(dim)]
     coords = np.array([locations[leaf] for leaf in leaves])
-    tdata.obsm[spatial_key] = pd.DataFrame(coords, index=leaves, columns=columns)
+    tdata.obsm[key_added] = coords
 
-    return tdata
+    if copy:
+        return tdata
 
 
 # --- Private helpers ---
@@ -232,15 +215,20 @@ def _n_leaves_in_subtree(tree: nx.DiGraph, node: str) -> int:
 
 
 def _sample_points(space: np.ndarray, dim: int, n: int) -> np.ndarray:
-    """Sample n points in space using Poisson-disc (Bridson) sampling."""
+    """Sample n points in space using Poisson-disc sampling."""
     shape = space.shape
-    radius = (min(shape) / (n ** (1 / dim))) / 2
+    # PoissonDisk works in the unit hypercube; convert radius to normalized units
+    radius = 1.0 / (2 * n ** (1 / dim))
     while True:
-        points = disc.Bridson_sampling(dims=np.array(shape), radius=radius)
-        radius /= 2
-        points = points[space[tuple(points.T.astype(int))]]
+        engine = PoissonDisk(d=dim, radius=radius, seed=np.random.randint(2**31))
+        unit_points = engine.fill_space()
+        # Scale to pixel coordinates and filter by the boolean mask
+        points = unit_points * np.array(shape)
+        idx = tuple(points.astype(int).clip(0, np.array(shape) - 1).T)
+        points = points[space[idx]]
         if len(points) >= n:
             break
+        radius /= 2
     np.random.shuffle(points)
     return points[:n]
 
@@ -258,8 +246,14 @@ def _triangulation_graph(points: np.ndarray) -> nx.Graph:
 
 def _nearest_neighbors_graph(points: np.ndarray, k: int) -> nx.Graph:
     """k-nearest-neighbors graph with distance edge weights."""
-    distances = neighbors.kneighbors_graph(points, k, mode="distance")
-    return nx.from_scipy_sparse_array(distances)
+    tree = scipy_spatial.KDTree(points)
+    distances, indices = tree.query(points, k=k + 1)  # +1 to exclude self
+    G = nx.Graph()
+    G.add_nodes_from(range(len(points)))
+    for i, (dists, idxs) in enumerate(zip(distances[:, 1:], indices[:, 1:], strict=False)):
+        for d, j in zip(dists, idxs, strict=False):
+            G.add_edge(i, int(j), weight=float(d))
+    return G
 
 
 def _points_to_graph(points: np.ndarray) -> nx.Graph:

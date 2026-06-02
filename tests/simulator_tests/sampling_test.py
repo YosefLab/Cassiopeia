@@ -12,6 +12,7 @@ from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
 from cassiopeia.simulator import (
     sample_spatial,
     sample_supercellular,
+    sample_timepoints,
     sample_uniform,
 )
 
@@ -522,3 +523,78 @@ def test_pixel_mode_composed_after_spatial():
     filtered = sample_spatial(tdata, space=space)
     merged = sample_supercellular(filtered, spatial_key="spatial")
     assert len(merged.obs_names) == 5
+
+
+# ============================================================
+# copy=False / key_added — in-place mode for all four functions
+# ============================================================
+
+
+def test_uniform_copy_false_adds_tree_to_obst():
+    tdata = _make_tdata()
+    result = sample_uniform(tdata, number_of_leaves=4, random_seed=0, copy=False)
+    assert result is None
+    assert "sampled" in tdata.obst
+    sampled = tdata.obst["sampled"]
+    leaves = [n for n in sampled if sampled.out_degree(n) == 0]
+    assert len(leaves) == 4
+
+
+def test_uniform_copy_false_key_added():
+    tdata = _make_tdata()
+    sample_uniform(tdata, number_of_leaves=4, random_seed=0, copy=False, key_added="subset")
+    assert "subset" in tdata.obst
+    assert "sampled" not in tdata.obst
+
+
+def test_uniform_copy_true_unchanged():
+    tdata = _make_tdata()
+    result = sample_uniform(tdata, number_of_leaves=4, random_seed=0, copy=True)
+    assert result is not None
+    assert isinstance(result, td.TreeData)
+    assert "sampled" not in tdata.obst
+
+
+def test_spatial_copy_false_adds_tree_to_obst():
+    tdata = _make_spatial_tdata()
+    bbox = [(0.0, 3.0), (0.0, 3.0)]
+    result = sample_spatial(tdata, bounding_box=bbox, copy=False)
+    assert result is None
+    assert "sampled" in tdata.obst
+
+
+def test_spatial_copy_false_key_added():
+    tdata = _make_spatial_tdata()
+    bbox = [(0.0, 3.0), (0.0, 3.0)]
+    sample_spatial(tdata, bounding_box=bbox, copy=False, key_added="roi")
+    assert "roi" in tdata.obst
+    assert "sampled" not in tdata.obst
+
+
+def test_timepoints_copy_false_adds_tree_to_obst():
+    tdata = _make_tdata(n_leaves=8)
+    result = sample_timepoints(tdata, timepoints={2.0: 3}, random_seed=0, copy=False)
+    assert result is None
+    assert "sampled" in tdata.obst
+    sampled = tdata.obst["sampled"]
+    leaves = [n for n in sampled if sampled.out_degree(n) == 0]
+    assert len(leaves) == 3
+
+
+def test_timepoints_copy_false_key_added():
+    tdata = _make_tdata(n_leaves=8)
+    sample_timepoints(tdata, timepoints={2.0: 3}, random_seed=0, copy=False, key_added="tp")
+    assert "tp" in tdata.obst
+    assert "sampled" not in tdata.obst
+
+
+def test_timepoints_copy_true_returns_tdata():
+    tdata = _make_tdata(n_leaves=8)
+    result = sample_timepoints(tdata, timepoints={2.0: 3}, random_seed=0, copy=True)
+    assert result is not None
+    assert isinstance(result, td.TreeData)
+    assert "sampled" not in tdata.obst
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])

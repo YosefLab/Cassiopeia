@@ -19,15 +19,16 @@ def sample_uniform(
     keep_root_edge: bool = True,
     random_seed: int | None = None,
     tree_key: str = "simulated",
-) -> td.TreeData:
+    key_added: str = "sampled",
+    copy: bool = True,
+) -> td.TreeData | None:
     """Uniformly subsample leaves from a TreeData.
 
     Selects a random subset of leaves and returns the induced subtree on
     those leaves. Unifurcations created by leaf removal are collapsed.
 
     Args:
-        tdata: TreeData with a tree in ``obst[tree_key]``. Nodes must have a
-            ``"time"`` attribute.
+        tdata: TreeData with a tree in ``obst[tree_key]``.
         ratio: Fraction of leaves to keep (rounded down). Mutually exclusive
             with ``number_of_leaves``.
         number_of_leaves: Exact number of leaves to keep. Mutually exclusive
@@ -37,9 +38,15 @@ def sample_uniform(
             ``False``, collapse that edge into the root.
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
+        key_added: Key under which to store the sampled tree when
+            ``copy=False``.
+        copy: If ``True`` (default), return a new TreeData with the sampled
+            subtree. If ``False``, add the sampled tree to
+            ``tdata.obst[key_added]`` in-place and return ``None``.
 
     Returns:
-        A new TreeData with the induced subtree on the sampled leaves.
+        A new TreeData with the induced subtree on the sampled leaves, or
+        ``None`` if ``copy=False``.
 
     Raises:
         LeafSubsamplerError: On invalid parameters or sample size.
@@ -60,7 +67,10 @@ def sample_uniform(
         )
 
     keep = [str(x) for x in np.random.choice(leaves, n_keep, replace=False)]
-    return _prune_tdata(tdata, keep, keep_root_edge, tree_key)
+    result = _prune_tdata(tdata, keep, keep_root_edge, tree_key)
+    if copy:
+        return result
+    tdata.obst[key_added] = result.obst[tree_key]
 
 
 def sample_spatial(
@@ -70,7 +80,9 @@ def sample_spatial(
     spatial_key: str = "spatial",
     keep_root_edge: bool = True,
     tree_key: str = "simulated",
-) -> td.TreeData:
+    key_added: str = "sampled",
+    copy: bool = True,
+) -> td.TreeData | None:
     """Subsample leaves within a spatial region of interest.
 
     Subsets leaves to those within a bounding box or binary mask. Spatial
@@ -95,9 +107,15 @@ def sample_spatial(
         spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
         keep_root_edge: Preserve root's single child edge after pruning.
         tree_key: Key in ``tdata.obst`` for the tree.
+        key_added: Key under which to store the sampled tree when
+            ``copy=False``.
+        copy: If ``True`` (default), return a new TreeData with the sampled
+            subtree. If ``False``, add the sampled tree to
+            ``tdata.obst[key_added]`` in-place and return ``None``.
 
     Returns:
-        A new TreeData with spatially filtered leaves.
+        A new TreeData with spatially filtered leaves, or ``None`` if
+        ``copy=False``.
 
     Raises:
         LeafSubsamplerError: On invalid parameters or empty region.
@@ -156,7 +174,10 @@ def sample_spatial(
     if len(leaf_keep) == 0:
         raise LeafSubsamplerError("No leaves within the specified region.")
 
-    return _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
+    result = _prune_tdata(tdata, leaf_keep, keep_root_edge, tree_key)
+    if copy:
+        return result
+    tdata.obst[key_added] = result.obst[tree_key]
 
 
 def sample_supercellular(
@@ -168,6 +189,7 @@ def sample_supercellular(
     collapse_duplicates: bool = True,
     random_seed: int | None = None,
     tree_key: str = "simulated",
+    time_key: str = "time",
 ) -> td.TreeData:
     """Merge pairs of leaves to simulate supercellular observations.
 
@@ -191,8 +213,7 @@ def sample_supercellular(
     ``"|"`` separating the contributing state tokens.
 
     Args:
-        tdata: TreeData with a tree in ``obst[tree_key]``. Nodes must have a
-            ``"time"`` attribute.
+        tdata: TreeData with a tree in ``obst[tree_key]``.
         ratio: Number of merges as a fraction of the total leaf count.
             Iterative mode only; mutually exclusive with ``number_of_merges``.
         number_of_merges: Exact number of merge operations. Iterative mode
@@ -205,9 +226,13 @@ def sample_supercellular(
             within a merged state string (e.g., ``"1|1|2"`` → ``"1|2"``).
         random_seed: NumPy random seed for reproducibility (iterative mode).
         tree_key: Key in ``tdata.obst`` for the tree.
+        time_key: Node attribute key for time values (iterative mode).
+             Required for distance-based merging; ignored in pixel mode.
+             Must be present on all nodes.
 
     Returns:
-        A new TreeData with merged leaves and combined character states.
+        A new TreeData with merged leaves and combined character states, or
+        ``None`` if ``copy=False``.
 
     Raises:
         LeafSubsamplerError: On invalid parameters.
@@ -222,7 +247,9 @@ def sample_supercellular(
             )
         if spatial_key not in tdata.obsm:
             raise LeafSubsamplerError(f"Spatial key `{spatial_key}` not present in tdata.obsm.")
-        return _pixel_merge(tdata, spatial_key, keep_root_edge, collapse_duplicates, tree_key)
+        return _pixel_merge(
+            tdata, spatial_key, keep_root_edge, collapse_duplicates, tree_key, time_key
+        )
 
     # Iterative mode
     if (ratio is None) == (number_of_merges is None):
@@ -254,16 +281,16 @@ def sample_supercellular(
         leaf1 = str(np.random.choice(current_leaves))
         other = [l for l in current_leaves if l != leaf1]
 
-        distances = np.array([_leaf_distance(working_tree, leaf1, l) for l in other])
+        distances = np.array([_leaf_distance(working_tree, leaf1, l, time_key) for l in other])
         weights = 1.0 / np.maximum(distances, 1e-10)
         probs = weights / weights.sum()
         leaf2 = str(np.random.choice(other, p=probs))
 
         lca = nx.lowest_common_ancestor(working_tree, leaf1, leaf2)
-        new_time = (working_tree.nodes[leaf1]["time"] + working_tree.nodes[leaf2]["time"]) / 2
+        new_time = (working_tree.nodes[leaf1][time_key] + working_tree.nodes[leaf2][time_key]) / 2
         new_leaf = f"{leaf1}-{leaf2}"
 
-        working_tree.add_node(new_leaf, time=new_time)
+        working_tree.add_node(new_leaf, **{time_key: new_time})
         working_tree.add_edge(lca, new_leaf)
 
         for key in obsm_data:
@@ -295,6 +322,159 @@ def sample_supercellular(
     )
 
 
+def sample_timepoints(
+    tdata: td.TreeData,
+    timepoints: dict[float, int],
+    keep_root_edge: bool = True,
+    random_seed: int | None = None,
+    tree_key: str = "simulated",
+    time_key: str = "time",
+    key_added: str = "sampled",
+    copy: bool = True,
+) -> td.TreeData | None:
+    """Sample cells at multiple timepoints from a growing tree.
+
+    Simulates sequential destructive sampling: at each timepoint (processed
+    in ascending order) a set of currently-alive cells is drawn without
+    replacement. Once a cell is sampled its entire lineage is terminated —
+    none of its progeny are eligible at any later timepoint. Cells from all
+    timepoints are pooled as leaves in the returned tree.
+
+    A cell is alive at time ``t`` when its parent has already divided
+    (``parent_time <= t``) and it has not yet divided (``t < node_time``
+    for internal nodes) or has survived to its leaf time (``t <= node_time``
+    for leaves).
+
+    Results are written to a new TreeData:
+
+    * ``tdata.obs["timepoint"]``: sampling timepoint for each cell.
+    * ``tdata.obs``: other columns carried over for cells that were leaves in
+      the input tree; ``NaN`` for cells sampled at intermediate timepoints.
+    * ``tdata.obsm``: character data from ``tdata.obsm`` for original leaves
+      or from node attributes for intermediate cells.
+
+    Args:
+        tdata: TreeData with a tree in ``obst[tree_key]``.
+        timepoints: Mapping of timepoint → number of cells to sample at that
+            time. Timepoints are processed in ascending order.
+        keep_root_edge: Preserve root's single child edge after pruning.
+        random_seed: NumPy random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the tree.
+        time_key: Node attribute key for time values. Must be present on all nodes.
+        key_added: Key under which to store the sampled tree when
+            ``copy=False``.
+        copy: If ``True`` (default), return a new TreeData with one leaf per
+            sampled cell. If ``False``, add the sampled tree to
+            ``tdata.obst[key_added]`` in-place and return ``None``.
+
+    Returns:
+        A new TreeData with one leaf per sampled cell and a ``"timepoint"``
+        column in ``obs``, or ``None`` if ``copy=False``.
+
+    Raises:
+        LeafSubsamplerError: If the timepoints dict is empty, a requested
+            count exceeds the number of available cells, or no cells are
+            sampled.
+    """
+    if not timepoints:
+        raise LeafSubsamplerError("timepoints dict is empty.")
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    tree = tdata.obst[tree_key]
+    original_leaves = set(tdata.obs_names)
+
+    parent_times: dict[str, float] = {
+        node: (
+            tree.nodes[next(iter(tree.predecessors(node)))][time_key]
+            if tree.in_degree(node) > 0
+            else float("-inf")
+        )
+        for node in tree.nodes
+    }
+
+    def _alive_at(node: str, t: float) -> bool:
+        pt = parent_times[node]
+        nt = tree.nodes[node][time_key]
+        # Internal cells are alive strictly before their division time;
+        # leaves are alive up to and including their leaf time.
+        if tree.out_degree(node) == 0:
+            return pt <= t <= nt
+        return pt <= t < nt
+
+    available: set[str] = set(tree.nodes)
+    sampled: dict[str, float] = {}  # node → sampling timepoint
+
+    for t in sorted(timepoints):
+        n_sample = timepoints[t]
+        if n_sample == 0:
+            continue
+        alive = [n for n in available if _alive_at(n, t)]
+        if len(alive) < n_sample:
+            raise LeafSubsamplerError(
+                f"Only {len(alive)} cells alive at timepoint {t}, but {n_sample} were requested."
+            )
+        chosen = [str(n) for n in np.random.choice(alive, n_sample, replace=False)]
+        sampled.update(dict.fromkeys(chosen, t))
+        terminated: set[str] = set(chosen)
+        for node in chosen:
+            terminated |= nx.descendants(tree, node)
+        available -= terminated
+
+    if not sampled:
+        raise LeafSubsamplerError("No cells were sampled.")
+
+    # Sampled nodes form an antichain (no sampled node is an ancestor of
+    # another), so they appear naturally as leaves in the induced subtree.
+    ancestors_needed: set[str] = set()
+    for node in sampled:
+        ancestors_needed |= nx.ancestors(tree, node)
+    induced = tree.subgraph(ancestors_needed | set(sampled)).copy()
+
+    # For cells sampled before their natural division time, override time
+    # to reflect when they were actually sampled.
+    for node, t in sampled.items():
+        induced.nodes[node][time_key] = t
+
+    new_tree = collapse_unifurcations(induced, collapse_root=not keep_root_edge)
+
+    # obs: "timepoint" column for all sampled cells; carry over existing
+    # columns for cells that were already leaves in the input tree.
+    sampled_list = list(sampled)
+    new_obs = pd.DataFrame({"timepoint": sampled}, index=sampled_list)
+    for col in tdata.obs.columns:
+        new_obs[col] = pd.Series(
+            {node: tdata.obs.loc[node, col] for node in sampled if node in original_leaves}
+        )
+
+    # obsm: use tdata.obsm for original leaves; fall back to node attributes
+    # for cells sampled at intermediate timepoints.
+    new_obsm: dict = {}
+    for key, val in tdata.obsm.items():
+        if not isinstance(val, pd.DataFrame):
+            continue
+        cols = list(val.columns)
+        rows: dict[str, list] = {}
+        for node in sampled_list:
+            if node in original_leaves:
+                rows[node] = list(val.loc[node])
+            elif key in tree.nodes.get(node, {}):
+                node_data = tree.nodes[node][key]
+                rows[node] = [node_data.get(col) for col in cols]
+        if rows:
+            new_obsm[key] = pd.DataFrame(rows, index=cols).T[cols]
+
+    result = td.TreeData(
+        obs=new_obs,
+        obsm=new_obsm,
+        obst={tree_key: new_tree},
+        uns=dict(tdata.uns),
+    )
+    if copy:
+        return result
+    tdata.obst[key_added] = result.obst[tree_key]
+
+
 # --- Private helpers ---
 
 
@@ -317,6 +497,7 @@ def _pixel_merge(
     keep_root_edge: bool,
     collapse_duplicates: bool,
     tree_key: str,
+    time_key: str = "time",
 ) -> td.TreeData:
     """Merge leaves that share the same integer pixel coordinate."""
     leaves = list(tdata.obs_names)
@@ -348,7 +529,9 @@ def _pixel_merge(
         return _prune_tdata(tdata, leaves, keep_root_edge, tree_key)
 
     final_leaves = single_leaves + list(merge_map.keys())
-    new_tree = _build_merged_tree(tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge)
+    new_tree = _build_merged_tree(
+        tdata.obst[tree_key], merge_map, final_leaves, keep_root_edge, time_key
+    )
     new_obs = pd.DataFrame(index=final_leaves)
     new_obsm = _merge_obsm(
         tdata.obsm,
@@ -366,10 +549,10 @@ def _pixel_merge(
     )
 
 
-def _leaf_distance(tree: nx.DiGraph, leaf1: str, leaf2: str) -> float:
+def _leaf_distance(tree: nx.DiGraph, leaf1: str, leaf2: str, time_key: str = "time") -> float:
     """Branch distance between two leaves via their LCA."""
     lca = nx.lowest_common_ancestor(tree, leaf1, leaf2)
-    return tree.nodes[leaf1]["time"] + tree.nodes[leaf2]["time"] - 2 * tree.nodes[lca]["time"]
+    return tree.nodes[leaf1][time_key] + tree.nodes[leaf2][time_key] - 2 * tree.nodes[lca][time_key]
 
 
 def _merge_state(s1: str, s2: str, collapse_duplicates: bool) -> str:
@@ -402,6 +585,7 @@ def _build_merged_tree(
     merge_map: dict[str, list[str]],
     final_leaves: list[str],
     keep_root_edge: bool,
+    time_key: str = "time",
 ) -> nx.DiGraph:
     """Add merged leaf nodes to tree, then induce subtree on final_leaves."""
     working = orig_tree.copy()
@@ -409,8 +593,8 @@ def _build_merged_tree(
         lca = old_leaves[0]
         for other in old_leaves[1:]:
             lca = nx.lowest_common_ancestor(working, lca, other)
-        new_time = float(np.mean([working.nodes[l]["time"] for l in old_leaves]))
-        working.add_node(new_name, time=new_time)
+        new_time = float(np.mean([working.nodes[l][time_key] for l in old_leaves]))
+        working.add_node(new_name, **{time_key: new_time})
         working.add_edge(lca, new_name)
     return _induce_and_collapse(working, final_leaves, keep_root_edge)
 

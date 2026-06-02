@@ -3,6 +3,7 @@
 import math
 import warnings
 from collections.abc import Callable
+from colorsys import hsv_to_rgb
 
 import networkx as nx
 import numpy as np
@@ -16,7 +17,7 @@ def stochastic_tracing(
     tdata: td.TreeData,
     number_of_cassettes: int = 10,
     size_of_cassette: int = 3,
-    mutation_rate: float | list[float] = 0.01,
+    mutation_rate: float | list[float] = 0.1,
     state_generating_distribution: Callable[[], float] = lambda: np.random.exponential(1e-5),
     number_of_states: int = 100,
     state_priors: dict | list[dict] | None = None,
@@ -25,7 +26,8 @@ def stochastic_tracing(
     unmodified_state: str = "*",
     random_seed: int | None = None,
     tree_key: str = "simulated",
-    characters_key: str = "characters",
+    time_key: str = "time",
+    key_added: str = "characters",
     copy: bool = False,
 ) -> td.TreeData:
     """Simulate stochastic lineage tracing data on a tree.
@@ -48,9 +50,9 @@ def stochastic_tracing(
 
     Results are written in-place to ``tdata``:
 
-    * ``tdata.obsm[characters_key]``: ``pd.DataFrame`` (n_leaves × n_chars),
+    * ``tdata.obsm[key_added]``: ``pd.DataFrame`` (n_leaves × n_chars),
       columns named ``"C-I"`` (cassette, site).
-    * ``tree.nodes[node][characters_key]``: character state dict for every
+    * ``tree.nodes[node][key_added]``: character state dict for every
       node (leaves and internal).
     * ``tdata.uns["cassette_size"]``, ``tdata.uns["unmodified_state"]``:
       stored for :func:`missing_data`.
@@ -88,8 +90,7 @@ def stochastic_tracing(
             )
 
     Args:
-        tdata: TreeData with a tree in ``obst[tree_key]``. Nodes must have a
-            ``"time"`` attribute.
+        tdata: TreeData with a tree in ``obst[tree_key]``.
         number_of_cassettes: Number of cassette arrays.
         size_of_cassette: Number of editable sites per cassette.
         mutation_rate: Cutting rate (exponential parameter) for the independent
@@ -113,7 +114,8 @@ def stochastic_tracing(
             Stored in ``tdata.uns["unmodified_state"]`` for downstream use.
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
-        characters_key: Key used for ``obsm`` and node attributes.
+        time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
+        key_added: Key used for ``obsm`` and node attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
             If ``False`` (default), modify ``tdata`` in-place.
 
@@ -165,7 +167,7 @@ def stochastic_tracing(
             continue  # root stays all-unmodified
 
         parent = next(iter(tree.predecessors(node)))
-        branch_len = tree.nodes[node]["time"] - tree.nodes[parent]["time"]
+        branch_len = tree.nodes[node][time_key] - tree.nodes[parent][time_key]
         array = char_arrays[parent].copy()
 
         if not sequential:
@@ -204,20 +206,28 @@ def stochastic_tracing(
 
         char_arrays[node] = array
 
+    chars = {node: dict(zip(columns, char_arrays[node], strict=False)) for node in tree.nodes}
     for node in tree.nodes:
-        tree.nodes[node][characters_key] = dict(zip(columns, char_arrays[node], strict=False))
+        tree.nodes[node][key_added] = chars[node]
 
     obs_names = list(tdata.obs_names)
-    tdata.obsm[characters_key] = pd.DataFrame(
-        [char_arrays[n] for n in obs_names],
-        index=obs_names,
-        columns=columns,
+    all_states = list(dict.fromkeys(state for priors in priors_per_char for state in priors)) + [
+        unmodified_state
+    ]
+    categorical_dtype = pd.CategoricalDtype(categories=all_states, ordered=True)
+
+    tdata.obsm[key_added] = _build_characters_dataframe(
+        chars, columns, obs_names, categorical_dtype
     )
 
     tdata.uns["cassette_size"] = size_of_cassette
     tdata.uns["unmodified_state"] = unmodified_state
+    tdata.uns[f"{key_added}_colors"] = _get_state_colors(
+        all_states, custom={unmodified_state: "lightgray"}
+    )
 
-    return tdata
+    if copy:
+        return tdata
 
 
 def missing_data(
@@ -230,6 +240,7 @@ def missing_data(
     key_added: str | None = None,
     random_seed: int | None = None,
     tree_key: str = "simulated",
+    time_key: str = "time",
     characters_key: str = "characters",
     copy: bool = False,
 ) -> td.TreeData:
@@ -284,6 +295,7 @@ def missing_data(
             ``key_added``, leaving the originals untouched.
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree.
+        time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
         characters_key: Key to read character data from.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
             If ``False`` (default), modify ``tdata`` in-place.
@@ -314,12 +326,35 @@ def missing_data(
     n_cassettes = len(columns) // cassette_size
     output_key = key_added if key_added is not None else characters_key
 
-    # Snapshot original characters (from stochastic_tracing) for collapse detection
-    original_chars: dict[str, dict[str, str]] = {
-        node: dict(tree.nodes[node][characters_key]) for node in tree.nodes
-    }
-    # Working copy — all modifications go here
-    chars: dict[str, dict[str, str]] = {node: dict(d) for node, d in original_chars.items()}
+    # Check if characters are available as node attributes
+    some_node = next(iter(tree.nodes))
+    has_node_chars = characters_key in tree.nodes[some_node]
+
+    if collapse_sites_on_cassette and not has_node_chars:
+        raise DataSimulatorError(
+            f"collapse_sites_on_cassette requires '{characters_key}' stored as node "
+            f"attributes, but none were found. Ensure stochastic_tracing was called "
+            f"first, or set collapse_sites_on_cassette=False."
+        )
+
+    if has_node_chars:
+        # Snapshot original characters (from stochastic_tracing) for collapse detection
+        original_chars: dict[str, dict[str, str]] = {
+            node: dict(tree.nodes[node][characters_key]) for node in tree.nodes
+        }
+        # Working copy — all modifications go here
+        chars: dict[str, dict[str, str]] = {node: dict(d) for node, d in original_chars.items()}
+    else:
+        original_chars = {}
+        obsm_df = tdata.obsm[characters_key]
+        obs_names_set = set(tdata.obs_names)
+        default_row = dict.fromkeys(columns, unmodified_state)
+        chars = {}
+        for node in tree.nodes:
+            if node in obs_names_set:
+                chars[node] = {col: str(obsm_df.loc[node, col]) for col in columns}
+            else:
+                chars[node] = dict(default_row)
 
     # --- Resection (collapse) ---
     # Detected per-branch by comparing original chars of each node to its parent.
@@ -360,7 +395,7 @@ def missing_data(
             silenced[node] = set()
             continue
         parent = next(iter(tree.predecessors(node)))
-        branch_len = tree.nodes[node]["time"] - tree.nodes[parent]["time"]
+        branch_len = tree.nodes[node][time_key] - tree.nodes[parent][time_key]
         p = 1 - np.exp(-branch_len * heritable_rate)
         new_silenced = {c for c in range(n_cassettes) if np.random.uniform() < p}
         silenced[node] = silenced[parent] | new_silenced
@@ -381,15 +416,58 @@ def missing_data(
         tree.nodes[node][output_key] = chars[node]
 
     obs_names = list(tdata.obs_names)
-    tdata.obsm[output_key] = pd.DataFrame(
-        [{col: chars[n][col] for col in columns} for n in obs_names],
-        index=obs_names,
-    )[columns]
+
+    # Preserve categorical dtype and extend categories to include missing_state
+    source_col = tdata.obsm[characters_key].iloc[:, 0]
+    if hasattr(source_col.dtype, "categories"):
+        existing_categories = list(source_col.dtype.categories)
+    else:
+        existing_categories = list(
+            dict.fromkeys(
+                str(v) for col in columns for v in tdata.obsm[characters_key][col].unique()
+            )
+        )
+    new_categories = (
+        existing_categories
+        if missing_state in existing_categories
+        else existing_categories + [missing_state]
+    )
+    categorical_dtype = pd.CategoricalDtype(categories=new_categories, ordered=True)
+
+    tdata.obsm[output_key] = _build_characters_dataframe(
+        chars, columns, obs_names, categorical_dtype
+    )
+
+    # Propagate existing colors and add "white" for missing_state
+    source_colors_key = f"{characters_key}_colors"
+    if source_colors_key in tdata.uns:
+        colors_map = dict(zip(existing_categories, tdata.uns[source_colors_key], strict=False))
+        colors_map.setdefault(missing_state, "white")
+        tdata.uns[f"{output_key}_colors"] = [colors_map.get(cat, "white") for cat in new_categories]
 
     tdata.uns["missing_state"] = missing_state
     tdata.uns["unmodified_state"] = unmodified_state
 
-    return tdata
+    if copy:
+        return tdata
+
+
+def _build_characters_dataframe(
+    chars: dict[str, dict[str, str]],
+    columns: list[str],
+    obs_names: list[str],
+    categorical_dtype: pd.CategoricalDtype,
+) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            col: pd.Categorical(
+                [chars[n][col] for n in obs_names],
+                dtype=categorical_dtype,
+            )
+            for col in columns
+        },
+        index=obs_names,
+    )
 
 
 def _resolve_mutation_rate(
@@ -428,9 +506,12 @@ def _resolve_state_priors(
     cassette_size: int,
 ) -> list[dict]:
     if state_priors is None:
-        probs = [state_generating_distribution() for _ in range(number_of_states)]
+        probs = sorted(
+            (state_generating_distribution() for _ in range(number_of_states)),
+            reverse=True,
+        )
         Z = np.sum(probs)
-        prior = {i + 1: probs[i] / Z for i in range(number_of_states)}
+        prior = {str(i + 1): p / Z for i, p in enumerate(probs)}
         return [prior] * n_chars
 
     if isinstance(state_priors, np.ndarray):
@@ -469,11 +550,135 @@ def _introduce_states(
     for i in cuts:
         states = list(priors_per_char[i].keys())
         probs = list(priors_per_char[i].values())
-        updated[i] = str(np.random.choice(states, p=probs))
+        updated[i] = np.random.choice(states, p=probs)
     return updated
 
 
 def _edit_site(array: list[str], site: int, prior: dict) -> None:
     states = list(prior.keys())
     probs = list(prior.values())
-    array[site] = str(np.random.choice(states, p=probs))
+    array[site] = np.random.choice(states, p=probs)
+
+
+def _get_state_colors(categories: list, custom=None) -> list[str]:
+    """Generate color palette for states."""
+    n = len(categories)
+
+    if n <= len(godsnot_102):
+        colors = dict(zip(categories, godsnot_102[:n], strict=True))
+    else:
+        sampled_colors = [
+            "#{:02x}{:02x}{:02x}".format(*(int(255 * c) for c in hsv_to_rgb(i / n, 0.85, 0.95)))
+            for i in range(n)
+        ]
+        colors = dict(zip(categories, sampled_colors, strict=True))
+
+    colors.update(custom or {})
+    return [colors[cat] for cat in categories]
+
+
+# from https://godsnotwheregodsnot.blogspot.com/2012/09/color-distribution-methodology.html
+godsnot_102 = [
+    "#FFFF00",
+    "#1CE6FF",
+    "#FF34FF",
+    "#FF4A46",
+    "#008941",
+    "#006FA6",
+    "#A30059",
+    "#FFDBE5",
+    "#7A4900",
+    "#0000A6",
+    "#63FFAC",
+    "#B79762",
+    "#004D43",
+    "#8FB0FF",
+    "#997D87",
+    "#5A0007",
+    "#809693",
+    "#6A3A4C",
+    "#1B4400",
+    "#4FC601",
+    "#3B5DFF",
+    "#4A3B53",
+    "#FF2F80",
+    "#61615A",
+    "#BA0900",
+    "#6B7900",
+    "#00C2A0",
+    "#FFAA92",
+    "#FF90C9",
+    "#B903AA",
+    "#D16100",
+    "#DDEFFF",
+    "#000035",
+    "#7B4F4B",
+    "#A1C299",
+    "#300018",
+    "#0AA6D8",
+    "#013349",
+    "#00846F",
+    "#372101",
+    "#FFB500",
+    "#C2FFED",
+    "#A079BF",
+    "#CC0744",
+    "#C0B9B2",
+    "#C2FF99",
+    "#001E09",
+    "#00489C",
+    "#6F0062",
+    "#0CBD66",
+    "#EEC3FF",
+    "#456D75",
+    "#B77B68",
+    "#7A87A1",
+    "#788D66",
+    "#885578",
+    "#FAD09F",
+    "#FF8A9A",
+    "#D157A0",
+    "#BEC459",
+    "#456648",
+    "#0086ED",
+    "#886F4C",
+    "#34362D",
+    "#B4A8BD",
+    "#00A6AA",
+    "#452C2C",
+    "#636375",
+    "#A3C8C9",
+    "#FF913F",
+    "#938A81",
+    "#575329",
+    "#00FECF",
+    "#B05B6F",
+    "#8CD0FF",
+    "#3B9700",
+    "#04F757",
+    "#C8A1A1",
+    "#1E6E00",
+    "#7900D7",
+    "#A77500",
+    "#6367A9",
+    "#A05837",
+    "#6B002C",
+    "#772600",
+    "#D790FF",
+    "#9B9700",
+    "#549E79",
+    "#FFF69F",
+    "#201625",
+    "#72418F",
+    "#BC23FF",
+    "#99ADC0",
+    "#3A2465",
+    "#922329",
+    "#5B4534",
+    "#FDE8DC",
+    "#404E55",
+    "#0089A3",
+    "#CB7E98",
+    "#A4E804",
+    "#324E72",
+]

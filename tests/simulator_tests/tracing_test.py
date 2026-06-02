@@ -50,7 +50,7 @@ def tdata():
     return _make_tree()
 
 
-SIMPLE_PRIORS = {1: 0.5, 2: 0.3, 3: 0.2}
+SIMPLE_PRIORS = {"1": 0.5, "2": 0.3, "3": 0.2}
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +173,7 @@ def test_cas9_state_generating_distribution(tdata):
 
 def test_cas9_per_cassette_priors(tdata):
     """List of dicts (length = size_of_cassette) tiled across cassettes."""
-    priors = [{1: 1.0}, {2: 1.0}, {3: 1.0}]  # deterministic per-site
+    priors = [{"1": 1.0}, {"2": 1.0}, {"3": 1.0}]  # deterministic per-site
     stochastic_tracing(
         tdata,
         number_of_cassettes=2,
@@ -246,13 +246,13 @@ def test_cas9_no_collapse(tdata):
     assert "-" not in set(df.values.flatten())
 
 
-def test_cas9_custom_characters_key(tdata):
+def test_cas9_custom_key_added(tdata):
     stochastic_tracing(
         tdata,
         number_of_cassettes=1,
         size_of_cassette=2,
         state_priors={1: 1.0},
-        characters_key="edits",
+        key_added="edits",
         random_seed=0,
     )
     assert "edits" in tdata.obsm
@@ -580,9 +580,13 @@ def test_missing_data_key_added(tdata):
 def test_missing_data_uns_storage(tdata):
     """missing_data updates uns with missing_state and unmodified_state."""
     stochastic_tracing(
-        tdata, number_of_cassettes=1, size_of_cassette=2, state_priors={1: 1.0}, random_seed=0
+        tdata,
+        number_of_cassettes=1,
+        size_of_cassette=2,
+        state_priors={1: 1.0},
+        random_seed=0,
     )
-    missing_data(tdata, missing_state="X", unmodified_state="O", random_seed=0)
+    missing_data(tdata, missing_state="X", unmodified_state="O", random_seed=0, stochastic_rate=0.1)
     assert tdata.uns["missing_state"] == "X"
     assert tdata.uns["unmodified_state"] == "O"
 
@@ -605,8 +609,7 @@ def test_composed_pipeline(tdata):
 
 
 def test_stochastic_tracing_copy_false_modifies_inplace(tdata):
-    original = tdata
-    result = stochastic_tracing(
+    stochastic_tracing(
         tdata,
         number_of_cassettes=2,
         size_of_cassette=2,
@@ -614,11 +617,11 @@ def test_stochastic_tracing_copy_false_modifies_inplace(tdata):
         random_seed=1,
         copy=False,
     )
-    assert result is original
-    assert "characters" in original.obsm
+    assert "characters" in tdata.obsm
 
 
 def test_stochastic_tracing_copy_true_returns_new(tdata):
+    original = tdata
     result = stochastic_tracing(
         tdata,
         number_of_cassettes=2,
@@ -628,6 +631,7 @@ def test_stochastic_tracing_copy_true_returns_new(tdata):
         copy=True,
     )
     assert result is not tdata
+    assert original is tdata
     assert "characters" not in tdata.obsm
     assert "characters" in result.obsm
 
@@ -637,13 +641,18 @@ def test_missing_data_copy_false_modifies_inplace(tdata):
         tdata, number_of_cassettes=2, size_of_cassette=2, state_priors=SIMPLE_PRIORS, random_seed=1
     )
     original = tdata
-    result = missing_data(tdata, random_seed=1, copy=False)
-    assert result is original
+    result = missing_data(tdata, random_seed=1, copy=True, stochastic_rate=0.1)
+    assert original is tdata
+    assert original is not result
 
 
 def test_missing_data_copy_true_returns_new(tdata):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=2, state_priors=SIMPLE_PRIORS, random_seed=1
     )
-    result = missing_data(tdata, random_seed=1, copy=True)
+    result = missing_data(tdata, random_seed=1, copy=True, stochastic_rate=0.1)
     assert result is not tdata
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])
