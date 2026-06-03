@@ -171,3 +171,4 @@ environment.yml
 .nfs*
 ._*
 dev/
+CLAUDE.md
