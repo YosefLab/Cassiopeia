@@ -1,659 +1,148 @@
+"""Tests for the functional greedy() API on TreeData."""
+
 import itertools
-import unittest
+import warnings
 
 import networkx as nx
 import pandas as pd
+import pytest
+import treedata as td
 
 import cassiopeia as cas
-from cassiopeia.solver import missing_data_methods, solver_utilities
-from cassiopeia.solver.VanillaGreedySolver import VanillaGreedySolver
+from cassiopeia.solver.greedy import _compute_mutation_frequencies
 
 
 def find_triplet_structure(triplet, T):
-    a, b, c = triplet[0], triplet[1], triplet[2]
-    a_ancestors = list(nx.ancestors(T, a))
-    b_ancestors = list(nx.ancestors(T, b))
-    c_ancestors = list(nx.ancestors(T, c))
-    ab_common = len(set(a_ancestors) & set(b_ancestors))
-    ac_common = len(set(a_ancestors) & set(c_ancestors))
-    bc_common = len(set(b_ancestors) & set(c_ancestors))
-    structure = "-"
-    if ab_common > bc_common and ab_common > ac_common:
-        structure = "ab"
-    elif ac_common > bc_common and ac_common > ab_common:
-        structure = "ac"
-    elif bc_common > ab_common and bc_common > ac_common:
-        structure = "bc"
-    return structure
-
-
-class VanillaGreedySolverTest(unittest.TestCase):
-    def test_basic_freq_dict(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, 0, 1, 2, -1],
-                "c2": [0, 0, 3, 2, -1],
-                "c3": [-1, 4, 0, 2, 2],
-                "c4": [4, 4, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-
-        vgsolver = VanillaGreedySolver()
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-        freq_dict = vgsolver.compute_mutation_frequencies(
-            ["c1", "c2", "c3", "c4"],
-            unique_character_matrix,
-            vg_tree.missing_state_indicator,
-        )
-
-        self.assertEqual(len(freq_dict), 5)
-        self.assertEqual(len(freq_dict[0]), 4)
-        self.assertEqual(len(freq_dict[1]), 3)
-        self.assertEqual(len(freq_dict[2]), 4)
-        self.assertEqual(len(freq_dict[3]), 2)
-        self.assertEqual(len(freq_dict[4]), 3)
-        self.assertEqual(freq_dict[0][5], 1)
-        self.assertEqual(freq_dict[1][0], 2)
-        self.assertEqual(freq_dict[2][-1], 0)
-        self.assertNotIn(3, freq_dict[1].keys())
-
-    def test_duplicate_freq_dict(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, 0, 1, 2, -1],
-                "c2": [5, 0, 1, 2, -1],
-                "c3": [0, 0, 3, 2, -1],
-                "c4": [-1, 4, 0, 2, 2],
-                "c5": [4, 4, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-
-        vgsolver = VanillaGreedySolver()
-
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-        freq_dict = vgsolver.compute_mutation_frequencies(
-            ["c1", "c3", "c4", "c5"],
-            unique_character_matrix,
-            vg_tree.missing_state_indicator,
-        )
-
-        self.assertEqual(len(freq_dict), 5)
-        self.assertEqual(len(freq_dict[0]), 4)
-        self.assertEqual(len(freq_dict[1]), 3)
-        self.assertEqual(len(freq_dict[2]), 4)
-        self.assertEqual(len(freq_dict[3]), 2)
-        self.assertEqual(len(freq_dict[4]), 3)
-        self.assertEqual(freq_dict[0][5], 1)
-        self.assertEqual(freq_dict[1][0], 2)
-        self.assertEqual(freq_dict[2][-1], 0)
-        self.assertNotIn(3, freq_dict[1].keys())
-
-    def test_ambiguous_freq_dict(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, (0, 1), 1, 2, -1],
-                "c2": [0, 0, 3, 2, -1],
-                "c3": [-1, 4, 0, (2, 3), 2],
-                "c4": [4, 4, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-
-        vgsolver = VanillaGreedySolver()
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-        freq_dict = vgsolver.compute_mutation_frequencies(
-            ["c1", "c2", "c3", "c4"],
-            unique_character_matrix,
-            vg_tree.missing_state_indicator,
-        )
-
-        self.assertEqual(len(freq_dict), 5)
-        self.assertEqual(len(freq_dict[0]), 4)
-        self.assertEqual(len(freq_dict[1]), 4)
-        self.assertEqual(len(freq_dict[2]), 4)
-        self.assertEqual(len(freq_dict[3]), 3)
-        self.assertEqual(len(freq_dict[4]), 3)
-        self.assertEqual(freq_dict[0][5], 1)
-        self.assertEqual(freq_dict[1][0], 2)
-        self.assertEqual(freq_dict[1][1], 1)
-        self.assertEqual(freq_dict[3][3], 1)
-        self.assertEqual(freq_dict[2][-1], 0)
-        self.assertNotIn(3, freq_dict[1].keys())
-
-    def test_ambiguous_duplicate_freq_dict(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, (0, 1), 1, 2, -1],
-                "c1_dup": [5, (1, 0), 1, 2, -1],
-                "c2": [0, 0, 3, 2, -1],
-                "c3": [-1, 4, 0, (2, 3), 2],
-                "c4": [4, 4, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-
-        vgsolver = VanillaGreedySolver()
-        keep_rows = (
-            cm.apply(
-                lambda x: [set(s) if isinstance(s, tuple) else {s} for s in x.values],
-                axis=0,
-            )
-            .apply(tuple, axis=1)
-            .drop_duplicates()
-            .index.values
-        )
-        unique_character_matrix = cm.loc[keep_rows].copy()
-
-        freq_dict = vgsolver.compute_mutation_frequencies(
-            unique_character_matrix.index,
-            unique_character_matrix,
-            vg_tree.missing_state_indicator,
-        )
-
-        self.assertEqual(len(freq_dict), 5)
-        self.assertEqual(len(freq_dict[0]), 4)
-        self.assertEqual(len(freq_dict[1]), 4)
-        self.assertEqual(len(freq_dict[2]), 4)
-        self.assertEqual(len(freq_dict[3]), 3)
-        self.assertEqual(len(freq_dict[4]), 3)
-        self.assertEqual(freq_dict[0][5], 1)
-        self.assertEqual(freq_dict[1][0], 2)
-        self.assertEqual(freq_dict[1][1], 1)
-        self.assertEqual(freq_dict[3][3], 1)
-        self.assertEqual(freq_dict[2][-1], 0)
-        self.assertNotIn(3, freq_dict[1].keys())
-
-    def test_average_missing_data(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [-1, 4, 0, 2, 2],
-                "c2": [4, 4, 1, 2, 0],
-                "c3": [4, 0, 3, -1, -1],
-                "c4": [5, 0, 1, 2, -1],
-                "c5": [5, 0, 1, 2, -1],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        left_set, right_set = missing_data_methods.assign_missing_average(
-            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"]
-        )
-        self.assertEqual(left_set, ["c1", "c2", "c3"])
-        self.assertEqual(right_set, ["c4", "c5"])
-
-    def test_average_missing_data_priors(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [-1, 4, 0, 2, 2],
-                "c2": [4, 4, 0, 2, 0],
-                "c3": [4, 0, 1, -1, -1],
-                "c4": [5, 0, 1, 2, -1],
-                "c5": [5, 0, 1, 2, -1],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-        priors = {
-            0: {4: 0.5, 5: 0.5},
-            1: {4: 1},
-            2: {1: 1},
-            3: {2: 1},
-            4: {2: 1},
-        }
-
-        weights = solver_utilities.transform_priors(priors)
-
-        left_set, right_set = missing_data_methods.assign_missing_average(
-            cm, -1, ["c1", "c2"], ["c4", "c5"], ["c3"], weights
-        )
-        self.assertEqual(left_set, ["c1", "c2", "c3"])
-        self.assertEqual(right_set, ["c4", "c5"])
-
-    def test_all_duplicates_base_case(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, 0, 1, 2, 0],
-                "c2": [5, 0, 1, 2, 0],
-                "c3": [5, 0, 1, 2, 0],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from([(3, "c1"), (3, "c3"), (3, "c2")])
-        observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver.solve(vg_tree)
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_case_1(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [5, 0, 1, 2, 0],
-                "c2": [5, 0, 0, 2, -1],
-                "c3": [4, 0, 3, 2, -1],
-                "c4": [-1, 4, 0, 2, 2],
-                "c5": [0, 4, 1, 2, 2],
-                "c6": [4, 0, 0, 2, 2],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-
-        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
-
-        self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
-        self.assertListEqual(right, ["c1", "c2"])
-
-        vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c4"),
-                (7, "c5"),
-                (8, "c3"),
-                (8, "c6"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c4"),
-                (7, "c5"),
-                (8, "c3"),
-                (8, "c6"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_case_2(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [0, 0, 1, 2, 0],
-                "c2": [0, 0, 1, 2, 0],
-                "c3": [1, 2, 0, 2, -1],
-                "c4": [1, 2, 3, 2, -1],
-                "c5": [1, 0, 3, 4, 5],
-                "c6": [1, 0, -1, 4, 5],
-                "c7": [1, 0, -1, -1, 5],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c3"),
-                (7, "c4"),
-                (8, "c5"),
-                (8, "c6"),
-                (8, "c7"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c3"),
-                (7, "c4"),
-                (8, "c5"),
-                (8, "c6"),
-                (8, "c7"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_weighted_case_trivial(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [0, 0, 1, 2, 0],
-                "c2": [0, 0, 1, 2, 0],
-                "c3": [1, 2, 0, 2, -1],
-                "c4": [1, 2, 3, 2, -1],
-                "c5": [1, 0, 3, 4, 5],
-                "c6": [1, 0, -1, 4, 5],
-                "c7": [1, 0, -1, -1, 5],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        priors = {
-            0: {1: 0.5},
-            1: {2: 0.5},
-            2: {1: 0.5, 3: 0.5},
-            3: {2: 0.5, 4: 0.5},
-            4: {5: 0.5},
-        }
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
-
-        vgsolver = VanillaGreedySolver()
-
-        vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c3"),
-                (7, "c4"),
-                (8, "c5"),
-                (8, "c6"),
-                (8, "c7"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_priors_case(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [0, 0, 1, 2, 0],
-                "c2": [0, 0, 1, 2, 0],
-                "c3": [1, 2, 0, 2, -1],
-                "c4": [1, 2, 3, 2, -1],
-                "c5": [1, 0, 3, 4, 5],
-                "c6": [1, 0, -1, 4, 5],
-                "c7": [1, 0, -1, -1, 5],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        priors = {
-            0: {1: 0.99, 2: 0.01},
-            1: {2: 0.99, 3: 0.01},
-            2: {1: 0.8, 3: 0.2},
-            3: {2: 0.9, 4: 0.1},
-            4: {5: 0.99, 6: 0.01},
-        }
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1, priors=priors)
-        vgsolver = VanillaGreedySolver()
-
-        vgsolver.solve(vg_tree, collapse_mutationless_edges=True)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (8, "c3"),
-                (8, "c4"),
-                (7, "c5"),
-                (7, "c6"),
-                (7, "c7"),
-                (8, 6),
-                (9, 7),
-                (9, 8),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c7"], 3)
-
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (8, "c3"),
-                (8, 6),
-                (7, "c5"),
-                (7, "c6"),
-                (7, "c7"),
-                (9, 8),
-                (9, "c4"),
-                (10, 9),
-                (10, 7),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_ambiguous_no_missing(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [(5, 0), 0, 1, 2, 0],
-                "c2": [5, 0, 0, 2, 0],
-                "c3": [4, 0, 3, 2, (2, 1)],
-                "c4": [0, (4, 0), 0, 2, 2],
-                "c5": [0, 4, 1, 2, 2],
-                "c6": [4, 0, 0, 2, 2],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-
-        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
-
-        self.assertEqual(set(left), {"c4", "c5", "c6", "c3"})
-        self.assertEqual(set(right), {"c1", "c2"})
-
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c4"),
-                (7, "c5"),
-                (8, "c3"),
-                (8, "c6"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_ambiguous_with_missing(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [(5, 1), 0, 1, 2, 0],
-                "c2": [5, 0, 0, 2, -1],
-                "c3": [4, 0, 3, 2, -1],
-                "c4": [-1, 4, 0, 2, 2],
-                "c5": [0, 4, 1, 2, 2],
-                "c6": [4, 0, 0, 2, (2, 1)],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        unique_character_matrix = vg_tree.character_matrix.drop_duplicates()
-
-        left, right = vgsolver.perform_split(unique_character_matrix, unique_character_matrix.index)
-
-        self.assertListEqual(left, ["c4", "c5", "c6", "c3"])
-        self.assertListEqual(right, ["c1", "c2"])
-
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6"], 3)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c4"),
-                (7, "c5"),
-                (8, "c3"),
-                (8, "c6"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_ambiguous_with_missing_and_duplicates(self):
-        cm = pd.DataFrame.from_dict(
-            {
-                "c1": [(5, 1), 0, 1, 2, 0],
-                "c2": [5, 0, 0, 2, -1],
-                "c3": [4, 0, 3, 2, -1],
-                "c4": [-1, 4, 0, 2, 2],
-                "c5": [0, 4, 1, 2, 2],
-                "c6": [4, 0, 0, 2, (2, 1)],
-                "c6_dup": [4, 0, 0, 2, (1, 2)],
-            },
-            orient="index",
-            columns=["a", "b", "c", "d", "e"],
-        )
-
-        vg_tree = cas.data.CassiopeiaTree(cm, missing_state_indicator=-1)
-        vgsolver = VanillaGreedySolver()
-
-        triplets = itertools.combinations(["c1", "c2", "c3", "c4", "c5", "c6", "c6_dup"], 3)
-
-        vgsolver.solve(vg_tree)
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                (6, "c1"),
-                (6, "c2"),
-                (7, "c4"),
-                (7, "c5"),
-                (8, "c3"),
-                (8, 11),
-                (11, "c6"),
-                (11, "c6_dup"),
-                (9, 7),
-                (9, 8),
-                (10, 6),
-                (10, 9),
-            ]
-        )
-        observed_tree = vg_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, observed_tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    a, b, c = triplet
+    a_anc = set(nx.ancestors(T, a))
+    b_anc = set(nx.ancestors(T, b))
+    c_anc = set(nx.ancestors(T, c))
+    ab = len(a_anc & b_anc)
+    ac = len(a_anc & c_anc)
+    bc = len(b_anc & c_anc)
+    if ab > bc and ab > ac:
+        return "ab"
+    if ac > bc and ac > ab:
+        return "ac"
+    if bc > ab and bc > ac:
+        return "bc"
+    return "-"
+
+
+def leaves(g):
+    return [n for n in g.nodes if g.out_degree(n) == 0]
+
+
+def chars_tdata(cm, priors=None):
+    uns = {"missing_state_indicator": -1}
+    if priors is not None:
+        uns["priors"] = priors
+    return td.TreeData(obs=pd.DataFrame(index=list(cm.index)), obsm={"characters": cm}, uns=uns)
+
+
+# ── mutation-frequency helper ─────────────────────────────────────────────────
+
+
+def test_basic_freq_dict():
+    cm = pd.DataFrame.from_dict(
+        {
+            "c1": [5, 0, 1, 2, -1],
+            "c2": [0, 0, 3, 2, -1],
+            "c3": [-1, 4, 0, 2, 2],
+            "c4": [4, 4, 1, 2, 0],
+        },
+        orient="index",
+        columns=["a", "b", "c", "d", "e"],
+    )
+    freq = _compute_mutation_frequencies(["c1", "c2", "c3", "c4"], cm.drop_duplicates(), -1)
+    assert len(freq) == 5
+    assert len(freq[0]) == 4
+    assert len(freq[1]) == 3
+    assert len(freq[2]) == 4
+    assert len(freq[3]) == 2
+    assert len(freq[4]) == 3
+    assert freq[0][5] == 1
+    assert freq[1][0] == 2
+    assert freq[2][-1] == 0
+    assert 3 not in freq[1]
+
+
+def test_ambiguous_freq_dict():
+    cm = pd.DataFrame.from_dict(
+        {
+            "c1": [5, (0, 1), 1, 2, -1],
+            "c2": [0, 0, 3, 2, -1],
+            "c3": [-1, 4, 0, (2, 3), 2],
+            "c4": [4, 4, 1, 2, 0],
+        },
+        orient="index",
+        columns=["a", "b", "c", "d", "e"],
+    )
+    freq = _compute_mutation_frequencies(["c1", "c2", "c3", "c4"], cm.drop_duplicates(), -1)
+    assert freq[1][0] == 2
+    assert freq[1][1] == 1
+
+
+# ── greedy() reconstruction ───────────────────────────────────────────────────
+
+
+def test_greedy_basic_topology():
+    cm = pd.DataFrame.from_dict(
+        {
+            "a": [1, 1, 0],
+            "b": [1, 2, 0],
+            "c": [1, 2, 1],
+            "d": [2, 0, 0],
+            "e": [2, 0, 2],
+        },
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    tdata = chars_tdata(cm)
+    cas.solver.greedy(tdata, tree_key="greedy")
+    tree = tdata.obst["greedy"]
+
+    assert set(leaves(tree)) == set(cm.index)
+    # a/b/c share the first-character mutation and split from d/e.
+    assert find_triplet_structure(("a", "d", "e"), tree) == "bc"
+    assert find_triplet_structure(("b", "c", "d"), tree) == "ab"
+
+
+def test_greedy_with_priors_runs():
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 1, 0], "b": [1, 2, 0], "c": [1, 2, 1], "d": [2, 0, 0], "e": [2, 0, 2]},
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
+    tdata = chars_tdata(cm, priors=priors)
+    cas.solver.greedy(tdata, tree_key="greedy")
+    assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
+
+
+def test_greedy_duplicates_preserved():
+    cm = pd.DataFrame.from_dict(
+        {
+            "a": [1, 1, 0],
+            "b": [1, 2, 0],
+            "c": [1, 2, 1],
+            "d": [2, 0, 0],
+            "e": [2, 0, 2],
+            "f": [2, 0, 2],
+        },
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    tdata = chars_tdata(cm)
+    cas.solver.greedy(tdata, tree_key="greedy")
+    assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
+
+
+# ── deprecation ───────────────────────────────────────────────────────────────
+
+
+def test_vanilla_greedy_solver_deprecated():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        cas.solver.VanillaGreedySolver()
+        assert any(issubclass(x.category, DeprecationWarning) for x in w)

@@ -1,11 +1,12 @@
 """Module containing general utilities to be called by functions throughout the solver module."""
 
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from hashlib import blake2b
 
 import ete3
 import numpy as np
+import pandas as pd
 
 from cassiopeia.mixins import PriorTransformationError
 
@@ -173,6 +174,85 @@ def _set_tree(data, rooted, characters_key=None, tree_key=None):
         data.root_sample_name = root_node
         data.populate_tree(rooted, layer=characters_key)
         data.collapse_unifurcations()
+
+
+def _get_missing_and_priors(data) -> tuple[int, dict | None]:
+    """Return ``(missing_state_indicator, priors)`` for a data object.
+
+    Reads from ``TreeData.uns`` or the corresponding ``CassiopeiaTree``
+    attributes.
+    """
+    from treedata import TreeData
+
+    if isinstance(data, TreeData):
+        return data.uns.get("missing_state_indicator", -1), data.uns.get("priors", None)
+    return data.missing_state_indicator, data.priors
+
+
+def get_distance_map(
+    data,
+    dissimilarity_fn: Callable | None,
+    characters_key: str | None = None,
+    dist_key: str | None = None,
+    prior_transformation: str = "negative_log",
+    threads: int = 1,
+) -> pd.DataFrame:
+    """Return a symmetric n×n distance ``pd.DataFrame`` for a data object.
+
+    Resolves distances for distance-based solvers, handling both data types:
+
+    - **TreeData**: uses ``obsp[dist_key]`` when *dist_key* is given, otherwise
+      computes from ``obsm[characters_key]`` via
+      :func:`cassiopeia.dissimilarity._pairwise`.
+    - **CassiopeiaTree**: returns the cached dissimilarity map when present (and
+      no explicit layer is requested), otherwise computes and caches it via
+      ``CassiopeiaTree.compute_dissimilarity_map``.
+
+    Args:
+        data: CassiopeiaTree or TreeData.
+        dissimilarity_fn: Resolved dissimilarity callable, or ``None``.
+        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
+            (TreeData).
+        dist_key: ``obsp`` key for precomputed distances (TreeData only).
+        prior_transformation: Prior weight transformation name.
+        threads: Threads for parallel computation.
+
+    Raises:
+        DistanceSolverError: If distances must be computed but no dissimilarity
+            function is available.
+    """
+    from treedata import TreeData
+
+    from cassiopeia.dissimilarity import _pairwise
+    from cassiopeia.mixins import DistanceSolverError
+
+    if isinstance(data, TreeData):
+        if dist_key is not None:
+            names = list(data.obs_names)
+            return pd.DataFrame(
+                np.asarray(data.obsp[dist_key], dtype=np.float64),
+                index=names,
+                columns=names,
+            )
+        chars = _get_characters(data, characters_key)
+        if chars is None:
+            raise ValueError(
+                "TreeData has no character matrix; store characters in "
+                f"obsm[{characters_key or 'characters'!r}] or provide dist_key."
+            )
+        missing, priors = _get_missing_and_priors(data)
+        return _pairwise(chars, dissimilarity_fn, missing, priors, prior_transformation, threads)
+
+    # CassiopeiaTree
+    cached = data.get_dissimilarity_map()
+    if characters_key is None and cached is not None:
+        return cached
+    if dissimilarity_fn is None:
+        raise DistanceSolverError(
+            "Please provide a dissimilarity_function or a precomputed dissimilarity map."
+        )
+    data.compute_dissimilarity_map(dissimilarity_fn, prior_transformation, characters_key, threads=threads)
+    return data.get_dissimilarity_map()
 
 
 def collapse_mutationless_edges(data, characters_key=None, tree_key=None):

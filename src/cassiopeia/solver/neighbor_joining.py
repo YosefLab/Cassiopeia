@@ -10,8 +10,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.solver import dissimilarity_functions, rooting, solver_utilities
-from cassiopeia.solver.dissimilarity import _get_distances, _resolve_dissimilarity
+from cassiopeia import dissimilarity as dissimilarity_functions
+from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
+from cassiopeia.solver import rooting, solver_utilities
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -95,19 +96,12 @@ def nj(
         prior_transformation: Transformation applied to priors.
         threads: Threads for parallel dissimilarity computation.
     """
-    from treedata import TreeData
-
     dissimilarity_fn = _resolve_dissimilarity(dissimilarity)
-    is_treedata = isinstance(tdata, TreeData)
     synthetic_root = root == "outgroup" and outgroup is None
 
-    # Determine which characters (if any) to pass to _get_distances.
-    # For synthetic outgroup: augment chars with 'root' row and always compute
-    # fresh distances.  For TreeData without dist_key: pass chars so they are
-    # used for computation.  Otherwise: let _get_distances use dist_key or the
-    # cached map.
-    characters: pd.DataFrame | None = None
     if synthetic_root:
+        # Augment the character matrix with a synthetic all-zero 'root' leaf and
+        # compute distances fresh from the augmented matrix.
         chars = solver_utilities._get_characters(tdata, characters_key)
         if chars is None:
             raise ValueError(
@@ -120,23 +114,20 @@ def nj(
             index=["root"],
             columns=chars.columns,
         )
-        characters = pd.concat([chars, root_row])
-    elif is_treedata and dist_key is None:
-        characters = solver_utilities._get_characters(tdata, characters_key)
-    elif not is_treedata and characters_key is not None:
-        characters = solver_utilities._get_characters(tdata, characters_key)
-
-    # Distances are computed from augmented chars (synthetic outgroup) or
-    # retrieved from dist_key / cache.
-    effective_dist_key = None if synthetic_root else dist_key
-    dist_df = _get_distances(
-        tdata,
-        effective_dist_key,
-        dissimilarity_fn,
-        characters,
-        prior_transformation,
-        threads,
-    )
+        augmented = pd.concat([chars, root_row])
+        missing, priors = solver_utilities._get_missing_and_priors(tdata)
+        dist_df = _pairwise(
+            augmented, dissimilarity_fn, missing, priors, prior_transformation, threads
+        )
+    else:
+        dist_df = solver_utilities.get_distance_map(
+            tdata,
+            dissimilarity_fn,
+            characters_key=characters_key,
+            dist_key=dist_key,
+            prior_transformation=prior_transformation,
+            threads=threads,
+        )
 
     node_gen = solver_utilities.node_name_generator()
     graph = _build_graph(dist_df, node_gen)

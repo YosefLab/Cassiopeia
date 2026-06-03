@@ -10,8 +10,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.solver import dissimilarity_functions, solver_utilities
-from cassiopeia.solver.dissimilarity import _get_distances, _resolve_dissimilarity
+from cassiopeia import dissimilarity as dissimilarity_functions
+from cassiopeia.dissimilarity import _resolve_dissimilarity
+from cassiopeia.solver import solver_utilities
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -92,19 +93,15 @@ def upgma(
             dissimilarity weights.
         threads: Threads for parallel dissimilarity computation.
     """
-    from treedata import TreeData
-
     dissimilarity_fn = _resolve_dissimilarity(dissimilarity)
-    is_treedata = isinstance(tdata, TreeData)
 
-    characters: pd.DataFrame | None = None
-    if is_treedata and dist_key is None:
-        characters = solver_utilities._get_characters(tdata, characters_key)
-    elif not is_treedata and characters_key is not None:
-        characters = solver_utilities._get_characters(tdata, characters_key)
-
-    dist_df = _get_distances(
-        tdata, dist_key, dissimilarity_fn, characters, prior_transformation, threads
+    dist_df = solver_utilities.get_distance_map(
+        tdata,
+        dissimilarity_fn,
+        characters_key=characters_key,
+        dist_key=dist_key,
+        prior_transformation=prior_transformation,
+        threads=threads,
     )
 
     node_gen = solver_utilities.node_name_generator()

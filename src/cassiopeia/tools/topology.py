@@ -3,6 +3,7 @@
 import math
 from collections.abc import Callable
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy import spatial, stats
@@ -10,6 +11,105 @@ from scipy import spatial, stats
 from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
 from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.typing import TreeLike
+from cassiopeia.utils import _get_digraph
+
+
+def _mutationless_criteria(parent_states: list, child_states: list) -> bool:
+    """Return ``True`` when a parent and child share identical character states.
+
+    The default edge-collapse criterion: an edge carries no mutation when the
+    parent and child have identical inferred character states (introducing a
+    missing-data event counts as a mutation, so unequal states are retained).
+    """
+    return parent_states == child_states
+
+
+# Registry of edge-collapse criteria. Maps a criterion name to a predicate
+# ``(parent_states, child_states) -> bool`` that is ``True`` when the edge
+# between them should be collapsed. Extend this to add future criteria.
+_COLLAPSE_CRITERIA: dict[str, Callable[[list, list], bool]] = {
+    "mutationless": _mutationless_criteria,
+}
+
+
+def collapse_edges(
+    tdata: TreeLike,
+    tree_key: str | None = None,
+    characters_key: str = "characters",
+    criteria: str = "mutationless",
+    copy: bool = False,
+) -> TreeLike | None:
+    """Collapse edges of a tree according to a character-state criterion.
+
+    For each internal node, any non-leaf child satisfying the collapse
+    *criteria* (by default, identical character states — a "mutationless" edge)
+    is spliced out and its children are reattached to the node.  Leaves are
+    never removed.  Edge attributes are not preserved.
+
+    Ancestral character states must already be present on every node under the
+    ``characters_key`` node attribute; call
+    :func:`cassiopeia.tl.ancestral_characters` first if they are not.
+
+    Only :class:`~treedata.TreeData` is supported.
+
+    Args:
+        tdata: TreeData object to operate on.
+        tree_key: The ``obst`` key of the tree to use.
+        characters_key: Node attribute holding character states (the same name
+            as the obsm character matrix and the output of
+            :func:`cassiopeia.tl.ancestral_characters`).
+        criteria: Name of the edge-collapse criterion to apply.  Currently
+            supports ``'mutationless'``.
+        copy: If ``True``, operate on and return a copy of *tdata*; otherwise
+            modify in place and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
+
+    Raises:
+        TypeError: If *tdata* is not a TreeData object.
+        ValueError: If *criteria* is not a registered criterion.
+        CassiopeiaError: If a node is missing character states.
+    """
+    from treedata import TreeData
+
+    if not isinstance(tdata, TreeData):
+        raise TypeError(
+            "collapse_edges() operates on TreeData. For a CassiopeiaTree, convert "
+            "with CassiopeiaTree.to_treedata()."
+        )
+    if criteria not in _COLLAPSE_CRITERIA:
+        raise ValueError(
+            f"Unknown collapse criteria {criteria!r}. Available: {sorted(_COLLAPSE_CRITERIA)}"
+        )
+    predicate = _COLLAPSE_CRITERIA[criteria]
+
+    tdata = tdata.copy() if copy else tdata
+    # TreeData stores frozen graphs; operate on a copy and write back.
+    g, tree_key = _get_digraph(tdata, tree_key, copy=True)
+
+    for node in g.nodes:
+        if characters_key not in g.nodes[node]:
+            raise CassiopeiaError(
+                f"Node {node!r} has no character states under {characters_key!r}. "
+                "Call cassiopeia.tl.ancestral_characters first."
+            )
+
+    for node in list(nx.dfs_postorder_nodes(g)):
+        if g.out_degree(node) == 0:
+            continue
+        for child in list(g.successors(node)):
+            if g.out_degree(child) == 0:
+                continue
+            if predicate(g.nodes[node][characters_key], g.nodes[child][characters_key]):
+                for grandchild in list(g.successors(child)):
+                    g.add_edge(node, grandchild)
+                g.remove_node(child)
+
+    tdata.obst[tree_key] = g
+
+    return tdata if copy else None
 
 
 def compute_expansion_pvalues(
