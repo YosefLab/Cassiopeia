@@ -100,9 +100,7 @@ def reconstruct_ancestral_characters(
         g.nodes[n][key_added] = reconstructed
 
 
-def _resolve_missing_state_indicator(
-    tree: TreeLike, missing_state_indicator: int | None
-) -> int:
+def _resolve_missing_state_indicator(tree: TreeLike, missing_state_indicator: int | None) -> int:
     """Resolve the missing state indicator for *tree*.
 
     Returns *missing_state_indicator* when provided.  Otherwise reads it from the

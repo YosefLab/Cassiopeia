@@ -1,11 +1,9 @@
 """Tests for the functional greedy() API on TreeData."""
 
-import itertools
 import warnings
 
 import networkx as nx
 import pandas as pd
-import pytest
 import treedata as td
 
 import cassiopeia as cas
