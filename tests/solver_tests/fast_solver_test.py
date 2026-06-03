@@ -111,7 +111,7 @@ def dist_tdata():
 
 
 def test_nj_treedata_dist_key(dist_tdata):
-    cas.solver.nj(dist_tdata, dist_key="distances", tree_key="nj")
+    cas.solver.nj(dist_tdata, dissim_key="distances", tree_key="nj")
     assert "nj" in dist_tdata.obst
     tree = dist_tdata.obst["nj"]
     assert isinstance(tree, nx.DiGraph)
@@ -119,20 +119,18 @@ def test_nj_treedata_dist_key(dist_tdata):
 
 
 def test_upgma_treedata_dist_key(dist_tdata):
-    cas.solver.upgma(dist_tdata, dist_key="distances", tree_key="upgma")
+    cas.solver.upgma(dist_tdata, dissim_key="distances", tree_key="upgma")
     assert isinstance(dist_tdata.obst["upgma"], nx.DiGraph)
 
 
 def test_nj_treedata_named_outgroup_clusters(dist_tdata):
-    cas.solver.nj(
-        dist_tdata, dist_key="distances", root="outgroup", outgroup="e", tree_key="nj"
-    )
+    cas.solver.nj(dist_tdata, dissim_key="distances", root="outgroup", outgroup="e", tree_key="nj")
     tree = dist_tdata.obst["nj"]
     assert find_triplet_structure(("a", "b", "c"), tree) == "ab"
 
 
 def test_upgma_treedata_groups_cluster_correctly(dist_tdata):
-    cas.solver.upgma(dist_tdata, dist_key="distances", tree_key="upgma")
+    cas.solver.upgma(dist_tdata, dissim_key="distances", tree_key="upgma")
     tree = dist_tdata.obst["upgma"]
     ab = set(nx.ancestors(tree, "a")) & set(nx.ancestors(tree, "b"))
     ac = set(nx.ancestors(tree, "a")) & set(nx.ancestors(tree, "c"))
@@ -140,12 +138,12 @@ def test_upgma_treedata_groups_cluster_correctly(dist_tdata):
 
 
 def test_nj_treedata_default_tree_key(dist_tdata):
-    cas.solver.nj(dist_tdata, dist_key="distances")
+    cas.solver.nj(dist_tdata, dissim_key="distances")
     assert "nj" in dist_tdata.obst
 
 
 def test_upgma_treedata_default_tree_key(dist_tdata):
-    cas.solver.upgma(dist_tdata, dist_key="distances")
+    cas.solver.upgma(dist_tdata, dissim_key="distances")
     assert "upgma" in dist_tdata.obst
 
 
@@ -204,7 +202,6 @@ def test_nj_unknown_root_raises():
 
 def test_pairwise_treedata():
     tdata = make_chars_tdata(SMALL_CM)
-    cas.solver  # ensure module import
     cas.dissimilarity.pairwise(tdata, key_added="distances")
     dm = tdata.obsp["distances"]
     n = SMALL_CM.shape[0]
@@ -216,6 +213,31 @@ def test_pairwise_treedata():
 def test_pairwise_rejects_non_treedata():
     with pytest.raises(TypeError):
         cas.dissimilarity.pairwise(object())
+
+
+# ── save_dissim ───────────────────────────────────────────────────────────────
+
+
+def test_nj_save_dissim_default_off():
+    tdata = make_chars_tdata(SMALL_CM)
+    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    assert len(tdata.obsp) == 0
+
+
+def test_nj_save_dissim_excludes_synthetic_outgroup():
+    tdata = make_chars_tdata(SMALL_CM)
+    cas.solver.nj(tdata, root="outgroup", save_dissim=True, dissim_key="d", tree_key="nj")
+    dm = tdata.obsp["d"]
+    n = SMALL_CM.shape[0]
+    # the synthetic 'root' outgroup is excluded from the saved matrix
+    assert dm.shape == (n, n)
+
+
+def test_upgma_save_dissim():
+    tdata = make_chars_tdata(SMALL_CM)
+    cas.solver.upgma(tdata, save_dissim=True, tree_key="upgma")
+    assert "distances" in tdata.obsp
+    assert tdata.obsp["distances"].shape == (SMALL_CM.shape[0], SMALL_CM.shape[0])
 
 
 # ── Rooting registry ──────────────────────────────────────────────────────────

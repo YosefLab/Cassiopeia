@@ -57,13 +57,14 @@ def _build_graph(
 
 def nj(
     tdata: CassiopeiaTree | TreeData,
-    dist_key: str | None = None,
-    dissimilarity: str | Callable | None = "weighted_hamming_distance",
+    dissim_key: str | None = None,
+    dissim_fn: str | Callable | None = "weighted_hamming_distance",
     root: str | None = None,
     outgroup: str | None = None,
     characters_key: str | None = None,
     tree_key: str = "nj",
     prior_transformation: str = "negative_log",
+    save_dissim: bool = False,
     threads: int = 1,
 ) -> None:
     """Dynamic Neighbor-Joining (Cython O(n²) average case). Modifies tdata in-place.
@@ -72,31 +73,36 @@ def nj(
     ``populate_tree()``.  For :class:`~treedata.TreeData`: stores the result
     ``nx.DiGraph`` in ``tdata.obst[tree_key]``.
 
+    Rooting is selected by *root*: ``None`` (default) uses ``root_sample_name``
+    or the first obs name; otherwise *root* names a procedure registered in
+    :mod:`cassiopeia.solver.rooting` (``'outgroup'``, ``'midpoint'``,
+    ``'centroid'``, ``'shared_mutation'``).
+
     When ``root='outgroup'`` with ``outgroup=None``, a synthetic all-zero leaf
-    named ``'root'`` is added to the character matrix **before** computing
-    distances; the NJ tree is then rooted at that leaf.  When ``outgroup`` is a
-    sample name, a new root node is inserted on the branch connecting that
-    sample to the rest of the tree.
+    named ``'root'`` is added to the distance matrix **before** building the
+    tree and used as the root; the synthetic leaf is removed from any saved
+    dissimilarity matrix.
 
     Args:
         tdata: CassiopeiaTree or TreeData to solve.
-        dist_key: Key in ``tdata.obsp`` for precomputed distances (TreeData
+        dissim_key: Key in ``tdata.obsp`` for precomputed distances (TreeData
             only, ignored when ``root='outgroup'`` and ``outgroup=None``).
-        dissimilarity: Function used to compute pairwise dissimilarities.
-            Accepts a callable or a string name of a function in
-            :mod:`cassiopeia.solver.dissimilarity_functions`.
-        root: Rooting procedure.  ``'outgroup'`` uses outgroup rooting (see
-            *outgroup*).  ``None`` (default) uses ``root_sample_name`` or the
-            first obs name for TreeData.
+        dissim_fn: Function used to compute pairwise dissimilarities.  Accepts a
+            callable or a string name of a built-in metric in
+            :mod:`cassiopeia.dissimilarity`.
+        root: Rooting procedure name, or ``None`` for the default root.
         outgroup: For ``root='outgroup'``: sample name to use as outgroup, or
             ``None`` to add a synthetic all-zero outgroup named ``'root'``.
         characters_key: Character matrix layer (CassiopeiaTree) or ``obsm``
             key (TreeData, default ``'characters'``).
         tree_key: Key in ``tdata.obst`` for the result (TreeData only).
         prior_transformation: Transformation applied to priors.
+        save_dissim: Whether to store the computed dissimilarity matrix
+            (TreeData: ``obsp[dissim_key or 'distances']``; CassiopeiaTree:
+            ``set_dissimilarity_map``).  The synthetic outgroup is excluded.
         threads: Threads for parallel dissimilarity computation.
     """
-    dissimilarity_fn = _resolve_dissimilarity(dissimilarity)
+    dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
     synthetic_root = root == "outgroup" and outgroup is None
 
     if synthetic_root:
@@ -119,22 +125,61 @@ def nj(
         dist_df = _pairwise(
             augmented, dissimilarity_fn, missing, priors, prior_transformation, threads
         )
+        if save_dissim:
+            # Exclude the synthetic outgroup from the saved dissimilarity matrix.
+            real = dist_df.drop(index="root", columns="root")
+            solver_utilities.save_distance_map(tdata, real, dissim_key)
     else:
         dist_df = solver_utilities.get_distance_map(
             tdata,
             dissimilarity_fn,
             characters_key=characters_key,
-            dist_key=dist_key,
+            dissim_key=dissim_key,
             prior_transformation=prior_transformation,
             threads=threads,
         )
+        if save_dissim:
+            solver_utilities.save_distance_map(tdata, dist_df, dissim_key)
 
     node_gen = solver_utilities.node_name_generator()
     graph = _build_graph(dist_df, node_gen)
 
-    rooted = rooting.apply(graph, root, tdata, outgroup=outgroup)
+    rooted = _root_graph(graph, root, outgroup, tdata, characters_key)
 
     solver_utilities._set_tree(tdata, rooted, characters_key, tree_key)
+
+
+def _root_graph(
+    graph: nx.Graph,
+    root: str | None,
+    outgroup: str | None,
+    data: CassiopeiaTree | TreeData,
+    characters_key: str | None,
+) -> nx.DiGraph:
+    """Root the complete NJ *graph* using the procedure named by *root*.
+
+    ``root=None`` roots at the default node (``root_sample_name`` / first obs)
+    via DFS; otherwise *root* selects a registered procedure in
+    :mod:`cassiopeia.solver.rooting`.
+    """
+    if root is None:
+        root_node = rooting._default_root(data)
+        rooted = nx.DiGraph()
+        for e in nx.dfs_edges(graph, source=root_node):
+            rooted.add_edge(e[0], e[1])
+        return rooted
+
+    if root not in rooting._PROCEDURES:
+        raise ValueError(
+            f"Unknown rooting procedure {root!r}. Available: {sorted(rooting._PROCEDURES)}"
+        )
+
+    proc_kwargs = {}
+    if root == "outgroup":
+        proc_kwargs["outgroup"] = outgroup
+    elif root == "shared_mutation":
+        proc_kwargs["characters"] = solver_utilities._get_characters(data, characters_key)
+    return rooting._PROCEDURES[root](graph, **proc_kwargs)
 
 
 # ── Backward-compat shim ─────────────────────────────────────────────────────
@@ -221,34 +266,39 @@ class NeighborJoiningSolver:
                 root = "outgroup"
         nj(
             cassiopeia_tree,
-            dissimilarity=self.dissimilarity_function,
+            dissim_fn=self.dissimilarity_function,
             root=root,
             characters_key=layer,
             prior_transformation=self.prior_transformation,
+            save_dissim=True,
             threads=self.threads,
         )
         if collapse_mutationless_edges:
             solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
 
     def root_tree(self, tree, root_sample, remaining_samples):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "root_tree is removed in favor of the fast Cython implementation. "
             "Use cas.solver.nj() directly."
         )
 
     def find_cherry(self, dissimilarity_matrix):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "find_cherry is removed in favor of the fast Cython implementation. "
             "Use cas.solver.nj() directly."
         )
 
     def update_dissimilarity_map(self, dissimilarity_map, cherry, new_node):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "update_dissimilarity_map is removed in favor of the fast Cython "
             "implementation. Use cas.solver.nj() directly."
         )
 
     def setup_root_finder(self, cassiopeia_tree):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "setup_root_finder is removed in favor of the fast Cython "
             "implementation. Use cas.solver.nj() directly."

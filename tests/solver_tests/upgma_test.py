@@ -5,7 +5,6 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
-import pytest
 import treedata as td
 
 import cassiopeia as cas
@@ -69,14 +68,23 @@ def test_upgma_basic_from_distances():
     tdata = td.TreeData(obs=pd.DataFrame(index=samples))
     tdata.obsp["distances"] = delta.loc[samples, samples].to_numpy()
 
-    cas.solver.upgma(tdata, dist_key="distances", tree_key="upgma")
+    cas.solver.upgma(tdata, dissim_key="distances", tree_key="upgma")
     tree = tdata.obst["upgma"]
 
     assert set(leaves(tree)) == set(samples)
 
     expected = nx.DiGraph()
     expected.add_edges_from(
-        [("5", "a"), ("5", "b"), ("6", "5"), ("6", "e"), ("7", "c"), ("7", "d"), ("root", "6"), ("root", "7")]
+        [
+            ("5", "a"),
+            ("5", "b"),
+            ("6", "5"),
+            ("6", "e"),
+            ("7", "c"),
+            ("7", "d"),
+            ("root", "6"),
+            ("root", "7"),
+        ]
     )
     assert_triplets_match(tree, expected, samples)
 

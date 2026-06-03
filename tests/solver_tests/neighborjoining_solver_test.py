@@ -1,9 +1,6 @@
 """Tests for the functional nj() API on TreeData."""
 
-import itertools
-
 import networkx as nx
-import numpy as np
 import pandas as pd
 import pytest
 import treedata as td
@@ -63,7 +60,7 @@ def test_nj_basic_from_distances_named_outgroup():
     tdata.obsp["distances"] = delta.loc[samples, samples].to_numpy()
 
     # Root with "b" as the outgroup; "b" remains a leaf.
-    cas.solver.nj(tdata, dist_key="distances", root="outgroup", outgroup="b", tree_key="nj")
+    cas.solver.nj(tdata, dissim_key="distances", root="outgroup", outgroup="b", tree_key="nj")
     tree = tdata.obst["nj"]
     assert set(leaves(tree)) == set(samples)
     # c and d are closer to each other than c is to e.
@@ -121,4 +118,4 @@ def test_nj_missing_dissimilarity_raises():
     # Characters present but dissimilarity=None -> cannot compute distances.
     tdata = chars_tdata(PP_CM)
     with pytest.raises(cas.mixins.DistanceSolverError):
-        cas.solver.nj(tdata, dissimilarity=None)
+        cas.solver.nj(tdata, dissim_fn=None)

@@ -64,11 +64,12 @@ def _build_graph(
 
 def upgma(
     tdata: CassiopeiaTree | TreeData,
-    dist_key: str | None = None,
-    dissimilarity: str | Callable | None = "weighted_hamming_distance",
+    dissim_key: str | None = None,
+    dissim_fn: str | Callable | None = "weighted_hamming_distance",
     characters_key: str | None = None,
     tree_key: str = "upgma",
     prior_transformation: str = "negative_log",
+    save_dissim: bool = False,
     threads: int = 1,
 ) -> None:
     """UPGMA with O(n²) Cython implementation. Modifies tdata in-place.
@@ -82,27 +83,33 @@ def upgma(
 
     Args:
         tdata: CassiopeiaTree or TreeData to solve.
-        dist_key: Key in ``tdata.obsp`` for precomputed distances (TreeData only).
-        dissimilarity: Function used when distances are not precomputed.
-            Accepts a callable or a string name of a function in
-            :mod:`cassiopeia.solver.dissimilarity_functions`.
+        dissim_key: Key in ``tdata.obsp`` for precomputed distances (TreeData only).
+        dissim_fn: Function used when distances are not precomputed.  Accepts a
+            callable or a string name of a built-in metric in
+            :mod:`cassiopeia.dissimilarity`.
         characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
             (TreeData, default ``'characters'``).
         tree_key: Key in ``tdata.obst`` for the result (TreeData only).
         prior_transformation: Transformation applied to priors when computing
             dissimilarity weights.
+        save_dissim: Whether to store the computed dissimilarity matrix
+            (TreeData: ``obsp[dissim_key or 'distances']``; CassiopeiaTree:
+            ``set_dissimilarity_map``).
         threads: Threads for parallel dissimilarity computation.
     """
-    dissimilarity_fn = _resolve_dissimilarity(dissimilarity)
+    dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
 
     dist_df = solver_utilities.get_distance_map(
         tdata,
         dissimilarity_fn,
         characters_key=characters_key,
-        dist_key=dist_key,
+        dissim_key=dissim_key,
         prior_transformation=prior_transformation,
         threads=threads,
     )
+
+    if save_dissim:
+        solver_utilities.save_distance_map(tdata, dist_df, dissim_key)
 
     node_gen = solver_utilities.node_name_generator()
     rooted = _build_graph(dist_df, node_gen)
@@ -180,33 +187,38 @@ class UPGMASolver:
         """
         upgma(
             cassiopeia_tree,
-            dissimilarity=self.dissimilarity_function,
+            dissim_fn=self.dissimilarity_function,
             characters_key=layer,
             prior_transformation=self.prior_transformation,
+            save_dissim=True,
             threads=self.threads,
         )
         if collapse_mutationless_edges:
             solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
 
     def root_tree(self, tree, root_sample, remaining_samples):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "root_tree is removed in favor of the fast Cython implementation. "
             "Use cas.solver.upgma() directly."
         )
 
     def find_cherry(self, dissimilarity_matrix):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "find_cherry is removed in favor of the fast Cython implementation. "
             "Use cas.solver.upgma() directly."
         )
 
     def update_dissimilarity_map(self, dissimilarity_map, cherry, new_node):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "update_dissimilarity_map is removed in favor of the fast Cython "
             "implementation. Use cas.solver.upgma() directly."
         )
 
     def setup_root_finder(self, cassiopeia_tree):
+        """Removed. Raises :class:`NotImplementedError`."""
         raise NotImplementedError(
             "setup_root_finder is removed in favor of the fast Cython "
             "implementation. Use cas.solver.upgma() directly."

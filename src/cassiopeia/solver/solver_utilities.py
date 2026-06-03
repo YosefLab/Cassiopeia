@@ -193,27 +193,28 @@ def get_distance_map(
     data,
     dissimilarity_fn: Callable | None,
     characters_key: str | None = None,
-    dist_key: str | None = None,
+    dissim_key: str | None = None,
     prior_transformation: str = "negative_log",
     threads: int = 1,
 ) -> pd.DataFrame:
     """Return a symmetric n×n distance ``pd.DataFrame`` for a data object.
 
-    Resolves distances for distance-based solvers, handling both data types:
+    Resolves distances for distance-based solvers, handling both data types
+    *without* side effects (it never writes the map back):
 
-    - **TreeData**: uses ``obsp[dist_key]`` when *dist_key* is given, otherwise
-      computes from ``obsm[characters_key]`` via
+    - **TreeData**: uses ``obsp[dissim_key]`` when *dissim_key* is given,
+      otherwise computes from ``obsm[characters_key]`` via
       :func:`cassiopeia.dissimilarity._pairwise`.
     - **CassiopeiaTree**: returns the cached dissimilarity map when present (and
-      no explicit layer is requested), otherwise computes and caches it via
-      ``CassiopeiaTree.compute_dissimilarity_map``.
+      no explicit layer is requested), otherwise computes from the character
+      matrix via :func:`cassiopeia.dissimilarity._pairwise`.
 
     Args:
         data: CassiopeiaTree or TreeData.
         dissimilarity_fn: Resolved dissimilarity callable, or ``None``.
         characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
             (TreeData).
-        dist_key: ``obsp`` key for precomputed distances (TreeData only).
+        dissim_key: ``obsp`` key for precomputed distances (TreeData only).
         prior_transformation: Prior weight transformation name.
         threads: Threads for parallel computation.
 
@@ -224,13 +225,12 @@ def get_distance_map(
     from treedata import TreeData
 
     from cassiopeia.dissimilarity import _pairwise
-    from cassiopeia.mixins import DistanceSolverError
 
     if isinstance(data, TreeData):
-        if dist_key is not None:
+        if dissim_key is not None:
             names = list(data.obs_names)
             return pd.DataFrame(
-                np.asarray(data.obsp[dist_key], dtype=np.float64),
+                np.asarray(data.obsp[dissim_key], dtype=np.float64),
                 index=names,
                 columns=names,
             )
@@ -238,7 +238,7 @@ def get_distance_map(
         if chars is None:
             raise ValueError(
                 "TreeData has no character matrix; store characters in "
-                f"obsm[{characters_key or 'characters'!r}] or provide dist_key."
+                f"obsm[{characters_key or 'characters'!r}] or provide dissim_key."
             )
         missing, priors = _get_missing_and_priors(data)
         return _pairwise(chars, dissimilarity_fn, missing, priors, prior_transformation, threads)
@@ -247,12 +247,31 @@ def get_distance_map(
     cached = data.get_dissimilarity_map()
     if characters_key is None and cached is not None:
         return cached
-    if dissimilarity_fn is None:
-        raise DistanceSolverError(
-            "Please provide a dissimilarity_function or a precomputed dissimilarity map."
-        )
-    data.compute_dissimilarity_map(dissimilarity_fn, prior_transformation, characters_key, threads=threads)
-    return data.get_dissimilarity_map()
+    chars = _get_characters(data, characters_key)
+    missing, priors = _get_missing_and_priors(data)
+    return _pairwise(chars, dissimilarity_fn, missing, priors, prior_transformation, threads)
+
+
+def save_distance_map(data, dist_df: pd.DataFrame, dissim_key: str | None = None) -> None:
+    """Store a pairwise distance map on a data object.
+
+    For :class:`~treedata.TreeData` the dense matrix is written to
+    ``obsp[dissim_key or 'distances']``; for
+    :class:`~cassiopeia.data.CassiopeiaTree` it is set via
+    ``set_dissimilarity_map``.
+
+    Args:
+        data: CassiopeiaTree or TreeData to modify in-place.
+        dist_df: Symmetric distance ``pd.DataFrame`` indexed by sample name.
+        dissim_key: ``obsp`` key for the stored matrix (TreeData only).
+    """
+    from treedata import TreeData
+
+    if isinstance(data, TreeData):
+        names = list(data.obs_names)
+        data.obsp[dissim_key or "distances"] = dist_df.loc[names, names].to_numpy()
+    else:
+        data.set_dissimilarity_map(dist_df)
 
 
 def collapse_mutationless_edges(data, characters_key=None, tree_key=None):

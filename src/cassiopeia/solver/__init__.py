@@ -15,4 +15,5 @@ from .greedy import VanillaGreedySolver, greedy
 from .hybrid import HybridSolver, hybrid
 from .ilp import ILPSolver, ilp
 from .neighbor_joining import NeighborJoiningSolver, nj
+from .rooting import reroot
 from .upgma import UPGMASolver, upgma
