@@ -50,7 +50,7 @@ def _assess_cutoff(
             character_matrix.loc[samples].values.tolist(), missing_state_indicator
         )
         lca_distances = [
-            dissimilarity.hamming_distance(np.array(root_states), character_matrix.loc[u].values)
+            dissimilarity.hamming(np.array(root_states), character_matrix.loc[u].values)
             for u in samples
         ]
         if np.max(lca_distances) <= lca_cutoff:
@@ -257,6 +257,11 @@ def hybrid(
         )
     character_matrix = character_matrix.copy()
     missing_state_indicator, priors = solver_utilities._get_missing_and_priors(tdata)
+    # Encode string/categorical states to integers so the greedy split logic and
+    # the bottom solver operate on the integer convention.
+    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
+        tdata, character_matrix, missing_state_indicator
+    )
 
     weights = None
     if priors:

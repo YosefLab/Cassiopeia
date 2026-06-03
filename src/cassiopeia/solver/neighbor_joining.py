@@ -56,22 +56,19 @@ def _build_graph(
 
 
 def nj(
-    tdata: CassiopeiaTree | TreeData,
+    tdata: TreeData,
     dissim_key: str | None = None,
-    dissim_fn: str | Callable | None = "weighted_hamming_distance",
-    root: str | None = None,
+    dissim_fn: str | Callable | None = "nonmissing_hamming",
+    root: str | None = "centroid",
     outgroup: str | None = None,
     characters_key: str | None = None,
     tree_key: str = "nj",
     prior_transformation: str = "negative_log",
     save_dissim: bool = False,
+    unmodified_state: int | str = "*",
     threads: int = 1,
 ) -> None:
     """Dynamic Neighbor-Joining (Cython O(n²) average case). Modifies tdata in-place.
-
-    For :class:`~cassiopeia.data.CassiopeiaTree`: populates tree topology via
-    ``populate_tree()``.  For :class:`~treedata.TreeData`: stores the result
-    ``nx.DiGraph`` in ``tdata.obst[tree_key]``.
 
     Rooting is selected by *root*: ``None`` (default) uses ``root_sample_name``
     or the first obs name; otherwise *root* names a procedure registered in
@@ -84,13 +81,13 @@ def nj(
     dissimilarity matrix.
 
     Args:
-        tdata: CassiopeiaTree or TreeData to solve.
+        tdata: TreeData to solve.
         dissim_key: Key in ``tdata.obsp`` for precomputed distances (TreeData
             only, ignored when ``root='outgroup'`` and ``outgroup=None``).
         dissim_fn: Function used to compute pairwise dissimilarities.  Accepts a
             callable or a string name of a built-in metric in
             :mod:`cassiopeia.dissimilarity`.
-        root: Rooting procedure name, or ``None`` for the default root.
+        root: Rooting procedure name.
         outgroup: For ``root='outgroup'``: sample name to use as outgroup, or
             ``None`` to add a synthetic all-zero outgroup named ``'root'``.
         characters_key: Character matrix layer (CassiopeiaTree) or ``obsm``
@@ -100,6 +97,7 @@ def nj(
         save_dissim: Whether to store the computed dissimilarity matrix
             (TreeData: ``obsp[dissim_key or 'distances']``; CassiopeiaTree:
             ``set_dissimilarity_map``).  The synthetic outgroup is excluded.
+        unmodified_state: State representing unmodified/uncut.
         threads: Threads for parallel dissimilarity computation.
     """
     dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
@@ -108,6 +106,8 @@ def nj(
     if synthetic_root:
         # Augment the character matrix with a synthetic all-zero 'root' leaf and
         # compute distances fresh from the augmented matrix.
+        from cassiopeia.utils import _get_tree_parameter
+
         chars = solver_utilities._get_characters(tdata, characters_key)
         if chars is None:
             raise ValueError(
@@ -115,15 +115,27 @@ def nj(
                 "outgroup=None.  Provide characters_key or store characters "
                 "in obsm['characters']."
             )
+        unmodified_state = _get_tree_parameter(tdata, "unmodified_state", default=unmodified_state)
+        # The synthetic outgroup must use the character matrix's own representation
+        # of the unmodified (uncut) state: 0 for integer matrices, otherwise the
+        # configured unmodified_state (e.g. "*" for string/categorical matrices).
+        if np.issubdtype(chars.to_numpy().dtype, np.integer):
+            unmodified_state = 0
         root_row = pd.DataFrame(
-            [np.zeros(chars.shape[1], dtype=int)],
+            [[unmodified_state] * chars.shape[1]],
             index=["root"],
             columns=chars.columns,
         )
         augmented = pd.concat([chars, root_row])
         missing, priors = solver_utilities._get_missing_and_priors(tdata)
         dist_df = _pairwise(
-            augmented, dissimilarity_fn, missing, priors, prior_transformation, threads
+            augmented,
+            dissimilarity_fn,
+            missing,
+            priors,
+            prior_transformation,
+            threads,
+            unmodified_state=unmodified_state,
         )
         if save_dissim:
             # Exclude the synthetic outgroup from the saved dissimilarity matrix.
@@ -207,7 +219,7 @@ class NeighborJoiningSolver:
         dissimilarity_function: Callable[
             [np.array, np.array, int, dict[int, dict[int, float]]], float
         ]
-        | None = dissimilarity_functions.weighted_hamming_distance,
+        | None = dissimilarity_functions.nonmissing_hamming,
         add_root: bool = False,
         prior_transformation: str = "negative_log",
         fast: bool = True,

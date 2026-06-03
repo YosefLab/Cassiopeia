@@ -11,11 +11,9 @@ full pairwise dissimilarity map on a tree.
    :toctree: reference/
 
    dissimilarity.pairwise
-   dissimilarity.weighted_hamming_distance
-   dissimilarity.hamming_distance
-   dissimilarity.hamming_similarity_without_missing
-   dissimilarity.hamming_similarity_normalized_over_missing
-   dissimilarity.weighted_hamming_similarity
-   dissimilarity.exponential_negative_hamming_distance
+   dissimilarity.compute_dissimilarity_map
+   dissimilarity.weighted_hamming
+   dissimilarity.hamming
+   dissimilarity.nonmissing_hamming
    dissimilarity.cluster_dissimilarity
-   dissimilarity.cluster_dissimilarity_weighted_hamming_distance_min_linkage
+   dissimilarity.cluster_weighted_hamming

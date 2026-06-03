@@ -41,7 +41,7 @@ def _add_edge_weights(
     """Annotate each edge with the (weighted) Hamming distance between its nodes."""
     weighted_graph = potential_graph.copy()
     for u, v in weighted_graph.edges():
-        weighted_graph[u][v]["weight"] = dissimilarity.weighted_hamming_distance(
+        weighted_graph[u][v]["weight"] = dissimilarity.weighted_hamming(
             list(u), list(v), missing_state_indicator, weights
         )
     return weighted_graph
@@ -57,12 +57,12 @@ def _infer_potential_graph(
 ) -> nx.DiGraph:
     """Infer a potential graph of evolutionary intermediates.
 
-    Invokes ``ilp_solver_utilities.infer_potential_graph_cython`` (Cython),
-    decodes the returned ``"state1|state2|..."`` edge strings into tuples, builds
-    a directed graph, and annotates edge weights.
+    Invokes ``ilp_solver_utilities.infer_potential_graph_cython`` (Cython), which
+    operates on the integer character matrix and returns integer
+    ``(parent_tuple, child_tuple)`` edges directly.
     """
     potential_graph_edges = ilp_solver_utilities.infer_potential_graph_cython(
-        character_matrix.astype(str).values,
+        character_matrix.to_numpy(),
         pid,
         lca_height,
         maximum_potential_graph_layer_size,
@@ -75,14 +75,8 @@ def _infer_potential_graph(
             "increasing `maximum_potential_graph_layer_size` or using another solver."
         )
 
-    decoded_edges = []
-    for e1, e2 in potential_graph_edges:
-        e1 = np.array(e1.replace("-", str(missing_state_indicator)).split("|")).astype(int)
-        e2 = np.array(e2.replace("-", str(missing_state_indicator)).split("|")).astype(int)
-        decoded_edges.append((tuple(e1), tuple(e2)))
-
     potential_graph = nx.DiGraph()
-    potential_graph.add_edges_from(decoded_edges)
+    potential_graph.add_edges_from(potential_graph_edges)
 
     return _add_edge_weights(potential_graph, weights, missing_state_indicator)
 
@@ -416,6 +410,13 @@ def ilp(
     if any(is_ambiguous_state(state) for state in character_matrix.values.flatten()):
         raise ILPSolverError("Solver does not support ambiguous states.")
 
+    # The potential-graph / Steiner-tree machinery operates on integer states, so
+    # encode string/categorical matrices (unmodified -> 0, missing -> -1, other
+    # states -> distinct positive integers).
+    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
+        tdata, character_matrix, missing_state_indicator
+    )
+
     unique_character_matrix = character_matrix.drop_duplicates()
 
     weights = None
@@ -453,10 +454,9 @@ def ilp(
     else:
         max_lca_distance = 0
         lca_distances = [
-            dissimilarity.hamming_distance(
+            dissimilarity.nonmissing_hamming(
                 root,
                 np.array(u),
-                ignore_missing_state=True,
                 missing_state_indicator=missing_state_indicator,
             )
             for u in targets

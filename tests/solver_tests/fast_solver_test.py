@@ -172,8 +172,8 @@ def test_upgma_treedata_from_characters():
 def test_nj_and_upgma_agree_on_known_groups():
     nj_tdata = make_chars_tdata(CM)
     upgma_tdata = make_chars_tdata(CM)
-    cas.solver.nj(nj_tdata, root="outgroup", tree_key="nj")
-    cas.solver.upgma(upgma_tdata, tree_key="upgma")
+    cas.solver.nj(nj_tdata, root="outgroup", tree_key="nj", dissim_fn="weighted_hamming")
+    cas.solver.upgma(upgma_tdata, tree_key="upgma", dissim_fn="weighted_hamming")
     nj_topo = nj_tdata.obst["nj"]
     upgma_topo = upgma_tdata.obst["upgma"]
     import itertools
@@ -284,3 +284,21 @@ def test_nj_solver_fast_false_raises():
 def test_upgma_solver_fast_false_raises():
     with pytest.raises(NotImplementedError):
         cas.solver.UPGMASolver(fast=False)
+
+
+# ── depth annotation ──────────────────────────────────────────────────────────
+
+
+def test_solvers_annotate_depth():
+    tdata = make_chars_tdata(SMALL_CM)
+    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    g = tdata.obst["nj"]
+    assert all("depth" in g.nodes[n] for n in g.nodes)
+    root = [n for n in g if g.in_degree(n) == 0][0]
+    assert g.nodes[root]["depth"] == 0
+    # a child of the root has depth 1
+    assert all(g.nodes[c]["depth"] == 1 for c in g.successors(root))
+
+    cas.solver.greedy(tdata, tree_key="greedy")
+    gg = tdata.obst["greedy"]
+    assert all("depth" in gg.nodes[n] for n in gg.nodes)

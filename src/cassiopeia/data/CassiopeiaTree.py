@@ -1795,8 +1795,10 @@ class CassiopeiaTree:
         state_to_cells = character_matrix.index.groupby(cell_to_state)
         dedup_character_matrix = character_matrix.drop_duplicates()
 
+        from cassiopeia.dissimilarity import compute_dissimilarity_map
+
         N = dedup_character_matrix.shape[0]
-        dissimilarity_map = utilities.compute_dissimilarity_map(
+        dissimilarity_map = compute_dissimilarity_map(
             dedup_character_matrix.to_numpy(),
             N,
             dissimilarity_function,

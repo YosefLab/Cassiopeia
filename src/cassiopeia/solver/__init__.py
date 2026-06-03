@@ -1,6 +1,6 @@
 """Top level for Tree Solver development."""
 
-from . import dissimilarity_functions, nj_solver_utilities, rooting
+from . import nj_solver_utilities, rooting
 from .deprecated import (
     MaxCutGreedySolver,
     MaxCutSolver,
@@ -10,7 +10,6 @@ from .deprecated import (
     SpectralNeighborJoiningSolver,
     SpectralSolver,
 )
-from .dissimilarity import dissimilarity
 from .greedy import VanillaGreedySolver, greedy
 from .hybrid import HybridSolver, hybrid
 from .ilp import ILPSolver, ilp
@@ -28,8 +27,6 @@ __all__ = [
     "reroot",
     # modules
     "rooting",
-    "dissimilarity_functions",
-    "dissimilarity",
     # backward-compat class shims (deprecated)
     "NeighborJoiningSolver",
     "UPGMASolver",

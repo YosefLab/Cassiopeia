@@ -303,6 +303,11 @@ def greedy(
         )
 
     missing_state_indicator, priors = solver_utilities._get_missing_and_priors(tdata)
+    # Encode string/categorical states to integers so the split logic correctly
+    # treats the unmodified state as 0.
+    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
+        tdata, character_matrix, missing_state_indicator
+    )
 
     weights = None
     if priors:

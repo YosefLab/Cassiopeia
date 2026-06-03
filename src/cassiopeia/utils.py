@@ -145,6 +145,23 @@ def get_root(tree: TreeLike, tree_key: str | None = None) -> str:
     return roots[0]
 
 
+def _add_depth(tree: nx.DiGraph, depth_key: str = "depth") -> None:
+    """Annotate each node of a rooted ``nx.DiGraph`` with its depth, in place.
+
+    Depth is the number of edges from the root (root depth ``0``).  Called by the
+    solvers after rooting so the output tree carries a ``depth`` node attribute.
+
+    Args:
+        tree: A rooted directed tree.
+        depth_key: Node attribute key under which the depth is stored.
+    """
+    roots = [n for n in tree.nodes if tree.in_degree(n) == 0]
+    if not roots:
+        return
+    for node, depth in nx.single_source_shortest_path_length(tree, roots[0]).items():
+        tree.nodes[node][depth_key] = depth
+
+
 def collapse_unifurcations(
     tree: TreeLike,
     tree_key: str | None = None,

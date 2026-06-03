@@ -93,62 +93,50 @@ MISSING_CM = pd.DataFrame.from_dict(
 
 
 def test_get_lca_cython():
-    cm = MISSING_CM.astype(str)
+    cm = MISSING_CM
     lca = ilp_solver_utilities.get_lca_characters_cython(
-        cm.loc["a"].values, cm.loc["b"].values, 4, "-1"
+        cm.loc["a"].values, cm.loc["b"].values, 4, -1
     )
-    assert lca == "1|3|1|1"
+    assert list(lca) == [1, 3, 1, 1]
     lca = ilp_solver_utilities.get_lca_characters_cython(
-        cm.loc["h"].values, cm.loc["b"].values, 4, "-1"
+        cm.loc["h"].values, cm.loc["b"].values, 4, -1
     )
-    assert lca == "0|0|0|0"
+    assert list(lca) == [0, 0, 0, 0]
 
 
 def test_cython_hamming_dist():
-    s1 = np.array(["1", "2", "3", "0", "0"])
-    s2 = np.array(["1", "4", "0", "0", "1"])
-    assert ilp_solver_utilities.simple_hamming_distance_cython(s1, s2, "-") == 3
+    s1 = np.array([1, 2, 3, 0, 0])
+    s2 = np.array([1, 4, 0, 0, 1])
+    assert ilp_solver_utilities.simple_hamming_distance_cython(s1, s2, -1) == 3
 
-    s1 = np.array(["1", "2", "3", "0", "-"])
-    s2 = np.array(["1", "-", "0", "0", "1"])
-    assert ilp_solver_utilities.simple_hamming_distance_cython(s1, s2, "-") == 1
+    s1 = np.array([1, 2, 3, 0, -1])
+    s2 = np.array([1, -1, 0, 0, 1])
+    assert ilp_solver_utilities.simple_hamming_distance_cython(s1, s2, -1) == 1
 
 
 def test_get_layer_for_potential_graph():
-    source_nodes = PP_CM.drop_duplicates().values
-    dim = source_nodes.shape[1]
-    source_node_strings = np.array(["|".join(arr) for arr in source_nodes.astype(str)])
-    layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(
-        source_node_strings, 10
-    )
+    source = PP_CM.drop_duplicates().to_numpy()
+    layer_nodes, layer_edges = ilp_solver_utilities.infer_layer_of_potential_graph(source, 10, -1)
 
-    layer_nodes = np.unique(np.array([node.split("|") for node in layer_nodes], dtype=int), axis=0)
-    for sample in np.array([[1, 0, 0], [1, 2, 0], [0, 0, 0], [2, 0, 0]]):
-        assert sample in layer_nodes
+    node_set = {tuple(n) for n in layer_nodes}
+    for s in [(1, 0, 0), (1, 2, 0), (0, 0, 0), (2, 0, 0)]:
+        assert s in node_set
 
-    layer_edges = np.array([edge.split("|") for edge in layer_edges], dtype=int)
-    layer_edges = [(list(e[:dim]), list(e[dim:])) for e in layer_edges]
-    expected_edges = [
-        ([1, 0, 0], [1, 1, 0]),
-        ([1, 0, 0], [1, 2, 0]),
-        ([1, 0, 0], [1, 2, 1]),
-        ([1, 2, 0], [1, 2, 0]),
-        ([1, 2, 0], [1, 2, 1]),
-        ([0, 0, 0], [1, 1, 0]),
-        ([0, 0, 0], [1, 2, 0]),
-        ([0, 0, 0], [1, 2, 1]),
-        ([0, 0, 0], [2, 0, 0]),
-        ([0, 0, 0], [2, 0, 2]),
-        ([2, 0, 0], [2, 0, 0]),
-        ([2, 0, 0], [2, 0, 2]),
-    ]
-    for edge in expected_edges:
-        assert edge in layer_edges
-    uniq = []
-    for edge in layer_edges:
-        if edge not in uniq:
-            uniq.append(edge)
-    assert len(uniq) == len(expected_edges)
+    expected_edges = {
+        ((1, 0, 0), (1, 1, 0)),
+        ((1, 0, 0), (1, 2, 0)),
+        ((1, 0, 0), (1, 2, 1)),
+        ((1, 2, 0), (1, 2, 0)),
+        ((1, 2, 0), (1, 2, 1)),
+        ((0, 0, 0), (1, 1, 0)),
+        ((0, 0, 0), (1, 2, 0)),
+        ((0, 0, 0), (1, 2, 1)),
+        ((0, 0, 0), (2, 0, 0)),
+        ((0, 0, 0), (2, 0, 2)),
+        ((2, 0, 0), (2, 0, 0)),
+        ((2, 0, 0), (2, 0, 2)),
+    }
+    assert set(layer_edges) == expected_edges
 
 
 # ── Potential graph inference ─────────────────────────────────────────────────
@@ -303,7 +291,7 @@ def test_ilp_perfect_phylogeny():
     tdata = chars_tdata(PP_CM)
     cas.solver.ilp(tdata, mip_gap=0.0, tree_key="ilp")
     tree = tdata.obst["ilp"]
-    assert len(roots := [n for n in tree if tree.in_degree(n) == 0]) == 1
+    assert len([n for n in tree if tree.in_degree(n) == 0]) == 1
     assert set(leaves(tree)) == set(PP_CM.index)
     assert [n for n in tree if tree.in_degree(n) > 1] == []
 
@@ -352,3 +340,7 @@ def test_ilp_solver_deprecated_and_stores_params():
     assert solver.convergence_time_limit == 12600
     assert solver.maximum_potential_graph_layer_size == 10000
     assert solver.weighted is False
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])

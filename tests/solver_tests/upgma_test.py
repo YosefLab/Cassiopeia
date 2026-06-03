@@ -91,7 +91,7 @@ def test_upgma_basic_from_distances():
 
 def test_upgma_from_characters_no_priors():
     tdata = chars_tdata(PP_CM)
-    cas.solver.upgma(tdata, tree_key="upgma")
+    cas.solver.upgma(tdata, tree_key="upgma", dissim_fn="weighted_hamming")
     tree = tdata.obst["upgma"]
 
     expected = nx.DiGraph()
@@ -120,7 +120,7 @@ def test_upgma_pairwise_value_no_priors():
 def test_upgma_with_priors_pairwise_value():
     priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
     tdata = chars_tdata(PP_CM, priors=priors)
-    cas.dissimilarity.pairwise(tdata, key_added="distances")
+    cas.dissimilarity.pairwise(tdata, method="weighted_hamming", key_added="distances")
     dm = pd.DataFrame(tdata.obsp["distances"], index=list(PP_CM.index), columns=list(PP_CM.index))
     np.testing.assert_almost_equal(dm.loc["a", "b"], (-np.log(0.2) - np.log(0.8)) / 3)
 
@@ -139,7 +139,7 @@ def test_upgma_duplicate_pairwise_value():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(duplicates_cm)
-    cas.dissimilarity.pairwise(tdata, key_added="distances")
+    cas.dissimilarity.pairwise(tdata, method="weighted_hamming", key_added="distances")
     dm = pd.DataFrame(
         tdata.obsp["distances"], index=list(duplicates_cm.index), columns=list(duplicates_cm.index)
     )
@@ -167,6 +167,6 @@ def test_upgma_then_collapse_edges():
 def test_pairwise_with_callable_metric():
     tdata = chars_tdata(PP_CM)
     cas.dissimilarity.pairwise(
-        tdata, method=cas.dissimilarity.weighted_hamming_distance, key_added="distances"
+        tdata, method=cas.dissimilarity.weighted_hamming, key_added="distances"
     )
     assert tdata.obsp["distances"].shape == (5, 5)

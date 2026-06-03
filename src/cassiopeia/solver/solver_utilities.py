@@ -164,6 +164,12 @@ def _set_tree(data, rooted, characters_key=None, tree_key=None):
     """
     from treedata import TreeData
 
+    from cassiopeia.utils import _add_depth
+
+    # Annotate the rooted tree with a per-node ``depth`` attribute (edges from root)
+    # so every solver's output tree carries a depth key.
+    _add_depth(rooted)
+
     if isinstance(data, TreeData):
         data.obst[tree_key] = rooted
     else:
@@ -174,6 +180,34 @@ def _set_tree(data, rooted, characters_key=None, tree_key=None):
         data.root_sample_name = root_node
         data.populate_tree(rooted, layer=characters_key)
         data.collapse_unifurcations()
+
+
+def encode_character_matrix(data, character_matrix, missing_state_indicator):
+    """Encode a string/categorical character matrix to integers.
+
+    Maps the unmodified state (``data.uns['unmodified_state']`` for TreeData,
+    else ``0``) to ``0``, the missing state to ``-1``, and other states to
+    distinct positive integers — the integer convention the solvers require.
+    Integer matrices are returned unchanged.
+
+    Returns ``(character_matrix, missing_state_indicator)`` with both coerced to
+    integers when encoding was applied.
+    """
+    from treedata import TreeData
+
+    if np.issubdtype(character_matrix.to_numpy().dtype, np.integer):
+        return character_matrix, missing_state_indicator
+
+    from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
+
+    unmodified_state = data.uns.get("unmodified_state", 0) if isinstance(data, TreeData) else 0
+    encoded, missing = _encode_integer_matrix(
+        character_matrix.to_numpy(), missing_state_indicator, unmodified_state
+    )
+    return (
+        pd.DataFrame(encoded, index=character_matrix.index, columns=character_matrix.columns),
+        missing,
+    )
 
 
 def _get_missing_and_priors(data) -> tuple[int, dict | None]:
@@ -241,7 +275,16 @@ def get_distance_map(
                 f"obsm[{characters_key or 'characters'!r}] or provide dissim_key."
             )
         missing, priors = _get_missing_and_priors(data)
-        return _pairwise(chars, dissimilarity_fn, missing, priors, prior_transformation, threads)
+        unmodified = data.uns.get("unmodified_state", 0)
+        return _pairwise(
+            chars,
+            dissimilarity_fn,
+            missing,
+            priors,
+            prior_transformation,
+            threads,
+            unmodified_state=unmodified,
+        )
 
     # CassiopeiaTree
     cached = data.get_dissimilarity_map()

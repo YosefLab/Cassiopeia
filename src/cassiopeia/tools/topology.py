@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from scipy import spatial, stats
 
+from cassiopeia import dissimilarity as dissimilarity_functions
 from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
-from cassiopeia.solver import dissimilarity_functions
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import _get_digraph
 
@@ -192,7 +192,7 @@ def compute_cophenetic_correlation(
     weights: pd.DataFrame | None = None,
     dissimilarity_map: pd.DataFrame | None = None,
     dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
-    | None = dissimilarity_functions.weighted_hamming_distance,
+    | None = dissimilarity_functions.weighted_hamming,
 ) -> tuple[float, float]:
     """Computes the cophenetic correlation of a lineage.
 

@@ -80,7 +80,7 @@ def test_nj_from_characters_synthetic_root():
 
 def test_nj_pairwise_value():
     tdata = chars_tdata(PP_CM)
-    cas.dissimilarity.pairwise(tdata, method="weighted_hamming_distance", key_added="d")
+    cas.dissimilarity.pairwise(tdata, method="weighted_hamming", key_added="d")
     dm = pd.DataFrame(tdata.obsp["d"], index=list(PP_CM.index), columns=list(PP_CM.index))
     # weighted hamming between a=[1,1,0] and b=[1,2,0]: differ at one non-zero
     # character (+2), normalized over 3 present characters.

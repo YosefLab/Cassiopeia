@@ -65,7 +65,7 @@ def _build_graph(
 def upgma(
     tdata: CassiopeiaTree | TreeData,
     dissim_key: str | None = None,
-    dissim_fn: str | Callable | None = "weighted_hamming_distance",
+    dissim_fn: str | Callable | None = "nonmissing_hamming",
     characters_key: str | None = None,
     tree_key: str = "upgma",
     prior_transformation: str = "negative_log",
@@ -143,7 +143,7 @@ class UPGMASolver:
         dissimilarity_function: Callable[
             [np.array, np.array, int, dict[int, dict[int, float]]], float
         ]
-        | None = dissimilarity_functions.weighted_hamming_distance,
+        | None = dissimilarity_functions.nonmissing_hamming,
         prior_transformation: str = "negative_log",
         fast: bool = True,
         implementation: str | None = None,
