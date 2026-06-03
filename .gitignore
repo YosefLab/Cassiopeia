@@ -169,3 +169,5 @@ docs/api/reference/**
 src/cassiopeia/config.ini
 environment.yml
 ._*
+.nfs*
+dev/
