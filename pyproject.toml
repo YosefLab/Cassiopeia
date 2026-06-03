@@ -51,7 +51,7 @@ dependencies = [
   "pysam>=0.14.1",
   "pyseq-align>=1.0.2",
   "pyyaml>=3.12",
-  "scipy>=1.2",
+  "scipy>=1.9",
   "tqdm>=4",
   "treedata>=0.2.2",
   "typing-extensions>=3.7.4",
@@ -68,7 +68,6 @@ optional-dependencies.doc = [
   "ipython",
   "myst-nb>=1.1",
   "nbsphinx",
-  "nbsphinx-link",
   "pandas",
   "pandoc",
   "scanpydoc",
@@ -160,7 +159,10 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 testpaths = [ "tests" ]
 xfail_strict = true
-addopts = [ "--import-mode=importlib" ]
+addopts = [
+  "--import-mode=importlib",
+  "--ignore-glob=*/._*",
+]
 
 [tool.coverage.run]
 source = [ "cassiopeia" ]

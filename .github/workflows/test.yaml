@@ -43,7 +43,8 @@ jobs:
                 | {
                     name: .key,
                     label: (if (.key | contains("pre")) then .key + " (PRE-RELEASE DEPENDENCIES)" else .key end),
-                    python: .value.python
+                    python: .value.python,
+                    allow_failure: (.key | contains("pre"))
                   }
               )')
           echo "envs=${ENVS_JSON}" | tee $GITHUB_OUTPUT
@@ -60,6 +61,7 @@ jobs:
 
     name: ${{ matrix.env.label }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.env.allow_failure }}
 
     steps:
       - uses: actions/checkout@v4

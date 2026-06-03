@@ -170,3 +170,4 @@ src/cassiopeia/config.ini
 environment.yml
 .nfs*
 ._*
+dev/
