@@ -11,9 +11,8 @@ from .deprecated import (
     SpectralSolver,
 )
 from .dissimilarity import dissimilarity
-from .greedy import greedy
+from .greedy import VanillaGreedySolver, greedy
 from .HybridSolver import HybridSolver
-from .ILPSolver import ILPSolver
+from .ilp import ILPSolver, ilp
 from .neighbor_joining import NeighborJoiningSolver, nj
 from .upgma import UPGMASolver, upgma
-from .VanillaGreedySolver import VanillaGreedySolver

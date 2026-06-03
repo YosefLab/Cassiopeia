@@ -15,6 +15,11 @@ import pandas as pd
 import cassiopeia as cas
 from cassiopeia.mixins import ILPSolverError
 from cassiopeia.solver import ilp_solver_utilities
+from cassiopeia.solver.ilp import (
+    _append_sample_names_and_remove_spurious_leaves,
+    _infer_potential_graph,
+    _post_process_steiner_solution,
+)
 
 GUROBI_INSTALLED = importlib.util.find_spec("gurobipy") is not None
 
@@ -233,10 +238,11 @@ class TestILPSolver(unittest.TestCase):
         unique_character_matrix = self.pp_tree.character_matrix.drop_duplicates()
 
         max_lca_height = 10
-        potential_graph = self.ilp_solver.infer_potential_graph(
+        potential_graph = _infer_potential_graph(
             unique_character_matrix,
             0,
             max_lca_height,
+            10000,
             self.pp_tree.priors,
             self.pp_tree.missing_state_indicator,
         )
@@ -298,7 +304,7 @@ class TestILPSolver(unittest.TestCase):
             ]
         )
 
-        processed_tree = self.ilp_solver.post_process_steiner_solution(tree, 9)
+        processed_tree = _post_process_steiner_solution(tree, 9)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_weighted_edges_from(
@@ -338,9 +344,7 @@ class TestILPSolver(unittest.TestCase):
                 ((1, 0, 0), (1, 1, 1)),
             ]
         )
-        processed_tree = self.ilp_solver._ILPSolver__append_sample_names_and_remove_spurious_leaves(
-            tree, cm
-        )
+        processed_tree = _append_sample_names_and_remove_spurious_leaves(tree, cm)
 
         expected_tree = nx.DiGraph()
         expected_tree.add_edges_from(
@@ -435,10 +439,11 @@ class TestILPSolver(unittest.TestCase):
         unique_character_matrix = self.duplicates_tree.character_matrix.drop_duplicates()
 
         max_lca_height = 10
-        potential_graph = self.ilp_solver.infer_potential_graph(
+        potential_graph = _infer_potential_graph(
             unique_character_matrix,
             0,
             max_lca_height,
+            10000,
             self.duplicates_tree.priors,
             self.duplicates_tree.missing_state_indicator,
         )
