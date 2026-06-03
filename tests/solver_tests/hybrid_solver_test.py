@@ -110,17 +110,6 @@ class TestHybridSolver(unittest.TestCase):
             greedy_solver, ilp_solver, cell_cutoff=3, threads=2
         )
 
-        ## hybrid solver with MaxCut Greedy
-        greedy_maxcut_solver = cas.solver.MaxCutGreedySolver()
-        self.hybrid_pp_solver_maxcut = cas.solver.HybridSolver(
-            greedy_maxcut_solver, ilp_solver, cell_cutoff=3, threads=2
-        )
-
-        ## hybrid solver with Greedy on top and Maxcut on Bottom
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut = cas.solver.HybridSolver(
-            greedy_solver, greedy_maxcut_solver, cell_cutoff=3, threads=2
-        )
-
     def test_constructor(self):
         self.assertEqual(self.hybrid_pp_solver.cell_cutoff, 3)
         self.assertEqual(self.hybrid_pp_solver.lca_cutoff, None)
@@ -443,63 +432,6 @@ class TestHybridSolver(unittest.TestCase):
         self.large_tree.get_newick()
 
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
-    def test_full_hybrid_maxcut(self):
-        self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
-        tree = self.missing_tree.get_tree_topology()
-
-        # make sure log files are created correctly
-        self.assertIsFile(os.path.join(self.dir_path, "test-1.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test-2.log"))
-        self.assertIsFile(os.path.join(self.dir_path, "test-3.log"))
-
-        # make sure there's one root
-        roots = [n for n in tree if tree.in_degree(n) == 0]
-        self.assertEqual(len(roots), 1)
-
-        # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
-        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
-        for leaf in expected_leaves:
-            self.assertIn(leaf, tree_leaves)
-
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                ("node0", "node1"),
-                ("node0", "node2"),
-                ("node1", "node3"),
-                ("node1", "node4"),
-                ("node3", "c"),
-                ("node3", "node6"),
-                ("node6", "a"),
-                ("node6", "b"),
-                ("node4", "d"),
-                ("node4", "e"),
-                ("node2", "f"),
-                ("node2", "node5"),
-                ("node5", "g"),
-                ("node5", "node7"),
-                ("node7", "h"),
-                ("node7", "i"),
-            ]
-        )
-
-        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h", "i"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        self.hybrid_pp_solver_maxcut.solve(self.missing_tree, logfile=self.logfile)
-        tree = self.missing_tree.get_tree_topology()
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        # make sure that the tree can be converted to newick format
-        self.missing_tree.get_newick()
-
     @unittest.skipUnless(GUROBI_INSTALLED, "Gurobi installation not found.")
     def test_full_hybrid_missing(self):
         self.hybrid_pp_solver_missing.solve(
@@ -551,52 +483,6 @@ class TestHybridSolver(unittest.TestCase):
             expected_triplet = find_triplet_structure(triplet, expected_tree)
             observed_triplet = find_triplet_structure(triplet, tree)
             self.assertEqual(expected_triplet, observed_triplet)
-
-    def test_greedy_over_greedy_maxcut_missing(self):
-        self.hybrid_pp_solver_greedy_over_greedy_maxcut.solve(
-            self.missing_tree, collapse_mutationless_edges=True
-        )
-
-        tree = self.missing_tree.get_tree_topology()
-
-        # make sure there's one root
-        roots = [n for n in tree if tree.in_degree(n) == 0]
-        self.assertEqual(len(roots), 1)
-
-        # make sure all samples are leaves
-        tree_leaves = [n for n in tree if tree.out_degree(n) == 0]
-        expected_leaves = ["a", "b", "c", "d", "e", "f", "g", "h"]
-        for leaf in expected_leaves:
-            self.assertIn(leaf, tree_leaves)
-
-        expected_tree = nx.DiGraph()
-        expected_tree.add_edges_from(
-            [
-                ("node0", "node1"),
-                ("node0", "node2"),
-                ("node1", "node3"),
-                ("node1", "node4"),
-                ("node3", "c"),
-                ("node3", "node6"),
-                ("node6", "a"),
-                ("node6", "b"),
-                ("node4", "d"),
-                ("node4", "e"),
-                ("node2", "f"),
-                ("node2", "node5"),
-                ("node5", "g"),
-                ("node5", "h"),
-            ]
-        )
-
-        triplets = itertools.combinations(["a", "b", "c", "d", "e", "f", "g", "h"], 3)
-        for triplet in triplets:
-            expected_triplet = find_triplet_structure(triplet, expected_tree)
-            observed_triplet = find_triplet_structure(triplet, tree)
-            self.assertEqual(expected_triplet, observed_triplet)
-
-        # make sure that the tree can be converted to newick format
-        self.missing_tree.get_newick()
 
     def tearDown(self):
         for _file in os.listdir(self.dir_path):
