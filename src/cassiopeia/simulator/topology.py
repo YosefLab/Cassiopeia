@@ -1,7 +1,8 @@
 """Functional tree topology simulators for Cassiopeia."""
 
+import inspect
 import warnings
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Iterable
 from queue import PriorityQueue, Queue
 
 import networkx as nx
@@ -11,6 +12,68 @@ import treedata as td
 from cassiopeia.mixins import TreeSimulatorError
 from cassiopeia.utils import _get_leaf_data
 from cassiopeia.utils import collapse_unifurcations as _collapse_unifurcations
+
+
+def _name_generator(
+    start: int = 0, exclude: Iterable[str] | None = None
+) -> Generator[str, None, None]:
+    """Yield ``"0"``, ``"1"``, ... skipping any names already in ``exclude``.
+
+    Skipping ``exclude`` lets a simulation resume from an ``initial_tree`` whose
+    nodes use any naming scheme without colliding, instead of assuming integer
+    leaf names.
+    """
+    seen = set(exclude or ())
+    i = start
+    while True:
+        name = str(i)
+        i += 1
+        if name not in seen:
+            yield name
+
+
+def _call(func: Callable, *args, rng: np.random.Generator):
+    """Call ``func(*args)``, passing ``rng=`` when ``func`` accepts an ``rng`` parameter.
+
+    Lets distribution/hook callables opt into the simulation's
+    :class:`numpy.random.Generator` for reproducibility, while older
+    zero/positional-argument callables keep working unchanged.
+    """
+    try:
+        params = inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        params = {}
+    accepts_rng = "rng" in params or any(
+        p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
+    )
+    if accepts_rng:
+        return func(*args, rng=rng)
+    return func(*args)
+
+
+def _finalize_tree(
+    tree: nx.DiGraph,
+    key_added: str,
+    leaf_attrs: Iterable[str] | None = None,
+    default_depth: str = "depth",
+) -> td.TreeData:
+    """Wrap a simulated ``nx.DiGraph`` in a ``TreeData`` with standard metadata.
+
+    Mirrors leaf node attributes into ``obs`` and records
+    ``uns["default_depth"]`` so every topology simulator produces a consistently
+    populated ``TreeData``.
+    """
+    tdata = td.TreeData(obst={key_added: tree}, uns={"default_depth": default_depth})
+
+    leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
+
+    if leaf_attrs is None and leaves:
+        leaf_attrs = tree.nodes[leaves[0]].keys()
+
+    for attr in leaf_attrs or ():
+        tdata.obs[attr] = _get_leaf_data(tree, attr)
+
+    return tdata
 
 
 def complete_binary(
@@ -47,13 +110,7 @@ def complete_binary(
     if depth <= 0:
         raise TreeSimulatorError("`depth` must be greater than 0.")
 
-    def _name_gen() -> Generator[str, None, None]:
-        i = 1
-        while True:
-            yield str(i)
-            i += 1
-
-    names = _name_gen()
+    names = _name_generator(start=1)
     tree = nx.balanced_tree(2, depth, create_using=nx.DiGraph)
     tree.add_edge("root", 0)
     nx.relabel_nodes(tree, {node: next(names) for node in tree.nodes if node != "root"}, copy=False)
@@ -63,15 +120,15 @@ def complete_binary(
     times = {node: d / max_depth for node, d in depths.items()}
     nx.set_node_attributes(tree, times, "time")
 
-    return td.TreeData(obst={key_added: tree})
+    return _finalize_tree(tree, key_added, ["time", "depth"], "time")
 
 
 def birth_death_process(
-    birth_waiting_distribution: Callable[[float], float] = lambda scale: np.random.lognormal(
+    birth_waiting_distribution: Callable = lambda scale, rng: rng.lognormal(
         mean=np.log(scale), sigma=0.5
     ),
     initial_birth_scale: float = 1.0,
-    death_waiting_distribution: Callable[[], float] = lambda: np.inf,
+    death_waiting_distribution: Callable = lambda rng: np.inf,
     mutation_distribution: Callable[[], int] | None = None,
     fitness_distribution: Callable[[], float] | None = None,
     fitness_base: float = np.e,
@@ -80,6 +137,7 @@ def birth_death_process(
     collapse_unifurcations: bool = True,
     random_seed: int | None = None,
     initial_tree: nx.DiGraph | None = None,
+    on_division: Callable | None = None,
     key_added: str = "simulated",
 ) -> td.TreeData:
     """Simulate a phylogenetic tree via a forward birth-death process with fitness.
@@ -93,26 +151,37 @@ def birth_death_process(
     be provided. Both may be provided, and the simulation stops at whichever is
     reached first.
 
+    Distribution callables may optionally accept a trailing ``rng`` keyword
+    argument (a :class:`numpy.random.Generator`); when they do, the simulation's
+    seeded generator is passed in for reproducibility.
+
     Args:
         birth_waiting_distribution: Samples birth waiting times; takes a scale
-            parameter (float) as input.
+            parameter (float), and optionally ``rng``.
         initial_birth_scale: Initial scale parameter for birth distribution.
-        death_waiting_distribution: Samples death waiting times (no args).
-            Defaults to no death (returns ``inf``).
+        death_waiting_distribution: Samples death waiting times; optionally takes
+            ``rng``. Defaults to no death (returns ``inf``).
         mutation_distribution: Samples number of fitness mutations at division.
-            If ``None``, no fitness mutations occur.
+            If ``None``, no fitness mutations occur. Optionally takes ``rng``.
         fitness_distribution: Samples the exponent for each fitness mutation.
-            Required when ``mutation_distribution`` is provided.
+            Required when ``mutation_distribution`` is provided. Optionally takes
+            ``rng``.
         fitness_base: Base raised by the fitness exponent to compute the
             multiplicative fitness coefficient. Default is ``e``.
         num_extant: Stop when this many lineages exist simultaneously.
         experiment_time: Stop when total elapsed time reaches this value.
         collapse_unifurcations: Whether to collapse unifurcations after pruning.
-        random_seed: NumPy random seed for reproducibility.
+        random_seed: Seed for the simulation's :class:`numpy.random.Generator`.
         initial_tree: Optional ``nx.DiGraph`` from which to resume simulation.
             Leaf nodes of this tree become the starting lineages. Nodes should
             have ``"birth_scale"`` and ``"time"`` attributes (defaults to
             ``initial_birth_scale`` and 0 if absent).
+        on_division: Optional hook ``on_division(parent_data[, rng])`` returning a
+            2-tuple of attribute dicts for the two daughters, given the dividing
+            node's attributes (``tree.nodes[parent]``). The returned attributes
+            (including ``"birth_scale"``) are written onto every daughter.
+            Extension seam for state-dependent fitness. Defaults to the scalar
+            fitness model.
         key_added: Key under which the result tree is stored in ``obst``.
 
     Returns:
@@ -134,23 +203,29 @@ def birth_death_process(
     if experiment_time is not None and experiment_time <= 0:
         raise TreeSimulatorError("Please specify an experiment time greater than 0")
 
-    starting_index = 0
-    if initial_tree is not None:
-        leaves = [n for n in initial_tree if initial_tree.out_degree(n) == 0]
-        starting_index = max(int(l) for l in leaves) + 1
+    if on_division is None:
 
-    def _name_gen(start: int = 0) -> Generator[str, None, None]:
-        i = start
-        while True:
-            yield str(i)
-            i += 1
+        def on_division(parent_data: dict, rng: np.random.Generator) -> tuple[dict, dict]:
+            scale = parent_data["birth_scale"]
+            return (
+                {
+                    "birth_scale": _update_fitness(
+                        scale, mutation_distribution, fitness_distribution, fitness_base, rng
+                    )
+                },
+                {
+                    "birth_scale": _update_fitness(
+                        scale, mutation_distribution, fitness_distribution, fitness_base, rng
+                    )
+                },
+            )
 
-    if random_seed is not None:
-        np.random.seed(random_seed)
+    exclude = set(initial_tree.nodes) if initial_tree is not None else set()
+    rng = np.random.default_rng(random_seed)
 
     _max_attempts = 10
     for _attempt in range(_max_attempts):
-        names = _name_gen(starting_index)
+        names = _name_generator(start=0, exclude=exclude)
         tree = _initialize_bd_tree(initial_tree, initial_birth_scale, names)
         current_lineages: PriorityQueue = PriorityQueue()
         observed_nodes: list[str] = []
@@ -159,8 +234,10 @@ def birth_death_process(
 
         try:
             if len(tree.nodes) == 1:
+                child_attrs = _call(on_division, tree.nodes[starting_lineage["id"]], rng=rng)[0]
                 _sample_lineage_event(
                     starting_lineage,
+                    child_attrs,
                     current_lineages,
                     tree,
                     names,
@@ -168,9 +245,7 @@ def birth_death_process(
                     birth_waiting_distribution,
                     death_waiting_distribution,
                     experiment_time,
-                    mutation_distribution,
-                    fitness_distribution,
-                    fitness_base,
+                    rng,
                 )
             else:
                 current_lineages = starting_lineage
@@ -183,17 +258,17 @@ def birth_death_process(
                         remaining.append(lineage)
                     min_time = remaining[0]["total_time"]
                     for lineage in remaining:
-                        parent = list(tree.predecessors(lineage["id"]))[0]
                         tree.nodes[lineage["id"]]["time"] += min_time - lineage["total_time"]
-                        tree.nodes[lineage["id"]]["birth_scale"] = tree.nodes[parent]["birth_scale"]
                         observed_nodes.append(lineage["id"])
                     break
 
                 _, _, lineage = current_lineages.get()
                 if lineage["active"]:
-                    for _ in range(2):
+                    children_attrs = _call(on_division, tree.nodes[lineage["id"]], rng=rng)
+                    for child_attrs in children_attrs:
                         _sample_lineage_event(
                             lineage,
+                            child_attrs,
                             current_lineages,
                             tree,
                             names,
@@ -201,16 +276,11 @@ def birth_death_process(
                             birth_waiting_distribution,
                             death_waiting_distribution,
                             experiment_time,
-                            mutation_distribution,
-                            fitness_distribution,
-                            fitness_base,
+                            rng,
                         )
 
             result = _build_tree(tree, observed_nodes, collapse_unifurcations)
-            tdata = td.TreeData(obst={key_added: result}, uns={"default_depth": "time"})
-            tdata.obs["time"] = _get_leaf_data(result, "time")
-            tdata.obs["birth_scale"] = _get_leaf_data(result, "birth_scale")
-            return tdata
+            return _finalize_tree(result, key_added, None, "time")
 
         except TreeSimulatorError as e:
             if "All lineages died" not in str(e) or _attempt == _max_attempts - 1:
@@ -280,36 +350,36 @@ def _update_fitness(
     mutation_distribution: Callable[[], int] | None,
     fitness_distribution: Callable[[], float] | None,
     fitness_base: float,
+    rng: np.random.Generator,
 ) -> float:
     coefficient = 1.0
     if mutation_distribution is not None:
-        num_mutations = int(mutation_distribution())
+        num_mutations = int(_call(mutation_distribution, rng=rng))
         if num_mutations < 0:
             raise TreeSimulatorError("Negative number of mutations detected")
         for _ in range(num_mutations):
-            coefficient *= fitness_base ** fitness_distribution()
+            coefficient *= fitness_base ** _call(fitness_distribution, rng=rng)
     return birth_scale * coefficient
 
 
 def _sample_lineage_event(
     lineage: dict,
+    child_attrs: dict,
     current_lineages: PriorityQueue,
     tree: nx.DiGraph,
     names: Generator,
     observed_nodes: list[str],
-    birth_waiting_distribution: Callable[[float], float],
-    death_waiting_distribution: Callable[[], float],
+    birth_waiting_distribution: Callable,
+    death_waiting_distribution: Callable,
     experiment_time: float | None,
-    mutation_distribution: Callable[[], int] | None,
-    fitness_distribution: Callable[[], float] | None,
-    fitness_base: float,
+    rng: np.random.Generator,
 ) -> None:
     if not lineage["active"]:
         raise TreeSimulatorError("Cannot sample event for non-active lineage")
 
     unique_id = next(names)
-    birth_wait = birth_waiting_distribution(lineage["birth_scale"])
-    death_wait = death_waiting_distribution()
+    birth_wait = _call(birth_waiting_distribution, lineage["birth_scale"], rng=rng)
+    death_wait = _call(death_waiting_distribution, rng=rng)
 
     if birth_wait <= 0 or death_wait <= 0:
         raise TreeSimulatorError("0 or negative waiting time detected")
@@ -317,27 +387,31 @@ def _sample_lineage_event(
     tree.add_node(unique_id)
     tree.add_edge(lineage["id"], unique_id)
 
+    # All daughter attributes from the hook (including birth_scale) are applied
+    # uniformly, regardless of whether the daughter divides or becomes a tip.
+    extra_attrs = {k: v for k, v in child_attrs.items() if k != "birth_scale"}
+    updated_scale = child_attrs.get("birth_scale", lineage["birth_scale"])
+
     if (
         experiment_time
         and lineage["total_time"] + birth_wait >= experiment_time
         and lineage["total_time"] + death_wait >= experiment_time
     ):
-        tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+        tree.nodes[unique_id].update(extra_attrs)
+        tree.nodes[unique_id]["birth_scale"] = updated_scale
         tree.nodes[unique_id]["time"] = experiment_time
         current_lineages.put(
             (
                 experiment_time,
                 unique_id,
-                _make_lineage_dict(unique_id, lineage["birth_scale"], experiment_time, False),
+                _make_lineage_dict(unique_id, updated_scale, experiment_time, False),
             )
         )
         observed_nodes.append(unique_id)
 
     elif birth_wait < death_wait:
-        updated_scale = _update_fitness(
-            lineage["birth_scale"], mutation_distribution, fitness_distribution, fitness_base
-        )
         new_time = birth_wait + lineage["total_time"]
+        tree.nodes[unique_id].update(extra_attrs)
         tree.nodes[unique_id]["birth_scale"] = updated_scale
         tree.nodes[unique_id]["time"] = new_time
         current_lineages.put(
@@ -350,13 +424,14 @@ def _sample_lineage_event(
 
     else:
         new_time = death_wait + lineage["total_time"]
-        tree.nodes[unique_id]["birth_scale"] = lineage["birth_scale"]
+        tree.nodes[unique_id].update(extra_attrs)
+        tree.nodes[unique_id]["birth_scale"] = updated_scale
         tree.nodes[unique_id]["time"] = new_time
         current_lineages.put(
             (
                 new_time,
                 unique_id,
-                _make_lineage_dict(unique_id, lineage["birth_scale"], new_time, False),
+                _make_lineage_dict(unique_id, updated_scale, new_time, False),
             )
         )
 
@@ -428,14 +503,8 @@ def simple_fit_subclone(
     else:
         _bl_fit = branch_length_fit
 
-    def _name_gen() -> Generator[str, None, None]:
-        i = 0
-        while True:
-            yield str(i)
-            i += 1
-
     tree: nx.DiGraph = nx.DiGraph()
-    names = _name_gen()
+    names = _name_generator(start=0)
     q: Queue = Queue()
     times: dict[str, float] = {}
     fits: dict[str, bool] = {}
@@ -473,7 +542,4 @@ def simple_fit_subclone(
 
     nx.set_node_attributes(tree, times, "time")
     nx.set_node_attributes(tree, fits, "fit")
-    tdata = td.TreeData(obst={key_added: tree}, uns={"default_depth": "time"})
-    tdata.obs["time"] = _get_leaf_data(tree, "time")
-    tdata.obs["fit"] = _get_leaf_data(tree, "fit")
-    return tdata
+    return _finalize_tree(tree, key_added, ["time", "fit"], "time")
