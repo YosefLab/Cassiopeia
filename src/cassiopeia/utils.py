@@ -13,6 +13,9 @@ import pandas as pd
 from treedata import TreeData
 
 from cassiopeia.data import CassiopeiaTree
+from cassiopeia.mixins.errors import (
+    CassiopeiaError,
+)
 
 from .typing import TreeLike
 
@@ -42,7 +45,9 @@ def _get_characters(
     return None
 
 
-def _get_digraph(tree: TreeLike, tree_key: str | None = None, copy=False) -> nx.DiGraph:
+def _get_digraph(
+    tree: TreeLike, tree_key: str | None = None, copy=False
+) -> tuple[nx.DiGraph, str | None]:
     """Logic for getting `nx.DiGraph` from inputs.
 
     Args:
@@ -73,7 +78,7 @@ def _get_digraph(tree: TreeLike, tree_key: str | None = None, copy=False) -> nx.
         t = tree.get_tree_topology()
 
     elif isinstance(tree, TreeData):
-        keys = list(tree.obst_keys())
+        keys = list(tree.obst.keys())
         if not keys:
             raise ValueError("TreeData object does not contain any trees in 'obst'.")
 
@@ -141,7 +146,10 @@ def get_root(tree: TreeLike, tree_key: str | None = None) -> str:
 
 
 def collapse_unifurcations(
-    tree: TreeLike, tree_key: str | None = None, inplace: bool = False
+    tree: TreeLike,
+    tree_key: str | None = None,
+    inplace: bool = False,
+    collapse_root: bool = True,
 ) -> nx.DiGraph:
     """Return a copy of ``tree`` with all unifurcations collapsed.
 
@@ -154,6 +162,9 @@ def collapse_unifurcations(
         tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
             Only required if multiple trees are present.
         inplace: Whether to modify the graph in place or return a new graph.
+        collapse_root: When ``True`` (default), collapse the root's single child
+            into the root if the root is a unifurcation. When ``False``, the
+            root's direct child is preserved even if it is a unifurcation.
 
     Returns:
         nx.DiGraph: A directed graph with all unifurcations collapsed.
@@ -175,6 +186,8 @@ def collapse_unifurcations(
         child = children[0]
         # Root case: bypass a single child by wiring root -> grandchildren
         if node == root:
+            if not collapse_root:
+                continue
             parent_edge = dict(t.get_edge_data(node, child, default={}))
             for gc in list(t.successors(child)):
                 child_edge = dict(t.get_edge_data(child, gc, default={}))
@@ -209,6 +222,22 @@ def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) 
         child_length = child_edge.get("length", 0)
         new_edge["length"] = parent_length + child_length
     return new_edge
+
+
+def _get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
+    """Return the cell metadata DataFrame from a CassiopeiaTree or TreeData.
+
+    For CassiopeiaTree, this is `tree.cell_meta`.
+    For TreeData, this is `tree.obs`.
+    Raises a CassiopeiaError if neither attribute exists.
+    """
+    if isinstance(tree, CassiopeiaTree) and isinstance(tree.cell_meta, pd.DataFrame):
+        return tree.cell_meta
+    if isinstance(tree, TreeData) and isinstance(tree.obs, pd.DataFrame):
+        return tree.obs
+    raise CassiopeiaError(
+        "Tree object does not have .cell_meta (CassiopeiaTree) or .obs (TreeData)."
+    )
 
 
 def _get_character_matrix(
@@ -306,3 +335,12 @@ def _check_tree_has_key(tree: nx.DiGraph, key: str):
         if key not in tree.nodes[node]:
             message = f"One or more nodes do not have '{key}' attribute."
             raise ValueError(message)
+
+
+def _get_leaf_data(g: nx.DiGraph, key: str) -> dict[str, Any]:
+    """Get a dictionary mapping leaf node labels to a specified node attribute."""
+    leaf_data = {}
+    for node in g.nodes:
+        if g.out_degree(node) == 0:  # Check if node is a leaf
+            leaf_data[node] = g.nodes[node].get(key)
+    return pd.Series(leaf_data)

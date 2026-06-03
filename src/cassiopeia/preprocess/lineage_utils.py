@@ -337,7 +337,7 @@ def filter_intbcs_final_lineages(
 
         p_bc = props[(props["prop"] > min_intbc_thresh) & (props["iBC"] != "NC")]
 
-        lg_group = lg.loc[np.in1d(lg["intBC"], p_bc["iBC"])]
+        lg_group = lg.loc[np.isin(lg["intBC"], p_bc["iBC"])]
         lgs.append(lg_group)
 
     return lgs

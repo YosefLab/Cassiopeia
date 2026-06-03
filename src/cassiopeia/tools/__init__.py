@@ -1,5 +1,6 @@
 """Top level for tools."""
 
+from .ancestral_characters import reconstruct_ancestral_characters
 from .autocorrelation import compute_morans_i
 from .coupling import compute_evolutionary_coupling
 from .deprecated import FitnessEstimator, IIDExponentialBayesian, IIDExponentialMLE
@@ -28,4 +29,5 @@ __all__ = [
     "score_small_parsimony",
     "compute_cophenetic_correlation",
     "compute_expansion_pvalues",
+    "reconstruct_ancestral_characters",
 ]

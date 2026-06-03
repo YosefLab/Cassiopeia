@@ -168,6 +168,6 @@ docs/api/reference/**
 .vscode
 src/cassiopeia/config.ini
 environment.yml
-._*
 .nfs*
+._*
 dev/
