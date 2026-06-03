@@ -59,3 +59,11 @@ Topology
    :toctree: reference/
 
    tl.compute_expansion_pvalues
+   tl.collapse_edges
+
+Ancestral Characters
+~~~~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: reference/
+
+   tl.ancestral_characters
