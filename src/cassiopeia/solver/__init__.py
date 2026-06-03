@@ -12,7 +12,7 @@ from .deprecated import (
 )
 from .dissimilarity import dissimilarity
 from .greedy import VanillaGreedySolver, greedy
-from .HybridSolver import HybridSolver
+from .hybrid import HybridSolver, hybrid
 from .ilp import ILPSolver, ilp
 from .neighbor_joining import NeighborJoiningSolver, nj
 from .upgma import UPGMASolver, upgma
