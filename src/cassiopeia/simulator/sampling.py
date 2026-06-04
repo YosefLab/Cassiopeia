@@ -9,7 +9,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
-from cassiopeia.utils import collapse_unifurcations
+from cassiopeia.utils import _collapse_unifurcations
 
 
 def sample_uniform(
@@ -436,7 +436,7 @@ def sample_timepoints(
     for node, t in sampled.items():
         induced.nodes[node][time_key] = t
 
-    new_tree = collapse_unifurcations(induced, collapse_root=not keep_root_edge)
+    new_tree = _collapse_unifurcations(induced, collapse_root=not keep_root_edge)
 
     # obs: "timepoint" column for all sampled cells; carry over existing
     # columns for cells that were already leaves in the input tree.
@@ -486,7 +486,7 @@ def _prune_tdata(
 ) -> td.TreeData:
     """Return new TreeData pruned to keep_leaves with unifurcations collapsed."""
     sub = tdata[list(keep_leaves)].copy()
-    pruned = collapse_unifurcations(sub.obst[tree_key], collapse_root=not keep_root_edge)
+    pruned = _collapse_unifurcations(sub.obst[tree_key], collapse_root=not keep_root_edge)
     sub.obst[tree_key] = pruned
     return sub
 
@@ -577,7 +577,7 @@ def _induce_and_collapse(
     for leaf in final_leaves:
         ancestors |= nx.ancestors(tree, leaf)
     induced = tree.subgraph(ancestors | set(final_leaves)).copy()
-    return collapse_unifurcations(induced, collapse_root=not keep_root_edge)
+    return _collapse_unifurcations(induced, collapse_root=not keep_root_edge)
 
 
 def _build_merged_tree(

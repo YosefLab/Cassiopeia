@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import random
+import time
 import warnings
-from collections.abc import Sequence
+from collections.abc import Generator
+from hashlib import blake2b
 from typing import Any
 
 import networkx as nx
@@ -12,16 +14,78 @@ import numpy as np
 import pandas as pd
 from treedata import TreeData
 
-from cassiopeia.data import CassiopeiaTree
+from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins.errors import (
     CassiopeiaError,
+    PriorTransformationError,
 )
 
-from .typing import TreeLike
+
+def _get_characters(
+    tree: CassiopeiaTree | TreeData,
+    key: str | None = None,
+    **kwargs,
+) -> pd.DataFrame | None:
+    """Return the character matrix from a tree-like object.
+
+    Args:
+        tree: A :class:`~cassiopeia.data.CassiopeiaTree`, :class:`~treedata.TreeData`,
+            or ``nx.DiGraph``.
+        key: For :class:`~treedata.TreeData`, the ``obsm`` key to look up
+            (default ``"characters"``).  For :class:`~cassiopeia.data.CassiopeiaTree`,
+            the layer name (default: the primary character matrix).
+        kwargs: Deprecated argument ``layer`` is also accepted as an alias for ``key`` for backward compatibility.
+
+    Returns:
+        pd.DataFrame or None if no character matrix is available.
+    """
+    if "layer" in kwargs:
+        warnings.warn(
+            "'layer' is deprecated and will be removed in a future version. "
+            "Use 'characters_key' instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        key = kwargs.pop("layer")
+
+    characters = None
+    if isinstance(tree, TreeData):
+        characters = tree.obsm.get(key or "characters", None)
+    if isinstance(tree, CassiopeiaTree):
+        if key == "characters":
+            characters = tree.character_matrix
+        else:
+            characters = tree.layers[key]
+    if isinstance(characters, np.ndarray):
+        characters = pd.DataFrame(characters)
+
+    if characters is None and isinstance(tree, TreeData):
+        raise ValueError(f"No character matrix found; store characters in obsm[{key}]")
+
+    return characters
+
+
+def _set_characters(
+    data: CassiopeiaTree | TreeData, characters: pd.DataFrame, characters_key: str = "characters"
+):
+    """Set the character matrix in a CassiopeiaTree or TreeData.
+
+    Args:
+        data: CassiopeiaTree or TreeData to modify in-place.
+        characters: Character matrix to set.
+        characters_key: Key under which to store characters.
+    """
+    if isinstance(data, CassiopeiaTree):
+        if characters_key == "characters":
+            data.character_matrix = characters
+        else:
+            data.layers[characters_key] = characters
+    elif isinstance(data, TreeData):
+        data.obsm[characters_key] = characters
 
 
 def _get_digraph(
-    tree: TreeLike, tree_key: str | None = None, copy=False
+    tree: CassiopeiaTree | TreeData | nx.DiGraph, tree_key: str | None = None, copy=False
 ) -> tuple[nx.DiGraph, str | None]:
     """Logic for getting `nx.DiGraph` from inputs.
 
@@ -45,7 +109,7 @@ def _get_digraph(
 
     elif isinstance(tree, CassiopeiaTree):
         warnings.warn(
-            "CassiopeiaTree is deprecated and will be removed in v3.1.0."
+            "CassiopeiaTree is deprecated and will be removed in v3.1.0. "
             "Please convert to TreeData using CassiopeiaTree.to_treedata().",
             DeprecationWarning,
             stacklevel=2,
@@ -79,7 +143,28 @@ def _get_digraph(
     return t, tree_key
 
 
-def get_leaves(tree: TreeLike, tree_key: str | None = None) -> list[str]:
+def _set_tree(data: CassiopeiaTree | TreeData, g: nx.DiGraph, tree_key: str | None = None):
+    """Store DiGraph, handling both CassiopeiaTree and TreeData.
+
+    Args:
+        data: CassiopeiaTree or TreeData to modify in-place.
+        g: Directed tree DiGraph to store.
+        tree_key: obst key for TreeData.
+    """
+    # Annotate the rooted tree with a per-node ``depth`` attribute (edges from root)
+    # so every solver's output tree carries a depth key.
+    _add_depth(g)
+
+    if isinstance(data, TreeData):
+        data.obst[tree_key] = g
+    else:
+        data.root_sample_name = get_root(g)
+        data.populate_tree(g)
+
+
+def get_leaves(
+    tree: CassiopeiaTree | TreeData | nx.DiGraph, tree_key: str | None = None
+) -> list[str]:
     """Return the leaf labels of a tree.
 
     Args:
@@ -95,7 +180,7 @@ def get_leaves(tree: TreeLike, tree_key: str | None = None) -> list[str]:
     return sorted(leaves)
 
 
-def get_root(tree: TreeLike, tree_key: str | None = None) -> str:
+def get_root(tree: CassiopeiaTree | TreeData | nx.DiGraph, tree_key: str | None = None) -> str:
     """Return the unique root of a tree.
 
     Args:
@@ -120,8 +205,25 @@ def get_root(tree: TreeLike, tree_key: str | None = None) -> str:
     return roots[0]
 
 
-def collapse_unifurcations(
-    tree: TreeLike,
+def _add_depth(tree: nx.DiGraph, depth_key: str = "depth") -> None:
+    """Annotate each node of a rooted ``nx.DiGraph`` with its depth, in place.
+
+    Depth is the number of edges from the root (root depth ``0``).  Called by the
+    solvers after rooting so the output tree carries a ``depth`` node attribute.
+
+    Args:
+        tree: A rooted directed tree.
+        depth_key: Node attribute key under which the depth is stored.
+    """
+    roots = [n for n in tree.nodes if tree.in_degree(n) == 0]
+    if not roots:
+        return
+    for node, depth in nx.single_source_shortest_path_length(tree, roots[0]).items():
+        tree.nodes[node][depth_key] = depth
+
+
+def _collapse_unifurcations(
+    tree: CassiopeiaTree | TreeData | nx.DiGraph,
     tree_key: str | None = None,
     inplace: bool = False,
     collapse_root: bool = True,
@@ -129,8 +231,8 @@ def collapse_unifurcations(
     """Return a copy of ``tree`` with all unifurcations collapsed.
 
     Internal nodes with exactly one child are removed and their parent and child
-    are connected directly. When branch length metadata is present, lengths are
-    summed so that the total distance between the parent and child is preserved.
+    are connected directly. Numeric edge attributes (e.g. branch lengths) are
+    summed so that additive quantities between the parent and child are preserved.
 
     Args:
         tree: The tree object.
@@ -189,13 +291,25 @@ def collapse_unifurcations(
         return t
 
 
+def _is_number(value: Any) -> bool:
+    """Return ``True`` for real numeric scalars (ints/floats), excluding bools."""
+    return isinstance(value, (int, float, np.number)) and not isinstance(value, bool)
+
+
 def _combine_edge_data(parent_edge: dict[str, Any], child_edge: dict[str, Any]) -> dict[str, Any]:
-    """Merge edge metadata while preserving branch lengths."""
-    new_edge = child_edge.copy()
-    if "length" in parent_edge or "length" in child_edge:
-        parent_length = parent_edge.get("length", 0)
-        child_length = child_edge.get("length", 0)
-        new_edge["length"] = parent_length + child_length
+    """Merge edge metadata when splicing out a node, summing numeric attributes.
+
+    Numeric attributes (e.g. branch lengths) are summed across the two edges so
+    additive quantities are preserved across the removed node; non-numeric
+    attributes take the child edge's value.
+    """
+    new_edge = dict(child_edge)
+    for key, parent_value in parent_edge.items():
+        child_value = new_edge.get(key)
+        if _is_number(parent_value) and (child_value is None or _is_number(child_value)):
+            new_edge[key] = parent_value + (child_value or 0)
+        elif key not in new_edge:
+            new_edge[key] = parent_value
     return new_edge
 
 
@@ -215,84 +329,31 @@ def _get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     )
 
 
-def _get_character_matrix(
-    tree: CassiopeiaTree | TreeData, characters_key: str = "characters", **kwargs
-) -> np.ndarray:
-    """Get character matrix from a tree object."""
-    if "layer" in kwargs:
-        warnings.warn(
-            "'layer' is deprecated and will be removed in a future version. "
-            "Use 'characters_key' instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        characters_key = kwargs.pop("layer")
-
+def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None):
+    """Get a parameter from CassiopeiaTree or TreeData."""
+    if value is not None:
+        return value
     if isinstance(tree, CassiopeiaTree):
-        if characters_key == "characters":
-            character_matrix = tree.character_matrix
+        if param_name == "missing_state":
+            value = tree.missing_state_indicator
+        elif param_name == "priors":
+            value = tree.priors
         else:
-            character_matrix = tree.layers[characters_key]
+            value = tree.parameters.get(param_name, None)
     elif isinstance(tree, TreeData):
-        character_matrix = tree.obsm[characters_key]
-
-    if isinstance(character_matrix, np.ndarray):
-        character_matrix = pd.DataFrame(character_matrix)
-    return character_matrix
-
-
-def _get_missing_state_indicator(
-    tree: CassiopeiaTree | TreeData,
-    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
-) -> str | int | Sequence[str | int] | None:
-    user_provided = missing_state != (-1, "-1", "NA", "-")
-    tree_value = None
-    if isinstance(tree, CassiopeiaTree):
-        tree_value = tree.missing_state_indicator
-    elif isinstance(tree, TreeData):
-        if "missing_state_indicator" in tree.uns:
-            tree_value = tree.uns["missing_state_indicator"]
-    if user_provided and tree_value is not None and missing_state != tree_value:
+        value = tree.uns.get(param_name, None)
+    fallbacks = {
+        "missing_state": (-1, "-1", "NA", "-"),
+        "unmodified_state": (0, "0", "*"),
+    }
+    if value is None and param_name in fallbacks:
+        value = fallbacks[param_name]
         warnings.warn(
-            f"User-provided missing_state ({missing_state}) differs from tree's "
-            f"missing_state_indicator ({tree_value}). Using user-provided value.",
+            f"Parameter '{param_name}' not specified; using default value {value}.",
             UserWarning,
             stacklevel=3,
         )
-        return missing_state
-    return tree_value if tree_value is not None else missing_state
-
-
-def _get_tree_parameter(tree: CassiopeiaTree | TreeData, param_name: str, default=None):
-    """Get a parameter from CassiopeiaTree or TreeData."""
-    if isinstance(tree, CassiopeiaTree):
-        return tree.parameters.get(param_name, default)
-    elif isinstance(tree, TreeData):
-        return tree.uns.get(param_name, default)
-    return default
-
-
-def get_mean_depth(tree: TreeLike, depth_key: str, tree_key: str | None = None) -> float:
-    """Compute the mean depth of a tree's leaves.
-
-    Calculates the average depth across all leaf nodes in the tree. Depth is
-    retrieved from the node attribute specified by depth_key. This can represent
-    either discrete generations (e.g., number of divisions) or continuous time
-    (e.g., evolutionary time).
-
-    Args:
-        tree: Tree object (CassiopeiaTree, TreeData, or nx.DiGraph)
-        depth_key: Node attribute key containing depth values (e.g., "depth", "time")
-        tree_key: Tree key to use if tree is a TreeData object with multiple trees
-
-    Returns:
-        float: Mean depth of the tree's leaves
-    """
-    t, _ = _get_digraph(tree, tree_key=tree_key)
-    _check_tree_has_key(t, depth_key)
-    leaves = get_leaves(tree, tree_key=tree_key)
-    depths = [t.nodes[leaf][depth_key] for leaf in leaves]
-    return float(np.mean(depths))
+    return value
 
 
 def _check_tree_has_key(tree: nx.DiGraph, key: str):
@@ -319,3 +380,92 @@ def _get_leaf_data(g: nx.DiGraph, key: str) -> dict[str, Any]:
         if g.out_degree(node) == 0:  # Check if node is a leaf
             leaf_data[node] = g.nodes[node].get(key)
     return pd.Series(leaf_data)
+
+
+def _node_name_generator() -> Generator[str, None, None]:
+    """Yield unique internal node names for building reconstructed trees.
+
+    Produces unique names by hashing timestamps.
+    """
+    while True:
+        k = str(time.time()).encode("utf-8")
+        h = blake2b(key=k, digest_size=12)
+        yield "cassiopeia_internal_node" + h.hexdigest()
+
+
+def _transform_priors(
+    priors: dict[int, dict[int, float]] | None,
+    prior_transformation: str = "negative_log",
+) -> dict[int, dict[int, float]]:
+    """Generate a dictionary of weights from priors.
+
+    Generates a dictionary of weights from given priors for each character/state
+    pair. Supported transformations include negative log, inverse, and square
+    root inverse.
+
+    Args:
+        priors: A dictionary of prior probabilities for each character/state pair.
+        prior_transformation: A function defining a transformation on the priors
+            in forming weights. Supports the following transformations:
+                "negative_log": Transforms each probability by the negative log
+                "inverse": Transforms each probability p by taking 1/p
+                "square_root_inverse": Transforms each probability by the
+                    square root of 1/p
+
+    Returns:
+        A dictionary of weights for each character/state pair.
+
+    Raises:
+        PriorTransformationError: If *prior_transformation* is unsupported or a
+            prior is not in ``(0, 1]``.
+    """
+    if prior_transformation not in [
+        "negative_log",
+        "inverse",
+        "square_root_inverse",
+    ]:
+        raise PriorTransformationError("Please select one of the supported prior transformations.")
+
+    prior_function = lambda x: -np.log(x)
+
+    if prior_transformation == "square_root_inverse":
+        prior_function = lambda x: (np.sqrt(1 / x))
+    if prior_transformation == "inverse":
+        prior_function = lambda x: 1 / x
+
+    weights = {}
+    for character in priors:
+        state_weights = {}
+        for state in priors[character]:
+            p = priors[character][state]
+            if p <= 0.0 or p > 1.0:
+                raise PriorTransformationError(
+                    "Please make sure all priors have a value between 0 and 1"
+                )
+            state_weights[state] = prior_function(p)
+        weights[character] = state_weights
+    return weights
+
+
+def _save_dissimilarity(
+    data: CassiopeiaTree | TreeData,
+    dist_df: pd.DataFrame,
+    dissim_key: str | None = None,
+) -> None:
+    """Store a pairwise dissimilarity map on a tree-like object.
+
+    For :class:`~treedata.TreeData` the dense matrix is written to
+    ``obsp[dissim_key or 'distances']``; for
+    :class:`~cassiopeia.data.CassiopeiaTree` it is set via
+    ``set_dissimilarity_map``.
+
+    Args:
+        data: CassiopeiaTree or TreeData to modify in-place.
+        dist_df: Symmetric distance ``pd.DataFrame`` indexed by sample name.
+        dissim_key: ``obsp`` key for the stored matrix (TreeData only).
+    """
+    if isinstance(data, TreeData):
+        names = list(data.obs_names)
+        data.obsp[dissim_key or "distances"] = dist_df.loc[names, names].to_numpy()
+    else:
+        data.set_dissimilarity_map(dist_df)

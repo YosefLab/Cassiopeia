@@ -1,6 +1,9 @@
 """Top level for tools."""
 
-from .ancestral_characters import reconstruct_ancestral_characters
+from .ancestral_characters import (
+    ancestral_characters,
+    reconstruct_ancestral_characters,
+)
 from .autocorrelation import compute_morans_i
 from .coupling import compute_evolutionary_coupling
 from .deprecated import FitnessEstimator, IIDExponentialBayesian, IIDExponentialMLE
@@ -9,7 +12,12 @@ from .parameter_estimators import (
     estimate_mutation_rate,
 )
 from .small_parsimony import fitch_count, fitch_hartigan, score_small_parsimony
-from .topology import compute_cophenetic_correlation, compute_expansion_pvalues
+from .topology import (
+    collapse_edges,
+    compute_cophenetic_correlation,
+    compute_expansion_pvalues,
+    mean_depth,
+)
 from .tree_metrics import (
     calculate_likelihood_continuous,
     calculate_likelihood_discrete,
@@ -30,4 +38,7 @@ __all__ = [
     "compute_cophenetic_correlation",
     "compute_expansion_pvalues",
     "reconstruct_ancestral_characters",
+    "ancestral_characters",
+    "collapse_edges",
+    "mean_depth",
 ]

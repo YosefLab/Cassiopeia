@@ -1,8 +1,9 @@
 """Top level for data."""
 
+from cassiopeia.dissimilarity import compute_dissimilarity_map
+
 from .CassiopeiaTree import CassiopeiaTree
 from .utilities import (
-    compute_dissimilarity_map,
     compute_inter_cluster_distances,
     compute_phylogenetic_weight_matrix,
     get_lca_characters,

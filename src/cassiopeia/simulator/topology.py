@@ -10,8 +10,7 @@ import numpy as np
 import treedata as td
 
 from cassiopeia.mixins import TreeSimulatorError
-from cassiopeia.utils import _get_leaf_data
-from cassiopeia.utils import collapse_unifurcations as _collapse_unifurcations
+from cassiopeia.utils import _collapse_unifurcations, _get_leaf_data
 
 
 def _name_generator(

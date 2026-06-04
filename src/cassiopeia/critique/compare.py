@@ -16,8 +16,8 @@ from cassiopeia.critique.critique_utilities import (
 )
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
+    _collapse_unifurcations,
     _get_digraph,
-    collapse_unifurcations,
     get_leaves,
 )
 
@@ -101,8 +101,8 @@ def _run_triplets_correct(
             proportion_unresolvable: Proportion of triplets that are unresolvable at each depth.
     """
     # collapse unifurcations
-    collapse_unifurcations(G1)
-    collapse_unifurcations(G2)
+    _collapse_unifurcations(G1)
+    _collapse_unifurcations(G2)
 
     # annotate depths and per-node triplet counts (on G1)
     depth_to_nodes = annotate_tree_depths(G1)

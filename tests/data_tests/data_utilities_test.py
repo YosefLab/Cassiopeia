@@ -498,6 +498,10 @@ class TestDataUtilities(unittest.TestCase):
             atol=0.001,
         )
 
+    @pytest.mark.filterwarnings(
+        "ignore:The samples in the existing character matrix:"
+        "cassiopeia.mixins.warnings.CassiopeiaTreeWarning"
+    )
     def test_to_treedata(self):
         graph = nx.DiGraph()
         graph.add_edges_from(

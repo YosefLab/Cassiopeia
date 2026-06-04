@@ -3,13 +3,171 @@
 import math
 from collections.abc import Callable
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 from scipy import spatial, stats
+from treedata import TreeData
 
+from cassiopeia import dissimilarity as dissimilarity_functions
 from cassiopeia.data import CassiopeiaTree, compute_phylogenetic_weight_matrix
 from cassiopeia.mixins import CassiopeiaError
-from cassiopeia.solver import dissimilarity_functions
+from cassiopeia.typing import TreeLike
+from cassiopeia.utils import (
+    _check_tree_has_key,
+    _collapse_unifurcations,
+    _combine_edge_data,
+    _get_digraph,
+    get_leaves,
+)
+
+
+def mean_depth(
+    tree: CassiopeiaTree | TreeData | nx.DiGraph,
+    depth_key: str,
+    tree_key: str | None = None,
+) -> float:
+    """Compute the mean depth of a tree's leaves.
+
+    Calculates the average depth across all leaf nodes in the tree. Depth is
+    retrieved from the node attribute specified by ``depth_key``. This can
+    represent either discrete generations (e.g., number of divisions) or
+    continuous time (e.g., evolutionary time).
+
+    Args:
+        tree: Tree object (CassiopeiaTree, TreeData, or nx.DiGraph).
+        depth_key: Node attribute key containing depth values (e.g., ``"depth"``,
+            ``"time"``).
+        tree_key: Tree key to use if ``tree`` is a TreeData object with multiple
+            trees.
+
+    Returns:
+        Mean depth of the tree's leaves.
+    """
+    t, _ = _get_digraph(tree, tree_key=tree_key)
+    _check_tree_has_key(t, depth_key)
+    leaves = get_leaves(tree, tree_key=tree_key)
+    depths = [t.nodes[leaf][depth_key] for leaf in leaves]
+    return float(np.mean(depths))
+
+
+def _mutationless_criteria(parent_states: list, child_states: list) -> bool:
+    """Return ``True`` when a parent and child share identical character states.
+
+    The default edge-collapse criterion: an edge carries no mutation when the
+    parent and child have identical inferred character states (introducing a
+    missing-data event counts as a mutation, so unequal states are retained).
+    """
+    return parent_states == child_states
+
+
+# Registry of edge-collapse criteria. Maps a criterion name to a predicate
+# ``(parent_states, child_states) -> bool`` that is ``True`` when the edge
+# between them should be collapsed. The structural ``"unifurcation"`` criterion
+# is handled separately (it needs no character states). Extend this to add
+# future state-based criteria.
+_COLLAPSE_CRITERIA: dict[str, Callable[[list, list], bool]] = {
+    "mutationless": _mutationless_criteria,
+}
+
+
+def collapse_edges(
+    tdata: TreeLike,
+    tree_key: str | None = None,
+    characters_key: str = "characters",
+    criteria: str = "mutationless",
+    collapse_root: bool = True,
+    copy: bool = False,
+) -> TreeLike | None:
+    """Collapse edges of a tree according to a collapse criterion.
+
+    For each internal node, any non-leaf child satisfying the collapse
+    *criteria* is spliced out and its children are reattached to the node.
+    Leaves are never removed. Numeric edge attributes (e.g. branch lengths) are
+    summed across the removed edges so additive quantities are preserved;
+    non-numeric attributes take the child edge's value.
+
+    Two criteria are supported:
+
+    * ``'mutationless'`` (default): collapse an edge when the parent and child
+      have identical inferred character states. Ancestral character states must
+      already be present on every node under the ``characters_key`` node
+      attribute; call :func:`cassiopeia.tl.ancestral_characters` first if they
+      are not.
+    * ``'unifurcation'``: collapse every internal node with exactly one child
+      (a structural criterion needing no character states).
+
+    Only :class:`~treedata.TreeData` is supported.
+
+    Args:
+        tdata: TreeData object to operate on.
+        tree_key: The ``obst`` key of the tree to use.
+        characters_key: Node attribute holding character states (the same name
+            as the obsm character matrix and the output of
+            :func:`cassiopeia.tl.ancestral_characters`). Only used by the
+            ``'mutationless'`` criterion.
+        criteria: Name of the edge-collapse criterion to apply. Supports
+            ``'mutationless'`` and ``'unifurcation'``.
+        collapse_root: For ``criteria='unifurcation'``, whether to also collapse
+            the root's single child into the root. Ignored otherwise.
+        copy: If ``True``, operate on and return a copy of *tdata*; otherwise
+            modify in place and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
+
+    Raises:
+        TypeError: If *tdata* is not a TreeData object.
+        ValueError: If *criteria* is not a recognized criterion.
+        CassiopeiaError: If a node is missing character states (mutationless).
+    """
+    from treedata import TreeData
+
+    if not isinstance(tdata, TreeData):
+        raise TypeError(
+            "collapse_edges() operates on TreeData. For a CassiopeiaTree, convert "
+            "with CassiopeiaTree.to_treedata()."
+        )
+    if criteria != "unifurcation" and criteria not in _COLLAPSE_CRITERIA:
+        raise ValueError(
+            f"Unknown collapse criteria {criteria!r}. "
+            f"Available: {sorted([*_COLLAPSE_CRITERIA, 'unifurcation'])}"
+        )
+
+    tdata = tdata.copy() if copy else tdata
+    # TreeData stores frozen graphs; operate on a copy and write back.
+    g, tree_key = _get_digraph(tdata, tree_key, copy=True)
+
+    if criteria == "unifurcation":
+        g = _collapse_unifurcations(g, collapse_root=collapse_root)
+        tdata.obst[tree_key] = g
+        return tdata if copy else None
+
+    predicate = _COLLAPSE_CRITERIA[criteria]
+
+    for node in g.nodes:
+        if characters_key not in g.nodes[node]:
+            raise CassiopeiaError(
+                f"Node {node!r} has no character states under {characters_key!r}. "
+                "Call cassiopeia.tl.ancestral_characters first."
+            )
+
+    for node in list(nx.dfs_postorder_nodes(g)):
+        if g.out_degree(node) == 0:
+            continue
+        for child in list(g.successors(node)):
+            if g.out_degree(child) == 0:
+                continue
+            if predicate(g.nodes[node][characters_key], g.nodes[child][characters_key]):
+                parent_edge = dict(g.get_edge_data(node, child, default={}))
+                for grandchild in list(g.successors(child)):
+                    child_edge = dict(g.get_edge_data(child, grandchild, default={}))
+                    g.add_edge(node, grandchild, **_combine_edge_data(parent_edge, child_edge))
+                g.remove_node(child)
+
+    tdata.obst[tree_key] = g
+
+    return tdata if copy else None
 
 
 def compute_expansion_pvalues(
@@ -92,7 +250,7 @@ def compute_cophenetic_correlation(
     weights: pd.DataFrame | None = None,
     dissimilarity_map: pd.DataFrame | None = None,
     dissimilarity_function: Callable[[np.array, np.array, int, dict[int, dict[int, float]]], float]
-    | None = dissimilarity_functions.weighted_hamming_distance,
+    | None = dissimilarity_functions.weighted_hamming,
 ) -> tuple[float, float]:
     """Computes the cophenetic correlation of a lineage.
 

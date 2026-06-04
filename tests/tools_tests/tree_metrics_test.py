@@ -45,9 +45,11 @@ class TestCassiopeiaTree(unittest.TestCase):
         self.parsimony_tree = cas.data.CassiopeiaTree(
             tree=self.small_net, character_matrix=parsimony_cm
         )
+        self.parsimony_tree.parameters["unmodified_state"] = 0
 
     def test_parsimony_bad_cases(self):
         small_tree = cas.data.CassiopeiaTree(tree=self.small_net)
+        small_tree.parameters["unmodified_state"] = 0
         with self.assertRaises(TreeMetricError):
             tree_metrics.calculate_parsimony(small_tree, infer_ancestral_characters=False)
 

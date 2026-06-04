@@ -12,7 +12,7 @@ from cassiopeia.mixins import TreeMetricError
 from cassiopeia.tools import parameter_estimators, reconstruct_ancestral_characters
 from cassiopeia.utils import (
     _get_digraph,
-    _get_missing_state_indicator,
+    _get_parameter,
     get_root,
 )
 
@@ -88,6 +88,8 @@ def calculate_parsimony(
     tree: TreeData | CassiopeiaTree,
     infer_ancestral_characters: bool = False,
     treat_missing_as_mutation: bool = False,
+    missing_state: str | int | None = None,
+    unmodified_state: str | int | None = None,
 ) -> int:
     """Calculates the number of mutations that have occurred on a tree.
 
@@ -112,6 +114,8 @@ def calculate_parsimony(
             characters states of the tree
         treat_missing_as_mutation: Whether to treat missing states as
             mutations
+        missing_state: The missing state(s) to consider when calculating parsimony.
+        unmodified_state: The unmodified state(s) to consider when calculating parsimony.
 
     Returns:
             The number of mutations that have occurred on the tree
@@ -122,7 +126,7 @@ def calculate_parsimony(
     """
     g, _ = _get_digraph(tree)
     root = get_root(g)
-    missing_state_indicator = _get_missing_state_indicator(tree)
+    missing_state_indicator = _get_parameter(tree, "missing_state", value=missing_state)
 
     if infer_ancestral_characters:
         tree.reconstruct_ancestral_characters()
@@ -201,42 +205,46 @@ def log_transition_probability(
     Returns:
             The log transition probability between the states
     """
-    if s_ == tree.missing_state_indicator:
-        if s == tree.missing_state_indicator:
-            return 0
+    # A probability of exactly 0 (e.g. a certain mutation, so P(no mutation) = 0)
+    # legitimately yields a log-probability of -inf; suppress numpy's spurious
+    # "divide by zero encountered in log" warning for that intended result.
+    with np.errstate(divide="ignore"):
+        if s_ == tree.missing_state_indicator:
+            if s == tree.missing_state_indicator:
+                return 0
+            else:
+                return np.log(missing_probability_function_of_time(t))
+        # "&" stands in for any non-missing state (including the uncut state).
+        # The sum probability of transitioning from any non-missing state s
+        # to any non-missing state s' is 1 - P(missing event). Used to avoid
+        # marginalizing over the entire state space.
+        elif s_ == "&":
+            if s == tree.missing_state_indicator:
+                return -1e16
+            else:
+                return np.log(1 - missing_probability_function_of_time(t))
+        elif s_ == 0:
+            if s == 0:
+                return np.log(1 - mutation_probability_function_of_time(t)) + np.log(
+                    1 - missing_probability_function_of_time(t)
+                )
+            else:
+                # The transition from "&" to a non-missing state cannot occur
+                return -1e16
         else:
-            return np.log(missing_probability_function_of_time(t))
-    # "&" stands in for any non-missing state (including the uncut state).
-    # The sum probability of transitioning from any non-missing state s
-    # to any non-missing state s' is 1 - P(missing event). Used to avoid
-    # marginalizing over the entire state space.
-    elif s_ == "&":
-        if s == tree.missing_state_indicator:
-            return -1e16
-        else:
-            return np.log(1 - missing_probability_function_of_time(t))
-    elif s_ == 0:
-        if s == 0:
-            return np.log(1 - mutation_probability_function_of_time(t)) + np.log(
-                1 - missing_probability_function_of_time(t)
-            )
-        else:
-            # The transition from "&" to a non-missing state cannot occur
-            return -1e16
-    else:
-        if s == tree.missing_state_indicator:
-            return -1e16
-        elif s == 0:
-            return (
-                np.log(mutation_probability_function_of_time(t))
-                + np.log(tree.priors[character][s_])
-                + np.log(1 - missing_probability_function_of_time(t))
-            )
-        elif s == s_:
-            return np.log(1 - missing_probability_function_of_time(t))
-        else:
-            # The transition from "&" to a non-missing state cannot occur
-            return -1e16
+            if s == tree.missing_state_indicator:
+                return -1e16
+            elif s == 0:
+                return (
+                    np.log(mutation_probability_function_of_time(t))
+                    + np.log(tree.priors[character][s_])
+                    + np.log(1 - missing_probability_function_of_time(t))
+                )
+            elif s == s_:
+                return np.log(1 - missing_probability_function_of_time(t))
+            else:
+                # The transition from "&" to a non-missing state cannot occur
+                return -1e16
 
 
 def log_likelihood_of_character(

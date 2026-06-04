@@ -11,12 +11,13 @@ from treedata import TreeData
 from cassiopeia import utils
 from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
+from cassiopeia.tools.topology import mean_depth as _mean_depth
 
 
 def get_proportion_of_missing_data(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
+    missing_state: str | int | Sequence[str | int] | None = None,
     **kwargs,
 ) -> float:
     """Calculate the proportion of missing entries in the character matrix.
@@ -41,8 +42,8 @@ def get_proportion_of_missing_data(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_character_matrix(tree, characters_key, **kwargs)
-    missing_state_indicator = utils._get_missing_state_indicator(tree, missing_state)
+    character_matrix = utils._get_characters(tree, characters_key, **kwargs)
+    missing_state_indicator = utils._get_parameter(tree, "missing_state", value=missing_state)
 
     num_dropped = _count_entries(character_matrix, missing_state_indicator)
     missing_proportion = num_dropped / (character_matrix.shape[0] * character_matrix.shape[1])
@@ -52,8 +53,8 @@ def get_proportion_of_missing_data(
 def get_proportion_of_mutation(
     tree: CassiopeiaTree | TreeData,
     characters_key: str = "characters",
-    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
-    unmodified_state: str | int | Sequence[str | int] | None = (0, "0", "*"),
+    missing_state: str | int | Sequence[str | int] | None = None,
+    unmodified_state: str | int | Sequence[str | int] | None = None,
     **kwargs,
 ) -> float:
     """Calculate the proportion of mutated entries in the character matrix.
@@ -81,11 +82,14 @@ def get_proportion_of_mutation(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_character_matrix(tree, characters_key, **kwargs)
-    missing_state_indicator = utils._get_missing_state_indicator(tree, missing_state)
+    character_matrix = utils._get_characters(tree, characters_key, **kwargs)
+    missing_state_indicator = utils._get_parameter(tree, "missing_state", value=missing_state)
+    unmodified_state_indicator = utils._get_parameter(
+        tree, "unmodified_state", value=unmodified_state
+    )
 
     num_dropped = _count_entries(character_matrix, missing_state_indicator)
-    num_unmodified = _count_entries(character_matrix, unmodified_state)
+    num_unmodified = _count_entries(character_matrix, unmodified_state_indicator)
 
     num_mut = character_matrix.shape[0] * character_matrix.shape[1] - num_dropped - num_unmodified
     mutation_proportion = num_mut / (
@@ -145,7 +149,7 @@ def estimate_mutation_rate(
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
     t, _ = utils._get_digraph(tree, tree_key=tree_key)
-    mutation_proportion = utils._get_tree_parameter(tree, "mutation_proportion")
+    mutation_proportion = utils._get_parameter(tree, "mutation_proportion")
     if mutation_proportion is None:
         mutation_proportion = get_proportion_of_mutation(
             tree, characters_key, missing_state, unmodified_state, **kwargs
@@ -159,7 +163,7 @@ def estimate_mutation_rate(
     _check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
-    mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
+    mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
 
     if assume_root_implicit_branch and t.out_degree(root) != 1:
         mean_depth += (
@@ -288,7 +292,7 @@ def estimate_missing_data_rates(
             that the provided parameter may be too high.
     """
     t, _ = utils._get_digraph(tree, tree_key=tree_key)
-    total_missing_proportion = utils._get_tree_parameter(tree, "missing_proportion")
+    total_missing_proportion = utils._get_parameter(tree, "missing_proportion")
     if total_missing_proportion is None:
         total_missing_proportion = get_proportion_of_missing_data(
             tree, characters_key, missing_state, **kwargs
@@ -298,12 +302,12 @@ def estimate_missing_data_rates(
         raise ParameterEstimateError("Missing proportion must be between 0 and 1.")
 
     if stochastic_missing_probability is None:
-        stochastic_missing_probability = utils._get_tree_parameter(
+        stochastic_missing_probability = utils._get_parameter(
             tree, "stochastic_missing_probability"
         )
 
     if heritable_missing_rate is None:
-        heritable_missing_rate = utils._get_tree_parameter(tree, "heritable_missing_rate")
+        heritable_missing_rate = utils._get_parameter(tree, "heritable_missing_rate")
 
     if heritable_missing_rate is None and stochastic_missing_probability is None:
         raise ParameterEstimateError(
@@ -325,7 +329,7 @@ def estimate_missing_data_rates(
     _check_continuous_not_int(t, edges, continuous)
 
     root = utils.get_root(tree, tree_key=tree_key)
-    mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
+    mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
 
     if heritable_missing_rate is None:
         if stochastic_missing_probability < 0:
@@ -333,7 +337,7 @@ def estimate_missing_data_rates(
         if stochastic_missing_probability > 1:
             raise ParameterEstimateError("Stochastic missing data rate must be < 1.")
 
-        mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
+        mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
 
         if assume_root_implicit_branch and t.out_degree(root) != 1:
             if not continuous:
@@ -357,7 +361,7 @@ def estimate_missing_data_rates(
         if not continuous and heritable_missing_rate > 1:
             raise ParameterEstimateError("Per-generation heritable missing data rate must be < 1.")
 
-        mean_depth = utils.get_mean_depth(tree, depth_key, tree_key=tree_key)
+        mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
 
         if assume_root_implicit_branch and t.out_degree(root) != 1:
             if not continuous:
