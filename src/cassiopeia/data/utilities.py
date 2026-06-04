@@ -4,7 +4,6 @@ import collections
 import copy
 from collections.abc import Callable
 
-import ete3
 import networkx as nx
 import numba
 import numpy as np
@@ -80,18 +79,72 @@ def get_lca_characters(
 def newick_to_networkx(newick_string: str) -> nx.DiGraph:
     """Converts a newick string to a networkx DiGraph.
 
+    Parses a newick string (supporting named internal nodes and branch lengths)
+    into a directed tree.  Unnamed internal nodes are assigned unique names of
+    the form ``cassiopeia_internal_node{i}``; branches without an explicit length
+    default to a length of ``1.0``.
+
     Args:
         newick_string: A newick string.
 
     Returns:
             A networkx DiGraph.
     """
-    tree = ete3.Tree(newick_string, 1)
-    return ete3_to_networkx(tree)
+    g = nx.DiGraph()
+    s = newick_string.strip()
+    if s.endswith(";"):
+        s = s[:-1]
+
+    pos = 0  # current parse position
+    internal_node_iter = 0
+
+    def _parse_label() -> str:
+        nonlocal pos
+        start = pos
+        while pos < len(s) and s[pos] not in ",():":
+            pos += 1
+        return s[start:pos].strip()
+
+    def _parse_clade() -> tuple[str, float | None]:
+        """Parse a clade at ``pos`` and return its ``(name, branch_length)``."""
+        nonlocal pos, internal_node_iter
+        children = []
+        if pos < len(s) and s[pos] == "(":
+            pos += 1  # consume "("
+            while True:
+                children.append(_parse_clade())
+                if pos < len(s) and s[pos] == ",":
+                    pos += 1
+                    continue
+                if pos < len(s) and s[pos] == ")":
+                    pos += 1
+                break
+
+        name = _parse_label()
+        length = None
+        if pos < len(s) and s[pos] == ":":
+            pos += 1
+            length = float(_parse_label())
+
+        if not name and children:
+            name = f"cassiopeia_internal_node{internal_node_iter}"
+            internal_node_iter += 1
+
+        for child_name, child_length in children:
+            g.add_edge(name, child_name, length=1.0 if child_length is None else child_length)
+
+        return name, length
+
+    _parse_clade()
+    return g
 
 
-def ete3_to_networkx(tree: ete3.Tree) -> nx.DiGraph:
+def ete3_to_networkx(tree: "ete3.Tree") -> nx.DiGraph:  # noqa: F821
     """Converts an ete3 Tree to a networkx DiGraph.
+
+    ``ete3`` is an optional dependency; this helper only operates on an
+    already-constructed ete3 ``Tree`` passed by the caller and does not import
+    ete3 itself.
 
     Args:
         tree: an ete3 Tree object
@@ -506,6 +559,7 @@ def cassiopeia_to_treedata(
 
     # Extract unstructured annotations (uns)
     uns = {}
+    name_mapping = {"missing_state_indicator": "missing_state", "root_sample_name": "root_name"}
     if preserve_metadata:
         # Store CassiopeiaTree-specific data in uns
         for key, value in cassiopeia_tree.parameters.items():
@@ -514,7 +568,10 @@ def cassiopeia_to_treedata(
             if hasattr(cassiopeia_tree, key):
                 value = getattr(cassiopeia_tree, key)
                 if value is not None:
-                    uns[key] = copy.deepcopy(value)
+                    if key in name_mapping:
+                        uns[name_mapping[key]] = copy.deepcopy(value)
+                    else:
+                        uns[key] = copy.deepcopy(value)
         uns["converted_from"] = "CassiopeiaTree"
 
     # Create TreeData object

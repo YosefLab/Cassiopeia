@@ -39,7 +39,7 @@ def tdata():
         obs=pd.DataFrame(index=list(CM.index)),
         obst={"t": g},
         obsm={"characters": CM},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
     )
 
 
@@ -107,9 +107,9 @@ def test_nj_supports_rooting_methods(method):
     tdata = td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)),
         obsm={"characters": cm},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
     )
-    cas.solver.nj(tdata, root=method, tree_key="nj")
+    cas.solver.nj(tdata, root=method, key_added="nj")
     rt = tdata.obst["nj"]
     assert nx.is_tree(rt)
     assert len(roots(rt)) == 1

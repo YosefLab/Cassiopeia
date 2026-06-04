@@ -16,15 +16,45 @@ import pandas as pd
 
 from cassiopeia.dissimilarity._compute import compute_dissimilarity_map
 from cassiopeia.dissimilarity._metrics import _resolve_dissimilarity
+from cassiopeia.utils import _get_characters
 
 if TYPE_CHECKING:
     from treedata import TreeData
 
 
+def _int_missing(missing_state_indicator) -> int:
+    """Resolve a single integer missing-state indicator for the numba path.
+
+    The metric ``numba`` kernels compare against a scalar integer, so a parameter
+    that may be a tuple of acceptable representations (e.g. the default
+    ``(-1, "-1", "NA", "-")``) is collapsed to its integer member (``-1`` if none
+    is found).
+    """
+    if isinstance(missing_state_indicator, (tuple, list, set)):
+        for v in missing_state_indicator:
+            if isinstance(v, (int, np.integer)):
+                return int(v)
+        return -1
+    return missing_state_indicator
+
+
+def _as_str_set(value) -> set[str]:
+    """Return the set of string representations a parameter may take.
+
+    A parameter resolved by :func:`cassiopeia.utils._get_parameter` may be a
+    single value or a tuple of acceptable representations (e.g. the default
+    ``(0, "0", "*")`` for the unmodified state).  Any of those representations
+    should be treated as equivalent when encoding a character matrix.
+    """
+    if isinstance(value, (tuple, list, set)):
+        return {str(v) for v in value}
+    return {str(value)}
+
+
 def _encode_integer_matrix(
-    arr: np.ndarray, missing_state_indicator, unmodified_state
-) -> tuple[np.ndarray, int]:
-    """Encode a (string/categorical) character matrix to a contiguous int64 array.
+    arr: pd.DataFrame, missing_state_indicator, unmodified_state
+) -> tuple[pd.DataFrame, int]:
+    """Encode a (string/categorical) character matrix to a contiguous int64 frame.
 
     Maps the unmodified state to ``0``, the missing state to ``-1``, and every
     other distinct value to a distinct positive integer.  This preserves the
@@ -32,20 +62,26 @@ def _encode_integer_matrix(
     the special ``0``/unmodified handling of
     :func:`~cassiopeia.dissimilarity.weighted_hamming`) while enabling the fast
     ``numba`` (``nopython``) path.  States are compared by string so
-    integer/string conventions (e.g. ``0`` vs ``"0"``) are matched.
+    integer/string conventions (e.g. ``0`` vs ``"0"``) are matched.  Either
+    argument may be a single value or a tuple of acceptable representations.
 
-    Returns ``(int64_array, -1)`` (the second value is the integer missing
+    Returns ``(int64_dataframe, -1)`` (the second value is the integer missing
     indicator to use with the encoded matrix).
     """
-    missing_s = str(missing_state_indicator)
-    unmodified_s = str(unmodified_state)
+    values = arr.to_numpy()
+    # Integer matrices already use the integer convention; return them unchanged
+    # (remapping would break priors keyed by the original state values).
+    if np.issubdtype(values.dtype, np.integer):
+        return arr, _int_missing(missing_state_indicator)
+    missing_set = _as_str_set(missing_state_indicator)
+    unmodified_set = _as_str_set(unmodified_state)
     mapping: dict = {}
     nxt = 1
-    for value in pd.unique(arr.ravel()):
+    for value in pd.unique(values.ravel()):
         vs = str(value)
-        if vs == unmodified_s:
+        if vs in unmodified_set:
             mapping[value] = 0
-        elif vs == missing_s:
+        elif vs in missing_set:
             mapping[value] = -1
         else:
             mapping[value] = nxt
@@ -53,13 +89,13 @@ def _encode_integer_matrix(
 
     out = np.empty(arr.shape, dtype=np.int64)
     for value, code in mapping.items():
-        out[arr == value] = code
-    return np.ascontiguousarray(out), -1
+        out[values == value] = code
+    return pd.DataFrame(out, index=arr.index, columns=arr.columns), -1
 
 
 def _prepare_integer_matrix(
-    arr: np.ndarray, missing_state_indicator, unmodified_state, weights
-) -> tuple[np.ndarray, int | float]:
+    arr: pd.DataFrame, missing_state_indicator, unmodified_state, weights
+) -> tuple[np.array, int]:
     """Return ``(array, missing_state_indicator)`` ready for the numba path.
 
     Integer matrices are used as-is.  When weights are *not* provided, non-integer
@@ -69,15 +105,17 @@ def _prepare_integer_matrix(
     weight keys stay valid; otherwise the matrix is left as-is (slower object
     path).
     """
-    if np.issubdtype(arr.dtype, np.integer):
-        return arr, missing_state_indicator
+    values = arr.to_numpy()
+    if np.issubdtype(values.dtype, np.integer):
+        return np.ascontiguousarray(values), _int_missing(missing_state_indicator)
     if weights is None:
-        return _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
+        df, missing = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
+        return np.ascontiguousarray(df.to_numpy()), missing
     try:
-        converted = np.ascontiguousarray(arr.astype(np.int64))
+        converted = np.ascontiguousarray(arr.astype(np.int64).to_numpy())
         return converted, int(missing_state_indicator)
     except (ValueError, TypeError):
-        return arr, missing_state_indicator
+        return np.ascontiguousarray(values), missing_state_indicator
 
 
 def _pairwise(
@@ -117,7 +155,7 @@ def _pairwise(
     """
     import scipy.spatial.distance
 
-    from cassiopeia.solver import solver_utilities
+    from cassiopeia.utils import _transform_priors
 
     fn = _resolve_dissimilarity(method)
     if fn is None:
@@ -129,7 +167,7 @@ def _pairwise(
 
     weights = None
     if priors:
-        weights = solver_utilities.transform_priors(priors, prior_transformation)
+        weights = _transform_priors(priors, prior_transformation)
 
     # Only compute dissimilarities between *unique* states to save runtime.
     cell_to_state = characters.astype(str).apply("|".join, axis=1)
@@ -139,7 +177,7 @@ def _pairwise(
     N = dedup_character_matrix.shape[0]
     # Coerce to integers so the metric takes the fast numba (nopython) path.
     char_array, missing = _prepare_integer_matrix(
-        dedup_character_matrix.to_numpy(), missing_state_indicator, unmodified_state, weights
+        dedup_character_matrix, missing_state_indicator, unmodified_state, weights
     )
     condensed = compute_dissimilarity_map(
         char_array,
@@ -211,9 +249,7 @@ def pairwise(
             "CassiopeiaTree.to_treedata()."
         )
 
-    from cassiopeia.solver import solver_utilities
-
-    chars = solver_utilities._get_characters(tdata, characters_key)
+    chars = _get_characters(tdata, characters_key)
     if chars is None:
         raise ValueError(
             "TreeData has no character matrix; store characters in "

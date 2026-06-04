@@ -12,7 +12,14 @@ import pandas as pd
 
 from cassiopeia import dissimilarity as dissimilarity_functions
 from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
-from cassiopeia.solver import rooting, solver_utilities
+from cassiopeia.solver import rooting
+from cassiopeia.utils import (
+    _get_characters,
+    _get_parameter,
+    _node_name_generator,
+    _save_dissimilarity,
+    _set_tree,
+)
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -61,104 +68,118 @@ def nj(
     dissim_fn: str | Callable | None = "nonmissing_hamming",
     root: str | None = "centroid",
     outgroup: str | None = None,
-    characters_key: str | None = None,
-    tree_key: str = "nj",
-    prior_transformation: str = "negative_log",
     save_dissim: bool = False,
-    unmodified_state: int | str = "*",
+    characters_key: str | None = None,
+    key_added: str = "nj",
+    prior_transformation: str = "negative_log",
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | None = None,
     threads: int = 1,
-) -> None:
-    """Dynamic Neighbor-Joining (Cython O(n²) average case). Modifies tdata in-place.
+    copy: bool = False,
+) -> TreeData | None:
+    """Reconstruct a tree with Dynamic Neighbor-Joining (Cython, O(n²) average case).
 
-    Rooting is selected by *root*: ``None`` (default) uses ``root_sample_name``
-    or the first obs name; otherwise *root* names a procedure registered in
+    Builds the tree from a precomputed dissimilarity map in ``tdata.obsp`` or,
+    when none is available, from the character matrix in ``tdata.obsm``. The
+    result is stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
+
+    Rooting is selected by *root*: ``None`` uses ``root_sample_name`` or the
+    first obs name; otherwise *root* names a procedure registered in
     :mod:`cassiopeia.solver.rooting` (``'outgroup'``, ``'midpoint'``,
-    ``'centroid'``, ``'shared_mutation'``).
-
-    When ``root='outgroup'`` with ``outgroup=None``, a synthetic all-zero leaf
-    named ``'root'`` is added to the distance matrix **before** building the
-    tree and used as the root; the synthetic leaf is removed from any saved
-    dissimilarity matrix.
+    ``'centroid'``, ``'shared_mutation'``). When ``root='outgroup'`` with
+    ``outgroup=None``, a synthetic all-unmodified leaf named ``'root'`` is added
+    to the distance matrix **before** building the tree and used as the root;
+    the synthetic leaf is removed from any saved dissimilarity matrix.
 
     Args:
-        tdata: TreeData to solve.
-        dissim_key: Key in ``tdata.obsp`` for precomputed distances (TreeData
-            only, ignored when ``root='outgroup'`` and ``outgroup=None``).
-        dissim_fn: Function used to compute pairwise dissimilarities.  Accepts a
-            callable or a string name of a built-in metric in
-            :mod:`cassiopeia.dissimilarity`.
+        tdata: TreeData to operate on.
+        dissim_key: Key in ``tdata.obsp`` for a precomputed dissimilarity map
+            (ignored when ``root='outgroup'`` and ``outgroup=None``).
+        dissim_fn: Dissimilarity function used when distances are not
+            precomputed. Accepts a callable or a string name of a built-in
+            metric in :mod:`cassiopeia.dissimilarity`.
         root: Rooting procedure name.
         outgroup: For ``root='outgroup'``: sample name to use as outgroup, or
-            ``None`` to add a synthetic all-zero outgroup named ``'root'``.
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm``
-            key (TreeData, default ``'characters'``).
-        tree_key: Key in ``tdata.obst`` for the result (TreeData only).
-        prior_transformation: Transformation applied to priors.
-        save_dissim: Whether to store the computed dissimilarity matrix
-            (TreeData: ``obsp[dissim_key or 'distances']``; CassiopeiaTree:
-            ``set_dissimilarity_map``).  The synthetic outgroup is excluded.
-        unmodified_state: State representing unmodified/uncut.
+            ``None`` to add a synthetic all-unmodified outgroup named ``'root'``.
+        save_dissim: Whether to store the computed dissimilarity map in
+            ``tdata.obsp[dissim_key or 'distances']``. The synthetic outgroup is
+            excluded.
+        characters_key: Key in ``tdata.obsm`` for the character matrix
+            (default ``'characters'``).
+        key_added: Key in ``tdata.obst`` for the resulting tree.
+        prior_transformation: Transformation applied to priors to form weights.
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, as a dict mapping character index
+            to dicts mapping state to prior probability (read from ``tdata.uns``
+            if ``None``).
         threads: Threads for parallel dissimilarity computation.
+        copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
+            and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
+    tdata = tdata.copy() if copy else tdata
     dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
     synthetic_root = root == "outgroup" and outgroup is None
 
-    if synthetic_root:
-        # Augment the character matrix with a synthetic all-zero 'root' leaf and
-        # compute distances fresh from the augmented matrix.
-        from cassiopeia.utils import _get_tree_parameter
+    # Use a precomputed map only when one is actually stored under *dissim_key*;
+    # the synthetic-outgroup root requires distances recomputed from the
+    # augmented character matrix, so *dissim_key* is then a save target only.
+    use_precomputed = dissim_key is not None and not synthetic_root and dissim_key in tdata.obsp
 
-        chars = solver_utilities._get_characters(tdata, characters_key)
-        if chars is None:
-            raise ValueError(
-                "A character matrix is required for root='outgroup' with "
-                "outgroup=None.  Provide characters_key or store characters "
-                "in obsm['characters']."
-            )
-        unmodified_state = _get_tree_parameter(tdata, "unmodified_state", default=unmodified_state)
-        # The synthetic outgroup must use the character matrix's own representation
-        # of the unmodified (uncut) state: 0 for integer matrices, otherwise the
-        # configured unmodified_state (e.g. "*" for string/categorical matrices).
-        if np.issubdtype(chars.to_numpy().dtype, np.integer):
-            unmodified_state = 0
-        root_row = pd.DataFrame(
-            [[unmodified_state] * chars.shape[1]],
-            index=["root"],
-            columns=chars.columns,
+    if use_precomputed:
+        dist_df = pd.DataFrame(
+            tdata.obsp[dissim_key], index=tdata.obs_names, columns=tdata.obs_names
         )
-        augmented = pd.concat([chars, root_row])
-        missing, priors = solver_utilities._get_missing_and_priors(tdata)
+    else:
+        unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+        missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
+        characters = _get_characters(tdata, characters_key)
+        priors = _get_parameter(tdata, "priors", value=priors)
+
+        if synthetic_root:
+            # Augment the character matrix with a synthetic all-unmodified 'root'
+            # leaf and compute distances fresh from the augmented matrix.
+            # ``unmodified_state`` may be a tuple of acceptable representations
+            # (e.g. the default ``(0, "0", "*")``); fill with a single scalar.
+            fill = (
+                unmodified_state[0]
+                if isinstance(unmodified_state, (tuple, list))
+                else unmodified_state
+            )
+            root_row = pd.DataFrame(
+                [[fill] * characters.shape[1]],
+                index=["root"],
+                columns=characters.columns,
+            )
+            characters = pd.concat([characters, root_row])
+
         dist_df = _pairwise(
-            augmented,
+            characters,
             dissimilarity_fn,
-            missing,
+            missing_state,
             priors,
             prior_transformation,
             threads,
             unmodified_state=unmodified_state,
         )
         if save_dissim:
-            # Exclude the synthetic outgroup from the saved dissimilarity matrix.
-            real = dist_df.drop(index="root", columns="root")
-            solver_utilities.save_distance_map(tdata, real, dissim_key)
-    else:
-        dist_df = solver_utilities.get_distance_map(
-            tdata,
-            dissimilarity_fn,
-            characters_key=characters_key,
-            dissim_key=dissim_key,
-            prior_transformation=prior_transformation,
-            threads=threads,
-        )
-        if save_dissim:
-            solver_utilities.save_distance_map(tdata, dist_df, dissim_key)
+            # Exclude the synthetic outgroup ('root') from the saved matrix.
+            real = dist_df.drop(index="root", columns="root") if synthetic_root else dist_df
+            _save_dissimilarity(tdata, real, dissim_key)
 
-    node_gen = solver_utilities.node_name_generator()
+    node_gen = _node_name_generator()
     graph = _build_graph(dist_df, node_gen)
 
     rooted = _root_graph(graph, root, outgroup, tdata, characters_key)
 
-    solver_utilities._set_tree(tdata, rooted, characters_key, tree_key)
+    _set_tree(tdata, rooted, key_added)
+
+    return tdata if copy else None
 
 
 def _root_graph(
@@ -190,7 +211,7 @@ def _root_graph(
     if root == "outgroup":
         proc_kwargs["outgroup"] = outgroup
     elif root == "shared_mutation":
-        proc_kwargs["characters"] = solver_utilities._get_characters(data, characters_key)
+        proc_kwargs["characters"] = _get_characters(data, characters_key)
     return rooting._PROCEDURES[root](graph, **proc_kwargs)
 
 
@@ -286,7 +307,7 @@ class NeighborJoiningSolver:
             threads=self.threads,
         )
         if collapse_mutationless_edges:
-            solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def root_tree(self, tree, root_sample, remaining_samples):
         """Removed. Raises :class:`NotImplementedError`."""

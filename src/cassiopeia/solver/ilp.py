@@ -21,8 +21,16 @@ import pandas as pd
 
 from cassiopeia import dissimilarity
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
 from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
-from cassiopeia.solver import ilp_solver_utilities, solver_utilities
+from cassiopeia.solver import ilp_solver_utilities
+from cassiopeia.utils import (
+    _get_characters,
+    _get_parameter,
+    _node_name_generator,
+    _set_tree,
+    _transform_priors,
+)
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -316,10 +324,10 @@ def _finalize(
     solution: nx.DiGraph,
     character_matrix: pd.DataFrame,
     characters_key: str | None,
-    tree_key: str,
+    key_added: str,
 ) -> None:
     """Rename internal (tuple) nodes to unique names and store the tree."""
-    node_name_generator = solver_utilities.node_name_generator()
+    node_name_generator = _node_name_generator()
     sample_set = set(character_matrix.index)
     rename = {}
     seen = set()
@@ -333,14 +341,12 @@ def _finalize(
         seen.add(new_name)
     tree = nx.relabel_nodes(solution, rename)
 
-    solver_utilities._set_tree(tdata, tree, characters_key, tree_key)
+    _set_tree(tdata, tree, key_added)
 
 
 @logger.namespaced("ILPSolver")
 def ilp(
-    tdata: CassiopeiaTree | TreeData,
-    characters_key: str | None = None,
-    tree_key: str = "ilp",
+    tdata: TreeData,
     convergence_time_limit: int = 12600,
     convergence_iteration_limit: int = 0,
     maximum_potential_graph_layer_size: int = 10000,
@@ -348,21 +354,23 @@ def ilp(
     weighted: bool = False,
     seed: int | None = None,
     mip_gap: float = 0.01,
-    prior_transformation: str = "negative_log",
     logfile: str | None = None,
-) -> None:
-    """Cassiopeia-ILP maximum-parsimony reconstruction.  Modifies *tdata* in-place.
+    characters_key: str | None = None,
+    key_added: str = "ilp",
+    prior_transformation: str = "negative_log",
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | None = None,
+    copy: bool = False,
+) -> TreeData | None:
+    """Reconstruct a tree with Cassiopeia-ILP (maximum parsimony).
 
     Infers a potential graph of evolutionary intermediates and solves a Steiner
-    Tree over it with Gurobi.  For :class:`~cassiopeia.data.CassiopeiaTree` the
-    topology is populated via ``populate_tree()``; for :class:`~treedata.TreeData`
-    the result ``nx.DiGraph`` is stored in ``tdata.obst[tree_key]``.
+    Tree over it with Gurobi. The character matrix is read from ``tdata.obsm``
+    and the result is stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
 
     Args:
-        tdata: CassiopeiaTree or TreeData to solve.
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
-            (TreeData, default ``'characters'``).
-        tree_key: Key in ``tdata.obst`` for the result (TreeData only).
+        tdata: TreeData to operate on.
         convergence_time_limit: ILP convergence time limit (seconds). Ignored if 0.
         convergence_iteration_limit: ILP iteration limit. Ignored if 0.
         maximum_potential_graph_layer_size: Maximum potential-graph layer size.
@@ -372,22 +380,32 @@ def ilp(
             Requires priors.
         seed: Random seed for ILP optimization.
         mip_gap: Objective gap for the MILP.
-        prior_transformation: Transformation applied to priors to form weights.
         logfile: File to log progress to, or ``None``.
+        characters_key: Key in ``tdata.obsm`` for the character matrix
+            (default ``'characters'``).
+        key_added: Key in ``tdata.obst`` for the resulting tree.
+        prior_transformation: Transformation applied to priors to form weights.
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, as a dict mapping character index
+            to dicts mapping state to prior probability (read from ``tdata.uns``
+            if ``None``).
+        copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
+            and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
 
     Raises:
         ILPSolverError: On missing character matrix, ambiguous states, or
             ``weighted=True`` without priors.
     """
-    character_matrix = solver_utilities._get_characters(tdata, characters_key)
-    if character_matrix is None:
-        raise ILPSolverError(
-            "No character matrix found; store characters in "
-            f"obsm[{characters_key or 'characters'!r}] (TreeData) or set one on "
-            "the CassiopeiaTree."
-        )
-    character_matrix = character_matrix.copy()
-    missing_state_indicator, priors = solver_utilities._get_missing_and_priors(tdata)
+    tdata = tdata.copy() if copy else tdata
+    character_matrix = _get_characters(tdata, characters_key).copy()
+    missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
+    unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    priors = _get_parameter(tdata, "priors", value=priors)
 
     if weighted and not priors:
         raise ILPSolverError("Specify prior probabilities for weighted analysis.")
@@ -413,15 +431,15 @@ def ilp(
     # The potential-graph / Steiner-tree machinery operates on integer states, so
     # encode string/categorical matrices (unmodified -> 0, missing -> -1, other
     # states -> distinct positive integers).
-    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
-        tdata, character_matrix, missing_state_indicator
+    character_matrix, missing_state_indicator = _encode_integer_matrix(
+        character_matrix, missing_state_indicator, unmodified_state
     )
 
     unique_character_matrix = character_matrix.drop_duplicates()
 
     weights = None
     if priors:
-        weights = solver_utilities.transform_priors(priors, prior_transformation)
+        weights = _transform_priors(priors, prior_transformation)
 
     # find the root of the tree & generate process ID
     root = tuple(
@@ -440,11 +458,11 @@ def ilp(
         optimal_solution = _append_sample_names_and_remove_spurious_leaves(
             optimal_solution, character_matrix
         )
-        _finalize(tdata, optimal_solution, character_matrix, characters_key, tree_key)
+        _finalize(tdata, optimal_solution, character_matrix, characters_key, key_added)
         if file_handler is not None:
             logger.removeHandler(file_handler)
             file_handler.close()
-        return
+        return tdata if copy else None
 
     # determine the maximum LCA distance to consider
     if (maximum_potential_graph_lca_distance is not None) and (
@@ -503,11 +521,13 @@ def ilp(
         optimal_solution, character_matrix
     )
 
-    _finalize(tdata, optimal_solution, character_matrix, characters_key, tree_key)
+    _finalize(tdata, optimal_solution, character_matrix, characters_key, key_added)
 
     if file_handler is not None:
         logger.removeHandler(file_handler)
         file_handler.close()
+
+    return tdata if copy else None
 
 
 # ── Backward-compat shim ─────────────────────────────────────────────────────
@@ -576,4 +596,4 @@ class ILPSolver:
             logfile=logfile,
         )
         if collapse_mutationless_edges:
-            solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)

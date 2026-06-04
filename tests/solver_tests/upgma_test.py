@@ -5,6 +5,7 @@ import itertools
 import networkx as nx
 import numpy as np
 import pandas as pd
+import pytest
 import treedata as td
 
 import cassiopeia as cas
@@ -39,7 +40,7 @@ def assert_triplets_match(observed, expected, samples):
 
 
 def chars_tdata(cm, priors=None):
-    uns = {"missing_state_indicator": -1}
+    uns = {"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1}
     if priors is not None:
         uns["priors"] = priors
     return td.TreeData(obs=pd.DataFrame(index=list(cm.index)), obsm={"characters": cm}, uns=uns)
@@ -68,7 +69,7 @@ def test_upgma_basic_from_distances():
     tdata = td.TreeData(obs=pd.DataFrame(index=samples))
     tdata.obsp["distances"] = delta.loc[samples, samples].to_numpy()
 
-    cas.solver.upgma(tdata, dissim_key="distances", tree_key="upgma")
+    cas.solver.upgma(tdata, dissim_key="distances", key_added="upgma")
     tree = tdata.obst["upgma"]
 
     assert set(leaves(tree)) == set(samples)
@@ -91,7 +92,7 @@ def test_upgma_basic_from_distances():
 
 def test_upgma_from_characters_no_priors():
     tdata = chars_tdata(PP_CM)
-    cas.solver.upgma(tdata, tree_key="upgma", dissim_fn="weighted_hamming")
+    cas.solver.upgma(tdata, key_added="upgma", dissim_fn="weighted_hamming")
     tree = tdata.obst["upgma"]
 
     expected = nx.DiGraph()
@@ -145,14 +146,14 @@ def test_upgma_duplicate_pairwise_value():
     )
     assert dm.loc["b", "d"] == 1.5
 
-    cas.solver.upgma(tdata, tree_key="upgma")
+    cas.solver.upgma(tdata, key_added="upgma")
     assert set(leaves(tdata.obst["upgma"])) == set(duplicates_cm.index)
 
 
 def test_upgma_then_collapse_edges():
     priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
     tdata = chars_tdata(PP_CM, priors=priors)
-    cas.solver.upgma(tdata, tree_key="upgma")
+    cas.solver.upgma(tdata, key_added="upgma")
     before = tdata.obst["upgma"].number_of_nodes()
 
     cas.tl.ancestral_characters(tdata, tree_key="upgma")
@@ -170,3 +171,7 @@ def test_pairwise_with_callable_metric():
         tdata, method=cas.dissimilarity.weighted_hamming, key_added="distances"
     )
     assert tdata.obsp["distances"].shape == (5, 5)
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])

@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 
 from cassiopeia import dissimilarity
-from cassiopeia.solver import solver_utilities
+from cassiopeia.mixins import PriorTransformationError
+from cassiopeia.utils import _transform_priors
 
 
 @pytest.fixture
@@ -29,9 +30,9 @@ def data():
         "ambiguous": [(0,), (-1, 0), (0,), (-1, 0), (1,), (1,)],
         "ambiguous_no_missing": [(0,), (1, 0), (0,), (2, 0), (1,), (1,)],
         "priors": priors,
-        "nlweights": solver_utilities.transform_priors(priors, "negative_log"),
-        "iweights": solver_utilities.transform_priors(priors, "inverse"),
-        "sqiweights": solver_utilities.transform_priors(priors, "square_root_inverse"),
+        "nlweights": _transform_priors(priors, "negative_log"),
+        "iweights": _transform_priors(priors, "inverse"),
+        "sqiweights": _transform_priors(priors, "square_root_inverse"),
     }
 
 
@@ -39,8 +40,8 @@ def data():
 
 
 def test_bad_prior_transformations():
-    with pytest.raises(solver_utilities.PriorTransformationError):
-        solver_utilities.transform_priors({0: {1: 0}, 1: {1: -1, 2: -1.5}}, "negative_log")
+    with pytest.raises(PriorTransformationError):
+        _transform_priors({0: {1: 0}, 1: {1: -1, 2: -1.5}}, "negative_log")
 
 
 def test_negative_log_prior_transformations(data):

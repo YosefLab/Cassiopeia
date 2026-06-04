@@ -28,8 +28,16 @@ from tqdm.auto import tqdm
 
 from cassiopeia import dissimilarity
 from cassiopeia.data import utilities as data_utilities
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
 from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
-from cassiopeia.solver import solver_utilities
+from cassiopeia.utils import (
+    _get_characters,
+    _get_parameter,
+    _node_name_generator,
+    _set_characters,
+    _set_tree,
+    _transform_priors,
+)
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -140,7 +148,10 @@ def _apply_bottom_solver(
 
     import treedata as td
 
-    uns = {"missing_state_indicator": missing_state_indicator}
+    # The subproblem character matrix is already integer-encoded (missing ->
+    # missing_state_indicator, unmodified -> 0), so set the canonical state keys
+    # the bottom solver reads to avoid re-resolving (and warning about) defaults.
+    uns = {"missing_state": missing_state_indicator, "unmodified_state": 0}
     if priors:
         uns["priors"] = priors
     sub_tdata = td.TreeData(
@@ -194,27 +205,30 @@ def _add_duplicates_to_tree_and_remove_spurious_leaves(
 
 
 def hybrid(
-    tdata: CassiopeiaTree | TreeData,
+    tdata: TreeData,
     top_solver: Callable | None = None,
     bottom_solver: Callable | None = None,
     lca_cutoff: float | None = None,
     cell_cutoff: int | None = None,
-    threads: int = 1,
-    prior_transformation: str = "negative_log",
     progress_bar: bool = True,
     characters_key: str | None = None,
-    tree_key: str = "hybrid",
-) -> None:
-    """Hybrid (top-down split + bottom solver) reconstruction.  Modifies *tdata* in-place.
+    key_added: str = "hybrid",
+    prior_transformation: str = "negative_log",
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | None = None,
+    threads: int = 1,
+    copy: bool = False,
+) -> TreeData | None:
+    """Reconstruct a tree with a hybrid (top-down split + bottom solver) approach.
 
     A top-down split criterion clusters cells until a cutoff (``lca_cutoff`` or
     ``cell_cutoff``) is reached, then *bottom_solver* reconstructs each
-    subproblem.  For :class:`~treedata.TreeData` the result ``nx.DiGraph`` is
-    stored in ``tdata.obst[tree_key]``; for :class:`~cassiopeia.data.CassiopeiaTree`
-    the topology is populated via ``populate_tree()``.
+    subproblem. The character matrix is read from ``tdata.obsm`` and the result
+    is stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
 
     Args:
-        tdata: CassiopeiaTree or TreeData to solve.
+        tdata: TreeData to operate on.
         top_solver: Split function
             ``(character_matrix, samples, weights, missing_state_indicator) ->
             (left, right)``.  Defaults to the vanilla greedy split.
@@ -224,12 +238,23 @@ def hybrid(
             ``threads > 1`` (use module-level functions / ``partial``, not closures).
         lca_cutoff: LCA-distance cutoff for switching to the bottom solver.
         cell_cutoff: Cell-count cutoff for switching to the bottom solver.
-        threads: Number of subproblems to solve concurrently.
-        prior_transformation: Transformation applied to priors to form weights.
         progress_bar: Whether to display a progress bar over subproblems.
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
-            (TreeData, default ``'characters'``).
-        tree_key: Key in ``tdata.obst`` for the result (TreeData only).
+        characters_key: Key in ``tdata.obsm`` for the character matrix
+            (default ``'characters'``).
+        key_added: Key in ``tdata.obst`` for the resulting tree.
+        prior_transformation: Transformation applied to priors to form weights.
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, as a dict mapping character index
+            to dicts mapping state to prior probability (read from ``tdata.uns``
+            if ``None``).
+        threads: Number of subproblems to solve concurrently.
+        copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
+            and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
 
     Raises:
         HybridSolverError: If no cutoff or no bottom_solver is provided, or if no
@@ -248,28 +273,24 @@ def hybrid(
 
         top_solver = _greedy_split
 
-    character_matrix = solver_utilities._get_characters(tdata, characters_key)
-    if character_matrix is None:
-        raise HybridSolverError(
-            "No character matrix found; store characters in "
-            f"obsm[{characters_key or 'characters'!r}] (TreeData) or set one on "
-            "the CassiopeiaTree."
-        )
-    character_matrix = character_matrix.copy()
-    missing_state_indicator, priors = solver_utilities._get_missing_and_priors(tdata)
+    tdata = tdata.copy() if copy else tdata
+    character_matrix = _get_characters(tdata, characters_key).copy()
+    missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
+    unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    priors = _get_parameter(tdata, "priors", value=priors)
     # Encode string/categorical states to integers so the greedy split logic and
     # the bottom solver operate on the integer convention.
-    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
-        tdata, character_matrix, missing_state_indicator
+    character_matrix, missing_state_indicator = _encode_integer_matrix(
+        character_matrix, missing_state_indicator, unmodified_state
     )
 
     weights = None
     if priors:
-        weights = solver_utilities.transform_priors(priors, prior_transformation)
+        weights = _transform_priors(priors, prior_transformation)
 
     unique_character_matrix = character_matrix.drop_duplicates()
 
-    node_name_generator = solver_utilities.node_name_generator()
+    node_name_generator = _node_name_generator()
 
     tree = nx.DiGraph()
     _, subproblems, tree = _apply_top_solver(
@@ -328,7 +349,10 @@ def hybrid(
         tree, character_matrix, node_name_generator
     )
 
-    solver_utilities._set_tree(tdata, samples_tree, characters_key, tree_key)
+    _set_tree(tdata, samples_tree, key_added)
+    _set_characters(tdata, character_matrix, characters_key or "characters")
+
+    return tdata if copy else None
 
 
 # ── Backward-compat shim ─────────────────────────────────────────────────────
@@ -403,4 +427,4 @@ class HybridSolver:
             characters_key=layer,
         )
         if collapse_mutationless_edges:
-            solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)

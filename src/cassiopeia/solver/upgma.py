@@ -11,8 +11,14 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia import dissimilarity as dissimilarity_functions
-from cassiopeia.dissimilarity import _resolve_dissimilarity
-from cassiopeia.solver import solver_utilities
+from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
+from cassiopeia.utils import (
+    _get_characters,
+    _get_parameter,
+    _node_name_generator,
+    _save_dissimilarity,
+    _set_tree,
+)
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -63,58 +69,80 @@ def _build_graph(
 
 
 def upgma(
-    tdata: CassiopeiaTree | TreeData,
+    tdata: TreeData,
     dissim_key: str | None = None,
     dissim_fn: str | Callable | None = "nonmissing_hamming",
-    characters_key: str | None = None,
-    tree_key: str = "upgma",
-    prior_transformation: str = "negative_log",
     save_dissim: bool = False,
+    characters_key: str | None = None,
+    key_added: str = "upgma",
+    prior_transformation: str = "negative_log",
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | None = None,
     threads: int = 1,
-) -> None:
-    """UPGMA with O(n²) Cython implementation. Modifies tdata in-place.
+    copy: bool = False,
+) -> TreeData | None:
+    """Reconstruct a tree with UPGMA (Cython, O(n²) average case).
 
-    Produces an ultrametric tree.  UPGMA is self-rooting; no ``root`` parameter
-    is needed.
-
-    For :class:`~cassiopeia.data.CassiopeiaTree`: populates tree topology via
-    ``populate_tree()``.  For :class:`~treedata.TreeData`: stores the result
-    ``nx.DiGraph`` in ``tdata.obst[tree_key]``.
+    Builds the tree from a precomputed dissimilarity map in ``tdata.obsp`` or,
+    when none is available, from the character matrix in ``tdata.obsm``. The
+    result is stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
 
     Args:
-        tdata: CassiopeiaTree or TreeData to solve.
-        dissim_key: Key in ``tdata.obsp`` for precomputed distances (TreeData only).
-        dissim_fn: Function used when distances are not precomputed.  Accepts a
-            callable or a string name of a built-in metric in
-            :mod:`cassiopeia.dissimilarity`.
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
-            (TreeData, default ``'characters'``).
-        tree_key: Key in ``tdata.obst`` for the result (TreeData only).
-        prior_transformation: Transformation applied to priors when computing
-            dissimilarity weights.
-        save_dissim: Whether to store the computed dissimilarity matrix
-            (TreeData: ``obsp[dissim_key or 'distances']``; CassiopeiaTree:
-            ``set_dissimilarity_map``).
+        tdata: TreeData to operate on.
+        dissim_key: Key in ``tdata.obsp`` for a precomputed dissimilarity map.
+        dissim_fn: Dissimilarity function used when distances are not
+            precomputed. Accepts a callable or a string name of a built-in
+            metric in :mod:`cassiopeia.dissimilarity`.
+        save_dissim: Whether to store the computed dissimilarity map in
+            ``tdata.obsp[dissim_key or 'distances']``.
+        characters_key: Key in ``tdata.obsm`` for the character matrix
+            (default ``'characters'``).
+        key_added: Key in ``tdata.obst`` for the resulting tree.
+        prior_transformation: Transformation applied to priors to form weights.
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, as a dict mapping character index
+            to dicts mapping state to prior probability (read from ``tdata.uns``
+            if ``None``).
         threads: Threads for parallel dissimilarity computation.
+        copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
+            and return ``None``.
+
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
+    tdata = tdata.copy() if copy else tdata
     dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
 
-    dist_df = solver_utilities.get_distance_map(
-        tdata,
-        dissimilarity_fn,
-        characters_key=characters_key,
-        dissim_key=dissim_key,
-        prior_transformation=prior_transformation,
-        threads=threads,
-    )
+    if dissim_key is None:
+        unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+        missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
+        characters = _get_characters(tdata, characters_key)
+        priors = _get_parameter(tdata, "priors", value=priors)
+        dist_df = _pairwise(
+            characters,
+            dissimilarity_fn,
+            missing_state,
+            priors,
+            prior_transformation,
+            threads,
+            unmodified_state=unmodified_state,
+        )
+        if save_dissim:
+            _save_dissimilarity(tdata, dist_df, dissim_key)
+    else:
+        dist_df = pd.DataFrame(
+            tdata.obsp[dissim_key], index=tdata.obs_names, columns=tdata.obs_names
+        )
 
-    if save_dissim:
-        solver_utilities.save_distance_map(tdata, dist_df, dissim_key)
-
-    node_gen = solver_utilities.node_name_generator()
+    node_gen = _node_name_generator()
     rooted = _build_graph(dist_df, node_gen)
 
-    solver_utilities._set_tree(tdata, rooted, characters_key, tree_key)
+    _set_tree(tdata, rooted, key_added)
+
+    return tdata if copy else None
 
 
 # ── Backward-compat class wrapper ────────────────────────────────────────────
@@ -194,7 +222,7 @@ class UPGMASolver:
             threads=self.threads,
         )
         if collapse_mutationless_edges:
-            solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def root_tree(self, tree, root_sample, remaining_samples):
         """Removed. Raises :class:`NotImplementedError`."""

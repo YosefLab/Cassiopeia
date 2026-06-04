@@ -41,6 +41,7 @@ def cassiopeia_trees():
     )
     priors1 = {0: {1: 1}, 1: {1: 1}, 2: {1: 1}}
     discrete_tree = cas.data.CassiopeiaTree(tree=small_net, character_matrix=cm1, priors=priors1)
+    discrete_tree.parameters["unmodified_state"] = 0
     root_time = discrete_tree.get_time(discrete_tree.root)
     for node in discrete_tree.nodes:
         discrete_tree._CassiopeiaTree__network.nodes[node]["depth"] = (
@@ -63,6 +64,7 @@ def cassiopeia_trees():
         2: {1: 0.2, 2: 0.7, 3: 0.1},
     }
     continuous_tree = cas.data.CassiopeiaTree(tree=small_net, character_matrix=cm2, priors=priors2)
+    continuous_tree.parameters["unmodified_state"] = 0
     continuous_tree.set_branch_length("node5", "node0", 1.5)
     continuous_tree.set_branch_length("node6", "node3", 2)
     root_time = continuous_tree.get_time(continuous_tree.root)
@@ -234,11 +236,13 @@ def test_deprecation_in_all_functions(cassiopeia_trees):
         parameter_estimators.get_proportion_of_missing_data(discrete_tree, layer="characters")
 
     with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
-        parameter_estimators.estimate_mutation_rate(discrete_tree, layer="characters")
+        parameter_estimators.estimate_mutation_rate(
+            discrete_tree, continuous=False, layer="characters"
+        )
 
     with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
         parameter_estimators.estimate_missing_data_rates(
-            discrete_tree, stochastic_missing_probability=0.1, layer="characters"
+            discrete_tree, continuous=False, stochastic_missing_probability=0.1, layer="characters"
         )
 
 

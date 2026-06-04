@@ -60,6 +60,7 @@ Topology
 
    tl.compute_expansion_pvalues
    tl.collapse_edges
+   tl.mean_depth
 
 Ancestral Characters
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -21,7 +21,6 @@ import warnings
 from collections.abc import Callable, Iterator
 from typing import Any, Optional
 
-import ete3
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -34,7 +33,6 @@ from cassiopeia.mixins import (
     CassiopeiaTreeWarning,
     is_ambiguous_state,
 )
-from cassiopeia.solver import solver_utilities
 
 
 class CassiopeiaTree:
@@ -98,7 +96,7 @@ class CassiopeiaTree:
         cell_meta: pd.DataFrame | None = None,
         character_meta: pd.DataFrame | None = None,
         priors: dict[int, dict[int, float]] | None = None,
-        tree: str | ete3.Tree | nx.DiGraph | None = None,
+        tree: str | nx.DiGraph | None = None,
         dissimilarity_map: pd.DataFrame | None = None,
         parameters: dict[str, Any] | None = None,
         root_sample_name: str | None = None,
@@ -132,7 +130,7 @@ class CassiopeiaTree:
 
     def populate_tree(
         self,
-        tree: str | ete3.Tree | nx.DiGraph,
+        tree: str | nx.DiGraph,
         layer: str | None = None,
     ) -> None:
         """Populates a tree object in CassiopeiaTree.
@@ -144,8 +142,8 @@ class CassiopeiaTree:
         corresponding to their tree depth.
 
         Args:
-            tree: A tree topology specified as a networkx DiGraph, a newick
-                string, or an ete3 Tree.
+            tree: A tree topology specified as a networkx DiGraph or a newick
+                string. An ete3 ``Tree`` is also accepted if ete3 is installed.
             layer: Layer to use for character matrix. If this is None,
                 then the current `character_matrix` variable will be used.
         """
@@ -153,12 +151,11 @@ class CassiopeiaTree:
             self.__network = tree
         elif isinstance(tree, str):
             self.__network = utilities.newick_to_networkx(tree)
-        elif isinstance(tree, ete3.Tree):
+        elif hasattr(tree, "traverse"):
+            # Duck-typed ete3 Tree (optional dependency, not imported here).
             self.__network = utilities.ete3_to_networkx(tree)
         else:
-            raise CassiopeiaTreeError(
-                "Please pass an ete3 Tree, a newick string, or a Networkx DiGraph object."
-            )
+            raise CassiopeiaTreeError("Please pass a newick string or a Networkx DiGraph object.")
 
         # enforce all names to be strings
         rename_dictionary = {}
@@ -1578,7 +1575,7 @@ class CassiopeiaTree:
         if len(subtree_nodes) <= 1:
             return
 
-        collapsed_subtree = utils.collapse_unifurcations(
+        collapsed_subtree = utils._collapse_unifurcations(
             self.__network.subgraph(subtree_nodes).copy()
         )
 
@@ -1786,9 +1783,11 @@ class CassiopeiaTree:
         if character_matrix is None:
             raise CassiopeiaTreeError("No character matrix is detected in this tree.")
 
+        from cassiopeia.utils import _transform_priors
+
         weights = None
         if self.priors:
-            weights = solver_utilities.transform_priors(self.priors, prior_transformation)
+            weights = _transform_priors(self.priors, prior_transformation)
 
         # Only compute dissimilarities between *unique* states to save runtime!
         cell_to_state = character_matrix.astype(str).apply("|".join, axis=1)

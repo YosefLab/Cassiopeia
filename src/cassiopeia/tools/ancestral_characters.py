@@ -7,7 +7,7 @@ from cassiopeia.mixins import is_ambiguous_state
 from cassiopeia.mixins.errors import CassiopeiaError
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
-    _get_character_matrix,
+    _get_characters,
     _get_digraph,
 )
 
@@ -185,7 +185,7 @@ def ancestral_characters(
 
     missing = _resolve_missing_state_indicator(tree, missing_state_indicator)
     if not isinstance(tree, nx.DiGraph):
-        character_matrix = _get_character_matrix(tree, characters_key)
+        character_matrix = _get_characters(tree, characters_key)
         _seed_leaf_states(g, character_matrix, characters_key)
 
     reconstruct_ancestral_characters(g, missing, characters_key)

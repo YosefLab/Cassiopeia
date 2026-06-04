@@ -83,7 +83,7 @@ def make_chars_tdata(cm):
     return td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)),
         obsm={"characters": cm},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
     )
 
 
@@ -111,7 +111,7 @@ def dist_tdata():
 
 
 def test_nj_treedata_dist_key(dist_tdata):
-    cas.solver.nj(dist_tdata, dissim_key="distances", tree_key="nj")
+    cas.solver.nj(dist_tdata, dissim_key="distances", key_added="nj")
     assert "nj" in dist_tdata.obst
     tree = dist_tdata.obst["nj"]
     assert isinstance(tree, nx.DiGraph)
@@ -119,18 +119,18 @@ def test_nj_treedata_dist_key(dist_tdata):
 
 
 def test_upgma_treedata_dist_key(dist_tdata):
-    cas.solver.upgma(dist_tdata, dissim_key="distances", tree_key="upgma")
+    cas.solver.upgma(dist_tdata, dissim_key="distances", key_added="upgma")
     assert isinstance(dist_tdata.obst["upgma"], nx.DiGraph)
 
 
 def test_nj_treedata_named_outgroup_clusters(dist_tdata):
-    cas.solver.nj(dist_tdata, dissim_key="distances", root="outgroup", outgroup="e", tree_key="nj")
+    cas.solver.nj(dist_tdata, dissim_key="distances", root="outgroup", outgroup="e", key_added="nj")
     tree = dist_tdata.obst["nj"]
     assert find_triplet_structure(("a", "b", "c"), tree) == "ab"
 
 
 def test_upgma_treedata_groups_cluster_correctly(dist_tdata):
-    cas.solver.upgma(dist_tdata, dissim_key="distances", tree_key="upgma")
+    cas.solver.upgma(dist_tdata, dissim_key="distances", key_added="upgma")
     tree = dist_tdata.obst["upgma"]
     ab = set(nx.ancestors(tree, "a")) & set(nx.ancestors(tree, "b"))
     ac = set(nx.ancestors(tree, "a")) & set(nx.ancestors(tree, "c"))
@@ -152,7 +152,7 @@ def test_upgma_treedata_default_tree_key(dist_tdata):
 
 def test_nj_treedata_from_characters():
     tdata = make_chars_tdata(CM)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     tree = tdata.obst["nj"]
     assert set(leaves(tree)) == set(CM.index)
     structures = [
@@ -164,7 +164,7 @@ def test_nj_treedata_from_characters():
 
 def test_upgma_treedata_from_characters():
     tdata = make_chars_tdata(CM)
-    cas.solver.upgma(tdata, tree_key="upgma")
+    cas.solver.upgma(tdata, key_added="upgma")
     tree = tdata.obst["upgma"]
     assert set(leaves(tree)) == set(CM.index)
 
@@ -172,8 +172,8 @@ def test_upgma_treedata_from_characters():
 def test_nj_and_upgma_agree_on_known_groups():
     nj_tdata = make_chars_tdata(CM)
     upgma_tdata = make_chars_tdata(CM)
-    cas.solver.nj(nj_tdata, root="outgroup", tree_key="nj", dissim_fn="weighted_hamming")
-    cas.solver.upgma(upgma_tdata, tree_key="upgma", dissim_fn="weighted_hamming")
+    cas.solver.nj(nj_tdata, root="outgroup", key_added="nj", dissim_fn="weighted_hamming")
+    cas.solver.upgma(upgma_tdata, key_added="upgma", dissim_fn="weighted_hamming")
     nj_topo = nj_tdata.obst["nj"]
     upgma_topo = upgma_tdata.obst["upgma"]
     import itertools
@@ -187,7 +187,7 @@ def test_nj_and_upgma_agree_on_known_groups():
 
 def test_duplicate_sample_treedata():
     tdata = make_chars_tdata(DUPLICATE_CM)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     assert set(leaves(tdata.obst["nj"])) == set(DUPLICATE_CM.index)
 
 
@@ -220,13 +220,13 @@ def test_pairwise_rejects_non_treedata():
 
 def test_nj_save_dissim_default_off():
     tdata = make_chars_tdata(SMALL_CM)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     assert len(tdata.obsp) == 0
 
 
 def test_nj_save_dissim_excludes_synthetic_outgroup():
     tdata = make_chars_tdata(SMALL_CM)
-    cas.solver.nj(tdata, root="outgroup", save_dissim=True, dissim_key="d", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", save_dissim=True, dissim_key="d", key_added="nj")
     dm = tdata.obsp["d"]
     n = SMALL_CM.shape[0]
     # the synthetic 'root' outgroup is excluded from the saved matrix
@@ -235,9 +235,19 @@ def test_nj_save_dissim_excludes_synthetic_outgroup():
 
 def test_upgma_save_dissim():
     tdata = make_chars_tdata(SMALL_CM)
-    cas.solver.upgma(tdata, save_dissim=True, tree_key="upgma")
+    cas.solver.upgma(tdata, save_dissim=True, key_added="upgma")
     assert "distances" in tdata.obsp
     assert tdata.obsp["distances"].shape == (SMALL_CM.shape[0], SMALL_CM.shape[0])
+
+
+def test_nj_copy_returns_new_and_leaves_original():
+    tdata = make_chars_tdata(CM)
+    out = cas.solver.nj(tdata, root="outgroup", key_added="nj", copy=True)
+    assert isinstance(out, td.TreeData)
+    assert "nj" in out.obst
+    assert "nj" not in tdata.obst
+    assert cas.solver.nj(tdata, root="outgroup", key_added="nj") is None
+    assert "nj" in tdata.obst
 
 
 # ── Rooting registry ──────────────────────────────────────────────────────────
@@ -291,7 +301,7 @@ def test_upgma_solver_fast_false_raises():
 
 def test_solvers_annotate_depth():
     tdata = make_chars_tdata(SMALL_CM)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     g = tdata.obst["nj"]
     assert all("depth" in g.nodes[n] for n in g.nodes)
     root = [n for n in g if g.in_degree(n) == 0][0]
@@ -299,6 +309,6 @@ def test_solvers_annotate_depth():
     # a child of the root has depth 1
     assert all(g.nodes[c]["depth"] == 1 for c in g.successors(root))
 
-    cas.solver.greedy(tdata, tree_key="greedy")
+    cas.solver.greedy(tdata, key_added="greedy")
     gg = tdata.obst["greedy"]
     assert all("depth" in gg.nodes[n] for n in gg.nodes)

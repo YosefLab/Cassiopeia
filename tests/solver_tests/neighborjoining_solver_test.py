@@ -30,7 +30,7 @@ def leaves(g):
 
 
 def chars_tdata(cm, priors=None):
-    uns = {"missing_state_indicator": -1}
+    uns = {"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1}
     if priors is not None:
         uns["priors"] = priors
     return td.TreeData(obs=pd.DataFrame(index=list(cm.index)), obsm={"characters": cm}, uns=uns)
@@ -60,7 +60,7 @@ def test_nj_basic_from_distances_named_outgroup():
     tdata.obsp["distances"] = delta.loc[samples, samples].to_numpy()
 
     # Root with "b" as the outgroup; "b" remains a leaf.
-    cas.solver.nj(tdata, dissim_key="distances", root="outgroup", outgroup="b", tree_key="nj")
+    cas.solver.nj(tdata, dissim_key="distances", root="outgroup", outgroup="b", key_added="nj")
     tree = tdata.obst["nj"]
     assert set(leaves(tree)) == set(samples)
     # c and d are closer to each other than c is to e.
@@ -71,7 +71,7 @@ def test_nj_basic_from_distances_named_outgroup():
 
 def test_nj_from_characters_synthetic_root():
     tdata = chars_tdata(PP_CM)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     tree = tdata.obst["nj"]
     assert set(leaves(tree)) == set(PP_CM.index)
     # b and c share more derived states than either with d.
@@ -101,14 +101,14 @@ def test_nj_duplicates_preserved():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(duplicates_cm)
-    cas.solver.nj(tdata, root="outgroup", tree_key="nj")
+    cas.solver.nj(tdata, root="outgroup", key_added="nj")
     assert set(leaves(tdata.obst["nj"])) == set(duplicates_cm.index)
 
 
 def test_nj_default_root_uses_first_obs():
     tdata = chars_tdata(PP_CM)
     # root=None: TreeData default uses the first obs name as the root.
-    cas.solver.nj(tdata, tree_key="nj")
+    cas.solver.nj(tdata, key_added="nj")
     tree = tdata.obst["nj"]
     assert isinstance(tree, nx.DiGraph)
     assert len(tree.nodes) > 0

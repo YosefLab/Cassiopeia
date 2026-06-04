@@ -51,7 +51,7 @@ def chars_tdata(cm):
     return td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)),
         obsm={"characters": cm},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
     )
 
 
@@ -279,7 +279,7 @@ def test_ilp_single_sample():
     # A single unique state needs no ILP optimization (no Gurobi required).
     cm = pd.DataFrame([[1], [1], [1]], index=["a", "b", "c"], columns=["x1"])
     tdata = chars_tdata(cm)
-    cas.solver.ilp(tdata, tree_key="ilp")
+    cas.solver.ilp(tdata, key_added="ilp")
     assert set(leaves(tdata.obst["ilp"])) == {"a", "b", "c"}
 
 
@@ -289,7 +289,7 @@ def test_ilp_single_sample():
 @pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
 def test_ilp_perfect_phylogeny():
     tdata = chars_tdata(PP_CM)
-    cas.solver.ilp(tdata, mip_gap=0.0, tree_key="ilp")
+    cas.solver.ilp(tdata, mip_gap=0.0, key_added="ilp")
     tree = tdata.obst["ilp"]
     assert len([n for n in tree if tree.in_degree(n) == 0]) == 1
     assert set(leaves(tree)) == set(PP_CM.index)
@@ -316,7 +316,7 @@ def test_ilp_perfect_phylogeny():
 @pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
 def test_ilp_missing_data():
     tdata = chars_tdata(MISSING_CM)
-    cas.solver.ilp(tdata, mip_gap=0.0, tree_key="ilp")
+    cas.solver.ilp(tdata, mip_gap=0.0, key_added="ilp")
     tree = tdata.obst["ilp"]
     assert len([n for n in tree if tree.in_degree(n) == 0]) == 1
     assert set(leaves(tree)) == set(MISSING_CM.index)

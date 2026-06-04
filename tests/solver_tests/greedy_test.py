@@ -4,6 +4,7 @@ import warnings
 
 import networkx as nx
 import pandas as pd
+import pytest
 import treedata as td
 
 import cassiopeia as cas
@@ -32,9 +33,10 @@ def leaves(g):
 
 
 def chars_tdata(cm, priors=None):
-    uns = {"missing_state_indicator": -1}
+    uns = {"missing_state": -1, "unmodified_state": 0}
     if priors is not None:
         uns["priors"] = priors
+
     return td.TreeData(obs=pd.DataFrame(index=list(cm.index)), obsm={"characters": cm}, uns=uns)
 
 
@@ -97,7 +99,7 @@ def test_greedy_basic_topology():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(cm)
-    cas.solver.greedy(tdata, tree_key="greedy")
+    cas.solver.greedy(tdata, key_added="greedy", missing_state=-1, unmodified_state=0)
     tree = tdata.obst["greedy"]
 
     assert set(leaves(tree)) == set(cm.index)
@@ -114,7 +116,7 @@ def test_greedy_with_priors_runs():
     )
     priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
     tdata = chars_tdata(cm, priors=priors)
-    cas.solver.greedy(tdata, tree_key="greedy")
+    cas.solver.greedy(tdata, key_added="greedy", missing_state=-1, unmodified_state=0)
     assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
 
 
@@ -132,8 +134,65 @@ def test_greedy_duplicates_preserved():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(cm)
-    cas.solver.greedy(tdata, tree_key="greedy")
+    cas.solver.greedy(tdata, key_added="greedy")
     assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
+
+
+def test_greedy_copy_returns_new_and_leaves_original():
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 1, 0], "b": [1, 2, 0], "c": [1, 2, 1], "d": [2, 0, 0], "e": [2, 0, 2]},
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    tdata = chars_tdata(cm)
+    out = cas.solver.greedy(tdata, key_added="greedy", copy=True)
+    assert isinstance(out, td.TreeData)
+    assert "greedy" in out.obst
+    # original is untouched when copy=True
+    assert "greedy" not in tdata.obst
+    # in-place returns None
+    assert cas.solver.greedy(tdata, key_added="greedy") is None
+    assert "greedy" in tdata.obst
+
+
+# ── missing-data classifier ───────────────────────────────────────────────────
+
+
+def test_greedy_average_classifier_string_and_callable_match():
+    from cassiopeia.solver.greedy import _assign_missing_average
+
+    cm = pd.DataFrame.from_dict(
+        {
+            "a": [1, 1, 0],
+            "b": [1, 2, 0],
+            "c": [-1, 2, 1],
+            "d": [2, 0, 0],
+            "e": [2, 0, 2],
+        },
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    str_tdata = chars_tdata(cm.copy())
+    cb_tdata = chars_tdata(cm.copy())
+    # the "average" string default resolves to _assign_missing_average
+    cas.solver.greedy(str_tdata, key_added="greedy", missing_data_classifier="average")
+    cas.solver.greedy(cb_tdata, key_added="greedy", missing_data_classifier=_assign_missing_average)
+    assert set(leaves(str_tdata.obst["greedy"])) == set(cm.index)
+    for t in [("a", "d", "e"), ("b", "c", "d")]:
+        assert find_triplet_structure(t, str_tdata.obst["greedy"]) == find_triplet_structure(
+            t, cb_tdata.obst["greedy"]
+        )
+
+
+def test_greedy_unknown_classifier_raises():
+    from cassiopeia.mixins import GreedySolverError
+
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 0], "b": [1, 1], "c": [2, 0]}, orient="index", columns=["x1", "x2"]
+    )
+    tdata = chars_tdata(cm)
+    with pytest.raises(GreedySolverError):
+        cas.solver.greedy(tdata, key_added="greedy", missing_data_classifier="not_a_method")
 
 
 # ── deprecation ───────────────────────────────────────────────────────────────
@@ -144,3 +203,7 @@ def test_vanilla_greedy_solver_deprecated():
         warnings.simplefilter("always")
         cas.solver.VanillaGreedySolver()
         assert any(issubclass(x.category, DeprecationWarning) for x in w)
+
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])

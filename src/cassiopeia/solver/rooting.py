@@ -120,7 +120,7 @@ def reroot_on_edge(graph: nx.DiGraph, new_root, best_edge) -> nx.DiGraph:
     Node attributes are preserved; the previous root and any resulting
     unifurcations are collapsed.
     """
-    from cassiopeia.utils import collapse_unifurcations
+    from cassiopeia.utils import _collapse_unifurcations
 
     undirected = graph.to_undirected()
     u, v = best_edge
@@ -139,7 +139,7 @@ def reroot_on_edge(graph: nx.DiGraph, new_root, best_edge) -> nx.DiGraph:
         attrs = graph.get_edge_data(p, c) or graph.get_edge_data(c, p) or {}
         rooted.add_edge(p, c, **attrs)
 
-    return collapse_unifurcations(rooted, collapse_root=True)
+    return _collapse_unifurcations(rooted, collapse_root=True)
 
 
 # ── Procedures ────────────────────────────────────────────────────────────────
@@ -404,7 +404,7 @@ def reroot(
     """
     from treedata import TreeData
 
-    from cassiopeia.utils import _get_character_matrix, _get_digraph
+    from cassiopeia.utils import _get_characters, _get_digraph
 
     if not isinstance(tdata, TreeData):
         raise TypeError(
@@ -419,7 +419,7 @@ def reroot(
 
     proc_kwargs = dict(kwargs)
     if method == "shared_mutation" and proc_kwargs.get("characters") is None:
-        proc_kwargs["characters"] = _get_character_matrix(tdata, characters_key)
+        proc_kwargs["characters"] = _get_characters(tdata, characters_key)
     if method == "midpoint":
         proc_kwargs.setdefault("time_key", time_key)
 

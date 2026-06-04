@@ -48,7 +48,7 @@ INT_CM = pd.DataFrame.from_dict(
 
 
 def make_tdata(cm=CM, unmodified="*"):
-    uns = {"unmodified_state": unmodified} if unmodified is not None else {}
+    uns = {"missing_state": -1, "unmodified_state": unmodified if unmodified is not None else 0}
     return td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)), obsm={"characters": cm.copy()}, uns=uns
     )
@@ -63,16 +63,16 @@ def roots(g):
 
 
 SOLVERS = [
-    pytest.param(lambda t: cas.solver.nj(t, tree_key="t"), id="nj"),
-    pytest.param(lambda t: cas.solver.upgma(t, tree_key="t"), id="upgma"),
-    pytest.param(lambda t: cas.solver.greedy(t, tree_key="t"), id="greedy"),
+    pytest.param(lambda t: cas.solver.nj(t, key_added="t"), id="nj"),
+    pytest.param(lambda t: cas.solver.upgma(t, key_added="t"), id="upgma"),
+    pytest.param(lambda t: cas.solver.greedy(t, key_added="t"), id="greedy"),
     pytest.param(
         lambda t: cas.solver.hybrid(
             t,
             bottom_solver=functools.partial(cas.solver.greedy),
             cell_cutoff=3,
             progress_bar=False,
-            tree_key="t",
+            key_added="t",
         ),
         id="hybrid",
     ),
@@ -93,7 +93,7 @@ def test_solvers_string_characters(solve):
 @pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
 def test_ilp_string_characters():
     tdata = make_tdata()
-    cas.solver.ilp(tdata, tree_key="t")
+    cas.solver.ilp(tdata, key_added="t")
     g = tdata.obst["t"]
     assert len(roots(g)) == 1
     assert set(leaves(g)) == set(CM.index)
@@ -104,8 +104,8 @@ def test_solvers_string_match_integer_encoding():
     # 0 encoding is what makes the two equivalent).
     s = make_tdata()
     i = make_tdata(cm=INT_CM, unmodified=None)
-    cas.solver.upgma(s, tree_key="t")
-    cas.solver.upgma(i, tree_key="t")
+    cas.solver.upgma(s, key_added="t")
+    cas.solver.upgma(i, key_added="t")
 
     def triplet(g, a, b, c):
         anc = {x: set(nx.ancestors(g, x)) for x in (a, b, c)}

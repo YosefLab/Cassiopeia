@@ -39,7 +39,6 @@ dependencies = [
   "bokeh>=0.12.15",
   "cvxpy",
   "ecos",
-  "ete3>=3.1.1",
   "hits",
   "itolapi",
   "matplotlib>=2.2.2",
@@ -163,6 +162,12 @@ xfail_strict = true
 addopts = [
   "--import-mode=importlib",
   "--ignore-glob=*/._*",
+]
+filterwarnings = [
+  # CassiopeiaTree is deprecated by design; legacy tests still exercise it and
+  # assert the deprecation explicitly via pytest.warns where relevant.
+  "ignore:CassiopeiaTree is deprecated:DeprecationWarning",
+  "ignore:cassiopeia.solver.dissimilarity_functions is deprecated:DeprecationWarning",
 ]
 
 [tool.coverage.run]

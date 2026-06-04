@@ -80,42 +80,42 @@ def test_get_root_identifies_unique_root(tree):
 
 
 def test_collapse_unifurcations(tree):
-    collapsed = utils.collapse_unifurcations(tree)
+    collapsed = utils._collapse_unifurcations(tree)
     assert "1" not in collapsed
     assert set(collapsed.successors("0")) == {"2", "3"}
     assert collapsed["0"]["2"]["length"] == pytest.approx(2.0)
     assert collapsed["0"]["3"]["length"] == pytest.approx(2.0)
     # Inplace
     tdata = TreeData(obst={"tree": tree})
-    utils.collapse_unifurcations(tdata, tree_key="tree", inplace=True)
+    utils._collapse_unifurcations(tdata, tree_key="tree", inplace=True)
     assert "1" not in tdata.obst["tree"]
     assert set(tdata.obst["tree"].successors("0")) == {"2", "3"}
     assert tdata.obst["tree"]["0"]["2"]["length"] == pytest.approx(2.0)
     assert tdata.obst["tree"]["0"]["3"]["length"] == pytest.approx(2.0)
 
 
-def test_get_character_matrix_cassiopeia_layer():
+def test_get_characters_cassiopeia_layer():
     """Test getting character matrix from CassiopeiaTree layer."""
     tree = nx.DiGraph()
     tree.add_edges_from([("root", "A")])
     cm = pd.DataFrame({"A": [0, 1, -1]}).T
     cas_tree = cas.data.CassiopeiaTree(tree=tree, character_matrix=cm)
     cas_tree.layers["alternative"] = cm * 2
-    result = utils._get_character_matrix(cas_tree, "alternative")
+    result = utils._get_characters(cas_tree, "alternative")
     assert isinstance(result, pd.DataFrame)
 
 
-def test_get_character_matrix_treedata(tree):
+def test_get_characters_treedata(tree):
     """Test getting character matrix from TreeData obsm."""
     tdata = TreeData(obst={"tree": tree})
     obs_order = tdata.obs_names.tolist()
     cm = pd.DataFrame([[0, 1, -1], [1, 0, -1], [1, 1, 0]], index=obs_order)
     tdata.obsm["characters"] = cm
-    result = utils._get_character_matrix(tdata)
+    result = utils._get_characters(tdata)
     assert isinstance(result, pd.DataFrame)
 
 
-def test_get_character_matrix_converts_numpy_array():
+def test_get_characters_converts_numpy_array():
     """Test that numpy arrays are converted to DataFrames."""
     tree = nx.DiGraph()
     tree.add_edges_from([("root", "A"), ("root", "B")])
@@ -124,33 +124,18 @@ def test_get_character_matrix_converts_numpy_array():
     tdata = TreeData(
         obst={"tree": tree}, obsm={"characters": cm_array}, obs=pd.DataFrame(index=leaves)
     )
-    result = utils._get_character_matrix(tdata)
+    result = utils._get_characters(tdata)
     assert isinstance(result, pd.DataFrame)
     assert result.shape == (2, 3)
 
 
-def test_get_missing_state_indicator(tree):
-    """Test getting missing state indicator from TreeData and non-tree objects."""
-    tdata = TreeData(obst={"tree": tree})
-    result = utils._get_missing_state_indicator(tdata)
-    assert result == (-1, "-1", "NA", "-")
-
-    tdata.uns["missing_state_indicator"] = -99
-    result = utils._get_missing_state_indicator(tdata)
-    assert result == -99
-
-    with pytest.warns(UserWarning, match="differs from tree's missing_state_indicator"):
-        result = utils._get_missing_state_indicator(tdata, missing_state="custom")
-    assert result == "custom"
-
-
-def test_get_tree_parameter(tree):
+def test_get_parameter(tree):
     """Test getting parameter from TreeData and non-tree objects."""
     tdata = TreeData(obst={"tree": tree})
     tdata.uns["mutation_rate"] = 0.75
-    result = utils._get_tree_parameter(tdata, "mutation_rate")
+    result = utils._get_parameter(tdata, "mutation_rate")
     assert result == 0.75
-    result = utils._get_tree_parameter(None, "param", default="default_val")
+    result = utils._get_parameter(None, "param", value="default_val")
     assert result == "default_val"
 
 

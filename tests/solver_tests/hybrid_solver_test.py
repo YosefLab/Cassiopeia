@@ -30,7 +30,7 @@ def chars_tdata(cm):
     return td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)),
         obsm={"characters": cm},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
     )
 
 
@@ -67,7 +67,7 @@ def test_hybrid_cell_cutoff_greedy_bottom():
         bottom_solver=functools.partial(cas.solver.greedy),
         cell_cutoff=3,
         progress_bar=False,
-        tree_key="hybrid",
+        key_added="hybrid",
     )
     tree = tdata.obst["hybrid"]
     assert set(leaves(tree)) == set(PP_CM.index)
@@ -81,7 +81,7 @@ def test_hybrid_lca_cutoff_greedy_bottom():
         bottom_solver=functools.partial(cas.solver.greedy),
         lca_cutoff=2,
         progress_bar=False,
-        tree_key="hybrid",
+        key_added="hybrid",
     )
     tree = tdata.obst["hybrid"]
     assert set(leaves(tree)) == set(LARGE_CM.index)
@@ -96,7 +96,7 @@ def test_hybrid_multithreaded_pickles():
         cell_cutoff=3,
         threads=2,
         progress_bar=False,
-        tree_key="hybrid",
+        key_added="hybrid",
     )
     tree = tdata.obst["hybrid"]
     assert set(leaves(tree)) == set(LARGE_CM.index)
@@ -144,7 +144,7 @@ def test_hybrid_ilp_bottom():
         bottom_solver=functools.partial(cas.solver.ilp, mip_gap=0.0, logfile=None),
         cell_cutoff=3,
         progress_bar=False,
-        tree_key="hybrid",
+        key_added="hybrid",
     )
     assert set(leaves(tdata.obst["hybrid"])) == set(PP_CM.index)
 

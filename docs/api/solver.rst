@@ -7,8 +7,8 @@ Solvers
 ~~~~~~~~~~~~~~~~~~~
 
 Phylogeny reconstruction is performed with functional solvers that operate on a
-:class:`treedata.TreeData` object in place, storing the inferred tree in
-``tdata.obst[tree_key]``:
+:class:`treedata.TreeData` object in place (or return a copy when ``copy=True``),
+storing the inferred tree in ``tdata.obst[key_added]``:
 
 .. autosummary::
    :toctree: reference/

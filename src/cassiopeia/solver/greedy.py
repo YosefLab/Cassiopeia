@@ -20,18 +20,162 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
 from cassiopeia.mixins import (
     GreedySolverError,
     find_duplicate_groups,
     is_ambiguous_state,
     unravel_ambiguous_states,
 )
-from cassiopeia.solver import missing_data_methods, solver_utilities
+from cassiopeia.utils import (
+    _get_characters,
+    _get_parameter,
+    _node_name_generator,
+    _set_tree,
+    _transform_priors,
+)
 
 if TYPE_CHECKING:
     from treedata import TreeData
 
     from cassiopeia.data import CassiopeiaTree
+
+
+def convert_sample_names_to_indices(names: list[str], samples: list[str]) -> list[int]:
+    """Map samples to their integer indices in a given set of names.
+
+    Used to map sample string names to their integer positions in the index of
+    the original character matrix for efficient indexing operations.
+
+    Args:
+        names: A list of sample names, represented by their string names in the
+            original character matrix.
+        samples: A list of sample names representing the subset to be mapped to
+            integer indices.
+
+    Returns:
+        A list of samples mapped to integer indices.
+    """
+    name_to_index = dict(zip(names, range(len(names)), strict=False))
+
+    return [name_to_index[x] for x in samples]
+
+
+def _assign_missing_average(
+    character_matrix: pd.DataFrame,
+    missing_state_indicator: int,
+    left_set: list[str],
+    right_set: list[str],
+    missing: list[str],
+    weights: dict[int, dict[int, float]] | None = None,
+) -> tuple[list[str], list[str]]:
+    """Implement the "average" missing-data imputation method.
+
+    An on-the-fly missing data imputation method for Cassiopeia-Greedy. It takes
+    in a set of samples that have a missing value at the character chosen to
+    split on in a partition. For each of these samples, it calculates the average
+    number of mutations that samples on each side of the partition share with it
+    and places the sample on the side with the higher value.
+
+    Args:
+        character_matrix: The character matrix containing the observed character
+            states for the samples.
+        missing_state_indicator: The character representing missing values.
+        left_set: A list of the samples on the left of the partition, represented
+            by their names in the original character matrix.
+        right_set: A list of the samples on the right of the partition,
+            represented by their names in the original character matrix.
+        missing: A list of samples with missing data to be imputed, represented
+            by their names in the original character matrix.
+        weights: A set of optional weights for character/state mutation pairs.
+
+    Returns:
+        A tuple of lists, representing the left and right partitions with missing
+        samples imputed.
+    """
+    # A helper function to calculate the number of shared character/state pairs
+    # shared between a missing sample and a side of the partition
+    sample_names = list(character_matrix.index)
+    character_array = character_matrix.to_numpy()
+    left_indices = convert_sample_names_to_indices(sample_names, left_set)
+    right_indices = convert_sample_names_to_indices(sample_names, right_set)
+    missing_indices = convert_sample_names_to_indices(sample_names, missing)
+
+    def score_side(subset_character_states, query_states, weights):
+        score = 0
+        for char in range(len(subset_character_states)):
+            query_state = [q for q in query_states[char] if q != 0 and q != missing_state_indicator]
+            all_states = np.array(subset_character_states[char])
+            for q in query_state:
+                if weights:
+                    score += weights[char][q] * np.count_nonzero(all_states == q)
+                else:
+                    score += np.count_nonzero(all_states == q)
+
+        return score
+
+    subset_character_array_left = character_array[left_indices, :]
+    subset_character_array_right = character_array[right_indices, :]
+
+    all_left_states = [
+        unravel_ambiguous_states(subset_character_array_left[:, char])
+        for char in range(subset_character_array_left.shape[1])
+    ]
+    all_right_states = [
+        unravel_ambiguous_states(subset_character_array_right[:, char])
+        for char in range(subset_character_array_right.shape[1])
+    ]
+
+    for sample_index in missing_indices:
+        all_states_for_sample = [
+            unravel_ambiguous_states([character_array[sample_index, char]])
+            for char in range(character_array.shape[1])
+        ]
+
+        left_score = score_side(
+            np.array(all_left_states, dtype=object),
+            np.array(all_states_for_sample, dtype=object),
+            weights,
+        )
+        right_score = score_side(
+            np.array(all_right_states, dtype=object),
+            np.array(all_states_for_sample, dtype=object),
+            weights,
+        )
+
+        if (left_score / len(left_set)) > (right_score / len(right_set)):
+            left_set.append(sample_names[sample_index])
+        else:
+            right_set.append(sample_names[sample_index])
+
+    return left_set, right_set
+
+
+# Registry of missing-data classifiers. Maps a name to a callable that assigns
+# samples with missing data at the split character into the left/right partition.
+_MISSING_DATA_CLASSIFIERS: dict[str, Callable] = {
+    "average": _assign_missing_average,
+}
+
+
+def _resolve_missing_data_classifier(classifier: str | Callable) -> Callable:
+    """Resolve a missing-data classifier name or callable to a callable.
+
+    Args:
+        classifier: The name of a registered classifier (e.g. ``"average"``) or
+            a callable implementing the imputation method directly.
+
+    Raises:
+        GreedySolverError: If *classifier* is an unknown name.
+    """
+    if callable(classifier):
+        return classifier
+    if classifier not in _MISSING_DATA_CLASSIFIERS:
+        raise GreedySolverError(
+            f"Unknown missing_data_classifier {classifier!r}. "
+            f"Available: {sorted(_MISSING_DATA_CLASSIFIERS)}"
+        )
+    return _MISSING_DATA_CLASSIFIERS[classifier]
 
 
 def _compute_mutation_frequencies(
@@ -77,7 +221,7 @@ def _greedy_split(
     samples: list[str],
     weights: dict[int, dict[int, float]] | None = None,
     missing_state_indicator: int = -1,
-    missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
+    missing_data_classifier: str | Callable = "average",
 ) -> tuple[list[str], list[str]]:
     """Partition *samples* based on the most frequent (character, state) pair.
 
@@ -91,15 +235,15 @@ def _greedy_split(
         weights: Weighting of each (character, state) pair, typically a
             transformation of the priors.
         missing_state_indicator: Character representing missing data.
-        missing_data_classifier: Function classifying samples with missing data
-            at the chosen character into the left/right partition.
+        missing_data_classifier: Name of a registered missing-data classifier
+            (e.g. ``"average"``) or a callable assigning samples with missing
+            data at the chosen character into the left/right partition.
 
     Returns:
         A tuple of lists representing the left and right partition groups.
     """
-    sample_indices = solver_utilities.convert_sample_names_to_indices(
-        character_matrix.index, samples
-    )
+    missing_data_classifier = _resolve_missing_data_classifier(missing_data_classifier)
+    sample_indices = convert_sample_names_to_indices(character_matrix.index, samples)
     mutation_frequencies = _compute_mutation_frequencies(
         samples, character_matrix, missing_state_indicator
     )
@@ -221,7 +365,7 @@ def _greedy_solve(
         GreedySolverError: If the matrix contains ambiguous states and
             *allow_ambiguous* is ``False``.
     """
-    node_name_generator = solver_utilities.node_name_generator()
+    node_name_generator = _node_name_generator()
 
     if (
         any(is_ambiguous_state(state) for state in character_matrix.values.flatten())
@@ -272,58 +416,69 @@ def _greedy_solve(
 
 
 def greedy(
-    tdata: CassiopeiaTree | TreeData,
+    tdata: TreeData,
+    missing_data_classifier: str | Callable = "average",
     characters_key: str | None = None,
-    tree_key: str = "greedy",
-    missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
+    key_added: str = "greedy",
     prior_transformation: str = "negative_log",
-) -> None:
-    """Vanilla Cassiopeia-Greedy reconstruction.  Modifies *tdata* in-place.
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | None = None,
+    copy: bool = False,
+) -> TreeData | None:
+    """Reconstruct a tree with vanilla Cassiopeia-Greedy.
 
     Builds a tree top-down by recursively splitting samples on the most frequent
-    mutation.  For :class:`~cassiopeia.data.CassiopeiaTree` the topology is
-    populated via ``populate_tree()``; for :class:`~treedata.TreeData` the result
-    ``nx.DiGraph`` is stored in ``tdata.obst[tree_key]``.
+    mutation. The character matrix is read from ``tdata.obsm`` and the result is
+    stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
 
     Args:
-        tdata: CassiopeiaTree or TreeData to solve.
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
-            (TreeData, default ``'characters'``).
-        tree_key: Key in ``tdata.obst`` for the result (TreeData only).
-        missing_data_classifier: Function assigning samples with missing data at
-            the split character into the left/right partition.
+        tdata: TreeData to operate on.
+        missing_data_classifier: Name of a registered missing-data classifier
+            (e.g. ``"average"``) or a callable assigning samples with missing
+            data at the split character into the left/right partition.
+        characters_key: Key in ``tdata.obsm`` for the character matrix
+            (default ``'characters'``).
+        key_added: Key in ``tdata.obst`` for the resulting tree.
         prior_transformation: Transformation applied to priors to form weights.
-    """
-    character_matrix = solver_utilities._get_characters(tdata, characters_key)
-    if character_matrix is None:
-        raise ValueError(
-            "No character matrix found; store characters in "
-            f"obsm[{characters_key or 'characters'!r}] (TreeData) or set one on "
-            "the CassiopeiaTree."
-        )
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, as a dict mapping character index
+            to dicts mapping state to prior probability (read from ``tdata.uns``
+            if ``None``).
+        copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
+            and return ``None``.
 
-    missing_state_indicator, priors = solver_utilities._get_missing_and_priors(tdata)
-    # Encode string/categorical states to integers so the split logic correctly
-    # treats the unmodified state as 0.
-    character_matrix, missing_state_indicator = solver_utilities.encode_character_matrix(
-        tdata, character_matrix, missing_state_indicator
+    Returns:
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
+    """
+    tdata = tdata.copy() if copy else tdata
+    character_matrix = _get_characters(tdata, characters_key).copy()
+    missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
+    unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    priors = _get_parameter(tdata, "priors", value=priors)
+    character_matrix, missing_state = _encode_integer_matrix(
+        character_matrix, missing_state, unmodified_state
     )
 
     weights = None
     if priors:
-        weights = solver_utilities.transform_priors(priors, prior_transformation)
+        weights = _transform_priors(priors, prior_transformation)
 
     split_fn = functools.partial(_greedy_split, missing_data_classifier=missing_data_classifier)
 
     tree = _greedy_solve(
         character_matrix,
         split_fn,
-        missing_state_indicator=missing_state_indicator,
+        missing_state_indicator=missing_state,
         weights=weights,
         allow_ambiguous=True,
     )
 
-    solver_utilities._set_tree(tdata, tree, characters_key, tree_key)
+    _set_tree(tdata, tree, key_added)
+
+    return tdata if copy else None
 
 
 # ── Backward-compat shim ─────────────────────────────────────────────────────
@@ -337,14 +492,15 @@ class VanillaGreedySolver:
     directly.
 
     Args:
-        missing_data_classifier: A function implementing a missing-data
-            imputation method.  Defaults to the "average" method.
+        missing_data_classifier: Name of a registered missing-data classifier
+            (e.g. ``"average"``) or a callable implementing the imputation
+            method.  Defaults to the ``"average"`` method.
         prior_transformation: Transformation applied to priors to form weights.
     """
 
     def __init__(
         self,
-        missing_data_classifier: Callable = missing_data_methods.assign_missing_average,
+        missing_data_classifier: str | Callable = "average",
         prior_transformation: str = "negative_log",
     ):
         warnings.warn(
@@ -380,7 +536,7 @@ class VanillaGreedySolver:
             prior_transformation=self.prior_transformation,
         )
         if collapse_mutationless_edges:
-            solver_utilities.collapse_mutationless_edges(cassiopeia_tree)
+            cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)
 
     def perform_split(
         self,

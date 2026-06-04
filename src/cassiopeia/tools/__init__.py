@@ -16,6 +16,7 @@ from .topology import (
     collapse_edges,
     compute_cophenetic_correlation,
     compute_expansion_pvalues,
+    mean_depth,
 )
 from .tree_metrics import (
     calculate_likelihood_continuous,
@@ -39,4 +40,5 @@ __all__ = [
     "reconstruct_ancestral_characters",
     "ancestral_characters",
     "collapse_edges",
+    "mean_depth",
 ]
