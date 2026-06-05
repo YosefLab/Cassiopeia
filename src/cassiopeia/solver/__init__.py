@@ -1,15 +1,44 @@
 """Top level for Tree Solver development."""
 
-from . import dissimilarity_functions as dissimilarity
-from .HybridSolver import HybridSolver
-from .ILPSolver import ILPSolver
-from .MaxCutGreedySolver import MaxCutGreedySolver
-from .MaxCutSolver import MaxCutSolver
-from .NeighborJoiningSolver import NeighborJoiningSolver
-from .PercolationSolver import PercolationSolver
-from .SharedMutationJoiningSolver import SharedMutationJoiningSolver
-from .SpectralGreedySolver import SpectralGreedySolver
-from .SpectralNeighborJoiningSolver import SpectralNeighborJoiningSolver
-from .SpectralSolver import SpectralSolver
-from .UPGMASolver import UPGMASolver
-from .VanillaGreedySolver import VanillaGreedySolver
+from . import nj_solver_utilities, rooting
+from .deprecated import (
+    MaxCutGreedySolver,
+    MaxCutSolver,
+    PercolationSolver,
+    SharedMutationJoiningSolver,
+    SpectralGreedySolver,
+    SpectralNeighborJoiningSolver,
+    SpectralSolver,
+)
+from .greedy import VanillaGreedySolver, greedy
+from .hybrid import HybridSolver, hybrid
+from .ilp import ILPSolver, ilp
+from .neighbor_joining import NeighborJoiningSolver, nj
+from .rooting import reroot
+from .upgma import UPGMASolver, upgma
+
+__all__ = [
+    # functional API
+    "nj",
+    "upgma",
+    "greedy",
+    "ilp",
+    "hybrid",
+    "reroot",
+    # modules
+    "rooting",
+    # backward-compat class shims (deprecated)
+    "NeighborJoiningSolver",
+    "UPGMASolver",
+    "VanillaGreedySolver",
+    "ILPSolver",
+    "HybridSolver",
+    # deprecated, removed-implementation solvers
+    "MaxCutSolver",
+    "MaxCutGreedySolver",
+    "SpectralSolver",
+    "SpectralGreedySolver",
+    "SharedMutationJoiningSolver",
+    "PercolationSolver",
+    "SpectralNeighborJoiningSolver",
+]

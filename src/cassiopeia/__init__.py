@@ -2,7 +2,7 @@
 
 import sys
 
-from . import critique, data, solver, utils
+from . import critique, data, dissimilarity, solver, utils
 from . import plotting as pl
 from . import preprocess as pp
 from . import simulator as sim
@@ -23,4 +23,15 @@ sys.modules.update(
 )
 del sys
 
-__all__ = ["pp", "solver", "pl", "data", "critique", "sim", "sp", "tl", "utils"]
+__all__ = [
+    "pp",
+    "solver",
+    "pl",
+    "data",
+    "critique",
+    "dissimilarity",
+    "sim",
+    "sp",
+    "tl",
+    "utils",
+]

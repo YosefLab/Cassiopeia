@@ -1,7 +1,8 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-  "oldest-supported-numpy",
+  "cython>=3",
+  "numpy>=2",
   "setuptools>=64",
   "wheel",
 ]
@@ -38,7 +39,6 @@ dependencies = [
   "bokeh>=0.12.15",
   "cvxpy",
   "ecos",
-  "ete3>=3.1.1",
   "hits",
   "itolapi",
   "matplotlib>=2.2.2",
@@ -51,7 +51,7 @@ dependencies = [
   "pysam>=0.14.1",
   "pyseq-align>=1.0.2",
   "pyyaml>=3.12",
-  "scipy>=1.2",
+  "scipy>=1.9",
   "tqdm>=4",
   "treedata>=0.2.2",
   "typing-extensions>=3.7.4",
@@ -68,7 +68,6 @@ optional-dependencies.doc = [
   "ipython",
   "myst-nb>=1.1",
   "nbsphinx",
-  "nbsphinx-link",
   "pandas",
   "pandoc",
   "scanpydoc",
@@ -111,7 +110,7 @@ exclude = [ "tests*", "docs*", "notebooks*", "data*" ]
 
 # If you ship .pxd, include them:
 [tool.setuptools.package-data]
-cassiopeia = [ "**/*.pxd" ]
+cassiopeia = [ "**/*.pxd", "config.ini" ]
 
 # --- Hatch envs ---
 
@@ -160,7 +159,16 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 testpaths = [ "tests" ]
 xfail_strict = true
-addopts = [ "--import-mode=importlib" ]
+addopts = [
+  "--import-mode=importlib",
+  "--ignore-glob=*/._*",
+]
+filterwarnings = [
+  # CassiopeiaTree is deprecated by design; legacy tests still exercise it and
+  # assert the deprecation explicitly via pytest.warns where relevant.
+  "ignore:CassiopeiaTree is deprecated:DeprecationWarning",
+  "ignore:cassiopeia.solver.dissimilarity_functions is deprecated:DeprecationWarning",
+]
 
 [tool.coverage.run]
 source = [ "cassiopeia" ]

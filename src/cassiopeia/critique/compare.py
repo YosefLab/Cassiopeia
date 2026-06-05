@@ -16,9 +16,8 @@ from cassiopeia.critique.critique_utilities import (
 )
 from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
+    _collapse_unifurcations,
     _get_digraph,
-    collapse_unifurcations,
-    get_leaves,
 )
 
 
@@ -67,6 +66,9 @@ def triplets_correct(
         else _get_digraph(tree1, tree_key=key2, copy=True)
     )
 
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
+
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")
 
@@ -101,8 +103,8 @@ def _run_triplets_correct(
             proportion_unresolvable: Proportion of triplets that are unresolvable at each depth.
     """
     # collapse unifurcations
-    collapse_unifurcations(G1)
-    collapse_unifurcations(G2)
+    _collapse_unifurcations(G1)
+    _collapse_unifurcations(G2)
 
     # annotate depths and per-node triplet counts (on G1)
     depth_to_nodes = annotate_tree_depths(G1)
@@ -168,12 +170,10 @@ def _run_triplets_correct(
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     """Compute the unrooted Robinson–Foulds distance using bitsets."""
-    leaves1 = sorted([n for n in tree1 if tree1.degree[n] == 1])
-    leaves2 = sorted([n for n in tree2 if tree2.degree[n] == 1])
-    if set(leaves1) != set(leaves2):
-        raise ValueError("Trees must have identical leaf sets.")
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
 
-    leaf_index = {leaf: i for i, leaf in enumerate(leaves1)}
+    leaf_index = {leaf: i for i, leaf in enumerate(get_leaves(tree1))}
 
     def get_splits(tree, leaf_index):
         """Return a set of canonical bitmasks representing bipartitions."""
@@ -243,6 +243,9 @@ def robinson_foulds(
         if tree2 is not None
         else _get_digraph(tree1, tree_key=key2, copy=True)
     )
+
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")

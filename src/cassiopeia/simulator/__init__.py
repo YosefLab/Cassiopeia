@@ -1,35 +1,50 @@
 """Top level for simulator."""
 
-from .BirthDeathFitnessSimulator import BirthDeathFitnessSimulator
-from .BrownianSpatialDataSimulator import BrownianSpatialDataSimulator
-from .Cas9LineageTracingDataSimulator import Cas9LineageTracingDataSimulator
-from .ClonalSpatialDataSimulator import ClonalSpatialDataSimulator
-from .CompleteBinarySimulator import CompleteBinarySimulator
-from .DataSimulator import DataSimulator
-from .ecDNABirthDeathSimulator import ecDNABirthDeathSimulator
-from .expression import brownian_expression, fate_tree_expression
-from .LeafSubsampler import LeafSubsampler
-from .LineageTracingDataSimulator import LineageTracingDataSimulator
-from .SequentialLineageTracingDataSimulator import (
+from .deprecated import (
+    BirthDeathFitnessSimulator,
+    BrownianSpatialDataSimulator,
+    Cas9LineageTracingDataSimulator,
+    ClonalSpatialDataSimulator,
+    CompleteBinarySimulator,
+    LeafSubsampler,
+    LineageTracingDataSimulator,
     SequentialLineageTracingDataSimulator,
+    SimpleFitSubcloneSimulator,
+    SpatialLeafSubsampler,
+    SupercellularSampler,
+    TreeSimulator,
+    UniformLeafSubsampler,
+    ecDNABirthDeathSimulator,
 )
-from .SimpleFitSubcloneSimulator import SimpleFitSubcloneSimulator
-from .SpatialLeafSubsampler import SpatialLeafSubsampler
-from .SupercellularSampler import SupercellularSampler
-from .TreeSimulator import TreeSimulator
-from .UniformLeafSubsampler import UniformLeafSubsampler
+from .sampling import sample_spatial, sample_supercellular, sample_timepoints, sample_uniform
+from .spatial import brownian_spatial, clonal_spatial
+from .topology import birth_death_process, complete_binary, simple_fit_subclone
+from .tracing import missing_data, stochastic_tracing
+from .expression import brownian_expression, fate_tree_expression
 
 __all__ = [
+    "birth_death_process",
     "BirthDeathFitnessSimulator",
     "BrownianSpatialDataSimulator",
+    "brownian_spatial",
     "Cas9LineageTracingDataSimulator",
-    "SeqeuntialLineageTracingDataSimulator",
+    "clonal_spatial",
+    "ClonalSpatialDataSimulator",
+    "complete_binary",
     "CompleteBinarySimulator",
-    "DataSimulator",
     "ecDNABirthDeathSimulator",
     "LeafSubsampler",
     "LineageTracingDataSimulator",
+    "missing_data",
+    "sample_spatial",
+    "sample_supercellular",
+    "sample_timepoints",
+    "sample_uniform",
+    "SequentialLineageTracingDataSimulator",
+    "simple_fit_subclone",
     "SimpleFitSubcloneSimulator",
+    "SpatialLeafSubsampler",
+    "stochastic_tracing",
     "SupercellularSampler",
     "TreeSimulator",
     "UniformLeafSubsampler",

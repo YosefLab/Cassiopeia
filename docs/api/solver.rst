@@ -3,38 +3,40 @@ Solver
 ===========
 .. currentmodule:: cassiopeia
 
-CassiopeiaSolvers
+Solvers
 ~~~~~~~~~~~~~~~~~~~
 
-We have several algorithms available for solving phylogenies:
+Phylogeny reconstruction is performed with functional solvers that operate on a
+:class:`treedata.TreeData` object in place (or return a copy when ``copy=True``),
+storing the inferred tree in ``tdata.obst[key_added]``:
 
 .. autosummary::
    :toctree: reference/
 
-   solver.HybridSolver
-   solver.ILPSolver
-   solver.MaxCutSolver
-   solver.MaxCutGreedySolver
-   solver.NeighborJoiningSolver
-   solver.PercolationSolver
-   solver.SharedMutationJoiningSolver
-   solver.SpectralSolver
-   solver.SpectralGreedySolver
-   solver.UPGMASolver
-   solver.VanillaGreedySolver
+   solver.nj
+   solver.upgma
+   solver.greedy
+   solver.ilp
+   solver.hybrid
 
-
-Dissimilarity Maps
+Rooting
 ~~~~~~~~~~~~~~~~~~~
 
-For use in our distance-based solver and for comparing character states, we also have available several dissimilarity functions:
+Trees can be (re)rooted with a choice of procedures (``outgroup``, ``midpoint``,
+``centroid``, ``shared_mutation``):
 
 .. autosummary::
    :toctree: reference/
 
-   solver.dissimilarity_functions.cluster_dissimilarity
-   solver.dissimilarity_functions.hamming_distance
-   solver.dissimilarity_functions.hamming_similarity_normalized_over_missing
-   solver.dissimilarity_functions.hamming_similarity_without_missing
-   solver.dissimilarity_functions.weighted_hamming_distance
-   solver.dissimilarity_functions.weighted_hamming_similarity
+   solver.reroot
+
+Deprecated solver classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The object-oriented solver classes are deprecated in favor of the functional API
+above and are retained only for backward compatibility. ``NeighborJoiningSolver``,
+``UPGMASolver``, ``VanillaGreedySolver``, ``ILPSolver``, and ``HybridSolver`` warn
+on use and delegate to the corresponding function. The remaining classes
+(``MaxCutSolver``, ``MaxCutGreedySolver``, ``SpectralSolver``,
+``SpectralGreedySolver``, ``SharedMutationJoiningSolver``, ``PercolationSolver``,
+``SpectralNeighborJoiningSolver``) have been removed and raise on ``solve``.
