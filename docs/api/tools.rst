@@ -16,7 +16,6 @@ Metrics
    tl.calculate_likelihood
    tl.calculate_parsimony
    tl.count_edge_mutations
-   tl.get_tracing_parameters
 
 Parameter Estimation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -28,25 +27,16 @@ Parameter Estimation
    tl.estimate_mutation_rate
    tl.fraction_missing
    tl.fraction_mutated
-
-
-Small-Parsimony
-~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-   :toctree: reference/
-
-   tl.fitch_count
-   tl.fitch_hartigan
-   tl.score_small_parsimony
+   tl.get_tracing_parameters
 
 Topology
 ~~~~~~~~~~~~~~~~~~~
 .. autosummary::
    :toctree: reference/
 
-   tl.compute_expansion_pvalues
    tl.collapse_edges
+   tl.get_leaves
+   tl.get_root
    tl.mean_depth
 
 Ancestral Characters
