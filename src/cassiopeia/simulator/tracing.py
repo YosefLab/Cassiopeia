@@ -11,6 +11,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import DataSimulatorError
+from cassiopeia.utils import _get_parameter, _normalize_missing
 
 
 def stochastic_tracing(
@@ -451,6 +452,146 @@ def missing_data(
 
     if copy:
         return tdata
+
+
+def noise(
+    tdata: td.TreeData,
+    error_rate: float = 0.0,
+    priors: dict | None = None,
+    missing_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str = "simulated",
+    characters_key: str = "characters",
+    copy: bool = False,
+) -> td.TreeData:
+    """Apply sequencing-error state miscalls to the character matrix.
+
+    Models assay-level read errors that cause an observed character state to be
+    miscalled as a different state. Unlike :func:`missing_data` (which drops
+    states to ``missing_state`` and can propagate heritably), ``noise`` acts only
+    on the observed leaf states and is **not heritable**: each leaf is treated
+    independently.
+
+    For each leaf and site, with probability ``error_rate`` the called state is
+    replaced by a different state drawn from that character's prior distribution
+    (excluding the current state, with the remaining probabilities
+    renormalized). Missing states are never altered and are never introduced.
+
+    Priors are not specified, they are imputed from the empirical per-character state
+    distribution of the matrix (excluding missing states). Priors are keyed by
+    the positional index of each character column.
+
+    Args:
+        tdata: TreeData with a character matrix in ``tdata.obsm[characters_key]``.
+        error_rate: Per-site probability that a called state is miscalled.
+        priors: Optional ``{char_index: {state: prob}}`` mapping. If ``None``,
+            falls back to ``tdata.uns["priors"]`` then to imputed priors.
+        missing_state: Value(s) indicating missing data. If ``None``, uses
+            ``tdata.uns["missing_state"]`` (falling back to the package default).
+        key_added: If ``None`` (default), overwrites ``tdata.obsm[characters_key]``
+            (and matching leaf node attributes) in place. If a string, writes
+            results to ``tdata.obsm[key_added]`` instead, leaving the original
+            untouched.
+        random_seed: NumPy random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the tree.
+        characters_key: Key to read character data from.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in-place.
+
+    Returns:
+        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
+        input modified in-place.
+    """
+    if error_rate == 0:
+        warnings.warn(
+            "No noise will be applied since error_rate is zero. Returning original tdata.",
+            stacklevel=2,
+        )
+
+    if copy:
+        tdata = tdata.copy()
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    missing_set = _normalize_missing(_get_parameter(tdata, "missing_state", missing_state))
+
+    matrix = tdata.obsm[characters_key]
+    columns = list(matrix.columns)
+    output_key = key_added if key_added is not None else characters_key
+
+    if priors is None:
+        priors = _impute_priors(matrix, missing_set)
+
+    # Apply miscalls column by column, preserving categorical dtype.
+    result = {}
+    for idx, col in enumerate(columns):
+        source = matrix[col]
+        values = source.astype(object).to_numpy().copy()
+        char_priors = priors.get(idx) or {}
+        states = list(char_priors.keys())
+        weights = np.array([char_priors[s] for s in states], dtype=float)
+
+        if error_rate > 0 and states:
+            for i in range(len(values)):
+                current = values[i]
+                if current in missing_set:
+                    continue
+                if np.random.uniform() >= error_rate:
+                    continue
+                # Draw a replacement state, excluding the current one.
+                keep = [s != current for s in states]
+                alt_states = [s for s, k in zip(states, keep, strict=True) if k]
+                if not alt_states:
+                    continue
+                alt_weights = weights[keep]
+                total = alt_weights.sum()
+                p = alt_weights / total if total > 0 else None
+                values[i] = np.random.choice(alt_states, p=p)
+
+        if hasattr(source.dtype, "categories"):
+            categories = list(source.dtype.categories)
+            for s in states:
+                if s not in categories:
+                    categories.append(s)
+            result[col] = pd.Categorical(
+                values, categories=categories, ordered=source.dtype.ordered
+            )
+        else:
+            result[col] = values
+
+    new_matrix = pd.DataFrame(result, index=matrix.index)
+    tdata.obsm[output_key] = new_matrix
+
+    # Keep leaf node attributes in sync if characters are stored on the tree.
+    tree = tdata.obst[tree_key]
+    some_node = next(iter(tree.nodes))
+    if characters_key in tree.nodes[some_node]:
+        for leaf in new_matrix.index:
+            if leaf in tree.nodes:
+                node_chars = dict(tree.nodes[leaf].get(characters_key, {}))
+                for col in columns:
+                    node_chars[col] = new_matrix.loc[leaf, col]
+                tree.nodes[leaf][output_key] = node_chars
+
+    if copy:
+        return tdata
+
+
+def _impute_priors(matrix: pd.DataFrame, missing_set: set) -> dict[int, dict[str, float]]:
+    """Impute per-character priors from the empirical state distribution.
+
+    For each column, computes the frequency of each non-missing state and uses
+    it as that character's prior. Columns are keyed by positional index.
+    """
+    priors: dict[int, dict[str, float]] = {}
+    for idx, col in enumerate(matrix.columns):
+        observed = [v for v in matrix[col].astype(object) if v not in missing_set]
+        counts = pd.Series(observed).value_counts()
+        total = counts.sum()
+        priors[idx] = {state: count / total for state, count in counts.items()} if total > 0 else {}
+    return priors
 
 
 def _build_characters_dataframe(

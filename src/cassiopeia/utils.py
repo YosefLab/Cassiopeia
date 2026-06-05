@@ -368,6 +368,11 @@ def _get_leaf_data(g: nx.DiGraph, key: str) -> dict[str, Any]:
     return pd.Series(leaf_data)
 
 
+def _get_node_data(g: nx.DiGraph, key: str) -> pd.Series:
+    """Get a Series mapping every node label to a specified node attribute."""
+    return pd.Series({node: g.nodes[node].get(key) for node in g.nodes})
+
+
 def _node_name_generator() -> Generator[str, None, None]:
     """Yield unique internal node names for building reconstructed trees.
 

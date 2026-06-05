@@ -42,6 +42,21 @@ topology.
 
    sim.stochastic_tracing
    sim.missing_data
+   sim.noise
+
+
+Expression Simulators
+~~~~~~~~~~~~~~~~~~~~~~
+
+These functions overlay simulated gene-expression data onto an existing
+topology, optionally sampling counts from a Poisson or negative-binomial
+observation model.
+
+.. autosummary::
+   :toctree: reference/
+
+   sim.brownian_expression
+   sim.trajectory_expression
 
 
 Spatial Simulators
@@ -88,3 +103,4 @@ be removed in a future release. Use the functional API above instead.
    sim.UniformLeafSubsampler
    sim.SpatialLeafSubsampler
    sim.SupercellularSampler
+   sim.fate_tree_expression
