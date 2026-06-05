@@ -16,11 +16,11 @@ from .deprecated import (
     UniformLeafSubsampler,
     ecDNABirthDeathSimulator,
 )
+from .expression import brownian_expression, fate_tree_expression
 from .sampling import sample_spatial, sample_supercellular, sample_timepoints, sample_uniform
 from .spatial import brownian_spatial, clonal_spatial
 from .topology import birth_death_process, complete_binary, simple_fit_subclone
 from .tracing import missing_data, stochastic_tracing
-from .expression import brownian_expression, fate_tree_expression
 
 __all__ = [
     "birth_death_process",
