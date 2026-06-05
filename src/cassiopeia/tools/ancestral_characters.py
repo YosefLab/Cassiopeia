@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import networkx as nx
 import numpy as np
+from treedata import TreeData
 
 from cassiopeia.mixins import is_ambiguous_state
 from cassiopeia.mixins.errors import CassiopeiaError
-from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
     _get_characters,
     _get_digraph,
+    _get_parameter,
+    _normalize_missing,
+    _set_tree,
 )
 
 
 def _get_lca_characters(
     vecs: list[list[int] | list[tuple[int, ...]]],
-    missing_state_indicator: int,
+    missing_states: set,
+    unmodified_state: int,
 ) -> list[int]:
     """Builds the character vector of the LCA of a list of character vectors, obeying Camin-Sokal Parsimony.
 
@@ -26,11 +30,12 @@ def _get_lca_characters(
     state. If the intersection between two states (even ambiguous) is non-zero
     and not the missing state, and has length exactly 1, we assign the ancestral
     state this value. Else, if the intersection length is greater than 1, the
-    value '0' is assigned.
+    ``unmodified_state`` value is assigned.
 
     Args:
         vecs: A list of character vectors to generate an LCA for
-        missing_state_indicator: The character representing missing values
+        missing_states: The set of values representing missing data
+        unmodified_state: The value representing the unmodified (uncut) state
 
     Returns:
             A list representing the character vector of the LCA
@@ -39,18 +44,17 @@ def _get_lca_characters(
     k = len(vecs[0])
     for i in vecs:
         assert len(i) == k
-    lca_vec = [0] * len(vecs[0])
+    lca_vec = [unmodified_state] * len(vecs[0])
     for i in range(k):
-        if np.all(np.array([vec[i] for vec in vecs], dtype=object) == missing_state_indicator):
-            lca_vec[i] = missing_state_indicator
+        if all(vec[i] in missing_states for vec in vecs):
+            lca_vec[i] = next(iter(missing_states))
         else:
-            all_states = [vec[i] for vec in vecs if vec[i] != missing_state_indicator]
+            all_states = [vec[i] for vec in vecs if vec[i] not in missing_states]
 
             # this check is specifically if all_states consists of a single
             # ambiguous state.
             if len(list(set(all_states))) == 1:
                 state = all_states[0]
-                # lca_vec[i] = state
                 if is_ambiguous_state(state) and len(state) == 1:
                     lca_vec[i] = state[0]
                 else:
@@ -70,55 +74,6 @@ def _get_lca_characters(
                     # to be the intersection.
                     lca_vec[i] = tuple(chars)
     return lca_vec
-
-
-def reconstruct_ancestral_characters(
-    g, missing_state_indicator=-1, key_added="character_states"
-) -> None:
-    """Reconstruct ancestral character states.
-
-    Reconstructs ancestral states (i.e., those character states in the
-    internal nodes) using the Camin-Sokal parsimony criterion (i.e.,
-    irreversibility). Operates on the tree in place.
-
-    Raises:
-        AttributeError if the tree has not been initialized.
-    """
-    for n in nx.dfs_postorder_nodes(g):
-        if g.out_degree(n) == 0:
-            if g.nodes[n][key_added][:] == []:
-                raise AttributeError(
-                    "Character states have not been initialized at leaves."
-                    " Use set_character_states_at_leaves or populate_tree"
-                    " with the character matrix that specifies the leaf"
-                    " character states."
-                )
-            continue
-        children = g.successors(n)
-        character_states = [g.nodes[c][key_added][:] for c in children]
-        reconstructed = _get_lca_characters(character_states, missing_state_indicator)
-        g.nodes[n][key_added] = reconstructed
-
-
-def _resolve_missing_state_indicator(tree: TreeLike, missing_state_indicator: int | None) -> int:
-    """Resolve the missing state indicator for *tree*.
-
-    Returns *missing_state_indicator* when provided.  Otherwise reads it from the
-    tree object (``CassiopeiaTree.missing_state_indicator`` or
-    ``TreeData.uns['missing_state_indicator']``), defaulting to ``-1``.
-    """
-    if missing_state_indicator is not None:
-        return missing_state_indicator
-
-    from treedata import TreeData
-
-    from cassiopeia.data import CassiopeiaTree
-
-    if isinstance(tree, CassiopeiaTree):
-        return tree.missing_state_indicator
-    if isinstance(tree, TreeData):
-        return tree.uns.get("missing_state_indicator", -1)
-    return -1
 
 
 def _seed_leaf_states(g: nx.DiGraph, character_matrix, key_added: str) -> None:
@@ -145,52 +100,78 @@ def _seed_leaf_states(g: nx.DiGraph, character_matrix, key_added: str) -> None:
         g.nodes[node][key_added] = list(character_matrix.loc[node])
 
 
+def _reconstruct(g: nx.DiGraph, missing_states: set, unmodified_state: int, key: str) -> None:
+    """Reconstruct ancestral states in place using Camin-Sokal parsimony.
+
+    Internal-node states under the ``key`` node attribute are inferred bottom-up
+    from the children's states. Leaves are assumed to already carry ``key``.
+
+    Raises:
+        AttributeError: If a leaf has no character states under ``key``.
+    """
+    for n in nx.dfs_postorder_nodes(g):
+        if g.out_degree(n) == 0:
+            if g.nodes[n].get(key, None) is None or g.nodes[n][key] == []:
+                raise AttributeError(
+                    "Character states have not been initialized at leaves."
+                    " Seed leaf character states from a character matrix"
+                    " before reconstructing ancestral characters."
+                )
+            continue
+        character_states = [g.nodes[c][key][:] for c in g.successors(n)]
+        g.nodes[n][key] = _get_lca_characters(character_states, missing_states, unmodified_state)
+
+
 def ancestral_characters(
-    tree: TreeLike,
+    tdata: TreeData,
     characters_key: str = "characters",
     tree_key: str | None = None,
-    missing_state_indicator: int | None = None,
+    missing_state: int | None = None,
+    unmodified_state: int | None = None,
+    key_added: str | None = None,
     copy: bool = False,
-) -> TreeLike | None:
+) -> TreeData | None:
     """Reconstruct ancestral character states using Camin-Sokal parsimony.
 
     Leaf character states are seeded from the tree's character matrix and the
     internal-node states are inferred bottom-up obeying Camin-Sokal parsimony
-    (i.e. irreversibility).  States are written to the ``characters_key`` node
-    attribute — the same name as the obsm character matrix — so leaves and
-    internal nodes share a single, consistent attribute.  When ``tree`` is a
-    plain :class:`~networkx.DiGraph`, leaves are assumed to already carry
-    ``characters_key`` and are not re-seeded.
+    (i.e. irreversibility). By default, states are written to the
+    ``characters_key`` node attribute — the same name as the obsm character
+    matrix — so leaves and internal nodes share a single, consistent attribute.
+    Pass ``key_added`` to store the inferred states (and seeded leaf states)
+    under a different node attribute.
 
     Args:
-        tree: The tree to operate on (CassiopeiaTree, TreeData, or nx.DiGraph).
-        characters_key: Character matrix layer (CassiopeiaTree) or ``obsm`` key
-            (TreeData) used to seed leaf states, and the node attribute under
-            which inferred states are stored.
-        tree_key: For TreeData, the ``obst`` key of the tree to use.
-        missing_state_indicator: Missing-data value.  Resolved from the tree
+        tdata: The TreeData object to operate on.
+        characters_key: The ``obsm`` key for the character matrix used to seed
+            leaf states.
+        tree_key: The ``obst`` key of the tree to use.
+        missing_state: Missing-data value. Resolved from the tdata when ``None``.
+        unmodified_state: Unmodified (uncut) state value. Resolved from the tdata
             when ``None``.
-        copy: If ``True``, operate on and return a copy of *tree*; otherwise
+        key_added: Node attribute under which to store states. Defaults to
+            ``characters_key`` when ``None``.
+        copy: If ``True``, operate on and return a copy of *tdata*; otherwise
             modify in place and return ``None``.
 
     Returns:
-        A modified copy of *tree* if ``copy=True``, else ``None``.
+        A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
-    from treedata import TreeData
-
-    tree = tree.copy() if copy else tree
+    tdata = tdata.copy() if copy else tdata
     # TreeData stores frozen graphs; operate on a copy and write back.
-    is_treedata = isinstance(tree, TreeData)
-    g, tree_key = _get_digraph(tree, tree_key, copy=is_treedata)
+    g, tree_key = _get_digraph(tdata, tree_key, copy=True)
 
-    missing = _resolve_missing_state_indicator(tree, missing_state_indicator)
-    if not isinstance(tree, nx.DiGraph):
-        character_matrix = _get_characters(tree, characters_key)
-        _seed_leaf_states(g, character_matrix, characters_key)
+    missing_states = _normalize_missing(_get_parameter(tdata, "missing_state", value=missing_state))
+    unmodified = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    if isinstance(unmodified, (list, tuple, set)):
+        unmodified = next(iter(unmodified))
 
-    reconstruct_ancestral_characters(g, missing, characters_key)
+    write_key = key_added if key_added is not None else characters_key
+    character_matrix = _get_characters(tdata, characters_key)
+    _seed_leaf_states(g, character_matrix, write_key)
 
-    if is_treedata:
-        tree.obst[tree_key] = g
+    _reconstruct(g, missing_states, unmodified, write_key)
 
-    return tree if copy else None
+    _set_tree(tdata, g, tree_key)
+
+    return tdata if copy else None
