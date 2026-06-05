@@ -158,44 +158,23 @@ def _set_tree(data: CassiopeiaTree | TreeData, g: nx.DiGraph, tree_key: str | No
     if isinstance(data, TreeData):
         data.obst[tree_key] = g
     else:
-        data.root_sample_name = get_root(g)
+        data.root_sample_name = _get_root(g)
         data.populate_tree(g)
 
 
-def get_leaves(
-    tree: CassiopeiaTree | TreeData | nx.DiGraph, tree_key: str | None = None
-) -> list[str]:
-    """Return the leaf labels of a tree.
+def _get_root(g: nx.DiGraph) -> str:
+    """Return the unique root of a directed tree graph.
 
     Args:
-        tree: The tree object.
-        tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
-            Only required if multiple trees are present.
-
-    Returns:
-        list[str]: Sorted leaf labels.
-    """
-    t, _ = _get_digraph(tree, tree_key=tree_key)
-    leaves = [node for node in t.nodes if t.out_degree(node) == 0]
-    return sorted(leaves)
-
-
-def get_root(tree: CassiopeiaTree | TreeData | nx.DiGraph, tree_key: str | None = None) -> str:
-    """Return the unique root of a tree.
-
-    Args:
-        tree: The tree object.
-        tree_key: The `obst` key to use when ``tree`` is a :class:`treedata.TreeData`.
-            Only required if multiple trees are present.
+        g: A directed tree graph.
 
     Returns:
         str: The node label of the root.
 
     Raises:
-        ValueError: If the tree does not contain exactly one root.
+        ValueError: If the graph does not contain exactly one root.
     """
-    t, _ = _get_digraph(tree, tree_key=tree_key)
-    roots = [node for node in t.nodes if t.in_degree(node) == 0]
+    roots = [node for node in g.nodes if g.in_degree(node) == 0]
 
     if not roots:
         raise ValueError("Tree does not have a root.")
@@ -254,7 +233,7 @@ def _collapse_unifurcations(
     if len(t) <= 2:
         return t
 
-    root = get_root(t)
+    root = _get_root(t)
 
     for node in reversed(list(nx.topological_sort(t))):
         children = list(t.successors(node))
@@ -354,6 +333,13 @@ def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None)
             stacklevel=3,
         )
     return value
+
+
+def _normalize_missing(missing_state) -> set:
+    """Normalize a missing-state value (scalar or sequence) into a set of values."""
+    if isinstance(missing_state, (list, tuple, set)):
+        return set(missing_state)
+    return {missing_state}
 
 
 def _check_tree_has_key(tree: nx.DiGraph, key: str):

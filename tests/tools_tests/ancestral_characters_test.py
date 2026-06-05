@@ -1,4 +1,4 @@
-"""Tests for tools.ancestral_characters and tools.collapse_edges (TreeData)."""
+"""Tests for tools.ancestral_characters, collapse_edges, count_edge_mutations (TreeData)."""
 
 import networkx as nx
 import pandas as pd
@@ -27,7 +27,7 @@ def make_tdata():
         obs=pd.DataFrame(index=["0", "1", "2", "3"]),
         obst={"tree": g},
         obsm={"characters": cm},
-        uns={"missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0},
     )
 
 
@@ -53,16 +53,78 @@ def test_ancestral_characters_copy_returns_new():
     assert "characters" not in tdata.obst["tree"].nodes["6"]
 
 
+def test_ancestral_characters_key_added():
+    tdata = make_tdata()
+    cas.tl.ancestral_characters(tdata, tree_key="tree", key_added="ancestral")
+    g = tdata.obst["tree"]
+    assert g.nodes["6"]["ancestral"] == [1, 0, 3, 0, 5]
+    assert g.nodes["0"]["ancestral"] == [1, 0, 3, 4, 5]
+    # the default characters attribute is not written when key_added is given
+    assert "characters" not in g.nodes["6"]
+
+
+def test_ancestral_characters_unmodified_state():
+    g = nx.DiGraph()
+    g.add_edge("p", "0")
+    g.add_edge("p", "1")
+    cm = pd.DataFrame.from_dict({"0": [1], "1": [2]}, orient="index", columns=["a"])
+    tdata = td.TreeData(
+        obs=pd.DataFrame(index=["0", "1"]),
+        obst={"tree": g},
+        obsm={"characters": cm},
+        uns={"missing_state": -1},
+    )
+    cas.tl.ancestral_characters(tdata, tree_key="tree", unmodified_state=9)
+    # leaves disagree at character a, so the LCA takes the unmodified state
+    assert tdata.obst["tree"].nodes["p"]["characters"] == [9]
+
+
+def test_count_edge_mutations():
+    tdata = make_tdata()
+    cas.tl.ancestral_characters(tdata, tree_key="tree")
+    cas.tl.count_edge_mutations(tdata, tree_key="tree")
+    g = tdata.obst["tree"]
+    # 6->4 is mutationless; 4->0 has one real mutation (character d, 0 -> 4)
+    assert g.edges["6", "4"]["n_mutations"] == 0
+    assert g.edges["4", "0"]["n_mutations"] == 1
+    # 6->5 differs only by a transition to missing -> not counted by default
+    assert g.edges["6", "5"]["n_mutations"] == 0
+
+
+def test_count_edge_mutations_treat_missing():
+    tdata = make_tdata()
+    cas.tl.ancestral_characters(tdata, tree_key="tree")
+    cas.tl.count_edge_mutations(tdata, tree_key="tree", treat_missing_as_mutation=True)
+    g = tdata.obst["tree"]
+    # 6->5 now counts the 5 -> -1 transition
+    assert g.edges["6", "5"]["n_mutations"] == 1
+
+
+def test_count_edge_mutations_requires_ancestral_states():
+    tdata = make_tdata()
+    with pytest.raises(CassiopeiaError):
+        cas.tl.count_edge_mutations(tdata, tree_key="tree")
+
+
+def test_count_edge_mutations_rejects_non_treedata():
+    g = nx.DiGraph()
+    g.add_edge("r", "a")
+    with pytest.raises(TypeError):
+        cas.tl.count_edge_mutations(g)
+
+
 def test_collapse_edges_mutationless():
     tdata = make_tdata()
     cas.tl.ancestral_characters(tdata, tree_key="tree")
     cas.tl.collapse_edges(tdata, tree_key="tree")
     g = tdata.obst["tree"]
-    # node 4 has identical states to its parent 6 and is collapsed out
+    # node 4 has identical states to its parent 6 and is collapsed out;
+    # node 5 differs only by a transition to missing, so it is mutationless too
     assert "4" not in g.nodes
+    assert "5" not in g.nodes
     assert set(leaves(g)) == {"0", "1", "2", "3"}
-    # 0 and 1 reattach directly to 6
-    assert set(g.successors("6")) == {"0", "1", "5"}
+    # all leaves reattach directly to 6
+    assert set(g.successors("6")) == {"0", "1", "2", "3"}
 
 
 def test_collapse_edges_requires_ancestral_states():

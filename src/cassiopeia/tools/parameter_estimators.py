@@ -9,97 +9,119 @@ import pandas as pd
 from treedata import TreeData
 
 from cassiopeia import utils
-from cassiopeia.data.CassiopeiaTree import CassiopeiaTree
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
+from cassiopeia.tools.topology import get_root
 from cassiopeia.tools.topology import mean_depth as _mean_depth
 
 
-def get_proportion_of_missing_data(
-    tree: CassiopeiaTree | TreeData,
+def fraction_missing(
+    tdata: TreeData,
     characters_key: str = "characters",
     missing_state: str | int | Sequence[str | int] | None = None,
+    key_added: str | None = "fraction_missing",
     **kwargs,
 ) -> float:
-    """Calculate the proportion of missing entries in the character matrix.
+    """Calculate the fraction of missing entries in the character matrix.
 
-    Calculates the proportion of cell/character entries in the character matrix
-    that have a missing state, with the missing state being indicated by
-    the tree's missing_state_indicator.
+    Computes, per cell, the fraction of its character entries that have a
+    missing state and (when ``key_added`` is given) stores this per-cell value
+    in ``tdata.obs[key_added]``. Returns the overall pooled fraction of missing
+    cell/character entries across the whole matrix.
 
     Args:
-        tree: CassiopeiaTree or TreeData object containing the character matrix
-        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
-            uses the default character_matrix attribute; otherwise looks in layers.
-            For TreeData, specifies the obsm key. Default is "characters".
+        tdata: TreeData object containing the character matrix.
+        characters_key: The ``obsm`` key for the character matrix.
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a sequence of values. If not provided, uses the tree's missing_state_indicator
-            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
+            or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
+            or defaults to (-1, "-1", "NA", "-").
+        key_added: Column in ``tdata.obs`` under which to store the per-cell
+            missing fraction. Pass ``None`` to skip writing per-cell values
+            (e.g. when called internally).
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
-        Proportion of missing cell/character entries (between 0 and 1)
+        Overall fraction of missing cell/character entries (between 0 and 1).
 
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_characters(tree, characters_key, **kwargs)
-    missing_state_indicator = utils._get_parameter(tree, "missing_state", value=missing_state)
+    character_matrix = utils._get_characters(tdata, characters_key, **kwargs)
+    missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
 
-    num_dropped = _count_entries(character_matrix, missing_state_indicator)
-    missing_proportion = num_dropped / (character_matrix.shape[0] * character_matrix.shape[1])
-    return missing_proportion
+    missing_mask = _entry_mask(character_matrix, missing_state_indicator)
+    n_characters = character_matrix.shape[1]
+
+    if key_added is not None:
+        per_cell = missing_mask.sum(axis=1) / n_characters
+        utils._get_cell_meta(tdata)[key_added] = pd.Series(per_cell, index=character_matrix.index)
+
+    num_dropped = int(missing_mask.sum())
+    return num_dropped / (character_matrix.shape[0] * n_characters)
 
 
-def get_proportion_of_mutation(
-    tree: CassiopeiaTree | TreeData,
+def fraction_mutated(
+    tdata: TreeData,
     characters_key: str = "characters",
     missing_state: str | int | Sequence[str | int] | None = None,
     unmodified_state: str | int | Sequence[str | int] | None = None,
+    key_added: str | None = "fraction_mutated",
     **kwargs,
 ) -> float:
-    """Calculate the proportion of mutated entries in the character matrix.
+    """Calculate the fraction of mutated entries in the character matrix.
 
-    Calculates the proportion of cell/character entries in the character matrix
-    that have a non-uncut (non-0) state, normalizing over non-missing entries.
-    Hence, missing entries are not considered in calculating the proportion.
+    Computes, per cell, the fraction of its non-missing character entries that
+    have a non-unmodified (mutated) state and (when ``key_added`` is given)
+    stores this per-cell value in ``tdata.obs[key_added]``. Returns the overall
+    pooled fraction of mutated entries, normalizing over non-missing entries
+    (missing entries are not considered).
 
     Args:
-        tree: CassiopeiaTree or TreeData object containing the character matrix
-        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
-            uses the default character_matrix attribute; otherwise looks in layers.
-            For TreeData, specifies the obsm key. Default is "characters".
+        tdata: TreeData object containing the character matrix.
+        characters_key: The ``obsm`` key for the character matrix.
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a sequence of values. If not provided, uses the tree's missing_state_indicator
-            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
+            or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
+            or defaults to (-1, "-1", "NA", "-").
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
-            a single value or a sequence of values. If not provided, defaults to (0, "0", "*").
-            Default is (0, "0", "*").
+            a single value or a sequence of values. If not provided, uses
+            ``tdata.uns['unmodified_state']``, or defaults to (0, "0", "*").
+        key_added: Column in ``tdata.obs`` under which to store the per-cell
+            mutated fraction. Pass ``None`` to skip writing per-cell values
+            (e.g. when called internally).
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
-        Proportion of non-missing cell/character entries that are mutated (between 0 and 1)
+        Overall fraction of non-missing cell/character entries that are mutated
+        (between 0 and 1).
 
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_characters(tree, characters_key, **kwargs)
-    missing_state_indicator = utils._get_parameter(tree, "missing_state", value=missing_state)
+    character_matrix = utils._get_characters(tdata, characters_key, **kwargs)
+    missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state_indicator = utils._get_parameter(
-        tree, "unmodified_state", value=unmodified_state
+        tdata, "unmodified_state", value=unmodified_state
     )
 
-    num_dropped = _count_entries(character_matrix, missing_state_indicator)
-    num_unmodified = _count_entries(character_matrix, unmodified_state_indicator)
+    missing_mask = _entry_mask(character_matrix, missing_state_indicator)
+    unmodified_mask = _entry_mask(character_matrix, unmodified_state_indicator)
+    n_characters = character_matrix.shape[1]
 
-    num_mut = character_matrix.shape[0] * character_matrix.shape[1] - num_dropped - num_unmodified
-    mutation_proportion = num_mut / (
-        character_matrix.shape[0] * character_matrix.shape[1] - num_dropped
-    )
-    return mutation_proportion
+    if key_added is not None:
+        n_nonmissing_row = n_characters - missing_mask.sum(axis=1)
+        n_mutated_row = n_nonmissing_row - unmodified_mask.sum(axis=1)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            per_cell = np.where(n_nonmissing_row > 0, n_mutated_row / n_nonmissing_row, 0.0)
+        utils._get_cell_meta(tdata)[key_added] = pd.Series(per_cell, index=character_matrix.index)
+
+    num_dropped = int(missing_mask.sum())
+    num_unmodified = int(unmodified_mask.sum())
+    n_total = character_matrix.shape[0] * n_characters
+    num_mut = n_total - num_dropped - num_unmodified
+    return num_mut / (n_total - num_dropped)
 
 
 def estimate_mutation_rate(
-    tree: CassiopeiaTree | TreeData,
+    tdata: TreeData,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
     characters_key: str = "characters",
@@ -109,37 +131,36 @@ def estimate_mutation_rate(
     unmodified_state: str | int | Sequence[str | int] | None = (0, "0", "*"),
     **kwargs,
 ) -> float:
-    """Calculate the proportion of mutated entries in the character matrix.
+    """Estimate the mutation rate of a tree from its observed mutations.
 
-    Calculates the proportion of cell/character entries in the character matrix
-    that have a non-uncut (non-0) state, normalizing over non-missing entries.
-    Hence, missing entries are not considered in calculating the proportion.
+    Estimates the mutation rate from the fraction of mutated (non-missing,
+    non-unmodified) entries in the character matrix and the mean depth/time of
+    the tree, either as a per-generation (discrete) or instantaneous (continuous)
+    rate.
 
     Args:
-        tree: CassiopeiaTree or TreeData object containing tree topology and character matrix
+        tdata: TreeData object containing tree topology and character matrix.
         continuous: If True, calculate a continuous mutation rate accounting for branch
             lengths. If False, calculate a discrete mutation rate using node depths.
             Default is True.
         assume_root_implicit_branch: If True, assume an implicit branch leading from
             the root if it doesn't exist (i.e., if root has multiple children). This
             branch is added to the total time when calculating the estimate. Default is True.
-        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
-            uses the default character_matrix attribute; otherwise looks in layers.
-            For TreeData, specifies the obsm key. Default is "characters".
+        characters_key: The ``obsm`` key for the character matrix. Default is "characters".
         depth_key: Node attribute key containing depth values (e.g., "depth" for
             generation count, "time" for evolutionary time). Default is "depth".
-        tree_key: Tree key to use if tree is a TreeData object with multiple trees.
-            Only required if multiple trees are present. Default is "tree".
+        tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
+            trees. Default is "tree".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a sequence of values. If not provided, uses the tree's missing_state_indicator
-            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
+            or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
+            or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
             a single value or a sequence of values. If not provided, defaults to (0, "0", "*").
             Default is (0, "0", "*").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Returns:
-        Proportion of non-missing cell/character entries that are mutated (between 0 and 1)
+        The estimated mutation rate.
 
     Warns:
         UserWarning: If continuous=True but branch lengths are integers, suggesting
@@ -148,11 +169,11 @@ def estimate_mutation_rate(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    t, _ = utils._get_digraph(tree, tree_key=tree_key)
-    mutation_proportion = utils._get_parameter(tree, "mutation_proportion")
+    t, _ = utils._get_digraph(tdata, tree_key=tree_key)
+    mutation_proportion = utils._get_parameter(tdata, "mutation_proportion")
     if mutation_proportion is None:
-        mutation_proportion = get_proportion_of_mutation(
-            tree, characters_key, missing_state, unmodified_state, **kwargs
+        mutation_proportion = fraction_mutated(
+            tdata, characters_key, missing_state, unmodified_state, key_added=None, **kwargs
         )
 
     if mutation_proportion < 0 or mutation_proportion > 1:
@@ -162,8 +183,8 @@ def estimate_mutation_rate(
 
     _check_continuous_not_int(t, edges, continuous)
 
-    root = utils.get_root(tree, tree_key=tree_key)
-    mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
+    root = get_root(tdata, tree_key=tree_key)
+    mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
 
     if assume_root_implicit_branch and t.out_degree(root) != 1:
         mean_depth += (
@@ -178,8 +199,8 @@ def estimate_mutation_rate(
     return mutation_rate
 
 
-def estimate_missing_data_rates(
-    tree: CassiopeiaTree | TreeData,
+def estimate_missing_rates(
+    tdata: TreeData,
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
     stochastic_missing_probability: float | None = None,
@@ -208,12 +229,12 @@ def estimate_missing_data_rates(
             - heritable proportion * stochastic proportion
 
     This function attempts to consume the amount of missing data (the total
-    missing proportion) as `missing_proportion` in `tree.parameters`, inferring
-    it using `get_proportion_of_missing_data` if it is not populated.
+    missing proportion) as `missing_proportion` in `tdata.uns`, inferring
+    it using `fraction_missing` if it is not populated.
 
     Since the two types of data are convolved, we need to know the contribution of one
     type to estimate the other. This function attempts to retrieve the heritable missing
-    rate and stochastic missing probability from tree parameters, or they may be provided
+    rate and stochastic missing probability from ``tdata.uns``, or they may be provided
     as function arguments. Exactly one of these parameters must be provided; if neither
     or both are provided, the function raises an error.
 
@@ -256,7 +277,7 @@ def estimate_missing_data_rates(
     assume is equal to the probability.
 
     Args:
-        tree: CassiopeiaTree or TreeData object containing tree topology and character matrix
+        tdata: TreeData object containing tree topology and character matrix
         continuous: If True, calculate a continuous missing rate accounting for branch
             lengths. If False, calculate a discrete missing rate based on the number of
             generations. Default is True.
@@ -264,20 +285,18 @@ def estimate_missing_data_rates(
             the root if it doesn't exist (i.e., if root has multiple children). This
             branch is added to the total time when calculating the estimate. Default is True.
         stochastic_missing_probability: The stochastic missing probability. Will override
-            the value stored in tree parameters if provided. Observed probabilities of
+            the value stored in ``tdata.uns`` if provided. Observed probabilities of
             stochastic missing data typically range between 10-20%. Default is None.
         heritable_missing_rate: The heritable missing rate. Will override the value
-            stored in tree parameters if provided. Default is None.
-        characters_key: Key for the character matrix. For CassiopeiaTree, if "characters",
-            uses the default character_matrix attribute; otherwise looks in layers.
-            For TreeData, specifies the obsm key. Default is "characters".
+            stored in ``tdata.uns`` if provided. Default is None.
+        characters_key: The ``obsm`` key for the character matrix. Default is "characters".
         depth_key: Node attribute key containing depth values (e.g., "depth" for
             generation count, "time" for evolutionary time). Default is "depth".
-        tree_key: Tree key to use if tree is a TreeData object with multiple trees.
-            Only required if multiple trees are present. Default is "tree".
+        tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
+            trees. Default is "tree".
         missing_state: Value(s) to consider as missing data. Can be a single value
-            or a sequence of values. If not provided, uses the tree's missing_state_indicator
-            attribute, or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
+            or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
+            or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
         **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
 
     Warns:
@@ -291,11 +310,11 @@ def estimate_missing_data_rates(
         ParameterEstimateWarning: If the estimated parameter is negative, suggesting
             that the provided parameter may be too high.
     """
-    t, _ = utils._get_digraph(tree, tree_key=tree_key)
-    total_missing_proportion = utils._get_parameter(tree, "missing_proportion")
+    t, _ = utils._get_digraph(tdata, tree_key=tree_key)
+    total_missing_proportion = utils._get_parameter(tdata, "missing_proportion")
     if total_missing_proportion is None:
-        total_missing_proportion = get_proportion_of_missing_data(
-            tree, characters_key, missing_state, **kwargs
+        total_missing_proportion = fraction_missing(
+            tdata, characters_key, missing_state, key_added=None, **kwargs
         )
 
     if total_missing_proportion < 0 or total_missing_proportion > 1:
@@ -303,24 +322,24 @@ def estimate_missing_data_rates(
 
     if stochastic_missing_probability is None:
         stochastic_missing_probability = utils._get_parameter(
-            tree, "stochastic_missing_probability"
+            tdata, "stochastic_missing_probability"
         )
 
     if heritable_missing_rate is None:
-        heritable_missing_rate = utils._get_parameter(tree, "heritable_missing_rate")
+        heritable_missing_rate = utils._get_parameter(tdata, "heritable_missing_rate")
 
     if heritable_missing_rate is None and stochastic_missing_probability is None:
         raise ParameterEstimateError(
             "Neither `heritable_missing_rate` nor "
             "`stochastic_missing_probability` were provided as arguments or "
-            "found in `tree.parameters`. Please provide one of these "
+            "found in `tdata.uns`. Please provide one of these "
             "parameters, otherwise they are convolved and cannot be estimated"
         )
 
     if heritable_missing_rate is not None and stochastic_missing_probability is not None:
         raise ParameterEstimateError(
             "Both `heritable_missing_rate` and `stochastic_missing_probability`"
-            " were provided as parameters or found in `tree.parameters`. "
+            " were provided as parameters or found in `tdata.uns`. "
             "Please only supply one of the two"
         )
 
@@ -328,8 +347,8 @@ def estimate_missing_data_rates(
 
     _check_continuous_not_int(t, edges, continuous)
 
-    root = utils.get_root(tree, tree_key=tree_key)
-    mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
+    root = get_root(tdata, tree_key=tree_key)
+    mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
 
     if heritable_missing_rate is None:
         if stochastic_missing_probability < 0:
@@ -337,7 +356,7 @@ def estimate_missing_data_rates(
         if stochastic_missing_probability > 1:
             raise ParameterEstimateError("Stochastic missing data rate must be < 1.")
 
-        mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
+        mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
 
         if assume_root_implicit_branch and t.out_degree(root) != 1:
             if not continuous:
@@ -361,7 +380,7 @@ def estimate_missing_data_rates(
         if not continuous and heritable_missing_rate > 1:
             raise ParameterEstimateError("Per-generation heritable missing data rate must be < 1.")
 
-        mean_depth = _mean_depth(tree, depth_key, tree_key=tree_key)
+        mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
 
         if assume_root_implicit_branch and t.out_degree(root) != 1:
             if not continuous:
@@ -395,20 +414,17 @@ def estimate_missing_data_rates(
     return stochastic_missing_probability, heritable_missing_rate
 
 
-def _count_entries(character_matrix: pd.DataFrame, indicator) -> int:
-    """Counts the instances of the character matrix that matches the indicator."""
+def _entry_mask(character_matrix: pd.DataFrame, indicator) -> np.ndarray:
+    """Boolean ndarray mask of entries matching ``indicator`` (scalar or sequence)."""
     if not isinstance(indicator, (list, tuple, set)):
-        mask = character_matrix == indicator
+        return (character_matrix == indicator).values
+    if pd.api.types.is_integer_dtype(character_matrix.values.dtype):
+        indicator = [x for x in indicator if isinstance(x, (int, np.integer))]
     else:
-        if pd.api.types.is_integer_dtype(character_matrix.values.dtype):
-            indicator = [x for x in indicator if isinstance(x, (int, np.integer))]
-        else:
-            indicator = [str(x) for x in indicator]
-        if not indicator:
-            return 0
-        mask = np.isin(character_matrix, indicator)
-
-    return int(mask.sum().sum())
+        indicator = [str(x) for x in indicator]
+    if not indicator:
+        return np.zeros(character_matrix.shape, dtype=bool)
+    return np.isin(character_matrix.values, indicator)
 
 
 def _check_continuous_not_int(

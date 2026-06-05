@@ -18,7 +18,6 @@ from cassiopeia.typing import TreeLike
 from cassiopeia.utils import (
     _collapse_unifurcations,
     _get_digraph,
-    get_leaves,
 )
 
 
@@ -66,6 +65,9 @@ def triplets_correct(
         if tree2 is not None
         else _get_digraph(tree1, tree_key=key2, copy=True)
     )
+
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")
@@ -168,6 +170,9 @@ def _run_triplets_correct(
 
 def _robinson_foulds_bitset(tree1: nx.DiGraph, tree2: nx.DiGraph):
     """Compute the unrooted Robinson–Foulds distance using bitsets."""
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
+
     leaf_index = {leaf: i for i, leaf in enumerate(get_leaves(tree1))}
 
     def get_splits(tree, leaf_index):
@@ -238,6 +243,9 @@ def robinson_foulds(
         if tree2 is not None
         else _get_digraph(tree1, tree_key=key2, copy=True)
     )
+
+    # Imported lazily to avoid a circular import at package load time.
+    from cassiopeia.tools.topology import get_leaves
 
     if set(get_leaves(t1)) != set(get_leaves(t2)):
         raise ValueError("Trees must have identical leaf sets.")

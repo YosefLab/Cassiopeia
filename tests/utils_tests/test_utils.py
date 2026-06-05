@@ -59,26 +59,6 @@ def test_get_digraph_from_treedata(tree):
         utils._get_digraph(tree="bad")
 
 
-def test_get_leaves_sorted(tree):
-    leaves = utils.get_leaves(tree)
-    assert leaves == ["3", "4", "5"]
-
-
-def test_get_root_identifies_unique_root(tree):
-    root = utils.get_root(tree)
-    assert root == "0"
-    # Does not have a root
-    cycle = nx.DiGraph()
-    cycle.add_edges_from([("A", "B"), ("B", "C"), ("C", "A")])
-    with pytest.raises(ValueError):
-        utils.get_root(cycle)
-    # Multiple roots
-    multi_root = nx.DiGraph()
-    multi_root.add_edges_from([("A", "B"), ("C", "D")])
-    with pytest.raises(ValueError):
-        utils.get_root(multi_root)
-
-
 def test_collapse_unifurcations(tree):
     collapsed = utils._collapse_unifurcations(tree)
     assert "1" not in collapsed
