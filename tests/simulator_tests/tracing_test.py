@@ -268,7 +268,7 @@ def test_uns_storage(tdata):
     )
     assert tdata.uns["cassette_size"] == 4
     assert tdata.uns["unmodified_state"] == "*"
-    assert "missing_state" not in tdata.uns
+    assert tdata.uns["missing_state"] == "-"
 
 
 def test_custom_unmodified_state(tdata):

@@ -17,13 +17,14 @@ def weighted_hamming(
     s2: list[int],
     missing_state_indicator=-1,
     weights: dict[int, dict[int, float]] | None = None,
+    unmodified_state=0,
 ) -> float:
     """Weighted hamming distance between two samples (ignores missing positions).
 
     Positions where either sample is missing are ignored, and the dissimilarity
     is normalized by the number of non-missing shared characters.  Without
-    weights, a mismatch contributes +2, a mismatch where one state is uncut (0)
-    contributes +1, and identical states contribute +0.
+    weights, a mismatch contributes +2, a mismatch where one state is the
+    unmodified (uncut) state contributes +1, and identical states contribute +0.
 
     Args:
         s1: Character states of the first sample
@@ -31,6 +32,7 @@ def weighted_hamming(
         missing_state_indicator: The character representing missing values
         weights: A nested dictionary of per-(character, state) weights derived
             from the priors (character -> state -> weight), or ``None``.
+        unmodified_state: The state representing the unmodified (uncut) site.
 
     Returns:
         A dissimilarity score.
@@ -44,9 +46,9 @@ def weighted_hamming(
         num_present += 1
 
         if s1[i] != s2[i]:
-            if s1[i] == 0 or s2[i] == 0:
+            if s1[i] == unmodified_state or s2[i] == unmodified_state:
                 if weights:
-                    if s1[i] != 0:
+                    if s1[i] != unmodified_state:
                         d += weights[i][s1[i]]
                     else:
                         d += weights[i][s2[i]]
@@ -97,35 +99,42 @@ def nonmissing_hamming(
     s2: list[int],
     missing_state_indicator: int = -1,
     weights: dict[int, dict[int, float]] | None = None,
+    unmodified_state=0,
 ) -> float:
-    """Fraction of non-missing positions at which two samples disagree.
+    """Hamming-style dissimilarity over non-missing positions.
 
-    Positions where either sample is missing are ignored, and the count of
-    disagreements is normalized by the number of non-missing shared positions
-    (as in :func:`weighted_hamming`).
+    Positions where either sample is missing are ignored.  A mismatch
+    contributes +2, a mismatch where one state is the unmodified (uncut) state
+    contributes +1, and identical states contribute +0; the total is normalized
+    by the number of non-missing shared positions (as in
+    :func:`weighted_hamming` without weights).
 
     Args:
         s1: The first sample
         s2: The second sample
         missing_state_indicator: The character representing missing values.
         weights: Unused; present for a uniform metric signature.
+        unmodified_state: The state representing the unmodified (uncut) site.
 
     Returns:
-        The proportion of non-missing positions two samples disagree at.
+        The normalized dissimilarity over non-missing positions.
     """
-    dist = 0
+    d = 0
     num_present = 0
     for i in range(len(s1)):
         if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
             continue
         num_present += 1
         if s1[i] != s2[i]:
-            dist += 1
+            if s1[i] == unmodified_state or s2[i] == unmodified_state:
+                d += 1
+            else:
+                d += 2
 
     if num_present == 0:
         return 0
 
-    return dist / num_present
+    return d / num_present
 
 
 def cluster_dissimilarity(
@@ -269,6 +278,29 @@ _DISSIMILARITY_FUNCTIONS: dict[str, Callable] = {
     "cluster_dissimilarity": cluster_dissimilarity,
     "cluster_weighted_hamming": cluster_weighted_hamming,
 }
+
+# Metrics that actually consume the per-(character, state) ``weights`` derived
+# from priors. Others ignore weights, so supplying priors with them is a no-op.
+_WEIGHTED_DISSIMILARITY_FUNCTIONS = {weighted_hamming, cluster_weighted_hamming}
+
+
+def _uses_weights(dissimilarity: str | Callable | None) -> bool:
+    """Whether a dissimilarity metric consumes prior-derived weights.
+
+    Resolves a string name to its callable and unwraps :func:`functools.partial`
+    wrappers, inspecting any bound sub-metric (e.g. a ``cluster_dissimilarity``
+    partial built around ``weighted_hamming``).
+    """
+    import functools
+
+    fn = _resolve_dissimilarity(dissimilarity)
+    candidates: list = []
+    while isinstance(fn, functools.partial):
+        candidates.extend(fn.args)
+        candidates.extend(fn.keywords.values())
+        fn = fn.func
+    candidates.append(fn)
+    return any(c in _WEIGHTED_DISSIMILARITY_FUNCTIONS for c in candidates)
 
 
 def _resolve_dissimilarity(

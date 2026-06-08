@@ -14,7 +14,30 @@ from collections.abc import Callable
 import networkx as nx
 import numpy as np
 
+from cassiopeia.simulator.expression import trajectory_expression
 from cassiopeia.simulator.topology import birth_death_process, complete_binary
+
+
+def fate_tree_expression(*args, **kwargs):
+    """Deprecated. Use :func:`cassiopeia.simulator.trajectory_expression` instead."""
+    warnings.warn(
+        "fate_tree_expression is deprecated and will be removed in a future release. "
+        "Use trajectory_expression() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    # Map renamed arguments to the new signature.
+    if "lineage_tree" in kwargs:
+        kwargs["tdata"] = kwargs.pop("lineage_tree")
+    if "fate_tree" in kwargs:
+        kwargs["trajectory"] = kwargs.pop("fate_tree")
+    if "factor_key" in kwargs:
+        kwargs["latent_key"] = kwargs.pop("factor_key")
+    if "random_state" in kwargs:
+        kwargs["random_seed"] = kwargs.pop("random_state")
+    if "noise" in kwargs:
+        kwargs["latent_noise"] = kwargs.pop("noise")
+    return trajectory_expression(*args, **kwargs)
 
 
 class CompleteBinarySimulator:

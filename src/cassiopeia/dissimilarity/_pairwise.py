@@ -53,7 +53,7 @@ def _as_str_set(value) -> set[str]:
 
 def _encode_integer_matrix(
     arr: pd.DataFrame, missing_state_indicator, unmodified_state
-) -> tuple[pd.DataFrame, int]:
+) -> tuple[pd.DataFrame, int, dict | None]:
     """Encode a (string/categorical) character matrix to a contiguous int64 frame.
 
     Maps the unmodified state to ``0``, the missing state to ``-1``, and every
@@ -65,14 +65,15 @@ def _encode_integer_matrix(
     integer/string conventions (e.g. ``0`` vs ``"0"``) are matched.  Either
     argument may be a single value or a tuple of acceptable representations.
 
-    Returns ``(int64_dataframe, -1)`` (the second value is the integer missing
-    indicator to use with the encoded matrix).
+    Returns ``(int64_dataframe, -1, mapping)`` where *mapping* maps each original
+    state value to its integer code (use :func:`_encode_priors` to re-key priors
+    accordingly). Integer matrices are returned unchanged with ``mapping=None``.
     """
     values = arr.to_numpy()
     # Integer matrices already use the integer convention; return them unchanged
     # (remapping would break priors keyed by the original state values).
     if np.issubdtype(values.dtype, np.integer):
-        return arr, _int_missing(missing_state_indicator)
+        return arr, _int_missing(missing_state_indicator), None
     missing_set = _as_str_set(missing_state_indicator)
     unmodified_set = _as_str_set(unmodified_state)
     mapping: dict = {}
@@ -90,7 +91,38 @@ def _encode_integer_matrix(
     out = np.empty(arr.shape, dtype=np.int64)
     for value, code in mapping.items():
         out[values == value] = code
-    return pd.DataFrame(out, index=arr.index, columns=arr.columns), -1
+    return pd.DataFrame(out, index=arr.index, columns=arr.columns), -1, mapping
+
+
+def _encode_priors(priors: dict[int, dict] | None, mapping: dict | None) -> dict[int, dict] | None:
+    """Re-key priors' state keys to match an integer-encoded character matrix.
+
+    ``tdata.obsm[characters_key]`` may hold string or integer states, and
+    :func:`_encode_integer_matrix` remaps string/categorical states to integers.
+    Priors (``{character_index: {state: probability}}``) carry state keys in the
+    *original* representation, so they must be remapped with the same *mapping*
+    to line up with the encoded matrix.
+
+    Args:
+        priors: Priors keyed by character index, or ``None``.
+        mapping: Original-state -> integer-code map from
+            :func:`_encode_integer_matrix`. ``None`` means the matrix was already
+            integer (no remapping), so priors are returned unchanged.
+
+    Returns:
+        Priors with inner state keys remapped to the encoded integers. States not
+        present in the matrix (absent from *mapping*) are left unchanged.
+    """
+    if mapping is None or not priors:
+        return priors
+    str_to_code = {str(orig): code for orig, code in mapping.items()}
+    return {
+        character: {
+            str_to_code.get(str(state), state): probability
+            for state, probability in state_priors.items()
+        }
+        for character, state_priors in priors.items()
+    }
 
 
 def _prepare_integer_matrix(
@@ -109,7 +141,7 @@ def _prepare_integer_matrix(
     if np.issubdtype(values.dtype, np.integer):
         return np.ascontiguousarray(values), _int_missing(missing_state_indicator)
     if weights is None:
-        df, missing = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
+        df, missing, _ = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
         return np.ascontiguousarray(df.to_numpy()), missing
     try:
         converted = np.ascontiguousarray(arr.astype(np.int64).to_numpy())

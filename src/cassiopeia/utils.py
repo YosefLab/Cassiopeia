@@ -335,6 +335,52 @@ def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None)
     return value
 
 
+def _resolve_priors(
+    tree: CassiopeiaTree | TreeData,
+    priors: dict[int, dict[int, float]] | bool,
+) -> dict[int, dict[int, float]] | None:
+    """Resolve a solver's ``priors`` argument to a priors dict or ``None``.
+
+    Centralizes the shared ``priors: dict | bool`` semantics used by the solvers
+    so the behavior is identical everywhere.
+
+    Args:
+        tree: CassiopeiaTree or TreeData that may store priors.
+        priors: Either an explicit priors mapping, or a boolean flag. ``True``
+            reads priors from ``tree.uns["priors"]`` (``tree.priors`` for a
+            CassiopeiaTree) and raises if none are stored. ``False`` disables
+            priors (returns ``None``). A mapping is returned (after
+            normalization). ``None`` is treated as ``False`` for backward
+            compatibility.
+
+    Returns:
+        Priors as a dict keyed by character index, or ``None`` when disabled. A
+        list/tuple of per-character dicts is normalized to a position-keyed dict.
+
+    Raises:
+        ValueError: If ``priors=True`` but no priors are stored on *tree*.
+    """
+    if priors is True:
+        if isinstance(tree, CassiopeiaTree):
+            stored = tree.priors
+        else:
+            stored = tree.uns.get("priors", None)
+        if not stored:
+            raise ValueError(
+                "priors=True but no priors were found in tdata.uns['priors']. "
+                "Specify priors explicitly (priors=<dict>) or set priors=False "
+                "to reconstruct without priors."
+            )
+        priors = stored
+    elif priors is False or priors is None:
+        return None
+    # Normalize a per-character sequence (e.g. the simulator's list of dicts) to a
+    # dict keyed by character index, matching the solver convention.
+    if isinstance(priors, (list, tuple)):
+        priors = dict(enumerate(priors))
+    return priors
+
+
 def _normalize_missing(missing_state) -> set:
     """Normalize a missing-state value (scalar or sequence) into a set of values."""
     if isinstance(missing_state, (list, tuple, set)):
@@ -366,6 +412,11 @@ def _get_leaf_data(g: nx.DiGraph, key: str) -> dict[str, Any]:
         if g.out_degree(node) == 0:  # Check if node is a leaf
             leaf_data[node] = g.nodes[node].get(key)
     return pd.Series(leaf_data)
+
+
+def _get_node_data(g: nx.DiGraph, key: str) -> pd.Series:
+    """Get a Series mapping every node label to a specified node attribute."""
+    return pd.Series({node: g.nodes[node].get(key) for node in g.nodes})
 
 
 def _node_name_generator() -> Generator[str, None, None]:

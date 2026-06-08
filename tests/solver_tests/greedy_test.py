@@ -99,7 +99,7 @@ def test_greedy_basic_topology():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(cm)
-    cas.solver.greedy(tdata, key_added="greedy", missing_state=-1, unmodified_state=0)
+    cas.solver.greedy(tdata, key_added="greedy", missing_state=-1, unmodified_state=0, priors=False)
     tree = tdata.obst["greedy"]
 
     assert set(leaves(tree)) == set(cm.index)
@@ -116,7 +116,49 @@ def test_greedy_with_priors_runs():
     )
     priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
     tdata = chars_tdata(cm, priors=priors)
+    # priors=True (default) reads tdata.uns["priors"].
     cas.solver.greedy(tdata, key_added="greedy", missing_state=-1, unmodified_state=0)
+    assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
+
+
+def test_greedy_priors_true_without_priors_raises():
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 1, 0], "b": [1, 2, 0], "c": [1, 2, 1]},
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    tdata = chars_tdata(cm)  # no priors in uns
+    with pytest.raises(ValueError, match="priors=True but no priors"):
+        cas.solver.greedy(tdata, key_added="greedy", priors=True)
+
+
+def test_greedy_priors_list_normalized_to_dict():
+    # The simulator stores priors as a list of per-character dicts; this is
+    # normalized to a position-keyed dict and must match the dict form.
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 1, 0], "b": [1, 2, 0], "c": [1, 2, 1], "d": [2, 0, 0], "e": [2, 0, 2]},
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    priors_dict = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
+    priors_list = [{1: 0.5, 2: 0.5}, {1: 0.2, 2: 0.8}, {1: 0.3, 2: 0.7}]
+
+    td_d = chars_tdata(cm)
+    td_l = chars_tdata(cm)
+    cas.solver.greedy(td_d, key_added="greedy", priors=priors_dict)
+    cas.solver.greedy(td_l, key_added="greedy", priors=priors_list)
+    assert set(leaves(td_d.obst["greedy"])) == set(leaves(td_l.obst["greedy"]))
+
+
+def test_greedy_priors_dict_passed_directly():
+    cm = pd.DataFrame.from_dict(
+        {"a": [1, 1, 0], "b": [1, 2, 0], "c": [1, 2, 1], "d": [2, 0, 0], "e": [2, 0, 2]},
+        orient="index",
+        columns=["x1", "x2", "x3"],
+    )
+    priors = {0: {1: 0.5, 2: 0.5}, 1: {1: 0.2, 2: 0.8}, 2: {1: 0.3, 2: 0.7}}
+    tdata = chars_tdata(cm)  # no priors in uns; passed explicitly
+    cas.solver.greedy(tdata, key_added="greedy", priors=priors)
     assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
 
 
@@ -134,7 +176,7 @@ def test_greedy_duplicates_preserved():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(cm)
-    cas.solver.greedy(tdata, key_added="greedy")
+    cas.solver.greedy(tdata, key_added="greedy", priors=False)
     assert set(leaves(tdata.obst["greedy"])) == set(cm.index)
 
 
@@ -145,13 +187,13 @@ def test_greedy_copy_returns_new_and_leaves_original():
         columns=["x1", "x2", "x3"],
     )
     tdata = chars_tdata(cm)
-    out = cas.solver.greedy(tdata, key_added="greedy", copy=True)
+    out = cas.solver.greedy(tdata, key_added="greedy", copy=True, priors=False)
     assert isinstance(out, td.TreeData)
     assert "greedy" in out.obst
     # original is untouched when copy=True
     assert "greedy" not in tdata.obst
     # in-place returns None
-    assert cas.solver.greedy(tdata, key_added="greedy") is None
+    assert cas.solver.greedy(tdata, key_added="greedy", priors=False) is None
     assert "greedy" in tdata.obst
 
 
@@ -175,8 +217,12 @@ def test_greedy_average_classifier_string_and_callable_match():
     str_tdata = chars_tdata(cm.copy())
     cb_tdata = chars_tdata(cm.copy())
     # the "average" string default resolves to _assign_missing_average
-    cas.solver.greedy(str_tdata, key_added="greedy", missing_data_classifier="average")
-    cas.solver.greedy(cb_tdata, key_added="greedy", missing_data_classifier=_assign_missing_average)
+    cas.solver.greedy(
+        str_tdata, key_added="greedy", missing_data_classifier="average", priors=False
+    )
+    cas.solver.greedy(
+        cb_tdata, key_added="greedy", missing_data_classifier=_assign_missing_average, priors=False
+    )
     assert set(leaves(str_tdata.obst["greedy"])) == set(cm.index)
     for t in [("a", "d", "e"), ("b", "c", "d")]:
         assert find_triplet_structure(t, str_tdata.obst["greedy"]) == find_triplet_structure(
@@ -192,7 +238,9 @@ def test_greedy_unknown_classifier_raises():
     )
     tdata = chars_tdata(cm)
     with pytest.raises(GreedySolverError):
-        cas.solver.greedy(tdata, key_added="greedy", missing_data_classifier="not_a_method")
+        cas.solver.greedy(
+            tdata, key_added="greedy", missing_data_classifier="not_a_method", priors=False
+        )
 
 
 # ── deprecation ───────────────────────────────────────────────────────────────

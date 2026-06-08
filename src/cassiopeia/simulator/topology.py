@@ -4,13 +4,14 @@ import inspect
 import warnings
 from collections.abc import Callable, Generator, Iterable
 from queue import PriorityQueue, Queue
+from typing import Literal
 
 import networkx as nx
 import numpy as np
 import treedata as td
 
 from cassiopeia.mixins import TreeSimulatorError
-from cassiopeia.utils import _collapse_unifurcations, _get_leaf_data
+from cassiopeia.utils import _collapse_unifurcations, _get_leaf_data, _get_node_data
 
 
 def _name_generator(
@@ -53,24 +54,34 @@ def _call(func: Callable, *args, rng: np.random.Generator):
 def _finalize_tree(
     tree: nx.DiGraph,
     key_added: str,
-    leaf_attrs: Iterable[str] | None = None,
+    node_attrs: Iterable[str] | None = None,
     default_depth: str = "depth",
+    alignment: Literal["nodes", "leaves"] = "leaves",
 ) -> td.TreeData:
     """Wrap a simulated ``nx.DiGraph`` in a ``TreeData`` with standard metadata.
 
-    Mirrors leaf node attributes into ``obs`` and records
-    ``uns["default_depth"]`` so every topology simulator produces a consistently
-    populated ``TreeData``.
+    Mirrors node attributes into ``obs`` and records ``uns["default_depth"]`` so
+    every topology simulator produces a consistently populated ``TreeData``. When
+    ``alignment == "nodes"`` the ``obs`` index spans all tree nodes, so
+    attributes are pulled from every node (not just leaves); otherwise only leaf
+    attributes are mirrored.
     """
-    tdata = td.TreeData(obst={key_added: tree}, uns={"default_depth": default_depth})
+    tdata = td.TreeData(obst={key_added: tree}, alignment=alignment)
 
-    leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
+    # Rows that TreeData aligns ``obs`` to: all nodes for "nodes" alignment,
+    # leaves only otherwise.
+    if alignment == "nodes":
+        obs_nodes = list(tree.nodes)
+        get_data = _get_node_data
+    else:
+        obs_nodes = [node for node in tree.nodes if tree.out_degree(node) == 0]
+        get_data = _get_leaf_data
 
-    if leaf_attrs is None and leaves:
-        leaf_attrs = tree.nodes[leaves[0]].keys()
+    if node_attrs is None and obs_nodes:
+        node_attrs = tree.nodes[obs_nodes[0]].keys()
 
-    for attr in leaf_attrs or ():
-        tdata.obs[attr] = _get_leaf_data(tree, attr)
+    for attr in node_attrs or ():
+        tdata.obs[attr] = get_data(tree, attr)
 
     return tdata
 
@@ -79,6 +90,7 @@ def complete_binary(
     num_cells: int | None = None,
     depth: int | None = None,
     key_added: str = "simulated",
+    alignment: Literal["nodes", "leaves"] = "leaves",
 ) -> td.TreeData:
     """Simulate a complete binary tree.
 
@@ -90,6 +102,8 @@ def complete_binary(
         num_cells: Number of leaf cells. Must be a power of 2.
         depth: Depth of the tree. Number of cells will be ``2^depth``.
         key_added: Key under which the tree is stored in ``obst``.
+        alignment: Whether the tree is aligned to "nodes" or "leaves" in the
+            resulting TreeData.
 
     Returns:
         A TreeData with the simulated tree in ``obst[key_added]``. Each node
@@ -119,7 +133,7 @@ def complete_binary(
     times = {node: d / max_depth for node, d in depths.items()}
     nx.set_node_attributes(tree, times, "time")
 
-    return _finalize_tree(tree, key_added, ["time", "depth"], "time")
+    return _finalize_tree(tree, key_added, ["time", "depth"], "time", alignment)
 
 
 def birth_death_process(
@@ -138,6 +152,7 @@ def birth_death_process(
     initial_tree: nx.DiGraph | None = None,
     on_division: Callable | None = None,
     key_added: str = "simulated",
+    alignment: Literal["nodes", "leaves"] = "leaves",
 ) -> td.TreeData:
     """Simulate a phylogenetic tree via a forward birth-death process with fitness.
 
@@ -182,6 +197,8 @@ def birth_death_process(
             Extension seam for state-dependent fitness. Defaults to the scalar
             fitness model.
         key_added: Key under which the result tree is stored in ``obst``.
+        alignment: Whether the tree is aligned to "nodes" or "leaves" in the
+            resulting TreeData.
 
     Returns:
         A TreeData with the simulated tree in ``obst[key_added]``. Each node
@@ -279,7 +296,7 @@ def birth_death_process(
                         )
 
             result = _build_tree(tree, observed_nodes, collapse_unifurcations)
-            return _finalize_tree(result, key_added, None, "time")
+            return _finalize_tree(result, key_added, None, "time", alignment)
 
         except TreeSimulatorError as e:
             if "All lineages died" not in str(e) or _attempt == _max_attempts - 1:
@@ -467,6 +484,7 @@ def simple_fit_subclone(
     experiment_duration: float = 10.0,
     generations_until_fit_subclone: int = 5,
     key_added: str = "simulated",
+    alignment: Literal["nodes", "leaves"] = "leaves",
 ) -> td.TreeData:
     """Simulate a clonal population that develops one fit subclone.
 
@@ -488,6 +506,8 @@ def simple_fit_subclone(
         generations_until_fit_subclone: Generation at which one lineage gains
             fitness.
         key_added: Key under which the tree is stored in ``obst``.
+        alignment: Whether the tree is aligned to "nodes" or "leaves" in the
+            resulting TreeData.
 
     Returns:
         A TreeData with the simulated tree in ``obst[key_added]``. All nodes
@@ -541,4 +561,4 @@ def simple_fit_subclone(
 
     nx.set_node_attributes(tree, times, "time")
     nx.set_node_attributes(tree, fits, "fit")
-    return _finalize_tree(tree, key_added, ["time", "fit"], "time")
+    return _finalize_tree(tree, key_added, ["time", "fit"], "time", alignment)

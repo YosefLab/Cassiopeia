@@ -385,5 +385,26 @@ def test_rng_reproducible_and_isolated():
     assert before == after
 
 
+# --- alignment ---
+
+
+def test_birth_death_alignment_leaves_default():
+    tdata = birth_death_process(lambda scale, rng: 1.0, num_extant=8, random_seed=0)
+    tree = tdata.obst["simulated"]
+    leaves = {n for n in tree if tree.out_degree(n) == 0}
+    assert set(tdata.obs_names) == leaves
+    assert tdata.obs["time"].notna().all()
+
+
+def test_birth_death_alignment_nodes():
+    tdata = birth_death_process(
+        lambda scale, rng: 1.0, num_extant=8, random_seed=0, alignment="nodes"
+    )
+    tree = tdata.obst["simulated"]
+    # obs spans every node, and time is populated for all of them (not just leaves).
+    assert set(tdata.obs_names) == set(tree.nodes)
+    assert tdata.obs["time"].notna().all()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

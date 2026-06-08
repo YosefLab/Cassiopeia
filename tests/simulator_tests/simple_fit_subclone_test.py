@@ -172,3 +172,34 @@ def test_later_subclone_generation():
     fit_early = sum(1 for n in tree_early if tree_early.out_degree(n) == 0 and n.endswith("_fit"))
     fit_late = sum(1 for n in tree_late if tree_late.out_degree(n) == 0 and n.endswith("_fit"))
     assert fit_early >= fit_late
+
+
+# --- alignment ---
+
+
+def _fit_subclone(alignment="leaves"):
+    return simple_fit_subclone(
+        branch_length_neutral=1,
+        branch_length_fit=0.5,
+        experiment_duration=1.9,
+        generations_until_fit_subclone=1,
+        alignment=alignment,
+    )
+
+
+def test_simple_fit_subclone_alignment_leaves_default():
+    tdata = _fit_subclone()
+    tree = tdata.obst["simulated"]
+    leaves = {n for n in tree if tree.out_degree(n) == 0}
+    assert set(tdata.obs_names) == leaves
+    assert tdata.obs["time"].notna().all()
+    assert tdata.obs["fit"].notna().all()
+
+
+def test_simple_fit_subclone_alignment_nodes():
+    tdata = _fit_subclone(alignment="nodes")
+    tree = tdata.obst["simulated"]
+    # obs spans every node, and time/fit are populated for all of them.
+    assert set(tdata.obs_names) == set(tree.nodes)
+    assert tdata.obs["time"].notna().all()
+    assert tdata.obs["fit"].notna().all()

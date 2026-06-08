@@ -20,7 +20,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_priors
 from cassiopeia.mixins import (
     GreedySolverError,
     find_duplicate_groups,
@@ -31,6 +31,7 @@ from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
+    _resolve_priors,
     _set_tree,
     _transform_priors,
 )
@@ -423,7 +424,7 @@ def greedy(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | None = None,
+    priors: dict[int, dict[int, float]] | bool = True,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with vanilla Cassiopeia-Greedy.
@@ -444,9 +445,10 @@ def greedy(
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states, as a dict mapping character index
-            to dicts mapping state to prior probability (read from ``tdata.uns``
-            if ``None``).
+        priors: Priors for character states. ``True`` (default) reads priors
+            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
+            reconstructs without priors; a dict (character index -> {state:
+            probability}) is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
@@ -457,10 +459,12 @@ def greedy(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _get_parameter(tdata, "priors", value=priors)
-    character_matrix, missing_state = _encode_integer_matrix(
+    priors = _resolve_priors(tdata, priors)
+    character_matrix, missing_state, mapping = _encode_integer_matrix(
         character_matrix, missing_state, unmodified_state
     )
+    # Re-key prior state values to match the integer encoding of the matrix.
+    priors = _encode_priors(priors, mapping)
 
     weights = None
     if priors:
@@ -529,11 +533,13 @@ class VanillaGreedySolver:
                 mutations after solving.
             logfile: Ignored (kept for API compatibility).
         """
+        # Preserve legacy behavior: use priors if the tree carries them, else not.
         greedy(
             cassiopeia_tree,
             characters_key=layer,
             missing_data_classifier=self.missing_data_classifier,
             prior_transformation=self.prior_transformation,
+            priors=_get_parameter(cassiopeia_tree, "priors") or False,
         )
         if collapse_mutationless_edges:
             cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)

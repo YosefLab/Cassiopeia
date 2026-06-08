@@ -11,12 +11,13 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia import dissimilarity as dissimilarity_functions
-from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
+from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity, _uses_weights
 from cassiopeia.solver import rooting
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
+    _resolve_priors,
     _save_dissimilarity,
     _set_tree,
 )
@@ -74,7 +75,7 @@ def nj(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | None = None,
+    priors: dict[int, dict[int, float]] | bool = False,
     threads: int = 1,
     copy: bool = False,
 ) -> TreeData | None:
@@ -112,9 +113,10 @@ def nj(
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states, as a dict mapping character index
-            to dicts mapping state to prior probability (read from ``tdata.uns``
-            if ``None``).
+        priors: Priors for character states. ``False`` (default) reconstructs
+            without priors; ``True`` reads priors from ``tdata.uns["priors"]``
+            and raises if none are stored; a dict (character index -> {state:
+            probability}) is used directly.
         threads: Threads for parallel dissimilarity computation.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
@@ -139,7 +141,15 @@ def nj(
         unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
         missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
         characters = _get_characters(tdata, characters_key)
-        priors = _get_parameter(tdata, "priors", value=priors)
+        priors = _resolve_priors(tdata, priors)
+        if priors and not _uses_weights(dissim_fn):
+            warnings.warn(
+                f"priors were provided but the dissimilarity function {dissim_fn!r} "
+                "does not use weights, so the priors will be ignored. Use a "
+                "weighted metric (e.g. 'weighted_hamming') to make use of priors.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         if synthetic_root:
             # Augment the character matrix with a synthetic all-unmodified 'root'
@@ -297,12 +307,14 @@ class NeighborJoiningSolver:
                 known_samples |= set(dist_map.index)
             if rsn is None or rsn not in known_samples:
                 root = "outgroup"
+        # Preserve legacy behavior: use priors if the tree carries them, else not.
         nj(
             cassiopeia_tree,
             dissim_fn=self.dissimilarity_function,
             root=root,
             characters_key=layer,
             prior_transformation=self.prior_transformation,
+            priors=_get_parameter(cassiopeia_tree, "priors") or False,
             save_dissim=True,
             threads=self.threads,
         )

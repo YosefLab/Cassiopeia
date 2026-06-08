@@ -72,5 +72,28 @@ def test_complete_binary_custom_key_added():
     assert "tree" not in tdata.obst
 
 
+# --- alignment ---
+
+
+def test_complete_binary_alignment_leaves_default():
+    tdata = complete_binary(depth=2)
+    tree = tdata.obst["simulated"]
+    leaves = {n for n in tree if tree.out_degree(n) == 0}
+    assert set(tdata.obs_names) == leaves
+    # time/depth populated for every observation (no NaN).
+    assert tdata.obs["time"].notna().all()
+    assert tdata.obs["depth"].notna().all()
+
+
+def test_complete_binary_alignment_nodes():
+    tdata = complete_binary(depth=2, alignment="nodes")
+    tree = tdata.obst["simulated"]
+    # obs spans every node (internal nodes included)...
+    assert set(tdata.obs_names) == set(tree.nodes)
+    # ...and time/depth are populated for all of them, not just leaves.
+    assert tdata.obs["time"].notna().all()
+    assert tdata.obs["depth"].notna().all()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
