@@ -284,7 +284,7 @@ def _add_duplicates_to_tree_and_remove_spurious_leaves(
 
 def hybrid(
     tdata: TreeData,
-    top_solver: str | Callable  = "greedy",
+    top_solver: str | Callable = "greedy",
     bottom_solver: str | Callable = "ilp",
     lca_cutoff: float | None = None,
     cell_cutoff: int | None = None,
