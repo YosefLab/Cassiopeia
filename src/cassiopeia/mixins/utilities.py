@@ -2,8 +2,6 @@ import functools
 import importlib
 from types import ModuleType
 
-import numpy as np
-
 
 def is_ambiguous_state(state: int | tuple[int, ...]) -> bool:
     """Determine whether the provided state is ambiguous.
@@ -62,17 +60,18 @@ def find_duplicate_groups(character_matrix) -> dict[str, tuple[str, ...]]:
     """
     character_matrix.index.name = "index"
 
-    # convert to sets to support ambiguous states
-    character_matrix_sets = character_matrix.copy()
-    character_matrix_sets = character_matrix_sets.apply(
-        lambda x: [set(s) if is_ambiguous_state(s) else {s} for s in x.values],
-        axis=0,
-    ).apply(tuple, axis=1)
-    is_duplicated = character_matrix_sets.duplicated(keep=False)
-    unique_states = np.unique(character_matrix_sets[is_duplicated])
-    duplicate_groups = [
-        character_matrix_sets[character_matrix_sets == val].index.values for val in unique_states
-    ]
-    duplicate_mappings = {g[0]: tuple(g) for g in duplicate_groups}
+    # Build a hashable key per row so identical rows can be grouped in a single
+    # linear pass. Ambiguous states (tuples) become frozensets so that order
+    # within an ambiguous state does not matter and the key stays hashable.
+    groups: dict[tuple, list] = {}
+    for idx, row in zip(
+        character_matrix.index.to_numpy(), character_matrix.to_numpy(), strict=False
+    ):
+        key = tuple(frozenset(s) if is_ambiguous_state(s) else s for s in row)
+        groups.setdefault(key, []).append(idx)
+
+    # Keep only groups with duplicates; the first occurrence is the representative
+    # (matching ``drop_duplicates(keep="first")``).
+    duplicate_mappings = {g[0]: tuple(g) for g in groups.values() if len(g) > 1}
 
     return duplicate_mappings

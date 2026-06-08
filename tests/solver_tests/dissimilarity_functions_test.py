@@ -73,6 +73,14 @@ def test_weighted_hamming_no_priors(data):
     assert dissimilarity.weighted_hamming(data["s1"], data["s2"]) == 3 / 5
 
 
+def test_weighted_hamming_no_priors_unmodified_state():
+    # Without weights the uncut state is configurable via unmodified_state.
+    s1 = [0, 1, 5]
+    s2 = [1, 2, 5]
+    assert dissimilarity.weighted_hamming(s1, s2) == 3 / 3  # default uncut=0
+    assert dissimilarity.weighted_hamming(s1, s2, unmodified_state=1) == 2 / 3
+
+
 def test_weighted_hamming_priors_negative_log(data):
     result = dissimilarity.weighted_hamming(data["s1"], data["s2"], weights=data["nlweights"])
     priors = data["priors"]
@@ -124,8 +132,22 @@ def test_hamming_all_missing(data):
 
 
 def test_nonmissing_hamming(data):
-    # position 3 is skipped (missing); positions 0 and 5 disagree out of 5 present
-    assert dissimilarity.nonmissing_hamming(data["s1"], data["s2"]) == 2 / 5
+    # s1=[0,1,0,-1,1,2], s2=[1,1,0,0,1,3]; position 3 is skipped (missing).
+    # pos0 (0 vs 1) involves the uncut state 0 -> +1; pos5 (2 vs 3) is a full
+    # mismatch -> +2; the rest match. Normalized over 5 present positions.
+    assert dissimilarity.nonmissing_hamming(data["s1"], data["s2"]) == 3 / 5
+
+
+def test_nonmissing_hamming_scoring_and_unmodified_state():
+    # mismatch -> +2, mismatch with the unmodified state -> +1, identical -> +0.
+    s1 = [0, 1, 5]
+    s2 = [1, 2, 5]
+    # default unmodified_state=0: pos0 (0 vs 1) -> +1, pos1 (1 vs 2) -> +2,
+    # pos2 (5 vs 5) -> +0; total 3 over 3 present.
+    assert dissimilarity.nonmissing_hamming(s1, s2) == 3 / 3
+    # with unmodified_state=1: pos0 (0 vs 1) -> +1 (1 is uncut), pos1 (1 vs 2)
+    # -> +1 (1 is uncut), pos2 -> +0; total 2 over 3.
+    assert dissimilarity.nonmissing_hamming(s1, s2, unmodified_state=1) == 2 / 3
 
 
 def test_nonmissing_hamming_all_missing(data):

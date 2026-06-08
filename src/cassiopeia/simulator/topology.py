@@ -66,9 +66,7 @@ def _finalize_tree(
     attributes are pulled from every node (not just leaves); otherwise only leaf
     attributes are mirrored.
     """
-    tdata = td.TreeData(
-        obst={key_added: tree}, uns={"default_depth": default_depth}, alignment=alignment
-    )
+    tdata = td.TreeData(obst={key_added: tree}, alignment=alignment)
 
     # Rows that TreeData aligns ``obs`` to: all nodes for "nodes" alignment,
     # leaves only otherwise.

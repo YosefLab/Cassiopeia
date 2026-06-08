@@ -65,13 +65,14 @@ def roots(g):
 SOLVERS = [
     pytest.param(lambda t: cas.solver.nj(t, key_added="t"), id="nj"),
     pytest.param(lambda t: cas.solver.upgma(t, key_added="t"), id="upgma"),
-    pytest.param(lambda t: cas.solver.greedy(t, key_added="t"), id="greedy"),
+    pytest.param(lambda t: cas.solver.greedy(t, key_added="t", priors=False), id="greedy"),
     pytest.param(
         lambda t: cas.solver.hybrid(
             t,
             bottom_solver=functools.partial(cas.solver.greedy),
             cell_cutoff=3,
             progress_bar=False,
+            priors=False,
             key_added="t",
         ),
         id="hybrid",
@@ -93,7 +94,7 @@ def test_solvers_string_characters(solve):
 @pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
 def test_ilp_string_characters():
     tdata = make_tdata()
-    cas.solver.ilp(tdata, key_added="t")
+    cas.solver.ilp(tdata, key_added="t", priors=False)
     g = tdata.obst["t"]
     assert len(roots(g)) == 1
     assert set(leaves(g)) == set(CM.index)
@@ -106,6 +107,29 @@ def test_solvers_string_match_integer_encoding():
     i = make_tdata(cm=INT_CM, unmodified=None)
     cas.solver.upgma(s, key_added="t")
     cas.solver.upgma(i, key_added="t")
+
+    def triplet(g, a, b, c):
+        anc = {x: set(nx.ancestors(g, x)) for x in (a, b, c)}
+        ab, ac, bc = (len(anc[a] & anc[b]), len(anc[a] & anc[c]), len(anc[b] & anc[c]))
+        return max(("ab", ab), ("ac", ac), ("bc", bc), key=lambda kv: kv[1])[0]
+
+    import itertools
+
+    for t in itertools.combinations("abcde", 3):
+        assert triplet(s.obst["t"], *t) == triplet(i.obst["t"], *t)
+
+
+def test_priors_state_keys_match_character_encoding():
+    # String-keyed priors on the string matrix must produce the same tree as the
+    # equivalent integer-keyed priors on the integer twin: greedy re-keys the
+    # prior state values through the same encoding as the character matrix.
+    str_priors = {0: {"1": 0.2, "2": 0.3, "3": 0.5}, 1: {"2": 0.6}, 2: {"1": 0.4, "2": 0.6}}
+    int_priors = {0: {1: 0.2, 2: 0.3, 3: 0.5}, 1: {2: 0.6}, 2: {1: 0.4, 2: 0.6}}
+
+    s = make_tdata()
+    i = make_tdata(cm=INT_CM, unmodified=None)
+    cas.solver.greedy(s, key_added="t", priors=str_priors)
+    cas.solver.greedy(i, key_added="t", priors=int_priors)
 
     def triplet(g, a, b, c):
         anc = {x: set(nx.ancestors(g, x)) for x in (a, b, c)}

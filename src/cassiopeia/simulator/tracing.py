@@ -224,7 +224,7 @@ def stochastic_tracing(
     tdata.uns["cassette_size"] = size_of_cassette
     tdata.uns["unmodified_state"] = unmodified_state
     tdata.uns["missing_state"] = "-"
-    tdata.uns["priors"] = state_priors
+    tdata.uns["priors"] = priors_per_char
     tdata.uns[f"{key_added}_colors"] = _get_state_colors(
         all_states, custom={unmodified_state: "lightgray"}
     )

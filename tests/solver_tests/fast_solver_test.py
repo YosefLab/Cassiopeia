@@ -309,6 +309,6 @@ def test_solvers_annotate_depth():
     # a child of the root has depth 1
     assert all(g.nodes[c]["depth"] == 1 for c in g.successors(root))
 
-    cas.solver.greedy(tdata, key_added="greedy")
+    cas.solver.greedy(tdata, key_added="greedy", priors=False)
     gg = tdata.obst["greedy"]
     assert all("depth" in gg.nodes[n] for n in gg.nodes)

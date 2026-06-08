@@ -20,6 +20,7 @@ Sub-solvers may be passed as **strings** or **callables**:
 from __future__ import annotations
 
 import functools
+import inspect
 import multiprocessing
 import warnings
 from collections.abc import Callable, Generator
@@ -32,12 +33,13 @@ from tqdm import tqdm
 
 from cassiopeia import dissimilarity
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_priors
 from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
+    _resolve_priors,
     _set_tree,
     _transform_priors,
 )
@@ -252,6 +254,25 @@ def _resolve_bottom_solver(
     return bottom_solver
 
 
+def _maybe_bind_priors(bottom_solver: Callable, priors_value: dict | bool) -> Callable:
+    """Bind *priors_value* to *bottom_solver* if it accepts a ``priors`` keyword.
+
+    The functional solvers (ilp/greedy/nj/upgma) take a ``priors`` argument that
+    otherwise defaults to ``True`` — which, on a prior-free subproblem, would
+    re-resolve and raise. Binding hybrid's resolved priors keeps the bottom
+    solver consistent with the top-level decision. Class-shim ``solve`` methods
+    don't expose ``priors`` (they read it from the subproblem TreeData), so they
+    are left untouched.
+    """
+    try:
+        params = inspect.signature(bottom_solver).parameters
+    except (TypeError, ValueError):
+        return bottom_solver
+    if "priors" in params:
+        return functools.partial(bottom_solver, priors=priors_value)
+    return bottom_solver
+
+
 def _add_duplicates_to_tree_and_remove_spurious_leaves(
     tree: nx.DiGraph,
     character_matrix: pd.DataFrame,
@@ -284,7 +305,7 @@ def _add_duplicates_to_tree_and_remove_spurious_leaves(
 
 def hybrid(
     tdata: TreeData,
-    top_solver: str | Callable  = "greedy",
+    top_solver: str | Callable = "greedy",
     bottom_solver: str | Callable = "ilp",
     lca_cutoff: float | None = None,
     cell_cutoff: int | None = None,
@@ -294,7 +315,7 @@ def hybrid(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | None = None,
+    priors: dict[int, dict[int, float]] | bool = True,
     top_kwargs: dict | None = None,
     bottom_kwargs: dict | None = None,
     threads: int = 1,
@@ -329,9 +350,11 @@ def hybrid(
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states, as a dict mapping character index
-            to dicts mapping state to prior probability (read from ``tdata.uns``
-            if ``None``).
+        priors: Priors for character states. ``True`` (default) reads priors
+            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
+            reconstructs without priors; a dict (character index -> {state:
+            probability}) is used directly. The resolved value is propagated to
+            the bottom solver.
         top_kwargs: Extra keyword arguments bound to *top_solver*.
         bottom_kwargs: Extra keyword arguments bound to *bottom_solver*
             (e.g. ``{"weighted": True}`` for the ILP bottom solver).
@@ -357,12 +380,18 @@ def hybrid(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _get_parameter(tdata, "priors", value=priors)
+    priors = _resolve_priors(tdata, priors)
     # Encode string/categorical states to integers so the greedy split logic and
-    # the bottom solver operate on the integer convention.
-    character_matrix, missing_state_indicator = _encode_integer_matrix(
+    # the bottom solver operate on the integer convention; re-key priors to match.
+    character_matrix, missing_state_indicator, mapping = _encode_integer_matrix(
         character_matrix, missing_state_indicator, unmodified_state
     )
+    priors = _encode_priors(priors, mapping)
+    # Propagate the resolved (encoded) prior decision to the bottom solver so it
+    # does not independently default to priors=True and raise on a prior-free
+    # subproblem. The subproblem matrices are already integer-encoded, so the
+    # bottom solver must receive the re-keyed (integer-state) priors.
+    bottom_solver = _maybe_bind_priors(bottom_solver, priors if priors else False)
 
     weights = None
     if priors:
@@ -421,19 +450,25 @@ def hybrid(
             for a in tqdm(args, total=len(args), desc="Bottom solver", disable=not progress_bar)
         ]
 
+    # Accumulate every subproblem tree into ``tree`` in place. Each subproblem
+    # solver names its internal nodes from its own generator, so names collide
+    # across subproblems; rename any non-root node that clashes with one already
+    # present. ``existing_nodes`` is a set updated incrementally (O(1) lookups)
+    # and trees are merged with ``tree.update`` (adds only the new nodes/edges)
+    # rather than ``nx.compose`` (which copies the whole accumulated tree each
+    # call) — keeping the whole loop linear in the final tree size.
+    existing_nodes = set(tree.nodes())
     for subproblem_tree, subproblem_root in results:
-        # Rename overlapping (non-root) nodes so subproblem trees don't merge
-        # across unrelated parts of the tree.
-        existing_nodes = list(tree)
         mapping = {}
         for n in subproblem_tree:
-            if n in existing_nodes and n != subproblem_root:
+            if n != subproblem_root and n in existing_nodes:
                 mapping[n] = next(node_name_generator)
-                existing_nodes.append(mapping[n])
+                existing_nodes.add(mapping[n])
             else:
-                existing_nodes.append(n)
-        subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
-        tree = nx.compose(tree, subproblem_tree)
+                existing_nodes.add(n)
+        if mapping:
+            subproblem_tree = nx.relabel_nodes(subproblem_tree, mapping)
+        tree.update(subproblem_tree)
 
     samples_tree = _add_duplicates_to_tree_and_remove_spurious_leaves(
         tree, character_matrix, node_name_generator
@@ -504,6 +539,7 @@ class HybridSolver:
         logfile: str = "stdout.log",
     ) -> None:
         """Run the hybrid solver in-place by delegating to :func:`hybrid`."""
+        # Preserve legacy behavior: use priors if the tree carries them, else not.
         hybrid(
             cassiopeia_tree,
             top_solver=self.top_solver.perform_split,
@@ -512,6 +548,7 @@ class HybridSolver:
             cell_cutoff=self.cell_cutoff,
             threads=self.threads,
             prior_transformation=self.prior_transformation,
+            priors=_get_parameter(cassiopeia_tree, "priors") or False,
             progress_bar=self.progress_bar,
             characters_key=layer,
         )

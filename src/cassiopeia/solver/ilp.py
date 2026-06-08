@@ -21,13 +21,14 @@ import pandas as pd
 
 from cassiopeia import dissimilarity
 from cassiopeia.data import utilities as data_utilities
-from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix
+from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_priors
 from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
 from cassiopeia.solver import ilp_solver_utilities
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
+    _resolve_priors,
     _set_tree,
     _transform_priors,
 )
@@ -365,7 +366,7 @@ def ilp(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | None = None,
+    priors: dict[int, dict[int, float]] | bool = True,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with Cassiopeia-ILP (maximum parsimony).
@@ -393,9 +394,10 @@ def ilp(
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states, as a dict mapping character index
-            to dicts mapping state to prior probability (read from ``tdata.uns``
-            if ``None``).
+        priors: Priors for character states. ``True`` (default) reads priors
+            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
+            reconstructs without priors; a dict (character index -> {state:
+            probability}) is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
@@ -410,7 +412,7 @@ def ilp(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _get_parameter(tdata, "priors", value=priors)
+    priors = _resolve_priors(tdata, priors)
 
     if weighted and not priors:
         raise ILPSolverError("Specify prior probabilities for weighted analysis.")
@@ -436,9 +438,11 @@ def ilp(
     # The potential-graph / Steiner-tree machinery operates on integer states, so
     # encode string/categorical matrices (unmodified -> 0, missing -> -1, other
     # states -> distinct positive integers).
-    character_matrix, missing_state_indicator = _encode_integer_matrix(
+    character_matrix, missing_state_indicator, mapping = _encode_integer_matrix(
         character_matrix, missing_state_indicator, unmodified_state
     )
+    # Re-key prior state values to match the integer encoding of the matrix.
+    priors = _encode_priors(priors, mapping)
 
     unique_character_matrix = character_matrix.drop_duplicates()
 
@@ -587,6 +591,7 @@ class ILPSolver:
                 mutations after solving.
             logfile: Location to log progress.
         """
+        # Preserve legacy behavior: use priors if the tree carries them, else not.
         ilp(
             cassiopeia_tree,
             characters_key=layer,
@@ -598,6 +603,7 @@ class ILPSolver:
             seed=self.seed,
             mip_gap=self.mip_gap,
             prior_transformation=self.prior_transformation,
+            priors=_get_parameter(cassiopeia_tree, "priors") or False,
             logfile=logfile,
         )
         if collapse_mutationless_edges:

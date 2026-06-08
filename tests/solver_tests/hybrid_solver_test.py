@@ -66,6 +66,7 @@ def test_hybrid_cell_cutoff_greedy_bottom():
         tdata,
         bottom_solver=functools.partial(cas.solver.greedy),
         cell_cutoff=3,
+        priors=False,
         progress_bar=False,
         key_added="hybrid",
     )
@@ -80,6 +81,7 @@ def test_hybrid_lca_cutoff_greedy_bottom():
         tdata,
         bottom_solver=functools.partial(cas.solver.greedy),
         lca_cutoff=2,
+        priors=False,
         progress_bar=False,
         key_added="hybrid",
     )
@@ -95,6 +97,7 @@ def test_hybrid_multithreaded_pickles():
         bottom_solver=functools.partial(cas.solver.greedy),
         cell_cutoff=3,
         threads=2,
+        priors=False,
         progress_bar=False,
         key_added="hybrid",
     )
@@ -113,6 +116,7 @@ def test_hybrid_custom_top_solver():
         top_solver=_greedy_split,
         bottom_solver=functools.partial(cas.solver.greedy),
         cell_cutoff=2,
+        priors=False,
         progress_bar=False,
     )
     assert set(leaves(tdata.obst["hybrid"])) == set(PP_CM.index)
@@ -126,6 +130,7 @@ def test_hybrid_string_solvers():
         top_solver="greedy",
         bottom_solver="greedy",
         cell_cutoff=3,
+        priors=False,
         progress_bar=False,
     )
     tree = tdata.obst["hybrid"]
@@ -143,6 +148,7 @@ def test_hybrid_solver_kwargs():
         top_kwargs={"missing_data_classifier": "average"},
         bottom_kwargs={"missing_data_classifier": "average"},
         cell_cutoff=3,
+        priors=False,
         progress_bar=False,
     )
     assert set(leaves(tdata.obst["hybrid"])) == set(LARGE_CM.index)
@@ -154,6 +160,24 @@ def test_hybrid_unknown_solver_name():
         cas.solver.hybrid(tdata, bottom_solver="not_a_solver", cell_cutoff=3)
 
 
+def test_hybrid_priors_true_without_priors_raises():
+    tdata = chars_tdata(PP_CM)  # no priors in uns
+    with pytest.raises(ValueError, match="priors=True but no priors"):
+        cas.solver.hybrid(
+            tdata, bottom_solver="greedy", cell_cutoff=3, priors=True, progress_bar=False
+        )
+
+
+def test_hybrid_priors_false_propagates_to_bottom_solver():
+    # With priors=False the (prior-defaulting) bottom solver must not raise on a
+    # prior-free subproblem: hybrid propagates the decision to the bottom solver.
+    tdata = chars_tdata(LARGE_CM)  # no priors in uns
+    cas.solver.hybrid(
+        tdata, bottom_solver="greedy", cell_cutoff=3, priors=False, progress_bar=False
+    )
+    assert set(leaves(tdata.obst["hybrid"])) == set(LARGE_CM.index)
+
+
 def test_hybrid_does_not_mutate_characters():
     # The integer-encoded matrix used internally must not be written back to obsm.
     tdata = chars_tdata(PP_CM)
@@ -162,6 +186,7 @@ def test_hybrid_does_not_mutate_characters():
         tdata,
         bottom_solver="greedy",
         cell_cutoff=3,
+        priors=False,
         progress_bar=False,
     )
     pd.testing.assert_frame_equal(tdata.obsm["characters"], before)
@@ -180,7 +205,7 @@ def test_hybrid_requires_cutoff():
 def test_hybrid_default_solvers():
     # Defaults are top_solver="greedy", bottom_solver="ilp".
     tdata = chars_tdata(PP_CM)
-    cas.solver.hybrid(tdata, cell_cutoff=3, progress_bar=False)
+    cas.solver.hybrid(tdata, cell_cutoff=3, progress_bar=False, priors=False)
     assert set(leaves(tdata.obst["hybrid"])) == set(PP_CM.index)
 
 
@@ -194,6 +219,7 @@ def test_hybrid_ilp_bottom():
         tdata,
         bottom_solver=functools.partial(cas.solver.ilp, mip_gap=0.0, logfile=None),
         cell_cutoff=3,
+        priors=False,
         progress_bar=False,
         key_added="hybrid",
     )
