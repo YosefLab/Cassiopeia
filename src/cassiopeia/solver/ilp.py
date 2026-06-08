@@ -120,7 +120,14 @@ def _generate_steiner_model(
     for target in targets:
         source_flow[target] = -1
 
-    model = gurobipy.Model("steiner")
+    # Build the model on an environment with console logging disabled *before*
+    # it starts, so Gurobi prints neither the license banner nor the
+    # "Set parameter LogToConsole to value 0" notice. LogToConsole (rather than
+    # OutputFlag) leaves LogFile-based logging intact when a logfile is set.
+    env = gurobipy.Env(empty=True)
+    env.setParam("LogToConsole", 0)
+    env.start()
+    model = gurobipy.Model("steiner", env=env)
 
     # add flow for edges
     edge_variables = {}
@@ -183,8 +190,6 @@ def _solve_steiner_instance(
         raise ILPSolverError(
             "Gurobi not found. You must install Gurobi & gurobipy from source."
         ) from err
-
-    model.params.LogToConsole = 0
 
     model.params.THREADS = 1
     model.params.Presolve = 2

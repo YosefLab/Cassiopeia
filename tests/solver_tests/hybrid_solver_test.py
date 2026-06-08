@@ -118,6 +118,55 @@ def test_hybrid_custom_top_solver():
     assert set(leaves(tdata.obst["hybrid"])) == set(PP_CM.index)
 
 
+def test_hybrid_string_solvers():
+    # top_solver and bottom_solver may be given by name.
+    tdata = chars_tdata(LARGE_CM)
+    cas.solver.hybrid(
+        tdata,
+        top_solver="greedy",
+        bottom_solver="greedy",
+        cell_cutoff=3,
+        progress_bar=False,
+    )
+    tree = tdata.obst["hybrid"]
+    assert set(leaves(tree)) == set(LARGE_CM.index)
+    assert len(roots(tree)) == 1
+
+
+def test_hybrid_solver_kwargs():
+    # top_kwargs / bottom_kwargs are bound to the resolved solvers.
+    tdata = chars_tdata(LARGE_CM)
+    cas.solver.hybrid(
+        tdata,
+        top_solver="greedy",
+        bottom_solver="greedy",
+        top_kwargs={"missing_data_classifier": "average"},
+        bottom_kwargs={"missing_data_classifier": "average"},
+        cell_cutoff=3,
+        progress_bar=False,
+    )
+    assert set(leaves(tdata.obst["hybrid"])) == set(LARGE_CM.index)
+
+
+def test_hybrid_unknown_solver_name():
+    tdata = chars_tdata(PP_CM)
+    with pytest.raises(cas.mixins.HybridSolverError):
+        cas.solver.hybrid(tdata, bottom_solver="not_a_solver", cell_cutoff=3)
+
+
+def test_hybrid_does_not_mutate_characters():
+    # The integer-encoded matrix used internally must not be written back to obsm.
+    tdata = chars_tdata(PP_CM)
+    before = tdata.obsm["characters"].copy()
+    cas.solver.hybrid(
+        tdata,
+        bottom_solver="greedy",
+        cell_cutoff=3,
+        progress_bar=False,
+    )
+    pd.testing.assert_frame_equal(tdata.obsm["characters"], before)
+
+
 # ── Errors ────────────────────────────────────────────────────────────────────
 
 
@@ -127,10 +176,12 @@ def test_hybrid_requires_cutoff():
         cas.solver.hybrid(tdata, bottom_solver=functools.partial(cas.solver.greedy))
 
 
-def test_hybrid_requires_bottom_solver():
+@pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
+def test_hybrid_default_solvers():
+    # Defaults are top_solver="greedy", bottom_solver="ilp".
     tdata = chars_tdata(PP_CM)
-    with pytest.raises(cas.mixins.HybridSolverError):
-        cas.solver.hybrid(tdata, cell_cutoff=3)
+    cas.solver.hybrid(tdata, cell_cutoff=3, progress_bar=False)
+    assert set(leaves(tdata.obst["hybrid"])) == set(PP_CM.index)
 
 
 # ── Gurobi-gated ILP bottom solver ────────────────────────────────────────────

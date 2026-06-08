@@ -5,17 +5,21 @@ cutoff (LCA distance or number of cells) is reached, then solves each resulting
 subproblem with a more precise bottom solver (e.g. ILP).  In Jones et al, the
 Cassiopeia-Hybrid algorithm stacks a greedy top on an ILP bottom.
 
-Sub-solvers are passed as **callables**:
+Sub-solvers may be passed as **strings** or **callables**:
 
 - ``top_solver`` is a *split function* with signature
-  ``(character_matrix, samples, weights, missing_state_indicator) -> (left, right)``.
-  Defaults to the vanilla greedy split.
+  ``(character_matrix, samples, weights, missing_state_indicator) -> (left, right)``,
+  or the name of a registered split (e.g. ``"greedy"``).  Defaults to the vanilla
+  greedy split.  Extra keyword arguments may be supplied via ``top_kwargs``.
 - ``bottom_solver`` is applied to each subproblem as ``bottom_solver(sub_tdata)``,
-  modifying ``sub_tdata`` in place (e.g. ``functools.partial(ilp, ...)``).
+  modifying ``sub_tdata`` in place, or the name of a registered solver
+  (e.g. ``"ilp"``, ``"nj"``, ``"upgma"``, ``"greedy"``).  Extra keyword arguments
+  may be supplied via ``bottom_kwargs``.
 """
 
 from __future__ import annotations
 
+import functools
 import multiprocessing
 import warnings
 from collections.abc import Callable, Generator
@@ -24,7 +28,7 @@ from typing import TYPE_CHECKING
 import networkx as nx
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from cassiopeia import dissimilarity
 from cassiopeia.data import utilities as data_utilities
@@ -34,7 +38,6 @@ from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
-    _set_characters,
     _set_tree,
     _transform_priors,
 )
@@ -79,14 +82,18 @@ def _apply_top_solver(
     missing_state_indicator: int,
     lca_cutoff: float | None,
     cell_cutoff: int | None,
+    pbar: tqdm | None = None,
 ) -> tuple[str, list[tuple[str, list[str]]], nx.DiGraph]:
     """Recursively split *samples* with *split_fn* until the cutoff is reached.
 
     Returns the root node of this subtree, the list of subproblems
     ``[(subtree_root, subtree_samples), ...]`` to hand to the bottom solver, and
-    the in-progress tree.
+    the in-progress tree.  If *pbar* is given, it is advanced by the number of
+    cells as they are resolved into terminal subproblems/polytomies.
     """
     if len(samples) == 1:
+        if pbar is not None:
+            pbar.update(1)
         return samples[0], [samples], tree
 
     clades = [
@@ -101,6 +108,8 @@ def _apply_top_solver(
     if len(clades) == 1:
         for clade in clades[0]:
             tree.add_edge(root, clade)
+        if pbar is not None:
+            pbar.update(len(clades[0]))
         return root, [], tree
 
     subproblems = []
@@ -109,6 +118,8 @@ def _apply_top_solver(
             clade, character_matrix, missing_state_indicator, lca_cutoff, cell_cutoff
         ):
             subproblems += [(root, clade)]
+            if pbar is not None:
+                pbar.update(len(clade))
         else:
             child, new_subproblems, tree = _apply_top_solver(
                 character_matrix,
@@ -120,6 +131,7 @@ def _apply_top_solver(
                 missing_state_indicator,
                 lca_cutoff,
                 cell_cutoff,
+                pbar,
             )
             tree.add_edge(root, child)
             subproblems += new_subproblems
@@ -174,6 +186,72 @@ def _apply_bottom_solver(
     return subproblem_tree, root
 
 
+def _apply_bottom_solver_star(args: tuple) -> tuple[nx.DiGraph, str]:
+    """Unpack *args* and call :func:`_apply_bottom_solver` (for ``Pool.imap``)."""
+    return _apply_bottom_solver(*args)
+
+
+def _resolve_top_solver(
+    top_solver: str | Callable | None,
+    top_kwargs: dict | None,
+) -> Callable:
+    """Resolve *top_solver* (name, callable, or ``None``) to a split callable.
+
+    ``None`` and ``"greedy"`` both resolve to the vanilla greedy split. Any
+    ``top_kwargs`` are bound via :func:`functools.partial`.
+    """
+    if top_solver is None:
+        top_solver = "greedy"
+    if isinstance(top_solver, str):
+        from cassiopeia.solver.greedy import _greedy_split
+
+        registry: dict[str, Callable] = {"greedy": _greedy_split}
+        if top_solver not in registry:
+            raise HybridSolverError(
+                f"Unknown top_solver {top_solver!r}. Available: {sorted(registry)}."
+            )
+        top_solver = registry[top_solver]
+    if top_kwargs:
+        top_solver = functools.partial(top_solver, **top_kwargs)
+    return top_solver
+
+
+def _resolve_bottom_solver(
+    bottom_solver: str | Callable | None,
+    bottom_kwargs: dict | None,
+) -> Callable:
+    """Resolve *bottom_solver* (name or callable) to a solver callable.
+
+    Recognized names are ``"ilp"``, ``"nj"``, ``"upgma"`` and ``"greedy"``. Any
+    ``bottom_kwargs`` are bound via :func:`functools.partial` (which stays
+    picklable for ``threads > 1``).
+    """
+    if bottom_solver is None:
+        raise HybridSolverError(
+            'Please provide a bottom_solver, e.g. "ilp" or functools.partial(ilp, ...).'
+        )
+    if isinstance(bottom_solver, str):
+        from cassiopeia.solver.greedy import greedy
+        from cassiopeia.solver.ilp import ilp
+        from cassiopeia.solver.neighbor_joining import nj
+        from cassiopeia.solver.upgma import upgma
+
+        registry: dict[str, Callable] = {
+            "ilp": ilp,
+            "nj": nj,
+            "upgma": upgma,
+            "greedy": greedy,
+        }
+        if bottom_solver not in registry:
+            raise HybridSolverError(
+                f"Unknown bottom_solver {bottom_solver!r}. Available: {sorted(registry)}."
+            )
+        bottom_solver = registry[bottom_solver]
+    if bottom_kwargs:
+        bottom_solver = functools.partial(bottom_solver, **bottom_kwargs)
+    return bottom_solver
+
+
 def _add_duplicates_to_tree_and_remove_spurious_leaves(
     tree: nx.DiGraph,
     character_matrix: pd.DataFrame,
@@ -206,17 +284,19 @@ def _add_duplicates_to_tree_and_remove_spurious_leaves(
 
 def hybrid(
     tdata: TreeData,
-    top_solver: Callable | None = None,
-    bottom_solver: Callable | None = None,
+    top_solver: str | Callable  = "greedy",
+    bottom_solver: str | Callable = "ilp",
     lca_cutoff: float | None = None,
     cell_cutoff: int | None = None,
     progress_bar: bool = True,
-    characters_key: str | None = None,
+    characters_key: str | None = "characters",
     key_added: str = "hybrid",
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
     priors: dict[int, dict[int, float]] | None = None,
+    top_kwargs: dict | None = None,
+    bottom_kwargs: dict | None = None,
     threads: int = 1,
     copy: bool = False,
 ) -> TreeData | None:
@@ -231,11 +311,14 @@ def hybrid(
         tdata: TreeData to operate on.
         top_solver: Split function
             ``(character_matrix, samples, weights, missing_state_indicator) ->
-            (left, right)``.  Defaults to the vanilla greedy split.
+            (left, right)``, or the name of a registered split (``"greedy"``).
+            Defaults to the vanilla greedy split.
         bottom_solver: Callable applied to each subproblem as
             ``bottom_solver(sub_tdata)``, modifying the TreeData in place
-            (e.g. ``functools.partial(ilp, ...)``).  Must be picklable when
-            ``threads > 1`` (use module-level functions / ``partial``, not closures).
+            (e.g. ``functools.partial(ilp, ...)``), or the name of a registered
+            solver (``"ilp"``, ``"nj"``, ``"upgma"``, ``"greedy"``).  Must be
+            picklable when ``threads > 1`` (use names, module-level functions, or
+            ``partial`` — not closures).
         lca_cutoff: LCA-distance cutoff for switching to the bottom solver.
         cell_cutoff: Cell-count cutoff for switching to the bottom solver.
         progress_bar: Whether to display a progress bar over subproblems.
@@ -249,6 +332,9 @@ def hybrid(
         priors: Priors for character states, as a dict mapping character index
             to dicts mapping state to prior probability (read from ``tdata.uns``
             if ``None``).
+        top_kwargs: Extra keyword arguments bound to *top_solver*.
+        bottom_kwargs: Extra keyword arguments bound to *bottom_solver*
+            (e.g. ``{"weighted": True}`` for the ILP bottom solver).
         threads: Number of subproblems to solve concurrently.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
@@ -264,14 +350,8 @@ def hybrid(
         raise HybridSolverError(
             "Please specify a cutoff, either through lca_cutoff or cell_cutoff."
         )
-    if bottom_solver is None:
-        raise HybridSolverError(
-            "Please provide a bottom_solver callable, e.g. functools.partial(ilp, ...)."
-        )
-    if top_solver is None:
-        from cassiopeia.solver.greedy import _greedy_split
-
-        top_solver = _greedy_split
+    top_solver = _resolve_top_solver(top_solver, top_kwargs)
+    bottom_solver = _resolve_bottom_solver(bottom_solver, bottom_kwargs)
 
     tdata = tdata.copy() if copy else tdata
     character_matrix = _get_characters(tdata, characters_key).copy()
@@ -293,17 +373,23 @@ def hybrid(
     node_name_generator = _node_name_generator()
 
     tree = nx.DiGraph()
-    _, subproblems, tree = _apply_top_solver(
-        unique_character_matrix,
-        list(unique_character_matrix.index),
-        tree,
-        node_name_generator,
-        top_solver,
-        weights,
-        missing_state_indicator,
-        lca_cutoff,
-        cell_cutoff,
-    )
+    with tqdm(
+        total=len(unique_character_matrix),
+        desc="Top-down split",
+        disable=not progress_bar,
+    ) as top_pbar:
+        _, subproblems, tree = _apply_top_solver(
+            unique_character_matrix,
+            list(unique_character_matrix.index),
+            tree,
+            node_name_generator,
+            top_solver,
+            weights,
+            missing_state_indicator,
+            lca_cutoff,
+            cell_cutoff,
+            top_pbar,
+        )
 
     args = [
         (
@@ -319,16 +405,20 @@ def hybrid(
 
     if threads > 1:
         with multiprocessing.Pool(processes=threads) as pool:
+            # imap (vs. starmap) yields results as they complete so the progress
+            # bar advances incrementally rather than jumping to 100% at the end.
             results = list(
                 tqdm(
-                    pool.starmap(_apply_bottom_solver, args),
+                    pool.imap(_apply_bottom_solver_star, args),
                     total=len(args),
+                    desc="Bottom solver",
                     disable=not progress_bar,
                 )
             )
     else:
         results = [
-            _apply_bottom_solver(*a) for a in tqdm(args, total=len(args), disable=not progress_bar)
+            _apply_bottom_solver(*a)
+            for a in tqdm(args, total=len(args), desc="Bottom solver", disable=not progress_bar)
         ]
 
     for subproblem_tree, subproblem_root in results:
@@ -350,7 +440,6 @@ def hybrid(
     )
 
     _set_tree(tdata, samples_tree, key_added)
-    _set_characters(tdata, character_matrix, characters_key or "characters")
 
     return tdata if copy else None
 
