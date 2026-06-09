@@ -1,0 +1,28 @@
+name: Backfill coverage
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit SHA or ref on main"
+        required: true
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -U pip
+      - run: pip install -e .[test]
+      - run: pytest -q
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          # For private repos:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          commit_sha: ${{ github.sha }}
+          fail_ci_if_error: true

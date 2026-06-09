@@ -1,2 +1,5 @@
-include LICENSE
-recursive-include cassiopeia *
+# Ship the Cython sources (single source of truth) and supporting files in the
+# sdist so a wheel can be built from it. The .pyx are cythonized at build time.
+recursive-include src/cassiopeia *.pyx
+recursive-include src/cassiopeia *.pxd
+include src/cassiopeia/config.ini

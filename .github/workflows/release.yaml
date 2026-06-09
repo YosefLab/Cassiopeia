@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  release:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/cassiopeia-lineage
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          cache-dependency-glob: pyproject.toml
+
+      # --- Pre-generate C from .pyx files before building ---
+      - name: Install cythonization deps
+        run: |
+          uv pip install --system "cython>=3" "numpy>=1.22,<3"
+
+      - name: Generate C sources from Cython
+        run: |
+          python - <<'PY'
+          from Cython.Build import cythonize
+          files = [
+              "cassiopeia/preprocess/collapse_cython.pyx",
+              "cassiopeia/solver/ilp_solver_utilities.pyx",
+          ]
+          cythonize(
+              files,
+              language_level="3",
+              annotate=False,
+          )
+          for f in files:
+              cfile = f.replace(".pyx", ".c")
+              print("Generated:", cfile)
+          PY
+
+          # Verify that both .c files exist
+          test -f cassiopeia/preprocess/collapse_cython.c
+          test -f cassiopeia/solver/ilp_solver_utilities.c
+
+      - name: List generated files
+        run: |
+          ls -l cassiopeia/preprocess/ | sed 's/^/  /'
+          ls -l cassiopeia/solver/ | sed 's/^/  /'
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
