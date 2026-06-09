@@ -27,6 +27,12 @@ ext_modules += cythonize(
             include_dirs=[numpy.get_include()],
             language="c",
         ),
+        Extension(
+            "cassiopeia.solver.greedy_solver_utilities",
+            sources=["src/cassiopeia/solver/greedy_solver_utilities.pyx"],
+            include_dirs=[numpy.get_include()],
+            language="c",
+        ),
     ],
     language_level="3",
 )
