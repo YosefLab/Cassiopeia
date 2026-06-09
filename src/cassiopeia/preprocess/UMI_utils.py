@@ -369,44 +369,22 @@ def form_clusters(
             A list of annotated aligned segments representing the consensus of each
             cluster.
     """
-<<<<<<< HEAD:cassiopeia/preprocess/UMI_utils.py
-
-    clusters: List[pysam.AlignedSegment] = []
+    clusters: list[pysam.AlignedSegment] = []
     remaining = list(als)
 
     # Keep pulling off clusters of size ≥2 until we can no longer make progress
     while len(remaining) > 1:
         seed = propose_seed(remaining, max_read_length)
-        near_seed, new_remaining = within_radius_of_seed(
-            seed, remaining, max_hq_mismatches
-        )
-=======
-    if len(als) == 0:
-        clusters = []
-
-    elif len(als) == 1:
-        clusters = [make_singleton_cluster(al) for al in als]
-
-    else:
-        seed = propose_seed(als, max_read_length)
-        near_seed, remaining = within_radius_of_seed(seed, als, max_hq_mismatches)
->>>>>>> 3.0.0:src/cassiopeia/preprocess/UMI_utils.py
+        near_seed, new_remaining = within_radius_of_seed(seed, remaining, max_hq_mismatches)
 
         if not near_seed:
             # no multi-read cluster found ⇒ stop trying
             break
 
-<<<<<<< HEAD:cassiopeia/preprocess/UMI_utils.py
         # build consensus for this cluster and record it
         clusters.append(call_consensus(near_seed, max_read_length))
         # update remaining reads
         remaining = new_remaining
-=======
-        else:
-            clusters = [call_consensus(near_seed, max_read_length)] + form_clusters(
-                remaining, max_read_length, max_hq_mismatches
-            )
->>>>>>> 3.0.0:src/cassiopeia/preprocess/UMI_utils.py
 
     # any reads we never clustered in a multi-read group become singletons
     clusters.extend(make_singleton_cluster(al) for al in remaining)
