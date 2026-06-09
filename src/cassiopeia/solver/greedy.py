@@ -217,6 +217,59 @@ def _compute_mutation_frequencies(
     return freq_dict
 
 
+def _build_weights_array(
+    weights: dict[int, dict[int, float]] | None, nc: int, nstates: int
+) -> np.ndarray:
+    """Densify the ``{char: {state: weight}}`` mapping into an ``(nc, nstates)`` array.
+
+    States/characters outside the matrix's range are simply not indexed by the
+    Cython kernel, so a dense zero-filled array is sufficient. ``_encode_priors``
+    leaves states absent from the matrix keyed by their original (possibly
+    string) representation; those never appear in the encoded matrix, so any
+    non-integer state key is skipped.
+    """
+    w = np.zeros((nc, nstates), dtype=np.float64)
+    if weights:
+        for c, state_map in weights.items():
+            if isinstance(c, (int, np.integer)) and 0 <= c < nc:
+                for st, val in state_map.items():
+                    if isinstance(st, (int, np.integer)) and 0 <= st < nstates:
+                        w[c, st] = val
+    return w
+
+
+def _perform_split_fast(
+    character_matrix: pd.DataFrame,
+    samples: list[str],
+    weights: dict[int, dict[int, float]] | None,
+    missing_state_indicator: int,
+) -> tuple[list[str], list[str]]:
+    """Cython-backed equivalent of :func:`_greedy_split` for the "average" classifier.
+
+    Extracts the subset character matrix, dispatches to the typed C kernel
+    (:func:`cassiopeia.solver.greedy_solver_utilities.perform_split`), and maps the
+    returned local row indices back to sample names. Produces the same partition
+    as the pure-Python path.
+    """
+    from cassiopeia.solver import greedy_solver_utilities as gsu
+
+    cm_sub = np.ascontiguousarray(character_matrix.loc[samples].to_numpy(), dtype=np.int64)
+    m, nc = cm_sub.shape
+    nstates = int(cm_sub.max()) + 1 if m and nc else 1
+    if nstates < 1:
+        nstates = 1
+    has_weights = 1 if weights else 0
+    w_arr = _build_weights_array(weights if has_weights else None, nc, nstates)
+    sample_idx = np.arange(m, dtype=np.int64)
+
+    left_idx, right_idx = gsu.perform_split(
+        cm_sub, sample_idx, w_arr, has_weights, int(missing_state_indicator), nstates
+    )
+    left = [samples[i] for i in left_idx]
+    right = [samples[i] for i in right_idx]
+    return left, right
+
+
 def _greedy_split(
     character_matrix: pd.DataFrame,
     samples: list[str],
@@ -230,8 +283,13 @@ def _greedy_split(
     most frequent mutation.  Samples with missing data at the chosen character
     are assigned by *missing_data_classifier*.
 
+    The default ``"average"`` classifier is dispatched to a fast Cython kernel
+    (:func:`_perform_split_fast`); any other (custom) classifier uses the
+    reference Python implementation below. Both produce identical partitions for
+    the integer-encoded matrices the greedy/hybrid solvers operate on.
+
     Args:
-        character_matrix: Character matrix (deduplicated).
+        character_matrix: Character matrix (deduplicated, integer-encoded).
         samples: A list of samples to partition.
         weights: Weighting of each (character, state) pair, typically a
             transformation of the priors.
@@ -244,6 +302,9 @@ def _greedy_split(
         A tuple of lists representing the left and right partition groups.
     """
     missing_data_classifier = _resolve_missing_data_classifier(missing_data_classifier)
+    # Fast path: the built-in "average" classifier is implemented in Cython.
+    if missing_data_classifier is _assign_missing_average:
+        return _perform_split_fast(character_matrix, samples, weights, missing_state_indicator)
     sample_indices = convert_sample_names_to_indices(character_matrix.index, samples)
     mutation_frequencies = _compute_mutation_frequencies(
         samples, character_matrix, missing_state_indicator
@@ -416,6 +477,71 @@ def _greedy_solve(
     return _add_duplicates_to_tree(tree, character_matrix, node_name_generator)
 
 
+def _greedy_solve_fast(
+    character_matrix: pd.DataFrame,
+    *,
+    missing_state_indicator: int,
+    weights: dict[int, dict[int, float]] | None,
+) -> nx.DiGraph:
+    """Build a greedy tree using the Cython split kernel and the "average" classifier.
+
+    Equivalent to :func:`_greedy_solve` with the vanilla split and the
+    ``"average"`` missing-data classifier, but recurses over integer row indices
+    into a single pre-extracted matrix (no per-node ``DataFrame.loc``) and calls
+    :func:`cassiopeia.solver.greedy_solver_utilities.perform_split` for the heavy
+    per-node work. The character matrix is integer-encoded (no ambiguous states),
+    so a plain ``drop_duplicates`` reproduces the dedup that
+    :func:`_greedy_solve` performs.
+
+    Args:
+        character_matrix: Integer-encoded character matrix (samples × characters).
+        missing_state_indicator: Integer code for missing data.
+        weights: Per-(character, state) weights from priors, or ``None``.
+
+    Returns:
+        The reconstructed tree as an :class:`~networkx.DiGraph`.
+    """
+    from cassiopeia.solver import greedy_solver_utilities as gsu
+
+    node_name_generator = _node_name_generator()
+
+    unique_character_matrix = character_matrix.drop_duplicates()
+    names = list(unique_character_matrix.index)
+    cm = np.ascontiguousarray(unique_character_matrix.to_numpy(), dtype=np.int64)
+    n, nc = cm.shape
+    nstates = int(cm.max()) + 1 if n and nc else 1
+    if nstates < 1:
+        nstates = 1
+    has_weights = 1 if weights else 0
+    w_arr = _build_weights_array(weights if has_weights else None, nc, nstates)
+    ms = int(missing_state_indicator)
+
+    tree = nx.DiGraph()
+    tree.add_nodes_from(names)
+
+    def _solve(idx: np.ndarray) -> str:
+        if idx.shape[0] == 1:
+            return names[idx[0]]
+        left, right = gsu.perform_split(cm, idx, w_arr, has_weights, ms, nstates)
+        clades = [c for c in (left, right) if c.shape[0] != 0]
+        root = next(node_name_generator)
+        tree.add_node(root)
+
+        # If unable to split, generate a polytomy and return.
+        if len(clades) == 1:
+            for j in clades[0]:
+                tree.add_edge(root, names[j])
+            return root
+        for clade in clades:
+            child = _solve(clade)
+            tree.add_edge(root, child)
+        return root
+
+    _solve(np.arange(n, dtype=np.int64))
+
+    return _add_duplicates_to_tree(tree, character_matrix, node_name_generator)
+
+
 def greedy(
     tdata: TreeData,
     missing_data_classifier: str | Callable = "average",
@@ -470,15 +596,24 @@ def greedy(
     if priors:
         weights = _transform_priors(priors, prior_transformation)
 
-    split_fn = functools.partial(_greedy_split, missing_data_classifier=missing_data_classifier)
-
-    tree = _greedy_solve(
-        character_matrix,
-        split_fn,
-        missing_state_indicator=missing_state,
-        weights=weights,
-        allow_ambiguous=True,
-    )
+    # Fast path: the built-in "average" classifier uses an index-based recursion
+    # backed by the Cython split kernel. Custom classifiers use the reference
+    # Python recursion (which still dispatches "average" splits to Cython).
+    if _resolve_missing_data_classifier(missing_data_classifier) is _assign_missing_average:
+        tree = _greedy_solve_fast(
+            character_matrix,
+            missing_state_indicator=missing_state,
+            weights=weights,
+        )
+    else:
+        split_fn = functools.partial(_greedy_split, missing_data_classifier=missing_data_classifier)
+        tree = _greedy_solve(
+            character_matrix,
+            split_fn,
+            missing_state_indicator=missing_state,
+            weights=weights,
+            allow_ambiguous=True,
+        )
 
     _set_tree(tdata, tree, key_added)
 
