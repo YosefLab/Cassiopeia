@@ -1,125 +1,215 @@
 """Functionality for spatial imputation."""
 
-import anndata
 import networkx as nx
 import numpy as np
 import pandas as pd
+import scipy.sparse
 import tqdm
+from treedata import TreeData
 
-from cassiopeia.spatial import spatial_utilities
+from cassiopeia.utils import _get_characters, _get_parameter, _normalize_missing
 
 
-def impute_alleles_from_spatial_data(
+def _impute_single_state(
+    cell: str,
+    character: int,
     character_matrix: pd.DataFrame,
-    adata: anndata.AnnData | None = None,
-    spatial_graph: nx.Graph | None = None,
-    neighborhood_size: int | None = None,
-    neighborhood_radius: float = 30.0,
+    neighborhood_graph: nx.DiGraph,
+    missing_states: frozenset,
+    number_of_hops: int = 1,
+    max_neighbor_distance: float = np.inf,
+    coordinates: pd.DataFrame | None = None,
+) -> tuple[object, float, int]:
+    """Imputes missing character state for a cell at a defined position.
+
+    Args:
+        cell: Cell barcode.
+        character: Which character to impute.
+        character_matrix: Character matrix of all character states.
+        neighborhood_graph: Spatial graph connecting cells.
+        missing_states: Set of values representing missing data (excluded from votes).
+        number_of_hops: Number of hops to make during imputation.
+        max_neighbor_distance: Maximum distance to neighbor to be used for
+            imputation.
+        coordinates: Coordinates of all cells.
+
+    Returns:
+        The state, the frequency of votes, and the absolute number of votes.
+        Returns ``(None, 0, 0)`` when no eligible votes are found.
+    """
+    votes = []
+    for _, node in nx.bfs_edges(neighborhood_graph, cell, depth_limit=number_of_hops):
+        if node not in character_matrix.index:
+            continue
+
+        distance = 0
+        if coordinates is not None:
+            distance = np.sqrt(
+                np.sum((coordinates.loc[cell].values - coordinates.loc[node].values) ** 2)
+            )
+
+        state = character_matrix.loc[node].iloc[character]
+        if distance <= max_neighbor_distance and state not in missing_states:
+            if isinstance(state, tuple):
+                for _state in state:
+                    votes.append(_state)
+            else:
+                votes.append(state)
+
+    if len(votes) > 0:
+        values, counts = np.unique(votes, return_counts=True)
+        return (
+            values[np.argmax(counts)],
+            np.max(counts) / np.sum(counts),
+            int(np.max(counts)),
+        )
+
+    return None, 0, 0
+
+
+def _build_spatial_nx_graph(tdata: TreeData, connect_key: str) -> nx.Graph:
+    """Converts a sparse spatial connectivity matrix to a labeled NetworkX graph.
+
+    Args:
+        tdata: TreeData with spatial connectivity in ``tdata.obsp[connect_key]``.
+        connect_key: Key in ``tdata.obsp`` for the spatial connectivity matrix.
+
+    Returns:
+        A NetworkX graph with cell names as nodes.
+    """
+    if connect_key not in tdata.obsp:
+        raise KeyError(
+            f"connect_key '{connect_key}' not found in tdata.obsp. "
+            f"Available keys: {list(tdata.obsp.keys())}."
+        )
+    adj = tdata.obsp[connect_key]
+    if not scipy.sparse.issparse(adj):
+        adj = scipy.sparse.csr_matrix(adj)
+    graph = nx.from_scipy_sparse_array(adj)
+    node_map = dict(zip(range(adj.shape[0]), tdata.obs_names, strict=False))
+    return nx.relabel_nodes(graph, node_map)
+
+
+def impute_alleles_spatial(
+    tdata: TreeData,
+    *,
+    connect_key: str | None = None,
+    characters_key: str = "characters",
+    spatial_key: str | None = None,
     imputation_hops: int = 2,
     imputation_concordance: float = 0.8,
     num_imputation_iterations: int = 1,
     max_neighbor_distance: float = np.inf,
-    coordinates: pd.DataFrame | None = None,
-    connect_key: str = "spatial_connectivities",
-) -> pd.DataFrame:
-    """Imputes data based on spatial location.
+    missing_state=None,
+    unmodified_state=None,
+    key_added: str = "characters_imputed",
+    copy: bool = False,
+) -> TreeData | None:
+    """Imputes missing alleles using spatial proximity.
 
-    This procedure iterates over spots in a given anndata and imputes missing
-    data based on spatial neigborhoods.
+    Iteratively imputes missing character states in ``tdata.obsm[characters_key]``
+    using a spatial connectivity graph stored in ``tdata.obsp[connect_key]``. For
+    each missing state a plurality vote is collected from spatial neighbors
+    (within ``imputation_hops`` BFS hops); the imputation is accepted when the
+    winning vote fraction meets ``imputation_concordance``. Unmodified states
+    (e.g. 0) are not imputed even when they win the vote.
 
-    The procedure is an interative algorithm where for each iteration a missing
-    character is imputed based on the neighborhood of a node. Node neighborhoods
-    are built off of a spatial graph that can passed in directly or inferred
-    from a specified spatial anndata. In the simplest example, node neighobrhoods
-    are just the immediate neighbors of a node, but users can also include
-    neighbors-of-neighbors (and neighbors-of-neighbors-of-neighbors, so on)
-    using the `imputation_hops` argument. An imputation will be accepted if the
-    fraction of neighbors that agree with an observed non-zero allele exceeds
-    the specified `imputation_concordance` threshold (by default 0.8). This
-    procedure can be repeated for several rounds, controlled by the
-    `num_imputation_iterations` argument and in this way approximates a
-    message-passing process.
+    Run ``squidpy.gr.spatial_neighbors`` on your AnnData, store the connectivity
+    in ``tdata.obsp``, then call this function::
+
+        import squidpy as sq
+
+        sq.gr.spatial_neighbors(adata, key_added="spatial")
+        tdata.obsp["spatial_connectivities"] = adata.obsp["spatial_connectivities"]
+        cas.sp.impute_alleles_spatial(tdata, connect_key="spatial_connectivities")
 
     Args:
-        character_matrix: A character matrix of spots, constructed using a
-            function like `convert_allele_table_to_character_matrix`.
-        adata: Anndata of spatially-resolved data. Only the spatial coordinates
-            need to be stored, and this is used to construct a graph.
-        spatial_graph: Optionally, the user can provide a spatial connectivity
-            graph instead of passing in an adata.
-        neighborhood_size: If a connectivitity graph is being constructed,
-            this is the number of nearest neighbors to connect to a node. If
-            both neighborhood_size and neighborhood_radius are passed in,
-            neighborhood_size is preferred.
-        neighborhood_radius: Intead of passing in `neighborhood_size`, this
-            is the radius of the connectivity graph.
-        imputation_hops: Number of adjacent node's adjacencies to query. For
-            example, if this is 2, this means that imputation is done not just
-            on nearest neighbors of a given node, but also each nearest
-            neighbor's nearest neighbors.
-        imputation_concordance: Fraction of votes that must agree in order
-            to accept an imputation.
-        num_imputation_iterations: Number of iterations for imputation
-            procedure.
-        max_neighbor_distance: Maximum distance to neighbor to be used for
-            imputation.
-        coordinates: If an AnnData is not specified, and you wish to set an
-            upper limit on the distance for spatial imputation, these
-            coordinates can be passed to the imputation procedure.
-        connect_key: Key used to store spatial connectivities in
-            `adata.obsp`. This will be passed into the `key_added` argument
-            of sq.gr.spatial_neighbors and an etnry in `adata.obsp` will be added
-            of the form `{connect_key}_connectivities`.
+        tdata: TreeData object.
+        connect_key: Key in ``tdata.obsp`` for the spatial connectivity graph.
+            Required; raises ``ValueError`` if ``None``.
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
+        spatial_key: Key in ``tdata.obsm`` for spatial coordinates. Required only
+            when ``max_neighbor_distance < inf``.
+        imputation_hops: Number of BFS hops used to gather neighbor votes.
+        imputation_concordance: Minimum fraction of neighbor votes required to
+            accept an imputation.
+        num_imputation_iterations: Number of imputation rounds (enables
+            multi-hop propagation of imputed values).
+        max_neighbor_distance: Maximum Euclidean distance to a neighbor for it
+            to contribute a vote. Requires ``spatial_key``.
+        missing_state: Value(s) representing missing data. May be a scalar or a
+            sequence. Defaults to ``tdata.uns["missing_state"]`` if present,
+            otherwise ``(-1, "-1", "NA", "-")``.
+        unmodified_state: Value(s) representing the unmodified (uncut) state.
+            Imputation will not produce these values. Defaults to
+            ``tdata.uns["unmodified_state"]`` if present, otherwise
+            ``(0, "0", "*")``.
+        key_added: Key in ``tdata.obsm`` under which the imputed character matrix
+            is stored.
+        copy: If ``True``, return a copy of ``tdata`` instead of modifying in-place.
 
     Returns:
-            An imputed character matrix.
+        ``None`` when ``copy=False`` (modifies ``tdata`` in-place), or the modified
+        copy when ``copy=True``.
     """
-    if (not spatial_graph) and (not adata):
-        raise Exception("One of the following must be specified: `spatial_graph` or `adata`.")
-
-    if not spatial_graph:
-        # create spatial graph if needed
-        spatial_graph = spatial_utilities.get_spatial_graph_from_anndata(
-            adata,
-            neighborhood_radius=neighborhood_radius,
-            neighborhood_size=neighborhood_size,
-            connect_key=connect_key,
+    if connect_key is None:
+        raise ValueError(
+            "connect_key must be provided. First compute a spatial connectivity graph "
+            "with squidpy.gr.spatial_neighbors(adata, key_added=...) and store the "
+            "result in tdata.obsp, then pass the key here."
         )
 
-    prev_character_matrix_imputed = character_matrix.copy()
-    missing_indices = np.where(character_matrix == -1)
+    if copy:
+        tdata = tdata.copy()
 
+    raw_missing = _get_parameter(tdata, "missing_state", missing_state)
+    raw_unmodified = _get_parameter(tdata, "unmodified_state", unmodified_state)
+    missing_states = frozenset(_normalize_missing(raw_missing))
+    unmodified_states = frozenset(_normalize_missing(raw_unmodified))
+
+    character_matrix = _get_characters(tdata, characters_key)
+    spatial_graph = _build_spatial_nx_graph(tdata, connect_key)
+
+    coordinates: pd.DataFrame | None = None
+    if spatial_key is not None:
+        coords_arr = tdata.obsm[spatial_key]
+        if not isinstance(coords_arr, pd.DataFrame):
+            coords_arr = pd.DataFrame(coords_arr, index=tdata.obs_names)
+        coordinates = coords_arr
+
+    prev = character_matrix.copy()
     for _round in range(num_imputation_iterations):
         print(f">> Imputation round {_round + 1}...")
 
-        character_matrix_imputed = prev_character_matrix_imputed.copy()
-        missing_indices = np.where(prev_character_matrix_imputed == -1)
+        current = prev.copy()
+        missing_mask = prev.isin(missing_states)
+        missing_indices = np.where(missing_mask)
 
         for i, j in tqdm.tqdm(
             zip(missing_indices[0], missing_indices[1], strict=False),
             total=len(missing_indices[0]),
         ):
-            (imputed_value, proportion_of_votes, number_of_votes) = (
-                spatial_utilities.impute_single_state(
-                    prev_character_matrix_imputed.index.values[i],
-                    j,
-                    prev_character_matrix_imputed,
-                    neighborhood_graph=spatial_graph,
-                    number_of_hops=imputation_hops,
-                    max_neighbor_distance=max_neighbor_distance,
-                    coordinates=coordinates,
-                )
+            imputed_value, proportion_of_votes, n_votes = _impute_single_state(
+                prev.index.values[i],
+                j,
+                prev,
+                neighborhood_graph=spatial_graph,
+                missing_states=missing_states,
+                number_of_hops=imputation_hops,
+                max_neighbor_distance=max_neighbor_distance,
+                coordinates=coordinates,
             )
             if (
-                proportion_of_votes >= imputation_concordance
-                and imputed_value != -1
-                and imputed_value != 0
+                n_votes > 0
+                and proportion_of_votes >= imputation_concordance
+                and imputed_value not in missing_states
+                and imputed_value not in unmodified_states
             ):
-                character_matrix_imputed.iloc[i, j] = int(imputed_value)
+                current.iloc[i, j] = imputed_value
 
-        prev_character_matrix_imputed = character_matrix_imputed.copy()
+        prev = current
 
-    # apply final missingness filter
-    final_character_matrix = character_matrix_imputed
+    tdata.obsm[key_added] = prev
 
-    return final_character_matrix
+    if copy:
+        return tdata
