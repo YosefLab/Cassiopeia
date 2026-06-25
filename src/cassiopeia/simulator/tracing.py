@@ -53,8 +53,9 @@ def stochastic_tracing(
 
     * ``tdata.obsm[key_added]``: ``pd.DataFrame`` (n_leaves × n_chars),
       columns named ``"C-I"`` (cassette, site).
-    * ``tree.nodes[node][key_added]``: character state dict for every
-      node (leaves and internal).
+    * ``tree.nodes[node][key_added]``: character state list of length
+      ``number_of_cassettes * size_of_cassette`` for every node (leaves and
+      internal), positionally aligned with the ``obsm`` columns.
     * ``tdata.uns["cassette_size"]``, ``tdata.uns["unmodified_state"]``:
       stored for :func:`missing_data`.
 
@@ -207,9 +208,8 @@ def stochastic_tracing(
 
         char_arrays[node] = array
 
-    chars = {node: dict(zip(columns, char_arrays[node], strict=False)) for node in tree.nodes}
     for node in tree.nodes:
-        tree.nodes[node][key_added] = chars[node]
+        tree.nodes[node][key_added] = char_arrays[node]
 
     obs_names = list(tdata.obs_names)
     all_states = list(dict.fromkeys(state for priors in priors_per_char for state in priors)) + [
@@ -218,7 +218,7 @@ def stochastic_tracing(
     categorical_dtype = pd.CategoricalDtype(categories=all_states, ordered=True)
 
     tdata.obsm[key_added] = _build_characters_dataframe(
-        chars, columns, obs_names, categorical_dtype
+        char_arrays, columns, obs_names, categorical_dtype
     )
 
     tdata.uns["cassette_size"] = size_of_cassette
@@ -273,7 +273,7 @@ def missing_data(
 
     Results are written in-place (or to ``key_added`` if specified):
 
-    * ``tree.nodes[node][output_key]``: updated character dicts for all nodes
+    * ``tree.nodes[node][output_key]``: updated character lists for all nodes
     * ``tdata.obsm[output_key]``: rebuilt from updated leaf attributes
     * ``tdata.uns["missing_state"]`` / ``tdata.uns["unmodified_state"]``
 
@@ -342,22 +342,21 @@ def missing_data(
 
     if has_node_chars:
         # Snapshot original characters (from stochastic_tracing) for collapse detection
-        original_chars: dict[str, dict[str, str]] = {
-            node: dict(tree.nodes[node][characters_key]) for node in tree.nodes
+        original_chars: dict[str, list[str]] = {
+            node: list(tree.nodes[node][characters_key]) for node in tree.nodes
         }
         # Working copy — all modifications go here
-        chars: dict[str, dict[str, str]] = {node: dict(d) for node, d in original_chars.items()}
+        chars: dict[str, list[str]] = {node: list(d) for node, d in original_chars.items()}
     else:
         original_chars = {}
         obsm_df = tdata.obsm[characters_key]
         obs_names_set = set(tdata.obs_names)
-        default_row = dict.fromkeys(columns, unmodified_state)
         chars = {}
         for node in tree.nodes:
             if node in obs_names_set:
-                chars[node] = {col: str(obsm_df.loc[node, col]) for col in columns}
+                chars[node] = [str(obsm_df.loc[node, col]) for col in columns]
             else:
-                chars[node] = dict(default_row)
+                chars[node] = [unmodified_state] * len(columns)
 
     # --- Resection (collapse) ---
     # Detected per-branch by comparing original chars of each node to its parent.
@@ -380,8 +379,8 @@ def missing_data(
                     for i in range(start, end)
                     if (
                         i not in collapsed_sites[parent]
-                        and original_chars[parent][columns[i]] == unmodified_state
-                        and original_chars[node][columns[i]] != unmodified_state
+                        and original_chars[parent][i] == unmodified_state
+                        and original_chars[node][i] != unmodified_state
                     )
                 ]
                 if len(new_cuts) > 1:
@@ -389,7 +388,7 @@ def missing_data(
                         new_collapsed.add(i)
             collapsed_sites[node] = collapsed_sites[parent] | new_collapsed
             for i in collapsed_sites[node]:
-                chars[node][columns[i]] = missing_state
+                chars[node][i] = missing_state
 
     # --- Heritable silencing ---
     silenced: dict[str, set[int]] = {}
@@ -404,7 +403,7 @@ def missing_data(
         silenced[node] = silenced[parent] | new_silenced
         for c in silenced[node]:
             for i in range(c * cassette_size, (c + 1) * cassette_size):
-                chars[node][columns[i]] = missing_state
+                chars[node][i] = missing_state
 
     # --- Stochastic dropout (leaves only) ---
     for node in tree.nodes:
@@ -413,7 +412,7 @@ def missing_data(
         for c in range(n_cassettes):
             if np.random.uniform() < stochastic_rate:
                 for i in range(c * cassette_size, (c + 1) * cassette_size):
-                    chars[node][columns[i]] = missing_state
+                    chars[node][i] = missing_state
 
     for node in tree.nodes:
         tree.nodes[node][output_key] = chars[node]
@@ -571,10 +570,7 @@ def noise(
     if characters_key in tree.nodes[some_node]:
         for leaf in new_matrix.index:
             if leaf in tree.nodes:
-                node_chars = dict(tree.nodes[leaf].get(characters_key, {}))
-                for col in columns:
-                    node_chars[col] = new_matrix.loc[leaf, col]
-                tree.nodes[leaf][output_key] = node_chars
+                tree.nodes[leaf][output_key] = [new_matrix.loc[leaf, col] for col in columns]
 
     if copy:
         return tdata
@@ -596,7 +592,7 @@ def _impute_priors(matrix: pd.DataFrame, missing_set: set) -> dict[int, dict[str
 
 
 def _build_characters_dataframe(
-    chars: dict[str, dict[str, str]],
+    chars: dict[str, list[str]],
     columns: list[str],
     obs_names: list[str],
     categorical_dtype: pd.CategoricalDtype,
@@ -604,10 +600,10 @@ def _build_characters_dataframe(
     return pd.DataFrame(
         {
             col: pd.Categorical(
-                [chars[n][col] for n in obs_names],
+                [chars[n][j] for n in obs_names],
                 dtype=categorical_dtype,
             )
-            for col in columns
+            for j, col in enumerate(columns)
         },
         index=obs_names,
     )

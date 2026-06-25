@@ -128,20 +128,21 @@ def test_cas9_inheritance(tdata):
         for parent in tree.predecessors(node):
             parent_chars = tree.nodes[parent]["characters"]
             child_chars = tree.nodes[node]["characters"]
-            for col in parent_chars:
-                if parent_chars[col] != "*":
-                    assert child_chars[col] == parent_chars[col], (
-                        f"Cut site {col} reverted from {parent_chars[col]} to {child_chars[col]}"
+            for i in range(len(parent_chars)):
+                if parent_chars[i] != "*":
+                    assert child_chars[i] == parent_chars[i], (
+                        f"Cut site {i} reverted from {parent_chars[i]} to {child_chars[i]}"
                     )
 
 
 def test_cas9_node_attributes(tdata):
     stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=3, random_seed=0)
     tree = tdata.obst["simulated"]
-    expected_cols = {"0-0", "0-1", "0-2", "1-0", "1-1", "1-2"}
     for node in tree.nodes:
         assert "characters" in tree.nodes[node]
-        assert set(tree.nodes[node]["characters"].keys()) == expected_cols
+        node_chars = tree.nodes[node]["characters"]
+        assert isinstance(node_chars, list)
+        assert len(node_chars) == 6
 
 
 def test_cas9_leaf_obsm_matches_node_attrs(tdata):
@@ -152,8 +153,8 @@ def test_cas9_leaf_obsm_matches_node_attrs(tdata):
     df = tdata.obsm["characters"]
     for leaf in df.index:
         node_chars = tree.nodes[leaf]["characters"]
-        for col in df.columns:
-            assert df.loc[leaf, col] == node_chars[col]
+        for j, col in enumerate(df.columns):
+            assert df.loc[leaf, col] == node_chars[j]
 
 
 def test_cas9_state_generating_distribution(tdata):
@@ -394,8 +395,7 @@ def test_sequential_ordering_constraint(tdata):
     for node in tree.nodes:
         chars = tree.nodes[node]["characters"]
         for cassette in range(2):
-            sites = [f"{cassette}-{i}" for i in range(3)]
-            states = [chars[s] for s in sites]
+            states = [chars[cassette * 3 + i] for i in range(3)]
             # Find first unedited: all following must also be unedited
             first_unedited = next((i for i, s in enumerate(states) if s == "*"), None)
             if first_unedited is not None:
@@ -420,11 +420,11 @@ def test_sequential_inheritance(tdata):
     tree = tdata.obst["simulated"]
     for node in tree.nodes:
         for parent in tree.predecessors(node):
-            for col in ["0-0", "0-1", "0-2"]:
-                p = tree.nodes[parent]["characters"][col]
-                c = tree.nodes[node]["characters"][col]
+            for i in range(3):
+                p = tree.nodes[parent]["characters"][i]
+                c = tree.nodes[node]["characters"][i]
                 if p != "*" and p != "-":
-                    assert c == p, f"Inherited edit at {col} changed from {p} to {c}"
+                    assert c == p, f"Inherited edit at site {i} changed from {p} to {c}"
 
 
 def test_sequential_high_rate_fills_cassette(tdata):
@@ -458,7 +458,7 @@ def test_heritable_silencing_on_internal_nodes(tdata):
     internal_nodes = [n for n in tree.nodes if tree.out_degree(n) > 0 and tree.in_degree(n) > 0]
     all_vals = set()
     for node in internal_nodes:
-        all_vals.update(tree.nodes[node]["characters"].values())
+        all_vals.update(tree.nodes[node]["characters"])
     assert "-" in all_vals
 
 
@@ -474,7 +474,7 @@ def test_heritable_silencing_propagates(tdata):
         for parent in tree.predecessors(node):
             p_chars = tree.nodes[parent]["characters"]
             for cassette in range(2):
-                sites = [f"{cassette}-{i}" for i in range(3)]
+                sites = [cassette * 3 + i for i in range(3)]
                 parent_silenced = all(p_chars[s] == "-" for s in sites)
                 child_silenced = all(chars[s] == "-" for s in sites)
                 if parent_silenced:
@@ -497,10 +497,10 @@ def test_stochastic_silencing_leaves_only(tdata):
     tree = tdata.obst["simulated"]
     # All leaves should be fully silenced (rate=1.0)
     for leaf in [n for n in tree.nodes if tree.out_degree(n) == 0]:
-        assert all(v == "-" for v in tree.nodes[leaf]["characters"].values())
+        assert all(v == "-" for v in tree.nodes[leaf]["characters"])
     # Internal nodes (other than root) should still have all-unmodified characters
     for node in [n for n in tree.nodes if tree.out_degree(n) > 0 and tree.in_degree(n) > 0]:
-        assert all(v == "*" for v in tree.nodes[node]["characters"].values())
+        assert all(v == "*" for v in tree.nodes[node]["characters"])
 
 
 def test_missing_data_cassette_level(tdata):
@@ -513,7 +513,7 @@ def test_missing_data_cassette_level(tdata):
     for node in tree.nodes:
         chars = tree.nodes[node]["characters"]
         for cassette in range(2):
-            sites = [f"{cassette}-{i}" for i in range(3)]
+            sites = [cassette * 3 + i for i in range(3)]
             vals = [chars[s] for s in sites]
             # Either all missing or none: partial silencing within a cassette cannot happen
             n_missing = sum(1 for v in vals if v == "-")
@@ -532,8 +532,8 @@ def test_obsm_rebuilt_after_missing_data(tdata):
     df = tdata.obsm["characters"]
     for leaf in df.index:
         node_chars = tree.nodes[leaf]["characters"]
-        for col in df.columns:
-            assert df.loc[leaf, col] == node_chars[col]
+        for j, col in enumerate(df.columns):
+            assert df.loc[leaf, col] == node_chars[j]
 
 
 def test_missing_data_custom_missing_state(tdata):
