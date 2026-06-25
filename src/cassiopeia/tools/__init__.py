@@ -29,6 +29,7 @@ from .topology import (
     get_leaves,
     get_root,
     mean_depth,
+    rescale_node_times,
 )
 from .tree_metrics import (
     calculate_likelihood,
@@ -54,6 +55,7 @@ __all__ = [
     "get_leaves",
     "get_root",
     "mean_depth",
+    "rescale_node_times",
     # Deprecated
     "FitnessEstimator",
     "IIDExponentialBayesian",

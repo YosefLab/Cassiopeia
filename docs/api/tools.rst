@@ -38,6 +38,7 @@ Topology
    tl.get_leaves
    tl.get_root
    tl.mean_depth
+   tl.rescale_node_times
 
 Ancestral Characters
 ~~~~~~~~~~~~~~~~~~~~~~

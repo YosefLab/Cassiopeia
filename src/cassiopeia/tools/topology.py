@@ -58,20 +58,23 @@ def get_leaves(tree: TreeData | nx.DiGraph, tree_key: str | None = None) -> list
 
 def mean_depth(
     tree: TreeData | nx.DiGraph,
-    depth_key: str,
+    depth_key: str | None = None,
     tree_key: str | None = None,
 ) -> float:
     """Compute the mean depth of a tree's leaves.
 
-    Calculates the average depth across all leaf nodes in the tree. Depth is
-    retrieved from the node attribute specified by ``depth_key``. This can
+    Calculates the average depth across all leaf nodes in the tree. When
+    ``depth_key`` is provided, depth is read from that node attribute; this can
     represent either discrete generations (e.g., number of divisions) or
-    continuous time (e.g., evolutionary time).
+    continuous time (e.g., evolutionary time). When ``depth_key`` is ``None``
+    (default), the topological depth of each leaf (the number of edges from the
+    root) is computed from the tree structure.
 
     Args:
         tree: Tree object.
         depth_key: Node attribute key containing depth values (e.g., ``"depth"``,
-            ``"time"``).
+            ``"time"``). If ``None`` (default), topological depth is computed
+            from the tree structure.
         tree_key: Tree key to use if ``tree`` is a TreeData object with multiple
             trees.
 
@@ -79,10 +82,76 @@ def mean_depth(
         Mean depth of the tree's leaves.
     """
     t, _ = _get_digraph(tree, tree_key=tree_key)
-    _check_tree_has_key(t, depth_key)
     leaves = get_leaves(tree, tree_key=tree_key)
-    depths = [t.nodes[leaf][depth_key] for leaf in leaves]
+    if depth_key is None:
+        depths_from_root = nx.single_source_shortest_path_length(t, _get_root(t))
+        depths = [depths_from_root[leaf] for leaf in leaves]
+    else:
+        _check_tree_has_key(t, depth_key)
+        depths = [t.nodes[leaf][depth_key] for leaf in leaves]
     return float(np.mean(depths))
+
+
+def rescale_node_times(
+    tree: TreeData | nx.DiGraph,
+    time_key: str = "time",
+    min: float = 0,
+    max: float = 1,
+    key_added: str | None = None,
+    tree_key: str | None = None,
+    copy: bool = False,
+) -> TreeData | nx.DiGraph | None:
+    """Linearly rescale node times to a target range.
+
+    Node times stored under ``time_key`` are linearly rescaled so the smallest
+    node time maps to ``min`` and the largest maps to ``max``, preserving the
+    relative spacing between nodes. When all node times are equal, every node is
+    assigned ``min``.
+
+    Args:
+        tree: Tree object. Either a :class:`~treedata.TreeData` or an
+            :class:`networkx.DiGraph`.
+        time_key: Node attribute key containing the times to rescale.
+        min: Target value for the smallest node time.
+        max: Target value for the largest node time.
+        key_added: Node attribute under which to store the rescaled times. If
+            ``None`` (default), the rescaled times overwrite ``time_key``.
+        tree_key: The ``obst`` key of the tree to use when ``tree`` is a TreeData
+            object.
+        copy: If ``True``, operate on and return a copy of *tree*; otherwise
+            modify in place and return ``None``.
+
+    Returns:
+        A modified copy of *tree* (TreeData or DiGraph, matching the input) if
+        ``copy=True``, else ``None``.
+    """
+    if not isinstance(tree, (TreeData, nx.DiGraph)):
+        raise TypeError(
+            f"rescale_node_times() operates on TreeData or nx.DiGraph, got {type(tree)}."
+        )
+    if max <= min:
+        raise ValueError(f"max ({max}) must be greater than min ({min}).")
+
+    if copy:
+        tree = tree.copy()
+    g, _ = _get_digraph(tree, tree_key)
+    _check_tree_has_key(g, time_key)
+
+    times = np.array([g.nodes[node][time_key] for node in g.nodes], dtype=float)
+    t_min, t_max = times.min(), times.max()
+    span = t_max - t_min
+    output_key = key_added if key_added is not None else time_key
+
+    for node in g.nodes:
+        if span == 0:
+            scaled = float(min)
+        else:
+            scaled = min + (g.nodes[node][time_key] - t_min) / span * (max - min)
+        g.nodes[node][output_key] = scaled
+
+    if copy:
+        return tree if isinstance(tree, TreeData) else g
+    return None
 
 
 def _mutations_along_edge(
