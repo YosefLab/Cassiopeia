@@ -2,21 +2,25 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
+from itertools import combinations
 
 import networkx as nx
 import numpy as np
 import scipy
+import scipy.stats
 from treedata import TreeData
 
 from cassiopeia.mixins import TreeMetricError
 from cassiopeia.tools import parameter_estimators
 from cassiopeia.tools.ancestral_characters import _seed_leaf_states, ancestral_characters
-from cassiopeia.tools.topology import count_edge_mutations, get_root
+from cassiopeia.tools.topology import count_edge_mutations, get_leaves, get_root
 from cassiopeia.utils import (
     _get_characters,
     _get_digraph,
     _get_parameter,
+    _get_root,
 )
 
 
@@ -581,3 +585,249 @@ def calculate_likelihood(
             for character in range(n_character)
         ]
     )
+
+
+def _collision_probability(
+    priors: dict | None,
+    character_matrix,
+    missing_state: int | str,
+    unmodified_state: int | str,
+) -> float:
+    """Estimate the state-collision probability ``q``.
+
+    The collision probability is the chance that two independent mutations at a
+    character produce the same state, i.e. ``sum_s p_s^2`` where ``p_s`` is the
+    prior probability of state ``s``. When ``priors`` is a mapping of character
+    index to per-state dicts, the per-character collisions are averaged. When it
+    is a flat state->probability mapping, that single distribution is used. When
+    no priors are available, a uniform distribution over the observed editable
+    states is assumed, giving ``1 / m`` for ``m`` distinct non-missing,
+    non-unmodified states.
+    """
+    if priors is None:
+        warnings.warn(
+            "Neither `collision_probability` nor `priors` were provided; "
+            "assuming a uniform distribution (q = 1/m) over observed states.",
+            UserWarning,
+            stacklevel=3,
+        )
+        states = set(np.unique(character_matrix.values)) - {missing_state, unmodified_state}
+        if not states:
+            raise TreeMetricError("Character matrix contains no editable states.")
+        return 1.0 / len(states)
+
+    if not isinstance(priors, dict):
+        raise TreeMetricError("`priors` must be a dict or a dict of per-character dicts.")
+
+    first_value = next(iter(priors.values()))
+    if isinstance(first_value, dict):
+        per_character = [
+            float(np.sum(np.array(list(state_priors.values())) ** 2))
+            for state_priors in priors.values()
+        ]
+        return float(np.mean(per_character))
+    return float(np.sum(np.array(list(priors.values())) ** 2))
+
+
+def _calculate_cphs(
+    g: nx.DiGraph,
+    mutation_rate: float,
+    collision_probability: float,
+    time_key: str,
+    characters_key: str,
+    missing_state: int | str,
+    unmodified_state: int | str,
+) -> float:
+    """Calculate the corrected pairwise homoplasy score (cPHS) for one tree.
+
+    Character states (including inferred ancestral states at internal nodes)
+    must already be annotated under the ``characters_key`` node attribute.
+    """
+    root = _get_root(g)
+    leaves = get_leaves(g)
+    k = len(g.nodes[leaves[0]][characters_key])
+
+    # cPHS models homoplasy as a function of the normalized height of a pair's
+    # LCA, and so requires an ultrametric (equal leaf-depth) tree.
+    leaf_depths = np.array([g.nodes[leaf][time_key] for leaf in leaves], dtype=float)
+    if not np.allclose(leaf_depths, leaf_depths[0]):
+        raise TreeMetricError(
+            "All leaves must be at the same depth to calculate cPHS. Perform "
+            "branch length estimation using `ConvexML` or `LAML-Pro`"
+        )
+    leaf_depth = leaf_depths[0]
+    if leaf_depth == 0:
+        raise TreeMetricError(
+            f"Leaves have zero depth under node attribute {time_key!r}; cPHS "
+            "requires branch length estimation."
+        )
+
+    # Homoplasy count and (normalized) LCA height for every pair of leaves. A
+    # homoplasy at a character is a shared, non-missing edit in both leaves whose
+    # LCA is still in the unmodified state (i.e. the edit arose independently).
+    phs = []
+    lca_heights = []
+    for (l1, l2), lca in nx.tree_all_pairs_lowest_common_ancestor(
+        g, root=root, pairs=combinations(leaves, 2)
+    ):
+        lca_states = g.nodes[lca][characters_key]
+        l1_states = g.nodes[l1][characters_key]
+        l2_states = g.nodes[l2][characters_key]
+        phs.append(
+            sum(
+                1
+                for i in range(k)
+                if (
+                    lca_states[i] == unmodified_state
+                    and l1_states[i] not in (missing_state, unmodified_state)
+                    and l1_states[i] == l2_states[i]
+                )
+            )
+        )
+        lca_heights.append(g.nodes[lca][time_key])
+    phs = np.array(phs)
+    lca_heights = np.array(lca_heights, dtype=float) / leaf_depth
+
+    # Probability of a homoplasy at a given LCA height under the mutation model:
+    # the LCA is unmodified (alpha), both descendant branches acquire an edit
+    # (beta**2), and those edits collide on the same state (q).
+    alpha = np.exp(-mutation_rate * lca_heights)
+    beta = 1 - np.exp(-mutation_rate * (1 - lca_heights))
+    prob = alpha * beta**2 * collision_probability
+    prob[np.isclose(lca_heights, 1)] = 1
+    pvalues = 1 - scipy.stats.binom.cdf(phs - 1, k, prob)
+    pvalues[pvalues == 0] = np.finfo(float).eps  # zeros cannot be real zeros
+
+    # Benjamini-Hochberg style adjustment; the cPHS is the minimum adjusted p-value.
+    pvalues_sorted = np.sort(pvalues)
+    adjusted_pvalues = pvalues_sorted * len(pvalues) / np.arange(1, len(pvalues) + 1)
+    return float(np.min(adjusted_pvalues))
+
+
+def calculate_cPHS(
+    tdata: TreeData,
+    characters_key: str = "characters",
+    time_key: str = "time",
+    mutation_rate: float | None = None,
+    collision_probability: float | None = None,
+    priors: dict | None = None,
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    tree_key: str | None = None,
+) -> float | dict[str, float]:
+    """Calculate the corrected Pairwise Homoplasy Score (cPHS) of a tree.
+
+    Given a tree with inferred branch lengths and ancestral character states, the
+    cPHS statistic uses a homoplasy-based approach to assess the accuracy of a
+    tree reconstruction by quantifying the likelihood of the observed homoplasies
+    under a mutation model (Zilber et al., 2026). For each pair of leaves, a
+    homoplasy at a character is a shared, non-missing edit whose lowest common
+    ancestor (LCA) is still in the unmodified state, so the edit must have arisen
+    independently on the two lineages. Observing more homoplasies than the model
+    expects is evidence of an incorrect reconstruction; the cPHS is the minimum
+    Benjamini-Hochberg-adjusted p-value across all leaf pairs.
+
+    Ancestral character states must already be annotated on every node under the
+    ``characters_key`` node attribute; call
+    :func:`cassiopeia.tl.ancestral_characters` first if they are not. The tree
+    must be ultrametric (all leaves at equal depth under ``time_key``); use
+    :func:`cassiopeia.tl.rescale_node_times` to normalize node times if needed.
+
+    .. warning::
+
+        The cPHS is strongly influenced by the accuracy of the ancestral
+        character reconstruction. :func:`cassiopeia.tl.ancestral_characters`
+        uses Camin-Sokal parsimony, which is only optimal for a perfect tree
+        reconstruction and a character matrix with no observation noise.
+        Reconstructing ancestral states with the Sankoff algorithm
+        (``pycea.tl.ancestral_states(method="sankoff")``) can improve results.
+        However, it is **not recommended** to compare different tree-reconstruction
+        algorithms using cPHS, since the statistic conflates errors in the
+        topology with errors in the ancestral state reconstruction.
+
+    Args:
+        tdata: TreeData object to operate on.
+        characters_key: Node attribute holding character states (leaves and,
+            after :func:`cassiopeia.tl.ancestral_characters`, internal nodes).
+            Also the ``obsm`` key of the character matrix used to estimate the
+            mutation rate and collision probability.
+        time_key: Node attribute holding node times/depths. Leaves must share a
+            common depth; heights are normalized to ``[0, 1]``.
+        mutation_rate: Mutation rate ``lambda`` of the model. Estimated from the
+            fraction of mutated entries when ``None``.
+        collision_probability: Probability ``q`` that two independent edits
+            produce the same state. Estimated from ``priors`` when ``None``.
+        priors: Prior state probabilities used to estimate ``collision_probability``,
+            as a mapping of character index to per-state dicts or a flat
+            state->probability dict. Resolved from ``tdata.uns['priors']`` when
+            ``None``.
+        missing_state: Missing-data value. Resolved from ``tdata`` when ``None``.
+        unmodified_state: Unmodified (uncut) state value. Resolved from ``tdata``
+            when ``None``.
+        tree_key: The ``obst`` key of the tree to use. When ``None`` and multiple
+            trees are present, the cPHS is computed for every tree and returned
+            as a dictionary keyed by tree name.
+
+    Returns:
+        The cPHS score as a float, or, when ``tree_key`` is ``None`` and ``tdata``
+        contains multiple trees, a dictionary mapping each tree name to its score.
+
+    Raises:
+        TreeMetricError: If a node is missing character states, or the tree is not
+            ultrametric under ``time_key``.
+    """
+    missing_state = _resolve_missing_state(tdata, missing_state)
+    unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    if isinstance(unmodified_state, (list, tuple, set)):
+        unmodified_state = next(iter(unmodified_state))
+
+    character_matrix = _get_characters(tdata, characters_key)
+
+    # Mutation rate and collision probability are properties of the character
+    # matrix / priors and so are estimated once, independent of the tree.
+    if mutation_rate is None:
+        proportion_mutated = parameter_estimators.fraction_mutated(
+            tdata,
+            characters_key=characters_key,
+            missing_state=missing_state,
+            unmodified_state=unmodified_state,
+            key_added=None,
+        )
+        mutation_rate = -np.log(1.0 - proportion_mutated)
+
+    if collision_probability is None:
+        priors = _get_parameter(tdata, "priors", value=priors)
+        collision_probability = _collision_probability(
+            priors, character_matrix, missing_state, unmodified_state
+        )
+
+    # Resolve which trees to score. Return a dict only when scoring every tree of
+    # a multi-tree TreeData; a single explicit tree_key always yields a scalar.
+    if tree_key is not None:
+        tree_keys = [tree_key]
+        return_dict = False
+    else:
+        tree_keys = list(tdata.obst.keys())
+        return_dict = len(tree_keys) > 1
+
+    scores = {}
+    for key in tree_keys:
+        g, key = _get_digraph(tdata, key)
+        for node in g.nodes:
+            if characters_key not in g.nodes[node]:
+                raise TreeMetricError(
+                    f"Node {node!r} has no character states under {characters_key!r}. "
+                    "Call cassiopeia.tl.ancestral_characters first. Note that cPHS "
+                    "is strongly influenced by ancestral reconstruction accuracy."
+                )
+        scores[key] = _calculate_cphs(
+            g,
+            mutation_rate,
+            collision_probability,
+            time_key,
+            characters_key,
+            missing_state,
+            unmodified_state,
+        )
+
+    return scores if return_dict else scores[tree_keys[0]]

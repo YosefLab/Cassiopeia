@@ -32,6 +32,7 @@ from .topology import (
     rescale_node_times,
 )
 from .tree_metrics import (
+    calculate_cPHS,
     calculate_likelihood,
     calculate_parsimony,
     get_tracing_parameters,
@@ -41,6 +42,7 @@ __all__ = [
     # Ancestral characters
     "ancestral_characters",
     # Metrics
+    "calculate_cPHS",
     "calculate_likelihood",
     "calculate_parsimony",
     "count_edge_mutations",

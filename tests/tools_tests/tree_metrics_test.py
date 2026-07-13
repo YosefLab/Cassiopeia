@@ -469,5 +469,95 @@ def test_likelihood_sum_to_one():
     assert np.isclose(sum(ls_no_branch), 1.0)
 
 
+# cPHS character matrix: node0 (under node5) and node2 (under node6) share a
+# mutated state at every character, and their LCA is the root, so each shared
+# state is a homoplasy under the mutation model.
+CPHS_CM = pd.DataFrame.from_dict(
+    {
+        "node0": [1, 2, 3],
+        "node1": [0, 0, 0],
+        "node2": [1, 2, 3],
+        "node3": [0, 0, 0],
+        "node4": [0, 0, 0],
+    },
+    orient="index",
+)
+
+CPHS_PRIORS = {
+    0: {1: 0.2, 2: 0.5, 3: 0.3},
+    1: {1: 0.2, 2: 0.5, 3: 0.3},
+    2: {1: 0.2, 2: 0.5, 3: 0.3},
+}
+
+
+def test_cphs_requires_ancestral_states():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM, priors=CPHS_PRIORS)
+    with pytest.raises(TreeMetricError, match="ancestral_characters"):
+        tree_metrics.calculate_cPHS(tdata)
+
+
+def test_cphs_returns_scalar():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM, priors=CPHS_PRIORS)
+    tree_metrics.ancestral_characters(tdata)
+    score = tree_metrics.calculate_cPHS(tdata)
+    assert isinstance(score, float)
+    assert 0 < score <= 1
+
+
+def test_cphs_explicit_params_reproducible():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM, priors=CPHS_PRIORS)
+    tree_metrics.ancestral_characters(tdata)
+    a = tree_metrics.calculate_cPHS(tdata, mutation_rate=0.7, collision_probability=0.3)
+    b = tree_metrics.calculate_cPHS(tdata, mutation_rate=0.7, collision_probability=0.3)
+    assert a == b
+    # More homoplasy-prone parameters (higher collision) should not increase
+    # confidence in the tree (i.e. the cPHS p-value should not decrease).
+    c = tree_metrics.calculate_cPHS(tdata, mutation_rate=0.7, collision_probability=0.6)
+    assert c >= a
+
+
+def test_cphs_multiple_trees_returns_dict():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM, priors=CPHS_PRIORS)
+    tdata.obst["tree2"] = tdata.obst["tree"].copy()
+    tree_metrics.ancestral_characters(tdata, tree_key="tree")
+    tree_metrics.ancestral_characters(tdata, tree_key="tree2")
+
+    result = tree_metrics.calculate_cPHS(tdata)
+    assert isinstance(result, dict)
+    assert set(result) == {"tree", "tree2"}
+    assert result["tree"] == result["tree2"]
+
+    # An explicit tree_key always yields a scalar, even with multiple trees.
+    scalar = tree_metrics.calculate_cPHS(tdata, tree_key="tree")
+    assert isinstance(scalar, float)
+    assert scalar == result["tree"]
+
+
+def test_cphs_requires_ultrametric():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM, priors=CPHS_PRIORS)
+    tree_metrics.ancestral_characters(tdata)
+    g = tdata.obst["tree"].copy()
+    g.nodes["node0"]["time"] = 5.0
+    tdata.obst["tree"] = g
+    with pytest.raises(TreeMetricError, match="same depth"):
+        tree_metrics.calculate_cPHS(tdata)
+
+
+def test_cphs_collision_probability_from_priors():
+    # dict-of-dicts priors: q is the mean over characters of sum_s p_s^2.
+    q = tree_metrics._collision_probability(CPHS_PRIORS, CPHS_CM, -1, 0)
+    assert np.isclose(q, 0.2**2 + 0.5**2 + 0.3**2)
+    # flat state->prob priors use that single distribution directly.
+    q_flat = tree_metrics._collision_probability({1: 0.5, 2: 0.5}, CPHS_CM, -1, 0)
+    assert np.isclose(q_flat, 0.5)
+
+
+def test_cphs_collision_probability_default_warns():
+    tdata = build_tree(SMALL_NET_EDGES, CPHS_CM)
+    tree_metrics.ancestral_characters(tdata)
+    with pytest.warns(UserWarning, match="uniform distribution"):
+        tree_metrics.calculate_cPHS(tdata)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
