@@ -619,8 +619,10 @@ def _collision_probability(
     if not isinstance(priors, dict):
         raise TreeMetricError("`priors` must be a dict or a dict of per-character dicts.")
 
+    if len(priors) == 0:
+        raise TreeMetricError("`priors` is empty; cannot estimate collision probability.")
+
     first_value = next(iter(priors.values()))
-    if isinstance(first_value, dict):
         per_character = [
             float(np.sum(np.array(list(state_priors.values())) ** 2))
             for state_priors in priors.values()
