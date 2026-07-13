@@ -1012,7 +1012,7 @@ def call_lineage_groups(
     # Reorder piv columns by binarized intBC frequency
     pivbin = piv.copy()
     pivbin[pivbin > 0] = 1
-    intBC_sums = pivbin.sum(0)
+    intBC_sums = pivbin.sum(axis=0)
     ordered_intBCs = intBC_sums.sort_values(ascending=False).index.tolist()
     piv = piv[ordered_intBCs]
     min_clust_size = int(min_cluster_prop * piv.shape[0])

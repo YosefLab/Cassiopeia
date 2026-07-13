@@ -100,12 +100,12 @@ def find_top_lg(
         pivot table of the remaining unassigned cells
     """
     # Calculate sum of observed intBCs, identify top intBC
-    intBC_sums = PIVOT_in.sum(0).sort_values(ascending=False)
+    intBC_sums = PIVOT_in.sum(axis=0).sort_values(ascending=False)
     intBC_top = intBC_sums.index[0]
 
     # Take subset of PIVOT table that contain cells that have the top intBC
     subPIVOT_in = PIVOT_in[PIVOT_in[intBC_top] > 0]
-    subPIVOT_in_sums = subPIVOT_in.sum(0)
+    subPIVOT_in_sums = subPIVOT_in.sum(axis=0)
     ordered_intBCs2 = subPIVOT_in_sums.sort_values(ascending=False).index.tolist()
     subPIVOT_in = subPIVOT_in[ordered_intBCs2]
 
@@ -113,7 +113,7 @@ def find_top_lg(
     subPIVOT_in[subPIVOT_in > 0] = 1
 
     # Define intBC set
-    subPIVOT_in_sums2 = subPIVOT_in.sum(0)
+    subPIVOT_in_sums2 = subPIVOT_in.sum(axis=0)
     total = subPIVOT_in_sums2[intBC_top]
     intBC_sums_filt = subPIVOT_in_sums2[subPIVOT_in_sums2 >= min_intbc_prop * total]
 
@@ -174,7 +174,7 @@ def filter_intbcs_lg_sets(
         PIVi_bin = PIVi_bin.drop(["lineageGrp"], axis=1)
         PIVi_bin[PIVi_bin > 0] = 1
 
-        intBC_sums = PIVi_bin.sum(0)
+        intBC_sums = PIVi_bin.sum(axis=0)
         intBC_normsums = intBC_sums / max(intBC_sums)
 
         intBC_normsums_filt_i = intBC_normsums[intBC_normsums >= min_intbc_thresh]
