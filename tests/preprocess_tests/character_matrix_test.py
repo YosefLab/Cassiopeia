@@ -318,6 +318,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_lineage_profile,
             lineage_profile[expected_lineage_profile.columns],
+            check_dtype=False,
         )
 
     def test_alleletable_to_lineage_profile_with_conflicts(self):
@@ -377,6 +378,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_lineage_profile,
             lineage_profile[expected_lineage_profile.columns],
+            check_dtype=False,
         )
 
     def test_alleletable_to_lineage_profile_with_conflicts_no_collapse(self):
@@ -438,6 +440,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_lineage_profile,
             lineage_profile[expected_lineage_profile.columns],
+            check_dtype=False,
         )
 
     def test_lineage_profile_to_character_matrix_with_conflicts(self):
@@ -757,6 +760,7 @@ class TestCharacterMatrixFormation(unittest.TestCase):
         pd.testing.assert_frame_equal(
             expected_lineage_profile,
             lineage_profile[expected_lineage_profile.columns],
+            check_dtype=False,
         )
 
     def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(

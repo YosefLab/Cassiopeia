@@ -32,7 +32,7 @@ def log_molecule_table(wrapped: Callable):
     @functools.wraps(wrapped)
     def wrapper(*args, **kwargs):
         df = wrapped(*args, **kwargs)
-        umi_count = df["UMI"].dtype != object
+        umi_count = pd.api.types.is_numeric_dtype(df["UMI"])
         logger.debug(f"Resulting {'alleletable' if umi_count else 'molecule_table'} statistics:")
         logger.debug(f"# Reads: {df['readCount'].sum()}")
         logger.debug(f"# UMIs: {df['UMI'].sum() if umi_count else df.shape[0]}")
@@ -102,7 +102,7 @@ def filter_cells(
             A filtered molecule table
     """
     # Detect if the UMI column contains UMI counts or the actual UMI sequence
-    umi_count = molecule_table["UMI"].dtype != object
+    umi_count = pd.api.types.is_numeric_dtype(molecule_table["UMI"])
 
     cell_groups = molecule_table.groupby("cellBC")
     umis_per_cell = cell_groups["UMI"].sum() if umi_count else cell_groups.size()

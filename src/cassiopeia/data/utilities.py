@@ -394,7 +394,9 @@ def compute_phylogenetic_weight_matrix(
 
             W.loc[leaf1, leaf2] = W.loc[leaf2, leaf1] = _d
 
-    np.fill_diagonal(W.values, 0)
+    values = W.to_numpy(copy=True)
+    np.fill_diagonal(values, 0)
+    W = pd.DataFrame(values, index=W.index, columns=W.columns)
 
     return W
 

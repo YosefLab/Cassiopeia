@@ -596,7 +596,7 @@ class CassiopeiaTree:
 
         # All nodes have a single character string, so we cast the character matrix
         # back to an integer.
-        self._character_matrix = self._character_matrix.astype(int, copy=False)
+        self._character_matrix = self._character_matrix.astype(int)
 
     def reconstruct_ancestral_characters(self) -> None:
         """Reconstruct ancestral character states.
@@ -985,9 +985,9 @@ class CassiopeiaTree:
             # character string.
             if self.is_ambiguous(node):
                 if layer is not None:
-                    self.layers[layer] = self.layers[layer].astype(object, copy=False)
+                    self.layers[layer] = self.layers[layer].astype(object)
                 else:
-                    self._character_matrix = self._character_matrix.astype(object, copy=False)
+                    self._character_matrix = self._character_matrix.astype(object)
 
             # Pass in as numpy array of tuples to bypass the VisibleDeprecationWarning
             # from creating an ndarray from ragged nested sequences
