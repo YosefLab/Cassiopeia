@@ -586,6 +586,22 @@ def calculate_likelihood(
         ]
     )
 
+def _normalized_collision(state_priors: dict) -> float:
+    """Return ``sum_s p_s^2`` for one character, renormalizing priors to sum to 1.
+
+    KPTracer-style priors files store unnormalized allele-frequency weights
+    (each character can sum to e.g. ~3.4 rather than 1). Squaring those values
+    directly yields ``q > 1`` and corrupts the p-values, so the priors are
+    renormalized first. For priors that already sum to 1 this is a no-op.
+    """
+    vals = np.array(list(state_priors.values()), dtype=float)
+    total = vals.sum()
+    if total <= 0:
+        raise TreeMetricError(
+            "Prior weights for a character sum to <= 0; cannot normalize."
+        )
+    vals = vals / total
+    return float(np.sum(vals ** 2))
 
 def _collision_probability(
     priors: dict | None,
@@ -625,11 +641,11 @@ def _collision_probability(
     first_value = next(iter(priors.values()))
     if isinstance(first_value, dict):
         per_character = [
-            float(np.sum(np.array(list(state_priors.values())) ** 2))
+            _normalized_collision(state_priors)
             for state_priors in priors.values()
         ]
         return float(np.mean(per_character))
-    return float(np.sum(np.array(list(priors.values())) ** 2))
+    return _normalized_collision(priors)
 
 
 def _calculate_cphs(
