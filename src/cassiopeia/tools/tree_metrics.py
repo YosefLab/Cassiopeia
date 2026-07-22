@@ -586,6 +586,7 @@ def calculate_likelihood(
         ]
     )
 
+
 def _normalized_collision(state_priors: dict) -> float:
     """Return ``sum_s p_s^2`` for one character, renormalizing priors to sum to 1.
 
@@ -597,11 +598,10 @@ def _normalized_collision(state_priors: dict) -> float:
     vals = np.array(list(state_priors.values()), dtype=float)
     total = vals.sum()
     if total <= 0:
-        raise TreeMetricError(
-            "Prior weights for a character sum to <= 0; cannot normalize."
-        )
+        raise TreeMetricError("Prior weights for a character sum to <= 0; cannot normalize.")
     vals = vals / total
-    return float(np.sum(vals ** 2))
+    return float(np.sum(vals**2))
+
 
 def _collision_probability(
     priors: dict | None,
@@ -640,10 +640,7 @@ def _collision_probability(
 
     first_value = next(iter(priors.values()))
     if isinstance(first_value, dict):
-        per_character = [
-            _normalized_collision(state_priors)
-            for state_priors in priors.values()
-        ]
+        per_character = [_normalized_collision(state_priors) for state_priors in priors.values()]
         return float(np.mean(per_character))
     return _normalized_collision(priors)
 
