@@ -551,6 +551,7 @@ def test_cphs_collision_probability_from_priors():
     q_flat = tree_metrics._collision_probability({1: 0.5, 2: 0.5}, CPHS_CM, -1, 0)
     assert np.isclose(q_flat, 0.5)
 
+
 def test_cphs_collision_probability_normalizes_priors():
     # Priors are not required to sum to 1: KPTracer-style files store
     # unnormalized allele-frequency weights. q must be identical whether the
