@@ -551,6 +551,26 @@ def test_cphs_collision_probability_from_priors():
     q_flat = tree_metrics._collision_probability({1: 0.5, 2: 0.5}, CPHS_CM, -1, 0)
     assert np.isclose(q_flat, 0.5)
 
+def test_cphs_collision_probability_normalizes_priors():
+    # Priors are not required to sum to 1: KPTracer-style files store
+    # unnormalized allele-frequency weights. q must be identical whether the
+    # same distribution is given normalized or as raw weights.
+    normalized = {0: {1: 0.2, 2: 0.5, 3: 0.3}}
+    unnormalized = {0: {1: 0.6, 2: 1.5, 3: 0.9}}  # 3x the weights above
+    q_norm = tree_metrics._collision_probability(normalized, CPHS_CM, -1, 0)
+    q_raw = tree_metrics._collision_probability(unnormalized, CPHS_CM, -1, 0)
+    assert np.isclose(q_norm, q_raw)
+    assert q_raw <= 1.0
+
+    # per-character priors may have different distributions; q is their mean
+    mixed = {0: {1: 1.0, 2: 1.0}, 1: {1: 3.0, 2: 1.0}}
+    q_mixed = tree_metrics._collision_probability(mixed, CPHS_CM, -1, 0)
+    assert np.isclose(q_mixed, np.mean([0.5, 0.75**2 + 0.25**2]))
+
+    # zero-weight priors are rejected rather than silently dividing by zero
+    with pytest.raises(tree_metrics.TreeMetricError):
+        tree_metrics._collision_probability({0: {1: 0.0, 2: 0.0}}, CPHS_CM, -1, 0)
+
 
 def test_cphs_collision_probability_default_warns():
     tdata = build_tree(SMALL_NET_EDGES, CPHS_CM)
