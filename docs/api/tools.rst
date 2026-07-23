@@ -16,6 +16,7 @@ Metrics
    tl.calculate_likelihood
    tl.calculate_parsimony
    tl.count_edge_mutations
+   tl.calculate_cPHS
 
 Parameter Estimation
 ~~~~~~~~~~~~~~~~~~~~~~
