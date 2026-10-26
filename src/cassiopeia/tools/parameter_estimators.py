@@ -14,9 +14,16 @@ from cassiopeia.tools.topology import get_root
 from cassiopeia.tools.topology import mean_depth as _mean_depth
 
 
-def _resolve_layer(characters_key: str, layer: str | None) -> str:
-    """Map the deprecated ``layer`` argument onto ``characters_key``."""
-    if layer is None:
+def _resolve_layer(characters_key: str, kwargs: dict) -> str:
+    """Map the deprecated ``layer`` keyword onto ``characters_key``.
+
+    Raises:
+        TypeError: If *kwargs* contains anything other than ``layer``.
+    """
+    unexpected = set(kwargs) - {"layer"}
+    if unexpected:
+        raise TypeError(f"Unexpected keyword argument(s): {', '.join(sorted(unexpected))}")
+    if "layer" not in kwargs:
         return characters_key
     warnings.warn(
         "'layer' is deprecated and will be removed in a future release; use "
@@ -24,7 +31,7 @@ def _resolve_layer(characters_key: str, layer: str | None) -> str:
         DeprecationWarning,
         stacklevel=3,
     )
-    return layer
+    return kwargs["layer"]
 
 
 def fraction_missing(
@@ -32,7 +39,7 @@ def fraction_missing(
     characters_key: str = "characters",
     missing_state: str | int | Sequence[str | int] | None = None,
     key_added: str | None = "fraction_missing",
-    layer: str | None = None,
+    **kwargs,
 ) -> float:
     """Calculate the fraction of missing entries in the character matrix.
 
@@ -50,7 +57,7 @@ def fraction_missing(
         key_added: Column in ``tdata.obs`` under which to store the per-cell
             missing fraction. Pass ``None`` to skip writing per-cell values
             (e.g. when called internally).
-        layer: Deprecated alias for ``characters_key``.
+        **kwargs: Deprecated ``layer`` alias for ``characters_key``.
 
     Returns:
         Overall fraction of missing cell/character entries (between 0 and 1).
@@ -58,7 +65,7 @@ def fraction_missing(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    characters_key = _resolve_layer(characters_key, layer)
+    characters_key = _resolve_layer(characters_key, kwargs)
     character_matrix = utils._get_characters(tdata, characters_key)
     missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
 
@@ -79,7 +86,7 @@ def fraction_mutated(
     missing_state: str | int | Sequence[str | int] | None = None,
     unmodified_state: str | int | Sequence[str | int] | None = None,
     key_added: str | None = "fraction_mutated",
-    layer: str | None = None,
+    **kwargs,
 ) -> float:
     """Calculate the fraction of mutated entries in the character matrix.
 
@@ -101,7 +108,7 @@ def fraction_mutated(
         key_added: Column in ``tdata.obs`` under which to store the per-cell
             mutated fraction. Pass ``None`` to skip writing per-cell values
             (e.g. when called internally).
-        layer: Deprecated alias for ``characters_key``.
+        **kwargs: Deprecated ``layer`` alias for ``characters_key``.
 
     Returns:
         Overall fraction of non-missing cell/character entries that are mutated
@@ -110,7 +117,7 @@ def fraction_mutated(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    characters_key = _resolve_layer(characters_key, layer)
+    characters_key = _resolve_layer(characters_key, kwargs)
     character_matrix = utils._get_characters(tdata, characters_key)
     missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state_indicator = utils._get_parameter(
@@ -144,7 +151,7 @@ def estimate_mutation_rate(
     tree_key: str | None = None,
     missing_state: str | int | Sequence[str | int] | None = None,
     unmodified_state: str | int | Sequence[str | int] | None = None,
-    layer: str | None = None,
+    **kwargs,
 ) -> float:
     """Estimate the mutation rate of a tree from its observed mutations.
 
@@ -172,7 +179,7 @@ def estimate_mutation_rate(
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
             a single value or a sequence of values. If not provided, uses
             ``tdata.uns['unmodified_state']``, or defaults to (0, "0", "*").
-        layer: Deprecated alias for ``characters_key``.
+        **kwargs: Deprecated ``layer`` alias for ``characters_key``.
 
     Returns:
         The estimated mutation rate.
@@ -184,7 +191,7 @@ def estimate_mutation_rate(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    characters_key = _resolve_layer(characters_key, layer)
+    characters_key = _resolve_layer(characters_key, kwargs)
     t, _ = utils._get_digraph(tdata, tree_key=tree_key)
     mutation_proportion = utils._get_parameter(tdata, "mutation_proportion")
     if mutation_proportion is None:
@@ -225,7 +232,7 @@ def estimate_missing_rates(
     depth_key: str = "depth",
     tree_key: str | None = None,
     missing_state: str | int | Sequence[str | int] | None = None,
-    layer: str | None = None,
+    **kwargs,
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
 
@@ -313,7 +320,7 @@ def estimate_missing_rates(
         missing_state: Value(s) to consider as missing data. Can be a single value
             or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
             or defaults to (-1, "-1", "NA", "-").
-        layer: Deprecated alias for ``characters_key``.
+        **kwargs: Deprecated ``layer`` alias for ``characters_key``.
 
     Warns:
         UserWarning: If continuous=True but branch lengths are integers, suggesting
@@ -326,7 +333,7 @@ def estimate_missing_rates(
         ParameterEstimateWarning: If the estimated parameter is negative, suggesting
             that the provided parameter may be too high.
     """
-    characters_key = _resolve_layer(characters_key, layer)
+    characters_key = _resolve_layer(characters_key, kwargs)
     t, _ = utils._get_digraph(tdata, tree_key=tree_key)
     total_missing_proportion = utils._get_parameter(tdata, "missing_proportion")
     if total_missing_proportion is None:

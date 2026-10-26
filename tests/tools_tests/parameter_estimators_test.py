@@ -251,3 +251,8 @@ def test_estimators_read_states_from_uns():
     )
     assert rate == pytest.approx(explicit)
     assert rate != pytest.approx(legacy_default)
+
+
+def test_fraction_rejects_unknown_kwargs(discrete_tree):
+    with pytest.raises(TypeError, match="charcters_key"):
+        parameter_estimators.fraction_missing(discrete_tree, charcters_key="characters")
