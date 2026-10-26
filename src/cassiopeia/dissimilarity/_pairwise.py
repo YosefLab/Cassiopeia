@@ -8,6 +8,7 @@ slower object path.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -15,8 +16,8 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.dissimilarity._compute import compute_dissimilarity_map
-from cassiopeia.dissimilarity._metrics import _resolve_dissimilarity
-from cassiopeia.utils import _get_characters
+from cassiopeia.dissimilarity._metrics import _resolve_dissimilarity, _uses_weights
+from cassiopeia.utils import _get_characters, _get_parameter, _resolve_priors
 
 if TYPE_CHECKING:
     from treedata import TreeData
@@ -111,43 +112,62 @@ def _encode_priors(priors: dict[int, dict] | None, mapping: dict | None) -> dict
 
     Returns:
         Priors with inner state keys remapped to the encoded integers. States not
-        present in the matrix (absent from *mapping*) are left unchanged.
+        present in the matrix (absent from *mapping*) are dropped, since they can
+        never be looked up.
     """
     if mapping is None or not priors:
         return priors
     str_to_code = {str(orig): code for orig, code in mapping.items()}
     return {
         character: {
-            str_to_code.get(str(state), state): probability
+            str_to_code[str(state)]: probability
             for state, probability in state_priors.items()
+            if str(state) in str_to_code
         }
         for character, state_priors in priors.items()
     }
 
 
-def _prepare_integer_matrix(
-    arr: pd.DataFrame, missing_state_indicator, unmodified_state, weights
-) -> tuple[np.array, int]:
-    """Return ``(array, missing_state_indicator)`` ready for the numba path.
+def _scalar_missing(missing_state_indicator, values: np.ndarray):
+    """Pick the single missing-state representation used in an object matrix.
 
-    Integer matrices are used as-is.  When weights are *not* provided, non-integer
-    (string/categorical) matrices are encoded to integers via
-    :func:`_encode_integer_matrix` for the fast path.  When weights *are*
-    provided (state-keyed), only a lossless numeric cast is attempted so the
-    weight keys stay valid; otherwise the matrix is left as-is (slower object
-    path).
+    A resolved missing state may be a tuple of acceptable representations (e.g.
+    the default ``(-1, "-1", "NA", "-")``), but the metrics compare against one
+    value. Return the first representation that occurs in *values* (including
+    inside ambiguous tuple states), else the integer member.
+    """
+    if not isinstance(missing_state_indicator, (tuple, list, set)):
+        return missing_state_indicator
+    present = set()
+    for v in values.ravel():
+        if isinstance(v, tuple):
+            present.update(v)
+        else:
+            present.add(v)
+    for candidate in missing_state_indicator:
+        if candidate in present:
+            return candidate
+    return _int_missing(missing_state_indicator)
+
+
+def _prepare_integer_matrix(
+    arr: pd.DataFrame, missing_state_indicator, unmodified_state
+) -> tuple[np.array, int, dict | None]:
+    """Return ``(array, missing_state_indicator, mapping)`` ready for the numba path.
+
+    Integer matrices are used as-is (``mapping=None``). Matrices with ambiguous
+    (tuple) states are left as-is (object path, ``mapping=None``) so ambiguity is
+    preserved for the cluster metrics. Other (string or categorical) matrices
+    are encoded to integers via :func:`_encode_integer_matrix`; re-key priors
+    with :func:`_encode_priors` using the returned *mapping*.
     """
     values = arr.to_numpy()
     if np.issubdtype(values.dtype, np.integer):
-        return np.ascontiguousarray(values), _int_missing(missing_state_indicator)
-    if weights is None:
-        df, missing, _ = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
-        return np.ascontiguousarray(df.to_numpy()), missing
-    try:
-        converted = np.ascontiguousarray(arr.astype(np.int64).to_numpy())
-        return converted, int(missing_state_indicator)
-    except (ValueError, TypeError):
-        return np.ascontiguousarray(values), missing_state_indicator
+        return np.ascontiguousarray(values), _int_missing(missing_state_indicator), None
+    if any(isinstance(v, tuple) for v in values.ravel()):
+        return values, _scalar_missing(missing_state_indicator, values), None
+    df, missing, mapping = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
+    return np.ascontiguousarray(df.to_numpy()), missing, mapping
 
 
 def _pairwise(
@@ -197,10 +217,6 @@ def _pairwise(
             "Please provide a dissimilarity_function or a precomputed dissimilarity map."
         )
 
-    weights = None
-    if priors:
-        weights = _transform_priors(priors, prior_transformation)
-
     # Only compute dissimilarities between *unique* states to save runtime.
     cell_to_state = characters.astype(str).apply("|".join, axis=1)
     state_to_cells = characters.index.groupby(cell_to_state)
@@ -208,9 +224,12 @@ def _pairwise(
 
     N = dedup_character_matrix.shape[0]
     # Coerce to integers so the metric takes the fast numba (nopython) path.
-    char_array, missing = _prepare_integer_matrix(
-        dedup_character_matrix, missing_state_indicator, unmodified_state, weights
+    char_array, missing, mapping = _prepare_integer_matrix(
+        dedup_character_matrix, missing_state_indicator, unmodified_state
     )
+    weights = None
+    if priors:
+        weights = _transform_priors(_encode_priors(priors, mapping), prior_transformation)
     condensed = compute_dissimilarity_map(
         char_array,
         N,
@@ -241,33 +260,74 @@ def _pairwise(
     return result.loc[order, order]
 
 
+def _resolve_metric_priors(
+    tdata: TreeData,
+    priors: dict[int, dict[int, float]] | bool | None,
+    method: str | Callable | None,
+) -> dict[int, dict[int, float]] | None:
+    """Resolve *priors* for a pairwise dissimilarity *method*.
+
+    Follows :func:`cassiopeia.utils._resolve_priors`, except that stored priors
+    are not picked up implicitly (``priors=None``) for metrics that ignore
+    weights, and explicitly requested priors with such a metric emit a warning.
+    """
+    if _uses_weights(method):
+        return _resolve_priors(tdata, priors)
+    if priors is None or priors is False:
+        return None
+    resolved = _resolve_priors(tdata, priors)
+    if resolved:
+        warnings.warn(
+            f"priors were provided but the dissimilarity function {method!r} "
+            "does not use weights, so the priors will be ignored. Use a "
+            "weighted metric (e.g. 'weighted_hamming') to make use of priors.",
+            UserWarning,
+            stacklevel=3,
+        )
+    return resolved
+
+
 def pairwise(
     tdata: TreeData,
     method: str | Callable = "nonmissing_hamming",
-    characters_key: str | None = None,
+    characters_key: str = "characters",
     key_added: str = "distances",
+    missing_state: int | str | None = None,
+    unmodified_state: int | str | None = None,
+    priors: dict[int, dict[int, float]] | bool | None = None,
     prior_transformation: str = "negative_log",
     threads: int = 1,
-) -> None:
-    """Compute pairwise dissimilarities between all leaves and store in *tdata*.
+    copy: bool = False,
+) -> pd.DataFrame | None:
+    """Compute pairwise dissimilarities between all cells.
 
     Analogous to :func:`scipy.spatial.distance.pdist`, but using a phylogenetic
-    dissimilarity metric and storing the full symmetric n×n map on the
-    :class:`~treedata.TreeData` object.  The map is computed from
-    ``tdata.obsm[characters_key or 'characters']`` and stored as a dense
-    ``numpy`` array in ``tdata.obsp[key_added]``.
+    dissimilarity metric on the character matrix in
+    ``tdata.obsm[characters_key]``. By default the full symmetric n×n map is
+    stored as a dense ``numpy`` array in ``tdata.obsp[key_added]``.
 
     Args:
-        tdata: TreeData to modify in-place.
+        tdata: TreeData to operate on.
         method: Dissimilarity function.  Accepts a callable or a string name
             of a built-in metric (e.g. ``'nonmissing_hamming'``,
             ``'weighted_hamming'``, ``'hamming'``).
-        characters_key: ``obsm`` key for the character matrix (default
-            ``'characters'``).
-        key_added: ``obsp`` key under which the result is stored.
-        prior_transformation: Transformation applied to priors when computing
-            dissimilarity weights.
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
+        key_added: Key in ``tdata.obsp`` under which the result is stored.
+        missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
+        unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
+            if ``None``).
+        priors: Priors for character states, used by weighted metrics. ``None``
+            (default) uses ``tdata.uns["priors"]`` if present; ``True`` requires
+            stored priors; ``False`` disables priors; a dict (character index ->
+            {state: probability}) is used directly.
+        prior_transformation: Transformation applied to priors to form weights.
         threads: Threads for parallel computation.
+        copy: If ``True``, return the dissimilarity map as a
+            :class:`~pandas.DataFrame` indexed by ``tdata.obs_names`` instead of
+            storing it in ``tdata.obsp``.
+
+    Returns:
+        The dissimilarity map if ``copy=True``, else ``None``.
 
     Raises:
         TypeError: If *tdata* is not a TreeData object.
@@ -282,21 +342,20 @@ def pairwise(
         )
 
     chars = _get_characters(tdata, characters_key)
-    if chars is None:
-        raise ValueError(
-            "TreeData has no character matrix; store characters in "
-            f"obsm[{characters_key or 'characters'!r}]."
-        )
-    missing = tdata.uns.get("missing_state_indicator", -1)
-    unmodified = tdata.uns.get("unmodified_state", 0)
-    priors = tdata.uns.get("priors", None)
+    missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
+    unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    priors = _resolve_metric_priors(tdata, priors, method)
     result = _pairwise(
         chars,
         method,
-        missing,
+        missing_state,
         priors,
         prior_transformation,
         threads,
-        unmodified_state=unmodified,
+        unmodified_state=unmodified_state,
     )
+    result = result.loc[tdata.obs_names, tdata.obs_names]
+    if copy:
+        return result
     tdata.obsp[key_added] = result.to_numpy()
+    return None

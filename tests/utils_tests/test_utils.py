@@ -130,3 +130,44 @@ def test_check_tree_has_key_missing():
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
+
+
+@pytest.mark.parametrize(
+    ("stored", "priors", "expected"),
+    [
+        ({0: {1: 0.5}}, None, {0: {1: 0.5}}),
+        (None, None, None),
+        ({0: {1: 0.5}}, True, {0: {1: 0.5}}),
+        ({0: {1: 0.5}}, False, None),
+        ({0: {1: 0.5}}, {1: {2: 0.1}}, {1: {2: 0.1}}),
+        ([{1: 0.5}, {2: 0.1}], None, {0: {1: 0.5}, 1: {2: 0.1}}),
+    ],
+)
+def test_resolve_priors(stored, priors, expected):
+    tdata = TreeData(obs=pd.DataFrame(index=["a"]), uns={"priors": stored} if stored else {})
+    assert utils._resolve_priors(tdata, priors) == expected
+
+
+def test_resolve_priors_true_without_stored_raises():
+    with pytest.raises(ValueError, match="priors=True"):
+        utils._resolve_priors(TreeData(obs=pd.DataFrame(index=["a"])), True)
+
+
+def test_multiple_trees_error_lists_keys():
+    tdata = TreeData(obs=pd.DataFrame(index=["a"]))
+    tdata.obst["t1"] = nx.DiGraph([("r", "a")])
+    tdata.obst["t2"] = nx.DiGraph([("r", "a")])
+    with pytest.raises(ValueError, match="'t1', 't2'.*tree_key"):
+        utils._get_digraph(tdata)
+
+
+def test_default_parameter_warns_once(monkeypatch):
+    import warnings
+
+    monkeypatch.setattr(utils, "_WARNED_DEFAULT_PARAMETERS", set())
+    tdata = TreeData(obs=pd.DataFrame(index=["a"]))
+    with pytest.warns(UserWarning, match="missing_state"):
+        utils._get_parameter(tdata, "missing_state")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert utils._get_parameter(tdata, "missing_state") == (-1, "-1", "NA", "-")

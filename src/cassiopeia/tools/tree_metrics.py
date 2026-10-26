@@ -384,8 +384,8 @@ def log_likelihood_of_character(
 
 def get_tracing_parameters(
     tdata: TreeData,
-    continuous: bool,
-    assume_root_implicit_branch: bool,
+    continuous: bool = True,
+    assume_root_implicit_branch: bool = True,
     characters_key: str = "characters",
     time_key: str = "time",
     tree_key: str | None = None,

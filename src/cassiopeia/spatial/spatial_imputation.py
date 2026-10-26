@@ -92,7 +92,6 @@ def _build_spatial_nx_graph(tdata: TreeData, connect_key: str) -> nx.Graph:
 
 def impute_alleles_spatial(
     tdata: TreeData,
-    *,
     connect_key: str | None = None,
     characters_key: str = "characters",
     spatial_key: str | None = None,

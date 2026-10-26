@@ -14,12 +14,25 @@ from cassiopeia.tools.topology import get_root
 from cassiopeia.tools.topology import mean_depth as _mean_depth
 
 
+def _resolve_layer(characters_key: str, layer: str | None) -> str:
+    """Map the deprecated ``layer`` argument onto ``characters_key``."""
+    if layer is None:
+        return characters_key
+    warnings.warn(
+        "'layer' is deprecated and will be removed in a future release; use "
+        "'characters_key' instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    return layer
+
+
 def fraction_missing(
     tdata: TreeData,
     characters_key: str = "characters",
     missing_state: str | int | Sequence[str | int] | None = None,
     key_added: str | None = "fraction_missing",
-    **kwargs,
+    layer: str | None = None,
 ) -> float:
     """Calculate the fraction of missing entries in the character matrix.
 
@@ -37,7 +50,7 @@ def fraction_missing(
         key_added: Column in ``tdata.obs`` under which to store the per-cell
             missing fraction. Pass ``None`` to skip writing per-cell values
             (e.g. when called internally).
-        **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
+        layer: Deprecated alias for ``characters_key``.
 
     Returns:
         Overall fraction of missing cell/character entries (between 0 and 1).
@@ -45,7 +58,8 @@ def fraction_missing(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_characters(tdata, characters_key, **kwargs)
+    characters_key = _resolve_layer(characters_key, layer)
+    character_matrix = utils._get_characters(tdata, characters_key)
     missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
 
     missing_mask = _entry_mask(character_matrix, missing_state_indicator)
@@ -65,7 +79,7 @@ def fraction_mutated(
     missing_state: str | int | Sequence[str | int] | None = None,
     unmodified_state: str | int | Sequence[str | int] | None = None,
     key_added: str | None = "fraction_mutated",
-    **kwargs,
+    layer: str | None = None,
 ) -> float:
     """Calculate the fraction of mutated entries in the character matrix.
 
@@ -87,7 +101,7 @@ def fraction_mutated(
         key_added: Column in ``tdata.obs`` under which to store the per-cell
             mutated fraction. Pass ``None`` to skip writing per-cell values
             (e.g. when called internally).
-        **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
+        layer: Deprecated alias for ``characters_key``.
 
     Returns:
         Overall fraction of non-missing cell/character entries that are mutated
@@ -96,7 +110,8 @@ def fraction_mutated(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
-    character_matrix = utils._get_characters(tdata, characters_key, **kwargs)
+    characters_key = _resolve_layer(characters_key, layer)
+    character_matrix = utils._get_characters(tdata, characters_key)
     missing_state_indicator = utils._get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state_indicator = utils._get_parameter(
         tdata, "unmodified_state", value=unmodified_state
@@ -126,10 +141,10 @@ def estimate_mutation_rate(
     assume_root_implicit_branch: bool = True,
     characters_key: str = "characters",
     depth_key: str = "depth",
-    tree_key: str = "tree",
-    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
-    unmodified_state: str | int | Sequence[str | int] | None = (0, "0", "*"),
-    **kwargs,
+    tree_key: str | None = None,
+    missing_state: str | int | Sequence[str | int] | None = None,
+    unmodified_state: str | int | Sequence[str | int] | None = None,
+    layer: str | None = None,
 ) -> float:
     """Estimate the mutation rate of a tree from its observed mutations.
 
@@ -150,14 +165,14 @@ def estimate_mutation_rate(
         depth_key: Node attribute key containing depth values (e.g., "depth" for
             generation count, "time" for evolutionary time). Default is "depth".
         tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
-            trees. Default is "tree".
+            trees.
         missing_state: Value(s) to consider as missing data. Can be a single value
             or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
-            or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
+            or defaults to (-1, "-1", "NA", "-").
         unmodified_state: Value(s) to consider as unmodified/uncut states. Can be
-            a single value or a sequence of values. If not provided, defaults to (0, "0", "*").
-            Default is (0, "0", "*").
-        **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
+            a single value or a sequence of values. If not provided, uses
+            ``tdata.uns['unmodified_state']``, or defaults to (0, "0", "*").
+        layer: Deprecated alias for ``characters_key``.
 
     Returns:
         The estimated mutation rate.
@@ -169,11 +184,12 @@ def estimate_mutation_rate(
     Raises:
         ParameterEstimateError: If character matrix or layer doesn't exist
     """
+    characters_key = _resolve_layer(characters_key, layer)
     t, _ = utils._get_digraph(tdata, tree_key=tree_key)
     mutation_proportion = utils._get_parameter(tdata, "mutation_proportion")
     if mutation_proportion is None:
         mutation_proportion = fraction_mutated(
-            tdata, characters_key, missing_state, unmodified_state, key_added=None, **kwargs
+            tdata, characters_key, missing_state, unmodified_state, key_added=None
         )
 
     if mutation_proportion < 0 or mutation_proportion > 1:
@@ -207,9 +223,9 @@ def estimate_missing_rates(
     heritable_missing_rate: float | None = None,
     characters_key: str = "characters",
     depth_key: str = "depth",
-    tree_key: str = "tree",
-    missing_state: str | int | Sequence[str | int] | None = (-1, "-1", "NA", "-"),
-    **kwargs,
+    tree_key: str | None = None,
+    missing_state: str | int | Sequence[str | int] | None = None,
+    layer: str | None = None,
 ) -> tuple[float, float]:
     """Estimates both missing data parameters given one of the two from a tree.
 
@@ -293,11 +309,11 @@ def estimate_missing_rates(
         depth_key: Node attribute key containing depth values (e.g., "depth" for
             generation count, "time" for evolutionary time). Default is "depth".
         tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
-            trees. Default is "tree".
+            trees.
         missing_state: Value(s) to consider as missing data. Can be a single value
             or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
-            or defaults to (-1, "-1", "NA", "-"). Default is (-1, "-1", "NA", "-").
-        **kwargs: Deprecated arguments. Use 'characters_key' instead of 'layer'.
+            or defaults to (-1, "-1", "NA", "-").
+        layer: Deprecated alias for ``characters_key``.
 
     Warns:
         UserWarning: If continuous=True but branch lengths are integers, suggesting
@@ -310,11 +326,12 @@ def estimate_missing_rates(
         ParameterEstimateWarning: If the estimated parameter is negative, suggesting
             that the provided parameter may be too high.
     """
+    characters_key = _resolve_layer(characters_key, layer)
     t, _ = utils._get_digraph(tdata, tree_key=tree_key)
     total_missing_proportion = utils._get_parameter(tdata, "missing_proportion")
     if total_missing_proportion is None:
         total_missing_proportion = fraction_missing(
-            tdata, characters_key, missing_state, key_added=None, **kwargs
+            tdata, characters_key, missing_state, key_added=None
         )
 
     if total_missing_proportion < 0 or total_missing_proportion > 1:

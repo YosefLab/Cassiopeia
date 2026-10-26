@@ -1,9 +1,3 @@
-class AutocorrelationError(Exception):
-    """An Exception for the tools.autocorrelation methods."""
-
-    pass
-
-
 class CassiopeiaError(Exception):
     """An general exception for the Cassiopeia software."""
 
@@ -24,18 +18,6 @@ class DataSimulatorError(Exception):
 
 class DistanceSolverError(Exception):
     """An Exception class for all DistanceSolver subclasses."""
-
-    pass
-
-
-class ecDNABirthDeathSimulatorError(Exception):
-    """An ExceptionClass for ecDNABirthDeathSimulator class."""
-
-    pass
-
-
-class FitchCountError(Exception):
-    """An ExceptionClass for FitchCount."""
 
     pass
 
@@ -62,16 +44,6 @@ class ILPSolverError(Exception):
     pass
 
 
-class iTOLError(Exception):
-    """Error raised by iTOL-related functionality.
-
-    Returns:
-        iTOLError - Specialized exception for iTOL operations.
-    """
-
-    pass
-
-
 class LeafSubsamplerError(Exception):
     """An Exception class for the LeafSubsampler class."""
 
@@ -90,12 +62,6 @@ class PreprocessError(Exception):
 
 class PriorTransformationError(Exception):
     """An Exception class for generating weights from priors."""
-
-    pass
-
-
-class SharedMutationJoiningSolverError(Exception):
-    """An Exception class for SharedMutationJoiningSolver."""
 
     pass
 
@@ -126,22 +92,6 @@ class UnspecifiedConfigParameterError(Exception):
     pass
 
 
-class BranchLengthEstimatorError(Exception):
-    """An Exception class for the BranchLengthEstimator class."""
-
-    pass
-
-
-class IIDExponentialMLEError(BranchLengthEstimatorError):
-    """Error raised during IID exponential maximum likelihood estimation.
-
-    Returns:
-        IIDExponentialMLEError - Specialized exception for IID exponential MLE failures.
-    """
-
-    pass
-
-
 class TreeMetricError(Exception):
     """An Exception class for calculating tree metrics."""
 
@@ -150,15 +100,5 @@ class TreeMetricError(Exception):
 
 class ParameterEstimateError(Exception):
     """An Exception class for the estimation and retrieval of tree parameters."""
-
-    pass
-
-
-class PlottingError(Exception):
-    """Error raised by plotting utilities.
-
-    Returns:
-        PlottingError - Specialized exception for plotting operations.
-    """
 
     pass

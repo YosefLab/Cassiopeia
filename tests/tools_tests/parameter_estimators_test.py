@@ -227,3 +227,27 @@ def test_fraction_mutated_various_unmodified_states():
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+def test_fraction_layer_is_deprecated(discrete_tree):
+    expected = parameter_estimators.fraction_missing(discrete_tree, key_added=None)
+    with pytest.warns(DeprecationWarning, match="'layer' is deprecated"):
+        assert parameter_estimators.fraction_missing(
+            discrete_tree, layer="characters", key_added=None
+        ) == pytest.approx(expected)
+
+
+def test_estimators_read_states_from_uns():
+    cm = pd.DataFrame({"A": [1, "?", 0], "B": [1, 2, "?"], "C": [0, 2, 1]}).T
+    edges = [("root", "i"), ("i", "A"), ("i", "B"), ("root", "C")]
+    tdata = build_tree(edges, cm, missing_state="?", unmodified_state=0)
+    tdata.obst["renamed"] = tdata.obst.pop("tree")
+    rate = parameter_estimators.estimate_mutation_rate(tdata, continuous=False)
+    explicit = parameter_estimators.estimate_mutation_rate(
+        tdata, continuous=False, missing_state="?", unmodified_state=0
+    )
+    legacy_default = parameter_estimators.estimate_mutation_rate(
+        tdata, continuous=False, missing_state=(-1, "-1", "NA", "-"), unmodified_state=0
+    )
+    assert rate == pytest.approx(explicit)
+    assert rate != pytest.approx(legacy_default)

@@ -11,7 +11,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import DataSimulatorError
-from cassiopeia.utils import _get_parameter, _normalize_missing
+from cassiopeia.utils import _get_digraph, _get_parameter, _normalize_missing
 
 
 def stochastic_tracing(
@@ -26,7 +26,7 @@ def stochastic_tracing(
     continuation_rate: float | None = None,
     unmodified_state: str = "*",
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     time_key: str = "time",
     key_added: str = "characters",
     copy: bool = False,
@@ -115,7 +115,8 @@ def stochastic_tracing(
         unmodified_state: String written to unedited sites. Default ``"*"``.
             Stored in ``tdata.uns["unmodified_state"]`` for downstream use.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
         key_added: Key used for ``obsm`` and node attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
@@ -128,6 +129,7 @@ def stochastic_tracing(
     Raises:
         DataSimulatorError: On invalid parameters.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if not isinstance(number_of_cassettes, int) or number_of_cassettes <= 0:
         raise DataSimulatorError("Specify a positive integer number of cassettes.")
     if not isinstance(size_of_cassette, int) or size_of_cassette <= 0:
@@ -242,7 +244,7 @@ def missing_data(
     unmodified_state: str | None = None,
     key_added: str | None = None,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     time_key: str = "time",
     characters_key: str = "characters",
     copy: bool = False,
@@ -297,7 +299,8 @@ def missing_data(
             writes results to ``tdata.obsm[key_added]`` and node attributes at
             ``key_added``, leaving the originals untouched.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
         characters_key: Key to read character data from.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
@@ -307,6 +310,7 @@ def missing_data(
         Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
         input modified in-place.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if unmodified_state is None:
         unmodified_state = tdata.uns.get("unmodified_state", "*")
 
@@ -461,7 +465,7 @@ def noise(
     missing_state: str | None = None,
     key_added: str | None = None,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     characters_key: str = "characters",
     copy: bool = False,
 ) -> td.TreeData:
@@ -494,7 +498,8 @@ def noise(
             results to ``tdata.obsm[key_added]`` instead, leaving the original
             untouched.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         characters_key: Key to read character data from.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
             If ``False`` (default), modify ``tdata`` in-place.
@@ -503,6 +508,7 @@ def noise(
         Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
         input modified in-place.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if error_rate == 0:
         warnings.warn(
             "No noise will be applied since error_rate is zero. Returning original tdata.",

@@ -25,14 +25,174 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
+from treedata import TreeData
 
-from cassiopeia.data import utilities
 from cassiopeia.data.Layers import Layers
 from cassiopeia.mixins import (
+    CassiopeiaError,
     CassiopeiaTreeError,
     CassiopeiaTreeWarning,
     is_ambiguous_state,
 )
+
+# ── Private helpers (only used by CassiopeiaTree) ────────────────────────────
+
+
+def _newick_to_networkx(newick_string: str) -> nx.DiGraph:
+    """Converts a newick string to a networkx DiGraph.
+
+    Parses a newick string (supporting named internal nodes and branch lengths)
+    into a directed tree.  Unnamed internal nodes are assigned unique names of
+    the form ``cassiopeia_internal_node{i}``; branches without an explicit length
+    default to a length of ``1.0``.
+
+    Args:
+        newick_string: A newick string.
+
+    Returns:
+            A networkx DiGraph.
+    """
+    g = nx.DiGraph()
+    s = newick_string.strip()
+    if s.endswith(";"):
+        s = s[:-1]
+
+    pos = 0  # current parse position
+    internal_node_iter = 0
+
+    def _parse_label() -> str:
+        nonlocal pos
+        start = pos
+        while pos < len(s) and s[pos] not in ",():":
+            pos += 1
+        return s[start:pos].strip()
+
+    def _parse_clade() -> tuple[str, float | None]:
+        """Parse a clade at ``pos`` and return its ``(name, branch_length)``."""
+        nonlocal pos, internal_node_iter
+        children = []
+        if pos < len(s) and s[pos] == "(":
+            pos += 1  # consume "("
+            while True:
+                children.append(_parse_clade())
+                if pos < len(s) and s[pos] == ",":
+                    pos += 1
+                    continue
+                if pos < len(s) and s[pos] == ")":
+                    pos += 1
+                break
+
+        name = _parse_label()
+        length = None
+        if pos < len(s) and s[pos] == ":":
+            pos += 1
+            length = float(_parse_label())
+
+        if not name and children:
+            name = f"cassiopeia_internal_node{internal_node_iter}"
+            internal_node_iter += 1
+
+        for child_name, child_length in children:
+            g.add_edge(name, child_name, length=1.0 if child_length is None else child_length)
+
+        return name, length
+
+    _parse_clade()
+    return g
+
+
+def _ete3_to_networkx(tree: "ete3.Tree") -> nx.DiGraph:  # noqa: F821
+    """Converts an ete3 Tree to a networkx DiGraph.
+
+    ``ete3`` is an optional dependency; this helper only operates on an
+    already-constructed ete3 ``Tree`` passed by the caller and does not import
+    ete3 itself.
+
+    Args:
+        tree: an ete3 Tree object
+
+    Returns:
+            a networkx DiGraph
+    """
+    g = nx.DiGraph()
+    internal_node_iter = 0
+    for n in tree.traverse():
+        if n.name == "":
+            n.name = f"cassiopeia_internal_node{internal_node_iter}"
+            internal_node_iter += 1
+
+        if n.is_root():
+            continue
+
+        g.add_edge(n.up.name, n.name, length=n.dist)
+
+    return g
+
+
+def _to_newick(
+    tree: nx.DiGraph,
+    record_branch_lengths: bool = False,
+    record_node_names: bool = False,
+) -> str:
+    """Converts a networkx graph to a newick string.
+
+    Args:
+        tree: A networkx tree
+        record_branch_lengths: Whether to record branch lengths on the tree in
+            the newick string
+        record_node_names: Whether to record internal node names on the tree in
+            the newick string
+
+    Returns:
+            A newick string representing the topology of the tree
+    """
+
+    def _to_newick_str(g, node):
+        is_leaf = g.out_degree(node) == 0
+        weight_string = ""
+
+        if record_branch_lengths and g.in_degree(node) > 0:
+            parent = list(g.predecessors(node))[0]
+            weight_string = ":" + str(g[parent][node]["length"])
+
+        _name = str(node)
+
+        name_string = ""
+        if record_node_names:
+            name_string = f"{_name}"
+
+        return (
+            f"{_name}" + weight_string
+            if is_leaf
+            else (
+                "("
+                + ",".join(_to_newick_str(g, child) for child in g.successors(node))
+                + ")"
+                + name_string
+                + weight_string
+            )
+        )
+
+    root = [node for node in tree if tree.in_degree(node) == 0][0]
+    return _to_newick_str(tree, root) + ";"
+
+
+def _resolve_most_abundant(state: tuple[int, ...]) -> int:
+    """Resolve an ambiguous character by selecting the most abundant.
+
+    This function is designed to be used with
+    :func:`CassiopeiaTree.resolve_ambiguous_characters`. It resolves an ambiguous
+    character, represented as a tuple of integers, by selecting the most abundant,
+    where ties are resolved randomly.
+
+    Args:
+        state: Ambiguous state as a tuple of integers
+
+    Returns:
+            Selected state as a single integer
+    """
+    most_common = collections.Counter(state).most_common()
+    return np.random.choice([state for state, count in most_common if count == most_common[0][1]])
 
 
 class CassiopeiaTree:
@@ -101,6 +261,13 @@ class CassiopeiaTree:
         parameters: dict[str, Any] | None = None,
         root_sample_name: str | None = None,
     ) -> None:
+        warnings.warn(
+            "CassiopeiaTree is deprecated and will be removed in v3.1.0. "
+            "Use treedata.TreeData instead; convert existing objects with "
+            "CassiopeiaTree.to_treedata().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.missing_state_indicator = missing_state_indicator
         self.cell_meta = cell_meta
         self.character_meta = character_meta
@@ -150,10 +317,10 @@ class CassiopeiaTree:
         if isinstance(tree, nx.DiGraph):
             self.__network = tree
         elif isinstance(tree, str):
-            self.__network = utilities.newick_to_networkx(tree)
+            self.__network = _newick_to_networkx(tree)
         elif hasattr(tree, "traverse"):
             # Duck-typed ete3 Tree (optional dependency, not imported here).
-            self.__network = utilities.ete3_to_networkx(tree)
+            self.__network = _ete3_to_networkx(tree)
         else:
             raise CassiopeiaTreeError("Please pass a newick string or a Networkx DiGraph object.")
 
@@ -561,7 +728,7 @@ class CassiopeiaTree:
 
     def resolve_ambiguous_characters(
         self,
-        resolve_function: Callable[[tuple[int, ...]], int] = utilities.resolve_most_abundant,
+        resolve_function: Callable[[tuple[int, ...]], int] = _resolve_most_abundant,
     ) -> None:
         """Resolve all nodes with ambiguous characters.
 
@@ -608,6 +775,8 @@ class CassiopeiaTree:
         Raises:
             CassiopeiaTreeError if the tree has not been initialized.
         """
+        from cassiopeia.tools.ancestral_characters import _get_lca_characters
+
         self.__check_network_initialized()
 
         for n in self.depth_first_traverse_nodes(postorder=True):
@@ -622,9 +791,7 @@ class CassiopeiaTree:
                 continue
             children = self.children(n)
             character_states = [self.get_character_states(c) for c in children]
-            reconstructed = utilities.get_lca_characters(
-                character_states, self.missing_state_indicator
-            )
+            reconstructed = _get_lca_characters(character_states, {self.missing_state_indicator}, 0)
             self.__set_character_states(n, reconstructed)
 
     def parent(self, node: str) -> str:
@@ -1212,7 +1379,7 @@ class CassiopeiaTree:
         if any("," in node for node in self.nodes):
             raise CassiopeiaTreeError("No nodes may have the comma (,) character in its name.")
 
-        return utilities.to_newick(self.__network, record_branch_lengths, record_node_names)
+        return _to_newick(self.__network, record_branch_lengths, record_node_names)
 
     def get_tree_topology(self) -> nx.DiGraph:
         """Returns the tree in Networkx format.
@@ -1794,7 +1961,7 @@ class CassiopeiaTree:
         state_to_cells = character_matrix.index.groupby(cell_to_state)
         dedup_character_matrix = character_matrix.drop_duplicates()
 
-        from cassiopeia.dissimilarity import compute_dissimilarity_map
+        from cassiopeia.dissimilarity._compute import compute_dissimilarity_map
 
         N = dedup_character_matrix.shape[0]
         dissimilarity_map = compute_dissimilarity_map(
@@ -2089,39 +2256,82 @@ class CassiopeiaTree:
         dissimilarity_map_key: str | None = "distances",
         preserve_layers: bool = True,
         preserve_metadata: bool = True,
-    ):
+    ) -> TreeData:
         """Convert a CassiopeiaTree object to TreeData format.
 
-        This is a  wrapper around
-        `utilities.cassiopeia_to_treedata`.
-
         Args:
-        cassiopeia_tree: CassiopeiaTree
-            Source CassiopeiaTree object to convert
-        tree_key: str, default "tree"
-            Key name for the tree in TreeData.obst
-        characters_key: str, default "characters"
-            Key name for character matrix in TreeData.obsm
-        dissimilarity_map_key: str, default "distances"
-            Key name for dissimilarity map in TreeData.obsp
-        preserve_layers: bool, default True
-            Whether to preserve character matrix layers in obsm
-        preserve_metadata: bool, default True
-            Whether to preserve cell and character metadata
+            tree_key: Key name for the tree in ``TreeData.obst``.
+            characters_key: Key name for the character matrix in ``TreeData.obsm``.
+            dissimilarity_map_key: Key name for the dissimilarity map in
+                ``TreeData.obsp``.
+            preserve_layers: Whether to preserve character matrix layers in ``obsm``
+                (stored as ``layer_{name}``).
+            preserve_metadata: Whether to preserve cell metadata (``obs``) and
+                parameters, priors, missing state, root name and character
+                metadata (``uns``).
 
         Returns:
-        TreeData
-            Converted TreeData object with:
-            - X = None
-            - obsm[characters_key] = character matrix (if present)
-            - obst[tree_key] = tree topology (if present)
-            - obsp[dissimilarity_map_key] = dissimilarity map (if present)
+            Converted TreeData object with ``X = None``, the character matrix in
+            ``obsm[characters_key]``, the tree in ``obst[tree_key]`` and the
+            dissimilarity map in ``obsp[dissimilarity_map_key]`` (each if present).
         """
-        return utilities.cassiopeia_to_treedata(
-            cassiopeia_tree=self,
-            tree_key=tree_key,
-            characters_key=characters_key,
-            dissimilarity_map_key=dissimilarity_map_key,
-            preserve_layers=preserve_layers,
-            preserve_metadata=preserve_metadata,
+        # Extract character matrix into obsm
+        obsm = {}
+        if self.character_matrix is not None:
+            obsm[characters_key] = self.character_matrix
+            obs = pd.DataFrame(index=self.character_matrix.index)
+
+        # Extract tree topology into obst
+        obst = {}
+        try:
+            tree_topology = self.get_tree_topology()
+            if tree_topology is not None:
+                obst[tree_key] = tree_topology
+                obs = pd.DataFrame(index=self.leaves)
+        except CassiopeiaTreeError as err:
+            if self.character_matrix is None:
+                raise CassiopeiaError(
+                    "CassiopeiaTree must have either a character matrix or a tree to "
+                    "convert to TreeData."
+                ) from err
+
+        # Extract observation metadata (obs)
+        if preserve_metadata and self.cell_meta is not None:
+            obs = self.cell_meta.copy()
+
+        # Extract character matrix layers into obsm
+        if preserve_layers:
+            for layer_name, layer_data in self.layers.items():
+                if layer_data is not None:
+                    obsm[f"layer_{layer_name}"] = layer_data
+
+        # Store dissimilarity map if it exists
+        obsp = {}
+        dissim_map = self.get_dissimilarity_map()
+        if dissim_map is not None:
+            obsp[dissimilarity_map_key] = dissim_map
+
+        # Extract unstructured annotations (uns)
+        uns = {}
+        name_mapping = {
+            "missing_state_indicator": "missing_state",
+            "root_sample_name": "root_name",
+        }
+        if preserve_metadata:
+            for key, value in self.parameters.items():
+                uns[key] = copy.deepcopy(value)
+            for key in ["priors", "missing_state_indicator", "root_sample_name", "character_meta"]:
+                value = getattr(self, key, None)
+                if value is not None:
+                    uns[name_mapping.get(key, key)] = copy.deepcopy(value)
+            uns["converted_from"] = "CassiopeiaTree"
+
+        return TreeData(
+            X=None,
+            obs=obs,
+            obst=obst if obst else None,
+            obsm=obsm if obsm else None,
+            obsp=obsp if obsp else None,
+            uns=uns if uns else None,
+            label="tree",
         )
