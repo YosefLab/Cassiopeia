@@ -196,7 +196,11 @@ def _resolve_most_abundant(state: tuple[int, ...]) -> int:
 
 
 class CassiopeiaTree:
-    """Basic tree object for Cassiopeia.
+    """Basic tree object for Cassiopeia (deprecated).
+
+    .. deprecated:: 3.0.0
+        Use :class:`treedata.TreeData` instead; convert existing objects with
+        :meth:`to_treedata`. ``CassiopeiaTree`` will be removed in v3.1.0.
 
     This object stores the key attributes and functionalities a user might want
     for working with lineage tracing experiments. At its core, it stores
