@@ -10,7 +10,6 @@ build:
         python - <<'PY'
         from Cython.Build import cythonize
         cythonize([
-            "src/cassiopeia/preprocess/collapse_cython.pyx",
             "src/cassiopeia/solver/ilp_solver_utilities.pyx",
             "src/cassiopeia/solver/nj_solver_utilities.pyx",
         ], language_level="3")
