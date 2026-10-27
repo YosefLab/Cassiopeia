@@ -11,10 +11,11 @@ import pandas as pd
 import pytest
 
 import cassiopeia as cas
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.data.CassiopeiaTree import (
     CassiopeiaTreeError,
     CassiopeiaTreeWarning,
+    _newick_to_networkx,
+    _resolve_most_abundant,
 )
 from cassiopeia.solver import dissimilarity_functions
 
@@ -127,8 +128,15 @@ class TestCassiopeiaTree(unittest.TestCase):
         )
         self.simple_complete_binary_tree = nx.relabel_nodes(complete_binary, str_names)
 
+    def test_init_warns_deprecated(self):
+        with pytest.warns(DeprecationWarning, match="CassiopeiaTree is deprecated"):
+            cas.data.CassiopeiaTree(character_matrix=self.character_matrix)
+
+    def test_resolve_most_abundant(self):
+        self.assertEqual(_resolve_most_abundant((1, 2, 3, 3)), 3)
+
     def test_newick_to_networkx(self):
-        network = data_utilities.newick_to_networkx(self.test_nwk)
+        network = _newick_to_networkx(self.test_nwk)
 
         test_edges = [(u, v) for (u, v) in network.edges()]
         expected_edges = [(u, v) for (u, v) in self.test_network.edges()]
@@ -138,7 +146,7 @@ class TestCassiopeiaTree(unittest.TestCase):
     def test_newick_to_networkx_with_branch_lengths(self):
         nwk = "(node1:0.2,node2:0.3)node0;"
 
-        network = data_utilities.newick_to_networkx(nwk)
+        network = _newick_to_networkx(nwk)
 
         test_edges = network.edges(data=True)
         expected_edges = [
@@ -874,14 +882,14 @@ class TestCassiopeiaTree(unittest.TestCase):
 
     def test_compute_dissimilarity_map_cluster_dissimilarity(self):
         tree = cas.data.CassiopeiaTree(self.ambiguous_character_matrix)
-        with self.assertWarns(data_utilities.CassiopeiaTreeWarning):
-            tree.compute_dissimilarity_map(
-                partial(
-                    dissimilarity_functions.cluster_dissimilarity,
-                    delta_fn,
-                    normalize=False,
-                )
+        # Ambiguous (object) matrices run in plain Python, so no fallback warning.
+        tree.compute_dissimilarity_map(
+            partial(
+                dissimilarity_functions.cluster_dissimilarity,
+                delta_fn,
+                normalize=False,
             )
+        )
         observed_dissimilarity_map = tree.get_dissimilarity_map()
 
         expected_dissimilarity_map = pd.DataFrame.from_dict(
@@ -1943,6 +1951,56 @@ class TestCassiopeiaTree(unittest.TestCase):
         # test with valid children
         tree.reorder_children("1", ["3", "2"])
         self.assertEqual(list(tree.children("1")), ["3", "2"])
+
+
+@pytest.mark.filterwarnings(
+    "ignore:The samples in the existing character matrix:"
+    "cassiopeia.mixins.warnings.CassiopeiaTreeWarning"
+)
+def test_to_treedata():
+    graph = nx.DiGraph()
+    graph.add_edges_from([("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"), ("2", "5"), ("2", "6")])
+    cm = pd.DataFrame(
+        [[0, 1, 3], [0, 1, 4], [1, 0, 1], [1, 0, 2]],
+        index=["3", "4", "5", "6"],
+        columns=["char1", "char2", "char3"],
+    )
+    dissim_map = pd.DataFrame([[1, 2, 3, 4]] * 4)
+    cas_tree = cas.data.CassiopeiaTree(
+        tree=graph, character_matrix=cm, dissimilarity_map=dissim_map
+    )
+    cas_tree.priors = {1: 0.1}
+    cas_tree.parameters["param"] = 42
+    cas_tree.layers["foo"] = cm * 2
+    tdata = cas_tree.to_treedata()
+
+    assert tdata.X is None
+    assert tdata.obsm["characters"].shape == (4, 3)
+    assert len(tdata.obst["tree"].nodes) == 7
+    np.testing.assert_array_equal(tdata.obsp["distances"], dissim_map.values)
+    assert tdata.uns["priors"] == {1: 0.1}
+    assert tdata.uns["param"] == 42
+    assert tdata.uns["missing_state"] == -1
+    pd.testing.assert_frame_equal(tdata.obsm["layer_foo"], cm * 2)
+
+    # missing character matrix
+    tdata = cas.data.CassiopeiaTree(tree=graph).to_treedata()
+    assert "characters" not in tdata.obsm
+    assert tdata.obs_names.tolist() == ["3", "4", "5", "6"]
+
+    # missing topology
+    tdata = cas.data.CassiopeiaTree(character_matrix=cm).to_treedata()
+    assert "tree" not in tdata.obst
+    assert tdata.obs_names.tolist() == ["3", "4", "5", "6"]
+
+    # with metadata
+    meta = pd.DataFrame(index=["3", "4", "5", "6"], data={"cell_type": ["A", "A", "B", "B"]})
+    tdata = cas.data.CassiopeiaTree(tree=graph, cell_meta=meta, character_matrix=cm).to_treedata()
+    assert "cell_type" in tdata.obs.columns
+
+    # missing both
+    with pytest.raises(cas.mixins.CassiopeiaError):
+        cas.data.CassiopeiaTree().to_treedata()
 
 
 if __name__ == "__main__":

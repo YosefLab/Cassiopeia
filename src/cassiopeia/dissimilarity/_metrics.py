@@ -1,21 +1,47 @@
 """Pairwise dissimilarity (distance) metrics for phylogenetic samples.
 
 The per-pair metrics are simple numeric loops that are JIT-compiled with
-``numba`` at compute time by :func:`cassiopeia.dissimilarity.compute_dissimilarity_map`.
+``numba`` at compute time by :func:`cassiopeia.dissimilarity.pairwise`.
 """
 
 from __future__ import annotations
 
+import functools
 import itertools
+import warnings
 from collections.abc import Callable
 
 import numpy as np
 
 
+def _accepts_missing_state_indicator(fn: Callable) -> Callable:
+    """Accept the deprecated ``missing_state_indicator`` keyword for *fn*.
+
+    The wrapped metric is what users call; ``numba`` compiles the undecorated
+    kernel (stored as ``wrapper._kernel``), so the fast path is unaffected.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if "missing_state_indicator" in kwargs:
+            warnings.warn(
+                "'missing_state_indicator' is deprecated and will be removed in a future "
+                "release; use 'missing_state' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            kwargs["missing_state"] = kwargs.pop("missing_state_indicator")
+        return fn(*args, **kwargs)
+
+    wrapper._kernel = fn
+    return wrapper
+
+
+@_accepts_missing_state_indicator
 def weighted_hamming(
     s1: list[int],
     s2: list[int],
-    missing_state_indicator=-1,
+    missing_state: int = -1,
     weights: dict[int, dict[int, float]] | None = None,
     unmodified_state=0,
 ) -> float:
@@ -29,7 +55,7 @@ def weighted_hamming(
     Args:
         s1: Character states of the first sample
         s2: Character states of the second sample
-        missing_state_indicator: The character representing missing values
+        missing_state: The character representing missing values
         weights: A nested dictionary of per-(character, state) weights derived
             from the priors (character -> state -> weight), or ``None``.
         unmodified_state: The state representing the unmodified (uncut) site.
@@ -40,7 +66,7 @@ def weighted_hamming(
     d = 0
     num_present = 0
     for i in range(len(s1)):
-        if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
+        if s1[i] == missing_state or s2[i] == missing_state:
             continue
 
         num_present += 1
@@ -66,10 +92,11 @@ def weighted_hamming(
     return d / num_present
 
 
+@_accepts_missing_state_indicator
 def hamming(
     s1: list[int],
     s2: list[int],
-    missing_state_indicator: int = -1,
+    missing_state: int = -1,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> int:
     """Number of positions at which two samples disagree.
@@ -81,7 +108,7 @@ def hamming(
     Args:
         s1: The first sample
         s2: The second sample
-        missing_state_indicator: Unused; present for a uniform metric signature.
+        missing_state: Unused; present for a uniform metric signature.
         weights: Unused; present for a uniform metric signature.
 
     Returns:
@@ -94,10 +121,11 @@ def hamming(
     return dist
 
 
+@_accepts_missing_state_indicator
 def nonmissing_hamming(
     s1: list[int],
     s2: list[int],
-    missing_state_indicator: int = -1,
+    missing_state: int = -1,
     weights: dict[int, dict[int, float]] | None = None,
     unmodified_state=0,
 ) -> float:
@@ -112,7 +140,7 @@ def nonmissing_hamming(
     Args:
         s1: The first sample
         s2: The second sample
-        missing_state_indicator: The character representing missing values.
+        missing_state: The character representing missing values.
         weights: Unused; present for a uniform metric signature.
         unmodified_state: The state representing the unmodified (uncut) site.
 
@@ -122,7 +150,7 @@ def nonmissing_hamming(
     d = 0
     num_present = 0
     for i in range(len(s1)):
-        if s1[i] == missing_state_indicator or s2[i] == missing_state_indicator:
+        if s1[i] == missing_state or s2[i] == missing_state:
             continue
         num_present += 1
         if s1[i] != s2[i]:
@@ -137,13 +165,14 @@ def nonmissing_hamming(
     return d / num_present
 
 
+@_accepts_missing_state_indicator
 def cluster_dissimilarity(
     dissimilarity_function: Callable[
         [list[int], list[int], int, dict[int, dict[int, float]]], float
     ],
     s1: list[int] | list[tuple[int, ...]],
     s2: list[int] | list[tuple[int, ...]],
-    missing_state_indicator: int,
+    missing_state: int,
     weights: dict[int, dict[int, float]] | None = None,
     linkage_function: Callable[[np.ndarray | list[float]], float] = np.mean,
     normalize: bool = True,
@@ -157,14 +186,14 @@ def cluster_dissimilarity(
     the number of shared non-missing positions.
 
     The ``dissimilarity_function`` argument is first so that this function can be
-    partially applied and passed to
-    :func:`cassiopeia.dissimilarity.compute_dissimilarity_map`.
+    partially applied and passed as a metric to
+    :func:`cassiopeia.dissimilarity.pairwise`.
 
     Args:
         dissimilarity_function: The per-state dissimilarity function.
         s1: The first (possibly) ambiguous sample.
         s2: The second (possibly) ambiguous sample.
-        missing_state_indicator: The character representing missing values.
+        missing_state: The character representing missing values.
         weights: Optional per-(character, state) weights.
         linkage_function: Linkage to aggregate dissimilarities (``np.mean`` for
             average linkage, ``np.min``/``np.max`` for single/complete).
@@ -184,12 +213,12 @@ def cluster_dissimilarity(
         dissim = []
         present = []
         for _c1, _c2 in itertools.product(c1, c2):
-            present.append(_c1 != missing_state_indicator and _c2 != missing_state_indicator)
+            present.append(_c1 != missing_state and _c2 != missing_state)
             dissim.append(
                 dissimilarity_function(
                     [_c1],
                     [_c2],
-                    missing_state_indicator,
+                    missing_state,
                     {0: weights[i]} if weights else None,
                 )
             )
@@ -202,10 +231,11 @@ def cluster_dissimilarity(
     return result / num_present if normalize else result
 
 
+@_accepts_missing_state_indicator
 def cluster_weighted_hamming(
     s1: list[int] | list[tuple[int, ...]],
     s2: list[int] | list[tuple[int, ...]],
-    missing_state_indicator: int,
+    missing_state: int,
     weights: dict[int, dict[int, float]] | None = None,
 ) -> float:
     r"""Weighted-hamming, min-linkage dissimilarity for (possibly) ambiguous strings.
@@ -216,7 +246,7 @@ def cluster_weighted_hamming(
     Args:
         s1: The first (possibly) ambiguous sample.
         s2: The second (possibly) ambiguous sample.
-        missing_state_indicator: The character representing missing values.
+        missing_state: The character representing missing values.
         weights: Optional per-(character, state) weights.
 
     Returns:
@@ -240,12 +270,10 @@ def cluster_weighted_hamming(
                 d = 0
 
                 total += 1
-                if _c1 != missing_state_indicator and _c2 != missing_state_indicator:
+                if _c1 != missing_state and _c2 != missing_state:
                     present += 1
 
-                if (_c1 != _c2) and (
-                    _c1 != missing_state_indicator and _c2 != missing_state_indicator
-                ):
+                if (_c1 != _c2) and (_c1 != missing_state and _c2 != missing_state):
                     if _c1 == 0 or _c2 == 0:
                         if weights:
                             if _c1 != 0:

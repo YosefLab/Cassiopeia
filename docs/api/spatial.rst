@@ -23,11 +23,3 @@ result in ``tdata.obsp``::
    :toctree: reference/
 
    sp.impute_alleles_spatial
-
-Deprecated
-~~~~~~~~~~
-
-.. autosummary::
-   :toctree: reference/
-
-   sp.impute_alleles_from_spatial_data

@@ -545,12 +545,12 @@ def _greedy_solve_fast(
 def greedy(
     tdata: TreeData,
     missing_data_classifier: str | Callable = "average",
-    characters_key: str | None = None,
+    characters_key: str = "characters",
     key_added: str = "greedy",
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool = True,
+    priors: dict[int, dict[int, float]] | bool | None = None,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with vanilla Cassiopeia-Greedy.
@@ -564,17 +564,17 @@ def greedy(
         missing_data_classifier: Name of a registered missing-data classifier
             (e.g. ``"average"``) or a callable assigning samples with missing
             data at the split character into the left/right partition.
-        characters_key: Key in ``tdata.obsm`` for the character matrix
-            (default ``'characters'``).
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
         key_added: Key in ``tdata.obst`` for the resulting tree.
         prior_transformation: Transformation applied to priors to form weights.
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states. ``True`` (default) reads priors
-            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
-            reconstructs without priors; a dict (character index -> {state:
-            probability}) is used directly.
+        priors: Priors for character states. ``None`` (default) uses
+            ``tdata.uns["priors"]`` if present and otherwise reconstructs without
+            priors; ``True`` requires stored priors and raises if there are none;
+            ``False`` reconstructs without priors; a dict (character index ->
+            {state: probability}) is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
@@ -671,7 +671,7 @@ class VanillaGreedySolver:
         # Preserve legacy behavior: use priors if the tree carries them, else not.
         greedy(
             cassiopeia_tree,
-            characters_key=layer,
+            characters_key=layer or "characters",
             missing_data_classifier=self.missing_data_classifier,
             prior_transformation=self.prior_transformation,
             priors=_get_parameter(cassiopeia_tree, "priors") or False,

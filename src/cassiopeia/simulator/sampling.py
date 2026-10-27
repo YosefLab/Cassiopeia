@@ -9,7 +9,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
-from cassiopeia.utils import _collapse_unifurcations
+from cassiopeia.utils import _collapse_unifurcations, _get_digraph
 
 
 def sample_uniform(
@@ -18,7 +18,7 @@ def sample_uniform(
     number_of_leaves: int | None = None,
     keep_root_edge: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     key_added: str = "sampled",
     copy: bool = True,
 ) -> td.TreeData | None:
@@ -37,7 +37,8 @@ def sample_uniform(
             child edge when the root is a unifurcation after pruning. If
             ``False``, collapse that edge into the root.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         key_added: Key under which to store the sampled tree when
             ``copy=False``.
         copy: If ``True`` (default), return a new TreeData with the sampled
@@ -51,6 +52,7 @@ def sample_uniform(
     Raises:
         LeafSubsamplerError: On invalid parameters or sample size.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if (ratio is None) == (number_of_leaves is None):
         raise LeafSubsamplerError("Specify exactly one of `ratio` or `number_of_leaves`.")
     if random_seed is not None:
@@ -79,7 +81,7 @@ def sample_spatial(
     space: np.ndarray | None = None,
     spatial_key: str = "spatial",
     keep_root_edge: bool = True,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     key_added: str = "sampled",
     copy: bool = True,
 ) -> td.TreeData | None:
@@ -106,7 +108,8 @@ def sample_spatial(
             with ``bounding_box``.
         spatial_key: Key in ``tdata.obsm`` holding spatial coordinates.
         keep_root_edge: Preserve root's single child edge after pruning.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         key_added: Key under which to store the sampled tree when
             ``copy=False``.
         copy: If ``True`` (default), return a new TreeData with the sampled
@@ -120,6 +123,7 @@ def sample_spatial(
     Raises:
         LeafSubsamplerError: On invalid parameters or empty region.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if (bounding_box is None) == (space is None):
         raise LeafSubsamplerError("Specify exactly one of `bounding_box` or `space`.")
     if spatial_key not in tdata.obsm:
@@ -188,7 +192,7 @@ def sample_supercellular(
     keep_root_edge: bool = True,
     collapse_duplicates: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     time_key: str = "time",
 ) -> td.TreeData:
     """Merge pairs of leaves to simulate supercellular observations.
@@ -225,7 +229,8 @@ def sample_supercellular(
         collapse_duplicates: If ``True``, deduplicate repeated state tokens
             within a merged state string (e.g., ``"1|1|2"`` → ``"1|2"``).
         random_seed: NumPy random seed for reproducibility (iterative mode).
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         time_key: Node attribute key for time values (iterative mode).
              Required for distance-based merging; ignored in pixel mode.
              Must be present on all nodes.
@@ -237,6 +242,7 @@ def sample_supercellular(
     Raises:
         LeafSubsamplerError: On invalid parameters.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     pixel_mode = spatial_key is not None
 
     if pixel_mode:
@@ -327,7 +333,7 @@ def sample_timepoints(
     timepoints: dict[float, int],
     keep_root_edge: bool = True,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     time_key: str = "time",
     key_added: str = "sampled",
     copy: bool = True,
@@ -359,7 +365,8 @@ def sample_timepoints(
             time. Timepoints are processed in ascending order.
         keep_root_edge: Preserve root's single child edge after pruning.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         time_key: Node attribute key for time values. Must be present on all nodes.
         key_added: Key under which to store the sampled tree when
             ``copy=False``.
@@ -376,6 +383,7 @@ def sample_timepoints(
             count exceeds the number of available cells, or no cells are
             sampled.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if not timepoints:
         raise LeafSubsamplerError("timepoints dict is empty.")
     if random_seed is not None:

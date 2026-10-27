@@ -203,3 +203,14 @@ def test_removed_functions_absent(data):
         "cluster_dissimilarity_weighted_hamming_distance_min_linkage",
     ):
         assert not hasattr(dissimilarity, name)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    [dissimilarity.weighted_hamming, dissimilarity.hamming, dissimilarity.nonmissing_hamming],
+)
+def test_missing_state_indicator_is_deprecated(metric):
+    s1, s2 = np.array([1, -1, 2]), np.array([1, 3, 0])
+    expected = metric(s1, s2, missing_state=-1)
+    with pytest.warns(DeprecationWarning, match="missing_state_indicator"):
+        assert metric(s1, s2, missing_state_indicator=-1) == expected

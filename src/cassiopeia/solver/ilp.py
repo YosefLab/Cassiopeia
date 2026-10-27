@@ -20,10 +20,10 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia import dissimilarity
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_priors
 from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
 from cassiopeia.solver import ilp_solver_utilities
+from cassiopeia.tools.ancestral_characters import _get_lca_characters
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
@@ -358,15 +358,15 @@ def ilp(
     maximum_potential_graph_layer_size: int = 10000,
     maximum_potential_graph_lca_distance: int | None = None,
     weighted: bool = False,
-    seed: int | None = None,
+    random_seed: int | None = None,
     mip_gap: float = 0.01,
     logfile: str | None = None,
-    characters_key: str | None = None,
+    characters_key: str = "characters",
     key_added: str = "ilp",
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool = True,
+    priors: dict[int, dict[int, float]] | bool | None = None,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with Cassiopeia-ILP (maximum parsimony).
@@ -384,20 +384,20 @@ def ilp(
             potential graph. If ``None`` or 0, the maximum pairwise distance is used.
         weighted: Weight potential-graph edges by mutation negative-log-likelihood.
             Requires priors.
-        seed: Random seed for ILP optimization.
+        random_seed: Random seed for ILP optimization.
         mip_gap: Objective gap for the MILP.
         logfile: File to log progress to, or ``None``.
-        characters_key: Key in ``tdata.obsm`` for the character matrix
-            (default ``'characters'``).
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
         key_added: Key in ``tdata.obst`` for the resulting tree.
         prior_transformation: Transformation applied to priors to form weights.
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states. ``True`` (default) reads priors
-            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
-            reconstructs without priors; a dict (character index -> {state:
-            probability}) is used directly.
+        priors: Priors for character states. ``None`` (default) uses
+            ``tdata.uns["priors"]`` if present and otherwise reconstructs without
+            priors; ``True`` requires stored priors and raises if there are none;
+            ``False`` reconstructs without priors; a dict (character index ->
+            {state: probability}) is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
@@ -452,9 +452,7 @@ def ilp(
 
     # find the root of the tree & generate process ID
     root = tuple(
-        data_utilities.get_lca_characters(
-            unique_character_matrix.values.tolist(), missing_state_indicator
-        )
+        _get_lca_characters(unique_character_matrix.values.tolist(), {missing_state_indicator}, 0)
     )
     logger.info(f"Phylogenetic root: {root}")
     pid = hashlib.md5("|".join([str(r) for r in root]).encode("utf-8")).hexdigest()
@@ -518,7 +516,7 @@ def ilp(
         pid,
         logfile,
         mip_gap=mip_gap,
-        seed=seed,
+        seed=random_seed,
         convergence_iteration_limit=convergence_iteration_limit,
         convergence_time_limit=convergence_time_limit,
     )
@@ -594,13 +592,13 @@ class ILPSolver:
         # Preserve legacy behavior: use priors if the tree carries them, else not.
         ilp(
             cassiopeia_tree,
-            characters_key=layer,
+            characters_key=layer or "characters",
             convergence_time_limit=self.convergence_time_limit,
             convergence_iteration_limit=self.convergence_iteration_limit,
             maximum_potential_graph_layer_size=self.maximum_potential_graph_layer_size,
             maximum_potential_graph_lca_distance=self.maximum_potential_graph_lca_distance,
             weighted=self.weighted,
-            seed=self.seed,
+            random_seed=self.seed,
             mip_gap=self.mip_gap,
             prior_transformation=self.prior_transformation,
             priors=_get_parameter(cassiopeia_tree, "priors") or False,

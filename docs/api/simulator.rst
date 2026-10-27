@@ -13,7 +13,7 @@ simulates data dropout, and then subsamples leaves:
 
    tdata = cas.sim.complete_binary(num_cells=256)
    cas.sim.stochastic_tracing(tdata, number_of_cassettes=10, size_of_cassette=3)
-   cas.sim.missing_data(tdata, stochastic_missing_rate = 0.1)
+   cas.sim.missing_data(tdata, stochastic_rate=0.1)
    tdata = cas.sim.sample_uniform(tdata, ratio=0.5)
 
 
@@ -83,24 +83,4 @@ incomplete capture.
    sim.sample_uniform
    sim.sample_spatial
    sim.sample_supercellular
-
-
-Deprecated
-~~~~~~~~~~
-
-The class-based API from v2 is retained for backwards compatibility but will
-be removed in a future release. Use the functional API above instead.
-
-.. autosummary::
-   :toctree: reference/
-
-   sim.BirthDeathFitnessSimulator
-   sim.CompleteBinarySimulator
-   sim.SimpleFitSubcloneSimulator
-   sim.Cas9LineageTracingDataSimulator
-   sim.BrownianSpatialDataSimulator
-   sim.ClonalSpatialDataSimulator
-   sim.UniformLeafSubsampler
-   sim.SpatialLeafSubsampler
-   sim.SupercellularSampler
-   sim.fate_tree_expression
+   sim.sample_timepoints

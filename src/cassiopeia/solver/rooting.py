@@ -114,11 +114,19 @@ def _leaf_side_counts(undirected: nx.Graph, leaf_attr: dict[str, int] | None = N
     return parent, side, total
 
 
-def reroot_on_edge(graph: nx.DiGraph, new_root, best_edge) -> nx.DiGraph:
+def reroot_on_edge(
+    graph: nx.DiGraph,
+    new_root,
+    best_edge,
+    length_key: str = "length",
+    position: float = 0.5,
+) -> nx.DiGraph:
     """Insert *new_root* on *best_edge* and orient all edges away from it.
 
-    Node attributes are preserved; the previous root and any resulting
-    unifurcations are collapsed.
+    Node and edge attributes are preserved; the previous root and any resulting
+    unifurcations are collapsed (summing branch lengths). If *best_edge* has a
+    numeric ``length_key`` attribute, it is split between the two new root edges,
+    with fraction *position* on the side of ``best_edge[0]``.
     """
     from cassiopeia.utils import _collapse_unifurcations
 
@@ -139,6 +147,12 @@ def reroot_on_edge(graph: nx.DiGraph, new_root, best_edge) -> nx.DiGraph:
         attrs = graph.get_edge_data(p, c) or graph.get_edge_data(c, p) or {}
         rooted.add_edge(p, c, **attrs)
 
+    split = graph.get_edge_data(u, v) or graph.get_edge_data(v, u) or {}
+    length = split.get(length_key)
+    if isinstance(length, (int, float)) and not isinstance(length, bool):
+        rooted[new_root][u][length_key] = position * length
+        rooted[new_root][v][length_key] = (1 - position) * length
+
     return _collapse_unifurcations(rooted, collapse_root=True)
 
 
@@ -146,7 +160,9 @@ def reroot_on_edge(graph: nx.DiGraph, new_root, best_edge) -> nx.DiGraph:
 
 
 @register("outgroup")
-def outgroup(graph: nx.Graph, outgroup: str | None = None, **kwargs) -> nx.DiGraph:
+def outgroup(
+    graph: nx.Graph, outgroup: str | None = None, length_key: str = "length", **kwargs
+) -> nx.DiGraph:
     """Root the tree using an outgroup leaf.
 
     When *outgroup* is ``None`` (NJ synthetic-root case), a synthetic all-zero
@@ -159,6 +175,7 @@ def outgroup(graph: nx.Graph, outgroup: str | None = None, **kwargs) -> nx.DiGra
             *outgroup* is ``None``).
         outgroup: Name of an existing leaf to use as outgroup, or ``None`` to use
             the synthetic ``"root"`` leaf.
+        length_key: Edge attribute holding branch lengths.
         kwargs: Keyword arguments.
 
     Returns:
@@ -192,23 +209,23 @@ def outgroup(graph: nx.Graph, outgroup: str | None = None, **kwargs) -> nx.DiGra
     while root_name in graph.nodes:
         root_name = root_name + "_internal"
 
-    return reroot_on_edge(graph, root_name, (outgroup, internal))
+    return reroot_on_edge(graph, root_name, (outgroup, internal), length_key=length_key)
 
 
 @register("midpoint")
 def midpoint(
-    graph: nx.Graph, time_key: str = "length", new_root: str = "root", **kwargs
+    graph: nx.Graph, length_key: str = "length", new_root: str = "root", **kwargs
 ) -> nx.DiGraph:
     """Root at the midpoint of the longest leaf-to-leaf path.
 
-    Branch lengths are read from the ``time_key`` edge attribute (defaulting to
+    Branch lengths are read from the ``length_key`` edge attribute (defaulting to
     ``1.0`` per edge when absent).  The two most distant leaves are found and a
     new root is placed on the edge straddling the halfway point of the path
     between them.
 
     Args:
         graph: Tree graph (rooted or unrooted).
-        time_key: Edge attribute holding branch lengths.
+        length_key: Edge attribute holding branch lengths.
         new_root: Name for the inserted root node.
         kwargs: Keyword arguments.
 
@@ -219,7 +236,7 @@ def midpoint(
     weighted.add_nodes_from(graph.nodes())
     for u, v in graph.to_undirected().edges():
         attrs = graph.get_edge_data(u, v) or graph.get_edge_data(v, u) or {}
-        weighted.add_edge(u, v, weight=attrs.get(time_key, 1.0))
+        weighted.add_edge(u, v, weight=attrs.get(length_key, 1.0))
 
     leaves = _leaves(weighted)
     if len(leaves) < 2:
@@ -240,18 +257,22 @@ def midpoint(
     half = best_dist / 2.0
     acc = 0.0
     best_edge = (path[0], path[1])
+    position = 0.5
     for i in range(len(path) - 1):
         w = weighted[path[i]][path[i + 1]]["weight"]
         if acc + w >= half:
             best_edge = (path[i], path[i + 1])
+            position = (half - acc) / w if w > 0 else 0.5
             break
         acc += w
 
-    return reroot_on_edge(graph, new_root, best_edge)
+    return reroot_on_edge(graph, new_root, best_edge, length_key=length_key, position=position)
 
 
 @register("centroid")
-def centroid(graph: nx.Graph, new_root: str = "root", **kwargs) -> nx.DiGraph:
+def centroid(
+    graph: nx.Graph, new_root: str = "root", length_key: str = "length", **kwargs
+) -> nx.DiGraph:
     """Root on the edge that most evenly splits the leaves.
 
     Finds the edge whose two sides have the closest leaf counts, inserts a new
@@ -260,6 +281,7 @@ def centroid(graph: nx.Graph, new_root: str = "root", **kwargs) -> nx.DiGraph:
     Args:
         graph: Tree graph (rooted or unrooted).
         new_root: Name for the inserted root node.
+        length_key: Edge attribute holding branch lengths.
         kwargs: Keyword arguments.
 
     Returns:
@@ -281,16 +303,19 @@ def centroid(graph: nx.Graph, new_root: str = "root", **kwargs) -> nx.DiGraph:
         if best is None or key < best:
             best, best_edge = key, (u, v)
 
-    return reroot_on_edge(graph, new_root, best_edge)
+    return reroot_on_edge(graph, new_root, best_edge, length_key=length_key)
 
 
 def _get_mutation_outgroup(characters: pd.DataFrame, missing_state=-1, unedited_state=0) -> list:
     """Identify outgroup leaves as those sharing the single most common mutation."""
+    from cassiopeia.utils import _normalize_missing
+
+    excluded = list(_normalize_missing(missing_state) | _normalize_missing(unedited_state))
     best_col = None
     best_value = None
     best_prop = -1
     for col in characters.columns:
-        col_values = characters[col][~characters[col].isin([missing_state, unedited_state])]
+        col_values = characters[col][~characters[col].isin(excluded)]
         if col_values.empty:
             continue
         mode_value = col_values.mode().iloc[0]
@@ -311,6 +336,7 @@ def shared_mutation(
     new_root: str = "root",
     missing_state=-1,
     unedited_state=0,
+    length_key: str = "length",
     **kwargs,
 ) -> nx.DiGraph:
     """Root using an outgroup defined by the most common shared mutation.
@@ -324,8 +350,10 @@ def shared_mutation(
         graph: Tree graph (rooted or unrooted).
         characters: Character matrix indexed by leaf name.
         new_root: Name for the inserted root node.
-        missing_state: Value representing missing data.
-        unedited_state: Value representing the unedited state.
+        missing_state: Value (or sequence of values) representing missing data.
+        unedited_state: Value (or sequence of values) representing the unedited
+            state.
+        length_key: Edge attribute holding branch lengths.
         kwargs: Keyword arguments.
 
     Returns:
@@ -337,7 +365,7 @@ def shared_mutation(
     undirected = graph.to_undirected()
     outgroup_leaves = set(_get_mutation_outgroup(characters, missing_state, unedited_state))
     if not outgroup_leaves:
-        return centroid(graph, new_root=new_root)
+        return centroid(graph, new_root=new_root, length_key=length_key)
 
     leaf_attr = {
         n: (1 if n in outgroup_leaves else 0) for n in undirected if undirected.degree[n] == 1
@@ -361,7 +389,7 @@ def shared_mutation(
             best_jaccard = j
             best_edge = (u, v)
 
-    return reroot_on_edge(graph, new_root, best_edge)
+    return reroot_on_edge(graph, new_root, best_edge, length_key=length_key)
 
 
 # ── Public reroot ─────────────────────────────────────────────────────────────
@@ -369,28 +397,35 @@ def shared_mutation(
 
 def reroot(
     tdata: TreeData,
-    method: str = "outgroup",
+    method: str = "centroid",
     tree_key: str | None = None,
     characters_key: str = "characters",
-    time_key: str = "length",
+    length_key: str = "length",
+    time_key: str = "time",
     key_added: str | None = None,
     copy: bool = False,
     **kwargs,
 ) -> TreeData | None:
     """Re-root an already-built tree using a registered rooting procedure.
 
-    Only :class:`~treedata.TreeData` is supported.
+    Branch lengths are read from the ``length_key`` edge attribute; edges
+    without it take their length from the ``time_key`` node attribute (only one
+    is needed), or unit length if neither is available. Lengths are preserved
+    across the re-rooting (the root edge is split, and the old root is collapsed
+    by summing its edges). If the input tree has node times, they are
+    recomputed as the distance from the new root, offset by the old root's time.
 
     Args:
         tdata: TreeData containing the tree to re-root.
-        method: Rooting procedure name — one of ``'outgroup'``, ``'midpoint'``,
-            ``'centroid'``, ``'shared_mutation'``.
-        tree_key: ``obst`` key of the tree to re-root.
-        characters_key: ``obsm`` key for the character matrix (used by
+        method: Rooting procedure name — one of ``'centroid'``, ``'midpoint'``,
+            ``'outgroup'``, ``'shared_mutation'``.
+        tree_key: Key in ``tdata.obst`` of the tree to re-root.
+        characters_key: Key in ``tdata.obsm`` for the character matrix (used by
             ``shared_mutation``).
-        time_key: Edge attribute holding branch lengths (used by ``midpoint``).
-        key_added: ``obst`` key to store the re-rooted tree under.  Defaults to
-            *tree_key* (overwriting in place).
+        length_key: Edge attribute holding branch lengths.
+        time_key: Node attribute holding node times.
+        key_added: Key in ``tdata.obst`` to store the re-rooted tree under.
+            Defaults to *tree_key* (overwriting in place).
         copy: If ``True``, operate on and return a copy of *tdata*; otherwise
             modify in place and return ``None``.
         **kwargs: Forwarded to the rooting procedure (e.g. ``outgroup=...``).
@@ -400,11 +435,12 @@ def reroot(
 
     Raises:
         TypeError: If *tdata* is not a TreeData object.
-        ValueError: If *method* is not a registered procedure.
+        ValueError: If *method* is not a registered procedure, or
+            ``method='outgroup'`` without an ``outgroup`` leaf name.
     """
     from treedata import TreeData
 
-    from cassiopeia.utils import _get_characters, _get_digraph
+    from cassiopeia.utils import _get_characters, _get_digraph, _get_parameter, _set_tree
 
     if not isinstance(tdata, TreeData):
         raise TypeError(
@@ -413,18 +449,36 @@ def reroot(
         )
     if method not in _PROCEDURES:
         raise ValueError(f"Unknown rooting procedure {method!r}. Available: {sorted(_PROCEDURES)}")
+    if method == "outgroup" and kwargs.get("outgroup") is None:
+        raise ValueError("method='outgroup' requires the name of an outgroup leaf (outgroup=...).")
 
     tdata = tdata.copy() if copy else tdata
     g, tree_key = _get_digraph(tdata, tree_key, copy=True)
 
-    proc_kwargs = dict(kwargs)
-    if method == "shared_mutation" and proc_kwargs.get("characters") is None:
-        proc_kwargs["characters"] = _get_characters(tdata, characters_key)
-    if method == "midpoint":
-        proc_kwargs.setdefault("time_key", time_key)
+    has_time = all(time_key in d for _, d in g.nodes(data=True))
+    if has_time:
+        root_time = g.nodes[next(n for n in g if g.in_degree(n) == 0)][time_key]
+        for u, v, d in g.edges(data=True):
+            if length_key not in d:
+                d[length_key] = g.nodes[v][time_key] - g.nodes[u][time_key]
+
+    proc_kwargs = {"length_key": length_key, **kwargs}
+    if method == "shared_mutation":
+        if proc_kwargs.get("characters") is None:
+            proc_kwargs["characters"] = _get_characters(tdata, characters_key)
+        proc_kwargs.setdefault("missing_state", _get_parameter(tdata, "missing_state"))
+        proc_kwargs.setdefault("unedited_state", _get_parameter(tdata, "unmodified_state"))
 
     rooted = _PROCEDURES[method](g, **proc_kwargs)
 
-    tdata.obst[key_added or tree_key] = rooted
+    if has_time:
+        root = next(n for n in rooted if rooted.in_degree(n) == 0)
+        rooted.nodes[root][time_key] = root_time
+        for u, v in nx.bfs_edges(rooted, root):
+            rooted.nodes[v][time_key] = rooted.nodes[u][time_key] + rooted[u][v].get(
+                length_key, 1.0
+            )
+
+    _set_tree(tdata, rooted, key_added or tree_key)
 
     return tdata if copy else None
