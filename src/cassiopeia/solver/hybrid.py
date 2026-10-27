@@ -32,9 +32,9 @@ import pandas as pd
 from tqdm import tqdm
 
 from cassiopeia import dissimilarity
-from cassiopeia.data import utilities as data_utilities
 from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_priors
 from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
+from cassiopeia.tools.ancestral_characters import _get_lca_characters
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
@@ -59,8 +59,8 @@ def _assess_cutoff(
 ) -> bool:
     """Return ``True`` when *samples* meet the bottom-solver cutoff."""
     if cell_cutoff is None:
-        root_states = data_utilities.get_lca_characters(
-            character_matrix.loc[samples].values.tolist(), missing_state_indicator
+        root_states = _get_lca_characters(
+            character_matrix.loc[samples].values.tolist(), {missing_state_indicator}, 0
         )
         lca_distances = [
             dissimilarity.hamming(np.array(root_states), character_matrix.loc[u].values)
@@ -310,12 +310,12 @@ def hybrid(
     lca_cutoff: float | None = None,
     cell_cutoff: int | None = None,
     progress_bar: bool = True,
-    characters_key: str | None = "characters",
+    characters_key: str = "characters",
     key_added: str = "hybrid",
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool = True,
+    priors: dict[int, dict[int, float]] | bool | None = None,
     top_kwargs: dict | None = None,
     bottom_kwargs: dict | None = None,
     threads: int = 1,
@@ -343,17 +343,17 @@ def hybrid(
         lca_cutoff: LCA-distance cutoff for switching to the bottom solver.
         cell_cutoff: Cell-count cutoff for switching to the bottom solver.
         progress_bar: Whether to display a progress bar over subproblems.
-        characters_key: Key in ``tdata.obsm`` for the character matrix
-            (default ``'characters'``).
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
         key_added: Key in ``tdata.obst`` for the resulting tree.
         prior_transformation: Transformation applied to priors to form weights.
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states. ``True`` (default) reads priors
-            from ``tdata.uns["priors"]`` and raises if none are stored; ``False``
-            reconstructs without priors; a dict (character index -> {state:
-            probability}) is used directly. The resolved value is propagated to
+        priors: Priors for character states. ``None`` (default) uses
+            ``tdata.uns["priors"]`` if present and otherwise reconstructs without
+            priors; ``True`` requires stored priors and raises if there are none;
+            ``False`` reconstructs without priors; a dict (character index ->
+            {state: probability}) is used directly. The resolved value is propagated to
             the bottom solver.
         top_kwargs: Extra keyword arguments bound to *top_solver*.
         bottom_kwargs: Extra keyword arguments bound to *bottom_solver*
@@ -550,7 +550,7 @@ class HybridSolver:
             prior_transformation=self.prior_transformation,
             priors=_get_parameter(cassiopeia_tree, "priors") or False,
             progress_bar=self.progress_bar,
-            characters_key=layer,
+            characters_key=layer or "characters",
         )
         if collapse_mutationless_edges:
             cassiopeia_tree.collapse_mutationless_edges(infer_ancestral_characters=True)

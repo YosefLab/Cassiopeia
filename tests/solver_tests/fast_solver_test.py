@@ -215,6 +215,101 @@ def test_pairwise_rejects_non_treedata():
         cas.dissimilarity.pairwise(object())
 
 
+def _string_tdata(priors=None):
+    cm = pd.DataFrame(
+        [["a", "b", "-"], ["a", "-", "c"], ["a", "b", "c"], ["*", "b", "c"]],
+        index=["x", "y", "z", "w"],
+    )
+    uns = {"missing_state": "-", "unmodified_state": "*"}
+    if priors is not None:
+        uns["priors"] = priors
+    return td.TreeData(obs=pd.DataFrame(index=cm.index), obsm={"characters": cm}, uns=uns)
+
+
+def test_pairwise_reads_missing_state_from_uns():
+    # x and y differ only where one of them is missing.
+    tdata = _string_tdata()
+    cas.dissimilarity.pairwise(tdata)
+    dm = pd.DataFrame(tdata.obsp["distances"], index=tdata.obs_names, columns=tdata.obs_names)
+    assert dm.loc["x", "y"] == 0
+    assert dm.loc["x", "w"] > 0
+
+
+def test_pairwise_copy_returns_dataframe():
+    tdata = _string_tdata()
+    dm = cas.dissimilarity.pairwise(tdata, copy=True)
+    assert isinstance(dm, pd.DataFrame)
+    assert list(dm.index) == list(tdata.obs_names) == list(dm.columns)
+    assert "distances" not in tdata.obsp
+
+
+def test_pairwise_uses_stored_priors_for_weighted_metrics():
+    # "q" never occurs in the matrix (the simulator stores priors for all states).
+    priors = {0: {"a": 0.5, "q": 0.5}, 1: {"b": 0.1, "q": 0.9}, 2: {"c": 0.9, "q": 0.1}}
+    tdata = _string_tdata(priors)
+    implicit = cas.dissimilarity.pairwise(tdata, method="weighted_hamming", copy=True)
+    explicit = cas.dissimilarity.pairwise(
+        tdata, method="weighted_hamming", priors=priors, copy=True
+    )
+    unweighted = cas.dissimilarity.pairwise(
+        tdata, method="weighted_hamming", priors=False, copy=True
+    )
+    pd.testing.assert_frame_equal(implicit, explicit)
+    assert not np.allclose(implicit.to_numpy(), unweighted.to_numpy())
+
+
+def test_pairwise_ignores_stored_priors_for_unweighted_metrics():
+    tdata = _string_tdata({0: {"a": 0.5}, 1: {"b": 0.1}, 2: {"c": 0.9}})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        cas.dissimilarity.pairwise(tdata, method="nonmissing_hamming")
+    with pytest.warns(UserWarning, match="does not use weights"):
+        cas.dissimilarity.pairwise(tdata, method="nonmissing_hamming", priors=True)
+
+
+def test_pairwise_builtin_metrics_are_jit_compiled():
+    from cassiopeia.mixins import CassiopeiaTreeWarning
+
+    tdata = _string_tdata()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", CassiopeiaTreeWarning)
+        for method in ["weighted_hamming", "nonmissing_hamming", "hamming"]:
+            cas.dissimilarity.pairwise(tdata, method=method)
+
+
+def test_numpy_characters_use_obs_names():
+    cm = np.array([[1, 0, -1], [1, 2, 0], [0, 0, 1]])
+    tdata = td.TreeData(
+        obs=pd.DataFrame(index=["x", "y", "z"]),
+        obsm={"characters": cm},
+        uns={"missing_state": -1, "unmodified_state": 0},
+    )
+    dm = cas.dissimilarity.pairwise(tdata, copy=True)
+    assert list(dm.index) == ["x", "y", "z"]
+    cas.solver.nj(tdata)
+    assert sorted(leaves(tdata.obst["nj"])) == ["x", "y", "z"]
+
+
+@pytest.mark.parametrize("missing_in_uns", [True, False])
+def test_pairwise_ambiguous_states(missing_in_uns):
+    from functools import partial
+
+    cm = pd.DataFrame({"c0": [(1, 2), 1, 2, -1], "c1": [0, 0, 3, 3]}, index=["x", "y", "z", "w"])
+    uns = {"unmodified_state": 0, **({"missing_state": -1} if missing_in_uns else {})}
+    tdata = td.TreeData(obs=pd.DataFrame(index=cm.index), obsm={"characters": cm}, uns=uns)
+    for fn in [
+        partial(cas.dissimilarity.cluster_dissimilarity, cas.dissimilarity.weighted_hamming),
+        cas.dissimilarity.cluster_weighted_hamming,
+    ]:
+        dm = cas.dissimilarity.pairwise(tdata, method=fn, copy=True)
+        for a in cm.index:
+            for b in cm.index:
+                if a != b:
+                    assert dm.loc[a, b] == pytest.approx(fn(list(cm.loc[a]), list(cm.loc[b]), -1))
+    cas.solver.nj(tdata, dissim_fn=cas.dissimilarity.cluster_weighted_hamming)
+    assert sorted(leaves(tdata.obst["nj"])) == sorted(cm.index)
+
+
 # ── save_dissim ───────────────────────────────────────────────────────────────
 
 

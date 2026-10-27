@@ -11,13 +11,13 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia import dissimilarity as dissimilarity_functions
-from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity, _uses_weights
+from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
+from cassiopeia.dissimilarity._pairwise import _resolve_metric_priors
 from cassiopeia.solver import rooting
 from cassiopeia.utils import (
     _get_characters,
     _get_parameter,
     _node_name_generator,
-    _resolve_priors,
     _save_dissimilarity,
     _set_tree,
 )
@@ -70,12 +70,12 @@ def nj(
     root: str | None = "centroid",
     outgroup: str | None = None,
     save_dissim: bool = False,
-    characters_key: str | None = None,
+    characters_key: str = "characters",
     key_added: str = "nj",
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool = False,
+    priors: dict[int, dict[int, float]] | bool | None = None,
     threads: int = 1,
     copy: bool = False,
 ) -> TreeData | None:
@@ -106,17 +106,16 @@ def nj(
         save_dissim: Whether to store the computed dissimilarity map in
             ``tdata.obsp[dissim_key or 'distances']``. The synthetic outgroup is
             excluded.
-        characters_key: Key in ``tdata.obsm`` for the character matrix
-            (default ``'characters'``).
+        characters_key: Key in ``tdata.obsm`` for the character matrix.
         key_added: Key in ``tdata.obst`` for the resulting tree.
         prior_transformation: Transformation applied to priors to form weights.
         missing_state: Missing-state value (read from ``tdata.uns`` if ``None``).
         unmodified_state: Unmodified/uncut state value (read from ``tdata.uns``
             if ``None``).
-        priors: Priors for character states. ``False`` (default) reconstructs
-            without priors; ``True`` reads priors from ``tdata.uns["priors"]``
-            and raises if none are stored; a dict (character index -> {state:
-            probability}) is used directly.
+        priors: Priors for character states, used by weighted dissimilarity
+            metrics. ``None`` (default) uses ``tdata.uns["priors"]`` if present;
+            ``True`` requires stored priors; ``False`` disables priors; a dict
+            (character index -> {state: probability}) is used directly.
         threads: Threads for parallel dissimilarity computation.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
@@ -141,15 +140,7 @@ def nj(
         unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
         missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
         characters = _get_characters(tdata, characters_key)
-        priors = _resolve_priors(tdata, priors)
-        if priors and not _uses_weights(dissim_fn):
-            warnings.warn(
-                f"priors were provided but the dissimilarity function {dissim_fn!r} "
-                "does not use weights, so the priors will be ignored. Use a "
-                "weighted metric (e.g. 'weighted_hamming') to make use of priors.",
-                UserWarning,
-                stacklevel=2,
-            )
+        priors = _resolve_metric_priors(tdata, priors, dissim_fn)
 
         if synthetic_root:
             # Augment the character matrix with a synthetic all-unmodified 'root'
@@ -222,6 +213,8 @@ def _root_graph(
         proc_kwargs["outgroup"] = outgroup
     elif root == "shared_mutation":
         proc_kwargs["characters"] = _get_characters(data, characters_key)
+        proc_kwargs["missing_state"] = _get_parameter(data, "missing_state")
+        proc_kwargs["unedited_state"] = _get_parameter(data, "unmodified_state")
     return rooting._PROCEDURES[root](graph, **proc_kwargs)
 
 
@@ -312,7 +305,7 @@ class NeighborJoiningSolver:
             cassiopeia_tree,
             dissim_fn=self.dissimilarity_function,
             root=root,
-            characters_key=layer,
+            characters_key=layer or "characters",
             prior_transformation=self.prior_transformation,
             priors=_get_parameter(cassiopeia_tree, "priors") or False,
             save_dissim=True,

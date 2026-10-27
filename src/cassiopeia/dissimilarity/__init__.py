@@ -1,6 +1,5 @@
 """Pairwise dissimilarity metrics and computation for phylogenetic samples."""
 
-from ._compute import compute_dissimilarity_map
 from ._metrics import (
     _resolve_dissimilarity,
     _uses_weights,
@@ -20,7 +19,6 @@ from ._pairwise import (
 
 __all__ = [
     "pairwise",
-    "compute_dissimilarity_map",
     "weighted_hamming",
     "hamming",
     "nonmissing_hamming",

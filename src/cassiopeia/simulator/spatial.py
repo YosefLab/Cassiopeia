@@ -7,6 +7,7 @@ from scipy import spatial as scipy_spatial
 from scipy.stats.qmc import PoissonDisk
 
 from cassiopeia.mixins import DataSimulatorError
+from cassiopeia.utils import _get_digraph
 
 
 def brownian_spatial(
@@ -15,7 +16,7 @@ def brownian_spatial(
     diffusion_coefficient: float = 1.0,
     scale_unit_area: bool = False,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     time_key: str = "time",
     key_added: str = "spatial",
     copy: bool = False,
@@ -38,7 +39,8 @@ def brownian_spatial(
         scale_unit_area: If True, shift and scale all coordinates so
             they lie in [0, 1] (all dimensions scaled by the same factor).
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
         key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
@@ -52,6 +54,7 @@ def brownian_spatial(
     Raises:
         DataSimulatorError: If ``dim`` <= 0 or ``diffusion_coefficient`` < 0.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if dim <= 0:
         raise DataSimulatorError("Number of dimensions must be positive.")
     if diffusion_coefficient < 0:
@@ -101,7 +104,7 @@ def clonal_spatial(
     shape: tuple[int, ...] | None = None,
     space: np.ndarray | None = None,
     random_seed: int | None = None,
-    tree_key: str = "simulated",
+    tree_key: str | None = None,
     key_added: str = "spatial",
     copy: bool = False,
 ) -> td.TreeData:
@@ -125,7 +128,8 @@ def clonal_spatial(
         space: Boolean mask defining the spatial region. Mutually exclusive
             with ``shape``.
         random_seed: NumPy random seed for reproducibility.
-        tree_key: Key in ``tdata.obst`` for the tree.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
         key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
@@ -138,6 +142,7 @@ def clonal_spatial(
     Raises:
         DataSimulatorError: If neither/both of ``shape`` and ``space`` are provided.
     """
+    _, tree_key = _get_digraph(tdata, tree_key)
     if (shape is None) == (space is None):
         raise DataSimulatorError("Specify exactly one of `shape` or `space`.")
 

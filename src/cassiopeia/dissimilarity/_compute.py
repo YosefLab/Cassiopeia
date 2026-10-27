@@ -24,11 +24,13 @@ def _jit_metric(dissimilarity_function: Callable, ambiguous: bool) -> Callable:
     """Return (and cache) the ``numba``-compiled dissimilarity metric.
 
     Cached per ``(function, ambiguous)`` so the metric is compiled only once per
-    process instead of on every :func:`compute_dissimilarity_map` call.
+    process instead of on every :func:`compute_dissimilarity_map` call. Metrics
+    for ambiguous (tuple-state, object) matrices run as plain Python: numba's
+    object mode gives no speedup there and fails to compile some metrics.
     """
     if not ambiguous:
         return numba.jit(dissimilarity_function, nopython=True)
-    return numba.jit(dissimilarity_function, nopython=False, forceobj=True, parallel=True)
+    return dissimilarity_function
 
 
 @functools.cache
@@ -37,7 +39,8 @@ def _jit_loop(dissimilarity_func: Callable, numbaize: bool, ambiguous: bool) -> 
 
     The loop calls *dissimilarity_func* on each pair.  Cached per
     ``(dissimilarity_func, numbaize, ambiguous)`` so it is compiled only once per
-    process; previously a fresh closure was jitted on every call.
+    process; previously a fresh closure was jitted on every call. For ambiguous
+    (object) matrices the loop runs as plain Python.
     """
 
     def _compute_dissimilarity_map(
@@ -66,12 +69,7 @@ def _jit_loop(dissimilarity_func: Callable, numbaize: bool, ambiguous: bool) -> 
 
         if not ambiguous:
             return numba.jit(_compute_dissimilarity_map, nopython=numbaize)
-        return numba.jit(
-            _compute_dissimilarity_map,
-            nopython=False,
-            forceobj=True,
-            parallel=True,
-        )
+        return _compute_dissimilarity_map
 
 
 def compute_dissimilarity_map(
@@ -99,6 +97,9 @@ def compute_dissimilarity_map(
     Returns:
             A dissimilarity mapping as a flattened array.
     """
+    # Compile the undecorated kernel of built-in metrics (see ``_metrics``).
+    dissimilarity_function = getattr(dissimilarity_function, "_kernel", dissimilarity_function)
+
     # check to see if any ambiguous characters are present
     ambiguous_present = np.any([(cm[:, i].dtype == "object") for i in range(cm.shape[1])])
 

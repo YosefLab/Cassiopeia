@@ -39,7 +39,7 @@ def tdata():
         obs=pd.DataFrame(index=list(CM.index)),
         obst={"t": g},
         obsm={"characters": CM},
-        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0},
     )
 
 
@@ -107,10 +107,120 @@ def test_nj_supports_rooting_methods(method):
     tdata = td.TreeData(
         obs=pd.DataFrame(index=list(cm.index)),
         obsm={"characters": cm},
-        uns={"missing_state": -1, "unmodified_state": 0, "missing_state_indicator": -1},
+        uns={"missing_state": -1, "unmodified_state": 0},
     )
     cas.solver.nj(tdata, root=method, key_added="nj")
     rt = tdata.obst["nj"]
     assert nx.is_tree(rt)
     assert len(roots(rt)) == 1
     assert leaves(rt) == sorted(cm.index)
+
+
+def _total_length(g, key="length"):
+    return sum(d[key] for _, _, d in g.edges(data=True))
+
+
+def _with_times_only(tdata):
+    """Replace edge lengths with node times (cumulative distance from root)."""
+    g = tdata.obst["t"]
+    times = {"r": 0.0}
+    for u, v in nx.bfs_edges(g, "r"):
+        times[v] = times[u] + g[u][v]["length"]
+    for u, v in g.edges():
+        del g[u][v]["length"]
+    nx.set_node_attributes(g, times, "time")
+    return tdata
+
+
+def test_reroot_default_method_is_centroid(tdata):
+    expected = cas.solver.reroot(tdata, method="centroid", tree_key="t", copy=True)
+    cas.solver.reroot(tdata)
+    assert set(tdata.obst["t"].edges) == set(expected.obst["t"].edges)
+
+
+@pytest.mark.parametrize("method", ["midpoint", "centroid", "outgroup"])
+def test_reroot_preserves_total_length(tdata, method):
+    kwargs = {"outgroup": "e"} if method == "outgroup" else {}
+    cas.solver.reroot(tdata, method=method, **kwargs)
+    assert _total_length(tdata.obst["t"]) == pytest.approx(10.0)
+
+
+def test_midpoint_splits_root_edge(tdata):
+    # Longest path e-r-i1-i2-a has length 8; the midpoint lies 4 along the e-r edge.
+    cas.solver.reroot(tdata, method="midpoint")
+    rt = tdata.obst["t"]
+    root = roots(rt)[0]
+    lengths = {c: rt[root][c]["length"] for c in rt.successors(root)}
+    assert lengths == {"e": pytest.approx(4.0), "i1": pytest.approx(2.0)}
+
+
+def test_reroot_from_node_times(tdata):
+    _with_times_only(tdata)
+    cas.solver.reroot(tdata, method="midpoint")
+    rt = tdata.obst["t"]
+    root = roots(rt)[0]
+    assert rt.nodes[root]["time"] == 0.0
+    assert rt.nodes["e"]["time"] == pytest.approx(4.0)
+    assert rt.nodes["a"]["time"] == pytest.approx(4.0)
+    assert rt.nodes[root]["depth"] == 0
+    assert _total_length(rt) == pytest.approx(10.0)
+
+
+def test_reroot_updates_times_and_depth(tdata):
+    # Stale times are recomputed from the lengths, keeping the old root's time offset.
+    g = tdata.obst["t"]
+    nx.set_node_attributes(g, 99.0, "time")
+    cas.solver.reroot(tdata, method="outgroup", outgroup="e")
+    rt = tdata.obst["t"]
+    root = roots(rt)[0]
+    assert rt.nodes[root]["time"] == 99.0
+    for u, v in rt.edges():
+        assert rt.nodes[v]["time"] == pytest.approx(rt.nodes[u]["time"] + rt[u][v]["length"])
+        assert rt.nodes[v]["depth"] == rt.nodes[u]["depth"] + 1
+
+
+def test_mutation_outgroup_accepts_state_sequences():
+    from cassiopeia.solver.rooting import _get_mutation_outgroup
+
+    assert sorted(_get_mutation_outgroup(CM)) == ["a", "b"]
+    # Treating 1 as missing makes 2 (shared by d and e) the most common mutation.
+    assert sorted(_get_mutation_outgroup(CM, missing_state=(1, "1"), unedited_state=(0,))) == [
+        "d",
+        "e",
+    ]
+
+
+def test_shared_mutation_reads_states_from_uns(tdata, monkeypatch):
+    from cassiopeia.solver import rooting
+
+    seen = {}
+    original = rooting._PROCEDURES["shared_mutation"]
+
+    def spy(graph, **kwargs):
+        seen.update(kwargs)
+        return original(graph, **kwargs)
+
+    monkeypatch.setitem(rooting._PROCEDURES, "shared_mutation", spy)
+    tdata.uns["missing_state"] = "?"
+    tdata.uns["unmodified_state"] = "*"
+    cas.solver.reroot(tdata, method="shared_mutation")
+    assert seen["missing_state"] == "?"
+    assert seen["unedited_state"] == "*"
+
+
+def test_reroot_fills_missing_lengths_from_times(tdata):
+    g = tdata.obst["t"]
+    times = {"r": 2.0}
+    for u, v in nx.bfs_edges(g, "r"):
+        times[v] = times[u] + g[u][v]["length"]
+    nx.set_node_attributes(g, times, "time")
+    del g["r"]["e"]["length"]  # recovered from times (5.0)
+    cas.solver.reroot(tdata, method="midpoint")
+    rt = tdata.obst["t"]
+    assert _total_length(rt) == pytest.approx(10.0)
+    assert rt.nodes[roots(rt)[0]]["time"] == 2.0
+
+
+def test_reroot_outgroup_requires_name(tdata):
+    with pytest.raises(ValueError, match="requires the name of an outgroup"):
+        cas.solver.reroot(tdata, method="outgroup")

@@ -19,6 +19,7 @@ from cassiopeia.mixins.errors import (
     CassiopeiaError,
     PriorTransformationError,
 )
+from cassiopeia.mixins.logging import logger
 
 
 def _get_characters(
@@ -57,31 +58,13 @@ def _get_characters(
         else:
             characters = tree.layers[key]
     if isinstance(characters, np.ndarray):
-        characters = pd.DataFrame(characters)
+        index = tree.obs_names if isinstance(tree, TreeData) else None
+        characters = pd.DataFrame(characters, index=index)
 
     if characters is None and isinstance(tree, TreeData):
         raise ValueError(f"No character matrix found; store characters in obsm[{key}]")
 
     return characters
-
-
-def _set_characters(
-    data: CassiopeiaTree | TreeData, characters: pd.DataFrame, characters_key: str = "characters"
-):
-    """Set the character matrix in a CassiopeiaTree or TreeData.
-
-    Args:
-        data: CassiopeiaTree or TreeData to modify in-place.
-        characters: Character matrix to set.
-        characters_key: Key under which to store characters.
-    """
-    if isinstance(data, CassiopeiaTree):
-        if characters_key == "characters":
-            data.character_matrix = characters
-        else:
-            data.layers[characters_key] = characters
-    elif isinstance(data, TreeData):
-        data.obsm[characters_key] = characters
 
 
 def _get_digraph(
@@ -124,7 +107,8 @@ def _get_digraph(
         if tree_key is None:
             if len(keys) > 1:
                 raise ValueError(
-                    "TreeData contains multiple trees. Please specify the tree using `tree_key`."
+                    f"TreeData contains multiple trees ({', '.join(map(repr, keys))}); "
+                    "pass tree_key to choose one."
                 )
             tree_key = keys[0]
 
@@ -308,6 +292,9 @@ def _get_cell_meta(tree: CassiopeiaTree | TreeData) -> pd.DataFrame:
     )
 
 
+_WARNED_DEFAULT_PARAMETERS: set[str] = set()
+
+
 def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None):
     """Get a parameter from CassiopeiaTree or TreeData."""
     if value is not None:
@@ -327,53 +314,57 @@ def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None)
     }
     if value is None and param_name in fallbacks:
         value = fallbacks[param_name]
-        warnings.warn(
-            f"Parameter '{param_name}' not specified; using default value {value}.",
-            UserWarning,
-            stacklevel=3,
-        )
+        # Warn once per parameter per process; a pipeline resolves these many times.
+        if param_name not in _WARNED_DEFAULT_PARAMETERS:
+            _WARNED_DEFAULT_PARAMETERS.add(param_name)
+            warnings.warn(
+                f"Parameter '{param_name}' not specified; using default value {value}. "
+                f"Set tdata.uns[{param_name!r}] or pass {param_name}= to silence this.",
+                UserWarning,
+                stacklevel=3,
+            )
     return value
 
 
 def _resolve_priors(
     tree: CassiopeiaTree | TreeData,
-    priors: dict[int, dict[int, float]] | bool,
+    priors: dict[int, dict[int, float]] | bool | None = None,
 ) -> dict[int, dict[int, float]] | None:
-    """Resolve a solver's ``priors`` argument to a priors dict or ``None``.
+    """Resolve a ``priors`` argument to a priors dict or ``None``.
 
-    Centralizes the shared ``priors: dict | bool`` semantics used by the solvers
-    so the behavior is identical everywhere.
+    Centralizes the shared ``priors: dict | bool | None`` semantics so the
+    behavior is identical everywhere.
 
     Args:
         tree: CassiopeiaTree or TreeData that may store priors.
-        priors: Either an explicit priors mapping, or a boolean flag. ``True``
-            reads priors from ``tree.uns["priors"]`` (``tree.priors`` for a
-            CassiopeiaTree) and raises if none are stored. ``False`` disables
-            priors (returns ``None``). A mapping is returned (after
-            normalization). ``None`` is treated as ``False`` for backward
-            compatibility.
+        priors: ``None`` uses ``tree.uns["priors"]`` (``tree.priors`` for a
+            CassiopeiaTree) if present, logging a message, and otherwise no
+            priors. ``True`` requires stored priors and raises if there are none.
+            ``False`` disables priors. A mapping is used directly.
 
     Returns:
-        Priors as a dict keyed by character index, or ``None`` when disabled. A
-        list/tuple of per-character dicts is normalized to a position-keyed dict.
+        Priors as a dict keyed by character index, or ``None`` when disabled or
+        unavailable. A list/tuple of per-character dicts is normalized to a
+        position-keyed dict.
 
     Raises:
         ValueError: If ``priors=True`` but no priors are stored on *tree*.
     """
-    if priors is True:
-        if isinstance(tree, CassiopeiaTree):
-            stored = tree.priors
-        else:
-            stored = tree.uns.get("priors", None)
-        if not stored:
-            raise ValueError(
-                "priors=True but no priors were found in tdata.uns['priors']. "
-                "Specify priors explicitly (priors=<dict>) or set priors=False "
-                "to reconstruct without priors."
-            )
-        priors = stored
-    elif priors is False or priors is None:
+    if priors is False:
         return None
+    if priors is None or priors is True:
+        stored = tree.priors if isinstance(tree, CassiopeiaTree) else tree.uns.get("priors", None)
+        if not stored:
+            if priors is True:
+                raise ValueError(
+                    "priors=True but no priors were found in tdata.uns['priors']. "
+                    "Specify priors explicitly (priors=<dict>) or set priors=False "
+                    "to reconstruct without priors."
+                )
+            return None
+        if priors is None:
+            logger.info("Using priors from tdata.uns['priors']; pass priors=False to ignore them.")
+        priors = stored
     # Normalize a per-character sequence (e.g. the simulator's list of dicts) to a
     # dict keyed by character index, matching the solver convention.
     if isinstance(priors, (list, tuple)):

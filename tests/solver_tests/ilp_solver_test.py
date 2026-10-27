@@ -344,3 +344,11 @@ def test_ilp_solver_deprecated_and_stores_params():
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
+
+
+def test_ilp_seed_parameter_is_random_seed():
+    import inspect
+
+    params = inspect.signature(cas.solver.ilp).parameters
+    assert "random_seed" in params
+    assert "seed" not in params

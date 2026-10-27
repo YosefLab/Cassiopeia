@@ -29,14 +29,3 @@ Trees can be (re)rooted with a choice of procedures (``outgroup``, ``midpoint``,
    :toctree: reference/
 
    solver.reroot
-
-Deprecated solver classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The object-oriented solver classes are deprecated in favor of the functional API
-above and are retained only for backward compatibility. ``NeighborJoiningSolver``,
-``UPGMASolver``, ``VanillaGreedySolver``, ``ILPSolver``, and ``HybridSolver`` warn
-on use and delegate to the corresponding function. The remaining classes
-(``MaxCutSolver``, ``MaxCutGreedySolver``, ``SpectralSolver``,
-``SpectralGreedySolver``, ``SharedMutationJoiningSolver``, ``PercolationSolver``,
-``SpectralNeighborJoiningSolver``) have been removed and raise on ``solve``.

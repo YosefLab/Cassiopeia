@@ -656,3 +656,11 @@ def test_missing_data_copy_true_returns_new(tdata):
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
+
+
+def test_tree_key_defaults_to_only_tree():
+    tdata = _make_tree()
+    tdata.obst["custom"] = tdata.obst.pop("simulated")
+    stochastic_tracing(tdata, number_of_cassettes=2, size_of_cassette=2, random_seed=0)
+    assert tdata.obsm["characters"].shape == (8, 4)
+    assert "characters" in tdata.obst["custom"].nodes["root"]

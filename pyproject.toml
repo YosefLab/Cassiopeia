@@ -36,23 +36,18 @@ classifiers = [
 dependencies = [
   "anndata>=0.11",
   "biopython>=1.71",
-  "bokeh>=0.12.15",
-  "cvxpy",
-  "ecos",
-  "itolapi",
+  "joblib",
   "matplotlib>=2.2.2",
   "networkx>=3.1",
   "numba>=0.51",
   "numpy>=2",
   "pandas>=2.2.1",
-  "parameterized",
   "pyarrow>=14",
   "pysam>=0.22",
   "pyyaml>=3.12",
   "scipy>=1.9",
   "tqdm>=4",
   "treedata>=0.2.2",
-  "typing-extensions>=3.7.4",
 ]
 
 optional-dependencies.dev = [
@@ -81,8 +76,6 @@ optional-dependencies.doc = [
   "sphinxext-opengraph",
 ]
 optional-dependencies.spatial = [
-  "scikit-image>=0.19.1",
-  "scikit-learn>=1.0.2",
   "squidpy>=1.6",
 ]
 optional-dependencies.test = [
