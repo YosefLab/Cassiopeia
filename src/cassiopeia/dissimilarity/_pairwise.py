@@ -197,19 +197,26 @@ def _pairwise(
             "Please provide a dissimilarity_function or a precomputed dissimilarity map."
         )
 
-    weights = None
-    if priors:
-        weights = _transform_priors(priors, prior_transformation)
-
     # Only compute dissimilarities between *unique* states to save runtime.
     cell_to_state = characters.astype(str).apply("|".join, axis=1)
     state_to_cells = characters.index.groupby(cell_to_state)
     dedup_character_matrix = characters.drop_duplicates()
 
     N = dedup_character_matrix.shape[0]
+    weights = None
+    char_matrix = dedup_character_matrix
+    if priors:
+        # Encode string states (e.g. "*", "-", "1") to integers, re-keying the
+        # priors to match, so the metric takes the fast numba path.
+        if not np.issubdtype(char_matrix.to_numpy().dtype, np.integer):
+            char_matrix, missing_state_indicator, mapping = _encode_integer_matrix(
+                char_matrix, missing_state_indicator, unmodified_state
+            )
+            priors = _encode_priors(priors, mapping)
+        weights = _transform_priors(priors, prior_transformation)
     # Coerce to integers so the metric takes the fast numba (nopython) path.
     char_array, missing = _prepare_integer_matrix(
-        dedup_character_matrix, missing_state_indicator, unmodified_state, weights
+        char_matrix, missing_state_indicator, unmodified_state, weights
     )
     condensed = compute_dissimilarity_map(
         char_array,

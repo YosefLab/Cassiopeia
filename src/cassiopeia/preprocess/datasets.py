@@ -68,12 +68,12 @@ DATASETS = {
             f"{ENA}/SRR182/034/SRR18280234/SRR18280234_1.fastq.gz",
             f"{ENA}/SRR182/034/SRR18280234/SRR18280234_2.fastq.gz",
         ],
-        "cb_translation": "3M-february-2018",
         "clones": "single",
         "truth": "https://raw.githubusercontent.com/shendurelab/DNATickerTape/main/"
         "Supplementary_File_2_DataTableMOI19.csv",
         "description": "DNA Typewriter monoclonal HEK293T TargetBC-5xTAPE-1 library, 10x 3' v3.1 "
-        "with Feature Barcoding (cell barcodes need Cell Ranger's translation table).",
+        "with Feature Barcoding: cell barcodes are in feature-barcode space (relabel them with "
+        "Cell Ranger's translation table to match the gene expression barcodes).",
     },
     "scgestalt_zf2": {
         "construct": "gestalt",
@@ -120,26 +120,6 @@ def whitelist(name: str) -> Path:
     d = data_dir() / "whitelists"
     d.mkdir(parents=True, exist_ok=True)
     return _download(url, d / Path(url).name)
-
-
-def translation_table(name: str = "3M-february-2018") -> Path | None:
-    """Cell Ranger's feature-barcoding translation table, if Cell Ranger is installed.
-
-    Looks in ``$CELLRANGER_BARCODES`` and next to the ``cellranger`` executable.
-    """
-    candidates = []
-    if os.environ.get("CELLRANGER_BARCODES"):
-        candidates.append(
-            Path(os.environ["CELLRANGER_BARCODES"]) / "translation" / f"{name}.txt.gz"
-        )
-    exe = shutil.which("cellranger")
-    if exe:
-        root = Path(exe).resolve().parent
-        candidates.append(root / "lib/python/cellranger/barcodes/translation" / f"{name}.txt.gz")
-    for c in candidates:
-        if c.exists():
-            return c
-    return None
 
 
 def _fastq_records(path):
@@ -223,14 +203,6 @@ def fetch(name: str, n_cells: int = 300, keep_raw: bool = False) -> dict:
     root.mkdir(parents=True, exist_ok=True)
     out = {k: info.get(k) for k in ("construct", "layout", "clones", "description")}
     out["whitelist"] = str(whitelist(info["whitelist"])) if info.get("whitelist") else None
-    if info.get("cb_translation"):
-        t = translation_table(info["cb_translation"])
-        out["cb_translation"] = str(t) if t else None
-        if t is None:
-            logger.warning(
-                f"{name}: Cell Ranger translation table not found; cell barcodes stay in "
-                "feature-barcode space (set $CELLRANGER_BARCODES)."
-            )
     done = root / f"subset_{n_cells}.done"
     sub = [root / f"{name}_{n_cells}cells_R{i + 1}.fastq.gz" for i in range(2)]
     if not done.exists():

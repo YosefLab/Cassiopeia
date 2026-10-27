@@ -27,7 +27,6 @@ struct AlignOptions {
     LayoutSpec layout;
     std::string output_bam;
     std::string whitelist;       // optional; plain or gzipped, one barcode per line
-    std::string cb_translation;  // optional two-column table (reported barcode, read barcode)
     int min_bc_qual = 10;
     int min_base_qual = 20;      // target-site bases below this are low quality for the UMI consensus
     int umi_max_dist = 1;

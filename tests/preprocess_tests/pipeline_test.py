@@ -25,7 +25,7 @@ def test_run_from_fastq(sim_factory, tmp_path):
     assert (out / "s1.molecules.parquet").exists() and (out / "s1.cells.csv").exists()
     assert {p.name for p in (out / "qc").iterdir()} >= {
         "align.png",
-        "call_alleles.png",
+        "filter_cells.png",
         "filter_doublets.png",
     }
     t2 = td.read_h5td(out / "s1.h5td")

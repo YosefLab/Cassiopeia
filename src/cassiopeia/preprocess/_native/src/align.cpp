@@ -150,34 +150,6 @@ std::vector<uint64_t> load_whitelist(const std::string &path, int len) {
     return wl;
 }
 
-// Two-column barcode translation (e.g. 10x feature barcoding): column 1 is
-// the reported (gene expression) barcode, column 2 the barcode in the reads.
-// Returns read barcode -> reported barcode; `wl` receives the read barcodes.
-std::unordered_map<uint64_t, uint64_t> load_translation(const std::string &path, int len, std::vector<uint64_t> &wl) {
-    std::unordered_map<uint64_t, uint64_t> map;
-    gzFile gz = gzopen(path.c_str(), "rb");
-    if (!gz) throw std::runtime_error("cannot open barcode translation: " + path);
-    std::vector<char> line(4096);
-    while (gzgets(gz, line.data(), static_cast<int>(line.size()))) {
-        std::string_view s(line.data());
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r' || s.back() == ' ')) s.remove_suffix(1);
-        size_t sep = s.find_first_of("\t ,");
-        if (sep == std::string_view::npos) continue;
-        std::string_view a = s.substr(0, sep), b = s.substr(sep + 1);
-        uint64_t va, vb;
-        if (static_cast<int>(a.size()) != len || static_cast<int>(b.size()) != len) continue;
-        if (pack2bit(a, va) && pack2bit(b, vb)) {
-            map.emplace(vb, va);
-            wl.push_back(vb);
-        }
-    }
-    gzclose(gz);
-    if (map.empty()) throw std::runtime_error("no barcode pairs of length " + std::to_string(len) + " in " + path);
-    std::sort(wl.begin(), wl.end());
-    wl.erase(std::unique(wl.begin(), wl.end()), wl.end());
-    return map;
-}
-
 bool in_sorted(const std::vector<uint64_t> &v, uint64_t x) { return std::binary_search(v.begin(), v.end(), x); }
 
 // Directional (UMI-tools) clustering. Returns root index per UMI.
@@ -745,13 +717,8 @@ AlignSummary align_fastqs(const AlignOptions &opt) {
                 for (int k = 0; k < cb_len; ++k) a.qsum[k] += kv.second.qsum[k];
             }
         cb_map.reserve(all.size() * 2);
-        if (!opt.whitelist.empty() || !opt.cb_translation.empty()) {
-            std::vector<uint64_t> wl;
-            std::unordered_map<uint64_t, uint64_t> translate;
-            if (!opt.cb_translation.empty())
-                translate = load_translation(opt.cb_translation, cb_len, wl);
-            else
-                wl = load_whitelist(opt.whitelist, cb_len);
+        if (!opt.whitelist.empty()) {
+            std::vector<uint64_t> wl = load_whitelist(opt.whitelist, cb_len);
             if (wl.empty()) throw std::runtime_error("no barcodes of length " + std::to_string(cb_len) + " in whitelist");
             std::unordered_map<uint64_t, uint64_t> exact;
             for (auto &kv : all)
@@ -759,7 +726,7 @@ AlignSummary align_fastqs(const AlignOptions &opt) {
             for (auto &kv : all) {
                 const uint64_t raw = kv.first;
                 if (exact.count(raw)) {
-                    cb_map[raw] = translate.empty() ? raw : translate.at(raw);
+                    cb_map[raw] = raw;
                     reads_exact += kv.second.reads;
                     continue;
                 }
@@ -785,7 +752,7 @@ AlignSummary align_fastqs(const AlignOptions &opt) {
                     }
                 }
                 if (best_cb != kInvalid && total > 0 && best / total >= opt.cb_confidence) {
-                    cb_map[raw] = translate.empty() ? best_cb : translate.at(best_cb);
+                    cb_map[raw] = best_cb;
                     reads_corrected += kv.second.reads;
                 } else {
                     cb_map[raw] = kInvalid;

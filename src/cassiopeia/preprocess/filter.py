@@ -3,63 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
 
 from cassiopeia.mixins import PreprocessError, logger
 
-from ._utils import finish_plot, passing, record_params, set_pass
-
-
-def gmm_threshold(values: np.ndarray, log: bool = True, n_iter: int = 200) -> float | None:
-    """Threshold separating the low and high component of a 2-component GMM.
-
-    Fits a two-component Gaussian mixture (in log10 space by default) and
-    returns the value where the posterior of the high component reaches 0.5.
-    Returns None if the data is not clearly bimodal.
-    """
-    x = np.asarray(values, dtype=float)
-    x = x[np.isfinite(x) & (x > 0)] if log else x[np.isfinite(x)]
-    if len(x) < 20:
-        return None
-    if log:
-        x = np.log10(x)
-    lo, hi = np.percentile(x, [10, 90])
-    if hi - lo < 1e-6:
-        return None
-    mu = np.array([lo, hi])
-    sd = np.array([max(x.std() / 2, 1e-3)] * 2)
-    w = np.array([0.5, 0.5])
-    for _ in range(n_iter):
-        dens = np.stack(
-            [w[k] * np.exp(-0.5 * ((x - mu[k]) / sd[k]) ** 2) / sd[k] for k in range(2)]
-        )
-        tot = dens.sum(0) + 1e-300
-        r = dens / tot
-        nk = r.sum(1) + 1e-12
-        new_mu = (r * x).sum(1) / nk
-        new_sd = np.sqrt((r * (x - new_mu[:, None]) ** 2).sum(1) / nk) + 1e-6
-        w = nk / nk.sum()
-        if np.allclose(new_mu, mu, atol=1e-6) and np.allclose(new_sd, sd, atol=1e-6):
-            mu, sd = new_mu, new_sd
-            break
-        mu, sd = new_mu, new_sd
-    if mu[0] > mu[1]:
-        mu, sd, w = mu[::-1], sd[::-1], w[::-1]
-    # require clearly separated components (Ashman's D >= 3) and, in log
-    # space, modes >= 4x apart: empty barcodes vs cells, not cells vs doublets
-    ashman_d = np.sqrt(2) * abs(mu[1] - mu[0]) / np.sqrt(sd[0] ** 2 + sd[1] ** 2)
-    min_sep = np.log10(4) if log else 0.0
-    if w.min() < 0.02 or ashman_d < 3 or (mu[1] - mu[0]) < min_sep:
-        return None
-    grid = np.linspace(mu[0], mu[1], 2000)
-    d0 = w[0] * np.exp(-0.5 * ((grid - mu[0]) / sd[0]) ** 2) / sd[0]
-    d1 = w[1] * np.exp(-0.5 * ((grid - mu[1]) / sd[1]) ** 2) / sd[1]
-    idx = np.flatnonzero(d1 >= d0)
-    t = grid[idx[0]] if len(idx) else mu[1] - 2 * sd[1]
-    return float(10**t) if log else float(t)
+from ._utils import finish_plot, molecule_passing, passing, record_params, set_pass
 
 
 def filter_molecules(
@@ -117,8 +67,8 @@ def filter_molecules(
     return df
 
 
-def _cell_umis(df: pd.DataFrame, use_pass: bool = True) -> pd.Series:
-    d = passing(df) if use_pass else df
+def _cell_umis(df: pd.DataFrame) -> pd.Series:
+    d = molecule_passing(df)
     return d.groupby("cellBC", observed=False).size()
 
 
@@ -158,7 +108,7 @@ def intbc_detection(df: pd.DataFrame) -> pd.Series:
 
 def filter_cells(
     df: pd.DataFrame,
-    min_umi: int | Literal["gmm"] | None = None,
+    min_umi: int | None = None,
     min_intbc_frac: float | None = None,
     *,
     plot: bool = False,
@@ -173,11 +123,12 @@ def filter_cells(
 
     Args:
         df: Molecule table.
-        min_umi: Minimum passing UMIs per cell, or ``"gmm"`` to fit a
-            two-component mixture to log UMI counts and use the boundary.
+        min_umi: Minimum UMIs per cell, counting molecules that pass
+            :func:`cassiopeia.pp.filter_molecules`.
         min_intbc_frac: Minimum fraction of the cell's clone's kept
             integrations detected in the cell.
-        plot: Plot UMIs vs. reads per UMI per cell (and intBC detection).
+        plot: Plot UMIs vs. intBCs detected per cell (and the fraction of
+            clone integrations detected, with ``min_intbc_frac``).
         show: Show the plot.
         save: Save the plot to this path.
 
@@ -187,22 +138,12 @@ def filter_cells(
     df = df.copy()
     if min_umi is not None:
         umis = _cell_umis(df)
-        if min_umi == "gmm":
-            thr = gmm_threshold(umis[umis > 0].to_numpy())
-            if thr is None:
-                logger.warning(
-                    "filter_cells: UMI counts do not separate cells from empty barcodes; "
-                    "no UMI threshold applied."
-                )
-        else:
-            thr = float(min_umi)
-        keep = umis[umis >= (thr or 0)].index
+        keep = umis[umis >= min_umi].index
         set_pass(df, "min_umi", df["cellBC"].isin(keep).to_numpy())
-        record_params(df, min_umi=thr, min_umi_method="gmm" if min_umi == "gmm" else "fixed")
-        if thr is not None:
-            logger.info(
-                f"filter_cells: {len(keep):,}/{int((umis > 0).sum()):,} cells with >= {thr:.1f} UMIs"
-            )
+        record_params(df, min_umi=min_umi)
+        logger.info(
+            f"filter_cells: {len(keep):,}/{int((umis > 0).sum()):,} cells with >= {min_umi} UMIs"
+        )
     if min_intbc_frac is not None:
         frac = intbc_detection(df)
         keep = frac[frac >= min_intbc_frac].index

@@ -41,7 +41,7 @@ STEPS = [
 DEFAULTS: dict[str, Any] = {
     "correct_intbcs": {},
     "filter_molecules": {},
-    "filter_cells": {"min_umi": "gmm"},
+    "filter_cells": {"min_umi": 10},
     "call_clones": {},
     "filter_integrations": {},
     "filter_cells_coverage": {"min_intbc_frac": 0.5},
@@ -70,7 +70,7 @@ align: {}
 call_alleles: {}
 correct_intbcs: {}
 filter_molecules: {min_reads: 2}
-filter_cells: {min_umi: gmm}
+filter_cells: {min_umi: 10}
 call_clones: {method: nova_clone}     # use `single` when all cells share intBCs
 filter_integrations: {min_detection: 0.4, max_conflict: 0.2}
 filter_cells_coverage: {min_intbc_frac: 0.5}
@@ -172,7 +172,7 @@ def run(config: str | Path | dict):
         ca.setdefault("cells", inp["cells"])
     if inp.get("contigs"):
         ca.setdefault("contigs", inp["contigs"])
-    df = call_alleles(bam, construct, n_threads=threads, **ca, **plot_args("call_alleles"))
+    df = call_alleles(bam, construct, n_threads=threads, **ca)
     if out_cfg.get("checkpoint", False):
         df.to_parquet(out_dir / f"{name}.molecules.raw.parquet")
 
@@ -194,7 +194,7 @@ def run(config: str | Path | dict):
     if out_cfg.get("checkpoint", False):
         df.to_parquet(out_dir / f"{name}.molecules.parquet")
     o = _opts(cfg, "alleles_to_characters") or {}
-    tdata = alleles_to_characters(df, **o, **plot_args("alleles_to_characters"))
+    tdata = alleles_to_characters(df, **o)
     tdata.uns["preprocess"]["config"] = yaml.safe_dump(cfg, sort_keys=False)
     tdata.write_h5td(out_dir / f"{name}.h5td")
     from .qc import cell_metrics

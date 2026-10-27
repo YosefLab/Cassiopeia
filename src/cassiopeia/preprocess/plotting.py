@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from ._utils import site_columns
+from ._utils import molecule_passing
 from .qc import cell_metrics, molecule_metrics
 
 # Colors: categorical slot 1 for kept data, a recessive neutral for filtered
@@ -185,80 +185,6 @@ def plot_umi_reads(
     return ax
 
 
-def plot_call_alleles(df: pd.DataFrame):
-    """Figure for :func:`cassiopeia.pp.call_alleles`."""
-    plt = _plt()
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.6), constrained_layout=True)
-    plot_umi_reads(df, level="intbc", thresholds=False, ax=axes[0])
-    plot_site_alleles(df, ax=axes[1])
-    plot_read_fate(df, ax=axes[2])
-    return fig
-
-
-def plot_site_alleles(df: pd.DataFrame, ax=None):
-    """Fraction of molecules unedited, edited or missing at each site."""
-    ax = _new_ax(ax)
-    sites = site_columns(df)
-    rows = []
-    for s in sites:
-        v = df[s].astype(object)
-        miss = v.isna()
-        tok = v[~miss].astype(str)
-        uned = tok.eq("None") | tok.str.contains(r"\[None\]", regex=True)
-        n = len(v)
-        rows.append((s, uned.sum() / n, (~uned).sum() / n, miss.sum() / n))
-    t = pd.DataFrame(rows, columns=["site", "unedited", "edited", "missing"])
-    y = np.arange(len(t))
-    left = np.zeros(len(t))
-    for col, color in (("edited", KEPT), ("unedited", "#1baf7a"), ("missing", FILTERED)):
-        ax.barh(
-            y, t[col], left=left, color=color, height=0.7, label=col, edgecolor="white", linewidth=2
-        )
-        left += t[col].to_numpy()
-    ax.set_yticks(y, t["site"])
-    ax.invert_yaxis()
-    ax.set_xlim(0, 1)
-    _style(ax, "Alleles per site (molecules)", "Fraction", None)
-    ax.legend(frameon=False, fontsize=7, ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.18))
-    return ax
-
-
-def plot_read_fate(df: pd.DataFrame, ax=None):
-    """Where the reads went in :func:`cassiopeia.pp.call_alleles`."""
-    ax = _new_ax(ax)
-    st = df.attrs.get("read_stats", {})
-    keys = [
-        ("records_on_target", "on target"),
-        ("filtered_flag", "secondary/unmapped"),
-        ("filtered_mapq", "low MAPQ"),
-        ("missing_cell", "no cell barcode"),
-        ("missing_umi", "no UMI"),
-        ("not_in_cells", "not a called cell"),
-        ("no_intbc", "intBC unreadable"),
-        ("records_used", "used"),
-    ]
-    labels = [lab for k, lab in keys if k in st]
-    vals = [st[k] for k, _ in keys if k in st]
-    y = np.arange(len(vals))
-    colors = [KEPT if lab in ("on target", "used") else FILTERED for lab in labels]
-    ax.barh(y, vals, color=colors, height=0.7)
-    for yi, v in zip(y, vals, strict=True):
-        ax.annotate(
-            f"{v:,}",
-            xy=(v, yi),
-            xytext=(3, 0),
-            textcoords="offset points",
-            va="center",
-            fontsize=7,
-            color=INK,
-        )
-    ax.set_yticks(y, labels)
-    ax.invert_yaxis()
-    _style(ax, "Records", "Count", None)
-    ax.set_xlim(0, max(vals + [1]) * 1.25)
-    return ax
-
-
 def plot_align(res: dict, min_score: int | None = None):
     """Figure for :func:`cassiopeia.pp.align`."""
     plt = _plt()
@@ -347,6 +273,54 @@ def plot_intbc_correction(counts: pd.Series, remap: dict):
 # ----------------------------------------------------------------- cells
 
 
+def plot_umi_intbcs(
+    df: pd.DataFrame,
+    hue: str = "pass",
+    thresholds: dict | bool | None = None,
+    ax=None,
+):
+    """UMIs vs. unique intBCs detected, per cell.
+
+    Counts are over molecules passing the molecule-level filters, so filtered
+    cells are drawn where they were before cell filtering. Points are colored
+    by whether the cell passes filtering and jittered vertically so integer
+    intBC counts don't overlap; a dashed line marks ``min_umi``.
+
+    Args:
+        df: Molecule table.
+        hue: ``pass`` (all cell filters) or a cell-level ``pass_*`` column.
+        thresholds: Dict overriding the recorded thresholds; ``False`` hides them.
+        ax: Matplotlib axes.
+    """
+    from matplotlib.ticker import MaxNLocator
+
+    ax = _new_ax(ax)
+    params = _params(df) if thresholds is None or thresholds is True else (thresholds or {})
+    c = cell_metrics(df)
+    d = molecule_passing(df)
+    g = d.groupby(d["cellBC"].astype(str))
+    n_umis = g.size().reindex(c.index, fill_value=0).to_numpy()
+    n_intbcs = g["intBC"].nunique().reindex(c.index, fill_value=0).to_numpy()
+    if hue == "pass":
+        ok = c["passed_qc"].to_numpy() & (n_umis > 0)
+    elif hue in c.columns:
+        ok = c[hue].fillna(False).to_numpy().astype(bool)
+    else:
+        ok = np.ones(len(c), dtype=bool)
+    x = np.clip(n_umis, 0.8, None)
+    jitter = np.random.default_rng(0).uniform(-0.2, 0.2, len(c))
+    y = n_intbcs + jitter
+    _scatter_pass(ax, x, y, ok, labels=("kept cells", "filtered cells"))
+    _style(ax, "Cells", "UMIs", "intBCs detected")
+    if thresholds is not False:
+        _vline(ax, params.get("min_umi"), "min UMIs")
+    ax.set_xscale("log")
+    _plain_log(ax)
+    ax.set_ylim(bottom=-0.5)
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    return ax
+
+
 def plot_filter_cells(df: pd.DataFrame):
     """Figure for :func:`cassiopeia.pp.filter_cells`."""
     plt = _plt()
@@ -358,7 +332,7 @@ def plot_filter_cells(df: pd.DataFrame):
         constrained_layout=True,
         squeeze=False,
     )
-    plot_umi_reads(df, level="cell", ax=axes[0, 0])
+    plot_umi_intbcs(df, ax=axes[0, 0])
     if has_frac:
         plot_intbc_detection(df, by="cell", ax=axes[0, 1])
     return fig
@@ -534,7 +508,9 @@ def plot_edit_frequency(data, ax=None, max_characters: int = 80):
         chars = data.obsm["characters"]
     else:
         raise ValueError("plot_edit_frequency expects a TreeData from pp.alleles_to_characters.")
-    a = np.asarray(chars)
+    a = np.asarray(chars).astype(str)
+    missing = np.asarray(data.uns.get("missing_state", -1), dtype=object).astype(str).ravel()
+    unedited = np.asarray(data.uns.get("unmodified_state", 0), dtype=object).astype(str).ravel()
     # fraction among cells of the clone(s) that carry each character
     owners = {}
     for clone, names in (data.uns.get("clone_characters") or {}).items():
@@ -547,7 +523,8 @@ def plot_edit_frequency(data, ax=None, max_characters: int = 80):
         if clone is not None and name in owners:
             col = col[np.isin(clone, list(owners[name]))]
         n = max(len(col), 1)
-        rows.append(((col > 0).sum() / n, (col == 0).sum() / n, (col < 0).sum() / n))
+        miss, uned = np.isin(col, missing), np.isin(col, unedited)
+        rows.append(((~miss & ~uned).sum() / n, uned.sum() / n, miss.sum() / n))
     t = pd.DataFrame(rows, columns=["edited", "unedited", "missing"], index=chars.columns)
     if len(t) > max_characters:
         t = t.sort_values("missing").head(max_characters)

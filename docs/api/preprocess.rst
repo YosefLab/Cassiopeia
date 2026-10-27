@@ -22,8 +22,19 @@ are given as a preset name or a pattern string such as ``"16C12U,T"`` (see
 
 All paths converge in :func:`~cassiopeia.pp.call_alleles`, which produces a
 molecule table (a pandas DataFrame). The remaining steps annotate that table
-(``pass_*`` columns; nothing is dropped until the character matrix is built)
-and each has a built-in QC plot (``plot=True`` / ``save=``).
+(``pass_*`` columns; nothing is dropped until the character matrix is built).
+Every step from :func:`~cassiopeia.pp.correct_intbcs` to
+:func:`~cassiopeia.pp.filter_doublets` has a built-in QC plot (``plot=True`` /
+``save=``).
+
+Running the pipeline
+~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   pp.run
+   pp.read_molecules
 
 Constructs and references
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,7 +68,6 @@ Filtering, clones and doublets
 
    pp.filter_molecules
    pp.filter_cells
-   pp.gmm_threshold
    pp.call_clones
    pp.clone_sizes
    pp.filter_integrations
@@ -72,9 +82,6 @@ Character matrices
    :toctree: reference/
 
    pp.alleles_to_characters
-   pp.to_allele_table
-   pp.run
-   pp.read_molecules
 
 QC metrics and plots
 ~~~~~~~~~~~~~~~~~~~~
@@ -84,23 +91,11 @@ QC metrics and plots
 
    pp.qc.cell_metrics
    pp.qc.molecule_metrics
+   pp.compute_empirical_indel_priors
    pp.plot_umi_reads
+   pp.plot_umi_intbcs
    pp.plot_intbc_detection
    pp.plot_integrations
    pp.plot_clone_intbc_heatmap
    pp.plot_doublet_scores
    pp.plot_edit_frequency
-
-Data utilities
-~~~~~~~~~~~~~~
-
-Converters for legacy allele tables (see :func:`~cassiopeia.pp.to_allele_table`):
-
-.. autosummary::
-   :toctree: reference/
-
-   pp.compute_empirical_indel_priors
-   pp.convert_alleletable_to_character_matrix
-   pp.convert_alleletable_to_lineage_profile
-   pp.convert_character_matrix_to_allele_table
-   pp.convert_lineage_profile_to_character_matrix

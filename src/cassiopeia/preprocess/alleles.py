@@ -14,7 +14,7 @@ import pandas as pd
 from cassiopeia.mixins import PreprocessError, logger
 
 from . import _native
-from ._utils import as_list, default_threads, finish_plot, record_params
+from ._utils import as_list, default_threads, record_params
 from .construct import Construct, load_construct
 
 
@@ -62,9 +62,6 @@ def call_alleles(
     normalize_indels: bool = True,
     clip_missing: bool = True,
     n_threads: int | None = None,
-    plot: bool = False,
-    show: bool = True,
-    save: str | Path | None = None,
 ) -> pd.DataFrame:
     """Call per-molecule alleles from an aligned target-site BAM.
 
@@ -106,9 +103,6 @@ def call_alleles(
         clip_missing: Call a site missing (instead of unedited) when the
             alignment does not cover its window, e.g. because of soft clipping.
         n_threads: Threads (default: ``SLURM_CPUS_PER_TASK`` or up to 8).
-        plot: Plot UMIs vs. reads per UMI and per-site allele frequencies.
-        show: Show the plot.
-        save: Save the plot to this path.
 
     Returns:
         Molecule table with categorical ``cellBC``, ``intBC``, ``UMI`` and one
@@ -197,11 +191,6 @@ def call_alleles(
             "Fewer than half of the on-target reads were usable; check the construct "
             f"(read statistics: {stats})."
         )
-    if plot or save:
-        from .plotting import plot_call_alleles
-
-        fig = plot_call_alleles(df)
-        finish_plot(fig, show and bool(plot), save)
     return df
 
 

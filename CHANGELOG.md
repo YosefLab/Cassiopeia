@@ -40,9 +40,11 @@ and this project adheres to [Semantic Versioning][].
   - Molecule-table steps that annotate rather than drop, each with a built-in
     QC plot: `pp.correct_intbcs`, `pp.filter_molecules`, `pp.filter_cells`,
     `pp.call_clones` (NovaClone, single clone or user-supplied),
-    `pp.filter_integrations`, `pp.filter_doublets` (allele conflicts, clone
-    mixtures, UMI outliers, custom scores) and `pp.alleles_to_characters`,
-    which returns a TreeData ready for the solvers.
+    `pp.filter_integrations` and `pp.filter_doublets` (allele conflicts, clone
+    mixtures, UMI outliers, custom scores).
+  - `pp.alleles_to_characters` returns a TreeData ready for the solvers, with
+    states written as strings (`"*"` unedited, `"-"` missing, `"1"`, `"2"`,
+    ...), integers, or the alleles themselves (`mapping=`).
   - `pp.run` / `cassiopeia-preprocess run config.yaml` run the full pipeline.
   - `cassiopeia.preprocess.datasets` fetches small subsets of published
     datasets for testing.
@@ -56,10 +58,17 @@ and this project adheres to [Semantic Versioning][].
   `pp.filter_molecule_table`, `pp.call_lineage_groups`, `pp.filter_cells`,
   `pp.filter_umis` and the `.cfg`-based `cassiopeia-preprocess`) in favor of the
   new pipeline above; `pp.call_alleles` and `pp.filter_cells` now refer to the
-  new functions. `ngs-tools`, `hits` and `pyseq-align` are no longer
+  new functions. The legacy allele-table converters
+  (`pp.convert_alleletable_to_character_matrix`,
+  `pp.convert_alleletable_to_lineage_profile`,
+  `pp.convert_lineage_profile_to_character_matrix`,
+  `pp.convert_character_matrix_to_allele_table`) are removed;
+  `pp.compute_empirical_indel_priors` now also accepts the molecule table. `ngs-tools`, `hits` and `pyseq-align` are no longer
   dependencies; `pysam>=0.22` and `pyarrow` are.
 - Priors stored in `tdata.uns["priors"]` with string keys (as written by h5ad/h5td)
   are converted back to integers by the solvers.
+- Pairwise dissimilarities with priors encode string character matrices (e.g.
+  `"*"` / `"-"` / `"1"`) to integers, so they use the fast numba path.
 - `cassiopeia.mixins.logger` no longer depends on `ngs-tools`.
 
 - Removed plotting module. Use [Pycea](https://pycea.readthedocs.io/en/latest/index.html) for all plotting needs.

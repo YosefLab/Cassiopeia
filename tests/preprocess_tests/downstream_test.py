@@ -53,14 +53,6 @@ def test_filters_annotate(sim_factory):
     assert cells.attrs["qc_params"]["min_umi"] == 20
 
 
-def test_gmm_threshold():
-    rng = np.random.default_rng(0)
-    x = np.concatenate([10 ** rng.normal(0.5, 0.2, 500), 10 ** rng.normal(2.5, 0.2, 500)])
-    t = cas.pp.gmm_threshold(x)
-    assert 10**1 < t < 10**2
-    assert cas.pp.gmm_threshold(10 ** rng.normal(2, 0.1, 500)) is None
-
-
 def test_single_clone_pipeline(sim_factory):
     sim = sim_factory("weissman", "single")
     df = _process(sim, "single")
@@ -104,15 +96,30 @@ def test_user_clones(sim_factory):
 def test_alleles_to_characters(sim_factory, tmp_path):
     sim = sim_factory("petracer", "single")
     df = _process(sim, "single")
-    tdata = cas.pp.alleles_to_characters(df)
+    tdata = cas.pp.alleles_to_characters(df, compute_priors=True)
     chars = tdata.obsm["characters"]
     n_int = len(df.attrs["integrations"]["0"])
     assert chars.shape[1] == 3 * n_int
-    assert set(np.unique(chars.to_numpy())) <= set(range(-1, 9))
+    assert set(np.unique(chars.to_numpy())) <= {"-", "*"} | {str(i) for i in range(1, 9)}
+    assert (tdata.uns["missing_state"], tdata.uns["unmodified_state"]) == ("-", "*")
     assert not tdata.obs["doublet"].astype(bool).any()
     states = tdata.uns["character_states"]
-    assert set(states.loc[states["state"] > 0, "allele"]) <= {str(i) for i in range(1, 9)}
+    assert set(states.loc[states["state"] != "*", "allele"]) <= {str(i) for i in range(1, 9)}
     assert tdata.uns["priors"]
+    # the other mappings encode the same states
+    ints = cas.pp.alleles_to_characters(df, mapping="int")
+    alleles = cas.pp.alleles_to_characters(df, mapping="allele")
+    assert "priors" not in ints.uns
+    s, i, a = (t.obsm["characters"].to_numpy() for t in (tdata, ints, alleles))
+    assert ((s == "-") == (i == -1)).all() and ((a == "*") == (i == 0)).all()
+    assert (s[i > 0] == i[i > 0].astype(str)).all()
+    allele_of = dict(
+        zip(zip(states["character"], states["state"], strict=False), states["allele"], strict=True)
+    )
+    names = chars.columns
+    assert all(
+        a[r, c] == allele_of[(names[c], s[r, c])] for r, c in zip(*np.nonzero(i > 0), strict=True)
+    )
     # h5td round trip keeps characters, priors and QC
     tdata.write_h5td(tmp_path / "t.h5td")
     t2 = td.read_h5td(tmp_path / "t.h5td")
@@ -123,12 +130,10 @@ def test_alleles_to_characters(sim_factory, tmp_path):
     assert "nj" in t2.obst
 
 
-def test_to_allele_table_and_converters(sim_factory):
+def test_compute_empirical_indel_priors(sim_factory):
     sim = sim_factory("weissman", "single")
     df = _process(sim, "single")
-    at = cas.pp.to_allele_table(df)
-    assert {"cellBC", "intBC", "allele", "r1", "r2", "r3", "UMI", "readCount", "lineageGrp"} <= set(
-        at.columns
-    )
-    cm, priors, states = cas.pp.convert_alleletable_to_character_matrix(at)
-    assert cm.shape[0] == at["cellBC"].nunique()
+    priors = cas.pp.compute_empirical_indel_priors(df)
+    assert len(priors) > 0 and priors["freq"].between(0, 1).all()
+    assert not any("None" in i for i in priors.index)
+    assert priors["count"].max() <= df.loc[df["pass"], "intBC"].nunique()

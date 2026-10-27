@@ -12,7 +12,6 @@ import pytest
 from cassiopeia.data import CassiopeiaTree
 from cassiopeia.data import utilities as data_utilities
 from cassiopeia.mixins.errors import CassiopeiaError
-from cassiopeia.preprocess import utilities as preprocessing_utilities
 
 
 class TestDataUtilities(unittest.TestCase):
@@ -127,7 +126,9 @@ class TestDataUtilities(unittest.TestCase):
             character_matrix,
             _,
             _,
-        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(self.allele_table)
+        ) = data_utilities._lineage_profile_to_character_matrix(
+            data_utilities._alleletable_to_lineage_profile(self.allele_table)
+        )
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
             self.allele_table, num_bootstraps=10, random_state=random_state
@@ -163,8 +164,10 @@ class TestDataUtilities(unittest.TestCase):
             character_matrix,
             _,
             _,
-        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(
-            self.non_cassiopeia_allele_table, cut_sites=["cs1", "cs2", "cs3"]
+        ) = data_utilities._lineage_profile_to_character_matrix(
+            data_utilities._alleletable_to_lineage_profile(
+                self.non_cassiopeia_allele_table, cut_sites=["cs1", "cs2", "cs3"]
+            )
         )
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
@@ -204,7 +207,9 @@ class TestDataUtilities(unittest.TestCase):
             character_matrix,
             _,
             _,
-        ) = preprocessing_utilities.convert_alleletable_to_character_matrix(self.allele_table)
+        ) = data_utilities._lineage_profile_to_character_matrix(
+            data_utilities._alleletable_to_lineage_profile(self.allele_table)
+        )
 
         bootstrap_samples = data_utilities.sample_bootstrap_allele_tables(
             self.allele_table,

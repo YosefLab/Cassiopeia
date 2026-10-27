@@ -44,7 +44,6 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--umi-tag", default="UB")
     c.add_argument("--legacy", action="store_true")
     c.add_argument("-t", "--threads", type=int)
-    c.add_argument("--plot", help="Save a QC figure to this path")
 
     b = sub.add_parser("build-reference", help="Write FASTA/GTF and STARsolo/Cell Ranger commands.")
     b.add_argument("construct")
@@ -90,8 +89,6 @@ def main(argv: list[str] | None = None) -> int:
             umi_tag=args.umi_tag or None,
             legacy=args.legacy,
             n_threads=args.threads,
-            save=args.plot,
-            show=False,
         )
         df.to_parquet(args.output)
     elif args.command == "build-reference":

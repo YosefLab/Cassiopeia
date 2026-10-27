@@ -124,7 +124,6 @@ cdef extern from "src/align.hpp" namespace "cas":
         LayoutSpec layout
         string output_bam
         string whitelist
-        string cb_translation
         int min_bc_qual
         int min_base_qual
         int umi_max_dist
@@ -360,7 +359,6 @@ def align_fastqs(dict options):
     opt.layout.cdna = _segment(layout["cdna"])
     opt.output_bam = _b(options["output_bam"])
     opt.whitelist = _b(options.get("whitelist") or "")
-    opt.cb_translation = _b(options.get("cb_translation") or "")
     opt.min_bc_qual = options.get("min_bc_qual", 10)
     opt.min_base_qual = options.get("min_base_qual", 20)
     opt.umi_max_dist = options.get("umi_max_dist", 1)

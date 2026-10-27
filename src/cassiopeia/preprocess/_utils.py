@@ -73,6 +73,18 @@ def passing(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+#: Cell-level ``pass_*`` columns; the others are molecule-level.
+CELL_PASS = ("pass_min_umi", "pass_intbc_frac", "pass_clone", "pass_doublet")
+
+
+def molecule_passing(df: pd.DataFrame) -> pd.DataFrame:
+    """Rows passing the molecule-level filters (cell-level flags ignored)."""
+    cols = [c for c in df.columns if c.startswith("pass_") and c not in CELL_PASS]
+    if cols:
+        return df[df[cols].all(axis=1).to_numpy()]
+    return df
+
+
 def site_columns(df: pd.DataFrame) -> list[str]:
     """Edit-site columns of a molecule table."""
     sites = df.attrs.get("sites")

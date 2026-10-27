@@ -46,7 +46,6 @@ def align(
     *,
     layout: str = "10xv3",
     whitelist: str | Path | None = None,
-    cb_translation: str | Path | None = None,
     min_bc_qual: int = 10,
     min_base_qual: int = 20,
     umi_max_dist: int = 1,
@@ -66,7 +65,7 @@ def align(
     show: bool = True,
     save: str | Path | None = None,
 ) -> dict:
-    """Align target-site reads and write a deduplicated, CB/UB-tagged BAM.
+    r"""Align target-site reads and write a deduplicated, CB/UB-tagged BAM.
 
     A self-contained alternative to STARsolo / Cell Ranger for target-site
     libraries that reproduces the legacy Cassiopeia alignment. Steps, all in
@@ -91,6 +90,21 @@ def align(
        (reads), ``ZU`` (UMIs merged), ``ZF`` (read fraction of the consensus)
        and ``AS`` (alignment score).
 
+    Libraries captured with 10x 3' v3 Feature Barcoding (capture sequences)
+    carry the feature-barcode version of each cell barcode. The usual
+    whitelist contains both versions, so correction works as is; relabel the
+    cells afterwards with Cell Ranger's translation table to match the gene
+    expression library::
+
+        t = pd.read_csv(
+            "<cellranger>/lib/python/cellranger/barcodes/translation/3M-february-2018.txt.gz",
+            sep="\t",
+            header=None,
+            names=["gex", "feature"],
+        )
+        df = cas.pp.call_alleles(bam, construct)
+        df["cellBC"] = df["cellBC"].map(dict(zip(t["feature"], t["gex"])))
+
     Args:
         fastqs: FASTQ paths in read order for one lane (e.g. ``[R1, R2]``), a
             flat list for several lanes, or a list of lanes.
@@ -105,13 +119,6 @@ def align(
             ``"16C12U,T"`` (10x 3' v3) or ``"8C18X6C9U,T"`` (Slide-seq v2).
         whitelist: Cell barcode whitelist (plain or gzipped). Without one,
             cell barcodes are not corrected.
-        cb_translation: Two-column barcode translation table (reported
-            barcode, barcode in the reads), for libraries captured with 10x
-            Feature Barcoding (capture sequence), whose bead barcodes differ
-            from the gene expression barcodes (Cell Ranger's
-            ``barcodes/translation/3M-february-2018.txt.gz``). Reads are
-            corrected to the second column and reported as the first, so cell
-            barcodes match the gene expression library. Replaces ``whitelist``.
         min_bc_qual: Minimum Phred quality of every barcode/UMI base.
         min_base_qual: Target-site bases below this quality do not count as
             mismatches when clustering a UMI's reads and have little weight
@@ -143,7 +150,7 @@ def align(
     c = load_construct(construct)
     lay = parse_layout(layout)
     lanes = _lanes(fastqs, lay.n_reads)
-    if lay.cb and whitelist is None and cb_translation is None:
+    if lay.cb and whitelist is None:
         logger.warning(
             "No cell barcode whitelist given; cell barcodes will not be corrected"
             + (f" (usual whitelist: {lay.whitelist_hint})." if lay.whitelist_hint else ".")
@@ -167,7 +174,6 @@ def align(
         "layout": lay._native(),
         "output_bam": output_bam,
         "whitelist": str(whitelist) if whitelist else "",
-        "cb_translation": str(cb_translation) if cb_translation else "",
         "min_bc_qual": min_bc_qual,
         "min_base_qual": min_base_qual,
         "umi_max_dist": umi_max_dist if lay.umi else 0,

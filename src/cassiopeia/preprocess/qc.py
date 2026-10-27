@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
-from ._utils import passing
+from ._utils import CELL_PASS as _CELL_PASS
+from ._utils import passing, site_columns
 from .integrations import integration_metrics
-
-_CELL_PASS = ("pass_min_umi", "pass_intbc_frac", "pass_clone", "pass_doublet")
 
 
 def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
@@ -49,7 +50,12 @@ def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-__all__ = ["cell_metrics", "integration_metrics", "molecule_metrics"]
+__all__ = [
+    "cell_metrics",
+    "compute_empirical_indel_priors",
+    "integration_metrics",
+    "molecule_metrics",
+]
 
 
 def molecule_metrics(df: pd.DataFrame) -> pd.DataFrame:
@@ -63,3 +69,45 @@ def molecule_metrics(df: pd.DataFrame) -> pd.DataFrame:
         out["pass"] = True
     out.index.names = ["cellBC", "intBC"]
     return out.reset_index()
+
+
+def compute_empirical_indel_priors(
+    df: pd.DataFrame,
+    grouping_variables: list[str] | None = None,
+    cut_sites: list[str] | None = None,
+) -> pd.DataFrame:
+    """Empirical indel frequencies, for use as priors.
+
+    Counts the independent groups in which each indel occurs and divides by
+    the number of groups. By default each intBC is a group, which holds for a
+    clonal population; group by more columns (e.g. ``["clone", "intBC"]``)
+    when the same intBC occurs in several clones.
+
+    Args:
+        df: Molecule table (molecules passing all filters are used), or an
+            allele table with one column per cut site.
+        grouping_variables: Columns defining independent groups (default
+            ``["intBC"]``).
+        cut_sites: Site columns. Default: the construct's sites, or columns
+            named ``r1``, ``r2``, ... of an allele table.
+
+    Returns:
+        DataFrame indexed by indel with ``count`` (groups containing it) and
+        ``freq`` (fraction of groups).
+    """
+    grouping_variables = list(grouping_variables or ["intBC"])
+    if cut_sites is None:
+        if df.attrs.get("sites"):
+            cut_sites = site_columns(df)
+        else:
+            cut_sites = [c for c in df.columns if re.fullmatch(r"r\d+", str(c))]
+    groups = passing(df).groupby(grouping_variables, observed=True)
+    counts: dict[str, int] = {}
+    for _, g in groups:
+        for allele in pd.unique(g[cut_sites].astype(object).to_numpy().ravel()):
+            if isinstance(allele, str) and "none" not in allele.lower():
+                counts[allele] = counts.get(allele, 0) + 1
+    out = pd.DataFrame({"count": pd.Series(counts, dtype=int)})
+    out["freq"] = out["count"] / max(groups.ngroups, 1)
+    out.index.name = "indel"
+    return out

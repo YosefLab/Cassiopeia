@@ -48,6 +48,9 @@ def test_umi_reads_plot_thresholds(processed):
     assert 5 in _vlines(ax)
     ax = cas.pp.plot_umi_reads(df, level="intbc", thresholds=False)
     assert _vlines(ax) == []
+    ax = cas.pp.plot_umi_intbcs(df)
+    assert 5 in _vlines(ax)
+    assert ax.get_ylabel() == "intBCs detected"
     plt.close("all")
 
 
@@ -67,7 +70,7 @@ def test_all_plots_render(processed, tmp_path, monkeypatch):
 
 def test_steps_plot_and_save(sim_factory, tmp_path):
     sim = sim_factory("weissman", "clean")
-    df = cas.pp.call_alleles(sim.bam, "weissman", plot=True, show=False)
+    df = cas.pp.call_alleles(sim.bam, "weissman")
     df = cas.pp.filter_molecules(df, save=tmp_path / "mol.png", show=False)
     assert (tmp_path / "mol.png").exists()
     res = cas.pp.align(
