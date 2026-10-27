@@ -37,7 +37,7 @@ class Site:
     """An edit site in the target-site reference.
 
     Args:
-        name: Site name; used as the column name in the molecule table.
+        name: Site name; used as the column name in the allele table.
         position: 0-based reference coordinate of the cut / insertion point.
         edit_model: Kind of edits recorded at this site:
 
@@ -189,7 +189,7 @@ class Construct:
     # ------------------------------------------------------------ helpers
     @property
     def site_names(self) -> list[str]:
-        """Names of the edit sites (molecule table columns)."""
+        """Names of the edit sites (allele table columns)."""
         return [s.name for s in self.sites]
 
     @property

@@ -6,7 +6,7 @@ import numba
 import numpy as np
 import pandas as pd
 
-from ._utils import passing, site_columns
+from ._utils import passing, site_columns, umi_counts
 
 
 @numba.njit(cache=True)
@@ -30,6 +30,11 @@ def _resolve_groups(starts, codes, umis, min_umi, min_minor_frac):
     n_clusters = np.zeros(n_groups, dtype=np.int32)
     reps = np.empty((64, n_sites), dtype=np.int32)
     rep_umis = np.empty(64, dtype=np.int64)
+    # every cluster: group, alleles and UMIs (at most one cluster per allele row)
+    cl_group = np.empty(codes.shape[0], dtype=np.int64)
+    cl_codes = np.empty((codes.shape[0], n_sites), dtype=np.int32)
+    cl_umis = np.empty(codes.shape[0], dtype=np.int64)
+    n_cl = 0
     for g in range(n_groups):
         s, e = starts[g], starts[g + 1]
         k = 0
@@ -80,7 +85,23 @@ def _resolve_groups(starts, codes, umis, min_umi, min_minor_frac):
                 flag = True
         conflict_umis[g] = cu
         conflict[g] = flag
-    return major, major_umis, total_umis, conflict_umis, conflict, n_clusters
+        for c in range(k):
+            cl_group[n_cl] = g
+            for j in range(n_sites):
+                cl_codes[n_cl, j] = reps[c, j]
+            cl_umis[n_cl] = rep_umis[c]
+            n_cl += 1
+    return (
+        major,
+        major_umis,
+        total_umis,
+        conflict_umis,
+        conflict,
+        n_clusters,
+        cl_group[:n_cl],
+        cl_codes[:n_cl],
+        cl_umis[:n_cl],
+    )
 
 
 def resolve_alleles(
@@ -89,15 +110,18 @@ def resolve_alleles(
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
     use_pass: bool = True,
-) -> pd.DataFrame:
+    return_clusters: bool = False,
+) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
     """Per (cell, intBC) resolved alleles and conflict flags.
 
     Args:
-        df: Molecule table.
+        df: Allele table.
         sites: Site columns (default: ``df.attrs['sites']``).
         min_umi: UMIs a minor allele needs to count as a conflict.
         min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
-        use_pass: Only use molecules passing all filters so far.
+        use_pass: Only use rows passing all filters so far.
+        return_clusters: Also return every allele cluster of each (cellBC,
+            intBC) with its ``umis`` and site alleles.
 
     Returns:
         DataFrame with one row per (cellBC, intBC): ``n_umis``, ``major_umis``,
@@ -113,6 +137,8 @@ def resolve_alleles(
             + ["n_umis", "major_umis", "conflict_umis", "conflict", "n_alleles"]
             + sites
         )
+        if return_clusters:
+            return out, pd.DataFrame(columns=["cellBC", "intBC", "umis"] + sites)
         return out
     allele = d.groupby(sites, observed=True, dropna=False, sort=False).ngroup().to_numpy()
     key = pd.DataFrame(
@@ -120,11 +146,10 @@ def resolve_alleles(
             "cell": d["cellBC"].cat.codes.to_numpy(),
             "intbc": d["intBC"].cat.codes.to_numpy(),
             "allele": allele,
+            "umis": umi_counts(d),
         }
     )
-    counts = (
-        key.groupby(["cell", "intbc", "allele"], sort=False).size().rename("umis").reset_index()
-    )
+    counts = key.groupby(["cell", "intbc", "allele"], sort=False)["umis"].sum().reset_index()
     counts = counts.sort_values(
         ["cell", "intbc", "umis", "allele"], ascending=[True, True, False, True]
     )
@@ -141,7 +166,17 @@ def resolve_alleles(
     )
     change = np.flatnonzero(np.diff(gkey)) + 1
     starts = np.concatenate([[0], change, [len(gkey)]]).astype(np.int64)
-    major, major_umis, total, conflict_umis, conflict, n_clusters = _resolve_groups(
+    (
+        major,
+        major_umis,
+        total,
+        conflict_umis,
+        conflict,
+        n_clusters,
+        cl_group,
+        cl_codes,
+        cl_umis,
+    ) = _resolve_groups(
         starts,
         np.ascontiguousarray(code_mat),
         counts["umis"].to_numpy().astype(np.int64),
@@ -163,4 +198,19 @@ def resolve_alleles(
     )
     for j, s in enumerate(sites):
         out[s] = pd.Categorical.from_codes(major[:, j], categories=d[s].cat.categories)
-    return out
+    if not return_clusters:
+        return out
+    clusters = pd.DataFrame(
+        {
+            "cellBC": pd.Categorical.from_codes(
+                g_cell[cl_group], categories=d["cellBC"].cat.categories
+            ),
+            "intBC": pd.Categorical.from_codes(
+                g_intbc[cl_group], categories=d["intBC"].cat.categories
+            ),
+            "umis": cl_umis,
+        }
+    )
+    for j, s in enumerate(sites):
+        clusters[s] = pd.Categorical.from_codes(cl_codes[:, j], categories=d[s].cat.categories)
+    return out, clusters

@@ -73,24 +73,49 @@ def passing(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-#: Cell-level ``pass_*`` columns; the others are molecule-level.
+#: Clone label used when the table has no ``clone`` column (all cells form one clone).
+SINGLE_CLONE = "0"
+
+#: Cell-level ``pass_*`` columns; the others are row-level.
 CELL_PASS = ("pass_min_umi", "pass_intbc_frac", "pass_clone", "pass_doublet")
 
 
-def molecule_passing(df: pd.DataFrame) -> pd.DataFrame:
-    """Rows passing the molecule-level filters (cell-level flags ignored)."""
+def row_passing(df: pd.DataFrame) -> pd.DataFrame:
+    """Rows passing the row-level filters (cell-level flags ignored)."""
     cols = [c for c in df.columns if c.startswith("pass_") and c not in CELL_PASS]
     if cols:
         return df[df[cols].all(axis=1).to_numpy()]
     return df
 
 
+def umi_counts(df: pd.DataFrame) -> np.ndarray:
+    """UMIs each row stands for: ``n_umis`` after :func:`cassiopeia.pp.collapse_umis`, else 1."""
+    if "n_umis" in df.columns:
+        return df["n_umis"].to_numpy().astype(np.int64)
+    return np.ones(len(df), dtype=np.int64)
+
+
+def is_collapsed(df: pd.DataFrame) -> bool:
+    """Whether rows are alleles (UMIs collapsed) rather than single UMIs."""
+    return "n_umis" in df.columns
+
+
 def site_columns(df: pd.DataFrame) -> list[str]:
-    """Edit-site columns of a molecule table."""
+    """Edit-site columns of an allele table."""
     sites = df.attrs.get("sites")
     if sites:
         return [s for s in sites if s in df.columns]
-    reserved = {"sample", "cellBC", "intBC", "UMI", "clone", "n_reads", "allele_frac", "pass"}
+    reserved = {
+        "sample",
+        "cellBC",
+        "intBC",
+        "UMI",
+        "clone",
+        "n_reads",
+        "n_umis",
+        "allele_frac",
+        "pass",
+    }
     inferred = [
         c
         for c in df.columns
@@ -106,17 +131,16 @@ def site_columns(df: pd.DataFrame) -> list[str]:
     )
 
 
-def finish_plot(fig, show: bool, save: str | Path | None):
-    """Save and/or show a figure created by a step."""
+def finish_plot(fig, plot: bool, save: str | Path | None):
+    """Save and/or show a figure created by a step, then close it."""
     import matplotlib.pyplot as plt
 
     if save:
         fig.savefig(save, bbox_inches="tight", dpi=150)
         logger.info(f"Saved plot to {save}")
-    if show:
+    if plot:
         plt.show()
-    elif save:
-        plt.close(fig)
+    plt.close(fig)
 
 
 def copy_attrs(src: pd.DataFrame, dst: pd.DataFrame) -> pd.DataFrame:

@@ -30,5 +30,3 @@ sites:
     window: [2, 2]
     lookup: {GGACA: "1", ACAAT: "2", CCCTA: "3", AGTAC: "4", CCGAT: "5", CCTTT: "6", ATCAA: "7", ATTCG: "8",
              CTTGGG: "None"}
-defaults:
-  clones: nova_clone

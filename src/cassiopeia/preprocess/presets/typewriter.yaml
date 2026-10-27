@@ -36,5 +36,3 @@ sites:
   position: 116
   edit_model: sequential_insertion
   slot: 4
-defaults:
-  clones: single

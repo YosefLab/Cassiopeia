@@ -16,14 +16,20 @@ from ._utils import (
     copy_attrs,
     default_threads,
     finish_plot,
+    is_collapsed,
     record_params,
     set_pass,
     site_columns,
+    umi_counts,
 )
 
 
 def _merge_duplicate_molecules(df: pd.DataFrame) -> pd.DataFrame:
-    """Merge rows sharing (cell, intBC, UMI) after intBC correction."""
+    """Merge rows sharing (cell, intBC, UMI), or (cell, intBC, allele), after correction."""
+    if is_collapsed(df):
+        from .alleles import _collapse
+
+        return _collapse(df)
     keys = ["cellBC", "intBC", "UMI"] if df["UMI"].notna().any() else None
     if keys is None:
         return df
@@ -55,8 +61,7 @@ def correct_intbcs(
     max_dist: int = 2,
     min_ratio: float = 5.0,
     n_threads: int | None = None,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
     """Correct intBC sequencing errors.
@@ -66,23 +71,23 @@ def correct_intbcs(
     fail ``pass_intbc``. Without a whitelist, each intBC is merged into the
     closest intBC within ``max_dist`` edits that has at least ``min_ratio``
     times as many UMIs (error variants are much rarer than real intBCs).
-    Molecules that end up with the same (cell, intBC, UMI) are merged.
+    Rows that end up with the same (cell, intBC, UMI), or the same (cell,
+    intBC, allele) after :func:`cassiopeia.pp.collapse_umis`, are merged.
 
     Args:
-        df: Molecule table from :func:`cassiopeia.pp.call_alleles`.
+        df: Allele table from :func:`cassiopeia.pp.call_alleles`.
         whitelist: Known intBCs (list or file).
         max_dist: Maximum Levenshtein distance for a correction.
         min_ratio: (no whitelist) Minimum UMI ratio of the target intBC.
         n_threads: Threads.
         plot: Plot intBC abundance with corrected intBCs highlighted.
-        show: Show the plot.
         save: Save the plot to this path.
 
     Returns:
-        Molecule table with corrected ``intBC``.
+        Allele table with corrected ``intBC``.
     """
     wl = as_list(whitelist)
-    counts = df.groupby("intBC", observed=True).size()
+    counts = pd.Series(umi_counts(df), index=df.index).groupby(df["intBC"], observed=True).sum()
     seqs = [str(s) for s in counts.index]
     mapping = _native.correct_intbcs(
         seqs,
@@ -116,9 +121,8 @@ def correct_intbcs(
         + f" -> {out['intBC'].nunique():,} intBCs"
     )
     if plot or save:
-        from .plotting import plot_intbc_correction
+        from ._plotting import plot_intbc_correction
 
-        fig = plot_intbc_correction(counts, remap)
-        finish_plot(fig, show and bool(plot), save)
+        finish_plot(plot_intbc_correction(counts, remap), plot, save)
     site_columns(out)  # validate
     return out

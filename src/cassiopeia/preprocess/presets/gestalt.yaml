@@ -66,5 +66,3 @@ sites:
   window:
   - 4
   - 4
-defaults:
-  clones: single

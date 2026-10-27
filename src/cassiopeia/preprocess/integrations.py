@@ -10,7 +10,7 @@ import pandas as pd
 from cassiopeia.mixins import logger
 
 from ._resolve import resolve_alleles
-from ._utils import finish_plot, passing, record_params, set_pass
+from ._utils import SINGLE_CLONE, finish_plot, passing, record_params, set_pass
 
 
 def integration_metrics(
@@ -18,18 +18,33 @@ def integration_metrics(
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
 ) -> pd.DataFrame:
-    """Per (clone, intBC) detection and allele-conflict rates.
+    """Per-integration (clone x intBC) QC metrics.
+
+    Used by :func:`~cassiopeia.pp.filter_integrations`, which computes them on
+    rows passing the earlier filters (ignoring its own and the doublet
+    filter). One row per clone and intBC seen in the clone's cells:
+
+    * ``clone``, ``intBC``: the integration. Without a ``clone`` column all
+      cells form one clone, ``"0"``.
+    * ``n_cells``: cells of the clone in which the intBC is detected.
+    * ``clone_cells``: cells in the clone.
+    * ``detection``: ``n_cells / clone_cells``. Real integrations are
+      detected in most cells of their clone; silenced or poorly captured
+      ones, and foreign intBCs from ambient RNA or doublets, are not.
+    * ``n_conflict``: cells holding two incompatible alleles of the intBC
+      (the minor one with at least ``min_umi`` UMIs and ``min_minor_frac``
+      of the intBC's UMIs).
+    * ``conflict``: ``n_conflict / n_cells``. High for intBCs shared by
+      several integrations (e.g. duplicated during transduction).
+    * ``mean_umis``: mean UMIs per cell for the intBC.
 
     Args:
-        df: Molecule table (with a ``clone`` column; otherwise all cells form
-            one clone).
+        df: Allele table.
         min_umi: UMIs a minor allele needs to count as a conflict.
         min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
 
     Returns:
-        DataFrame with ``clone``, ``intBC``, ``n_cells`` (cells with the intBC),
-        ``clone_cells``, ``detection`` (n_cells / clone_cells), ``conflict``
-        (fraction of cells with conflicting alleles) and ``mean_umis``.
+        DataFrame sorted by clone and decreasing detection.
     """
     d = passing(
         df.drop(columns=["pass_integration", "pass_doublet"], errors="ignore").assign(
@@ -43,7 +58,7 @@ def integration_metrics(
             cc["clone"].astype(object).to_numpy(), index=cc["cellBC"].astype(str).to_numpy()
         )
     else:
-        cell_clone = pd.Series("0", index=d["cellBC"].astype(str).unique(), dtype=object)
+        cell_clone = pd.Series(SINGLE_CLONE, index=d["cellBC"].astype(str).unique(), dtype=object)
     res["clone"] = res["cellBC"].astype(str).map(cell_clone).astype(object)
     res = res[res["clone"].notna() & (res["clone"] != "multiplet")]
     sizes = cell_clone[cell_clone.notna() & (cell_clone != "multiplet")].value_counts()
@@ -72,13 +87,12 @@ def _pass_without(df: pd.DataFrame, exclude: list[str]) -> np.ndarray:
 
 def filter_integrations(
     df: pd.DataFrame,
-    min_detection: float = 0.4,
+    min_detection: float = 0.2,
     max_conflict: float = 0.2,
     *,
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
     """Keep reliable integrations (clone x intBC pairs).
@@ -92,21 +106,21 @@ def filter_integrations(
     errors). Doublets are a minority of cells, so they barely change these
     rates; doublet scoring then only uses the kept integrations.
 
-    With a single clone (``pp.call_clones(method="single")``) this is the
-    population intBC whitelist plus duplicate detection.
+    Without a ``clone`` column (no :func:`cassiopeia.pp.call_clones`), all
+    cells form one clone, labelled ``"0"``, and this is the population intBC
+    whitelist plus duplicate detection.
 
     Args:
-        df: Molecule table with ``clone`` (all cells are one clone otherwise).
+        df: Allele table, with ``clone`` if there are several clones.
         min_detection: Minimum detection rate within the clone.
         max_conflict: Maximum fraction of cells with conflicting alleles.
         min_umi: UMIs a minor allele needs to count as a conflict.
         min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
         plot: Plot detection vs. conflict per integration.
-        show: Show the plot.
         save: Save the plot to this path.
 
     Returns:
-        The molecule table with ``pass_integration``; kept integrations per
+        The allele table with ``pass_integration``; kept integrations per
         clone are stored in ``df.attrs['integrations']``.
     """
     df = df.copy()
@@ -116,7 +130,7 @@ def filter_integrations(
     if "clone" in df.columns:
         clone = df["clone"].astype(object).to_numpy()
     else:
-        clone = np.full(len(df), "0", dtype=object)
+        clone = np.full(len(df), SINGLE_CLONE, dtype=object)
     keys = set(zip(m.loc[m["kept"], "clone"], m.loc[m["kept"], "intBC"], strict=True))
     intbc = df["intBC"].astype(str).to_numpy()
     ok = np.fromiter(
@@ -146,8 +160,7 @@ def filter_integrations(
         f"{m['clone'].nunique()} clones ({n_dup} with high allele conflict, e.g. duplicated integrations)"
     )
     if plot or save:
-        from .plotting import plot_integrations
+        from ._plotting import plot_integrations
 
-        ax = plot_integrations(df)
-        finish_plot(ax.figure, show and bool(plot), save)
+        finish_plot(plot_integrations(df).figure, plot, save)
     return df

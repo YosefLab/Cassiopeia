@@ -61,15 +61,15 @@ def align(
     strand: Literal["forward", "reverse", "both"] = "forward",
     cb_confidence: float = 0.975,
     n_threads: int | None = None,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> dict:
     r"""Align target-site reads and write a deduplicated, CB/UB-tagged BAM.
 
     A self-contained alternative to STARsolo / Cell Ranger for target-site
-    libraries that reproduces the legacy Cassiopeia alignment. Steps, all in
-    one streaming pass with no intermediate files:
+    libraries that reproduces the legacy Cassiopeia alignment. Use it for Cas9
+    indel recorders, whose large deletions STAR cannot align across. Steps,
+    all in one streaming pass with no intermediate files:
 
     1. Parse the cell barcode, UMI and target-site read from the FASTQs
        (``layout``); drop reads with N or low-quality barcode/UMI bases.
@@ -139,7 +139,6 @@ def align(
         cb_confidence: Posterior required to correct a cell barcode.
         n_threads: Threads (default: ``SLURM_CPUS_PER_TASK`` or up to 8).
         plot: Plot barcode rank, reads per UMI and alignment scores.
-        show: Show the plot.
         save: Save the plot to this path.
 
     Returns:
@@ -207,8 +206,7 @@ def align(
     res["bam"] = output_bam
     res["elapsed"] = elapsed
     if plot or save:
-        from .plotting import plot_align
+        from ._plotting import plot_align
 
-        fig = plot_align(res, min_score=min_score)
-        finish_plot(fig, show and bool(plot), save)
+        finish_plot(plot_align(res, min_score=min_score), plot, save)
     return res

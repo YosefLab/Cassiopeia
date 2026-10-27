@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning][].
     `insertion_lookup`, `sequential_insertion`, `substitution`).
   - `pp.build_reference` writes FASTA/GTF references and STARsolo / Cell Ranger
     commands; target-site BAMs from STARsolo or Cell Ranger can be used directly.
+    These are recommended for insertion and substitution recorders (PEtracer,
+    DNA Typewriter, BASELINE); Cas9 indel recorders should use `pp.align`,
+    because STAR cannot align reads across large deletions.
   - `pp.align`: FASTQ -> deduplicated, Smith-Waterman aligned, CB/UB-tagged BAM
     in one streaming pass (cell barcode and UMI correction included). Follows
     the pre-3.0 UMI collapse, including its banded-alignment merge of reads with
@@ -35,19 +38,26 @@ and this project adheres to [Semantic Versioning][].
     pattern strings with one token per FASTQ, e.g. `16C12U,T` (`C` cell
     barcode, `U` UMI, `X` skip, `T` target site); `pp.build_reference`
     derives the matching STAR / STARsolo arguments from them.
-  - `pp.call_alleles`: streaming BAM -> molecule table (pandas) that reads only
-    the target-site contigs of indexed BAMs of any size.
-  - Molecule-table steps that annotate rather than drop, each with a built-in
-    QC plot: `pp.correct_intbcs`, `pp.filter_molecules`, `pp.filter_cells`,
-    `pp.call_clones` (NovaClone, single clone or user-supplied),
-    `pp.filter_integrations` and `pp.filter_doublets` (allele conflicts, clone
-    mixtures, UMI outliers, custom scores).
-  - `pp.alleles_to_characters` returns a TreeData ready for the solvers, with
-    states written as strings (`"*"` unedited, `"-"` missing, `"1"`, `"2"`,
-    ...), integers, or the alleles themselves (`mapping=`).
+  - `pp.call_alleles`: streaming BAM -> allele table (pandas) that reads only
+    the target-site contigs of indexed BAMs of any size. With
+    `collapse_umis=True` (or `pp.collapse_umis`), UMIs with the same cell,
+    intBC, allele and read count become one row with `n_umis`, so the table
+    stays small for large experiments.
+  - Allele-table steps that annotate rather than drop, each drawing a QC plot
+    (`plot=True`): `pp.correct_intbcs`, `pp.filter_alleles`, `pp.filter_cells`,
+    `pp.call_clones` (NovaClone or user-supplied; only for data with several
+    clones), `pp.filter_integrations` and `pp.filter_doublets` (allele
+    conflicts, clone mixtures, UMI outliers, custom scores).
+  - `pp.qc.cell_metrics`, `pp.clone_metrics` and `pp.integration_metrics`
+    summarize the allele table per cell, clone and integration.
+  - `pp.alleles_to_characters` returns a TreeData ready for the solvers (or the
+    character matrix as a DataFrame), with states written as strings (`"*"`
+    unedited, `"-"` missing, `"1"`, `"2"`, ...), integers, the alleles
+    themselves, or through a dict (`mapping=`); `ambiguous=True` keeps cells
+    with several alleles as ambiguous states such as `("1", "2")`.
+  - `pp.plot_edit_frequency` plots edit, unedited and missing frequencies per
+    character (optionally by edit) or the most frequent edits.
   - `pp.run` / `cassiopeia-preprocess run config.yaml` run the full pipeline.
-  - `cassiopeia.preprocess.datasets` fetches small subsets of published
-    datasets for testing.
 
 ### Changed
 
@@ -63,7 +73,7 @@ and this project adheres to [Semantic Versioning][].
   `pp.convert_alleletable_to_lineage_profile`,
   `pp.convert_lineage_profile_to_character_matrix`,
   `pp.convert_character_matrix_to_allele_table`) are removed;
-  `pp.compute_empirical_indel_priors` now also accepts the molecule table. `ngs-tools`, `hits` and `pyseq-align` are no longer
+  `pp.compute_empirical_indel_priors` now also accepts the allele table. `ngs-tools`, `hits` and `pyseq-align` are no longer
   dependencies; `pysam>=0.22` and `pyarrow` are.
 - Priors stored in `tdata.uns["priors"]` with string keys (as written by h5ad/h5td)
   are converted back to integers by the solvers.

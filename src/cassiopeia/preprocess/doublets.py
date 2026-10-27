@@ -12,7 +12,7 @@ import pandas as pd
 from cassiopeia.mixins import PreprocessError, logger
 
 from ._resolve import resolve_alleles
-from ._utils import finish_plot, passing, record_params, set_pass
+from ._utils import finish_plot, passing, record_params, set_pass, umi_counts
 
 Method = Literal["allele_conflict", "clone_mixture", "umi_outlier"]
 
@@ -86,7 +86,12 @@ def doublet_scores(
                 owner.setdefault(i, set()).add(str(clone))
         # molecules passing molecule-level filters (before integration filtering)
         d = passing(mol)
-        t = d.groupby(["cellBC", "intBC"], observed=True).size().rename("umis").reset_index()
+        t = (
+            pd.Series(umi_counts(d), index=d.index, name="umis")
+            .groupby([d["cellBC"], d["intBC"]], observed=True)
+            .sum()
+            .reset_index()
+        )
         t["cellBC"] = t["cellBC"].astype(str)
         t["intBC"] = t["intBC"].astype(str)
         cc = df.drop_duplicates("cellBC")
@@ -112,7 +117,7 @@ def doublet_scores(
 
     if "umi_outlier" in methods:
         d = passing(base)
-        umis = d.groupby("cellBC", observed=True).size()
+        umis = pd.Series(umi_counts(d), index=d.index).groupby(d["cellBC"], observed=True).sum()
         umis.index = umis.index.astype(str)
         if have_clones:
             cc = df.drop_duplicates("cellBC")
@@ -146,8 +151,7 @@ def filter_doublets(
     min_informative: int = 2,
     hooks: dict[str, Callable[[pd.DataFrame], pd.Series]] | None = None,
     hook_thresholds: dict[str, float] | None = None,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
     """Score and flag doublets.
@@ -164,7 +168,7 @@ def filter_doublets(
     unreliable integrations do not create false conflicts.
 
     Args:
-        df: Molecule table.
+        df: Allele table.
         methods: Scores to use, or ``"auto"``.
         conflict_threshold: Threshold for ``allele_conflict``.
         mixture_threshold: Threshold for ``clone_mixture``.
@@ -175,12 +179,11 @@ def filter_doublets(
         hooks: Extra scores: name -> function(df) returning a per-cell Series.
         hook_thresholds: Thresholds for hook scores (default 0.5).
         plot: Plot score distributions with thresholds.
-        show: Show the plot.
         save: Save the plot to this path.
 
     Returns:
-        The molecule table with ``doublet_<method>`` score columns, a
-        ``doublet`` flag and ``pass_doublet``.
+        The allele table with ``doublet_<method>`` score columns and
+        ``pass_doublet`` (False for cells flagged by any method).
     """
     df = df.copy()
     scores = doublet_scores(
@@ -210,16 +213,14 @@ def filter_doublets(
     for col in scores.columns:
         name = col if col == "n_informative" else f"doublet_{col}"
         df[name] = cells.map(scores[col]).to_numpy()
-    df["doublet"] = cells.map(flag).fillna(False).astype(bool).to_numpy()
-    set_pass(df, "doublet", ~df["doublet"].to_numpy())
+    set_pass(df, "doublet", ~cells.map(flag).fillna(False).astype(bool).to_numpy())
     used = [m for m in thresholds if m in scores.columns]
     record_params(df, **{f"doublet_{m}_threshold": thresholds[m] for m in used})
     record_params(df, doublet_methods=used)
     n = int(flag.sum())
     logger.info(f"filter_doublets: {n:,}/{len(flag):,} cells flagged ({', '.join(used)})")
     if plot or save:
-        from .plotting import plot_doublet_scores
+        from ._plotting import plot_doublet_scores
 
-        fig = plot_doublet_scores(df)
-        finish_plot(fig, show and bool(plot), save)
+        finish_plot(plot_doublet_scores(df), plot, save)
     return df

@@ -12,7 +12,7 @@ import pandas as pd
 
 from cassiopeia.mixins import PreprocessError, logger
 
-from ._utils import finish_plot, passing, record_params, set_pass
+from ._utils import finish_plot, passing, record_params, set_pass, umi_counts
 
 _NOVA_HELP = (
     "pp.call_clones(method='nova_clone') requires NovaClone "
@@ -20,17 +20,19 @@ _NOVA_HELP = (
     "    git clone https://github.com/YosefLab/nova-clone\n"
     "    export PYTHONPATH=$PWD/nova-clone:$PYTHONPATH\n"
     "and its dependencies (editdistance, networkx, scikit-learn, seaborn). "
-    "For data where all cells share the same integrations use method='single'."
+    "Data where all cells share the same integrations (one clone) do not need "
+    "pp.call_clones."
 )
 
 
 def intbc_table(df: pd.DataFrame, use_pass: bool = True) -> pd.DataFrame:
-    """UMI counts per (cell, intBC) from passing molecules."""
+    """UMI counts per (cell, intBC) from passing rows."""
     d = passing(df) if use_pass else df
     keys = ["cellBC", "intBC"]
     if "sample" in d.columns:
         keys = ["sample"] + keys
-    t = d.groupby(keys, observed=True).size().rename("UMI_count").reset_index()
+    umis = pd.Series(umi_counts(d), index=d.index, name="UMI_count")
+    t = umis.groupby([d[k] for k in keys], observed=True).sum().reset_index()
     return t[t["UMI_count"] > 0]
 
 
@@ -49,44 +51,45 @@ def _signatures(
 
 def call_clones(
     df: pd.DataFrame,
-    method: Literal["nova_clone", "single"] = "nova_clone",
+    method: Literal["nova_clone"] = "nova_clone",
     *,
     clones: pd.Series | dict | None = None,
     min_detection: float = 0.4,
     return_raw: bool = False,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
     **nova_kwargs,
 ) -> pd.DataFrame | tuple[pd.DataFrame, object]:
     """Assign cells to clones (groups of cells sharing an intBC signature).
 
-    * ``method="nova_clone"``: data with many clones, each with its own set
-      of intBCs (e.g. barcoded populations). Uses NovaClone; cells mapping to
-      more than one clone are labelled ``"multiplet"``.
-    * ``method="single"``: all cells share the same integrations (a single
-      clone, e.g. a monoclonal line, an embryo from one founder, GESTALT).
-    * ``clones=``: user-supplied cell -> clone assignment.
+    Only needed for data with several clones, each with its own set of
+    intBCs (e.g. barcoded populations or several founders). When all cells
+    share the same integrations, skip this step: the later steps treat all
+    cells as one clone.
 
-    The clone's intBC signature (``df.attrs['clone_intbcs']``) lists intBCs
-    detected in at least ``min_detection`` of its cells (NovaClone signatures
-    are used for ``nova_clone``).
+    * ``method="nova_clone"``: clones are called with NovaClone; cells
+      mapping to more than one clone are labelled ``"multiplet"``.
+    * ``clones=``: user-supplied cell -> clone assignment. The clone's intBC
+      signature lists intBCs detected in at least ``min_detection`` of its
+      cells.
+
+    Signatures are stored in ``df.attrs['clone_intbcs']``.
 
     Args:
-        df: Molecule table.
-        method: ``"nova_clone"`` or ``"single"``.
+        df: Allele table.
+        method: Clone calling method (``"nova_clone"``).
         clones: Optional mapping of cellBC to clone label (overrides ``method``).
-        min_detection: Detection rate for an intBC to join a clone signature.
+        min_detection: (``clones=``) Detection rate for an intBC to join a
+            clone signature.
         return_raw: Also return the raw NovaClone result.
         plot: Plot clone sizes and intBC detection per clone.
-        show: Show the plot.
         save: Save the plot to this path.
         **nova_kwargs: Passed to ``nova_clone.clone_calling_algorithm`` (e.g.
             ``min_intbc_umi_count``, ``min_cells_assigned``, ``min_intbc_fraction``).
 
     Returns:
-        The molecule table with a ``clone`` column and ``pass_clone``
-        (cells assigned to a clone).
+        The allele table with a ``clone`` column and ``pass_clone``
+        (cells assigned to exactly one clone; False for multiplets).
     """
     df = df.copy()
     table = intbc_table(df)
@@ -97,10 +100,6 @@ def call_clones(
         cell_clone = cell_clone.reindex(cells)
         method_used = "user"
         sig = _signatures(table, cell_clone.dropna(), min_detection)
-    elif method == "single":
-        cell_clone = pd.Series("0", index=cells, dtype=object)
-        method_used = "single"
-        sig = _signatures(table, cell_clone, min_detection)
     elif method == "nova_clone":
         try:
             import nova_clone
@@ -152,7 +151,7 @@ def call_clones(
     if (cell_clone == "multiplet").any():
         order.append("multiplet")
     df["clone"] = pd.Categorical(clone_col, categories=order)
-    set_pass(df, "clone", df["clone"].notna().to_numpy())
+    set_pass(df, "clone", (df["clone"].notna() & (df["clone"] != "multiplet")).to_numpy())
     df.attrs["clone_intbcs"] = sig
     df.attrs.pop("integrations", None)
     record_params(df, clone_method=method_used, clone_min_detection=min_detection)
@@ -163,28 +162,14 @@ def call_clones(
         + (f", {int(sizes.get('multiplet', 0)):,} multiplets" if "multiplet" in sizes else "")
     )
     if len(sig) == 1 and method_used == "nova_clone" and n_assigned > 0.95 * len(cells):
-        logger.warning("NovaClone found a single clone; consider method='single'.")
+        logger.warning(
+            "NovaClone found a single clone; data where all cells share their integrations "
+            "do not need pp.call_clones."
+        )
     if plot or save:
-        from .plotting import plot_clones
+        from ._plotting import plot_clones
 
-        fig = plot_clones(df)
-        finish_plot(fig, show and bool(plot), save)
+        finish_plot(plot_clones(df), plot, save)
     if return_raw:
         return df, raw
     return df
-
-
-def clone_sizes(df: pd.DataFrame) -> pd.Series:
-    """Number of cells per clone."""
-    if "clone" not in df.columns:
-        raise PreprocessError("Run pp.call_clones first.")
-    return df.drop_duplicates("cellBC")["clone"].value_counts()
-
-
-def _cell_clone(df: pd.DataFrame) -> pd.Series:
-    """Clone label (str) of each cellBC, NaN when unassigned."""
-    if "clone" not in df.columns:
-        return pd.Series(dtype=object)
-    s = df.drop_duplicates("cellBC").set_index("cellBC")["clone"]
-    s.index = s.index.astype(str)
-    return s.astype(object).where(s.notna(), None).astype(object)

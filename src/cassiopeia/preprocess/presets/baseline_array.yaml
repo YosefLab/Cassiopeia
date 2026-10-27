@@ -356,5 +356,3 @@ sites:
   end: 1273
   from_base: A
   to_base: G
-defaults:
-  clones: single

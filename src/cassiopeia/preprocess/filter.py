@@ -1,4 +1,4 @@
-"""Molecule and cell filters. Filters annotate ``pass_*`` columns; nothing is dropped."""
+"""Allele and cell filters. Filters annotate ``pass_*`` columns; nothing is dropped."""
 
 from __future__ import annotations
 
@@ -7,103 +7,92 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cassiopeia.mixins import PreprocessError, logger
+from cassiopeia.mixins import logger
 
-from ._utils import finish_plot, molecule_passing, passing, record_params, set_pass
+from ._utils import (
+    finish_plot,
+    is_collapsed,
+    record_params,
+    row_passing,
+    set_pass,
+    umi_counts,
+)
 
 
-def filter_molecules(
+def filter_alleles(
     df: pd.DataFrame,
-    min_reads: int = 2,
+    min_reads_per_umi: float = 3,
     min_allele_frac: float = 0.5,
-    min_umi_per_intbc: int = 1,
+    min_umi_per_intbc: int = 2,
     *,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
-    """Flag low-quality molecules.
+    """Flag low-quality rows of the allele table.
 
-    Adds ``pass_min_reads`` (UMIs with at least ``min_reads`` reads),
-    ``pass_allele_frac`` (at least ``min_allele_frac`` of a molecule's reads
-    agree at every site) and ``pass_umis_per_intbc`` (the (cell, intBC) has at
-    least ``min_umi_per_intbc`` passing UMIs; removes most ambient and
-    erroneous intBCs).
+    Adds ``pass_reads_per_umi`` (UMIs with at least ``min_reads_per_umi``
+    reads; exact on tables from :func:`cassiopeia.pp.collapse_umis` for
+    thresholds up to its ``read_cap``), ``pass_allele_frac`` (at least
+    ``min_allele_frac`` of the reads agree with the allele at every site) and
+    ``pass_umis_per_intbc`` (the cell has at least ``min_umi_per_intbc``
+    passing UMIs for the intBC; removes most ambient and erroneous intBCs).
+
+    Both read and UMI thresholds depend on sequencing depth: lower them for
+    shallowly sequenced libraries and raise them for deep ones. The plot shows
+    where the thresholds fall.
 
     Args:
-        df: Molecule table.
-        min_reads: Minimum reads per UMI.
-        min_allele_frac: Minimum fraction of reads supporting each site call.
+        df: Allele table.
+        min_reads_per_umi: Minimum reads per UMI.
+        min_allele_frac: Minimum fraction of reads supporting the allele at
+            each site.
         min_umi_per_intbc: Minimum passing UMIs per (cell, intBC).
-        plot: Plot UMIs vs. mean reads per UMI per (cell, intBC).
-        show: Show the plot.
+        plot: Plot the reads per UMI, and the passing UMIs per (cell, intBC).
         save: Save the plot to this path.
 
     Returns:
-        The molecule table with ``pass_*`` columns.
+        The allele table with ``pass_*`` columns.
     """
     df = df.copy()
-    set_pass(df, "min_reads", df["n_reads"].to_numpy() >= min_reads)
+    umis = umi_counts(df)
+    read_cap = df.attrs.get("qc_params", {}).get("read_cap")
+    if is_collapsed(df) and read_cap is not None and min_reads_per_umi > read_cap:
+        logger.warning(
+            f"UMIs were collapsed with read_cap={read_cap}; UMIs with {read_cap} or more reads "
+            f"are filtered by their mean reads per UMI, not exactly at min_reads_per_umi="
+            f"{min_reads_per_umi}. Collapse with a higher read_cap to filter exactly."
+        )
+    reads_per_umi = df["n_reads"].to_numpy() / np.maximum(umis, 1)
+    set_pass(df, "reads_per_umi", reads_per_umi >= min_reads_per_umi)
     set_pass(df, "allele_frac", df["allele_frac"].to_numpy() >= min_allele_frac)
-    ok = df["pass_min_reads"].to_numpy() & df["pass_allele_frac"].to_numpy()
-    grp = pd.DataFrame({"cell": df["cellBC"].cat.codes, "intbc": df["intBC"].cat.codes, "ok": ok})
-    n_ok = grp.groupby(["cell", "intbc"])["ok"].transform("sum").to_numpy()
+    ok = df["pass_reads_per_umi"].to_numpy() & df["pass_allele_frac"].to_numpy()
+    grp = pd.DataFrame(
+        {"cell": df["cellBC"].cat.codes, "intbc": df["intBC"].cat.codes, "umis": umis * ok}
+    )
+    n_ok = grp.groupby(["cell", "intbc"])["umis"].transform("sum").to_numpy()
     set_pass(df, "umis_per_intbc", n_ok >= min_umi_per_intbc)
     record_params(
         df,
-        min_reads=min_reads,
+        min_reads_per_umi=min_reads_per_umi,
         min_allele_frac=min_allele_frac,
         min_umi_per_intbc=min_umi_per_intbc,
     )
+    passed = df["pass"].to_numpy()
     logger.info(
-        f"filter_molecules: {int(df['pass'].sum()):,}/{len(df):,} molecules pass "
-        f"(min_reads={min_reads}, min_allele_frac={min_allele_frac}, min_umi_per_intbc={min_umi_per_intbc})"
+        f"filter_alleles: {int(umis[passed].sum()):,}/{int(umis.sum()):,} UMIs pass "
+        f"(min_reads_per_umi={min_reads_per_umi}, min_allele_frac={min_allele_frac}, "
+        f"min_umi_per_intbc={min_umi_per_intbc})"
     )
     if plot or save:
-        from .plotting import plot_umi_reads
+        from ._plotting import plot_filter_alleles
 
-        ax = plot_umi_reads(df, level="intbc")
-        finish_plot(ax.figure, show and bool(plot), save)
+        finish_plot(plot_filter_alleles(df), plot, save)
     return df
 
 
 def _cell_umis(df: pd.DataFrame) -> pd.Series:
-    d = molecule_passing(df)
-    return d.groupby("cellBC", observed=False).size()
-
-
-def intbc_detection(df: pd.DataFrame) -> pd.Series:
-    """Per cell, fraction of its clone's kept integrations that are detected."""
-    d = passing(df)
-    kept = df.attrs.get("integrations") or df.attrs.get("clone_intbcs")
-    if not kept:
-        raise PreprocessError(
-            "intBC detection needs pp.call_clones (and pp.filter_integrations) first."
-        )
-    if "clone" not in d.columns:
-        raise PreprocessError("intBC detection needs a `clone` column (run pp.call_clones).")
-    kept_sets = {str(c): set(v) for c, v in kept.items()}
-    pairs = d[["cellBC", "intBC", "clone"]].drop_duplicates()
-    pairs = pairs[pairs["clone"].notna()]
-    clone = pairs["clone"].astype(object).to_numpy()
-    intbc = pairs["intBC"].astype(object).to_numpy()
-    in_sig = np.fromiter(
-        (str(i) in kept_sets.get(str(c), ()) for i, c in zip(intbc, clone, strict=True)),
-        dtype=bool,
-        count=len(pairs),
-    )
-    det = (
-        pd.Series(in_sig.astype(float), index=pairs["cellBC"].astype(object).to_numpy())
-        .groupby(level=0)
-        .sum()
-    )
-    cc = d.drop_duplicates("cellBC")
-    cells = cc["cellBC"].astype(object).to_numpy()
-    sizes = np.array(
-        [len(kept_sets.get(str(c), ())) for c in cc["clone"].astype(object)], dtype=float
-    )
-    sizes[sizes == 0] = np.nan
-    return pd.Series(det.reindex(cells).fillna(0).to_numpy() / sizes, index=cells)
+    d = row_passing(df)
+    return pd.Series(umi_counts(d), index=d.index).groupby(d["cellBC"], observed=False).sum()
 
 
 def filter_cells(
@@ -111,30 +100,31 @@ def filter_cells(
     min_umi: int | None = None,
     min_intbc_frac: float | None = None,
     *,
-    plot: bool = False,
-    show: bool = True,
+    plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
     """Flag low-quality cells.
 
     Can be called more than once: typically with ``min_umi`` before clone
-    calling (removes empty or ambient barcodes) and with ``min_intbc_frac``
-    after :func:`cassiopeia.pp.filter_integrations`.
+    calling (removes empty or ambient barcodes) and, optionally, with
+    ``min_intbc_frac`` after :func:`cassiopeia.pp.filter_integrations`.
 
     Args:
-        df: Molecule table.
-        min_umi: Minimum UMIs per cell, counting molecules that pass
-            :func:`cassiopeia.pp.filter_molecules`.
-        min_intbc_frac: Minimum fraction of the cell's clone's kept
-            integrations detected in the cell.
+        df: Allele table.
+        min_umi: Minimum UMIs per cell, counting UMIs that pass
+            :func:`cassiopeia.pp.filter_alleles`.
+        min_intbc_frac: Minimum fraction of the intBCs expected for the
+            cell's clone (its kept integrations; all kept integrations
+            without clones) that are detected in the cell.
         plot: Plot UMIs vs. intBCs detected per cell (and the fraction of
-            clone integrations detected, with ``min_intbc_frac``).
-        show: Show the plot.
+            expected intBCs detected, with ``min_intbc_frac``).
         save: Save the plot to this path.
 
     Returns:
-        The molecule table with ``pass_min_umi`` / ``pass_intbc_frac`` columns.
+        The allele table with ``pass_min_umi`` / ``pass_intbc_frac`` columns.
     """
+    from .qc import intbc_fraction
+
     df = df.copy()
     if min_umi is not None:
         umis = _cell_umis(df)
@@ -142,19 +132,19 @@ def filter_cells(
         set_pass(df, "min_umi", df["cellBC"].isin(keep).to_numpy())
         record_params(df, min_umi=min_umi)
         logger.info(
-            f"filter_cells: {len(keep):,}/{int((umis > 0).sum()):,} cells with >= {min_umi} UMIs"
+            f"filter_cells: {len(keep):,}/{df['cellBC'].nunique():,} cells with >= {min_umi} UMIs"
         )
     if min_intbc_frac is not None:
-        frac = intbc_detection(df)
+        frac = intbc_fraction(df)
         keep = frac[frac >= min_intbc_frac].index
-        set_pass(df, "intbc_frac", df["cellBC"].isin(keep).to_numpy())
+        set_pass(df, "intbc_frac", df["cellBC"].astype(str).isin(keep).to_numpy())
         record_params(df, min_intbc_frac=min_intbc_frac)
         logger.info(
-            f"filter_cells: {len(keep):,}/{len(frac):,} cells detect >= {min_intbc_frac:.0%} of their integrations"
+            f"filter_cells: {len(keep):,}/{int(frac.notna().sum()):,} cells detect "
+            f">= {min_intbc_frac:.0%} of their expected intBCs"
         )
     if plot or save:
-        from .plotting import plot_filter_cells
+        from ._plotting import plot_filter_cells
 
-        fig = plot_filter_cells(df)
-        finish_plot(fig, show and bool(plot), save)
+        finish_plot(plot_filter_cells(df), plot, save)
     return df

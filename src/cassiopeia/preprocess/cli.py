@@ -35,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--strand", default="forward", choices=["forward", "reverse", "both"])
     a.add_argument("--plot", help="Save a QC figure to this path")
 
-    c = sub.add_parser("call-alleles", help="Aligned BAM -> molecule table (parquet).")
+    c = sub.add_parser("call-alleles", help="Aligned BAM -> allele table (parquet).")
     c.add_argument("bam")
     c.add_argument("-o", "--output", required=True, help="Output parquet")
     c.add_argument("-c", "--construct", required=True)
@@ -43,6 +43,11 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--cb-tag", default="CB")
     c.add_argument("--umi-tag", default="UB")
     c.add_argument("--legacy", action="store_true")
+    c.add_argument(
+        "--collapse-umis",
+        action="store_true",
+        help="One row per (cell, intBC, allele) instead of one row per UMI",
+    )
     c.add_argument("-t", "--threads", type=int)
 
     b = sub.add_parser("build-reference", help="Write FASTA/GTF and STARsolo/Cell Ranger commands.")
@@ -74,8 +79,8 @@ def main(argv: list[str] | None = None) -> int:
             method=args.method,
             strand=args.strand,
             n_threads=args.threads,
+            plot=False,
             save=args.plot,
-            show=False,
         )
         yaml.safe_dump(res["stats"], sys.stdout, sort_keys=False)
     elif args.command == "call-alleles":
@@ -88,7 +93,9 @@ def main(argv: list[str] | None = None) -> int:
             cb_tag=args.cb_tag or None,
             umi_tag=args.umi_tag or None,
             legacy=args.legacy,
+            collapse_umis=args.collapse_umis,
             n_threads=args.threads,
+            plot=False,
         )
         df.to_parquet(args.output)
     elif args.command == "build-reference":

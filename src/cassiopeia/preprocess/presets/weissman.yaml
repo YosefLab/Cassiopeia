@@ -11,5 +11,3 @@ sites:
   - {name: r1, position: 112, edit_model: indel, window: [12, 12]}
   - {name: r2, position: 166, edit_model: indel, window: [12, 12]}
   - {name: r3, position: 220, edit_model: indel, window: [12, 12]}
-defaults:
-  clones: nova_clone

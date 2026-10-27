@@ -56,6 +56,12 @@ def build_reference(
     genome FASTA/GTF to align gene expression and target-site reads together,
     or use them alone for target-site libraries.
 
+    STARsolo and Cell Ranger are recommended for insertion and substitution
+    recorders (PEtracer, DNA Typewriter, BASELINE). For Cas9 indel recorders
+    (``indel`` sites: Cassiopeia / KP-tracer, GESTALT) use
+    :func:`~cassiopeia.pp.align`: STAR cannot align reads across large
+    deletions, so the most edited molecules are lost or soft-clipped.
+
     Args:
         construct: Construct, preset name or YAML path.
         out_dir: Output directory.
@@ -71,6 +77,11 @@ def build_reference(
         target-site read).
     """
     c = load_construct(construct)
+    if "indel" in c.edit_models:
+        logger.warning(
+            f"Construct {c.name!r} records Cas9 indels; STARsolo and Cell Ranger cannot align "
+            "reads across large deletions and lose the most edited molecules. Use pp.align instead."
+        )
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     fasta = out / f"{c.name}.fa"
@@ -86,7 +97,7 @@ def build_reference(
         f.write(f"{c.name}\tcassiopeia\ttranscript\t1\t{n}\t.\t+\t.\t{attrs}\n")
         f.write(f"{c.name}\tcassiopeia\texon\t1\t{n}\t.\t+\t.\t{attrs}\n")
 
-    sa_bases = max(4, min(14, int(math.log2(max(n, 2)) / 2 - 1)))
+    sa_bases = max(1, min(14, int(math.log2(max(n, 2)) / 2 - 1)))
     genome_dir = out / "star_index"
     star_genome = (
         f"STAR --runMode genomeGenerate --genomeDir {genome_dir} --genomeFastaFiles {fasta} "
@@ -103,10 +114,13 @@ def build_reference(
     else:
         reads, solo = star
         attrs = "NH HI AS nM CR UR CB UB" if solo else "NH HI AS nM"
+        # STAR sizes the BAM sorting buffer from the genome, which is far too small
+        # for a target-site-only reference
         starsolo = (
             f"STAR --genomeDir {genome_dir} {reads} --readFilesCommand zcat "
             + (f"{solo} " if solo else "")
-            + f"--outSAMtype BAM SortedByCoordinate --outSAMattributes {attrs} "
+            + f"--outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 8000000000 "
+            f"--outSAMattributes {attrs} "
             "--alignEndsType Local --outFilterScoreMinOverLread 0.3 "
             "--outFilterMatchNminOverLread 0.3 --runThreadN 8 --outFileNamePrefix <prefix>"
         )
