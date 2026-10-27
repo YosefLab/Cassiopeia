@@ -378,7 +378,17 @@ def _resolve_priors(
     # dict keyed by character index, matching the solver convention.
     if isinstance(priors, (list, tuple)):
         priors = dict(enumerate(priors))
-    return priors
+    # Integer keys become strings when priors round-trip through h5ad/h5td.
+    return {_int_key(k): {_int_key(s): float(p) for s, p in v.items()} for k, v in priors.items()}
+
+
+def _int_key(k):
+    """Convert digit-string keys (from serialized priors) back to ints."""
+    if isinstance(k, str) and k.lstrip("-").isdigit():
+        return int(k)
+    if isinstance(k, (np.integer,)):
+        return int(k)
+    return k
 
 
 def _normalize_missing(missing_state) -> set:

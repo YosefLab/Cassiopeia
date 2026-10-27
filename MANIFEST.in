@@ -3,3 +3,6 @@
 recursive-include src/cassiopeia *.pyx
 recursive-include src/cassiopeia *.pxd
 include src/cassiopeia/config.ini
+# C++ preprocessing kernels and construct presets
+recursive-include src/cassiopeia/preprocess/_native/src *.cpp *.hpp
+recursive-include src/cassiopeia/preprocess/presets *.yaml *.fa

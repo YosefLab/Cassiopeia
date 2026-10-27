@@ -1,0 +1,15 @@
+# Weissman lab Cas9 target site (PCT48), used by Cassiopeia and KP-tracer: 14bp
+# intBC and three Cas9 cut sites. Jones et al. 2020 Genome Biology; Yang et al. 2022 Cell.
+name: weissman
+description: >-
+  Weissman lab Cas9 target site (PCT48) with a 14bp integration barcode and
+  three Cas9 cut sites. Alleles are indel strings identical to the legacy pipeline.
+reference:
+  fasta: weissman_pct48.fa
+intbc: auto
+sites:
+  - {name: r1, position: 112, edit_model: indel, window: [12, 12]}
+  - {name: r2, position: 166, edit_model: indel, window: [12, 12]}
+  - {name: r3, position: 220, edit_model: indel, window: [12, 12]}
+defaults:
+  clones: nova_clone

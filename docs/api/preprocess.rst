@@ -3,35 +3,96 @@ Preprocess
 ===========
 .. currentmodule:: cassiopeia
 
-Data Preprocessing
-~~~~~~~~~~~~~~~~~~~
+The preprocessing module turns sequencing reads into per-cell character
+matrices. It supports Cas9 indel recorders (Cassiopeia / KP-tracer, GESTALT),
+prime-editing recorders (PEtracer), sequential recorders (DNA Typewriter) and
+base-editing recorders (BASELINE) through a declarative :class:`~cassiopeia.pp.Construct`.
 
-We have several functions that are part of our pipeline for processing sequencing data from single-cell lineage tracing technologies:
+Reads reach an aligned, CB/UB-tagged BAM through any of three paths:
+
+* **Cell Ranger** (``cellranger mkref`` + ``count``) or **STARsolo**, using the
+  reference written by :func:`~cassiopeia.pp.build_reference`;
+* :func:`~cassiopeia.pp.align`, a self-contained FASTQ -> deduplicated
+  Smith-Waterman alignment that follows the pre-3.0 Cassiopeia collapse and
+  alignment, so ``pp.call_alleles(legacy=True)`` reproduces its allele calls.
+
+All paths converge in :func:`~cassiopeia.pp.call_alleles`, which produces a
+molecule table (a pandas DataFrame). The remaining steps annotate that table
+(``pass_*`` columns; nothing is dropped until the character matrix is built)
+and each has a built-in QC plot (``plot=True`` / ``save=``).
+
+Constructs and references
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: reference/
 
-   pp.align_sequences
+   pp.Construct
+   pp.Site
+   pp.TapeArray
+   pp.load_construct
+   pp.list_presets
+   pp.ReadLayout
+   pp.get_layout
+   pp.build_reference
+
+Reads to molecules
+~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   pp.align
    pp.call_alleles
-   pp.call_lineage_groups
-   pp.collapse_umis
-   pp.convert_fastqs_to_unmapped_bam
-   pp.error_correct_cellbcs_to_whitelist
-   pp.error_correct_intbcs_to_whitelist
-   pp.error_correct_umis
-   pp.filter_bam
-   pp.filter_molecule_table
+   pp.call_read
+   pp.correct_intbcs
+
+Filtering, clones and doublets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: reference/
+
+   pp.filter_molecules
    pp.filter_cells
-   pp.filter_umis
-   pp.resolve_umi_sequence
+   pp.gmm_threshold
+   pp.call_clones
+   pp.clone_sizes
+   pp.filter_integrations
+   pp.integration_metrics
+   pp.filter_doublets
+   pp.doublet_scores
 
+Character matrices
+~~~~~~~~~~~~~~~~~~
 
+.. autosummary::
+   :toctree: reference/
 
+   pp.alleles_to_characters
+   pp.to_allele_table
+   pp.run
+   pp.read_molecules
 
-Data Utilities
-~~~~~~~~~~~~~~~~~~~
+QC metrics and plots
+~~~~~~~~~~~~~~~~~~~~
 
-We also have several functions that are useful for converting between data formats for downstream analyses:
+.. autosummary::
+   :toctree: reference/
+
+   pp.qc.cell_metrics
+   pp.qc.molecule_metrics
+   pp.plot_umi_reads
+   pp.plot_intbc_detection
+   pp.plot_integrations
+   pp.plot_clone_intbc_heatmap
+   pp.plot_doublet_scores
+   pp.plot_edit_frequency
+
+Data utilities
+~~~~~~~~~~~~~~
+
+Converters for legacy allele tables (see :func:`~cassiopeia.pp.to_allele_table`):
 
 .. autosummary::
    :toctree: reference/

@@ -1,0 +1,70 @@
+# GESTALT v7 barcode (McKenna et al. 2016 Science; Raj et al. 2018 scGESTALT): ten
+# Cas9 target sites with a 27bp period and no integration barcode.
+name: gestalt
+description: GESTALT v7 barcode with ten Cas9 target sites and no intBC.
+reference:
+  fasta: gestalt_v7.fa
+intbc: null
+sites:
+- name: r1
+  position: 42
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r2
+  position: 69
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r3
+  position: 96
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r4
+  position: 123
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r5
+  position: 150
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r6
+  position: 177
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r7
+  position: 204
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r8
+  position: 231
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r9
+  position: 258
+  edit_model: indel
+  window:
+  - 4
+  - 4
+- name: r10
+  position: 285
+  edit_model: indel
+  window:
+  - 4
+  - 4
+defaults:
+  clones: single
