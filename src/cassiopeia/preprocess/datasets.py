@@ -77,7 +77,7 @@ DATASETS = {
     },
     "scgestalt_zf2": {
         "construct": "gestalt",
-        "layout": {"n_reads": 2, "cb": [(0, 0, 16)], "umi": [(0, 16, 22)], "cdna": (1, 0, None)},
+        "layout": "16C6U,T",
         "whitelist": None,
         "fastq": [f"{ENA}/SRR617/009/SRR6176749/SRR6176749.fastq.gz"],
         "convert": "scgestalt_names",
@@ -248,9 +248,9 @@ def fetch(name: str, n_cells: int = 300, keep_raw: bool = False) -> dict:
                         break
             kept = 0
         else:
-            from .layout import get_layout
+            from .layout import parse_layout
 
-            lay = get_layout(info["layout"])
+            lay = parse_layout(info["layout"])
             kept, n = _subset_10x(raw[0], raw[1], sub[0], sub[1], lay.cb_length, n_cells)
         logger.info(f"{name}: kept {kept} cells, {n:,} reads")
         if not keep_raw:

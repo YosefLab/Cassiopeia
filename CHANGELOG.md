@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning][].
     (KP-tracer, PEtracer) read counts match for 92-98% of molecules; most of the
     rest keep more reads, because the old collapse drops reads from UMIs in
     which no read sequence repeats. About 30x faster than the old pipeline.
+  - Read layouts are preset names (`10xv3`, `dropseq`, `slideseq2`, ...) or
+    pattern strings with one token per FASTQ, e.g. `16C12U,T` (`C` cell
+    barcode, `U` UMI, `X` skip, `T` target site); `pp.build_reference`
+    derives the matching STAR / STARsolo arguments from them.
   - `pp.call_alleles`: streaming BAM -> molecule table (pandas) that reads only
     the target-site contigs of indexed BAMs of any size.
   - Molecule-table steps that annotate rather than drop, each with a built-in

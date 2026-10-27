@@ -21,7 +21,7 @@ from .correct import correct_intbcs
 from .doublets import filter_doublets
 from .filter import filter_cells, filter_molecules
 from .integrations import filter_integrations
-from .layout import get_layout
+from .layout import parse_layout
 
 #: Steps run by :func:`run`, in order. Each can be configured (keyword
 #: arguments) or disabled (``false``) in the config.
@@ -54,7 +54,7 @@ EXAMPLE_CONFIG = """\
 construct: petracer            # preset name, YAML path, or inline mapping
 input:
   fastq: [sample_R1.fastq.gz, sample_R2.fastq.gz]   # -> pp.align
-  layout: 10xv3
+  layout: 10xv3                 # preset or pattern, e.g. 16C12U,T
   whitelist: 3M-february-2018.txt.gz
   # or, for STARsolo / Cell Ranger output:
   # bam: possorted_genome_bam.bam
@@ -161,7 +161,7 @@ def run(config: str | Path | dict):
             opts.setdefault("whitelist", inp["whitelist"])
         bam = opts.pop("output_bam", str(out_dir / f"{name}.aligned.bam"))
         align(inp["fastq"], bam, construct, n_threads=threads, **opts, **plot_args("align"))
-        lay = get_layout(opts["layout"])
+        lay = parse_layout(opts["layout"])
         ca_defaults = {"cb_tag": "CB" if lay.cb else None, "umi_tag": "UB" if lay.umi else None}
     else:
         bam = inp["bam"]

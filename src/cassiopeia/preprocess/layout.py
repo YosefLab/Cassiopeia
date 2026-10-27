@@ -1,31 +1,55 @@
-"""Read layouts (chemistries): where the cell barcode, UMI and cDNA are."""
+"""Read layouts: where the cell barcode, UMI and target-site sequence are in the reads.
+
+A layout is a preset name or a pattern string with one comma-separated token
+per FASTQ file, in read order. Each token lists fixed-length segments:
+
+* ``<n>C``: cell barcode bases (segments are joined in order)
+* ``<n>U``: UMI bases (joined in order)
+* ``<n>X``: bases to skip
+* ``T``: the target-site sequence (the rest of the read)
+
+A token ``X`` ignores the whole read, and exactly one ``T`` is required. For
+example ``"16C12U,T"`` is 10x 3' v3 (R1: 16 bp cell barcode + 12 bp UMI, R2:
+target site), ``"8C18X6C9U,T"`` Slide-seq v2, ``"8C,8C6U,T"`` inDrops v3 and
+``"T"`` a bulk amplicon.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass
 
 # A segment is (read index, start, end); end None = to the end of the read.
 Segment = tuple[int, int, int | None]
 
+_TENX_V3_WL = "3M-february-2018.txt.gz (10x 3' v3/v3.1)"
+# preset name -> (pattern, usual whitelist)
+PRESETS: dict[str, tuple[str, str]] = {
+    "10xv2": ("16C10U,T", "737K-august-2016.txt"),
+    "10xv3": ("16C12U,T", _TENX_V3_WL),
+    "10xv3.1": ("16C12U,T", _TENX_V3_WL),
+    "10xv4": ("16C12U,T", "3M-3pgex-may-2023.txt.gz (GEM-X 3' v4)"),
+    "10x5p": ("16C10U,T", "737K-august-2016.txt"),
+    "dropseq": ("12C8U,T", ""),
+    "indropsv3": ("8C,8C6U,T", ""),
+    "slideseq2": ("8C18X6C9U,T", ""),
+    "bulk": ("T", ""),
+    "bulk_umi10": ("10U,T", ""),
+}
 
-@dataclass
-class ReadLayout:
-    """Positions of the cell barcode, UMI and target-site sequence in the reads.
+_TOKEN = re.compile(r"(?:\d+[CUX])*T?")
+_UNIT = re.compile(r"(\d+)([CUX])|T")
 
-    Args:
-        name: Layout name.
-        n_reads: Number of FASTQ files per lane (e.g. 2 for R1/R2).
-        cb: Cell barcode segments (concatenated in order).
-        umi: UMI segments (concatenated in order).
-        cdna: Segment holding the target-site sequence.
-        whitelist_hint: Name of the usual barcode whitelist, for messages.
-    """
 
-    name: str
+@dataclass(frozen=True)
+class Layout:
+    """A parsed read layout (see the module docstring)."""
+
+    pattern: str
     n_reads: int
-    cb: list[Segment] = field(default_factory=list)
-    umi: list[Segment] = field(default_factory=list)
-    cdna: Segment = (1, 0, None)
+    cb: tuple[Segment, ...]
+    umi: tuple[Segment, ...]
+    cdna: Segment
     whitelist_hint: str = ""
 
     @property
@@ -47,45 +71,43 @@ class ReadLayout:
         }
 
 
-_TENX_V3_WL = "3M-february-2018.txt.gz (10x 3' v3/v3.1)"
+def parse_layout(layout: str) -> Layout:
+    """Parse a layout preset name (e.g. ``"10xv3"``) or pattern (e.g. ``"16C12U,T"``)."""
+    if not isinstance(layout, str):
+        raise TypeError(
+            f"layout must be a preset name or pattern string, not {type(layout).__name__}"
+        )
+    pattern, hint = PRESETS.get(layout.strip().lower(), (layout, ""))
+    tokens = [t.strip() for t in pattern.upper().split(",")]
 
-LAYOUTS: dict[str, ReadLayout] = {
-    "10xv2": ReadLayout(
-        "10xv2", 2, [(0, 0, 16)], [(0, 16, 26)], (1, 0, None), "737K-august-2016.txt"
-    ),
-    "10xv3": ReadLayout("10xv3", 2, [(0, 0, 16)], [(0, 16, 28)], (1, 0, None), _TENX_V3_WL),
-    "10xv3.1": ReadLayout("10xv3.1", 2, [(0, 0, 16)], [(0, 16, 28)], (1, 0, None), _TENX_V3_WL),
-    "10xv4": ReadLayout(
-        "10xv4",
-        2,
-        [(0, 0, 16)],
-        [(0, 16, 28)],
-        (1, 0, None),
-        "3M-3pgex-may-2023.txt.gz (GEM-X 3' v4)",
-    ),
-    "10x5p": ReadLayout(
-        "10x5p", 2, [(0, 0, 16)], [(0, 16, 26)], (1, 0, None), "737K-august-2016.txt"
-    ),
-    "dropseq": ReadLayout("dropseq", 2, [(0, 0, 12)], [(0, 12, 20)], (1, 0, None)),
-    "indropsv3": ReadLayout("indropsv3", 3, [(0, 0, 8), (1, 0, 8)], [(1, 8, 14)], (2, 0, None)),
-    "slideseq2": ReadLayout("slideseq2", 2, [(0, 0, 8), (0, 26, 32)], [(0, 32, 41)], (1, 0, None)),
-    "bulk": ReadLayout("bulk", 1, [], [], (0, 0, None)),
-    "bulk_umi10": ReadLayout("bulk_umi10", 2, [], [(0, 0, 10)], (1, 0, None)),
-}
+    def invalid(reason):
+        return ValueError(
+            f"Invalid layout {layout!r}: {reason}. Use a preset ({', '.join(PRESETS)}) or a "
+            "pattern with one token per FASTQ, e.g. '16C12U,T' (C cell barcode, U UMI, "
+            "X skip, T target site)."
+        )
 
-
-def get_layout(layout: str | ReadLayout | dict) -> ReadLayout:
-    """Get a :class:`ReadLayout` from a name, dict or layout."""
-    if isinstance(layout, ReadLayout):
-        return layout
-    if isinstance(layout, dict):
-        d = dict(layout)
-        d.setdefault("name", "custom")
-        d["cb"] = [tuple(s) for s in d.get("cb", [])]
-        d["umi"] = [tuple(s) for s in d.get("umi", [])]
-        d["cdna"] = tuple(d.get("cdna", (1, 0, None)))
-        return ReadLayout(**d)
-    key = str(layout).lower()
-    if key not in LAYOUTS:
-        raise ValueError(f"Unknown layout {layout!r}. Available: {', '.join(LAYOUTS)}.")
-    return LAYOUTS[key]
+    cb, umi, cdna = [], [], None
+    for r, tok in enumerate(tokens):
+        if tok == "X":
+            continue
+        if not tok or not _TOKEN.fullmatch(tok):
+            raise invalid(f"cannot parse {tok!r}")
+        pos = 0
+        for m in _UNIT.finditer(tok):
+            if m.group(0) == "T":
+                if cdna is not None:
+                    raise invalid("more than one T")
+                cdna = (r, pos, None)
+                continue
+            n = int(m.group(1))
+            if n == 0:
+                raise invalid("segment lengths must be positive")
+            if m.group(2) == "C":
+                cb.append((r, pos, pos + n))
+            elif m.group(2) == "U":
+                umi.append((r, pos, pos + n))
+            pos += n
+    if cdna is None:
+        raise invalid("no T (target-site sequence)")
+    return Layout(pattern.upper().replace(" ", ""), len(tokens), tuple(cb), tuple(umi), cdna, hint)

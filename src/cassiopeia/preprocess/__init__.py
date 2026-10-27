@@ -11,7 +11,6 @@ from .correct import correct_intbcs
 from .doublets import doublet_scores, filter_doublets
 from .filter import filter_cells, filter_molecules, gmm_threshold
 from .integrations import filter_integrations, integration_metrics
-from .layout import LAYOUTS, ReadLayout, get_layout
 from .pipeline import read_molecules, run
 from .plotting import (
     plot_clone_intbc_heatmap,
@@ -32,8 +31,6 @@ from .utilities import (
 
 __all__ = [
     "Construct",
-    "LAYOUTS",
-    "ReadLayout",
     "Site",
     "TapeArray",
     "align",
@@ -49,7 +46,6 @@ __all__ = [
     "filter_doublets",
     "filter_integrations",
     "filter_molecules",
-    "get_layout",
     "gmm_threshold",
     "integration_metrics",
     "list_presets",

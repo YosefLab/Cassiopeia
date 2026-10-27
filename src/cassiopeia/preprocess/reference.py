@@ -5,18 +5,40 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
-from .construct import Construct, load_construct
-from .layout import get_layout
+from cassiopeia.mixins import logger
 
-# STARsolo read-structure arguments per layout.
-_STARSOLO = {
-    "10xv2": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 10",
-    "10xv3": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12",
-    "10xv3.1": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12",
-    "10xv4": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12",
-    "10x5p": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 10",
-    "dropseq": "--soloType CB_UMI_Simple --soloCBstart 1 --soloCBlen 12 --soloUMIstart 13 --soloUMIlen 8",
-}
+from .construct import Construct, load_construct
+from .layout import Layout, parse_layout
+
+
+def _star_reads(lay: Layout, whitelist: str | None) -> tuple[str, str] | None:
+    """``--readFilesIn`` and STARsolo arguments for a layout (None if STARsolo cannot read it)."""
+    target = f"<R{lay.cdna[0] + 1}.fastq.gz>"
+    if not lay.cb and not lay.umi:  # bulk: plain STAR
+        return f"--readFilesIn {target}", ""
+    reads = {r for r, _, _ in lay.cb + lay.umi}
+    if not lay.cb or len(lay.umi) != 1 or len(reads) > 1 or lay.cdna[0] in reads:
+        return None
+    barcode = f"<R{reads.pop() + 1}.fastq.gz>"
+    (_, us, ue) = lay.umi[0]
+    if len(lay.cb) == 1:
+        (_, cs, ce) = lay.cb[0]
+        solo = (
+            f"--soloType CB_UMI_Simple --soloCBstart {cs + 1} --soloCBlen {ce - cs} "
+            f"--soloUMIstart {us + 1} --soloUMIlen {ue - us} --soloBarcodeReadLength 0 "
+            f"--soloCBwhitelist {whitelist or '<whitelist>'} "
+            "--soloCBmatchWLtype 1MM_multi_Nbase_pseudocounts"
+        )
+    else:  # split barcode: one whitelist per segment
+        positions = " ".join(f"0_{s}_0_{e - 1}" for _, s, e in lay.cb)
+        whitelists = " ".join(f"<whitelist_{i + 1}>" for i in range(len(lay.cb)))
+        solo = (
+            f"--soloType CB_UMI_Complex --soloCBposition {positions} "
+            f"--soloUMIposition 0_{us}_0_{ue - 1} --soloCBwhitelist {whitelists} "
+            "--soloCBmatchWLtype 1MM"
+        )
+    solo += " --soloUMIdedup 1MM_Directional_UMItools --soloFeatures Gene"
+    return f"--readFilesIn {target} {barcode}", solo
 
 
 def build_reference(
@@ -37,12 +59,16 @@ def build_reference(
     Args:
         construct: Construct, preset name or YAML path.
         out_dir: Output directory.
-        layout: Read layout used to suggest the STARsolo command.
+        layout: Read layout (preset or pattern, see :func:`~cassiopeia.pp.align`)
+            used to suggest the STAR / STARsolo command.
         whitelist: Cell barcode whitelist path used in the suggested commands.
 
     Returns:
         Dict with ``fasta``, ``gtf`` paths and ``star_genome``, ``starsolo``,
-        ``cellranger_mkref`` command strings.
+        ``cellranger_mkref`` command strings. ``starsolo`` is a plain STAR
+        command for layouts without barcodes, and None when STARsolo cannot
+        read the layout (barcodes split over several reads or sharing the
+        target-site read).
     """
     c = load_construct(construct)
     out = Path(out_dir)
@@ -66,20 +92,24 @@ def build_reference(
         f"STAR --runMode genomeGenerate --genomeDir {genome_dir} --genomeFastaFiles {fasta} "
         f"--sjdbGTFfile {gtf} --genomeSAindexNbases {sa_bases} --sjdbOverhang 100"
     )
-    lay = get_layout(layout)
-    solo = _STARSOLO.get(
-        lay.name, "--soloType CB_UMI_Simple  # set --soloCBstart/len and --soloUMIstart/len"
-    )
-    wl = whitelist or "<whitelist>"
-    starsolo = (
-        f"STAR --genomeDir {genome_dir} --readFilesIn <R2.fastq.gz> <R1.fastq.gz> "
-        f"--readFilesCommand zcat {solo} --soloCBwhitelist {wl} "
-        "--soloCBmatchWLtype 1MM_multi_Nbase_pseudocounts --soloUMIdedup 1MM_Directional_UMItools "
-        "--soloFeatures Gene --outSAMtype BAM SortedByCoordinate "
-        "--outSAMattributes NH HI AS nM CR UR CB UB "
-        "--alignEndsType Local --outFilterScoreMinOverLread 0.3 "
-        "--outFilterMatchNminOverLread 0.3 --runThreadN 8 --outFileNamePrefix <prefix>"
-    )
+    lay = parse_layout(layout)
+    star = _star_reads(lay, whitelist)
+    starsolo = None
+    if star is None:
+        logger.warning(
+            f"STARsolo needs the cell barcode and UMI on one read other than the target-site "
+            f"read; layout {lay.pattern!r} can only be aligned with pp.align."
+        )
+    else:
+        reads, solo = star
+        attrs = "NH HI AS nM CR UR CB UB" if solo else "NH HI AS nM"
+        starsolo = (
+            f"STAR --genomeDir {genome_dir} {reads} --readFilesCommand zcat "
+            + (f"{solo} " if solo else "")
+            + f"--outSAMtype BAM SortedByCoordinate --outSAMattributes {attrs} "
+            "--alignEndsType Local --outFilterScoreMinOverLread 0.3 "
+            "--outFilterMatchNminOverLread 0.3 --runThreadN 8 --outFileNamePrefix <prefix>"
+        )
     mkref = f"cellranger mkref --genome={c.name} --fasta={fasta} --genes={gtf}"
     return {
         "fasta": str(fasta),

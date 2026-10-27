@@ -15,7 +15,7 @@ from cassiopeia.mixins import PreprocessError, logger
 from . import _native
 from ._utils import default_threads, finish_plot
 from .construct import Construct, load_construct
-from .layout import ReadLayout, get_layout
+from .layout import parse_layout
 
 
 def _lanes(fastqs, n_reads: int) -> list[list[str]]:
@@ -44,7 +44,7 @@ def align(
     output_bam: str | Path,
     construct: Construct | str,
     *,
-    layout: str | ReadLayout | dict = "10xv3",
+    layout: str = "10xv3",
     whitelist: str | Path | None = None,
     cb_translation: str | Path | None = None,
     min_bc_qual: int = 10,
@@ -96,8 +96,13 @@ def align(
             flat list for several lanes, or a list of lanes.
         output_bam: Output BAM path.
         construct: Construct, preset name or YAML path.
-        layout: Read layout name (``"10xv3"``, ``"10xv2"``, ``"indropsv3"``,
-            ``"slideseq2"``, ``"dropseq"``, ``"bulk"``, ...) or definition.
+        layout: Where the cell barcode, UMI and target site are in the reads:
+            a preset (``"10xv3"``, ``"10xv2"``, ``"10xv4"``, ``"10x5p"``,
+            ``"dropseq"``, ``"indropsv3"``, ``"slideseq2"``, ``"bulk"``,
+            ``"bulk_umi10"``) or a pattern with one comma-separated token per
+            FASTQ: ``<n>C`` cell barcode, ``<n>U`` UMI, ``<n>X`` skipped bases
+            and ``T`` the target site (rest of the read). For example
+            ``"16C12U,T"`` (10x 3' v3) or ``"8C18X6C9U,T"`` (Slide-seq v2).
         whitelist: Cell barcode whitelist (plain or gzipped). Without one,
             cell barcodes are not corrected.
         cb_translation: Two-column barcode translation table (reported
@@ -136,7 +141,7 @@ def align(
     """
     t0 = time.time()
     c = load_construct(construct)
-    lay = get_layout(layout)
+    lay = parse_layout(layout)
     lanes = _lanes(fastqs, lay.n_reads)
     if lay.cb and whitelist is None and cb_translation is None:
         logger.warning(
@@ -146,7 +151,7 @@ def align(
     output_bam = str(output_bam)
     Path(output_bam).parent.mkdir(parents=True, exist_ok=True)
     params = {
-        "layout": lay.name,
+        "layout": lay.pattern,
         "dedup": dedup,
         "method": method,
         "umi_max_dist": umi_max_dist,
