@@ -83,3 +83,4 @@ incomplete capture.
    sim.sample_uniform
    sim.sample_spatial
    sim.sample_supercellular
+   sim.sample_timepoints
