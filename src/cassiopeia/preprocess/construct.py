@@ -41,8 +41,8 @@ class Site:
         position: 0-based reference coordinate of the cut / insertion point.
         edit_model: Kind of edits recorded at this site:
 
-            * ``"indel"`` - Cas9 indels (Cassiopeia, KP-tracer, GESTALT).
-              Alleles are reported as legacy indel strings, e.g.
+            * ``"indel"`` - Cas9 indels (Weissman, GESTALT).
+              Alleles are reported as indel strings, e.g.
               ``"ATCGA[112:3D]TTAGC"`` or ``"ATCGA[None]TTAGC"`` if unedited.
             * ``"insertion_lookup"`` - prime-editing insertions of known
               sequences (PEtracer). Insertions found in ``lookup`` are
@@ -328,7 +328,109 @@ def list_presets() -> list[str]:
 
 
 def load_construct(construct: Construct | str | Path | dict) -> Construct:
-    """Get a :class:`Construct` from an object, preset name, YAML path or dict."""
+    """Load a target-site construct from a preset, YAML file or dict.
+
+    A construct describes the target site as it appears in the reads: the
+    reference sequence, the position of the integration barcode (intBC), and the
+    edit sites with the kind of edits each one records. Every ``pp`` function
+    with a ``construct`` argument accepts the same values and passes them
+    through this function.
+
+    ``construct`` can be:
+
+    * A preset name (see :func:`~cassiopeia.pp.list_presets`):
+
+      * ``"weissman"``: the Weissman lab Cas9 target site (PCT48) used by
+        Cassiopeia and KP-tracer; 14 bp intBC and three cut sites.
+      * ``"gestalt"``: the GESTALT v7 barcode; ten Cas9 sites, no intBC.
+      * ``"petracer"``: the PEtracer lineage tracing cassette; 30 bp intBC
+        and three prime-editing sites with eight insertions each.
+      * ``"typewriter"``: DNA Typewriter TargetBC-5xTAPE-1; five sequential
+        insertion slots.
+      * ``"baseline"``: the BASELINE base-editing recorder; 50 A>G sites, with
+        the integration ID as intBC. ``"baseline_array"`` is the same array
+        without the integration ID, for genomic DNA amplicons.
+
+    * A path to a YAML file (``.yaml`` or ``.yml``) with the fields below.
+    * A dict with the same fields.
+    * A :class:`~cassiopeia.pp.Construct`, returned as is.
+
+    The fields (see :class:`~cassiopeia.pp.Construct`):
+
+    * ``name``: construct name; also the contig name in the reference written
+      by :func:`~cassiopeia.pp.build_reference`.
+    * ``reference``: the target-site sequence as it appears in the reads, or a
+      FASTA: ``{fasta: path, contig: record, mask: [[start, end], ...]}``.
+      ``contig`` defaults to the first record and ``mask`` replaces intervals
+      with N (e.g. the intBC). FASTA paths are relative to the YAML file, or
+      to the working directory for dicts.
+    * ``intbc``: ``auto`` (default: the single run of N in the reference),
+      ``[start, end]``, or ``null`` for constructs without an intBC.
+    * ``sites``: the edit sites, each with a ``name`` (its column in the
+      allele table), a ``position`` (cut or insertion point), an
+      ``edit_model`` (``indel``, ``insertion_lookup``,
+      ``sequential_insertion`` or ``substitution``) and that model's options;
+      see :class:`~cassiopeia.pp.Site`.
+    * Optional: ``description``; ``contig_pattern``, for BAMs with one contig
+      per known intBC; ``array``, for ``sequential_insertion`` sites (see
+      :class:`~cassiopeia.pp.TapeArray`).
+
+    Coordinates are 0-based positions in the reference, and intervals exclude
+    their end.
+
+    Args:
+        construct: Preset name, YAML path, dict or
+            :class:`~cassiopeia.pp.Construct`.
+
+    Returns:
+        The construct.
+
+    Raises:
+        ValueError: If ``construct`` is neither a preset nor an existing YAML
+            file, or if the description is invalid (e.g. a site outside the
+            reference).
+
+    Examples:
+        Load a preset::
+
+            construct = cas.pp.load_construct("weissman")
+            construct  # Construct('weissman', 750bp, intBC=(20, 34), 3 sites [indel])
+
+        Describe a custom Cas9 target site in ``my_target.yaml``. The intBC
+        (bases 20-34) is masked in the reference, and each site collects the
+        indels within 12 bases of its cut site:
+
+        .. code-block:: yaml
+
+            name: my_target
+            reference:
+              fasta: my_target.fa
+              mask: [[20, 34]]
+            sites:
+              - {name: r1, position: 112, edit_model: indel, window: [12, 12]}
+              - {name: r2, position: 166, edit_model: indel, window: [12, 12]}
+              - {name: r3, position: 220, edit_model: indel, window: [12, 12]}
+
+        Load it, or pass the path to any ``pp`` function::
+
+            construct = cas.pp.load_construct("my_target.yaml")
+            cas.pp.align(["R1.fastq.gz", "R2.fastq.gz"], "aligned.bam", "my_target.yaml")
+
+        The same construct as a dict (``window`` defaults to 12 bases on each
+        side for indel sites)::
+
+            construct = cas.pp.load_construct(
+                {
+                    "name": "my_target",
+                    "reference": {"fasta": "my_target.fa", "mask": [[20, 34]]},
+                    "sites": [
+                        {"name": "r1", "position": 112, "edit_model": "indel"},
+                        {"name": "r2", "position": 166, "edit_model": "indel"},
+                        {"name": "r3", "position": 220, "edit_model": "indel"},
+                    ],
+                }
+            )
+    """
     if isinstance(construct, Construct):
         return construct
     if isinstance(construct, dict):

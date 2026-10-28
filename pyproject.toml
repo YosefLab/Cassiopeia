@@ -63,6 +63,7 @@ optional-dependencies.doc = [
   "nbsphinx",
   "pandas",
   "pandoc",
+  "pycea-lineage>=0.4", # imported as pycea; requires Python >= 3.11
   "scanpydoc",
   "setuptools",
   "sphinx>=8.1",

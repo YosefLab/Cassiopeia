@@ -56,11 +56,11 @@ def build_reference(
     genome FASTA/GTF to align gene expression and target-site reads together,
     or use them alone for target-site libraries.
 
-    STARsolo and Cell Ranger are recommended for insertion and substitution
+    STARsolo and Cell Ranger can be a fast option for insertion and substitution
     recorders (PEtracer, DNA Typewriter, BASELINE). For Cas9 indel recorders
-    (``indel`` sites: Cassiopeia / KP-tracer, GESTALT) use
-    :func:`~cassiopeia.pp.align`: STAR cannot align reads across large
-    deletions, so the most edited molecules are lost or soft-clipped.
+    (``indel`` sites: Weissman, GESTALT) use :func:`~cassiopeia.pp.align`
+    or another custom aligner, since STAR has trouble aligning reads across
+    large deletions.
 
     Args:
         construct: Construct, preset name or YAML path.

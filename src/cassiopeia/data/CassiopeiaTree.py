@@ -2328,6 +2328,11 @@ class CassiopeiaTree:
                 value = getattr(self, key, None)
                 if value is not None:
                     uns[name_mapping.get(key, key)] = copy.deepcopy(value)
+            if self.priors:
+                from cassiopeia.utils import _format_priors
+
+                # The stored form (string keys), so the TreeData can be written.
+                uns["priors"] = _format_priors(self.priors)
             uns["converted_from"] = "CassiopeiaTree"
 
         return TreeData(

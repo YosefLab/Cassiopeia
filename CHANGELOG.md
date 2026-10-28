@@ -60,7 +60,9 @@ and this project adheres to [Semantic Versioning][].
     ambiguous states such as `("1", "2")` with `allow_ambiguous=True`.
   - `pp.plot_edit_frequency` plots edit, unedited and missing frequencies per
     character (optionally by edit) or the most frequent edits.
-  - `pp.run` / `cassiopeia-preprocess run config.yaml` run the full pipeline.
+  - `pp.run` / `cassiopeia-preprocess run config.yaml` run the pipeline from
+    reads to the filtered allele table, saved as parquet; build the character
+    matrix from it with `pp.alleles_to_characters`.
 
 ### Changed
 
@@ -78,10 +80,25 @@ and this project adheres to [Semantic Versioning][].
   `pp.convert_character_matrix_to_allele_table`) are removed;
   `pp.compute_empirical_indel_priors` is renamed `pp.compute_indel_priors` and
   also accepts the allele table and character matrices (TreeData or
-  DataFrame). `ngs-tools`, `hits` and `pyseq-align` are no longer
+  DataFrame); for a TreeData it stores the priors in `uns["priors"]`, where
+  the solvers use them. `ngs-tools`, `hits` and `pyseq-align` are no longer
   dependencies; `pysam>=0.22` and `pyarrow` are.
-- Priors stored in `tdata.uns["priors"]` with string keys (as written by h5ad/h5td)
-  are converted back to integers by the solvers.
+- Priors are handled the same way across the package:
+  - `tdata.uns["priors"]` is stored as `{"<character index>": {"<state>": p}}`
+    with string keys, because h5ad/h5td files cannot store integer keys or
+    lists of dicts. `sim.stochastic_tracing` (previously a list of dicts),
+    `pp.compute_indel_priors` and `CassiopeiaTree.to_treedata` (previously
+    integer keys) write this form.
+  - Every function with a `priors` argument (the solvers,
+    `dissimilarity.pairwise`, `sim.noise`) takes `None` (stored priors if
+    present), `True` (stored priors, required), `False` (none), or priors as a
+    dict with integer or string keys or a list of per-character dicts.
+    `sim.noise` now uses stored priors (before, it always imputed them unless
+    given) and imputes them with `priors=False`. `tl.calculate_likelihood`
+    accepts any of these stored forms.
+  - Prior states are matched to the character matrix's own values, so string
+    states such as `"1"` are no longer turned into integers. Malformed priors
+    raise a `ValueError`.
 - Pairwise dissimilarities with priors encode string character matrices (e.g.
   `"*"` / `"-"` / `"1"`) to integers, so they use the fast numba path.
 - `cassiopeia.mixins.logger` no longer depends on `ngs-tools`.

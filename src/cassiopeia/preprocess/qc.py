@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from cassiopeia.mixins import PreprocessError
+from cassiopeia.utils import _format_priors
 
 from ._utils import CELL_PASS as _CELL_PASS
 from ._utils import SINGLE_CLONE, passing, row_passing, site_columns, umi_counts
@@ -82,9 +83,8 @@ def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
     intBCs are counted over the rows that pass the row-level filters run so
     far (:func:`~cassiopeia.pp.correct_intbcs` with a whitelist,
     :func:`~cassiopeia.pp.filter_alleles`,
-    :func:`~cassiopeia.pp.filter_integrations`), including minor alleles
-    removed by :func:`~cassiopeia.pp.filter_alleles`; cell-level filters do
-    not change them. Columns appear once the step that computes them has run:
+    :func:`~cassiopeia.pp.filter_integrations`); cell-level filters do not
+    change them. Columns appear once the step that computes them has run:
 
     * ``n_umis``: UMIs (molecules) in the cell.
     * ``n_reads``: reads supporting those UMIs.
@@ -242,6 +242,35 @@ def _character_intbc(name: str) -> str:
     return name.rsplit("-", 1)[0] if "-" in name else name
 
 
+def _allele_lookup(meta) -> dict[tuple[str, str], str]:
+    """``(character, state) -> allele`` from ``character_states`` (empty if absent)."""
+    states = pd.DataFrame(meta.get("character_states", {}))
+    if not len(states):
+        return {}
+    keys = zip(states["character"].astype(str), states["state"].astype(str), strict=True)
+    return dict(zip(keys, states["allele"].astype(str), strict=True))
+
+
+def _state_priors(tdata, characters_key: str, freq: pd.Series) -> dict[int, dict[str, float]]:
+    """Priors ``{character index: {state: probability}}``; a state's is its allele's frequency."""
+    chars = tdata.obsm[characters_key]
+    skip = {str(tdata.uns.get("missing_state", -1)), str(tdata.uns.get("unmodified_state", 0))}
+    allele_of = _allele_lookup(tdata.uns)
+    freq = freq.to_dict()
+    priors = {}
+    for i, name in enumerate(chars.columns):
+        states = {}
+        for v in pd.unique(chars[name].to_numpy()):
+            for s in v if isinstance(v, tuple) else (v,):
+                s = str(s)
+                p = None if s in skip else freq.get(allele_of.get((str(name), s), s))
+                if p is not None:
+                    states[s] = float(p)
+        if states:
+            priors[i] = states
+    return priors
+
+
 def _priors_from_characters(
     data, grouping_variables: list[str], characters_key: str
 ) -> tuple[dict[str, int], int]:
@@ -252,16 +281,7 @@ def _priors_from_characters(
         chars, meta, obs = data, data.attrs, None
     missing = str(meta.get("missing_state", -1))
     unedited = str(meta.get("unmodified_state", 0))
-    states = pd.DataFrame(meta.get("character_states", {}))
-    allele_of = {}
-    if len(states):
-        allele_of = dict(
-            zip(
-                zip(states["character"].astype(str), states["state"].astype(str), strict=True),
-                states["allele"].astype(str),
-                strict=True,
-            )
-        )
+    allele_of = _allele_lookup(meta)
     by = [g for g in grouping_variables if g != "intBC"]
     if by:
         if obs is None or any(g not in obs.columns for g in by):
@@ -315,6 +335,11 @@ def compute_indel_priors(
     character is taken from its name (``{intBC}-{site}``), and grouping
     variables other than ``"intBC"`` are columns of ``tdata.obs``.
 
+    For a TreeData, the priors are also stored in ``tdata.uns["priors"]`` as
+    ``{character index: {state: probability}}``, the probability of a state
+    being the frequency of its indel. The solvers (e.g.
+    :func:`cassiopeia.solver.greedy`) use them by default.
+
     Args:
         data: Allele table (rows passing all filters are used), legacy allele
             table, or character matrix (TreeData or DataFrame).
@@ -353,4 +378,6 @@ def compute_indel_priors(
     out = pd.DataFrame({"count": pd.Series(counts, dtype=int)})
     out["freq"] = out["count"] / max(n_groups, 1)
     out.index.name = "indel"
+    if hasattr(data, "obsm"):
+        data.uns["priors"] = _format_priors(_state_priors(data, characters_key, out["freq"]))
     return out

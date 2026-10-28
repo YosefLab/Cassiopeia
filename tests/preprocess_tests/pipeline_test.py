@@ -1,8 +1,6 @@
 """Tests for pp.run and the cassiopeia-preprocess command line."""
 
-import pandas as pd
 import pytest
-import treedata as td
 import yaml
 
 import cassiopeia as cas
@@ -14,16 +12,16 @@ def test_run_from_fastq(sim_factory, tmp_path):
     cfg = {
         "construct": "petracer",
         "input": {"fastq": sim.fastqs, "layout": "10xv3", "whitelist": sim.whitelist},
-        "output": {"dir": str(tmp_path / "out"), "name": "s1", "plots": True, "checkpoint": True},
+        "output": {"dir": str(tmp_path / "out"), "name": "s1", "plots": True},
         "threads": 2,
         "call_alleles": {"min_reads_per_umi": 1},
         "filter_alleles": {"min_umi_per_allele": 2},
         "filter_cells": {"min_umi": 5},
     }
-    tdata = cas.pp.run(cfg)
+    df = cas.pp.run(cfg)
     out = tmp_path / "out"
-    assert (out / "s1.h5td").exists() and (out / "s1.aligned.bam").exists()
-    assert (out / "s1.alleles.parquet").exists() and (out / "s1.cells.csv").exists()
+    assert (out / "s1.aligned.bam").exists() and (out / "s1.cells.csv").exists()
+    assert not list(out.glob("*.h5td"))
     assert {p.name for p in (out / "qc").iterdir()} >= {
         "align.png",
         "call_alleles.png",
@@ -33,12 +31,13 @@ def test_run_from_fastq(sim_factory, tmp_path):
         "filter_doublets.png",
     }
     assert "call_clones.png" not in {p.name for p in (out / "qc").iterdir()}
-    # UMIs are collapsed into alleles while reading the BAM
+    # the pipeline ends at the allele table (UMIs collapsed into alleles), saved as parquet
     alleles = cas.pp.read_alleles(out / "s1.alleles.parquet")
+    assert alleles.shape == df.shape and alleles.attrs["qc_params"] == df.attrs["qc_params"]
+    assert (alleles["pass"].to_numpy() == df["pass"].to_numpy()).all()
     assert "n_umis" in alleles.columns and "UMI" not in alleles.columns
-    assert "clone" not in alleles.columns
-    t2 = td.read_h5td(out / "s1.h5td")
-    assert t2.obsm["characters"].shape == tdata.obsm["characters"].shape
+    assert "clone" not in alleles.columns and "pass_doublet" in alleles.columns
+    tdata = cas.pp.alleles_to_characters(alleles)
     assert tdata.n_obs > 0.7 * (~sim.cells["doublet"]).sum()
 
 
@@ -53,21 +52,16 @@ def test_run_from_bam_yaml(sim_factory, tmp_path):
         "filter_cells": {"min_umi": 5},
         "filter_integrations": {"max_conflict": 1.0},
         "filter_doublets": False,
-        "alleles_to_characters": {"allow_ambiguous": True, "mapping": "int"},
     }
     path = tmp_path / "cfg.yaml"
     path.write_text(yaml.safe_dump(cfg))
-    tdata = cas.pp.run(path)
-    assert "pass_doublet" not in tdata.obs.columns
+    cas.pp.run(path)
+    df = cas.pp.read_alleles(tmp_path / "out" / "weissman.alleles.parquet")
+    assert "pass_doublet" not in df.columns
+    # conflicting alleles are kept, so the characters have ambiguous states
+    tdata = cas.pp.alleles_to_characters(df, allow_ambiguous=True, mapping="int")
     chars = tdata.obsm["characters"]
-    ambiguous = chars.map(lambda v: isinstance(v, tuple)).to_numpy()
-    assert chars.shape[1] > 0 and ambiguous.any()
-    # the h5td stores ambiguous states as missing; the full matrix is pickled
-    out = tmp_path / "out"
-    full = pd.read_pickle(out / "weissman.characters.pkl")
-    pd.testing.assert_frame_equal(full, chars)
-    stored = td.read_h5td(out / "weissman.h5td").obsm["characters"]
-    assert (stored.to_numpy()[ambiguous] == -1).all()
+    assert chars.shape[1] > 0 and chars.map(lambda v: isinstance(v, tuple)).to_numpy().any()
 
 
 def test_config_errors():
@@ -77,6 +71,8 @@ def test_config_errors():
         cas.pp.run({"construct": "weissman", "input": {}})
     with pytest.raises(Exception, match="Unknown config keys"):
         cas.pp.run({"construct": "weissman", "input": {"bam": "x"}, "typo_step": {}})
+    with pytest.raises(Exception, match="ends at the allele table"):
+        cas.pp.run({"construct": "weissman", "input": {"bam": "x"}, "alleles_to_characters": {}})
 
 
 def test_cli(sim_factory, tmp_path, capsys):

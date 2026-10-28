@@ -83,19 +83,15 @@ SINGLE_CLONE = "0"
 #: Cell-level ``pass_*`` columns; the others are row-level.
 CELL_PASS = ("pass_min_umi", "pass_intbc_frac", "pass_clone", "pass_doublet")
 
-#: ``pass_*`` columns that choose among the alleles of a (cell, intBC). Cell,
-#: intBC and conflict statistics (UMI counts, clones, integrations, doublets)
-#: ignore them, so minor alleles still count there.
+#: ``pass_*`` columns that choose among the alleles of a (cell, intBC). Only the
+#: conflict statistics of filter_integrations and filter_doublets ignore them,
+#: so minor alleles count as conflict evidence there and nowhere else.
 ALLELE_PASS = ("pass_allele_frac", "pass_allele_conflict")
 
 
 def row_passing(df: pd.DataFrame) -> pd.DataFrame:
-    """Rows passing the row-level quality filters (cell flags and allele choice ignored)."""
-    cols = [
-        c
-        for c in df.columns
-        if c.startswith("pass_") and c not in CELL_PASS and c not in ALLELE_PASS
-    ]
+    """Rows passing the row-level filters (cell-level flags ignored)."""
+    cols = [c for c in df.columns if c.startswith("pass_") and c not in CELL_PASS]
     if cols:
         return df[df[cols].all(axis=1).to_numpy()]
     return df

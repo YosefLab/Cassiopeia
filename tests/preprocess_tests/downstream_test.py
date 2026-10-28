@@ -6,6 +6,7 @@ import pytest
 import treedata as td
 
 import cassiopeia as cas
+from cassiopeia.preprocess.clones import intbc_table
 
 from .conftest import requires_nova
 
@@ -132,9 +133,9 @@ def test_filters_annotate(sim_factory):
     both = cas.pp.filter_alleles(df, min_allele_frac=0.2, allow_allele_conflicts=True, plot=False)
     assert both["pass_allele_conflict"].all()
     assert both["pass"].sum() == (cand.shape[0])
-    # minor alleles still count towards the cell's UMIs
-    quality = low["pass_umis_per_allele"] & low["pass_avg_reads_per_umi"]
-    assert cas.pp.cell_metrics(low)["n_umis"].sum() == quality.sum()
+    # minor alleles count neither towards the cell's UMIs nor for clone calling
+    assert cas.pp.cell_metrics(low)["n_umis"].sum() == low["pass"].sum()
+    assert intbc_table(low)["UMI_count"].sum() == low["pass"].sum()
     # collapsed tables give the same result
     col = cas.pp.collapse_umis(df, plot=False)
     for kw in ({"min_avg_reads_per_umi": 4}, {"min_allele_frac": 0.2}):
@@ -211,6 +212,11 @@ def test_user_clones(sim_factory):
     df = cas.pp.call_clones(df, clones=clones)
     df = cas.pp.filter_integrations(df)
     df = cas.pp.filter_doublets(df)
+    # cells flagged as doublets are left out of the integration metrics
+    assert (~df["pass_doublet"]).any()
+    with_doublets = cas.pp.integration_metrics(df.assign(pass_doublet=True))
+    without = cas.pp.integration_metrics(df)
+    assert without["clone_cells"].sum() < with_doublets["clone_cells"].sum()
     assert df.attrs["qc_params"]["clone_method"] == "user"
     assert len(df.attrs["clone_intbcs"]) >= 3
     assert "doublet_clone_mixture" in df.columns
@@ -301,7 +307,7 @@ def test_ambiguous_characters(sim_factory):
     assert isinstance(v, tuple) and all(isinstance(x, str) for x in v)
 
 
-def test_compute_indel_priors(sim_factory):
+def test_compute_indel_priors(sim_factory, tmp_path):
     sim = sim_factory("weissman", "single")
     df = _process(sim)
     priors = cas.pp.compute_indel_priors(df)
@@ -313,6 +319,19 @@ def test_compute_indel_priors(sim_factory):
     for mapping in ("str", "int", "allele"):
         tdata = cas.pp.alleles_to_characters(df, mapping=mapping)
         results.append(cas.pp.compute_indel_priors(tdata).sort_index())
+        # TreeData input: priors per character index and state, for the solvers
+        chars, stored = tdata.obsm["characters"], tdata.uns["priors"]
+        st = tdata.uns["character_states"]
+        keys = zip(st["character"], st["state"].astype(str), strict=True)
+        allele = dict(zip(keys, st["allele"], strict=True))
+        assert stored and all(isinstance(s, str) for d in stored.values() for s in d)
+        for i, states in stored.items():
+            name = chars.columns[int(i)]
+            assert set(states) == {str(s) for s in chars[name].unique()} - {"*", "-", "0", "-1"}
+            for s, p in states.items():
+                assert p == results[-1].loc[allele.get((name, s), s), "freq"]
+        tdata.write_h5td(tmp_path / f"{mapping}.h5td")
+        cas.solver.greedy(td.read_h5td(tmp_path / f"{mapping}.h5td"), priors=True)
     chars = cas.pp.alleles_to_characters(df, return_type="dataframe")
     results.append(cas.pp.compute_indel_priors(chars).sort_index())
     for r in results[1:]:

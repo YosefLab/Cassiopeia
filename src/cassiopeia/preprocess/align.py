@@ -66,10 +66,9 @@ def align(
 ) -> dict:
     r"""Align target-site reads and write a deduplicated, CB/UB-tagged BAM.
 
-    A self-contained alternative to STARsolo / Cell Ranger for target-site
-    libraries that reproduces the legacy Cassiopeia alignment. Use it for Cas9
-    indel recorders, whose large deletions STAR cannot align across. Steps,
-    all in one streaming pass with no intermediate files:
+    A self-contained Smith-Waterman aligner offering greater accuracy
+    than STARsolo / Cell Ranger for target sites with large indels. Alignment
+    is performed in one streaming pass with no intermediate files:
 
     1. Parse the cell barcode, UMI and target-site read from the FASTQs
        (``layout``); drop reads with N or low-quality barcode/UMI bases.
@@ -79,11 +78,11 @@ def align(
     4. Merge molecules that now share a cell barcode and UMI, then correct
        UMIs within each cell (directional, as in UMI-tools / STARsolo).
     5. Deduplicate: one consensus sequence per UMI (``dedup="umi"``) or one
-       record per distinct sequence (``dedup="sequence"``). As in the legacy
-       collapse, a UMI's reads are clustered around its most common sequence
-       (``max_mismatches``) and smaller clusters are merged into the biggest
-       when an alignment shows at most ``max_indels`` gap bases, so reads with
-       a sequencing indel still count towards their UMI.
+       record per distinct sequence (``dedup="sequence"``). Each UMI's reads
+       are clustered around its most common sequence (``max_mismatches``) and
+       smaller clusters are merged into the biggest when an alignment shows
+       at most ``max_indels`` gap bases, so reads with a sequencing indel
+       still count towards their UMI.
     6. Smith-Waterman (or global) alignment of each distinct sequence to the
        construct reference, with legacy scoring by default.
     7. Write a coordinate-sorted, indexed BAM. Tags: ``CB``, ``UB``, ``ZR``
@@ -91,8 +90,7 @@ def align(
        and ``AS`` (alignment score).
 
     Libraries captured with 10x 3' v3 Feature Barcoding (capture sequences)
-    carry the feature-barcode version of each cell barcode. The usual
-    whitelist contains both versions, so correction works as is; relabel the
+    carry the feature-barcode version of each cell barcode. Relabel the
     cells afterwards with Cell Ranger's translation table to match the gene
     expression library::
 

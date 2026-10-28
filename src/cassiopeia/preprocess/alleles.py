@@ -173,7 +173,7 @@ def call_alleles(
 
     Works with BAMs from :func:`cassiopeia.pp.align`, STARsolo and Cell Ranger
     (the latter two are recommended only for insertion and substitution
-    recorders; see :func:`cassiopeia.pp.build_reference`).
+    recorders).
     Reads are streamed, so BAMs of any size can be processed; with an index,
     only the construct contigs are read. For each read the intBC is read from
     the bases aligned to the masked intBC (or from the contig name) and every

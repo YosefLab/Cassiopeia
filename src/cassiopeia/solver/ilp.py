@@ -412,7 +412,7 @@ def ilp(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _resolve_priors(tdata, priors)
+    priors = _resolve_priors(tdata, priors, character_matrix)
 
     if weighted and not priors:
         raise ILPSolverError("Specify prior probabilities for weighted analysis.")

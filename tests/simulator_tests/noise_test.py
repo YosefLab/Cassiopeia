@@ -67,6 +67,28 @@ def test_copy_leaves_input_untouched(char_tdata):
     assert not np.array_equal(_as_str(out.obsm["characters"]), before)
 
 
+def test_stored_priors_are_used(char_tdata):
+    # String keys, as read back from an h5td file: every called site becomes "2"
+    char_tdata.uns["priors"] = {str(i): {"2": 1.0} for i in range(3)}
+    noise(char_tdata, error_rate=1.0, random_seed=0)
+    after = _as_str(char_tdata.obsm["characters"])
+    assert set(np.unique(after)) == {"2", "-"} and (after == "-").sum() == 2
+
+
+def test_priors_argument(char_tdata):
+    # False ignores the stored priors and imputes them from the matrix
+    char_tdata.uns["priors"] = {str(i): {"2": 1.0} for i in range(3)}
+    noise(char_tdata, error_rate=1.0, priors=False, random_seed=0, key_added="imputed")
+    assert set(np.unique(_as_str(char_tdata.obsm["imputed"]))) != {"2", "-"}
+    # explicit priors (integer keys) are used directly
+    noise(char_tdata, error_rate=1.0, priors={i: {"1": 1.0} for i in range(3)}, key_added="ones")
+    assert set(np.unique(_as_str(char_tdata.obsm["ones"]))) == {"1", "-"}
+    # True requires stored priors
+    del char_tdata.uns["priors"]
+    with pytest.raises(ValueError, match="priors=True"):
+        noise(char_tdata, error_rate=1.0, priors=True)
+
+
 def test_imputed_priors_when_none_available(char_tdata):
     # Remove uns priors so noise must impute from the matrix.
     del char_tdata.uns["priors"]

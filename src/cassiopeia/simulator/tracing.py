@@ -11,7 +11,13 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import DataSimulatorError
-from cassiopeia.utils import _get_digraph, _get_parameter, _normalize_missing
+from cassiopeia.utils import (
+    _format_priors,
+    _get_digraph,
+    _get_parameter,
+    _normalize_missing,
+    _resolve_priors,
+)
 
 
 def stochastic_tracing(
@@ -58,6 +64,9 @@ def stochastic_tracing(
       internal), positionally aligned with the ``obsm`` columns.
     * ``tdata.uns["cassette_size"]``, ``tdata.uns["unmodified_state"]``:
       stored for :func:`missing_data`.
+    * ``tdata.uns["priors"]``: the state priors of each character as
+      ``{character index: {state: probability}}``, used by the solvers. Keys
+      are strings so the TreeData can be written to h5td.
 
     Missing data (heritable dropout, stochastic silencing, resections) is
     handled separately — call :func:`missing_data` after this function.
@@ -226,7 +235,7 @@ def stochastic_tracing(
     tdata.uns["cassette_size"] = size_of_cassette
     tdata.uns["unmodified_state"] = unmodified_state
     tdata.uns["missing_state"] = "-"
-    tdata.uns["priors"] = priors_per_char
+    tdata.uns["priors"] = _format_priors(priors_per_char)
     tdata.uns[f"{key_added}_colors"] = _get_state_colors(
         all_states, custom={unmodified_state: "lightgray"}
     )
@@ -461,7 +470,7 @@ def missing_data(
 def noise(
     tdata: td.TreeData,
     error_rate: float = 0.0,
-    priors: dict | None = None,
+    priors: dict | list | bool | None = None,
     missing_state: str | None = None,
     key_added: str | None = None,
     random_seed: int | None = None,
@@ -482,15 +491,18 @@ def noise(
     (excluding the current state, with the remaining probabilities
     renormalized). Missing states are never altered and are never introduced.
 
-    Priors are not specified, they are imputed from the empirical per-character state
-    distribution of the matrix (excluding missing states). Priors are keyed by
-    the positional index of each character column.
+    Without priors (none given or stored, or ``priors=False``), they are
+    imputed from the empirical per-character state distribution of the matrix
+    (excluding missing states).
 
     Args:
         tdata: TreeData with a character matrix in ``tdata.obsm[characters_key]``.
         error_rate: Per-site probability that a called state is miscalled.
-        priors: Optional ``{char_index: {state: prob}}`` mapping. If ``None``,
-            falls back to ``tdata.uns["priors"]`` then to imputed priors.
+        priors: Priors for character states (``{character index: {state:
+            probability}}``). ``None`` (default) uses ``tdata.uns["priors"]`` if
+            present and otherwise imputes them; ``True`` requires stored priors
+            and raises if there are none; ``False`` imputes them; a dict (or a
+            list of per-character dicts) is used directly.
         missing_state: Value(s) indicating missing data. If ``None``, uses
             ``tdata.uns["missing_state"]`` (falling back to the package default).
         key_added: If ``None`` (default), overwrites ``tdata.obsm[characters_key]``
@@ -527,6 +539,7 @@ def noise(
     columns = list(matrix.columns)
     output_key = key_added if key_added is not None else characters_key
 
+    priors = _resolve_priors(tdata, priors, matrix)
     if priors is None:
         priors = _impute_priors(matrix, missing_set)
 

@@ -384,8 +384,6 @@ def plot_umi_reads(df: pd.DataFrame, ax=None, max_points: int = 100_000):
     (``min_allele_frac`` on the colorbar). Alleles with low fractions are drawn
     on top. Above ``max_points`` a random subset is drawn.
     """
-    from matplotlib.colors import LinearSegmentedColormap
-
     ax = _new_ax(ax)
     m = _allele_umis(df)
     x = np.clip(m["n_umis"].to_numpy(), 0.8, None)
@@ -396,12 +394,11 @@ def plot_umi_reads(df: pd.DataFrame, ax=None, max_points: int = 100_000):
     if idx is not None:
         x, y, frac = x[idx], y[idx], frac[idx]
     order = np.argsort(-frac, kind="stable")
-    cmap = LinearSegmentedColormap.from_list("allele_frac", SEQ[2:])
     sc = ax.scatter(
         x[order],
         y[order],
         c=frac[order],
-        cmap=cmap,
+        cmap="viridis",
         vmin=0,
         vmax=1,
         s=6 if len(x) > 5000 else 12,

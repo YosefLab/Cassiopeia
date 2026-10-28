@@ -21,10 +21,10 @@ def integration_metrics(
     """Per-integration (clone x intBC) QC metrics.
 
     Used by :func:`~cassiopeia.pp.filter_integrations`, which computes them on
-    rows passing the earlier filters (ignoring its own and the doublet
-    filter, and including minor alleles removed by
-    :func:`cassiopeia.pp.filter_alleles`). One row per clone and intBC seen
-    in the clone's cells:
+    rows passing the earlier filters (ignoring its own filter, and including
+    minor alleles removed by :func:`cassiopeia.pp.filter_alleles`), so cells
+    flagged by :func:`~cassiopeia.pp.filter_doublets` are excluded. One row per
+    clone and intBC seen in the clone's cells:
 
     * ``clone``, ``intBC``: the integration. Without a ``clone`` column all
       cells form one clone, ``"0"``.
@@ -48,7 +48,7 @@ def integration_metrics(
     Returns:
         DataFrame sorted by clone and decreasing detection.
     """
-    ignore = ["pass_integration", "pass_doublet", *ALLELE_PASS]
+    ignore = ["pass_integration", *ALLELE_PASS]
     d = passing(
         df.drop(columns=ignore, errors="ignore").assign(**{"pass": _pass_without(df, ignore)})
     )
@@ -102,10 +102,10 @@ def filter_integrations(
     cells with the intBC and ``conflict`` the fraction of those cells holding
     two incompatible alleles. Integrations are kept if
     ``detection >= min_detection`` and ``conflict <= max_conflict``, which
-    removes silenced or poorly captured integrations, duplicated
-    integrations sharing an intBC, and foreign intBCs (ambient RNA, doublets,
-    errors). Doublets are a minority of cells, so they barely change these
-    rates; doublet scoring then only uses the kept integrations.
+    removes silenced or poorly captured integrations, and duplicated
+    integrations sharing an intBC. The ``conflict`` rate can be inflated by
+    doublets; cells flagged by :func:`cassiopeia.pp.filter_doublets` are
+    excluded, so you may need to run it before this function.
 
     Without a ``clone`` column (no :func:`cassiopeia.pp.call_clones`), all
     cells form one clone, labelled ``"0"``, and this is the population intBC

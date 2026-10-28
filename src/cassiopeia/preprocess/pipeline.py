@@ -14,7 +14,6 @@ from cassiopeia.mixins import PreprocessError, logger
 
 from .align import align
 from .alleles import call_alleles
-from .characters import alleles_to_characters
 from .clones import call_clones
 from .construct import load_construct
 from .correct import correct_intbcs
@@ -22,6 +21,7 @@ from .doublets import filter_doublets
 from .filter import filter_alleles, filter_cells
 from .integrations import filter_integrations
 from .layout import parse_layout
+from .qc import cell_metrics
 
 #: Steps run by :func:`run`, in order. Each can be configured (keyword
 #: arguments) or disabled (``false``) in the config.
@@ -35,7 +35,6 @@ STEPS = [
     "filter_integrations",
     "filter_cells_coverage",
     "filter_doublets",
-    "alleles_to_characters",
 ]
 
 DEFAULTS: dict[str, Any] = {
@@ -47,7 +46,6 @@ DEFAULTS: dict[str, Any] = {
     "filter_integrations": {},
     "filter_cells_coverage": {"min_intbc_frac": 0.5},
     "filter_doublets": {},
-    "alleles_to_characters": {},
 }
 
 EXAMPLE_CONFIG = """\
@@ -64,7 +62,6 @@ output:
   dir: results/sample1
   name: sample1
   plots: true                  # save one QC figure per step to <dir>/qc/
-  checkpoint: true             # save the allele table as parquet
 threads: 8
 # Step options (keyword arguments of each pp function); `false` skips a step.
 align: {}
@@ -76,8 +73,9 @@ call_clones: {method: nova_clone}     # only for data with several clones (defau
 filter_integrations: {min_detection: 0.2, max_conflict: 0.2}
 filter_cells_coverage: {min_intbc_frac: 0.5}   # optional
 filter_doublets: {}
-alleles_to_characters: {}      # e.g. {mapping: int}; {allow_ambiguous: true} with
-                               # filter_alleles {allow_allele_conflicts: true}
+# The result is <dir>/<name>.alleles.parquet. Convert it to characters in Python:
+#   df = cas.pp.read_alleles("results/sample1/sample1.alleles.parquet")
+#   tdata = cas.pp.alleles_to_characters(df)
 """
 
 
@@ -101,6 +99,11 @@ def load_config(config: str | Path | dict) -> dict:
     if not inp.get("fastq") and not inp.get("bam"):
         raise PreprocessError("The config `input` needs `fastq` or `bam`.")
     unknown = set(cfg) - {"construct", "input", "output", "threads", *STEPS}
+    if "alleles_to_characters" in unknown:
+        raise PreprocessError(
+            "The pipeline ends at the allele table: remove `alleles_to_characters` from the "
+            "config and call pp.alleles_to_characters on the saved table."
+        )
     if unknown:
         raise PreprocessError(f"Unknown config keys: {sorted(unknown)}")
     return cfg
@@ -115,28 +118,80 @@ def _opts(cfg: dict, step: str) -> dict | None:
     return opts
 
 
-def run(config: str | Path | dict):
-    """Run the preprocessing pipeline.
+def run(config: str | Path | dict) -> pd.DataFrame:
+    """Run the preprocessing pipeline from a config, from reads to a filtered allele table.
 
-    FASTQ input goes through :func:`cassiopeia.pp.align`; BAM input (STARsolo,
-    Cell Ranger) goes straight to :func:`cassiopeia.pp.call_alleles`, which
-    collapses UMIs into alleles by default. Then the allele table is
-    corrected, filtered, assigned to clones (only when ``call_clones`` is
-    configured), screened for doublets and converted to a character matrix.
-    See ``cassiopeia.preprocess.pipeline.EXAMPLE_CONFIG`` for the format.
+    The pipeline ends at the allele table, saved as ``<name>.alleles.parquet``.
+    Convert it to a character matrix with
+    :func:`~cassiopeia.pp.alleles_to_characters`::
 
-    Character matrices with ambiguous states
-    (``alleles_to_characters: {allow_ambiguous: true}``) cannot be stored in an
-    h5td file: the file then has those entries as missing, and the full
-    matrix is written to ``<output.dir>/<output.name>.characters.pkl``
-    (read it with :func:`pandas.read_pickle`).
+        df = cas.pp.read_alleles("results/sample1.alleles.parquet")
+        tdata = cas.pp.alleles_to_characters(df)
+
+    The steps run in this order; each is the ``pp`` function of the same name:
+
+    1. :func:`~cassiopeia.pp.align`, for FASTQ input only. BAM input
+       (STARsolo, Cell Ranger) starts at the next step.
+    2. :func:`~cassiopeia.pp.call_alleles`
+    3. :func:`~cassiopeia.pp.correct_intbcs`, skipped for constructs without
+       an intBC.
+    4. :func:`~cassiopeia.pp.filter_alleles`
+    5. :func:`~cassiopeia.pp.filter_cells`, with ``min_umi=10`` by default.
+    6. :func:`~cassiopeia.pp.call_clones`, skipped unless it is in the config
+       (only for data with several clones).
+    7. :func:`~cassiopeia.pp.filter_integrations`
+    8. ``filter_cells_coverage``: :func:`~cassiopeia.pp.filter_cells` again,
+       with ``min_intbc_frac=0.5`` by default. Runs only after
+       ``filter_integrations`` or ``call_clones``.
+    9. :func:`~cassiopeia.pp.filter_doublets`
+
+    Filters annotate the table (``pass_*`` columns) rather than drop rows, so
+    the saved table keeps every allele and can be filtered again.
+
+    The config has these keys:
+
+    * ``construct``: a preset name, a construct YAML (relative to the config
+      file) or an inline construct.
+    * ``input``: either ``fastq`` (the FASTQ files in read order, e.g.
+      ``[R1.fastq.gz, R2.fastq.gz]``) with ``layout`` (default ``10xv3``) and
+      an optional cell barcode ``whitelist``; or ``bam`` with optional
+      ``cells`` (barcodes to keep, e.g. ``barcodes.tsv.gz``) and ``contigs``.
+    * ``output``: ``dir`` (default ``cassiopeia_preprocess``), ``name``
+      (default: the construct name) and ``plots`` (save QC figures, default
+      ``true``).
+    * ``threads``: default is the Slurm allocation, else up to 8.
+    * One key per step, holding keyword arguments of its function, or
+      ``false`` to skip it. Steps left out run with their defaults.
+
+    For example:
+
+    .. code-block:: yaml
+
+        construct: weissman
+        input: {fastq: [R1.fastq.gz, R2.fastq.gz], layout: 10xv3}
+        output: {dir: results, name: sample1}
+        filter_alleles: {min_umi_per_allele: 2, min_avg_reads_per_umi: 5}
+        filter_doublets: false
+
+    ``cassiopeia-preprocess example-config`` prints a config with every step.
+    Input paths are relative to the working directory.
+
+    Files written to ``output.dir`` (``<name>`` is ``output.name``):
+
+    * ``<name>.alleles.parquet``: the returned allele table; read it with
+      :func:`~cassiopeia.pp.read_alleles`.
+    * ``<name>.cells.csv``: :func:`~cassiopeia.pp.cell_metrics` for every cell,
+      including filtered ones.
+    * ``config.yaml``: the config.
+    * ``qc/<step>.png``: one QC figure per step, with ``plots``.
+    * ``<name>.aligned.bam``: for FASTQ input (set another path with
+      ``align: {output_bam: ...}``).
 
     Args:
-        config: YAML path or dict.
+        config: Path to a YAML config, or the config as a dict.
 
     Returns:
-        TreeData with the character matrix (also written to
-        ``<output.dir>/<output.name>.h5td``).
+        The allele table, with a ``pass_*`` column per filter.
     """
     t0 = time.time()
     cfg = load_config(config)
@@ -178,8 +233,6 @@ def run(config: str | Path | dict):
     if inp.get("contigs"):
         ca.setdefault("contigs", inp["contigs"])
     df = call_alleles(bam, construct, n_threads=threads, **ca, **plot_args("call_alleles"))
-    if out_cfg.get("checkpoint", False):
-        df.to_parquet(out_dir / f"{name}.alleles.raw.parquet")
 
     if (o := _opts(cfg, "correct_intbcs")) is not None and construct.intbc is not None:
         df = correct_intbcs(df, n_threads=threads, **o, **plot_args("correct_intbcs"))
@@ -196,37 +249,15 @@ def run(config: str | Path | dict):
         df = filter_cells(df, **o, **plot_args("filter_cells_coverage"))
     if (o := _opts(cfg, "filter_doublets")) is not None:
         df = filter_doublets(df, **o, **plot_args("filter_doublets"))
-    if out_cfg.get("checkpoint", False):
-        df.to_parquet(out_dir / f"{name}.alleles.parquet")
-    o = _opts(cfg, "alleles_to_characters") or {}
-    o.pop("return_type", None)
-    tdata = alleles_to_characters(df, **o)
-    tdata.uns["preprocess"]["config"] = yaml.safe_dump(cfg, sort_keys=False)
-    _write(tdata, out_dir, name)
-    from .qc import cell_metrics
-
-    cell_metrics(df).to_csv(out_dir / f"{name}.cells.csv")
+    path = out_dir / f"{name}.alleles.parquet"
+    df.to_parquet(path)
+    cells = cell_metrics(df)
+    cells.to_csv(out_dir / f"{name}.cells.csv")
     logger.info(
-        f"Done in {time.time() - t0:.1f}s: {tdata.n_obs:,} cells -> {out_dir / f'{name}.h5td'}"
+        f"Done in {time.time() - t0:.1f}s: {int(cells['passed_qc'].sum()):,}/{len(cells):,} "
+        f"cells pass -> {path}"
     )
-    return tdata
-
-
-def _write(tdata, out_dir: Path, name: str) -> None:
-    """Write the h5td; ambiguous states (tuples) go to a pickled character matrix."""
-    chars = tdata.obsm["characters"]
-    ambiguous = chars.map(lambda v: isinstance(v, tuple))
-    if not ambiguous.to_numpy().any():
-        tdata.write_h5td(out_dir / f"{name}.h5td")
-        return
-    chars.to_pickle(out_dir / f"{name}.characters.pkl")
-    stored = tdata.copy()
-    stored.obsm["characters"] = chars.mask(ambiguous, tdata.uns["missing_state"]).infer_objects()
-    stored.write_h5td(out_dir / f"{name}.h5td")
-    logger.warning(
-        f"{int(ambiguous.to_numpy().sum()):,} ambiguous states are missing in {name}.h5td; "
-        f"the full character matrix is in {name}.characters.pkl."
-    )
+    return df
 
 
 def read_alleles(path: str | Path) -> pd.DataFrame:

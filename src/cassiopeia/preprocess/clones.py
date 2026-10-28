@@ -12,7 +12,7 @@ import pandas as pd
 
 from cassiopeia.mixins import PreprocessError, logger
 
-from ._utils import ALLELE_PASS, finish_plot, passing, record_params, set_pass, umi_counts
+from ._utils import finish_plot, passing, record_params, set_pass, umi_counts
 
 _NOVA_HELP = (
     "pp.call_clones(method='nova_clone') requires NovaClone "
@@ -26,8 +26,8 @@ _NOVA_HELP = (
 
 
 def intbc_table(df: pd.DataFrame, use_pass: bool = True) -> pd.DataFrame:
-    """UMI counts per (cell, intBC) from passing rows (minor alleles included)."""
-    d = passing(df, ignore=ALLELE_PASS) if use_pass else df
+    """UMI counts per (cell, intBC) from passing rows."""
+    d = passing(df) if use_pass else df
     keys = ["cellBC", "intBC"]
     if "sample" in d.columns:
         keys = ["sample"] + keys
@@ -67,13 +67,25 @@ def call_clones(
     share the same integrations, skip this step: the later steps treat all
     cells as one clone.
 
-    * ``method="nova_clone"``: clones are called with NovaClone; cells
-      mapping to more than one clone are labelled ``"multiplet"``.
+    * ``method="nova_clone"``: clones are called with
+      `NovaClone <https://github.com/YosefLab/nova-clone>`__; cells mapping to
+      more than one clone are labelled ``"multiplet"``.
     * ``clones=``: user-supplied cell -> clone assignment. The clone's intBC
       signature lists intBCs detected in at least ``min_detection`` of its
       cells.
 
     Signatures are stored in ``df.attrs['clone_intbcs']``.
+
+    NovaClone is not installed with Cassiopeia. Clone it from
+    https://github.com/YosefLab/nova-clone, add it to ``PYTHONPATH`` and
+    install its dependencies (``editdistance``, ``networkx``,
+    ``scikit-learn``, ``seaborn``):
+
+    .. code-block:: bash
+
+        git clone https://github.com/YosefLab/nova-clone
+        export PYTHONPATH=$PWD/nova-clone:$PYTHONPATH
+        pip install editdistance networkx scikit-learn seaborn
 
     Args:
         df: Allele table.

@@ -140,7 +140,7 @@ def nj(
         unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
         missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
         characters = _get_characters(tdata, characters_key)
-        priors = _resolve_metric_priors(tdata, priors, dissim_fn)
+        priors = _resolve_metric_priors(tdata, priors, dissim_fn, characters)
 
         if synthetic_root:
             # Augment the character matrix with a synthetic all-unmodified 'root'

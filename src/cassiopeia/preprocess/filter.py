@@ -35,43 +35,39 @@ def filter_alleles(
 ) -> pd.DataFrame:
     """Flag unreliable alleles in the allele table.
 
-    Each allele (cell, intBC and site alleles) is judged as a whole. UMIs with
-    too few reads were already dropped (``min_reads_per_umi`` of
-    :func:`cassiopeia.pp.call_alleles`). Adds four filters:
+    UMIs with low read support should be dropped before this function is called.
+    (See ``min_reads_per_umi`` parameter of :func:`cassiopeia.pp.call_alleles`).
+    This function adds four additional filters to remove unreliable alleles:
 
     * ``pass_umis_per_allele``: the allele has at least
       ``min_umi_per_allele`` UMIs. Alleles seen in a single UMI are much less
-      reliable; this also removes most ambient and erroneous intBCs.
+      reliable, often attributable to ambient RNA or sequencing errors.
     * ``pass_avg_reads_per_umi``: the allele's UMIs have at least
-      ``min_avg_reads_per_umi`` reads on average. Molecules from ambient RNA
-      tend to have fewer reads than the cell's own.
-    * ``pass_allele_frac``: the allele holds at least ``min_allele_frac`` of
-      the UMIs of its (cell, intBC) (``allele_frac``).
+      ``min_avg_reads_per_umi`` reads on average. PCR artifacts tend to have
+      fewer reads on average.
+    * ``pass_allele_frac``: the allele contributes at least ``min_allele_frac`` of
+      the total UMIs within the cellBC-intBC pair (``allele_frac``).
     * ``pass_allele_conflict``: with ``allow_allele_conflicts=False``, only
       the allele with the most UMIs (then reads) among those passing the
-      filters above is kept for each (cell, intBC). With ``True``, every such
-      allele is kept, and :func:`cassiopeia.pp.alleles_to_characters` needs
-      ``allow_ambiguous=True``.
+      filters above is kept for each cellBC-intBC pair. If ``True``, conflicting
+      alleles are kept as long as they pass the other filters.
 
     Alleles removed only by ``pass_allele_frac`` or ``pass_allele_conflict``
-    still count where the presence of an intBC or of several alleles
-    matters: UMIs per cell (:func:`cassiopeia.pp.filter_cells`), clone
-    calling, and the conflict rates of
-    :func:`cassiopeia.pp.filter_integrations` and
+    still count as evidence of several alleles in a cellBC-intBC pair for the
+    conflict rates used by :func:`cassiopeia.pp.filter_integrations` and
     :func:`cassiopeia.pp.filter_doublets`.
 
-    The UMI and read thresholds depend on sequencing depth: lower them for
-    shallowly sequenced libraries and raise them for deep ones. The plot shows
-    where the thresholds fall.
+    The UMI and read thresholds depend on sequencing depth and library complexity,
+    and should be adjusted accordingly. The plot shows where the thresholds fall.
 
     Args:
         df: Allele table.
-        min_allele_frac: Minimum fraction of the (cell, intBC)'s UMIs carrying
+        min_allele_frac: Minimum fraction of the cellBC-intBC pair's UMIs carrying
             the allele.
         min_umi_per_allele: Minimum UMIs per allele.
         min_avg_reads_per_umi: Minimum mean reads per UMI of the allele.
         allow_allele_conflicts: Keep every allele passing the filters instead
-            of only the most abundant one per (cell, intBC).
+            of only the most abundant one per cellBC-intBC pair.
         plot: Plot UMIs vs. mean reads per UMI per allele, colored by allele
             fraction.
         save: Save the plot to this path.
@@ -154,8 +150,7 @@ def filter_cells(
     Args:
         df: Allele table.
         min_umi: Minimum UMIs per cell, counting UMIs of alleles that pass
-            the UMI and read filters of :func:`cassiopeia.pp.filter_alleles`
-            (minor alleles included).
+            :func:`cassiopeia.pp.filter_alleles`.
         min_intbc_frac: Minimum fraction of the intBCs expected for the
             cell's clone (its kept integrations; all kept integrations
             without clones) that are detected in the cell.

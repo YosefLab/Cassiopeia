@@ -262,20 +262,22 @@ def _pairwise(
 
 def _resolve_metric_priors(
     tdata: TreeData,
-    priors: dict[int, dict[int, float]] | bool | None,
+    priors: dict | list | bool | None,
     method: str | Callable | None,
-) -> dict[int, dict[int, float]] | None:
+    characters: pd.DataFrame | None = None,
+) -> dict[int, dict] | None:
     """Resolve *priors* for a pairwise dissimilarity *method*.
 
-    Follows :func:`cassiopeia.utils._resolve_priors`, except that stored priors
-    are not picked up implicitly (``priors=None``) for metrics that ignore
-    weights, and explicitly requested priors with such a metric emit a warning.
+    Follows :func:`cassiopeia.utils._resolve_priors` (states matched to
+    *characters*), except that stored priors are not picked up implicitly
+    (``priors=None``) for metrics that ignore weights, and explicitly requested
+    priors with such a metric emit a warning.
     """
     if _uses_weights(method):
-        return _resolve_priors(tdata, priors)
+        return _resolve_priors(tdata, priors, characters)
     if priors is None or priors is False:
         return None
-    resolved = _resolve_priors(tdata, priors)
+    resolved = _resolve_priors(tdata, priors, characters)
     if resolved:
         warnings.warn(
             f"priors were provided but the dissimilarity function {method!r} "
@@ -344,7 +346,7 @@ def pairwise(
     chars = _get_characters(tdata, characters_key)
     missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _resolve_metric_priors(tdata, priors, method)
+    priors = _resolve_metric_priors(tdata, priors, method, chars)
     result = _pairwise(
         chars,
         method,

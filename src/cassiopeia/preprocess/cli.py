@@ -12,11 +12,13 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point for ``cassiopeia-preprocess``."""
     p = argparse.ArgumentParser(
         prog="cassiopeia-preprocess",
-        description="Cassiopeia lineage tracing preprocessing: reads -> character matrix.",
+        description="Cassiopeia lineage tracing preprocessing: reads -> allele table.",
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    r = sub.add_parser("run", help="Run the full pipeline from a YAML config.")
+    r = sub.add_parser(
+        "run", help="Run the pipeline from a YAML config and save the filtered allele table."
+    )
     r.add_argument("config")
 
     a = sub.add_parser("align", help="FASTQ -> deduplicated, aligned, CB/UB-tagged BAM.")
