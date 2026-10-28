@@ -2,6 +2,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
+import treedata as td
 from treedata import TreeData
 
 import cassiopeia as cas
@@ -151,6 +152,51 @@ def test_resolve_priors(stored, priors, expected):
 def test_resolve_priors_true_without_stored_raises():
     with pytest.raises(ValueError, match="priors=True"):
         utils._resolve_priors(TreeData(obs=pd.DataFrame(index=["a"])), True)
+
+
+@pytest.mark.parametrize(
+    "priors",
+    [{0: {1: 0.5}, 1: {"2": 0.25}}, {"0": {"1": 0.5}, "1": {"2": 0.25}}, [{1: 0.5}, {"2": 0.25}]],
+)
+def test_format_priors(priors):
+    assert utils._format_priors(priors) == {"0": {"1": 0.5}, "1": {"2": 0.25}}
+
+
+@pytest.mark.parametrize("priors", [0.5, {0: 0.1}, [0.5]])
+def test_malformed_priors_raise(priors):
+    with pytest.raises(ValueError, match="state probabilities"):
+        utils._format_priors(priors)
+    with pytest.raises(ValueError, match="state probabilities"):
+        utils._resolve_priors(TreeData(obs=pd.DataFrame(index=["a"])), priors)
+
+
+@pytest.mark.parametrize(
+    ("column", "expected"),
+    [
+        (["*", "1", "-"], {"1": 0.5, "3": 0.5}),  # string states; unseen "3" stays a string
+        ([0, 1, -1], {1: 0.5, 3: 0.5}),  # integer states
+        ([0.0, 1.0, np.nan], {1.0: 0.5, 3: 0.5}),  # float states match their integer form
+        (["*", ("1", "2"), "-"], {"1": 0.5, "3": 0.5}),  # ambiguous (tuple) states
+        (pd.Categorical(["*", "*", "-"], categories=["*", "1", "-"]), {"1": 0.5, "3": 0.5}),
+    ],
+)
+def test_resolve_priors_matches_matrix_states(column, expected):
+    chars = pd.DataFrame({"c0": column}, index=["a", "b", "c"])
+    tdata = TreeData(obs=pd.DataFrame(index=chars.index), obsm={"characters": chars})
+    tdata.uns["priors"] = utils._format_priors({0: {1: 0.5, 3: 0.5}})
+    resolved = utils._resolve_priors(tdata, characters=chars)
+    assert resolved == {0: expected}
+    assert all(type(k) is type(e) for k, e in zip(resolved[0], expected, strict=True))
+
+
+def test_stored_priors_round_trip_h5td(tmp_path):
+    chars = pd.DataFrame({"c0": ["*", "1"], "c1": ["2", "-"]}, index=["a", "b"])
+    tdata = TreeData(obs=pd.DataFrame(index=chars.index), obsm={"characters": chars})
+    tdata.uns["priors"] = utils._format_priors([{"1": 0.5}, {"2": 1.0}])
+    tdata.write_h5td(tmp_path / "t.h5td")
+    back = td.read_h5td(tmp_path / "t.h5td")
+    expected = {0: {"1": 0.5}, 1: {"2": 1.0}}
+    assert utils._resolve_priors(back, True, back.obsm["characters"]) == expected
 
 
 def test_multiple_trees_error_lists_keys():

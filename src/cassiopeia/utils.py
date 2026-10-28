@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 import time
 import warnings
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 from hashlib import blake2b
 from typing import Any
 
@@ -326,29 +326,105 @@ def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None)
     return value
 
 
+# Priors convention (every module follows it):
+#
+# * Stored in ``tdata.uns["priors"]`` as ``{"<character index>": {"<state>": p}}``
+#   with string keys, because h5ad/h5td cannot store integer keys or lists of
+#   dicts. Write them with :func:`_format_priors`.
+# * Functions that take ``priors`` accept ``None`` (stored priors if present),
+#   ``True`` (stored priors, required), ``False`` (none) or priors in any form
+#   (dict with integer or string keys, or a list of per-character dicts), and
+#   read them with :func:`_resolve_priors`.
+# * Resolved priors are keyed by integer character index, and their states are
+#   the character matrix's own values, so ``priors[i][value]`` works for string,
+#   integer, float and ambiguous (tuple) matrices alike.
+
+
+def _priors_by_character(priors) -> dict:
+    """Per-character priors from a dict (any key type) or a list of dicts."""
+    if isinstance(priors, (list, tuple)):
+        priors = dict(enumerate(priors))
+    if not isinstance(priors, Mapping):
+        raise ValueError(
+            "priors must map each character index to a dict of state probabilities, "
+            f"or be a list of such dicts; got {type(priors).__name__}."
+        )
+    out = {}
+    for k, states in priors.items():
+        if not isinstance(states, Mapping):
+            raise ValueError(
+                f"priors for character {k!r} must be a dict of state probabilities, "
+                f"got {type(states).__name__}."
+            )
+        out[_int_key(k)] = states
+    return out
+
+
+def _format_priors(priors) -> dict[str, dict[str, float]]:
+    """Priors in the stored form: ``{"<character index>": {"<state>": p}}``.
+
+    Accepts the same forms as :func:`_resolve_priors`. String keys let the
+    TreeData be written to h5ad/h5td.
+    """
+    return {
+        str(k): {str(s): float(p) for s, p in states.items()}
+        for k, states in _priors_by_character(priors).items()
+    }
+
+
+def _match_prior_states(states: Mapping, values) -> dict:
+    """Key one character's priors by the matrix's own state values.
+
+    States are matched to *values* by their string form (integral floats also
+    match their integer form). Unmatched states become integers when the
+    character's values are numeric (or unknown) and stay strings otherwise.
+    Ambiguous (tuple) values contribute their component states.
+    """
+    known: dict[str, Any] = {}
+    for v in values:
+        for s in v if isinstance(v, tuple) else (v,):
+            if isinstance(s, np.generic):
+                s = s.item()
+            known.setdefault(str(s), s)
+            if isinstance(s, float) and s.is_integer():
+                known.setdefault(str(int(s)), s)
+    numeric = all(isinstance(s, (int, float)) and not isinstance(s, bool) for s in known.values())
+    out = {}
+    for s, p in states.items():
+        key = known.get(str(s))
+        if key is None:
+            key = _int_key(s) if numeric else str(s)
+        out[key] = float(p)
+    return out
+
+
 def _resolve_priors(
     tree: CassiopeiaTree | TreeData,
-    priors: dict[int, dict[int, float]] | bool | None = None,
-) -> dict[int, dict[int, float]] | None:
+    priors: dict | list | bool | None = None,
+    characters: pd.DataFrame | None = None,
+) -> dict[int, dict] | None:
     """Resolve a ``priors`` argument to a priors dict or ``None``.
 
-    Centralizes the shared ``priors: dict | bool | None`` semantics so the
-    behavior is identical everywhere.
+    Centralizes the shared ``priors`` semantics so the behavior is identical
+    everywhere (see the priors convention above).
 
     Args:
         tree: CassiopeiaTree or TreeData that may store priors.
         priors: ``None`` uses ``tree.uns["priors"]`` (``tree.priors`` for a
             CassiopeiaTree) if present, logging a message, and otherwise no
             priors. ``True`` requires stored priors and raises if there are none.
-            ``False`` disables priors. A mapping is used directly.
+            ``False`` disables priors. Priors given directly may be a dict
+            (integer or string keys) or a list of per-character dicts.
+        characters: The character matrix the priors refer to. Its values become
+            the state keys; without it, digit-string states become integers.
 
     Returns:
-        Priors as a dict keyed by character index, or ``None`` when disabled or
-        unavailable. A list/tuple of per-character dicts is normalized to a
-        position-keyed dict.
+        Priors keyed by integer character index, then by state, or ``None`` when
+        disabled or unavailable.
 
     Raises:
-        ValueError: If ``priors=True`` but no priors are stored on *tree*.
+        ValueError: If ``priors=True`` but no priors are stored on *tree*, or if
+            the priors are malformed.
     """
     if priors is False:
         return None
@@ -359,17 +435,33 @@ def _resolve_priors(
                 raise ValueError(
                     "priors=True but no priors were found in tdata.uns['priors']. "
                     "Specify priors explicitly (priors=<dict>) or set priors=False "
-                    "to reconstruct without priors."
+                    "to run without priors."
                 )
             return None
         if priors is None:
             logger.info("Using priors from tdata.uns['priors']; pass priors=False to ignore them.")
         priors = stored
-    # Normalize a per-character sequence (e.g. the simulator's list of dicts) to a
-    # dict keyed by character index, matching the solver convention.
-    if isinstance(priors, (list, tuple)):
-        priors = dict(enumerate(priors))
-    return priors
+    by_char = _priors_by_character(priors)
+    columns = list(characters.columns) if characters is not None else []
+    out = {}
+    for k, states in by_char.items():
+        if isinstance(k, int) and 0 <= k < len(columns):
+            col = characters[columns[k]]
+            values = list(pd.unique(col.astype(object).to_numpy()))
+            values += list(getattr(col.dtype, "categories", []))
+            out[k] = _match_prior_states(states, values)
+        else:
+            out[k] = _match_prior_states(states, [])
+    return out
+
+
+def _int_key(k):
+    """Convert digit-string keys (from serialized priors) back to ints."""
+    if isinstance(k, str) and k.lstrip("-").isdigit():
+        return int(k)
+    if isinstance(k, (np.integer,)):
+        return int(k)
+    return k
 
 
 def _normalize_missing(missing_state) -> set:

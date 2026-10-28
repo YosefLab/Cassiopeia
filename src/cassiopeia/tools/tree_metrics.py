@@ -17,6 +17,7 @@ from cassiopeia.utils import (
     _get_characters,
     _get_digraph,
     _get_parameter,
+    _resolve_priors,
 )
 
 
@@ -473,7 +474,9 @@ def calculate_likelihood(
     :func:`log_likelihood_of_character`. The mutation rate, heritable missing
     rate, and stochastic missing probability are consumed from / estimated for
     the tree, and the per-character log likelihoods (assuming characters mutate
-    independently) are summed.
+    independently) are summed. State priors are read from
+    ``tdata.uns["priors"]`` (``{character index: {state: probability}}``;
+    string keys, as stored in h5td files, are accepted).
 
     Two evolutionary models are supported:
 
@@ -507,9 +510,13 @@ def calculate_likelihood(
         raise TreeMetricError(f"Unknown model {model!r}. Use 'discrete' or 'continuous'.")
     continuous = model == "continuous"
 
-    priors = _get_parameter(tdata, "priors")
-    if priors is None:
-        raise TreeMetricError("Priors must be specified for this tree to calculate the likelihood.")
+    character_matrix = _get_characters(tdata, characters_key)
+    try:
+        priors = _resolve_priors(tdata, True, character_matrix)
+    except ValueError as e:
+        raise TreeMetricError(
+            f"Priors must be specified for this tree to calculate the likelihood: {e}"
+        ) from e
 
     missing_state = _resolve_missing_state(tdata)
 
@@ -517,7 +524,6 @@ def calculate_likelihood(
     g, tree_key = _get_digraph(tdata, tree_key, copy=True)
     root = get_root(g)
 
-    character_matrix = _get_characters(tdata, characters_key)
     _seed_leaf_states(g, character_matrix, characters_key)
 
     leaves = [n for n in g.nodes if g.out_degree(n) == 0]

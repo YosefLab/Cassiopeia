@@ -1,0 +1,38 @@
+# DNA Typewriter TargetBC-5xTAPE-1 (Choi et al. 2022 Nature), 10x 3' amplicon in
+# read-2 orientation. Each slot records one 6bp insertion (NNN InsertBC + GGA key);
+# edits are written sequentially. TAPEs shortened by deletions are parsed from the
+# read, so slots beyond the observed array are missing rather than unedited.
+name: typewriter
+description: DNA Typewriter TargetBC-5xTAPE-1 with an 8bp TargetBC and five sequential insertion slots.
+reference:
+  fasta: typewriter_5xtape.fa
+intbc: auto
+array:
+  start: 60
+  unit: TGATGGTGAGCACG
+  insert_len: 6
+  n_units: 5
+  end_flank: TGATGGTGAGCCAAGGAAAGG
+  max_mismatch: 1
+  anchor: 43
+sites:
+- name: site1
+  position: 60
+  edit_model: sequential_insertion
+  slot: 0
+- name: site2
+  position: 74
+  edit_model: sequential_insertion
+  slot: 1
+- name: site3
+  position: 88
+  edit_model: sequential_insertion
+  slot: 2
+- name: site4
+  position: 102
+  edit_model: sequential_insertion
+  slot: 3
+- name: site5
+  position: 116
+  edit_model: sequential_insertion
+  slot: 4

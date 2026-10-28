@@ -4,11 +4,13 @@ import networkx as nx
 import pytest
 import treedata as td
 
+import cassiopeia as cas
 from cassiopeia.mixins import DataSimulatorError
 from cassiopeia.simulator import (
     missing_data,
     stochastic_tracing,
 )
+from cassiopeia.utils import _resolve_priors
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -116,6 +118,22 @@ def test_cas9_state_values(tdata):
     )
     df = tdata.obsm["characters"]
     assert set(df.values.flatten()).issubset({"*", "1", "2", "3"})
+
+
+def test_priors_stored_for_h5td_and_solvers(tdata, tmp_path):
+    """uns["priors"] has string keys, survives write_h5td and is read by the solvers."""
+    priors = [{"1": 1.0}, {"2": 1.0}, {"3": 1.0}]
+    stochastic_tracing(
+        tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=priors, random_seed=0
+    )
+    expected = {str(i): priors[i % 3] for i in range(6)}
+    assert tdata.uns["priors"] == expected
+    tdata.write_h5td(tmp_path / "sim.h5td")
+    back = td.read_h5td(tmp_path / "sim.h5td")
+    assert back.uns["priors"] == expected
+    assert _resolve_priors(back) == {i: {i % 3 + 1: 1.0} for i in range(6)}
+    cas.solver.greedy(back, priors=True)
+    assert "greedy" in back.obst
 
 
 def test_cas9_inheritance(tdata):

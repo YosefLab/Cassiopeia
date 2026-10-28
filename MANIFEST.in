@@ -2,3 +2,6 @@
 # built from it. The .pyx are cythonized at build time.
 recursive-include src/cassiopeia *.pyx
 recursive-include src/cassiopeia *.pxd
+# C++ preprocessing kernels and construct presets
+recursive-include src/cassiopeia/preprocess/_native/src *.cpp *.hpp
+recursive-include src/cassiopeia/preprocess/presets *.yaml *.fa

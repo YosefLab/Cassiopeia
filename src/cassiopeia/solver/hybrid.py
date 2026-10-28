@@ -36,6 +36,7 @@ from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_p
 from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
 from cassiopeia.tools.ancestral_characters import _get_lca_characters
 from cassiopeia.utils import (
+    _format_priors,
     _get_characters,
     _get_parameter,
     _node_name_generator,
@@ -167,7 +168,7 @@ def _apply_bottom_solver(
     # the bottom solver reads to avoid re-resolving (and warning about) defaults.
     uns = {"missing_state": missing_state_indicator, "unmodified_state": 0}
     if priors:
-        uns["priors"] = priors
+        uns["priors"] = _format_priors(priors)
     sub_tdata = td.TreeData(
         obs=pd.DataFrame(index=list(subproblem_character_matrix.index)),
         obsm={"characters": subproblem_character_matrix},
@@ -380,7 +381,7 @@ def hybrid(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _resolve_priors(tdata, priors)
+    priors = _resolve_priors(tdata, priors, character_matrix)
     # Encode string/categorical states to integers so the greedy split logic and
     # the bottom solver operate on the integer convention; re-key priors to match.
     character_matrix, missing_state_indicator, mapping = _encode_integer_matrix(

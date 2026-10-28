@@ -1,47 +1,43 @@
-"""Top level for preprocess."""
+"""Preprocessing: from sequencing reads to character matrices."""
 
-from .pipeline import (
-    align_sequences,
-    call_alleles,
-    call_lineage_groups,
-    collapse_umis,
-    convert_fastqs_to_unmapped_bam,
-    error_correct_cellbcs_to_whitelist,
-    error_correct_intbcs_to_whitelist,
-    error_correct_umis,
-    filter_bam,
-    filter_molecule_table,
-    resolve_umi_sequence,
-)
-from .setup_utilities import setup
-from .utilities import (
-    compute_empirical_indel_priors,
-    convert_alleletable_to_character_matrix,
-    convert_alleletable_to_lineage_profile,
-    convert_character_matrix_to_allele_table,
-    convert_lineage_profile_to_character_matrix,
-    filter_cells,
-    filter_umis,
-)
+from ._plotting import plot_edit_frequency
+from .align import align
+from .alleles import call_alleles, call_read, collapse_umis
+from .characters import alleles_to_characters
+from .clones import call_clones
+from .construct import Construct, Site, TapeArray, list_presets, load_construct
+from .correct import correct_intbcs
+from .doublets import doublet_scores, filter_doublets
+from .filter import filter_alleles, filter_cells
+from .integrations import filter_integrations, integration_metrics
+from .pipeline import read_alleles, run
+from .qc import cell_metrics, clone_metrics, compute_indel_priors
+from .reference import build_reference
 
 __all__ = [
-    "align_sequences",
+    "Construct",
+    "Site",
+    "TapeArray",
+    "align",
+    "alleles_to_characters",
+    "build_reference",
     "call_alleles",
+    "call_clones",
+    "call_read",
+    "cell_metrics",
+    "clone_metrics",
     "collapse_umis",
-    "convert_fastqs_to_unmapped_bam",
-    "error_correct_cellbcs_to_whitelist",
-    "error_correct_intbcs_to_whitelist",
-    "error_correct_umis",
-    "filter_bam",
-    "resolve_umi_sequence",
-    "filter_molecule_table",
-    "call_lineage_groups",
-    "compute_empirical_indel_priors",
-    "convert_alleletable_to_character_matrix",
-    "convert_alleletable_to_lineage_profile",
-    "convert_character_matrix_to_allele_table",
-    "convert_lineage_profile_to_character_matrix",
+    "compute_indel_priors",
+    "correct_intbcs",
+    "doublet_scores",
+    "filter_alleles",
     "filter_cells",
-    "filter_umis",
-    "setup",
+    "filter_doublets",
+    "filter_integrations",
+    "integration_metrics",
+    "list_presets",
+    "load_construct",
+    "plot_edit_frequency",
+    "read_alleles",
+    "run",
 ]

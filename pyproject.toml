@@ -36,16 +36,15 @@ classifiers = [
 dependencies = [
   "anndata>=0.11",
   "biopython>=1.71",
-  "hits",
   "joblib",
   "matplotlib>=2.2.2",
   "networkx>=3.1",
-  "ngs-tools>=1.5.6",
   "numba>=0.51",
   "numpy>=2",
   "pandas>=2.2.1",
-  "pysam>=0.14.1",
-  "pyseq-align>=1.0.2",
+  "pyarrow>=14",
+  "pysam>=0.22",
+  "pyyaml>=3.12",
   "scipy>=1.9",
   "tqdm>=4",
   "treedata>=0.2.2",
@@ -64,6 +63,7 @@ optional-dependencies.doc = [
   "nbsphinx",
   "pandas",
   "pandoc",
+  "pycea-lineage>=0.4",              # imported as pycea; requires Python >= 3.11
   "scanpydoc",
   "setuptools",
   "sphinx>=8.1",
@@ -90,6 +90,7 @@ urls.Homepage = "https://cassiopeia-lineage.readthedocs.io/"
 
 # --- setuptools: src/ layout + discovery ---
 urls.Source = "https://github.com/YosefLab/Cassiopeia"
+scripts.cassiopeia-preprocess = "cassiopeia.preprocess.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -101,7 +102,7 @@ exclude = [ "tests*", "docs*", "notebooks*", "data*" ]
 
 # If you ship .pxd, include them:
 [tool.setuptools.package-data]
-cassiopeia = [ "**/*.pxd", "config.ini" ]
+cassiopeia = [ "**/*.pxd", "config.ini", "preprocess/presets/*.yaml", "preprocess/presets/*.fa" ]
 
 # --- Hatch envs ---
 

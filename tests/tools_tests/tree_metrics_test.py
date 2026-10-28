@@ -322,6 +322,20 @@ def test_likelihood_bad_cases():
     assert L < -1e15
 
 
+def test_likelihood_stored_priors_forms(continuous_tree):
+    """String keys (as read back from h5td) and lists of dicts give the same likelihood."""
+    continuous_tree.uns["stochastic_missing_probability"] = 0.2
+    expected = tree_metrics.calculate_likelihood(continuous_tree, model="continuous")
+    priors = continuous_tree.uns["priors"]
+    for stored in (
+        {str(c): {str(s): p for s, p in d.items()} for c, d in priors.items()},
+        [priors[c] for c in sorted(priors)],
+    ):
+        continuous_tree.uns["priors"] = stored
+        L = tree_metrics.calculate_likelihood(continuous_tree, model="continuous")
+        assert np.isclose(L, expected)
+
+
 def test_likelihood_simple_mostly_missing():
     small_cm = pd.DataFrame.from_dict(
         {

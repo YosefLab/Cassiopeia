@@ -585,7 +585,7 @@ def greedy(
     character_matrix = _get_characters(tdata, characters_key).copy()
     missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
-    priors = _resolve_priors(tdata, priors)
+    priors = _resolve_priors(tdata, priors, character_matrix)
     character_matrix, missing_state, mapping = _encode_integer_matrix(
         character_matrix, missing_state, unmodified_state
     )
