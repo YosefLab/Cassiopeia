@@ -8,7 +8,7 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
-from cassiopeia.mixins import logger
+from cassiopeia.mixins import PreprocessError, logger
 
 from ._resolve import resolve_alleles
 from ._utils import SINGLE_CLONE, passing, site_columns
@@ -35,25 +35,25 @@ def _character_order(df: pd.DataFrame, cells_df: pd.DataFrame) -> list[tuple[str
 
 
 def _site_tokens(
-    res: pd.DataFrame,
-    clusters: pd.DataFrame | None,
-    sites: list[str],
-    min_allele_frac: float,
+    res: pd.DataFrame, clusters: pd.DataFrame, sites: list[str]
 ) -> dict[str, np.ndarray]:
     """Per site, the allele of each (cell, intBC) row of ``res``.
 
-    Entries are None (missing), an allele, or with ``clusters`` a tuple of
-    alleles when several alleles hold at least ``min_allele_frac`` of the UMIs.
+    Entries are None (missing), an allele, or a tuple of alleles where the
+    (cell, intBC) holds several incompatible alleles (``clusters``).
     """
-    frac = (res["major_umis"] / res["n_umis"]).to_numpy()
-    if clusters is None:
-        ok = frac >= min_allele_frac
-        return {
-            s: np.where(ok, res[s].astype(object).to_numpy(), None).astype(object) for s in sites
-        }
+    out = {}
+    for s in sites:
+        v = res[s].astype(object).to_numpy()
+        out[s] = np.where(pd.notna(v), v, None).astype(object)
+    multi = res["n_alleles"].to_numpy() > 1
+    if not multi.any():
+        return out
     row = pd.Series(
-        np.arange(len(res)),
-        index=pd.MultiIndex.from_arrays([res["cellBC"].astype(str), res["intBC"].astype(str)]),
+        np.flatnonzero(multi),
+        index=pd.MultiIndex.from_arrays(
+            [res.loc[multi, "cellBC"].astype(str), res.loc[multi, "intBC"].astype(str)]
+        ),
     )
     pos = row.reindex(
         pd.MultiIndex.from_arrays([clusters["cellBC"].astype(str), clusters["intBC"].astype(str)])
@@ -61,20 +61,18 @@ def _site_tokens(
     keep = ~np.isnan(pos)
     cl = clusters[keep]
     pos = pos[keep].astype(np.int64)
-    ok = cl["umis"].to_numpy() >= min_allele_frac * res["n_umis"].to_numpy()[pos]
-    cl, pos = cl[ok], pos[ok]
-    out = {}
     for s in sites:
-        vals = np.full(len(res), None, dtype=object)
         a = cl[s].astype(object).to_numpy()
         called = pd.notna(a)
         seen: dict[int, list] = {}
         for p, v in zip(pos[called], a[called], strict=True):
             seen.setdefault(int(p), []).append(v)
+        vals = out[s]
+        for p in np.flatnonzero(multi):
+            vals[p] = None
         for p, v in seen.items():
             uniq = sorted(set(v))
             vals[p] = uniq[0] if len(uniq) == 1 else tuple(uniq)
-        out[s] = vals
     return out
 
 
@@ -82,22 +80,20 @@ def alleles_to_characters(
     df: pd.DataFrame,
     *,
     mapping: Literal["str", "int", "allele"] | dict = "str",
-    min_allele_frac: float = 0.5,
-    min_umi: int = 1,
-    ambiguous: bool = False,
+    allow_ambiguous: bool = False,
     unknown: Literal["missing", "keep"] = "missing",
     return_type: Literal["treedata", "dataframe"] = "treedata",
 ):
     """Build the character matrix from the allele table.
 
-    Uses rows passing all filters. For each (cell, intBC) the alleles are
-    merged (alleles that differ only where a site is missing are combined)
-    and the major allele is used if it holds at least ``min_allele_frac`` of
-    the UMIs; otherwise the intBC's sites are missing. With
-    ``ambiguous=True``, every allele holding at least ``min_allele_frac`` of
-    the UMIs is kept, and a site where they differ gets an ambiguous state:
-    a tuple of states such as ``("1", "2")`` (lower ``min_allele_frac``, e.g.
-    to 0.2, to keep minor alleles).
+    Uses rows passing all filters; alleles are chosen by
+    :func:`cassiopeia.pp.filter_alleles`. For each (cell, intBC) the passing
+    alleles are merged where they differ only at missing sites. With the
+    defaults of :func:`cassiopeia.pp.filter_alleles` one allele remains. If
+    several incompatible alleles remain (``allow_allele_conflicts=True``),
+    ``allow_ambiguous=True`` gives a site where they differ an ambiguous
+    state, a tuple of states such as ``("1", "2")``; otherwise an error is
+    raised.
 
     Each character is one site of one kept integration (``"{intBC}-{site}"``).
     Edits are numbered by frequency within each character, and ``mapping``
@@ -121,10 +117,8 @@ def alleles_to_characters(
     Args:
         df: Filtered allele table.
         mapping: How states are written in the character matrix (see above).
-        min_allele_frac: UMI fraction an allele needs.
-        min_umi: Minimum UMIs supporting a (cell, intBC).
-        ambiguous: Write sites where a cell holds several alleles as tuples of
-            states instead of missing.
+        allow_ambiguous: Write sites where a cell holds several alleles as
+            tuples of states, instead of raising an error.
         unknown: For insertion_lookup sites, treat insertions that are not in
             the lookup as ``"missing"`` (default) or ``"keep"`` them as states.
         return_type: ``"treedata"`` or ``"dataframe"`` (the character matrix
@@ -155,9 +149,7 @@ def alleles_to_characters(
         raise ValueError(f"return_type must be 'treedata' or 'dataframe', not {return_type!r}.")
     sites = site_columns(df)
     d = passing(df)
-    res = resolve_alleles(d, sites, use_pass=False, return_clusters=ambiguous)
-    res, clusters = res if ambiguous else (res, None)
-    res = res[res["n_umis"] >= min_umi].reset_index(drop=True)
+    res, clusters = resolve_alleles(d, sites, use_pass=False, return_clusters=True)
     res = res.assign(cellBC=res["cellBC"].astype(str), intBC=res["intBC"].astype(str))
     known = df.attrs.get("site_states", {})
 
@@ -165,7 +157,15 @@ def alleles_to_characters(
     cell_index = pd.Index(cells, name="cellBC")
     pairs = _character_order(df, res)
     res = res[res["intBC"].isin({i for _, i in pairs})].reset_index(drop=True)
-    tokens_by_site = _site_tokens(res, clusters, sites, min_allele_frac)
+    n_multi = int((res["n_alleles"] > 1).sum())
+    if n_multi and not allow_ambiguous:
+        raise PreprocessError(
+            f"{n_multi:,} (cell, intBC) pairs have several incompatible alleles passing the "
+            "filters. Keep only the most abundant allele with "
+            "pp.filter_alleles(allow_allele_conflicts=False), or pass allow_ambiguous=True "
+            "to write them as ambiguous states."
+        )
+    tokens_by_site = _site_tokens(res, clusters, sites)
     row_pos = cell_index.get_indexer(res["cellBC"])
 
     columns: dict[str, np.ndarray] = {}
@@ -250,7 +250,7 @@ def alleles_to_characters(
     logger.info(
         f"alleles_to_characters: {len(cells):,} cells x {chars.shape[1]:,} characters "
         f"({n_missing:.0%} missing"
-        + (f", {n_ambiguous:,} ambiguous entries" if ambiguous else "")
+        + (f", {n_ambiguous:,} ambiguous entries" if allow_ambiguous else "")
         + ")"
     )
     if return_type == "dataframe":

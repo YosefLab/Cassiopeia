@@ -39,7 +39,6 @@ STEPS = [
 ]
 
 DEFAULTS: dict[str, Any] = {
-    "call_alleles": {"collapse_umis": True},
     "correct_intbcs": {},
     "filter_alleles": {},
     "filter_cells": {"min_umi": 10},
@@ -69,15 +68,16 @@ output:
 threads: 8
 # Step options (keyword arguments of each pp function); `false` skips a step.
 align: {}
-call_alleles: {collapse_umis: true}   # one row per (cell, intBC, allele)
+call_alleles: {min_reads_per_umi: 2}   # one row per (cell, intBC, allele); adjust to depth
 correct_intbcs: {}
-filter_alleles: {min_reads_per_umi: 3, min_umi_per_intbc: 2}   # adjust to sequencing depth
+filter_alleles: {min_allele_frac: 0.5, min_umi_per_allele: 2}   # adjust to sequencing depth
 filter_cells: {min_umi: 10}
 call_clones: {method: nova_clone}     # only for data with several clones (default: skipped)
 filter_integrations: {min_detection: 0.2, max_conflict: 0.2}
 filter_cells_coverage: {min_intbc_frac: 0.5}   # optional
 filter_doublets: {}
-alleles_to_characters: {}      # e.g. {mapping: int} or {ambiguous: true, min_allele_frac: 0.2}
+alleles_to_characters: {}      # e.g. {mapping: int}; {allow_ambiguous: true} with
+                               # filter_alleles {allow_allele_conflicts: true}
 """
 
 
@@ -126,7 +126,7 @@ def run(config: str | Path | dict):
     See ``cassiopeia.preprocess.pipeline.EXAMPLE_CONFIG`` for the format.
 
     Character matrices with ambiguous states
-    (``alleles_to_characters: {ambiguous: true}``) cannot be stored in an
+    (``alleles_to_characters: {allow_ambiguous: true}``) cannot be stored in an
     h5td file: the file then has those entries as missing, and the full
     matrix is written to ``<output.dir>/<output.name>.characters.pkl``
     (read it with :func:`pandas.read_pickle`).

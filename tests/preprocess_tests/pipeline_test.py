@@ -16,7 +16,8 @@ def test_run_from_fastq(sim_factory, tmp_path):
         "input": {"fastq": sim.fastqs, "layout": "10xv3", "whitelist": sim.whitelist},
         "output": {"dir": str(tmp_path / "out"), "name": "s1", "plots": True, "checkpoint": True},
         "threads": 2,
-        "filter_alleles": {"min_reads_per_umi": 1, "min_umi_per_intbc": 2},
+        "call_alleles": {"min_reads_per_umi": 1},
+        "filter_alleles": {"min_umi_per_allele": 2},
         "filter_cells": {"min_umi": 5},
     }
     tdata = cas.pp.run(cfg)
@@ -47,11 +48,12 @@ def test_run_from_bam_yaml(sim_factory, tmp_path):
         "construct": "weissman",
         "input": {"bam": sim.bam},
         "output": {"dir": str(tmp_path / "out"), "plots": False},
-        "filter_alleles": {"min_reads_per_umi": 1, "min_umi_per_intbc": 2},
+        "call_alleles": {"min_reads_per_umi": 1},
+        "filter_alleles": {"min_allele_frac": 0.2, "allow_allele_conflicts": True},
         "filter_cells": {"min_umi": 5},
         "filter_integrations": {"max_conflict": 1.0},
         "filter_doublets": False,
-        "alleles_to_characters": {"ambiguous": True, "min_allele_frac": 0.2, "mapping": "int"},
+        "alleles_to_characters": {"allow_ambiguous": True, "mapping": "int"},
     }
     path = tmp_path / "cfg.yaml"
     path.write_text(yaml.safe_dump(cfg))

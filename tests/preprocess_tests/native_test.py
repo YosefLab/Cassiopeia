@@ -1,7 +1,6 @@
 """Tests for the C++ kernels (alignment, allele calling, edit distance)."""
 
 import random
-import re
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +10,6 @@ import pytest
 import cassiopeia as cas
 from cassiopeia.preprocess._native import (
     align_sequences,
-    call_read_py,
     correct_intbcs,
     levenshtein,
     merge_check,
@@ -58,7 +56,7 @@ def queries():
 
 @pytest.fixture(scope="module")
 def legacy_reads():
-    """Legacy alignments (local, global) and parse_cigar calls of `queries`."""
+    """Legacy alignments (local, global) of `queries`."""
     df = pd.read_csv(DATA / "legacy_reads.tsv", sep="\t", dtype=str, keep_default_na=False)
     ints = ["local_qstart", "local_rstart", "local_score", "global_score"]
     return df.astype(dict.fromkeys(ints, int))
@@ -120,24 +118,6 @@ def test_cluster_merge_matches_legacy():
         for a, b, qa, qb in _read_pairs(len(expected))
     )
     assert got == expected
-
-
-def _cigar_ops(cig, qstart, qlen):
-    ops = [({"M": 0, "I": 1, "D": 2}[t], int(n)) for n, t in re.findall(r"(\d+)([MID])", cig)]
-    qend = qstart + sum(n for o, n in ops if o in (0, 1))
-    return ([(4, qstart)] if qstart else []) + ops + ([(4, qlen - qend)] if qlen > qend else [])
-
-
-def test_legacy_allele_calls_match_parse_cigar(queries, legacy_reads):
-    construct = cas.pp.load_construct("weissman")
-    native = construct._native(legacy=True, normalize_indels=False, clip_missing=False)
-    alignments = align_sequences(REF, queries, None, False, 2)
-    for q, (_, rstart, qstart, cig), row in zip(
-        queries, alignments, legacy_reads.itertuples(), strict=True
-    ):
-        res = call_read_py(native, rstart, _cigar_ops(cig, qstart, len(q)), q)
-        assert (res["intBC"] or "NC") == row.intBC
-        assert res["tokens"] == [row.r1, row.r2, row.r3]
 
 
 def test_indel_model_calls():

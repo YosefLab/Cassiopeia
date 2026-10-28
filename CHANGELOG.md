@@ -28,9 +28,7 @@ and this project adheres to [Semantic Versioning][].
   - `pp.align`: FASTQ -> deduplicated, Smith-Waterman aligned, CB/UB-tagged BAM
     in one streaming pass (cell barcode and UMI correction included). Follows
     the pre-3.0 UMI collapse, including its banded-alignment merge of reads with
-    sequencing indels, and the pre-3.0 alignment scoring. With
-    `pp.call_alleles(legacy=True, umi_max_dist=2)` it reproduces the pre-3.0
-    allele calls and read counts on simulated reads. On published data
+    sequencing indels, and the pre-3.0 alignment scoring. On published data
     (KP-tracer, PEtracer) read counts match for 92-98% of molecules; most of the
     rest keep more reads, because the old collapse drops reads from UMIs in
     which no read sequence repeats. About 30x faster than the old pipeline.
@@ -39,22 +37,27 @@ and this project adheres to [Semantic Versioning][].
     barcode, `U` UMI, `X` skip, `T` target site); `pp.build_reference`
     derives the matching STAR / STARsolo arguments from them.
   - `pp.call_alleles`: streaming BAM -> allele table (pandas) that reads only
-    the target-site contigs of indexed BAMs of any size. With
-    `collapse_umis=True` (or `pp.collapse_umis`), UMIs with the same cell,
-    intBC, allele and read count become one row with `n_umis`, so the table
-    stays small for large experiments.
+    the target-site contigs of indexed BAMs of any size. UMIs with fewer than
+    `min_reads_per_umi` reads (default 2) are dropped, and UMIs with the same
+    cell, intBC and allele are collapsed into one row with `n_umis` and
+    `allele_frac` (the fraction of the (cell, intBC)'s UMIs with the allele),
+    so the table stays small for large experiments (`collapse_umis=False`, or
+    `pp.collapse_umis` later, for one row per UMI).
   - Allele-table steps that annotate rather than drop, each drawing a QC plot
-    (`plot=True`): `pp.correct_intbcs`, `pp.filter_alleles`, `pp.filter_cells`,
+    (`plot=True`): `pp.correct_intbcs`, `pp.filter_alleles` (UMIs and mean
+    reads per UMI per allele, allele fraction, and by default only the most
+    abundant allele of each (cell, intBC)), `pp.filter_cells`,
     `pp.call_clones` (NovaClone or user-supplied; only for data with several
     clones), `pp.filter_integrations` and `pp.filter_doublets` (allele
-    conflicts, clone mixtures, UMI outliers, custom scores).
-  - `pp.qc.cell_metrics`, `pp.clone_metrics` and `pp.integration_metrics`
+    conflicts, clone mixtures, custom scores).
+  - `pp.cell_metrics`, `pp.clone_metrics` and `pp.integration_metrics`
     summarize the allele table per cell, clone and integration.
   - `pp.alleles_to_characters` returns a TreeData ready for the solvers (or the
     character matrix as a DataFrame), with states written as strings (`"*"`
     unedited, `"-"` missing, `"1"`, `"2"`, ...), integers, the alleles
-    themselves, or through a dict (`mapping=`); `ambiguous=True` keeps cells
-    with several alleles as ambiguous states such as `("1", "2")`.
+    themselves, or through a dict (`mapping=`). Cells keeping several alleles
+    of an intBC (`pp.filter_alleles(allow_allele_conflicts=True)`) get
+    ambiguous states such as `("1", "2")` with `allow_ambiguous=True`.
   - `pp.plot_edit_frequency` plots edit, unedited and missing frequencies per
     character (optionally by edit) or the most frequent edits.
   - `pp.run` / `cassiopeia-preprocess run config.yaml` run the full pipeline.
@@ -73,7 +76,9 @@ and this project adheres to [Semantic Versioning][].
   `pp.convert_alleletable_to_lineage_profile`,
   `pp.convert_lineage_profile_to_character_matrix`,
   `pp.convert_character_matrix_to_allele_table`) are removed;
-  `pp.compute_empirical_indel_priors` now also accepts the allele table. `ngs-tools`, `hits` and `pyseq-align` are no longer
+  `pp.compute_empirical_indel_priors` is renamed `pp.compute_indel_priors` and
+  also accepts the allele table and character matrices (TreeData or
+  DataFrame). `ngs-tools`, `hits` and `pyseq-align` are no longer
   dependencies; `pysam>=0.22` and `pyarrow` are.
 - Priors stored in `tdata.uns["priors"]` with string keys (as written by h5ad/h5td)
   are converted back to integers by the solvers.

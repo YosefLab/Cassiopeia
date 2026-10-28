@@ -42,11 +42,12 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--cells", help="Cell barcodes to keep (e.g. barcodes.tsv.gz)")
     c.add_argument("--cb-tag", default="CB")
     c.add_argument("--umi-tag", default="UB")
-    c.add_argument("--legacy", action="store_true")
+    c.add_argument("--min-reads-per-umi", type=int, default=2, help="Drop UMIs with fewer reads")
     c.add_argument(
-        "--collapse-umis",
-        action="store_true",
-        help="One row per (cell, intBC, allele) instead of one row per UMI",
+        "--no-collapse-umis",
+        dest="collapse_umis",
+        action="store_false",
+        help="One row per UMI instead of one row per (cell, intBC, allele)",
     )
     c.add_argument("-t", "--threads", type=int)
 
@@ -92,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
             cells=args.cells,
             cb_tag=args.cb_tag or None,
             umi_tag=args.umi_tag or None,
-            legacy=args.legacy,
+            min_reads_per_umi=args.min_reads_per_umi,
             collapse_umis=args.collapse_umis,
             n_threads=args.threads,
             plot=False,

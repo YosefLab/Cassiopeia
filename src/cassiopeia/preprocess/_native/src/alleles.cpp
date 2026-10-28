@@ -1,6 +1,8 @@
 #include "alleles.hpp"
 
 #include <algorithm>
+#include <array>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -51,7 +53,11 @@ struct KeyHash {
 };
 struct KeyCount {
     Key key;
-    uint32_t count;
+    uint32_t count;    // reads
+    uint32_t records;  // BAM records
+};
+struct Counts {
+    uint64_t reads = 0, records = 0;
 };
 
 constexpr uint64_t kPackedFlag = 1ULL << 63;
@@ -145,7 +151,7 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
 
     ConcurrentInterner cell_ids, intbc_ids, umi_ids, allele_ids;
     const size_t n_shards = static_cast<size_t>(n_threads) * 8;
-    std::vector<std::unordered_map<Key, uint64_t, KeyHash>> shards(n_shards);
+    std::vector<std::unordered_map<Key, Counts, KeyHash>> shards(n_shards);
     std::vector<std::unique_ptr<ThreadState>> states;
     for (int i = 0; i < n_threads; ++i) {
         auto st = std::make_unique<ThreadState>();
@@ -250,14 +256,18 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
                 k.umi = use_umi ? encode_umi(umi, umi_ids) : last_allele_id;
                 k.allele = last_allele_id;
                 size_t shard = mix64((uint64_t(k.cell) << 32) ^ k.intbc) % n_shards;
-                st.buckets[shard].push_back(KeyCount{k, static_cast<uint32_t>(std::min<int64_t>(count, UINT32_MAX))});
+                st.buckets[shard].push_back(KeyCount{k, static_cast<uint32_t>(std::min<int64_t>(count, UINT32_MAX)), 1});
             }
         });
         // each shard is updated by exactly one thread
         parallel_dynamic(n_shards, n_threads, [&](int, size_t sh) {
             auto &m = shards[sh];
             for (auto &st : states) {
-                for (const KeyCount &kc : st->buckets[sh]) m[kc.key] += kc.count;
+                for (const KeyCount &kc : st->buckets[sh]) {
+                    Counts &c = m[kc.key];
+                    c.reads += kc.count;
+                    c.records += kc.records;
+                }
                 st->buckets[sh].clear();
             }
         });
@@ -293,15 +303,21 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
         uint32_t cell, intbc;
         uint64_t umi;
         int32_t n_reads;
-        float frac;
     };
     std::vector<std::vector<Row>> rows(n_shards);
     std::vector<std::vector<int32_t>> row_sites(n_shards);  // n_sites per row, -1 missing (raw site ids)
+    // per shard: reads -> UMIs (before the read filter), and the UMIs, records
+    // and reads dropped by it
+    std::vector<std::unordered_map<uint64_t, int64_t>> umi_hist(n_shards);
+    std::vector<std::array<int64_t, 3>> dropped(n_shards, std::array<int64_t, 3>{0, 0, 0});
+    const uint64_t min_reads = use_umi ? static_cast<uint64_t>(std::max<int64_t>(opt.min_reads, 0)) : 0;
     parallel_dynamic(n_shards, n_threads, [&](int, size_t sh) {
         std::vector<KeyCount> entries;
         entries.reserve(shards[sh].size());
-        for (auto &kv : shards[sh]) entries.push_back(KeyCount{kv.first, static_cast<uint32_t>(kv.second)});
-        std::unordered_map<Key, uint64_t, KeyHash>().swap(shards[sh]);
+        for (auto &kv : shards[sh])
+            entries.push_back(KeyCount{kv.first, static_cast<uint32_t>(std::min<uint64_t>(kv.second.reads, UINT32_MAX)),
+                                       static_cast<uint32_t>(std::min<uint64_t>(kv.second.records, UINT32_MAX))});
+        std::unordered_map<Key, Counts, KeyHash>().swap(shards[sh]);
         std::sort(entries.begin(), entries.end(), [](const KeyCount &a, const KeyCount &b) {
             if (a.key.cell != b.key.cell) return a.key.cell < b.key.cell;
             if (a.key.intbc != b.key.intbc) return a.key.intbc < b.key.intbc;
@@ -318,6 +334,7 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
         struct Umi {
             uint64_t umi;
             uint64_t reads = 0;
+            uint64_t records = 0;
             std::vector<std::pair<uint32_t, uint64_t>> alleles;
             bool merged = false;
         };
@@ -335,6 +352,7 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
             for (size_t k = i; k < j; ++k) {
                 if (umis.empty() || umis.back().umi != entries[k].key.umi) umis.push_back(Umi{entries[k].key.umi});
                 umis.back().reads += entries[k].count;
+                umis.back().records += entries[k].records;
                 umis.back().alleles.emplace_back(entries[k].key.allele, entries[k].count);
             }
             if (use_umi && opt.umi_max_dist > 0 && umis.size() > 1) {
@@ -358,6 +376,7 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
                         roots.push_back(idx);
                     } else {
                         umis[target].reads += umis[idx].reads;
+                        umis[target].records += umis[idx].records;
                         for (auto &a : umis[idx].alleles) umis[target].alleles.push_back(a);
                         umis[idx].alleles.clear();
                         umis[idx].reads = 0;
@@ -367,6 +386,15 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
             }
             for (auto &u : umis) {
                 if (u.merged || u.reads == 0) continue;
+                if (use_umi) {
+                    umi_hist[sh][u.reads]++;
+                    if (u.reads < min_reads) {
+                        dropped[sh][0]++;
+                        dropped[sh][1] += static_cast<int64_t>(u.records);
+                        dropped[sh][2] += static_cast<int64_t>(u.reads);
+                        continue;
+                    }
+                }
                 for (auto &v : votes) v.clear();
                 for (auto &a : u.alleles) {
                     const auto &toks = tokens_of(a.first);
@@ -374,23 +402,21 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
                         if (!toks[s].empty()) votes[s][toks[s]] += a.second;
                 }
                 Row row{entries[i].key.cell, entries[i].key.intbc, u.umi,
-                        static_cast<int32_t>(std::min<uint64_t>(u.reads, INT32_MAX)), 1.0f};
+                        static_cast<int32_t>(std::min<uint64_t>(u.reads, INT32_MAX))};
                 for (size_t s = 0; s < n_sites; ++s) {
                     if (votes[s].empty()) {
                         out_sites.push_back(-1);
                         continue;
                     }
-                    uint64_t tot = 0, best = 0;
+                    uint64_t best = 0;
                     std::string_view best_tok;
                     for (auto &kv : votes[s]) {
-                        tot += kv.second;
                         if (kv.second > best || (kv.second == best && kv.first < best_tok)) {
                             best = kv.second;
                             best_tok = kv.first;
                         }
                     }
                     out_sites.push_back(static_cast<int32_t>(site_ids[s].intern(best_tok)));
-                    row.frac = std::min(row.frac, static_cast<float>(best) / static_cast<float>(tot));
                 }
                 out.push_back(row);
             }
@@ -419,7 +445,6 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
     res.sites.resize(n_sites);
     for (auto &s : res.sites) s.codes.resize(n_rows);
     res.n_reads.resize(n_rows);
-    res.allele_frac.resize(n_rows);
     for (size_t sh = 0; sh < n_shards; ++sh)
         for (const Row &r : rows[sh])
             if (umi_dense.emplace(r.umi, static_cast<int32_t>(umi_dense.size())).second)
@@ -436,7 +461,6 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
                 res.sites[s].codes[o + i] = v < 0 ? -1 : site_dense[s].at(static_cast<uint32_t>(v));
             }
             res.n_reads[o + i] = r.n_reads;
-            res.allele_frac[o + i] = r.frac;
         }
     });
     rows.clear();
@@ -464,7 +488,6 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
     permute(res.intbc.codes);
     for (auto &s : res.sites) permute(s.codes);
     permute(res.n_reads);
-    permute(res.allele_frac);
 
     int64_t totals[kNStats] = {0};
     res.site_missing.assign(n_sites, 0);
@@ -477,6 +500,19 @@ MoleculeTable call_alleles(const ConstructSpec &spec, const CallAllelesOptions &
         }
     }
     for (int k = 0; k < kNStats; ++k) res.stats.emplace_back(kStatNames[k], totals[k]);
+    int64_t low[3] = {0, 0, 0};
+    std::map<uint64_t, int64_t> hist;
+    for (size_t sh = 0; sh < n_shards; ++sh) {
+        for (int k = 0; k < 3; ++k) low[k] += dropped[sh][k];
+        for (const auto &kv : umi_hist[sh]) hist[kv.first] += kv.second;
+    }
+    res.stats.emplace_back("low_read_umis", low[0]);
+    res.stats.emplace_back("low_read_umi_records", low[1]);
+    res.stats.emplace_back("low_read_umi_reads", low[2]);
+    for (const auto &kv : hist) {
+        res.hist_reads.push_back(static_cast<int64_t>(kv.first));
+        res.hist_umis.push_back(kv.second);
+    }
     res.stats.emplace_back("molecules", static_cast<int64_t>(n_rows));
     res.stats.emplace_back("bytes_inflated", static_cast<int64_t>(reader.bytes_inflated()));
     return res;

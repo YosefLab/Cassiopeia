@@ -11,10 +11,12 @@ from .conftest import requires_nova
 
 
 def _process(sim, clones=False, collapse=False, correct=True, **kw):
-    df = cas.pp.call_alleles(sim.bam, sim.construct, n_threads=2, collapse_umis=collapse)
+    df = cas.pp.call_alleles(
+        sim.bam, sim.construct, n_threads=2, min_reads_per_umi=1, collapse_umis=collapse
+    )
     if correct:
         df = cas.pp.correct_intbcs(df)
-    df = cas.pp.filter_alleles(df, min_reads_per_umi=1, min_umi_per_intbc=2)
+    df = cas.pp.filter_alleles(df, min_umi_per_allele=2)
     df = cas.pp.filter_cells(df, min_umi=5)
     if clones:
         df = cas.pp.call_clones(df, **kw)
@@ -24,7 +26,7 @@ def _process(sim, clones=False, collapse=False, correct=True, **kw):
 
 
 def _truth_cells(sim, df):
-    cells = cas.pp.qc.cell_metrics(df)
+    cells = cas.pp.cell_metrics(df)
     truth = sim.cells.set_index("cellBC_10x")
     truth = truth.rename(columns={c: f"{c}_true" for c in truth.columns if c in cells.columns})
     return cells.join(truth, how="inner")
@@ -32,7 +34,7 @@ def _truth_cells(sim, df):
 
 def test_correct_intbcs(sim_factory):
     sim = sim_factory("weissman", "multi")
-    raw = cas.pp.call_alleles(sim.bam, "weissman")
+    raw = cas.pp.call_alleles(sim.bam, "weissman", collapse_umis=False)
     df = cas.pp.correct_intbcs(raw)
     true = set(sim.integrations["intBC"])
     assert set(df["intBC"].astype(str)) <= true | set(raw["intBC"].astype(str))
@@ -46,64 +48,104 @@ def test_correct_intbcs(sim_factory):
     assert set(df2.loc[df2["pass_intbc"], "intBC"].astype(str)) <= set(wl)
     # collapsed tables are corrected the same way, but UMIs that only differed
     # by an intBC error can no longer be merged
-    col = cas.pp.correct_intbcs(cas.pp.collapse_umis(raw))
+    col = cas.pp.correct_intbcs(cas.pp.collapse_umis(raw, plot=False))
     assert col["n_umis"].sum() == len(raw) and col["n_reads"].sum() == df["n_reads"].sum()
     assert set(col["intBC"].astype(str)) == set(df["intBC"].astype(str))
+    # allele fractions are recomputed for the corrected (cell, intBC) pairs
+    for d in (df, col):
+        alleles = d.drop_duplicates(["cellBC", "intBC", *d.attrs["sites"]])
+        pair = alleles.groupby(["cellBC", "intBC"], observed=True)["allele_frac"].sum()
+        np.testing.assert_allclose(pair, 1, rtol=1e-5)
+
+
+def _keyed(df, key):
+    return df.astype(dict.fromkeys(key, str)).set_index(key).sort_index()
 
 
 def test_collapse_umis(sim_factory):
     sim = sim_factory("weissman", "multi")
-    raw = cas.pp.call_alleles(sim.bam, "weissman", plot=False)
-    col = cas.pp.collapse_umis(raw, read_cap=3)
+    raw = cas.pp.call_alleles(
+        sim.bam, "weissman", collapse_umis=False, min_reads_per_umi=1, plot=False
+    )
+    hist = raw.attrs["read_stats"]["reads_per_umi"]
+    assert sum(hist["umis"]) == len(raw)
+    assert (
+        dict(zip(hist["reads"], hist["umis"], strict=True))
+        == raw["n_reads"].value_counts().to_dict()
+    )
     sites = raw.attrs["sites"]
-    assert "UMI" not in col.columns and len(col) < len(raw)
-    assert col["n_umis"].sum() == len(raw) and col["n_reads"].sum() == raw["n_reads"].sum()
-    assert col.attrs["sites"] == sites and col.attrs["qc_params"]["read_cap"] == 3
-    # UMIs are kept apart by read count below the cap
-    per_umi = col["n_reads"] / col["n_umis"]
-    low = per_umi < 3
-    assert (per_umi[low] == per_umi[low].round()).all()
-    cls = np.minimum(per_umi, 3).astype(int).rename("cls")
-    assert not pd.concat([col[["cellBC", "intBC", *sites]], cls], axis=1).duplicated().any()
-    # collapsing while reading the BAM gives the same table
-    native = cas.pp.call_alleles(sim.bam, "weissman", collapse_umis=True, read_cap=3, plot=False)
-    key = ["cellBC", "intBC", *sites, "cls"]
-
-    def keyed(x):
-        x = x.assign(cls=np.minimum(x["n_reads"] // x["n_umis"], 3))
-        return x.astype(dict.fromkeys(key, str)).set_index(key).sort_index()
-
-    a, b = keyed(col), keyed(native)
-    pd.testing.assert_frame_equal(a[["n_umis", "n_reads"]], b[["n_umis", "n_reads"]])
-    np.testing.assert_allclose(a["allele_frac"], b["allele_frac"], rtol=1e-5)
-    # the allele filters give the same result on both forms
-    for min_reads in (1, 2, 3):
-        f_umi = cas.pp.filter_alleles(raw, min_reads_per_umi=min_reads, plot=False)
-        f_col = cas.pp.filter_alleles(native, min_reads_per_umi=min_reads, plot=False)
-        assert f_col.loc[f_col["pass"], "n_umis"].sum() == f_umi["pass"].sum()
+    key = ["cellBC", "intBC", *sites]
+    # allele_frac: fraction of the (cell, intBC)'s UMIs that carry the allele
+    s = raw.astype(dict.fromkeys(key, str))
+    expected = s.groupby(key)["n_reads"].transform("size") / s.groupby(["cellBC", "intBC"])[
+        "n_reads"
+    ].transform("size")
+    np.testing.assert_allclose(raw["allele_frac"], expected, rtol=1e-6)
+    for thr in (1, 2, 3):
+        col = cas.pp.collapse_umis(raw, min_reads_per_umi=thr, plot=False)
+        kept = raw[raw["n_reads"] >= thr]
+        assert "UMI" not in col.columns and col.attrs["sites"] == sites
+        assert col["n_umis"].sum() == len(kept) and col["n_reads"].sum() == kept["n_reads"].sum()
+        assert not _keyed(col, key).index.duplicated().any()
+        pair = col.groupby(["cellBC", "intBC"], observed=True)["allele_frac"].sum()
+        np.testing.assert_allclose(pair, 1, rtol=1e-5)
+        # filtering and collapsing while reading the BAM gives the same table
+        native = cas.pp.call_alleles(sim.bam, "weissman", min_reads_per_umi=thr, plot=False)
+        a, b = _keyed(col, key), _keyed(native, key)
+        pd.testing.assert_frame_equal(a[["n_umis", "n_reads"]], b[["n_umis", "n_reads"]])
+        np.testing.assert_allclose(a["allele_frac"], b["allele_frac"], rtol=1e-5)
+        st = native.attrs["read_stats"]
+        assert st["low_read_umis"] == len(raw) - len(kept)
+        assert st["low_read_umi_reads"] == raw["n_reads"].sum() - kept["n_reads"].sum()
+        # one record per read in the simulated BAM
+        assert st["low_read_umi_records"] == st["low_read_umi_reads"]
+        assert st["reads_per_umi"] == hist  # before the filter
+        assert native.attrs["qc_params"]["min_reads_per_umi"] == thr
+    default = cas.pp.call_alleles(sim.bam, "weissman", plot=False)
+    assert default.attrs["qc_params"]["min_reads_per_umi"] == 2
+    with pytest.raises(Exception, match="already collapsed"):
+        cas.pp.collapse_umis(default)
 
 
 def test_filters_annotate(sim_factory):
     sim = sim_factory("weissman", "multi")
-    df = cas.pp.call_alleles(sim.bam, "weissman")
-    out = cas.pp.filter_alleles(df, min_reads_per_umi=3, min_umi_per_intbc=2)
+    df = cas.pp.call_alleles(sim.bam, "weissman", collapse_umis=False, plot=False)
+    sites = df.attrs["sites"]
+    key = ["cellBC", "intBC", *sites]
+    out = cas.pp.filter_alleles(df, min_umi_per_allele=2, min_avg_reads_per_umi=4, plot=False)
     assert len(out) == len(df)
-    assert {"pass_reads_per_umi", "pass_allele_frac", "pass_umis_per_intbc", "pass"} <= set(
-        out.columns
-    )
-    assert (out.loc[out["pass"], "n_reads"] >= 3).all()
-    assert out.attrs["qc_params"]["min_reads_per_umi"] == 3
+    flags = {"umis_per_allele", "avg_reads_per_umi", "allele_frac", "allele_conflict"}
+    assert {f"pass_{f}" for f in flags} | {"pass"} <= set(out.columns)
+    s = out.astype(dict.fromkeys(key, str))
+    g = s[s["pass"]].groupby(key)
+    assert (g.size() >= 2).all() and (g["n_reads"].sum() / g.size() >= 4).all()
+    assert (s.loc[s["pass"], "allele_frac"] >= 0.5).all()
+    # one allele per (cell, intBC), with the most UMIs among the candidates
+    low = cas.pp.filter_alleles(df, min_allele_frac=0.2, plot=False)
+    s = low.astype(dict.fromkeys(key, str))
+    assert not s[s["pass"]].drop_duplicates(key).duplicated(["cellBC", "intBC"]).any()
+    assert (~s["pass_allele_conflict"]).any()
+    cand = s[s["pass_umis_per_allele"] & s["pass_avg_reads_per_umi"] & s["pass_allele_frac"]]
+    best = cand.groupby(key).size().groupby(level=["cellBC", "intBC"]).max()
+    kept = s[s["pass"]].groupby(key).size().droplevel(sites)
+    assert (kept.to_numpy() == best.reindex(kept.index).to_numpy()).all()
+    both = cas.pp.filter_alleles(df, min_allele_frac=0.2, allow_allele_conflicts=True, plot=False)
+    assert both["pass_allele_conflict"].all()
+    assert both["pass"].sum() == (cand.shape[0])
+    # minor alleles still count towards the cell's UMIs
+    quality = low["pass_umis_per_allele"] & low["pass_avg_reads_per_umi"]
+    assert cas.pp.cell_metrics(low)["n_umis"].sum() == quality.sum()
+    # collapsed tables give the same result
+    col = cas.pp.collapse_umis(df, plot=False)
+    for kw in ({"min_avg_reads_per_umi": 4}, {"min_allele_frac": 0.2}):
+        a = cas.pp.filter_alleles(df, plot=False, **kw)
+        b = cas.pp.filter_alleles(col, plot=False, **kw)
+        assert b.loc[b["pass"], "n_umis"].sum() == a["pass"].sum()
     cells = cas.pp.filter_cells(out, min_umi=20)
     assert cells.attrs["qc_params"]["min_umi"] == 20
-    # defaults: 3 reads per UMI and 2 UMIs per (cell, intBC)
-    default = cas.pp.filter_alleles(df)
-    assert default.attrs["qc_params"]["min_reads_per_umi"] == 3
-    assert default.attrs["qc_params"]["min_umi_per_intbc"] == 2
-    # on a collapsed table the UMI filter counts UMIs, not rows
-    col = cas.pp.filter_alleles(cas.pp.collapse_umis(df), min_reads_per_umi=1)
-    ok = col[col["pass"]]
-    per_intbc = ok.groupby(["cellBC", "intBC"], observed=True)["n_umis"].sum()
-    assert (per_intbc >= 2).all()
+    qc = cas.pp.filter_alleles(df, plot=False).attrs["qc_params"]
+    assert qc["min_allele_frac"] == 0.5 and qc["min_umi_per_allele"] == 2
+    assert qc["min_avg_reads_per_umi"] == 0 and qc["allow_allele_conflicts"] is False
     with pytest.raises(Exception, match="filter_integrations"):
         cas.pp.filter_cells(out, min_intbc_frac=0.5)
 
@@ -117,7 +159,8 @@ def test_single_clone_pipeline(sim_factory):
     assert not any(kinds.get(i) in ("duplicated", "silenced") for i in kept)
     assert len(kept) == (kinds == "normal").sum()
     cells = _truth_cells(sim, df)
-    assert "doublet" not in cas.pp.qc.cell_metrics(df).columns
+    metrics = cas.pp.cell_metrics(df)
+    assert "doublet" not in metrics.columns and "n_informative" not in metrics.columns
     flagged, true = ~cells["pass_doublet"].astype(bool), cells["doublet"].astype(bool)
     assert (flagged & true).sum() >= 0.6 * true.sum()
     assert (flagged & ~true).sum() <= 2
@@ -129,15 +172,15 @@ def test_single_clone_pipeline(sim_factory):
     assert list(metrics.index) == ["0"]
     assert metrics.loc["0", "n_integrations"] == len(kept)
     assert metrics.loc["0", "intBCs"] == sorted(kept)
-    all_cells = cas.pp.qc.cell_metrics(df)
+    all_cells = cas.pp.cell_metrics(df)
     assert metrics.loc["0", "n_cells"] == all_cells["pass_min_umi"].sum()
 
 
 def test_collapsed_pipeline_matches(sim_factory):
     sim = sim_factory("weissman", "single")
     # without intBC correction, which can merge UMIs only before collapsing
-    a = cas.pp.qc.cell_metrics(_process(sim, correct=False))
-    b = cas.pp.qc.cell_metrics(_process(sim, collapse=True, correct=False))
+    a = cas.pp.cell_metrics(_process(sim, correct=False))
+    b = cas.pp.cell_metrics(_process(sim, collapse=True, correct=False))
     cols = ["n_umis", "n_reads", "reads_per_umi", "n_intbcs", "intbc_frac", "pass_doublet"]
     pd.testing.assert_frame_equal(a[cols], b[cols])
 
@@ -162,8 +205,8 @@ def test_multi_clone_pipeline(sim_factory):
 def test_user_clones(sim_factory):
     sim = sim_factory("weissman", "multi")
     clones = dict(zip(sim.cells["cellBC_10x"], sim.cells["clone"], strict=True))
-    df = cas.pp.call_alleles(sim.bam, sim.construct, n_threads=2)
-    df = cas.pp.filter_alleles(df, min_reads_per_umi=1)
+    df = cas.pp.call_alleles(sim.bam, sim.construct, n_threads=2, min_reads_per_umi=1)
+    df = cas.pp.filter_alleles(df, min_umi_per_allele=1)
     df = cas.pp.filter_cells(df, min_umi=5)
     df = cas.pp.call_clones(df, clones=clones)
     df = cas.pp.filter_integrations(df)
@@ -227,34 +270,55 @@ def test_alleles_to_characters(sim_factory, tmp_path):
 
 def test_ambiguous_characters(sim_factory):
     sim = sim_factory("weissman", "single")
-    df = cas.pp.call_alleles(sim.bam, "weissman", plot=False)
-    df = cas.pp.filter_alleles(df, min_reads_per_umi=1, plot=False)
-    df = cas.pp.filter_integrations(df, max_conflict=1.0, plot=False)
-    plain = cas.pp.alleles_to_characters(df, mapping="allele", min_allele_frac=0.2)
-    amb = cas.pp.alleles_to_characters(df, mapping="allele", ambiguous=True, min_allele_frac=0.2)
-    p, a = plain.obsm["characters"], amb.obsm["characters"]
+    df = cas.pp.call_alleles(sim.bam, "weissman", min_reads_per_umi=1, plot=False)
+
+    def prepare(**kw):
+        d = cas.pp.filter_alleles(df, min_allele_frac=0.2, plot=False, **kw)
+        return cas.pp.filter_integrations(d, max_conflict=1.0, plot=False)
+
+    plain, conflicts = prepare(), prepare(allow_allele_conflicts=True)
+    with pytest.raises(Exception, match="allow_ambiguous"):
+        cas.pp.alleles_to_characters(conflicts)
+    p = cas.pp.alleles_to_characters(plain, mapping="allele").obsm["characters"]
+    a = cas.pp.alleles_to_characters(conflicts, mapping="allele", allow_ambiguous=True)
+    a = a.obsm["characters"]
+    assert a.index.equals(p.index) and a.columns.equals(p.columns)
     tuples = a.map(lambda v: isinstance(v, tuple)).to_numpy()
     assert tuples.any()
-    # ambiguous entries hold distinct states, including the major allele
+    # ambiguous entries hold distinct states, including the kept allele
     for r, c in zip(*np.nonzero(tuples), strict=True):
         v = a.iat[r, c]
         assert len(v) >= 2 and len(set(v)) == len(v) and "-" not in v
         assert p.iat[r, c] in (*v, "-")
-    # everything else is unchanged where the major allele was called
+    # everything else is unchanged where the kept allele was called
     same = ~tuples & (p.to_numpy() != "-")
     assert (p.to_numpy()[same] == a.to_numpy()[same]).all()
-    ints = cas.pp.alleles_to_characters(df, mapping="int", ambiguous=True, min_allele_frac=0.2)
+    ints = cas.pp.alleles_to_characters(conflicts, mapping="int", allow_ambiguous=True)
     v = ints.obsm["characters"].to_numpy()[tuples][0]
     assert isinstance(v, tuple) and all(isinstance(x, (int, np.integer)) for x in v)
-    strs = cas.pp.alleles_to_characters(df, ambiguous=True, min_allele_frac=0.2).obsm["characters"]
+    strs = cas.pp.alleles_to_characters(conflicts, allow_ambiguous=True).obsm["characters"]
     v = strs.to_numpy()[tuples][0]
     assert isinstance(v, tuple) and all(isinstance(x, str) for x in v)
 
 
-def test_compute_empirical_indel_priors(sim_factory):
+def test_compute_indel_priors(sim_factory):
     sim = sim_factory("weissman", "single")
     df = _process(sim)
-    priors = cas.pp.compute_empirical_indel_priors(df)
+    priors = cas.pp.compute_indel_priors(df)
     assert len(priors) > 0 and priors["freq"].between(0, 1).all()
     assert not any("None" in i for i in priors.index)
     assert priors["count"].max() <= df.loc[df["pass"], "intBC"].nunique()
+    # from the character matrix, mapping states back to alleles
+    results = []
+    for mapping in ("str", "int", "allele"):
+        tdata = cas.pp.alleles_to_characters(df, mapping=mapping)
+        results.append(cas.pp.compute_indel_priors(tdata).sort_index())
+    chars = cas.pp.alleles_to_characters(df, return_type="dataframe")
+    results.append(cas.pp.compute_indel_priors(chars).sort_index())
+    for r in results[1:]:
+        pd.testing.assert_frame_equal(r, results[0])
+    from_matrix = results[0]
+    assert len(from_matrix) > 0 and set(from_matrix.index) <= set(priors.index)
+    assert (from_matrix["count"] <= priors.loc[from_matrix.index, "count"]).all()
+    with pytest.raises(ValueError, match="obs"):
+        cas.pp.compute_indel_priors(tdata, grouping_variables=["clone", "intBC"])

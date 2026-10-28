@@ -40,7 +40,7 @@ def _cell_clones(df: pd.DataFrame) -> pd.Series:
     return pd.Series(clone, index=cells, dtype=object).where(pd.notna(clone), None)
 
 
-def intbc_fraction(df: pd.DataFrame) -> pd.Series:
+def _intbc_fraction(df: pd.DataFrame) -> pd.Series:
     """Per cell, the fraction of its clone's expected intBCs that are detected.
 
     Expected intBCs are the clone's kept integrations
@@ -82,13 +82,14 @@ def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
     intBCs are counted over the rows that pass the row-level filters run so
     far (:func:`~cassiopeia.pp.correct_intbcs` with a whitelist,
     :func:`~cassiopeia.pp.filter_alleles`,
-    :func:`~cassiopeia.pp.filter_integrations`); cell-level filters do not
-    change them. Columns appear once the step that computes them has run:
+    :func:`~cassiopeia.pp.filter_integrations`), including minor alleles
+    removed by :func:`~cassiopeia.pp.filter_alleles`; cell-level filters do
+    not change them. Columns appear once the step that computes them has run:
 
     * ``n_umis``: UMIs (molecules) in the cell.
     * ``n_reads``: reads supporting those UMIs.
     * ``reads_per_umi``: ``n_reads / n_umis``. Low values mean the library
-      was sequenced shallowly and single-read UMIs are common.
+      was sequenced shallowly.
     * ``n_intbcs``: distinct intBCs detected.
     * ``intbc_frac``: fraction of the intBCs expected for the cell's clone
       that are detected. The expected intBCs are the clone's kept
@@ -98,8 +99,7 @@ def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
     * ``clone``: clone from :func:`~cassiopeia.pp.call_clones`.
     * ``doublet_<method>``: doublet scores from
       :func:`~cassiopeia.pp.filter_doublets` (see
-      :func:`~cassiopeia.pp.doublet_scores`), and ``n_informative``, the
-      integrations used for the ``allele_conflict`` score.
+      :func:`~cassiopeia.pp.doublet_scores`).
     * ``pass_min_umi``, ``pass_intbc_frac``, ``pass_clone``,
       ``pass_doublet``: results of the cell-level filters
       (:func:`~cassiopeia.pp.filter_cells`, :func:`~cassiopeia.pp.call_clones`,
@@ -125,13 +125,11 @@ def cell_metrics(df: pd.DataFrame) -> pd.DataFrame:
     out["reads_per_umi"] = out["n_reads"] / out["n_umis"].replace(0, np.nan)
     out["n_intbcs"] = d.groupby(dcell)["intBC"].nunique().reindex(cells).fillna(0).astype(int)
     if _expected_intbcs(df) is not None:
-        out["intbc_frac"] = intbc_fraction(df).reindex(cells)
+        out["intbc_frac"] = _intbc_fraction(df).reindex(cells)
     first = df.drop_duplicates("cellBC")
     first = first.set_index(first["cellBC"].astype(str))
     extra = [
-        c
-        for c in first.columns
-        if c == "clone" or c.startswith("doublet_") or c == "n_informative" or c in _CELL_PASS
+        c for c in first.columns if c == "clone" or c.startswith("doublet_") or c in _CELL_PASS
     ]
     if "sample" in first.columns:
         extra = ["sample"] + extra
@@ -156,14 +154,14 @@ def clone_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     * ``n_cells``: cells assigned to the clone.
     * ``n_cells_passed``: cells passing every cell-level filter so far
-      (``passed_qc`` in :func:`~cassiopeia.pp.qc.cell_metrics`).
+      (``passed_qc`` in :func:`~cassiopeia.pp.cell_metrics`).
     * ``n_doublets``: cells flagged by :func:`~cassiopeia.pp.filter_doublets`.
     * ``n_integrations``: number of intBCs that make up the clone: its kept
       integrations after :func:`~cassiopeia.pp.filter_integrations`,
       otherwise its NovaClone signature.
     * ``intBCs``: those intBCs, as a sorted list.
     * ``median_umis``: median UMIs per cell (``n_umis`` in
-      :func:`~cassiopeia.pp.qc.cell_metrics`).
+      :func:`~cassiopeia.pp.cell_metrics`).
     * ``mean_intbc_frac``: mean fraction of the clone's intBCs detected per
       cell (``intbc_frac``).
 
@@ -198,44 +196,109 @@ def clone_metrics(df: pd.DataFrame) -> pd.DataFrame:
     return out.loc[order]
 
 
-def _intbc_umis(df: pd.DataFrame) -> pd.DataFrame:
-    """Per (cell, intBC) UMIs, reads and pass status (for the allele filter plot).
+def _allele_umis(df: pd.DataFrame) -> pd.DataFrame:
+    """Per allele (cell, intBC, site alleles) summary for the plots.
 
-    ``umis_ok`` counts UMIs passing the read filters of
-    :func:`cassiopeia.pp.filter_alleles` (all UMIs before it has run).
+    UMIs, reads, mean reads per UMI, ``allele_frac``, and whether the allele
+    passes every filter of :func:`cassiopeia.pp.filter_alleles` (``kept``).
     """
-    keys = [df["cellBC"].astype(str), df["intBC"].astype(str)]
-    umis = pd.Series(umi_counts(df), index=df.index)
-    ok = np.ones(len(df), dtype=bool)
-    for c in ("pass_reads_per_umi", "pass_allele_frac"):
+    names = [c for c in ("sample", "cellBC", "intBC") if c in df.columns] + site_columns(df)
+    codes = pd.DataFrame({c: df[c].cat.codes.to_numpy() for c in names}, copy=False)
+    allele = codes.groupby(names, sort=False).ngroup().to_numpy()
+    _, first = np.unique(allele, return_index=True)
+    n_umis = np.bincount(allele, weights=umi_counts(df))
+    n_reads = np.bincount(allele, weights=df["n_reads"].to_numpy().astype(np.float64))
+
+    bad = np.zeros(len(df), dtype=bool)
+    for c in (
+        "pass_umis_per_allele",
+        "pass_avg_reads_per_umi",
+        "pass_allele_frac",
+        "pass_allele_conflict",
+    ):
         if c in df.columns:
-            ok &= df[c].to_numpy()
-    out = pd.DataFrame(
+            bad |= ~df[c].to_numpy(dtype=bool)
+    return pd.DataFrame(
         {
-            "n_umis": umis.groupby(keys).sum(),
-            "umis_ok": (umis * ok).groupby(keys).sum(),
-            "n_reads": df.groupby(keys)["n_reads"].sum(),
+            "n_umis": n_umis.astype(np.int64),
+            "n_reads": n_reads.astype(np.int64),
+            "reads_per_umi": n_reads / np.maximum(n_umis, 1),
+            "allele_frac": df["allele_frac"].to_numpy()[first],
+            "kept": np.bincount(allele, weights=bad) == 0,
         }
     )
-    out["reads_per_umi"] = out["n_reads"] / out["n_umis"]
-    out["pass"] = df.groupby(keys)["pass"].any() if "pass" in df.columns else True
-    out.index.names = ["cellBC", "intBC"]
-    return out.reset_index()
 
 
 __all__ = [
     "cell_metrics",
     "clone_metrics",
-    "compute_empirical_indel_priors",
+    "compute_indel_priors",
     "integration_metrics",
-    "intbc_fraction",
 ]
 
 
-def compute_empirical_indel_priors(
-    df: pd.DataFrame,
+def _character_intbc(name: str) -> str:
+    """The intBC of a character named ``{intBC}-{site}``."""
+    return name.rsplit("-", 1)[0] if "-" in name else name
+
+
+def _priors_from_characters(
+    data, grouping_variables: list[str], characters_key: str
+) -> tuple[dict[str, int], int]:
+    """Indel occurrences per group in a character matrix (TreeData or DataFrame)."""
+    if hasattr(data, "obsm"):
+        chars, meta, obs = data.obsm[characters_key], data.uns, data.obs
+    else:
+        chars, meta, obs = data, data.attrs, None
+    missing = str(meta.get("missing_state", -1))
+    unedited = str(meta.get("unmodified_state", 0))
+    states = pd.DataFrame(meta.get("character_states", {}))
+    allele_of = {}
+    if len(states):
+        allele_of = dict(
+            zip(
+                zip(states["character"].astype(str), states["state"].astype(str), strict=True),
+                states["allele"].astype(str),
+                strict=True,
+            )
+        )
+    by = [g for g in grouping_variables if g != "intBC"]
+    if by:
+        if obs is None or any(g not in obs.columns for g in by):
+            raise ValueError(f"Grouping variables {by} must be columns of tdata.obs.")
+        cell_group = obs[by].astype(str).agg("|".join, axis=1).to_numpy()
+    else:
+        cell_group = np.zeros(len(chars), dtype=int)
+    columns: dict[str, list[str]] = {}
+    for name in chars.columns:
+        columns.setdefault(_character_intbc(str(name)), []).append(name)
+    counts: dict[str, int] = {}
+    n_groups = 0
+    for group in pd.unique(cell_group):
+        rows = cell_group == group
+        for names in columns.values():
+            seen: set[str] = set()
+            observed = False
+            for name in names:
+                for v in pd.unique(chars.loc[rows, name].to_numpy()):
+                    for s in v if isinstance(v, tuple) else (v,):
+                        s = str(s)
+                        if s == missing:
+                            continue
+                        observed = True
+                        if s != unedited:
+                            seen.add(allele_of.get((str(name), s), s))
+            n_groups += observed
+            for allele in seen:
+                counts[allele] = counts.get(allele, 0) + 1
+    return counts, n_groups
+
+
+def compute_indel_priors(
+    data,
     grouping_variables: list[str] | None = None,
     cut_sites: list[str] | None = None,
+    characters_key: str = "characters",
 ) -> pd.DataFrame:
     """Empirical indel frequencies, for use as priors.
 
@@ -244,31 +307,50 @@ def compute_empirical_indel_priors(
     clonal population; group by more columns (e.g. ``["clone", "intBC"]``)
     when the same intBC occurs in several clones.
 
+    Accepts the allele table, a legacy allele table with one column per cut
+    site, or a character matrix from
+    :func:`cassiopeia.pp.alleles_to_characters` (a TreeData, or the DataFrame
+    from ``return_type="dataframe"``). For a character matrix, edits are
+    mapped back to their alleles with ``character_states``, the intBC of a
+    character is taken from its name (``{intBC}-{site}``), and grouping
+    variables other than ``"intBC"`` are columns of ``tdata.obs``.
+
     Args:
-        df: Allele table (rows passing all filters are used), or a legacy
-            allele table with one column per cut site.
-        grouping_variables: Columns defining independent groups (default
+        data: Allele table (rows passing all filters are used), legacy allele
+            table, or character matrix (TreeData or DataFrame).
+        grouping_variables: Variables defining independent groups (default
             ``["intBC"]``).
-        cut_sites: Site columns. Default: the construct's sites, or columns
-            named ``r1``, ``r2``, ... of a legacy allele table.
+        cut_sites: (allele tables) Site columns. Default: the construct's
+            sites, or columns named ``r1``, ``r2``, ... of a legacy allele table.
+        characters_key: (TreeData) Key of the character matrix in ``obsm``.
 
     Returns:
         DataFrame indexed by indel with ``count`` (groups containing it) and
         ``freq`` (fraction of groups).
     """
     grouping_variables = list(grouping_variables or ["intBC"])
-    if cut_sites is None:
-        if df.attrs.get("sites"):
-            cut_sites = site_columns(df)
-        else:
-            cut_sites = [c for c in df.columns if re.fullmatch(r"r\d+", str(c))]
-    groups = passing(df).groupby(grouping_variables, observed=True)
-    counts: dict[str, int] = {}
-    for _, g in groups:
-        for allele in pd.unique(g[cut_sites].astype(object).to_numpy().ravel()):
-            if isinstance(allele, str) and "none" not in allele.lower():
-                counts[allele] = counts.get(allele, 0) + 1
+    is_matrix = hasattr(data, "obsm") or (
+        isinstance(data, pd.DataFrame)
+        and "intBC" not in data.columns
+        and "missing_state" in data.attrs
+    )
+    if is_matrix:
+        counts, n_groups = _priors_from_characters(data, grouping_variables, characters_key)
+    else:
+        df = data
+        if cut_sites is None:
+            if df.attrs.get("sites"):
+                cut_sites = site_columns(df)
+            else:
+                cut_sites = [c for c in df.columns if re.fullmatch(r"r\d+", str(c))]
+        groups = passing(df).groupby(grouping_variables, observed=True)
+        counts = {}
+        for _, g in groups:
+            for allele in pd.unique(g[cut_sites].astype(object).to_numpy().ravel()):
+                if isinstance(allele, str) and "none" not in allele.lower():
+                    counts[allele] = counts.get(allele, 0) + 1
+        n_groups = groups.ngroups
     out = pd.DataFrame({"count": pd.Series(counts, dtype=int)})
-    out["freq"] = out["count"] / max(groups.ngroups, 1)
+    out["freq"] = out["count"] / max(n_groups, 1)
     out.index.name = "indel"
     return out

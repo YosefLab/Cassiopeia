@@ -1,6 +1,5 @@
 """Preprocessing: from sequencing reads to character matrices."""
 
-from . import qc
 from ._plotting import plot_edit_frequency
 from .align import align
 from .alleles import call_alleles, call_read, collapse_umis
@@ -12,7 +11,7 @@ from .doublets import doublet_scores, filter_doublets
 from .filter import filter_alleles, filter_cells
 from .integrations import filter_integrations, integration_metrics
 from .pipeline import read_alleles, run
-from .qc import clone_metrics, compute_empirical_indel_priors
+from .qc import cell_metrics, clone_metrics, compute_indel_priors
 from .reference import build_reference
 
 __all__ = [
@@ -25,9 +24,10 @@ __all__ = [
     "call_alleles",
     "call_clones",
     "call_read",
+    "cell_metrics",
     "clone_metrics",
     "collapse_umis",
-    "compute_empirical_indel_priors",
+    "compute_indel_priors",
     "correct_intbcs",
     "doublet_scores",
     "filter_alleles",
@@ -38,7 +38,6 @@ __all__ = [
     "list_presets",
     "load_construct",
     "plot_edit_frequency",
-    "qc",
     "read_alleles",
     "run",
 ]

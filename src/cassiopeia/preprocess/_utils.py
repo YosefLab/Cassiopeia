@@ -66,8 +66,12 @@ def set_pass(df: pd.DataFrame, name: str, values: np.ndarray | pd.Series) -> Non
     df["pass"] = df[pass_cols].all(axis=1).to_numpy()
 
 
-def passing(df: pd.DataFrame) -> pd.DataFrame:
-    """Rows passing all filters so far."""
+def passing(df: pd.DataFrame, ignore: Iterable[str] = ()) -> pd.DataFrame:
+    """Rows passing all filters so far, except the ``ignore`` columns."""
+    ignore = set(ignore)
+    if ignore:
+        cols = [c for c in df.columns if c.startswith("pass_") and c not in ignore]
+        return df[df[cols].all(axis=1).to_numpy()] if cols else df
     if "pass" in df.columns:
         return df[df["pass"].to_numpy()]
     return df
@@ -79,10 +83,19 @@ SINGLE_CLONE = "0"
 #: Cell-level ``pass_*`` columns; the others are row-level.
 CELL_PASS = ("pass_min_umi", "pass_intbc_frac", "pass_clone", "pass_doublet")
 
+#: ``pass_*`` columns that choose among the alleles of a (cell, intBC). Cell,
+#: intBC and conflict statistics (UMI counts, clones, integrations, doublets)
+#: ignore them, so minor alleles still count there.
+ALLELE_PASS = ("pass_allele_frac", "pass_allele_conflict")
+
 
 def row_passing(df: pd.DataFrame) -> pd.DataFrame:
-    """Rows passing the row-level filters (cell-level flags ignored)."""
-    cols = [c for c in df.columns if c.startswith("pass_") and c not in CELL_PASS]
+    """Rows passing the row-level quality filters (cell flags and allele choice ignored)."""
+    cols = [
+        c
+        for c in df.columns
+        if c.startswith("pass_") and c not in CELL_PASS and c not in ALLELE_PASS
+    ]
     if cols:
         return df[df[cols].all(axis=1).to_numpy()]
     return df
@@ -98,6 +111,44 @@ def umi_counts(df: pd.DataFrame) -> np.ndarray:
 def is_collapsed(df: pd.DataFrame) -> bool:
     """Whether rows are alleles (UMIs collapsed) rather than single UMIs."""
     return "n_umis" in df.columns
+
+
+def reads_per_umi_hist(n_reads: np.ndarray) -> dict[str, list[int]]:
+    """Number of UMIs (``umis``) with each read count (``reads``)."""
+    reads, umis = np.unique(np.asarray(n_reads, dtype=np.int64), return_counts=True)
+    return {"reads": reads.tolist(), "umis": umis.tolist()}
+
+
+def allele_fractions(df: pd.DataFrame) -> np.ndarray:
+    """Fraction of the UMIs of each row's (cell, intBC) that carry the row's allele.
+
+    The fractions of the alleles of a (cell, intBC) sum to 1. Without UMIs
+    (bulk data) reads are counted instead.
+    """
+    if len(df) == 0:
+        return np.zeros(0, dtype=np.float32)
+    pair_cols = [c for c in ("sample", "cellBC", "intBC") if c in df.columns]
+    names = pair_cols + site_columns(df)
+    codes = pd.DataFrame(
+        {
+            c: df[c].cat.codes.to_numpy()
+            if isinstance(df[c].dtype, pd.CategoricalDtype)
+            else pd.factorize(df[c], use_na_sentinel=False)[0]
+            for c in names
+        },
+        copy=False,
+    )
+    if df.attrs.get("has_umis", True) or "n_umis" in df.columns:
+        w = umi_counts(df).astype(np.float64)
+    else:
+        w = df["n_reads"].to_numpy().astype(np.float64)
+    pair = codes.groupby(pair_cols, sort=False).ngroup().to_numpy()
+    allele = codes.groupby(names, sort=False).ngroup().to_numpy()
+    pair_total = np.bincount(pair, weights=w)[pair]
+    allele_total = np.bincount(allele, weights=w)[allele]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        frac = np.where(pair_total > 0, allele_total / pair_total, 0.0)
+    return frac.astype(np.float32)
 
 
 def site_columns(df: pd.DataFrame) -> list[str]:

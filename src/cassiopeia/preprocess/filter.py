@@ -11,77 +11,119 @@ from cassiopeia.mixins import logger
 
 from ._utils import (
     finish_plot,
-    is_collapsed,
     record_params,
     row_passing,
     set_pass,
+    site_columns,
     umi_counts,
 )
 
 
+def _codes(df: pd.DataFrame, names: list[str]) -> pd.DataFrame:
+    return pd.DataFrame({c: df[c].cat.codes.to_numpy() for c in names}, copy=False)
+
+
 def filter_alleles(
     df: pd.DataFrame,
-    min_reads_per_umi: float = 3,
     min_allele_frac: float = 0.5,
-    min_umi_per_intbc: int = 2,
+    min_umi_per_allele: int = 2,
+    min_avg_reads_per_umi: float = 0,
+    allow_allele_conflicts: bool = False,
     *,
     plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
-    """Flag low-quality rows of the allele table.
+    """Flag unreliable alleles in the allele table.
 
-    Adds ``pass_reads_per_umi`` (UMIs with at least ``min_reads_per_umi``
-    reads; exact on tables from :func:`cassiopeia.pp.collapse_umis` for
-    thresholds up to its ``read_cap``), ``pass_allele_frac`` (at least
-    ``min_allele_frac`` of the reads agree with the allele at every site) and
-    ``pass_umis_per_intbc`` (the cell has at least ``min_umi_per_intbc``
-    passing UMIs for the intBC; removes most ambient and erroneous intBCs).
+    Each allele (cell, intBC and site alleles) is judged as a whole. UMIs with
+    too few reads were already dropped (``min_reads_per_umi`` of
+    :func:`cassiopeia.pp.call_alleles`). Adds four filters:
 
-    Both read and UMI thresholds depend on sequencing depth: lower them for
+    * ``pass_umis_per_allele``: the allele has at least
+      ``min_umi_per_allele`` UMIs. Alleles seen in a single UMI are much less
+      reliable; this also removes most ambient and erroneous intBCs.
+    * ``pass_avg_reads_per_umi``: the allele's UMIs have at least
+      ``min_avg_reads_per_umi`` reads on average. Molecules from ambient RNA
+      tend to have fewer reads than the cell's own.
+    * ``pass_allele_frac``: the allele holds at least ``min_allele_frac`` of
+      the UMIs of its (cell, intBC) (``allele_frac``).
+    * ``pass_allele_conflict``: with ``allow_allele_conflicts=False``, only
+      the allele with the most UMIs (then reads) among those passing the
+      filters above is kept for each (cell, intBC). With ``True``, every such
+      allele is kept, and :func:`cassiopeia.pp.alleles_to_characters` needs
+      ``allow_ambiguous=True``.
+
+    Alleles removed only by ``pass_allele_frac`` or ``pass_allele_conflict``
+    still count where the presence of an intBC or of several alleles
+    matters: UMIs per cell (:func:`cassiopeia.pp.filter_cells`), clone
+    calling, and the conflict rates of
+    :func:`cassiopeia.pp.filter_integrations` and
+    :func:`cassiopeia.pp.filter_doublets`.
+
+    The UMI and read thresholds depend on sequencing depth: lower them for
     shallowly sequenced libraries and raise them for deep ones. The plot shows
     where the thresholds fall.
 
     Args:
         df: Allele table.
-        min_reads_per_umi: Minimum reads per UMI.
-        min_allele_frac: Minimum fraction of reads supporting the allele at
-            each site.
-        min_umi_per_intbc: Minimum passing UMIs per (cell, intBC).
-        plot: Plot the reads per UMI, and the passing UMIs per (cell, intBC).
+        min_allele_frac: Minimum fraction of the (cell, intBC)'s UMIs carrying
+            the allele.
+        min_umi_per_allele: Minimum UMIs per allele.
+        min_avg_reads_per_umi: Minimum mean reads per UMI of the allele.
+        allow_allele_conflicts: Keep every allele passing the filters instead
+            of only the most abundant one per (cell, intBC).
+        plot: Plot UMIs vs. mean reads per UMI per allele, colored by allele
+            fraction.
         save: Save the plot to this path.
 
     Returns:
         The allele table with ``pass_*`` columns.
     """
     df = df.copy()
+    pair_cols = [c for c in ("sample", "cellBC", "intBC") if c in df.columns]
+    codes = _codes(df, pair_cols + site_columns(df))
+    pair = codes.groupby(pair_cols, sort=False).ngroup().to_numpy()
+    allele = codes.groupby(list(codes.columns), sort=True).ngroup().to_numpy()
     umis = umi_counts(df)
-    read_cap = df.attrs.get("qc_params", {}).get("read_cap")
-    if is_collapsed(df) and read_cap is not None and min_reads_per_umi > read_cap:
-        logger.warning(
-            f"UMIs were collapsed with read_cap={read_cap}; UMIs with {read_cap} or more reads "
-            f"are filtered by their mean reads per UMI, not exactly at min_reads_per_umi="
-            f"{min_reads_per_umi}. Collapse with a higher read_cap to filter exactly."
-        )
-    reads_per_umi = df["n_reads"].to_numpy() / np.maximum(umis, 1)
-    set_pass(df, "reads_per_umi", reads_per_umi >= min_reads_per_umi)
+    allele_umis = np.bincount(allele, weights=umis)
+    allele_reads = np.bincount(allele, weights=df["n_reads"].to_numpy().astype(np.float64))
+    avg_reads = allele_reads / np.maximum(allele_umis, 1)
+    set_pass(df, "umis_per_allele", allele_umis[allele] >= min_umi_per_allele)
+    set_pass(df, "avg_reads_per_umi", avg_reads[allele] >= min_avg_reads_per_umi)
     set_pass(df, "allele_frac", df["allele_frac"].to_numpy() >= min_allele_frac)
-    ok = df["pass_reads_per_umi"].to_numpy() & df["pass_allele_frac"].to_numpy()
-    grp = pd.DataFrame(
-        {"cell": df["cellBC"].cat.codes, "intbc": df["intBC"].cat.codes, "umis": umis * ok}
+    candidate = (
+        df["pass_umis_per_allele"].to_numpy()
+        & df["pass_avg_reads_per_umi"].to_numpy()
+        & df["pass_allele_frac"].to_numpy()
     )
-    n_ok = grp.groupby(["cell", "intbc"])["umis"].transform("sum").to_numpy()
-    set_pass(df, "umis_per_intbc", n_ok >= min_umi_per_intbc)
+    if allow_allele_conflicts:
+        minor = np.zeros(len(df), dtype=bool)
+    else:
+        # the most abundant candidate allele of each (cell, intBC)
+        _, first = np.unique(allele, return_index=True)
+        alleles = pd.DataFrame(
+            {"pair": pair[first], "umis": allele_umis, "reads": allele_reads},
+        )[candidate[first]]
+        top = alleles.sort_values(
+            ["pair", "umis", "reads"], ascending=[True, False, False], kind="stable"
+        ).drop_duplicates("pair")
+        is_top = np.zeros(len(allele_umis), dtype=bool)
+        is_top[top.index.to_numpy()] = True
+        minor = candidate & ~is_top[allele]
+    set_pass(df, "allele_conflict", ~minor)
     record_params(
         df,
-        min_reads_per_umi=min_reads_per_umi,
         min_allele_frac=min_allele_frac,
-        min_umi_per_intbc=min_umi_per_intbc,
+        min_umi_per_allele=min_umi_per_allele,
+        min_avg_reads_per_umi=min_avg_reads_per_umi,
+        allow_allele_conflicts=allow_allele_conflicts,
     )
     passed = df["pass"].to_numpy()
     logger.info(
         f"filter_alleles: {int(umis[passed].sum()):,}/{int(umis.sum()):,} UMIs pass "
-        f"(min_reads_per_umi={min_reads_per_umi}, min_allele_frac={min_allele_frac}, "
-        f"min_umi_per_intbc={min_umi_per_intbc})"
+        f"(min_allele_frac={min_allele_frac}, min_umi_per_allele={min_umi_per_allele}, "
+        f"min_avg_reads_per_umi={min_avg_reads_per_umi})"
+        + ("" if allow_allele_conflicts else f"; {int(umis[minor].sum()):,} UMIs of minor alleles")
     )
     if plot or save:
         from ._plotting import plot_filter_alleles
@@ -111,8 +153,9 @@ def filter_cells(
 
     Args:
         df: Allele table.
-        min_umi: Minimum UMIs per cell, counting UMIs that pass
-            :func:`cassiopeia.pp.filter_alleles`.
+        min_umi: Minimum UMIs per cell, counting UMIs of alleles that pass
+            the UMI and read filters of :func:`cassiopeia.pp.filter_alleles`
+            (minor alleles included).
         min_intbc_frac: Minimum fraction of the intBCs expected for the
             cell's clone (its kept integrations; all kept integrations
             without clones) that are detected in the cell.
@@ -123,7 +166,7 @@ def filter_cells(
     Returns:
         The allele table with ``pass_min_umi`` / ``pass_intbc_frac`` columns.
     """
-    from .qc import intbc_fraction
+    from .qc import _intbc_fraction
 
     df = df.copy()
     if min_umi is not None:
@@ -135,7 +178,7 @@ def filter_cells(
             f"filter_cells: {len(keep):,}/{df['cellBC'].nunique():,} cells with >= {min_umi} UMIs"
         )
     if min_intbc_frac is not None:
-        frac = intbc_fraction(df)
+        frac = _intbc_fraction(df)
         keep = frac[frac >= min_intbc_frac].index
         set_pass(df, "intbc_frac", df["cellBC"].astype(str).isin(keep).to_numpy())
         record_params(df, min_intbc_frac=min_intbc_frac)

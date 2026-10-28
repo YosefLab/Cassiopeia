@@ -52,7 +52,6 @@ struct ConstructSpec {
     std::string reference;
     int intbc_start = -1;    // [start, end) of the intBC in the reference; -1 if none
     int intbc_end = -1;
-    bool legacy = false;     // reproduce legacy parse_cigar exactly (indel model)
     bool clip_missing = true;
     bool normalize_indels = true;
     std::vector<SiteSpec> sites;

@@ -12,9 +12,9 @@ import pandas as pd
 from cassiopeia.mixins import PreprocessError, logger
 
 from ._resolve import resolve_alleles
-from ._utils import finish_plot, passing, record_params, set_pass, umi_counts
+from ._utils import ALLELE_PASS, finish_plot, passing, record_params, set_pass, umi_counts
 
-Method = Literal["allele_conflict", "clone_mixture", "umi_outlier"]
+Method = Literal["allele_conflict", "clone_mixture"]
 
 
 def _pass_without(df: pd.DataFrame, exclude: Iterable[str]) -> np.ndarray:
@@ -41,11 +41,12 @@ def doublet_scores(
           ``min_umi`` UMIs) holding two incompatible alleles. Two cells from
           different lineages carry different alleles at the same intBC, so
           conflicts nominate doublets. NaN when fewer than ``min_informative``
-          integrations are observed.
+          integrations are observed. Minor alleles removed by
+          :func:`cassiopeia.pp.filter_alleles` (``min_allele_frac``,
+          ``allow_allele_conflicts``) are included.
         * ``clone_mixture``: fraction of the cell's UMIs on intBCs that belong
           to another clone's signature but not its own (1 for NovaClone
           multiplets). Only with more than one clone.
-        * ``umi_outlier``: robust z-score of log UMIs within the clone.
         * ``hooks``: name -> function returning a per-cell score Series.
 
     Returns:
@@ -56,10 +57,11 @@ def doublet_scores(
     if methods == "auto":
         methods = ["allele_conflict"] + (["clone_mixture"] if n_clones > 1 else [])
     methods = list(methods)
-    base = df.assign(**{"pass": _pass_without(df, ["pass_doublet"])})
+    # minor alleles (removed only by the allele choice) are conflict evidence
+    base = df.assign(**{"pass": _pass_without(df, ["pass_doublet", *ALLELE_PASS])})
     # Score every cell with usable molecules, including cells that fail
     # clone / integration based filters (e.g. NovaClone multiplets).
-    cell_level = ["pass_doublet", "pass_integration", "pass_intbc_frac", "pass_clone"]
+    cell_level = ["pass_doublet", "pass_integration", "pass_intbc_frac", "pass_clone", *ALLELE_PASS]
     mol = df.assign(**{"pass": _pass_without(df, cell_level)})
     cells = passing(mol)["cellBC"].astype(str).unique()
     out = pd.DataFrame(index=pd.Index(cells, name="cellBC"))
@@ -74,7 +76,6 @@ def doublet_scores(
         n_conf = g["conflict"].sum()
         score = (n_conf / n_inf).where(n_inf >= min_informative)
         out["allele_conflict"] = score.reindex(out.index)
-        out["n_informative"] = n_inf.reindex(out.index).fillna(0).astype(int)
 
     if "clone_mixture" in methods:
         if not have_clones:
@@ -115,23 +116,6 @@ def doublet_scores(
         score[(clone_of == "multiplet").to_numpy()] = 1.0
         out["clone_mixture"] = score
 
-    if "umi_outlier" in methods:
-        d = passing(base)
-        umis = pd.Series(umi_counts(d), index=d.index).groupby(d["cellBC"], observed=True).sum()
-        umis.index = umis.index.astype(str)
-        if have_clones:
-            cc = df.drop_duplicates("cellBC")
-            clone = pd.Series(
-                cc["clone"].astype(object).to_numpy(), index=cc["cellBC"].astype(str).to_numpy()
-            )
-            clone = clone.reindex(umis.index).fillna("none")
-        else:
-            clone = pd.Series("0", index=umis.index)
-        logu = np.log10(umis.astype(float))
-        med = logu.groupby(clone).transform("median")
-        mad = (logu - med).abs().groupby(clone).transform("median") * 1.4826
-        out["umi_outlier"] = ((logu - med) / mad.replace(0, np.nan)).reindex(out.index)
-
     for name, fn in (hooks or {}).items():
         s = fn(df)
         s.index = s.index.astype(str)
@@ -145,7 +129,6 @@ def filter_doublets(
     *,
     conflict_threshold: float = 0.2,
     mixture_threshold: float = 0.2,
-    umi_outlier_threshold: float = 3.0,
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
     min_informative: int = 2,
@@ -158,8 +141,8 @@ def filter_doublets(
 
     Computes :func:`doublet_scores` and flags a cell as a doublet if any score
     exceeds its threshold (``allele_conflict > conflict_threshold``,
-    ``clone_mixture > mixture_threshold``, ``umi_outlier >
-    umi_outlier_threshold``, hooks above ``hook_thresholds`` (default 0.5)).
+    ``clone_mixture > mixture_threshold``, hooks above ``hook_thresholds``
+    (default 0.5)).
     With the default ``methods="auto"``, allele conflicts are always used and
     clone mixtures when there is more than one clone, so the same call works
     for data with many clones and for data where all cells share intBCs.
@@ -172,7 +155,6 @@ def filter_doublets(
         methods: Scores to use, or ``"auto"``.
         conflict_threshold: Threshold for ``allele_conflict``.
         mixture_threshold: Threshold for ``clone_mixture``.
-        umi_outlier_threshold: Threshold for ``umi_outlier``.
         min_umi: UMIs a minor allele needs to count as a conflict.
         min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
         min_informative: Integrations needed to score ``allele_conflict``.
@@ -194,11 +176,7 @@ def filter_doublets(
         min_informative=min_informative,
         hooks=hooks,
     )
-    thresholds = {
-        "allele_conflict": conflict_threshold,
-        "clone_mixture": mixture_threshold,
-        "umi_outlier": umi_outlier_threshold,
-    }
+    thresholds = {"allele_conflict": conflict_threshold, "clone_mixture": mixture_threshold}
     for name in hooks or {}:
         thresholds[name] = (hook_thresholds or {}).get(name, 0.5)
     flag = pd.Series(False, index=scores.index)
@@ -211,8 +189,7 @@ def filter_doublets(
                 flag |= (s > thr).fillna(False)
     cells = df["cellBC"].astype(str)
     for col in scores.columns:
-        name = col if col == "n_informative" else f"doublet_{col}"
-        df[name] = cells.map(scores[col]).to_numpy()
+        df[f"doublet_{col}"] = cells.map(scores[col]).to_numpy()
     set_pass(df, "doublet", ~cells.map(flag).fillna(False).astype(bool).to_numpy())
     used = [m for m in thresholds if m in scores.columns]
     record_params(df, **{f"doublet_{m}_threshold": thresholds[m] for m in used})

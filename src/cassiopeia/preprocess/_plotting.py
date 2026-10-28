@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from ._utils import row_passing, site_columns, umi_counts
-from .qc import _intbc_umis, cell_metrics
+from .qc import _allele_umis, cell_metrics
 
 # Colors: categorical slot 1 for kept data, a recessive neutral for filtered
 # data, slot 2 for flagged cells, neutral ink for thresholds and text.
@@ -107,6 +107,15 @@ def _hline(ax, y, label):
     )
 
 
+def _threshold(ax, value, label=None, axis="x"):
+    """Dashed threshold line, labelled in the legend if ``label`` (set the axis scale first)."""
+    scale = ax.get_xscale() if axis == "x" else ax.get_yscale()
+    if value is None or (scale == "log" and value <= 0):
+        return
+    line = ax.axvline if axis == "x" else ax.axhline
+    line(value, color=THRESH, linestyle="--", linewidth=1.2, zorder=3, label=label)
+
+
 def _params(data) -> dict:
     if hasattr(data, "uns"):
         return dict(data.uns.get("preprocess", {}).get("qc_params", {}))
@@ -120,11 +129,34 @@ def _new_ax(ax, figsize=(4, 3.4)):
     return ax
 
 
-def _scatter_pass(ax, x, y, ok, labels=("kept", "filtered")):
-    n = len(x)
-    raster = n > 50000
-    size = 6 if n > 5000 else 12
+def _subsample(ax, n, max_points):
+    """Indices of a random subset of ``max_points`` of ``n`` points (noted on ``ax``), or None."""
+    if n <= max_points:
+        return None
+    ax.text(
+        0.01,
+        0.01,
+        f"random {max_points:,} of {n:,} shown",
+        transform=ax.transAxes,
+        fontsize=6,
+        color=MUTED,
+    )
+    return np.sort(np.random.default_rng(0).choice(n, max_points, replace=False))
+
+
+def _scatter_pass(ax, x, y, ok, labels=("kept", "filtered"), max_points=100_000):
+    """Kept and filtered points.
+
+    Above ``max_points`` a random subset is drawn; the legend counts all points.
+    """
+    x, y = np.asarray(x), np.asarray(y)
     ok = np.asarray(ok, dtype=bool)
+    n_ok, n_bad = int(ok.sum()), int((~ok).sum())
+    idx = _subsample(ax, len(x), max_points)
+    if idx is not None:
+        x, y, ok = x[idx], y[idx], ok[idx]
+    raster = len(x) > 50000
+    size = 6 if len(x) > 5000 else 12
     ax.scatter(
         x[~ok],
         y[~ok],
@@ -133,7 +165,7 @@ def _scatter_pass(ax, x, y, ok, labels=("kept", "filtered")):
         linewidths=0,
         alpha=0.7,
         rasterized=raster,
-        label=f"{labels[1]} (n={int((~ok).sum()):,})",
+        label=f"{labels[1]} (n={n_bad:,})",
         zorder=2,
     )
     ax.scatter(
@@ -144,7 +176,7 @@ def _scatter_pass(ax, x, y, ok, labels=("kept", "filtered")):
         linewidths=0,
         alpha=0.7,
         rasterized=raster,
-        label=f"{labels[0]} (n={int(ok.sum()):,})",
+        label=f"{labels[0]} (n={n_ok:,})",
         zorder=2,
     )
     ax.legend(frameon=False, fontsize=7, markerscale=1.5, loc="lower right")
@@ -165,14 +197,9 @@ def plot_align(res: dict, min_score: int | None = None):
         ax.set_yscale("log")
         _plain_log(ax)
     _style(ax, "Barcode rank (corrected barcodes)", "Rank", "Reads")
-    ax = axes[1]
     h = np.asarray(res.get("reads_per_umi_hist", []))
-    if h.size:
-        k = np.arange(len(h))
-        last = int(np.flatnonzero(h)[-1]) + 1 if h.any() else 2
-        ax.bar(k[1:last], h[1:last], color=KEPT, width=1.0, linewidth=0)
-        ax.set_yscale("log")
-    _style(ax, "Reads per UMI", "Reads", "Molecules")
+    nz = np.flatnonzero(h)
+    plot_reads_per_umi({"reads": nz.tolist(), "umis": h[nz].tolist()}, ax=axes[1])
     ax = axes[2]
     s = np.asarray(res.get("score_hist", []))
     if s.size and s.sum():
@@ -207,7 +234,6 @@ def plot_align(res: dict, min_score: int | None = None):
 
 
 _READ_FATE = [
-    ("records_used", "used"),
     ("no_intbc", "no intBC"),
     ("unaligned", "not aligned"),
     ("filtered_flag", "unmapped, secondary or supplementary"),
@@ -220,7 +246,11 @@ _READ_FATE = [
 
 def _plot_read_fate(df: pd.DataFrame, ax):
     st = df.attrs.get("read_stats", {})
-    rows = [(label, int(st.get(key, 0))) for key, label in _READ_FATE]
+    low = int(st.get("low_read_umi_records", 0))
+    min_reads = _params(df).get("min_reads_per_umi")
+    rows = [("used", int(st.get("records_used", 0)) - low)]
+    rows.append((f"UMI with < {min_reads} reads", low))
+    rows += [(label, int(st.get(key, 0))) for key, label in _READ_FATE]
     off = int(st.get("records", 0)) - int(st.get("records_on_target", 0))
     rows.append(("other contigs", off))
     rows = [r for i, r in enumerate(rows) if i == 0 or r[1] > 0]
@@ -246,19 +276,23 @@ def _plot_read_fate(df: pd.DataFrame, ax):
 
 
 def plot_call_alleles(df: pd.DataFrame):
-    """Figure for :func:`cassiopeia.pp.call_alleles`: read fate and alleles per site."""
+    """Figure for :func:`cassiopeia.pp.call_alleles`: reads per UMI, read fate, alleles."""
     plt = _plt()
+    hist = df.attrs.get("read_stats", {}).get("reads_per_umi")
     n_sites = len(site_columns(df))
     width = float(np.clip(3.2 + 0.32 * n_sites, 4.0, 13.0))
+    ratios = ([5.2] if hist else []) + [4.6, width]
     fig, axes = plt.subplots(
         1,
-        2,
-        figsize=(4.6 + width, 3.6),
+        len(ratios),
+        figsize=(sum(ratios), 3.6),
         constrained_layout=True,
-        gridspec_kw={"width_ratios": [4.6, width]},
+        gridspec_kw={"width_ratios": ratios},
     )
-    _plot_read_fate(df, axes[0])
-    plot_edit_frequency(df, color_by="edit", ax=axes[1])
+    if hist:
+        plot_reads_per_umi(hist, _params(df).get("min_reads_per_umi"), ax=axes[0])
+    _plot_read_fate(df, axes[-2])
+    plot_edit_frequency(df, color_by="edit", ax=axes[-1])
     return fig
 
 
@@ -294,64 +328,113 @@ def plot_intbc_correction(counts: pd.Series, remap: dict):
     return fig
 
 
-def plot_reads_per_umi(df: pd.DataFrame, ax=None):
-    """Histogram of reads per UMI, with ``min_reads_per_umi``."""
+def plot_reads_per_umi(hist: dict, min_reads: int | None = None, ax=None):
+    """Histogram of reads per UMI (log-spaced bins), with ``min_reads``.
+
+    ``hist`` holds the read counts (``reads``) and the number of UMIs with
+    each (``umis``), e.g. ``df.attrs['read_stats']['reads_per_umi']``.
+    Without ``min_reads`` (or with 1), all UMIs are drawn as kept.
+    """
     ax = _new_ax(ax)
-    umis = umi_counts(df).astype(float)
-    rpu = df["n_reads"].to_numpy() / np.maximum(umis, 1)
-    thr = _params(df).get("min_reads_per_umi")
-    top = max(float(rpu.max()) if len(rpu) else 1.0, 1.0)
-    # one bin per read count, log-spaced for deep libraries
-    if top <= 30:
-        edges = np.arange(1, np.ceil(top) + 2) - 0.5
-    else:
-        edges = np.unique(np.round(np.logspace(0, np.log10(top + 1), 40))) - 0.5
-        edges = np.append(edges, edges[-1] + 1)
-    ok = rpu >= thr if thr is not None else np.ones(len(rpu), dtype=bool)
-    ax.hist(
-        [rpu[~ok], rpu[ok]],
-        bins=edges,
-        weights=[umis[~ok], umis[ok]],
-        stacked=True,
-        color=[FILTERED, KEPT],
-        label=[f"filtered (n={int(umis[~ok].sum()):,})", f"kept (n={int(umis[ok].sum()):,})"],
-        edgecolor="white",
-        linewidth=0.5,
-        zorder=2,
-    )
-    if top > 30:
+    reads = np.maximum(np.asarray(hist.get("reads", []), dtype=np.int64), 1)
+    umis = np.asarray(hist.get("umis", []), dtype=np.float64)
+    thr = int(min_reads) if min_reads else 1
+    if len(reads):
+        hi = int(reads.max()) + 1
+        edges = np.round(np.logspace(0, np.log10(hi), 25)).astype(np.int64)
+        edges = np.unique(np.concatenate([edges, [1, hi], [thr] if 1 < thr < hi else []]))
+        edges = edges.astype(np.int64)
+        idx = np.searchsorted(edges, reads, side="right") - 1
+        counts = np.bincount(idx, weights=umis, minlength=len(edges) - 1)[: len(edges) - 1]
+        left, width = edges[:-1], np.diff(edges)
+        ok = left >= thr
+        n_ok = int(umis[reads >= thr].sum())
+        n_bad = int(umis.sum()) - n_ok
+        kept = f"kept (n={n_ok:,})" if thr > 1 else f"UMIs (n={n_ok:,})"
+        for sel, color, label in (
+            (~ok, FILTERED, f"filtered (n={n_bad:,})" if n_bad else "_nolegend_"),
+            (ok, KEPT, kept),
+        ):
+            if sel.any():
+                ax.bar(
+                    left[sel],
+                    counts[sel],
+                    width=width[sel],
+                    align="edge",
+                    color=color,
+                    edgecolor="white",
+                    linewidth=0.4,
+                    zorder=2,
+                    label=label,
+                )
         ax.set_xscale("log")
         _plain_log(ax)
-    _style(ax, "Reads per UMI", "Reads", "UMIs")
-    if thr is not None:
-        _vline(ax, thr - 0.5, "min reads per UMI")
-    ax.legend(frameon=False, fontsize=7, loc="upper right")
+        if thr > 1:
+            _threshold(ax, thr)
+        ax.legend(frameon=False, fontsize=7, loc="best")
+    _style(ax, "Reads per UMI", "Reads per UMI", "UMIs")
+    ax.grid(False, axis="x")
     return ax
 
 
-def plot_umi_reads(df: pd.DataFrame, ax=None):
-    """Passing UMIs vs. mean reads per UMI per (cell, intBC), with ``min_umi_per_intbc``."""
+def plot_umi_reads(df: pd.DataFrame, ax=None, max_points: int = 100_000):
+    """UMIs vs. mean reads per UMI per allele, colored by allele fraction.
+
+    Dashed lines mark the thresholds of :func:`cassiopeia.pp.filter_alleles`
+    (``min_allele_frac`` on the colorbar). Alleles with low fractions are drawn
+    on top. Above ``max_points`` a random subset is drawn.
+    """
+    from matplotlib.colors import LinearSegmentedColormap
+
     ax = _new_ax(ax)
-    m = _intbc_umis(df)
-    x = np.clip(m["umis_ok"].to_numpy(), 0.8, None)
-    y, ok = m["reads_per_umi"].to_numpy(), m["pass"].to_numpy()
-    _scatter_pass(ax, x, y, ok)
-    _style(ax, "Alleles per (cell, intBC)", "UMIs passing the read filters", "Mean reads per UMI")
-    thr = _params(df).get("min_umi_per_intbc")
-    if thr is not None:
-        _vline(ax, thr - 0.5, "min UMIs")
+    m = _allele_umis(df)
+    x = np.clip(m["n_umis"].to_numpy(), 0.8, None)
+    y = m["reads_per_umi"].to_numpy()
+    frac = m["allele_frac"].to_numpy(dtype=float)
+    n, n_kept = len(m), int(m["kept"].sum())
+    idx = _subsample(ax, n, max_points)
+    if idx is not None:
+        x, y, frac = x[idx], y[idx], frac[idx]
+    order = np.argsort(-frac, kind="stable")
+    cmap = LinearSegmentedColormap.from_list("allele_frac", SEQ[2:])
+    sc = ax.scatter(
+        x[order],
+        y[order],
+        c=frac[order],
+        cmap=cmap,
+        vmin=0,
+        vmax=1,
+        s=6 if len(x) > 5000 else 12,
+        linewidths=0,
+        rasterized=len(x) > 50000,
+        zorder=2,
+    )
+    _style(ax, f"Alleles: {n_kept:,} of {n:,} kept", "UMIs", "Mean reads per UMI")
     ax.set_xscale("log")
     ax.set_yscale("log")
     _plain_log(ax)
+    params = _params(df)
+    thr = params.get("min_umi_per_allele")
+    if thr is not None:
+        _threshold(ax, thr - 0.5)
+    thr = params.get("min_avg_reads_per_umi")
+    if thr:
+        _threshold(ax, thr, axis="y")
+    cbar = ax.figure.colorbar(sc, ax=ax, fraction=0.05, pad=0.02, aspect=30)
+    cbar.set_label("Allele fraction", fontsize=9, color=INK)
+    cbar.ax.tick_params(colors=INK, labelsize=8)
+    cbar.outline.set_visible(False)
+    thr = params.get("min_allele_frac")
+    if thr is not None:
+        cbar.ax.axhline(thr, color=INK, linestyle="--", linewidth=1.5)
     return ax
 
 
 def plot_filter_alleles(df: pd.DataFrame):
     """Figure for :func:`cassiopeia.pp.filter_alleles`."""
     plt = _plt()
-    fig, axes = plt.subplots(1, 2, figsize=(8.8, 3.4), constrained_layout=True)
-    plot_reads_per_umi(df, ax=axes[0])
-    plot_umi_reads(df, ax=axes[1])
+    fig, ax = plt.subplots(figsize=(5.2, 3.6), constrained_layout=True)
+    plot_umi_reads(df, ax=ax)
     return fig
 
 
@@ -386,10 +469,10 @@ def plot_umi_intbcs(df: pd.DataFrame, ax=None):
 
 def plot_intbc_fraction(df: pd.DataFrame, ax=None):
     """Fraction of the expected intBCs detected per cell, with ``min_intbc_frac``."""
-    from .qc import intbc_fraction
+    from .qc import _intbc_fraction
 
     ax = _new_ax(ax)
-    frac = intbc_fraction(df).dropna()
+    frac = _intbc_fraction(df).dropna()
     ax.hist(frac, bins=np.linspace(0, 1, 26), color=KEPT, edgecolor="white", linewidth=1)
     _style(ax, "intBC detection per cell", "Fraction of expected intBCs detected", "Cells")
     _vline(ax, _params(df).get("min_intbc_frac"), "min fraction")
@@ -577,14 +660,18 @@ def _state_counts(data) -> tuple[pd.DataFrame, str, str]:
         # allele table: one bar per site, counting UMIs (reads without UMIs)
         d = row_passing(data)
         has_umis = data.attrs.get("has_umis", True)
-        w = pd.Series(umi_counts(d) if has_umis else d["n_reads"].to_numpy(), index=d.index)
+        w = (umi_counts(d) if has_umis else d["n_reads"].to_numpy()).astype(np.float64)
         for site in site_columns(data):
-            v = d[site].astype(object)
-            missing = v.isna()
-            rows.append((site, "missing", int(w[missing].sum())))
-            counts = w[~missing].groupby(v[~missing].astype(str)).sum()
-            for tok, n in counts.items():
-                rows.append((site, "unedited" if _is_unedited(tok) else tok, int(n)))
+            col = d[site]
+            if not isinstance(col.dtype, pd.CategoricalDtype):
+                col = col.astype("category")
+            cats = col.cat.categories
+            counts = np.bincount(col.cat.codes.to_numpy() + 1, weights=w, minlength=len(cats) + 1)
+            rows.append((site, "missing", int(counts[0])))
+            for tok, n in zip(cats, counts[1:], strict=True):
+                if n > 0:
+                    tok = str(tok)
+                    rows.append((site, "unedited" if _is_unedited(tok) else tok, int(n)))
         unit = "UMIs" if has_umis else "reads"
         return pd.DataFrame(rows, columns=["unit", "state", "count"]), "site", unit
     if hasattr(data, "obsm"):

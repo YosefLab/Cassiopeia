@@ -94,62 +94,37 @@ void build_walk(int ref_pos, const std::vector<uint32_t> &cigar, Walk &w) {
     }
 }
 
-// Port of the legacy Cassiopeia parse_cigar (alignment_utilities.py) so that
-// indel allele strings are identical.
-void legacy_parse(const std::string &ref, int ref_start, int query_start, const std::vector<uint32_t> &ops,
-                  const std::string &seq, int bs, int be, const std::vector<const SiteSpec *> &sites,
-                  std::string &intBC, bool &intbc_found, std::vector<std::string> &indels,
-                  std::vector<std::string> &uncut, bool ref_context) {
-    // ref_context: take context bases from the reference instead of the read
-    // so sequencing errors next to an edit do not create distinct alleles.
+// Indel alleles at each site, as `<context>[<pos>:<len><D|I>]<context>`
+// strings (the format of the pre-3.0 parse_cigar), with context bases
+// taken from the reference so sequencing errors next to an edit do not
+// create distinct alleles. `uncut` holds the unedited allele of sites
+// covered by an aligned block.
+void parse_indels(const std::string &ref, int ref_start, int query_start, const std::vector<uint32_t> &ops,
+                  const std::string &seq, const std::vector<const SiteSpec *> &sites,
+                  std::vector<std::string> &indels, std::vector<std::string> &uncut) {
     const size_t n = sites.size();
     indels.assign(n, "");
     uncut.assign(n, "");
-    intBC = "NC";
-    const bool has_bc = bs >= 0;
-    const std::string ref_anchor = has_bc ? py_slice(ref, bs - 11, bs) : std::string();
-    const int intBC_length = has_bc ? be - bs : 0;
-    int ref_pointer = ref_start, query_pointer = query_start, query_pad = 0;
+    int ref_pointer = ref_start, query_pointer = query_start;
     for (uint32_t c : ops) {
         uint32_t type = c & 0xf;
         int length = static_cast<int>(c >> 4);
         if (type == kM) {
             int pos_start = ref_pointer, pos_end = ref_pointer + length;
-            if (has_bc && bs >= pos_start && be <= pos_end) {
-                int intBC_offset = bs - pos_start;
-                if (query_pad > -intBC_length) {
-                    int end_index = query_pointer + intBC_offset + intBC_length + query_pad;
-                    intBC = py_slice(seq, query_pointer + intBC_offset, end_index);
-                }
-            }
             for (size_t i = 0; i < n; ++i) {
                 int site = sites[i]->position;
                 if (site >= pos_start && site <= pos_end && indels[i].empty()) {
-                    int loc = query_pointer + (site - pos_start);
                     if (sites[i]->context) {
                         int cs = sites[i]->context_size;
-                        if (ref_context)
-                            uncut[i] = py_slice(ref, site - cs, site) + "[None]" + py_slice(ref, site, site + cs);
-                        else
-                            uncut[i] = py_slice(seq, loc - cs, loc) + "[None]" + py_slice(seq, loc, loc + cs);
+                        uncut[i] = py_slice(ref, site - cs, site) + "[None]" + py_slice(ref, site, site + cs);
                     } else {
                         uncut[i] = "None";
                     }
                 }
             }
-            if (has_bc && pos_start >= bs && pos_start <= be && pos_end > be) {
-                int new_len = be - pos_start + 1;
-                intBC = py_slice(seq, query_pointer, query_pointer + new_len);
-            }
-            if (has_bc && pos_end >= bs && pos_end <= be && pos_start < bs) {
-                int new_len = pos_end - bs + 1;
-                int off = bs - pos_start;
-                intBC = py_slice(seq, query_pointer + off, query_pointer + off + new_len);
-            }
             ref_pointer += length;
             query_pointer += length;
         } else if (type == kI) {
-            if (has_bc && ref_pointer == bs) query_pad = length;
             int pos_start = query_pointer;
             query_pointer += length;
             for (size_t i = 0; i < n; ++i) {
@@ -158,11 +133,9 @@ void legacy_parse(const std::string &ref, int ref_start, int query_start, const 
                 if (ref_pointer >= w0 && ref_pointer <= w1) {
                     if (sites[i]->context) {
                         int cs = sites[i]->context_size;
-                        std::string l = ref_context ? py_slice(ref, ref_pointer - cs, ref_pointer)
-                                                    : py_slice(seq, pos_start - cs, pos_start);
-                        std::string r = ref_context ? py_slice(seq, pos_start, pos_start + length) +
-                                                          py_slice(ref, ref_pointer, ref_pointer + cs)
-                                                    : py_slice(seq, pos_start, pos_start + cs + length);
+                        std::string l = py_slice(ref, ref_pointer - cs, ref_pointer);
+                        std::string r = py_slice(seq, pos_start, pos_start + length) +
+                                        py_slice(ref, ref_pointer, ref_pointer + cs);
                         indels[i] += l + "[" + std::to_string(ref_pointer + 1) + ":" + std::to_string(length) + "I]" + r;
                     } else {
                         indels[i] += std::to_string(ref_pointer + 1) + ":" + std::to_string(length) + "I";
@@ -172,7 +145,6 @@ void legacy_parse(const std::string &ref, int ref_start, int query_start, const 
         } else if (type == kD || type == kN) {
             int pos_start = ref_pointer;
             ref_pointer += length;
-            if (has_bc && ref_pointer == bs) query_pad = -length;
             for (size_t i = 0; i < n; ++i) {
                 int w0 = sites[i]->position - sites[i]->window_left;
                 int w1 = sites[i]->position + sites[i]->window_right;
@@ -180,10 +152,8 @@ void legacy_parse(const std::string &ref, int ref_start, int query_start, const 
                     (pos_start <= w0 && ref_pointer >= w1) || (pos_start >= w0 && ref_pointer <= w1)) {
                     if (sites[i]->context) {
                         int cs = sites[i]->context_size;
-                        std::string l = ref_context ? py_slice(ref, pos_start - cs, pos_start)
-                                                    : py_slice(seq, query_pointer - cs, query_pointer);
-                        std::string r = ref_context ? py_slice(ref, ref_pointer, ref_pointer + cs)
-                                                    : py_slice(seq, query_pointer, query_pointer + cs);
+                        std::string l = py_slice(ref, pos_start - cs, pos_start);
+                        std::string r = py_slice(ref, ref_pointer, ref_pointer + cs);
                         indels[i] += l + "[" + std::to_string(pos_start + 1) + ":" + std::to_string(length) + "D]" + r;
                     } else {
                         indels[i] += std::to_string(pos_start + 1) + ":" + std::to_string(length) + "D";
@@ -192,11 +162,6 @@ void legacy_parse(const std::string &ref, int ref_start, int query_start, const 
             }
         }
     }
-    if (has_bc && (intBC == "NC" || static_cast<int>(intBC.size()) < intBC_length)) {
-        std::string anchor = py_slice(seq, bs - 11, bs);
-        if (anchor == ref_anchor) intBC = py_slice(seq, bs, be);
-    }
-    intbc_found = has_bc && intBC != "NC";
 }
 
 std::string flank_intbc(const Walk &w, const std::string &seq, int bs, int be, int ref_len) {
@@ -439,7 +404,7 @@ bool call_read(const ConstructSpec &spec, int ref_pos, const std::vector<uint32_
 
     const std::vector<uint32_t> *cigar = &cigar_in;
     thread_local std::vector<uint32_t> normalized;
-    if (spec.normalize_indels && !spec.legacy) {
+    if (spec.normalize_indels) {
         normalized = cigar_in;
         left_align_indels(spec.reference, ref_pos, seq, normalized);
         cigar = &normalized;
@@ -459,21 +424,13 @@ bool call_read(const ConstructSpec &spec, int ref_pos, const std::vector<uint32_
             indel_idx.push_back(i);
         }
 
-    bool intbc_done = false;
-    if (!indel_sites.empty() || (spec.legacy && spec.intbc_start >= 0)) {
-        std::string intBC;
-        bool found = false;
+    if (!indel_sites.empty()) {
         thread_local std::vector<std::string> indels, uncut;
-        legacy_parse(spec.reference, ref_pos, w.lead_clip, w.core_ops, seq, spec.intbc_start, spec.intbc_end,
-                     indel_sites, intBC, found, indels, uncut, !spec.legacy);
-        if (spec.legacy) {
-            out.intbc = found ? intBC : std::string();
-            intbc_done = true;
-        }
+        parse_indels(spec.reference, ref_pos, w.lead_clip, w.core_ops, seq, indel_sites, indels, uncut);
         for (size_t k = 0; k < indel_sites.size(); ++k) {
             const SiteSpec &s = *indel_sites[k];
             std::string tok = indels[k].empty() ? uncut[k] : indels[k];
-            if (!spec.legacy && spec.clip_missing && indels[k].empty()) {
+            if (spec.clip_missing && indels[k].empty()) {
                 if (!w.covered(s.position - s.window_left, s.position + s.window_right + 1)) {
                     tok.clear();
                     out.clipped[indel_idx[k]] = 1;
@@ -482,7 +439,7 @@ bool call_read(const ConstructSpec &spec, int ref_pos, const std::vector<uint32_
             out.tokens[indel_idx[k]] = std::move(tok);
         }
     }
-    if (!intbc_done && spec.intbc_start >= 0)
+    if (spec.intbc_start >= 0)
         out.intbc = flank_intbc(w, seq, spec.intbc_start, spec.intbc_end, ref_len);
 
     thread_local std::vector<std::string> slot_tokens;

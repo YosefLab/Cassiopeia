@@ -1,7 +1,5 @@
 """Tests for pp.call_alleles and pp.align on simulated data with ground truth."""
 
-from pathlib import Path
-
 import pandas as pd
 import pysam
 import pytest
@@ -10,12 +8,6 @@ import cassiopeia as cas
 from cassiopeia.preprocess._resolve import resolve_alleles
 
 PRESETS = ["weissman", "petracer", "typewriter", "gestalt", "baseline"]
-# Outputs of the pre-3.0 pipeline on the simulations below (see data/README.md).
-DATA = Path(__file__).parent / "data"
-LEGACY_CASES = {
-    "substitutions": {"seq_error": 0.003},
-    "indels": {"seq_error": 0.001, "indel_error": 0.001, "read_length": 300},
-}
 
 
 def _agreement(sim, df):
@@ -36,7 +28,7 @@ def _agreement(sim, df):
 @pytest.mark.parametrize("preset", PRESETS)
 def test_call_alleles_bam_matches_truth(sim_factory, preset):
     sim = sim_factory(preset, "clean")
-    df = cas.pp.call_alleles(sim.bam, preset, n_threads=2)
+    df = cas.pp.call_alleles(sim.bam, preset, n_threads=2, min_reads_per_umi=1)
     recovered, agree = _agreement(sim, df)
     assert agree == 1.0
     assert recovered > 0.6  # silenced integrations are mostly unobserved
@@ -50,18 +42,25 @@ def test_align_fastq_matches_truth(sim_factory, preset, tmp_path):
     sim = sim_factory(preset, "clean")
     res = cas.pp.align(sim.fastqs, tmp_path / "a.bam", preset, whitelist=sim.whitelist, n_threads=2)
     assert res["stats"]["records_aligned"] == res["stats"]["records_written"]
-    df = cas.pp.call_alleles(tmp_path / "a.bam", preset, n_threads=2)
+    df = cas.pp.call_alleles(tmp_path / "a.bam", preset, n_threads=2, min_reads_per_umi=1)
     recovered, agree = _agreement(sim, df)
     assert agree == 1.0
     # one molecule per simulated UMI
-    assert len(df) == len(sim.molecules)
+    assert df["n_umis"].sum() == len(sim.molecules)
+    per_umi = cas.pp.call_alleles(
+        tmp_path / "a.bam", preset, n_threads=2, min_reads_per_umi=1, collapse_umis=False
+    )
+    assert len(per_umi) == len(sim.molecules)
 
 
 def test_fastq_and_bam_paths_converge(sim_factory, tmp_path):
     sim = sim_factory("weissman", "multi")
     cas.pp.align(sim.fastqs, tmp_path / "a.bam", "weissman", whitelist=sim.whitelist, n_threads=2)
-    fq = cas.pp.call_alleles(tmp_path / "a.bam", "weissman", n_threads=2)
-    bam = cas.pp.correct_intbcs(cas.pp.call_alleles(sim.bam, "weissman", n_threads=2))
+    # per UMI, so intBC correction can merge UMIs that differ by an intBC error
+    fq = cas.pp.call_alleles(tmp_path / "a.bam", "weissman", n_threads=2, collapse_umis=False)
+    bam = cas.pp.correct_intbcs(
+        cas.pp.call_alleles(sim.bam, "weissman", n_threads=2, collapse_umis=False)
+    )
     sites = sim.construct.site_names
 
     def resolved(df):
@@ -132,43 +131,7 @@ def test_call_alleles_options(sim_factory):
     # bulk mode: one row per (intBC, allele) with read counts
     bulk = cas.pp.call_alleles(sim.bam, "weissman", cb_tag=None, umi_tag=None, sample="s1")
     assert bulk["cellBC"].nunique() == 1 and bulk["UMI"].isna().all()
+    assert "n_umis" not in bulk.columns  # nothing to collapse without UMIs
     assert bulk["n_reads"].sum() == idx.attrs["read_stats"]["reads_used"]
     with pytest.raises(Exception, match="No contig"):
         cas.pp.call_alleles(sim.bam, "petracer")
-
-
-@pytest.mark.parametrize("case", list(LEGACY_CASES))
-def test_legacy_golden(sim_factory, tmp_path, case):
-    """pp.align + call_alleles(legacy=True) reproduces the legacy pipeline.
-
-    Reads with a sequencing indel rejoin their UMI through the alignment-based
-    merge, as in the legacy collapse, so read counts still match. When a UMI's
-    biggest clusters are tied single reads both pipelines keep an arbitrary
-    one, so a few alleles differ.
-    """
-    errors = LEGACY_CASES[case]
-    sim = sim_factory("weissman", "multi", cells_per_clone=8, **errors)
-    old = pd.read_csv(
-        DATA / f"legacy_alleles_{case}.tsv.gz", sep="\t", dtype=str, keep_default_na=False
-    ).astype({"readCount": int})
-    cas.pp.align(
-        sim.fastqs, tmp_path / "new.bam", "weissman", whitelist=sim.whitelist, umi_max_dist=0
-    )
-    new = cas.pp.call_alleles(tmp_path / "new.bam", "weissman", legacy=True, umi_max_dist=2)
-    new = new.astype(
-        {"cellBC": str, "UMI": str, "intBC": str, "r1": object, "r2": object, "r3": object}
-    )
-    new = new.fillna({"r1": "", "r2": "", "r3": ""})
-    m = old.merge(new, on=["cellBC", "UMI", "intBC"], how="outer", indicator=True)
-    both = m[m["_merge"] == "both"]
-    same_alleles = (
-        both[["r1_x", "r2_x", "r3_x"]].to_numpy() == both[["r1_y", "r2_y", "r3_y"]].to_numpy()
-    ).all(axis=1)
-    same_reads = (both["readCount"] == both["n_reads"]).to_numpy()
-    if "indel_error" not in errors:
-        assert len(both) == len(m)
-        assert same_alleles.all() and same_reads.all()
-    else:
-        assert len(both) >= 0.95 * len(m)
-        assert same_reads.mean() >= 0.99
-        assert same_alleles.mean() >= 0.95

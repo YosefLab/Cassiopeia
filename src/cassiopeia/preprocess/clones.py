@@ -12,7 +12,7 @@ import pandas as pd
 
 from cassiopeia.mixins import PreprocessError, logger
 
-from ._utils import finish_plot, passing, record_params, set_pass, umi_counts
+from ._utils import ALLELE_PASS, finish_plot, passing, record_params, set_pass, umi_counts
 
 _NOVA_HELP = (
     "pp.call_clones(method='nova_clone') requires NovaClone "
@@ -26,8 +26,8 @@ _NOVA_HELP = (
 
 
 def intbc_table(df: pd.DataFrame, use_pass: bool = True) -> pd.DataFrame:
-    """UMI counts per (cell, intBC) from passing rows."""
-    d = passing(df) if use_pass else df
+    """UMI counts per (cell, intBC) from passing rows (minor alleles included)."""
+    d = passing(df, ignore=ALLELE_PASS) if use_pass else df
     keys = ["cellBC", "intBC"]
     if "sample" in d.columns:
         keys = ["sample"] + keys

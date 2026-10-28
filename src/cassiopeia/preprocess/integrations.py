@@ -10,7 +10,7 @@ import pandas as pd
 from cassiopeia.mixins import logger
 
 from ._resolve import resolve_alleles
-from ._utils import SINGLE_CLONE, finish_plot, passing, record_params, set_pass
+from ._utils import ALLELE_PASS, SINGLE_CLONE, finish_plot, passing, record_params, set_pass
 
 
 def integration_metrics(
@@ -22,7 +22,9 @@ def integration_metrics(
 
     Used by :func:`~cassiopeia.pp.filter_integrations`, which computes them on
     rows passing the earlier filters (ignoring its own and the doublet
-    filter). One row per clone and intBC seen in the clone's cells:
+    filter, and including minor alleles removed by
+    :func:`cassiopeia.pp.filter_alleles`). One row per clone and intBC seen
+    in the clone's cells:
 
     * ``clone``, ``intBC``: the integration. Without a ``clone`` column all
       cells form one clone, ``"0"``.
@@ -46,10 +48,9 @@ def integration_metrics(
     Returns:
         DataFrame sorted by clone and decreasing detection.
     """
+    ignore = ["pass_integration", "pass_doublet", *ALLELE_PASS]
     d = passing(
-        df.drop(columns=["pass_integration", "pass_doublet"], errors="ignore").assign(
-            **{"pass": _pass_without(df, ["pass_integration", "pass_doublet"])}
-        )
+        df.drop(columns=ignore, errors="ignore").assign(**{"pass": _pass_without(df, ignore)})
     )
     res = resolve_alleles(d, min_umi=min_umi, min_minor_frac=min_minor_frac, use_pass=False)
     if "clone" in df.columns:

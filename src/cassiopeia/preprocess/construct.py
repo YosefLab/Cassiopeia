@@ -253,9 +253,7 @@ class Construct:
         with open(path, "w") as f:
             yaml.safe_dump(self.to_dict(), f, sort_keys=False)
 
-    def _native(
-        self, legacy: bool = False, normalize_indels: bool = True, clip_missing: bool = True
-    ) -> dict:
+    def _native(self, normalize_indels: bool = True, clip_missing: bool = True) -> dict:
         """Dictionary consumed by the C++ kernels."""
         sites = []
         for s in self.sites:
@@ -281,7 +279,6 @@ class Construct:
             "reference": self.reference,
             "intbc_start": self.intbc[0] if self.intbc else -1,
             "intbc_end": self.intbc[1] if self.intbc else -1,
-            "legacy": legacy,
             "clip_missing": clip_missing,
             "normalize_indels": normalize_indels,
             "sites": sites,

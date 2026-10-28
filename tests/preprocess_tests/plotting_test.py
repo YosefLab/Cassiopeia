@@ -12,7 +12,7 @@ from cassiopeia.preprocess import _plotting
 def processed(sim_factory):
     sim = sim_factory("weissman", "single")
     df = cas.pp.call_alleles(sim.bam, "weissman", plot=False)
-    df = cas.pp.filter_alleles(df, min_reads_per_umi=2, min_umi_per_intbc=2, plot=False)
+    df = cas.pp.filter_alleles(df, min_umi_per_allele=2, min_avg_reads_per_umi=3, plot=False)
     df = cas.pp.filter_cells(df, min_umi=5, plot=False)
     df = cas.pp.filter_integrations(df, plot=False)
     df = cas.pp.filter_cells(df, min_intbc_frac=0.5, plot=False)
@@ -28,16 +28,30 @@ def _vlines(ax):
     ]
 
 
+def _hlines(ax):
+    return [
+        ln.get_ydata()[0]
+        for ln in ax.get_lines()
+        if ln.get_linestyle() == "--" and len(set(ln.get_ydata())) == 1
+    ]
+
+
 def test_step_plot_thresholds(processed):
     _, df = processed
-    ax = _plotting.plot_reads_per_umi(df)
-    assert _vlines(ax) == [1.5]  # between 1 and 2 reads
-    ax = _plotting.plot_umi_reads(df)
-    assert _vlines(ax) == [1.5]
+    hist = df.attrs["read_stats"]["reads_per_umi"]
+    ax = _plotting.plot_reads_per_umi(hist, 2)
+    assert _vlines(ax) == [2]
     labels = [t.get_text() for t in ax.get_legend().get_texts()]
-    assert any(t.startswith("kept") for t in labels) and any(
-        t.startswith("filtered") for t in labels
-    )
+    filtered = sum(u for r, u in zip(hist["reads"], hist["umis"], strict=True) if r < 2)
+    assert f"filtered (n={filtered:,})" in labels and len(labels) == 2
+    fig = _plotting.plot_filter_alleles(df)
+    ax, cbar = fig.axes
+    assert _vlines(ax) == [1.5] and _hlines(ax) == [3] and ax.get_legend() is None
+    assert _hlines(cbar) == [0.5] and cbar.get_ylabel() == "Allele fraction"
+    flags = ["pass_umis_per_allele", "pass_avg_reads_per_umi", "pass_allele_frac"]
+    kept = df[df[[*flags, "pass_allele_conflict"]].all(axis=1)]
+    n_kept = len(kept.drop_duplicates(["cellBC", "intBC", *df.attrs["sites"]]))
+    assert ax.get_title(loc="left").startswith(f"Alleles: {n_kept:,} of")
     ax = _plotting.plot_umi_intbcs(df)
     assert 5 in _vlines(ax)
     assert ax.get_ylabel() == "intBCs detected"
@@ -53,8 +67,9 @@ def test_step_figures_render(processed):
     assert _plotting.plot_clone_intbc_heatmap(df, value="conflict") is not None
     assert _plotting.plot_doublet_scores(df) is not None
     fig = _plotting.plot_call_alleles(df)
-    fate = fig.axes[0]
-    assert [t.get_text() for t in fate.get_yticklabels()][0] == "used"
+    assert fig.axes[0].get_title(loc="left") == "Reads per UMI"
+    fate = [t.get_text() for t in fig.axes[1].get_yticklabels()]
+    assert fate[:2] == ["used", "UMI with < 2 reads"]
     plt.close("all")
 
 
@@ -106,6 +121,10 @@ def test_steps_plot_and_save(sim_factory, tmp_path):
         sim.fastqs, tmp_path / "a.bam", "weissman", save=tmp_path / "align.png", plot=False
     )
     assert (tmp_path / "align.png").exists() and res["stats"]["reads"] > 0
+    ax = _plotting.plot_align(res).axes[1]
+    assert ax.get_xscale() == "log" and ax.get_title(loc="left") == "Reads per UMI"
+    assert ax.get_legend().get_texts()[0].get_text().startswith("UMIs (n=")
+    plt.close(ax.figure)
     n_files = len(list(tmp_path.iterdir()))
     cas.pp.filter_cells(df, min_umi=5)  # plot=True shows, writes nothing
     assert len(list(tmp_path.iterdir())) == n_files
@@ -117,7 +136,7 @@ def test_plots_from_parquet(processed, tmp_path):
     df.to_parquet(tmp_path / "m.parquet")
     df2 = cas.pp.read_alleles(tmp_path / "m.parquet")
     assert df2.attrs["qc_params"]["min_reads_per_umi"] == 2
-    ax = _plotting.plot_reads_per_umi(df2)
-    assert _vlines(ax) == [1.5]
+    assert _vlines(_plotting.plot_call_alleles(df2).axes[0]) == [2]
+    assert _hlines(_plotting.plot_filter_alleles(df2).axes[1]) == [0.5]
     pd.testing.assert_series_equal(df2["pass"], df["pass"], check_names=False)
     plt.close("all")

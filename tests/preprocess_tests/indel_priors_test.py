@@ -1,4 +1,4 @@
-"""Tests for pp.compute_empirical_indel_priors on allele tables."""
+"""Tests for pp.compute_indel_priors on allele tables."""
 
 import unittest
 
@@ -71,8 +71,8 @@ class TestIndelPriors(unittest.TestCase):
         }
         self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
 
-    def test_compute_empirical_indel_probabilities(self):
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(self.alleletable_basic)
+    def test_compute_indel_priors(self):
+        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_basic)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -95,8 +95,8 @@ class TestIndelPriors(unittest.TestCase):
                 delta=0.01,
             )
 
-    def test_compute_empirical_indel_probabilities_with_conflicts(self):
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(self.alleletable_conflict)
+    def test_compute_indel_priors_with_conflicts(self):
+        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_conflict)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -120,8 +120,8 @@ class TestIndelPriors(unittest.TestCase):
                 delta=0.01,
             )
 
-    def test_compute_empirical_indel_probabilities_multiple_variables(self):
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+    def test_compute_indel_priors_multiple_variables(self):
+        indel_probabilities = cas.pp.compute_indel_priors(
             self.allele_table_mouse, grouping_variables=["Mouse", "intBC"]
         )
 
@@ -159,7 +159,7 @@ class TestIndelPriors(unittest.TestCase):
             )
 
         # make sure permuting grouping variables doesn't change result
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+        indel_probabilities = cas.pp.compute_indel_priors(
             self.allele_table_mouse, grouping_variables=["intBC", "Mouse"]
         )
 
@@ -171,12 +171,12 @@ class TestIndelPriors(unittest.TestCase):
                 delta=0.01,
             )
 
-    def test_compute_empirical_indel_probabilities_multiple_variables_noncassiopeia_alleletable(
+    def test_compute_indel_priors_multiple_variables_noncassiopeia_alleletable(
         self,
     ):
         noncassiopeia_at = self.allele_table_mouse.copy()
         noncassiopeia_at.rename(columns={"r1": "cs1", "r2": "cs2", "r3": "cs3"}, inplace=True)
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+        indel_probabilities = cas.pp.compute_indel_priors(
             noncassiopeia_at,
             grouping_variables=["Mouse", "intBC"],
             cut_sites=["cs1", "cs2", "cs3"],
@@ -216,7 +216,7 @@ class TestIndelPriors(unittest.TestCase):
             )
 
         # make sure permuting grouping variables doesn't change result
-        indel_probabilities = cas.pp.compute_empirical_indel_priors(
+        indel_probabilities = cas.pp.compute_indel_priors(
             self.allele_table_mouse, grouping_variables=["intBC", "Mouse"]
         )
 

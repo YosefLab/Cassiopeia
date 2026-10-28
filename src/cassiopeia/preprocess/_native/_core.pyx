@@ -58,7 +58,6 @@ cdef extern from "src/caller.hpp" namespace "cas":
         string reference
         int intbc_start
         int intbc_end
-        cbool legacy
         cbool clip_missing
         cbool normalize_indels
         vector[SiteSpec] sites
@@ -85,6 +84,7 @@ cdef extern from "src/alleles.hpp" namespace "cas":
         int n_threads
         vector[string] cells
         int umi_max_dist
+        int64_t min_reads
         cbool intbc_from_contig
         string default_intbc
 
@@ -98,10 +98,11 @@ cdef extern from "src/alleles.hpp" namespace "cas":
         Categorical intbc
         vector[Categorical] sites
         vector[int32_t] n_reads
-        vector[float] allele_frac
         vector[pair[string, int64_t]] stats
         vector[int64_t] site_missing
         vector[int64_t] site_clipped
+        vector[int64_t] hist_reads
+        vector[int64_t] hist_umis
 
     MoleculeTable c_call_alleles "cas::call_alleles"(const ConstructSpec &, const CallAllelesOptions &) except + nogil
     void bam_references(const string &, vector[string] &, vector[int32_t] &) except +
@@ -196,14 +197,6 @@ cdef object _i64(const vector[int64_t] &v):
     return arr
 
 
-cdef object _f32(const vector[float] &v):
-    arr = np.empty(v.size(), dtype=np.float32)
-    cdef float[::1] view = arr
-    if v.size():
-        memcpy(&view[0], v.data(), v.size() * sizeof(float))
-    return arr
-
-
 cdef list _strs(const vector[string] &v):
     cdef size_t i
     return [v[i].decode("utf-8", "replace") for i in range(v.size())]
@@ -220,7 +213,6 @@ cdef ConstructSpec _construct(dict c):
     spec.reference = _b(c["reference"])
     spec.intbc_start = c.get("intbc_start", -1)
     spec.intbc_end = c.get("intbc_end", -1)
-    spec.legacy = c.get("legacy", False)
     spec.clip_missing = c.get("clip_missing", True)
     spec.normalize_indels = c.get("normalize_indels", True)
     for s in c["sites"]:
@@ -298,6 +290,7 @@ def call_alleles(dict construct, dict options):
     for c in options.get("cells") or []:
         opt.cells.push_back(_b(c))
     opt.umi_max_dist = options.get("umi_max_dist", 0)
+    opt.min_reads = options.get("min_reads", 0)
     opt.intbc_from_contig = options.get("intbc_from_contig", False)
     opt.default_intbc = _b(options.get("default_intbc", "0"))
     cdef MoleculeTable res
@@ -310,10 +303,11 @@ def call_alleles(dict construct, dict options):
         "intBC": (_i32(res.intbc.codes), _strs(res.intbc.categories)),
         "sites": [(_i32(res.sites[i].codes), _strs(res.sites[i].categories)) for i in range(res.sites.size())],
         "n_reads": _i32(res.n_reads),
-        "allele_frac": _f32(res.allele_frac),
         "stats": _stats(res.stats),
         "site_missing": _i64(res.site_missing),
         "site_clipped": _i64(res.site_clipped),
+        "hist_reads": _i64(res.hist_reads),
+        "hist_umis": _i64(res.hist_umis),
     }
     return out
 

@@ -15,9 +15,13 @@ from cassiopeia.mixins import PreprocessError, logger
 
 from . import _native
 from ._utils import (
+    allele_fractions,
     as_list,
+    copy_attrs,
     default_threads,
     finish_plot,
+    is_collapsed,
+    reads_per_umi_hist,
     record_params,
     site_columns,
     umi_counts,
@@ -52,32 +56,26 @@ def _resolve_contigs(construct: Construct, names: list[str], contigs) -> list[in
 
 
 def _group_rows(
-    keys: dict[str, np.ndarray], umis: np.ndarray, reads: np.ndarray, frac: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    keys: dict[str, np.ndarray], umis: np.ndarray, reads: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Group rows with identical integer keys.
 
-    Returns the first row of each group (in order of appearance), the summed
-    UMIs and reads, and the read-weighted allele fraction.
+    Returns the first row of each group (in order of appearance) and the
+    summed UMIs and reads of each group.
     """
     if len(umis) == 0:
         empty = np.zeros(0, dtype=np.int64)
-        return empty, empty, empty, np.zeros(0)
+        return empty, empty, empty
     gid = pd.DataFrame(keys, copy=False).groupby(list(keys), sort=False).ngroup().to_numpy()
     n = int(gid.max()) + 1
     _, first = np.unique(gid, return_index=True)
-    reads = np.asarray(reads, dtype=np.float64)
     n_umis = np.bincount(gid, weights=np.asarray(umis, dtype=np.float64), minlength=n)
-    n_reads = np.bincount(gid, weights=reads, minlength=n)
-    support = np.bincount(gid, weights=np.asarray(frac, dtype=np.float64) * reads, minlength=n)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        allele_frac = np.where(n_reads > 0, support / n_reads, 1.0)
-    return first, n_umis.astype(np.int64), n_reads.astype(np.int64), allele_frac
+    n_reads = np.bincount(gid, weights=np.asarray(reads, dtype=np.float64), minlength=n)
+    return first, n_umis.astype(np.int64), n_reads.astype(np.int64)
 
 
-def _collapse(df: pd.DataFrame, read_cap: int | None = None) -> pd.DataFrame:
-    """Merge rows with the same cell, intBC, allele, read class and pass flags."""
-    if read_cap is None:
-        read_cap = int(df.attrs.get("qc_params", {}).get("read_cap", 5))
+def _collapse(df: pd.DataFrame) -> pd.DataFrame:
+    """Merge rows with the same cell, intBC, allele and pass flags."""
     sites = site_columns(df)
     names = [c for c in ("sample", "cellBC", "intBC") if c in df.columns] + sites
     names += [c for c in df.columns if c == "pass" or c.startswith("pass_")]
@@ -87,53 +85,65 @@ def _collapse(df: pd.DataFrame, read_cap: int | None = None) -> pd.DataFrame:
         else df[c].to_numpy()
         for c in names
     }
-    umis = umi_counts(df)
-    reads = df["n_reads"].to_numpy()
-    keys["_reads"] = np.minimum(reads // np.maximum(umis, 1), read_cap)
-    first, n_umis, n_reads, frac = _group_rows(keys, umis, reads, df["allele_frac"].to_numpy())
-    out = df.iloc[first].drop(columns=["UMI", "n_umis"], errors="ignore").reset_index(drop=True)
+    first, n_umis, n_reads = _group_rows(keys, umi_counts(df), df["n_reads"].to_numpy())
+    out = df.iloc[first].drop(columns=["UMI", "n_umis", "allele_frac"], errors="ignore")
+    out = copy_attrs(df, out.reset_index(drop=True))
     out["n_umis"] = n_umis.astype(np.int32)
     out["n_reads"] = n_reads.astype(np.int32)
-    out["allele_frac"] = frac.astype(np.float32)
-    lead = [c for c in names if c in out.columns and not c.startswith("pass")]
-    lead += ["n_umis", "n_reads", "allele_frac"]
-    out = out[lead + [c for c in out.columns if c not in lead]]
-    out.attrs = {k: (dict(v) if isinstance(v, dict) else v) for k, v in df.attrs.items()}
-    record_params(out, read_cap=read_cap)
-    return out
+    out["allele_frac"] = allele_fractions(out)
+    lead = [c for c in names if not c.startswith("pass")] + ["n_umis", "n_reads", "allele_frac"]
+    return out[lead + [c for c in out.columns if c not in lead]]
 
 
-def collapse_umis(df: pd.DataFrame, read_cap: int = 5) -> pd.DataFrame:
+def collapse_umis(
+    df: pd.DataFrame,
+    min_reads_per_umi: int = 2,
+    *,
+    plot: bool = True,
+    save: str | Path | None = None,
+) -> pd.DataFrame:
     """Collapse UMIs with the same cell, intBC and allele into one row.
 
-    The allele table from :func:`cassiopeia.pp.call_alleles` has one row per
-    UMI. Collapsing merges UMIs with the same cell, intBC, allele and number
-    of reads into one row with ``n_umis`` and ``n_reads`` (summed over its
-    UMIs); UMIs with ``read_cap`` or more reads are merged regardless of their
-    read count. Keeping read counts apart means
-    :func:`cassiopeia.pp.filter_alleles` filters UMIs by reads exactly as on
-    the uncollapsed table, for ``min_reads_per_umi`` up to ``read_cap``. The
-    table is typically 2-6x smaller, and every later step works on either
-    form. ``allele_frac`` becomes the fraction of the row's reads that
-    support the allele. Rows that differ in a ``pass_*`` flag are kept apart.
+    UMIs with fewer than ``min_reads_per_umi`` reads are dropped first. Gives
+    one row per (cell, intBC, allele) with ``n_umis`` and ``n_reads`` summed
+    over its UMIs and ``allele_frac``, the fraction of the (cell, intBC)'s
+    UMIs that carry the allele. Every later step works on either form.
 
-    Use ``pp.call_alleles(collapse_umis=True)`` to collapse while reading the
-    BAM, before the full table is built. Collapsed UMIs can no longer be
+    :func:`cassiopeia.pp.call_alleles` collapses UMIs by default, while
+    reading the BAM; use this function on tables from
+    ``call_alleles(collapse_umis=False)``. Collapsed UMIs can no longer be
     merged if :func:`cassiopeia.pp.correct_intbcs` later finds that two of
     them are the same molecule with a sequencing error in the intBC; this
     does not happen with BAMs from :func:`cassiopeia.pp.align`, which merges
     such reads itself, and adds about 1% to UMI counts with STARsolo BAMs.
 
     Args:
-        df: Allele table.
-        read_cap: UMIs with at least this many reads are merged regardless of
-            their read count.
+        df: Allele table with one row per UMI.
+        min_reads_per_umi: Drop UMIs with fewer reads.
+        plot: Plot the reads per UMI, with ``min_reads_per_umi``.
+        save: Save the plot to this path.
 
     Returns:
         The collapsed allele table (without the ``UMI`` column).
     """
-    out = _collapse(df, read_cap)
-    logger.info(f"collapse_umis: {len(df):,} rows -> {len(out):,} alleles")
+    if is_collapsed(df):
+        raise PreprocessError("The allele table is already collapsed.")
+    if not df.attrs.get("has_umis", True):
+        raise PreprocessError("The allele table has no UMIs; each row is already an allele.")
+    reads = df["n_reads"].to_numpy()
+    keep = reads >= min_reads_per_umi
+    out = _collapse(copy_attrs(df, df[keep]))
+    record_params(out, min_reads_per_umi=min_reads_per_umi)
+    logger.info(
+        f"collapse_umis: {int(keep.sum()):,}/{len(df):,} UMIs with >= {min_reads_per_umi} reads "
+        f"-> {len(out):,} alleles"
+    )
+    if plot or save:
+        from ._plotting import _plt, plot_reads_per_umi
+
+        fig, ax = _plt().subplots(figsize=(5.2, 3.4), constrained_layout=True)
+        plot_reads_per_umi(reads_per_umi_hist(reads), min_reads_per_umi, ax=ax)
+        finish_plot(fig, plot, save)
     return out
 
 
@@ -151,16 +161,15 @@ def call_alleles(
     cells: str | Path | Iterable[str] | None = None,
     umi_max_dist: int = 0,
     sample: str | None = None,
-    legacy: bool = False,
     normalize_indels: bool = True,
     clip_missing: bool = True,
-    collapse_umis: bool = False,
-    read_cap: int = 5,
+    min_reads_per_umi: int = 2,
+    collapse_umis: bool = True,
     n_threads: int | None = None,
     plot: bool = True,
     save: str | Path | None = None,
 ) -> pd.DataFrame:
-    """Call per-molecule alleles from an aligned target-site BAM.
+    """Call alleles from an aligned target-site BAM.
 
     Works with BAMs from :func:`cassiopeia.pp.align`, STARsolo and Cell Ranger
     (the latter two are recommended only for insertion and substitution
@@ -170,9 +179,10 @@ def call_alleles(
     the bases aligned to the masked intBC (or from the contig name) and every
     edit site is called from the alignment. Reads are then grouped into
     molecules (cell, intBC, UMI) and each site is called by majority vote.
-    With ``collapse_umis=True``, UMIs with the same cell, intBC and allele are
-    then collapsed into one row (see :func:`cassiopeia.pp.collapse_umis`)
-    before the table is built, which keeps it small for large experiments.
+    UMIs with fewer than ``min_reads_per_umi`` reads are dropped. By default,
+    UMIs with the same cell, intBC and allele are then collapsed into one row
+    (see :func:`cassiopeia.pp.collapse_umis`) before the table is built,
+    which keeps it small for large experiments.
 
     Args:
         bam: Aligned BAM (coordinate-sorted and indexed for fast contig access).
@@ -195,31 +205,35 @@ def call_alleles(
         cells: Cell barcodes to keep (list or file, e.g. Cell Ranger's
             ``barcodes.tsv.gz``).
         umi_max_dist: Merge UMIs within this Hamming distance inside each
-            (cell, intBC), as the legacy pipeline did. 0 disables (STARsolo and
-            Cell Ranger already correct UMIs).
+            (cell, intBC), as the pre-3.0 pipeline did. 0 disables (STARsolo
+            and Cell Ranger already correct UMIs).
         sample: Optional sample name, stored in a ``sample`` column.
-        legacy: Reproduce the legacy Cassiopeia indel calls exactly
-            (implies no indel normalization and no clip handling).
         normalize_indels: Left-align indels before calling (makes calls
             independent of the aligner).
         clip_missing: Call a site missing (instead of unedited) when the
             alignment does not cover its window, e.g. because of soft clipping.
-        collapse_umis: Collapse UMIs with the same cell, intBC, allele and
-            read count into one row with ``n_umis`` (see
-            :func:`cassiopeia.pp.collapse_umis`).
-        read_cap: (``collapse_umis``) UMIs with at least this many reads are
-            collapsed regardless of their read count.
+        min_reads_per_umi: Drop UMIs with fewer reads. Depends on sequencing
+            depth: lower it for shallow libraries; the plot shows where it
+            falls. Not used without UMIs.
+        collapse_umis: Collapse UMIs with the same cell, intBC and allele into
+            one row (see :func:`cassiopeia.pp.collapse_umis`). ``False``
+            returns one row per UMI. Without UMIs (``umi_tag=None``) each row
+            is already a distinct allele and nothing is collapsed.
         n_threads: Threads (default: ``SLURM_CPUS_PER_TASK`` or up to 8).
-        plot: Plot what happened to the reads and the alleles called at each
-            site (unedited, the most common edits, missing).
+        plot: Plot the reads per UMI, what happened to the reads, and the
+            alleles called at each site (unedited, the most common edits,
+            missing).
         save: Save the plot to this path.
 
     Returns:
-        Allele table with categorical ``cellBC``, ``intBC``, ``UMI`` and one
-        column per edit site (NaN = missing), plus ``n_reads`` and
-        ``allele_frac`` (lowest fraction of reads supporting a site call).
-        With ``collapse_umis``, ``UMI`` is replaced by ``n_umis``.
-        ``df.attrs`` holds the construct, site names and read statistics.
+        Allele table with categorical ``cellBC``, ``intBC`` and one column per
+        edit site (NaN = missing). Collapsed, each row is one (cell, intBC,
+        allele) with ``n_umis`` and ``n_reads``; otherwise each row is one
+        UMI, with ``UMI`` and ``n_reads``. ``allele_frac`` is the fraction of
+        the (cell, intBC)'s UMIs (reads without UMIs) that carry the allele.
+        ``df.attrs`` holds the construct, site names and read statistics,
+        including the number of UMIs with each read count
+        (``read_stats['reads_per_umi']``).
     """
     t0 = time.time()
     c = load_construct(construct)
@@ -251,29 +265,24 @@ def call_alleles(
         "n_threads": n_threads,
         "cells": cell_list or [],
         "umi_max_dist": umi_max_dist if umi_tag else 0,
+        "min_reads": min_reads_per_umi if umi_tag else 0,
         "intbc_from_contig": from_contig,
         "default_intbc": c.name,
     }
-    native = c._native(
-        legacy=legacy,
-        normalize_indels=normalize_indels and not legacy,
-        clip_missing=clip_missing and not legacy,
-    )
+    native = c._native(normalize_indels=normalize_indels, clip_missing=clip_missing)
     res = _native.call_alleles(native, options)
 
     def cat(codes, cats):
         return pd.Categorical.from_codes(codes, categories=pd.Index(cats, dtype=object))
 
-    n_reads, allele_frac = res["n_reads"], res["allele_frac"]
+    n_reads = res["n_reads"]
+    collapse = collapse_umis and bool(umi_tag)
     rows = slice(None)
     n_umis = None
-    if collapse_umis:
+    if collapse:
         keys = {"cellBC": res["cellBC"][0], "intBC": res["intBC"][0]}
         keys.update({f"site{j}": s[0] for j, s in enumerate(res["sites"])})
-        keys["_reads"] = np.minimum(n_reads, read_cap)
-        rows, n_umis, n_reads, allele_frac = _group_rows(
-            keys, np.ones(len(n_reads), dtype=np.int64), n_reads, allele_frac
-        )
+        rows, n_umis, n_reads = _group_rows(keys, np.ones(len(n_reads), dtype=np.int64), n_reads)
     data = {}
     codes, cats = res["cellBC"]
     codes = codes[rows]
@@ -282,7 +291,7 @@ def call_alleles(
     else:
         data["cellBC"] = pd.Categorical([sample or "bulk"] * len(codes))
     data["intBC"] = cat(res["intBC"][0][rows], res["intBC"][1])
-    if not collapse_umis:
+    if not collapse:
         if umi_tag:
             data["UMI"] = cat(*res["UMI"])
         else:
@@ -292,28 +301,38 @@ def call_alleles(
     if n_umis is not None:
         data["n_umis"] = n_umis.astype(np.int32)
     data["n_reads"] = np.asarray(n_reads).astype(np.int32)
-    data["allele_frac"] = np.asarray(allele_frac).astype(np.float32)
     df = pd.DataFrame(data)
     if sample is not None:
         df.insert(0, "sample", pd.Categorical([sample] * len(df)))
     stats = dict(res["stats"])
     stats["site_missing_reads"] = dict(zip(c.site_names, res["site_missing"].tolist(), strict=True))
     stats["site_clipped_reads"] = dict(zip(c.site_names, res["site_clipped"].tolist(), strict=True))
+    if umi_tag:
+        stats["reads_per_umi"] = {
+            "reads": res["hist_reads"].tolist(),
+            "umis": res["hist_umis"].tolist(),
+        }
+    else:
+        for k in ("low_read_umis", "low_read_umi_records", "low_read_umi_reads"):
+            stats.pop(k, None)
     df.attrs["construct"] = c.name
     df.attrs["sites"] = c.site_names
     df.attrs["edit_models"] = {s.name: s.edit_model for s in c.sites}
     df.attrs["site_states"] = {s.name: s.edited_states for s in c.sites if s.lookup}
     df.attrs["read_stats"] = stats
     df.attrs["has_umis"] = bool(umi_tag)
+    df["allele_frac"] = allele_fractions(df)
     record_params(df, umi_max_dist=umi_max_dist)
-    if collapse_umis:
-        record_params(df, read_cap=read_cap)
+    if umi_tag:
+        record_params(df, min_reads_per_umi=min_reads_per_umi)
     elapsed = time.time() - t0
     used = stats.get("reads_used", 0)
+    low = stats.get("low_read_umis", 0)
     logger.info(
         f"call_alleles: {stats.get('records', 0):,} records read, {used:,} reads used, "
         f"{stats.get('molecules', len(df)):,} molecules"
-        + (f" -> {len(df):,} alleles" if collapse_umis else "")
+        + (f" ({low:,} UMIs with < {min_reads_per_umi} reads dropped)" if umi_tag else "")
+        + (f" -> {len(df):,} alleles" if collapse else "")
         + f" in {df['cellBC'].nunique():,} cells ({elapsed:.1f}s)"
     )
     if stats.get("records_on_target", 0) and used / max(stats["records_on_target"], 1) < 0.5:
@@ -334,7 +353,6 @@ def call_read(
     cigar: list[tuple[int, int]],
     seq: str,
     qual: Iterable[int] | None = None,
-    legacy: bool = False,
 ) -> dict | None:
     """Call the intBC and site alleles of a single aligned read (for inspection).
 
@@ -345,14 +363,7 @@ def call_read(
             2=D, 3=N, 4=S).
         seq: Read sequence.
         qual: Base qualities (Phred).
-        legacy: Use legacy allele calling.
     """
     c = load_construct(construct)
     q = None if qual is None else bytes(np.asarray(list(qual), dtype=np.uint8))
-    return _native.call_read_py(
-        c._native(legacy=legacy, normalize_indels=not legacy, clip_missing=not legacy),
-        ref_pos,
-        list(cigar),
-        seq,
-        q,
-    )
+    return _native.call_read_py(c._native(), ref_pos, list(cigar), seq, q)

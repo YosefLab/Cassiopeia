@@ -12,6 +12,7 @@ from cassiopeia.mixins import logger
 
 from . import _native
 from ._utils import (
+    allele_fractions,
     as_list,
     copy_attrs,
     default_threads,
@@ -72,7 +73,8 @@ def correct_intbcs(
     closest intBC within ``max_dist`` edits that has at least ``min_ratio``
     times as many UMIs (error variants are much rarer than real intBCs).
     Rows that end up with the same (cell, intBC, UMI), or the same (cell,
-    intBC, allele) after :func:`cassiopeia.pp.collapse_umis`, are merged.
+    intBC, allele) after :func:`cassiopeia.pp.collapse_umis`, are merged,
+    and ``allele_frac`` is recomputed for the corrected (cell, intBC) pairs.
 
     Args:
         df: Allele table from :func:`cassiopeia.pp.call_alleles`.
@@ -114,6 +116,7 @@ def correct_intbcs(
     if wl:
         set_pass(out, "intbc", placed)
     out = _merge_duplicate_molecules(out)
+    out["allele_frac"] = allele_fractions(out)
     record_params(out, intbc_max_dist=max_dist, intbc_min_ratio=None if wl else min_ratio)
     logger.info(
         f"correct_intbcs: {len(seqs):,} intBCs, {n_changed:,} corrected"
