@@ -1,27 +1,19 @@
 name: Release
 
 # Builds the sdist and binary wheels (Cython/C++ extensions) with cibuildwheel and publishes them to
-# PyPI when a GitHub release is published. Pull requests that touch the build run the same builds
-# (without publishing), and the workflow can be run manually to test the wheels.
+# PyPI when a GitHub release is published. It does not run on pull requests (macOS runners are
+# scarce; "Check Build" and "Test" cover Linux): run it manually from the Actions tab (Run workflow)
+# to test the wheels on every platform before publishing a release.
 # Platforms and Python versions are configured in [tool.cibuildwheel] in pyproject.toml.
 
 on:
   release:
     types: [published]
   workflow_dispatch:
-  pull_request:
-    paths:
-      - setup.py
-      - pyproject.toml
-      - MANIFEST.in
-      - "src/**/*.pyx"
-      - "src/**/*.pxd"
-      - "src/cassiopeia/preprocess/_native/**"
-      - .github/workflows/release.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'release' }}
 
 defaults:
   run:
