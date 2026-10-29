@@ -15,12 +15,18 @@ reconstructing & plotting trees, analyzing these trees, and benchmarking new alg
 
 You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/latest/index.html).
 
-We also have provided tutorials for three modules:
+We also provide tutorials:
 
-- [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
-- [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
-- [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
-- [plotting trees with our local library](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/local_plotting.ipynb)
+- [preprocessing sequencing reads](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
+- [basic benchmarking pipeline](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
+- [basic tree reconstruction](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
+- [gene expression simulation](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/expr_simulation.ipynb)
+- [branch length estimation](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/branch_lengths.ipynb)
+- [choosing the best solver](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/solvers.ipynb)
+- [advanced simulation: ecDNA](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/simulate_ecDNA.ipynb)
+- [spatially-resolved lineage tracing](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/spatial.ipynb)
+
+Trees are stored in [TreeData](https://treedata.readthedocs.io/en/latest/) objects and can be plotted and analyzed with [pycea](https://pycea.readthedocs.io/en/latest/).
 
 
 You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8).

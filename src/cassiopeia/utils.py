@@ -513,6 +513,11 @@ def _node_name_generator() -> Generator[str, None, None]:
         yield "cassiopeia_internal_node" + h.hexdigest()
 
 
+# Smallest "negative_log" weight: -log(1) = 0 would make the solvers ignore a state
+# whose prior is 1 (a site with a single possible edit).
+_MIN_LOG_WEIGHT = 1e-3
+
+
 def _transform_priors(
     priors: dict[int, dict[int, float]] | None,
     prior_transformation: str = "negative_log",
@@ -527,7 +532,9 @@ def _transform_priors(
         priors: A dictionary of prior probabilities for each character/state pair.
         prior_transformation: A function defining a transformation on the priors
             in forming weights. Supports the following transformations:
-                "negative_log": Transforms each probability by the negative log
+                "negative_log": Transforms each probability by the negative log,
+                    floored at ``1e-3`` so that a state with prior 1 (e.g. the
+                    only outcome of a base editor) still carries weight
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     square root of 1/p
@@ -546,7 +553,7 @@ def _transform_priors(
     ]:
         raise PriorTransformationError("Please select one of the supported prior transformations.")
 
-    prior_function = lambda x: -np.log(x)
+    prior_function = lambda x: max(-np.log(x), _MIN_LOG_WEIGHT)
 
     if prior_transformation == "square_root_inverse":
         prior_function = lambda x: (np.sqrt(1 / x))

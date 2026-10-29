@@ -175,6 +175,15 @@ def test_cas9_leaf_obsm_matches_node_attrs(tdata):
             assert df.loc[leaf, col] == node_chars[j]
 
 
+def test_random_seed_reproduces_sampled_priors(tdata):
+    runs = [
+        cas.sim.stochastic_tracing(tdata, number_of_states=10, random_seed=3, copy=True)
+        for _ in range(2)
+    ]
+    assert runs[0].uns["priors"] == runs[1].uns["priors"]
+    assert runs[0].obsm["characters"].equals(runs[1].obsm["characters"])
+
+
 def test_cas9_state_generating_distribution(tdata):
     """When state_priors=None, states are generated from the distribution."""
     stochastic_tracing(

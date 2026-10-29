@@ -8,6 +8,7 @@ from typing import Literal
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import TreeSimulatorError
@@ -66,8 +67,6 @@ def _finalize_tree(
     attributes are pulled from every node (not just leaves); otherwise only leaf
     attributes are mirrored.
     """
-    tdata = td.TreeData(obst={key_added: tree}, alignment=alignment)
-
     # Rows that TreeData aligns ``obs`` to: all nodes for "nodes" alignment,
     # leaves only otherwise.
     if alignment == "nodes":
@@ -76,6 +75,12 @@ def _finalize_tree(
     else:
         obs_nodes = [node for node in tree.nodes if tree.out_degree(node) == 0]
         get_data = _get_leaf_data
+
+    # Pass ``obs`` explicitly: without it, TreeData orders the observations by set
+    # iteration, which changes between Python processes (string hash randomization).
+    tdata = td.TreeData(
+        obs=pd.DataFrame(index=obs_nodes), obst={key_added: tree}, alignment=alignment
+    )
 
     if node_attrs is None and obs_nodes:
         node_attrs = tree.nodes[obs_nodes[0]].keys()

@@ -408,3 +408,26 @@ def test_birth_death_alignment_nodes():
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+def test_obs_order_independent_of_hash_seed():
+    """Cell order must not depend on string hash randomization (PYTHONHASHSEED)."""
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import cassiopeia as cas; "
+        "print(list(cas.sim.birth_death_process(num_extant=30, random_seed=0).obs_names))"
+    )
+    outputs = [
+        subprocess.run(
+            [sys.executable, "-W", "ignore", "-c", code],
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        for seed in ("1", "2")
+    ]
+    assert outputs[0] and outputs[0] == outputs[1]

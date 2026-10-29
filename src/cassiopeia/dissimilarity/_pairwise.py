@@ -69,17 +69,25 @@ def _encode_integer_matrix(
     Returns ``(int64_dataframe, -1, mapping)`` where *mapping* maps each original
     state value to its integer code (use :func:`_encode_priors` to re-key priors
     accordingly). Integer matrices are returned unchanged with ``mapping=None``.
+    Ambiguous (tuple) states are encoded state by state into tuples of integer
+    codes, so the returned frame has ``object`` dtype.
     """
     values = arr.to_numpy()
     # Integer matrices already use the integer convention; return them unchanged
     # (remapping would break priors keyed by the original state values).
     if np.issubdtype(values.dtype, np.integer):
         return arr, _int_missing(missing_state_indicator), None
+    flat = values.ravel()
+    ambiguous = values.dtype == object and any(isinstance(v, tuple) for v in flat)
+    if ambiguous:
+        states = dict.fromkeys(s for v in flat for s in (v if isinstance(v, tuple) else (v,)))
+    else:
+        states = pd.unique(flat)
     missing_set = _as_str_set(missing_state_indicator)
     unmodified_set = _as_str_set(unmodified_state)
     mapping: dict = {}
     nxt = 1
-    for value in pd.unique(values.ravel()):
+    for value in states:
         vs = str(value)
         if vs in unmodified_set:
             mapping[value] = 0
@@ -89,9 +97,17 @@ def _encode_integer_matrix(
             mapping[value] = nxt
             nxt += 1
 
-    out = np.empty(arr.shape, dtype=np.int64)
-    for value, code in mapping.items():
-        out[values == value] = code
+    if ambiguous:
+        out = np.empty(len(flat), dtype=object)
+        out[:] = [
+            tuple(dict.fromkeys(mapping[s] for s in v)) if isinstance(v, tuple) else mapping[v]
+            for v in flat
+        ]
+        out = out.reshape(arr.shape)
+    else:
+        out = np.empty(arr.shape, dtype=np.int64)
+        for value, code in mapping.items():
+            out[values == value] = code
     return pd.DataFrame(out, index=arr.index, columns=arr.columns), -1, mapping
 
 
@@ -128,46 +144,25 @@ def _encode_priors(priors: dict[int, dict] | None, mapping: dict | None) -> dict
     }
 
 
-def _scalar_missing(missing_state_indicator, values: np.ndarray):
-    """Pick the single missing-state representation used in an object matrix.
-
-    A resolved missing state may be a tuple of acceptable representations (e.g.
-    the default ``(-1, "-1", "NA", "-")``), but the metrics compare against one
-    value. Return the first representation that occurs in *values* (including
-    inside ambiguous tuple states), else the integer member.
-    """
-    if not isinstance(missing_state_indicator, (tuple, list, set)):
-        return missing_state_indicator
-    present = set()
-    for v in values.ravel():
-        if isinstance(v, tuple):
-            present.update(v)
-        else:
-            present.add(v)
-    for candidate in missing_state_indicator:
-        if candidate in present:
-            return candidate
-    return _int_missing(missing_state_indicator)
-
-
 def _prepare_integer_matrix(
     arr: pd.DataFrame, missing_state_indicator, unmodified_state
 ) -> tuple[np.array, int, dict | None]:
     """Return ``(array, missing_state_indicator, mapping)`` ready for the numba path.
 
-    Integer matrices are used as-is (``mapping=None``). Matrices with ambiguous
-    (tuple) states are left as-is (object path, ``mapping=None``) so ambiguity is
-    preserved for the cluster metrics. Other (string or categorical) matrices
-    are encoded to integers via :func:`_encode_integer_matrix`; re-key priors
-    with :func:`_encode_priors` using the returned *mapping*.
+    Integer matrices are used as-is (``mapping=None``). Other (string or
+    categorical) matrices are encoded to integers via
+    :func:`_encode_integer_matrix`; re-key priors with :func:`_encode_priors`
+    using the returned *mapping*. Matrices with ambiguous (tuple) states are
+    encoded to an ``object`` array of integers and tuples of integers (object
+    path), so ambiguity is preserved for the cluster metrics and the unmodified
+    state is ``0`` as they expect.
     """
     values = arr.to_numpy()
     if np.issubdtype(values.dtype, np.integer):
         return np.ascontiguousarray(values), _int_missing(missing_state_indicator), None
-    if any(isinstance(v, tuple) for v in values.ravel()):
-        return values, _scalar_missing(missing_state_indicator, values), None
     df, missing, mapping = _encode_integer_matrix(arr, missing_state_indicator, unmodified_state)
-    return np.ascontiguousarray(df.to_numpy()), missing, mapping
+    out = df.to_numpy()
+    return (out if out.dtype == object else np.ascontiguousarray(out)), missing, mapping
 
 
 def _pairwise(

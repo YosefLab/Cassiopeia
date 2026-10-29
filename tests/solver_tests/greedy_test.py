@@ -255,3 +255,28 @@ def test_vanilla_greedy_solver_deprecated():
 
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
+
+
+# ── ambiguous states and single-outcome priors ────────────────────────────────
+
+
+def test_greedy_ambiguous_states():
+    cm = pd.DataFrame(
+        {"c0": [1, 1, (1, 2), 2, 2], "c1": [3, 3, 3, 0, 0], "c2": [0, 4, 4, 0, 5]},
+        index=["a", "b", "c", "d", "e"],
+    )
+    tdata = chars_tdata(cm)
+    cas.solver.greedy(tdata)
+    tree = tdata.obst["greedy"]
+    assert sorted(leaves(tree)) == sorted(cm.index)
+    assert find_triplet_structure(("a", "b", "d"), tree) == "ab"
+
+
+def test_greedy_splits_with_single_outcome_priors():
+    # -log(1) = 0 weights used to stop greedy from splitting at all.
+    cm = pd.DataFrame(
+        {"c0": [1, 1, 0, 0], "c1": [1, 0, 0, 0], "c2": [0, 0, 1, 0]}, index=["a", "b", "c", "d"]
+    )
+    tdata = chars_tdata(cm, priors={0: {1: 1.0}, 1: {1: 1.0}, 2: {1: 1.0}})
+    cas.solver.greedy(tdata)
+    assert find_triplet_structure(("a", "b", "c"), tdata.obst["greedy"]) == "ab"

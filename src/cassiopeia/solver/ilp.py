@@ -215,6 +215,17 @@ def _solve_steiner_instance(
 
     model.optimize()
 
+    # If a limit was hit before any solution was found, continue until the first one.
+    if model.SolCount == 0 and model.status in (
+        gurobipy.GRB.TIME_LIMIT,
+        gurobipy.GRB.ITERATION_LIMIT,
+    ):
+        logger.info(f"(Process {pid}) No solution within the limits; continuing to the first one.")
+        model.params.TimeLimit = gurobipy.GRB.INFINITY
+        model.params.IterationLimit = gurobipy.GRB.INFINITY
+        model.params.SolutionLimit = 1
+        model.optimize()
+
     # recover subgraphs
     solutions = []
     for i in range(model.SolCount):
@@ -482,7 +493,7 @@ def ilp(
             dissimilarity.nonmissing_hamming(
                 root,
                 np.array(u),
-                missing_state_indicator=missing_state_indicator,
+                missing_state=missing_state_indicator,
             )
             for u in targets
         ]
@@ -521,6 +532,8 @@ def ilp(
         convergence_time_limit=convergence_time_limit,
     )
 
+    if not proposed_solutions:
+        raise ILPSolverError(f"The ILP did not find a solution (Gurobi status {model.Status}).")
     optimal_solution = proposed_solutions[0]
     optimal_solution = nx.relabel_nodes(optimal_solution, decoder)
     optimal_solution = _post_process_steiner_solution(optimal_solution, root)

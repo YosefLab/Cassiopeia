@@ -6,7 +6,6 @@ bottom solver; ILP-bottom behavior is covered behind a Gurobi skip.
 """
 
 import functools
-import importlib.util
 import warnings
 
 import pandas as pd
@@ -15,7 +14,24 @@ import treedata as td
 
 import cassiopeia as cas
 
-GUROBI_INSTALLED = importlib.util.find_spec("gurobipy") is not None
+
+def _gurobi_available() -> bool:
+    """Whether gurobipy is installed and licensed on this host (licenses can be host-locked)."""
+    try:
+        import gurobipy
+    except ImportError:
+        return False
+    try:
+        env = gurobipy.Env(empty=True)
+        env.setParam("OutputFlag", 0)
+        env.start()
+        env.dispose()
+    except gurobipy.GurobiError:
+        return False
+    return True
+
+
+GUROBI_INSTALLED = _gurobi_available()
 
 
 def leaves(g):

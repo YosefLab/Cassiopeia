@@ -158,6 +158,11 @@ def stochastic_tracing(
     else:
         rate_per_char = _resolve_mutation_rate(mutation_rate, number_of_cassettes, size_of_cassette)
 
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    # Seeded first: priors sampled from ``state_generating_distribution`` use the
+    # global NumPy RNG.
     priors_per_char = _resolve_state_priors(
         state_priors,
         state_generating_distribution,
@@ -168,9 +173,6 @@ def stochastic_tracing(
 
     if copy:
         tdata = tdata.copy()
-
-    if random_seed is not None:
-        np.random.seed(random_seed)
 
     tree = tdata.obst[tree_key]
     char_arrays: dict[str, list[str]] = {node: [unmodified_state] * n_chars for node in tree.nodes}
@@ -342,9 +344,9 @@ def missing_data(
     n_cassettes = len(columns) // cassette_size
     output_key = key_added if key_added is not None else characters_key
 
-    # Check if characters are available as node attributes
-    some_node = next(iter(tree.nodes))
-    has_node_chars = characters_key in tree.nodes[some_node]
+    # Characters are read from node attributes (written by stochastic_tracing). Nodes
+    # without them (e.g. leaves merged by sample_supercellular) use their observed row.
+    has_node_chars = all(characters_key in data for _, data in tree.nodes(data=True))
 
     if collapse_sites_on_cassette and not has_node_chars:
         raise DataSimulatorError(
@@ -353,23 +355,18 @@ def missing_data(
             f"first, or set collapse_sites_on_cassette=False."
         )
 
-    if has_node_chars:
-        # Snapshot original characters (from stochastic_tracing) for collapse detection
-        original_chars: dict[str, list[str]] = {
-            node: list(tree.nodes[node][characters_key]) for node in tree.nodes
-        }
-        # Working copy — all modifications go here
-        chars: dict[str, list[str]] = {node: list(d) for node, d in original_chars.items()}
-    else:
-        original_chars = {}
-        obsm_df = tdata.obsm[characters_key]
-        obs_names_set = set(tdata.obs_names)
-        chars = {}
-        for node in tree.nodes:
-            if node in obs_names_set:
-                chars[node] = [str(obsm_df.loc[node, col]) for col in columns]
-            else:
-                chars[node] = [unmodified_state] * len(columns)
+    obsm_df = tdata.obsm[characters_key]
+    obs_names_set = set(tdata.obs_names)
+    chars: dict[str, list[str]] = {}
+    for node, data in tree.nodes(data=True):
+        if characters_key in data:
+            chars[node] = list(data[characters_key])
+        elif node in obs_names_set:
+            chars[node] = [obsm_df.loc[node, col] for col in columns]
+        else:
+            chars[node] = [unmodified_state] * len(columns)
+    # Snapshot of the original characters for collapse detection; ``chars`` is modified.
+    original_chars = {node: list(c) for node, c in chars.items()} if has_node_chars else {}
 
     # --- Resection (collapse) ---
     # Detected per-branch by comparing original chars of each node to its parent.
@@ -431,6 +428,15 @@ def missing_data(
         tree.nodes[node][output_key] = chars[node]
 
     obs_names = list(tdata.obs_names)
+
+    # Ambiguous (tuple) states, e.g. from sample_supercellular, cannot be categories.
+    if any(isinstance(s, tuple) for node in obs_names for s in chars[node]):
+        tdata.obsm[output_key] = pd.DataFrame(
+            [chars[node] for node in obs_names], index=obs_names, columns=columns
+        )
+        tdata.uns["missing_state"] = missing_state
+        tdata.uns["unmodified_state"] = unmodified_state
+        return tdata if copy else None
 
     # Preserve categorical dtype and extend categories to include missing_state
     source_col = tdata.obsm[characters_key].iloc[:, 0]

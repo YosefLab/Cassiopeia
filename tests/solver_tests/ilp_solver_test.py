@@ -4,7 +4,6 @@ Full ILP solves require Gurobi and are gated behind ``GUROBI_INSTALLED``. The
 potential-graph and post-processing helpers (Gurobi-free) are tested directly.
 """
 
-import importlib.util
 import itertools
 import warnings
 
@@ -23,7 +22,24 @@ from cassiopeia.solver.ilp import (
     _post_process_steiner_solution,
 )
 
-GUROBI_INSTALLED = importlib.util.find_spec("gurobipy") is not None
+
+def _gurobi_available() -> bool:
+    """Whether gurobipy is installed and licensed on this host (licenses can be host-locked)."""
+    try:
+        import gurobipy
+    except ImportError:
+        return False
+    try:
+        env = gurobipy.Env(empty=True)
+        env.setParam("OutputFlag", 0)
+        env.start()
+        env.dispose()
+    except gurobipy.GurobiError:
+        return False
+    return True
+
+
+GUROBI_INSTALLED = _gurobi_available()
 
 
 def find_triplet_structure(triplet, T):
@@ -320,6 +336,20 @@ def test_ilp_missing_data():
     tree = tdata.obst["ilp"]
     assert len([n for n in tree if tree.in_degree(n) == 0]) == 1
     assert set(leaves(tree)) == set(MISSING_CM.index)
+
+
+@pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")
+def test_ilp_continues_past_limit_without_solution():
+    """Hitting the iteration limit before any solution still returns a tree."""
+    tdata = cas.sim.birth_death_process(num_extant=80, random_seed=0)
+    cas.tl.rescale_node_times(tdata)
+    cas.sim.stochastic_tracing(
+        tdata, mutation_rate=1.0, state_priors={str(i): 1 / 8 for i in range(1, 9)}, random_seed=0
+    )
+    cas.sim.missing_data(tdata, stochastic_rate=0.25, random_seed=0)
+    cas.solver.ilp(tdata, convergence_iteration_limit=1, priors=False)
+    tree = tdata.obst["ilp"]
+    assert set(leaves(tree)) == set(tdata.obs_names)
 
 
 @pytest.mark.skipif(not GUROBI_INSTALLED, reason="Gurobi installation not found.")

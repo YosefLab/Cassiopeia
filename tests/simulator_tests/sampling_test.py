@@ -253,6 +253,55 @@ def test_spatial_composed_pixel_merge():
     assert len(pixel_merged) == 1
 
 
+def test_missing_data_after_pixel_merge():
+    """Merged leaves have no node characters; missing_data uses their observed states."""
+    from cassiopeia.simulator import birth_death_process, missing_data, stochastic_tracing
+
+    tdata = birth_death_process(num_extant=50, random_seed=0)
+    stochastic_tracing(tdata, number_of_cassettes=4, size_of_cassette=2, random_seed=0)
+    leaves = list(tdata.obs_names)
+    tdata.obsm["spatial"] = pd.DataFrame(
+        [[i // 2, 0] for i in range(len(leaves))], index=leaves, columns=["x", "y"]
+    )
+    merged = sample_supercellular(tdata, spatial_key="spatial")
+    before = merged.obsm["characters"].copy()
+    missing_data(merged, stochastic_rate=0.5, random_seed=0)
+    after = merged.obsm["characters"]
+    assert (after == "-").values.any()
+    kept = after != "-"
+    assert (after[kept] == before[kept]).values[kept.values].all()
+    assert any(isinstance(v, tuple) for v in after.values.ravel())
+
+
+def test_pixel_merge_independent_of_hash_seed():
+    """Merged trees keep the node order, so seeded missing data is reproducible."""
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import pandas as pd, cassiopeia as cas; "
+        "t = cas.sim.birth_death_process(num_extant=60, random_seed=0); "
+        "cas.sim.stochastic_tracing(t, random_seed=0); "
+        "x = [i // 3 for i in range(t.n_obs)]; "
+        "t.obsm['spot'] = pd.DataFrame({'x': x, 'y': 0}, index=t.obs_names); "
+        "s = cas.sim.sample_supercellular(t, spatial_key='spot'); "
+        "cas.sim.missing_data(s, stochastic_rate=0.5, random_seed=0); "
+        "print(list(s.obst['simulated'].nodes), s.obsm['characters'].values.tolist())"
+    )
+    outputs = [
+        subprocess.run(
+            [sys.executable, "-W", "ignore", "-c", code],
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        for seed in ("1", "2")
+    ]
+    assert outputs[0] and outputs[0] == outputs[1]
+
+
 # ============================================================
 # sample_supercellular — iterative mode
 # ============================================================
@@ -318,13 +367,34 @@ def test_supercellular_characters_preserved_for_unmerged():
             )
 
 
-def test_supercellular_merged_states_contain_pipe():
+def test_supercellular_merged_states_are_tuples():
     tdata = _make_tdata(n_leaves=4, with_chars=False)
     leaves = list(tdata.obs_names)
     tdata.obsm["characters"] = pd.DataFrame({"c1": ["1", "2", "3", "4"]}, index=leaves)
     sub = sample_supercellular(tdata, number_of_merges=1, random_seed=1)
     merged = [l for l in sub.obs_names if "-" in l]
-    assert "|" in sub.obsm["characters"].loc[merged[0], "c1"]
+    state = sub.obsm["characters"].loc[merged[0], "c1"]
+    assert isinstance(state, tuple)
+    assert set(state) == {tdata.obsm["characters"].loc[l, "c1"] for l in merged[0].split("-")}
+
+
+def test_supercellular_nested_merges_flatten_tuples():
+    tdata = _make_tdata(n_leaves=4, with_chars=False)
+    leaves = list(tdata.obs_names)
+    tdata.obsm["characters"] = pd.DataFrame({"c1": ["1", "2", "3", "4"]}, index=leaves)
+    sub = sample_supercellular(tdata, number_of_merges=3, random_seed=1)
+    assert sub.n_obs == 1
+    assert sub.obsm["characters"].iloc[0, 0] == ("1", "2", "3", "4")
+
+
+def test_supercellular_keeps_integer_states():
+    tdata = _make_tdata(n_leaves=4, with_chars=False)
+    leaves = list(tdata.obs_names)
+    tdata.obsm["characters"] = pd.DataFrame({"c1": [1, 2, 3, 4], "c2": [0, 0, 0, 0]}, index=leaves)
+    sub = sample_supercellular(tdata, number_of_merges=1, random_seed=1)
+    merged = [l for l in sub.obs_names if "-" in l][0]
+    assert all(isinstance(s, (int, np.integer)) for s in sub.obsm["characters"].loc[merged, "c1"])
+    assert sub.obsm["characters"]["c2"].dtype == np.int64
 
 
 def test_supercellular_collapse_duplicates():
@@ -333,8 +403,9 @@ def test_supercellular_collapse_duplicates():
     tdata.obsm["characters"] = pd.DataFrame({"c1": ["1", "1", "3", "4"]}, index=leaves)
     sub = sample_supercellular(tdata, number_of_merges=1, collapse_duplicates=True, random_seed=1)
     for leaf in sub.obs_names:
-        parts = sub.obsm["characters"].loc[leaf, "c1"].split("|")
-        assert len(parts) == len(set(parts))
+        state = sub.obsm["characters"].loc[leaf, "c1"]
+        if isinstance(state, tuple):
+            assert len(state) == len(set(state))
 
 
 def test_supercellular_tree_valid():
@@ -468,8 +539,24 @@ def test_pixel_mode_characters_combined():
     )
     sub = sample_supercellular(tdata, spatial_key="spatial")
     merged = [l for l in sub.obs_names if "-" in l]
-    merged_c1 = sub.obsm["characters"].loc[merged[0], "c1"]
-    assert set(merged_c1.split("|")) == {"1", "2"}
+    assert sub.obsm["characters"].loc[merged[0], "c1"] == ("1", "2")
+
+
+def test_pixel_mode_drops_missing_states():
+    tdata = _make_tdata(n_leaves=4, with_chars=False)
+    leaves = list(tdata.obs_names)
+    tdata.obsm["characters"] = pd.DataFrame(
+        {"c1": ["2", "-", "-", "-"], "c2": ["*", "1", "-", "-"]}, index=leaves
+    )
+    tdata.uns["missing_state"] = "-"
+    tdata.obsm["spatial"] = pd.DataFrame(
+        [[1, 1], [1, 1], [2, 2], [2, 2]], index=leaves, columns=["x", "y"]
+    )
+    sub = sample_supercellular(tdata, spatial_key="spatial")
+    chars = sub.obsm["characters"]
+    pair, all_missing = ("-".join(sorted(leaves[:2])), "-".join(sorted(leaves[2:])))
+    assert chars.loc[pair].tolist() == ["2", ("*", "1")]
+    assert chars.loc[all_missing].tolist() == ["-", "-"]
 
 
 def test_pixel_mode_collapse_duplicates():
@@ -493,7 +580,7 @@ def test_pixel_mode_no_collapse_duplicates():
     )
     sub = sample_supercellular(tdata, spatial_key="spatial", collapse_duplicates=False)
     merged = [l for l in sub.obs_names if "-" in l]
-    assert sub.obsm["characters"].loc[merged[0], "c1"] == "1|1"
+    assert sub.obsm["characters"].loc[merged[0], "c1"] == ("1", "1")
 
 
 def test_pixel_mode_tree_valid():
