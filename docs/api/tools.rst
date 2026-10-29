@@ -46,3 +46,10 @@ Ancestral Characters
    :toctree: reference/
 
    tl.ancestral_characters
+
+Branch Lengths
+~~~~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: reference/
+
+   tl.estimate_branch_lengths

@@ -1,6 +1,7 @@
 """Top level for tools."""
 
 from .ancestral_characters import ancestral_characters
+from .branch_lengths import estimate_branch_lengths
 from .deprecated import (
     FitnessEstimator,
     IIDExponentialBayesian,
@@ -40,6 +41,8 @@ from .tree_metrics import (
 __all__ = [
     # Ancestral characters
     "ancestral_characters",
+    # Branch lengths
+    "estimate_branch_lengths",
     # Metrics
     "calculate_likelihood",
     "calculate_parsimony",

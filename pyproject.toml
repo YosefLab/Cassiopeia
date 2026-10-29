@@ -50,6 +50,9 @@ dependencies = [
   "treedata>=0.2.2",
 ]
 
+optional-dependencies.convexml = [
+  "cvxpy>=1.4",
+]
 optional-dependencies.dev = [
   "cython>=3.0.6", # for regenerating .c from .pyx when releasing
   "pre-commit",
@@ -81,6 +84,7 @@ optional-dependencies.spatial = [
 ]
 optional-dependencies.test = [
   "coverage>=7.10",
+  "cvxpy>=1.4",
   "pytest",
   "pytest-cov",
 ]
