@@ -127,11 +127,11 @@ skip-install = false
 # Matrix entries for hatch-test
 [[tool.hatch.envs.hatch-test.matrix]]
 deps = [ "stable" ]
-python = [ "3.10", "3.12" ]
+python = [ "3.10", "3.14" ]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 deps = [ "pre" ]
-python = [ "3.12" ]
+python = [ "3.14" ]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.deps.env-vars = [
@@ -139,6 +139,20 @@ matrix.deps.env-vars = [
 ]
 
 # --- Ruff / Pytest / Coverage ---
+
+[tool.cibuildwheel]
+# Wheels built by .github/workflows/release.yaml for Linux (x86_64, aarch64) and macOS (arm64).
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux_*"
+# Run the tests of the compiled kernels on the oldest and newest Python.
+test-sources = [ "pyproject.toml", "tests" ]
+test-requires = [ "pytest" ]
+test-command = "pytest tests/preprocess_tests tests/solver_tests -q -p no:cacheprovider"
+test-skip = "cp311-* cp312-* cp313-*"
+test-environment = { MPLBACKEND = "agg" }
+linux.before-all = "yum install -y zlib-devel"
+# numba's macOS wheels need macOS 12
+macos.environment = { MACOSX_DEPLOYMENT_TARGET = "12.0" }
 
 [tool.ruff]
 line-length = 100

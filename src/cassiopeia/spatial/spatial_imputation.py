@@ -4,9 +4,9 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.sparse
-import tqdm
 from treedata import TreeData
 
+from cassiopeia.mixins import logger
 from cassiopeia.utils import _get_characters, _get_parameter, _normalize_missing
 
 
@@ -176,37 +176,56 @@ def impute_alleles_spatial(
             coords_arr = pd.DataFrame(coords_arr, index=tdata.obs_names)
         coordinates = coords_arr
 
+    # Neighbors that may vote for each cell; the graph is fixed across rounds.
+    row_of = {cell: i for i, cell in enumerate(character_matrix.index)}
+    voters: dict[int, np.ndarray] = {}
+    for i in np.unique(np.where(character_matrix.isin(missing_states))[0]):
+        cell = character_matrix.index[i]
+        if cell not in spatial_graph:
+            voters[i] = np.array([], dtype=int)
+            continue
+        rows = []
+        for _, node in nx.bfs_edges(spatial_graph, cell, depth_limit=imputation_hops):
+            if node not in row_of:
+                continue
+            if coordinates is not None:
+                diff = coordinates.loc[cell].values - coordinates.loc[node].values
+                if np.sqrt(np.sum(diff**2)) > max_neighbor_distance:
+                    continue
+            rows.append(row_of[node])
+        voters[i] = np.array(rows, dtype=int)
+
     prev = character_matrix.copy()
     for _round in range(num_imputation_iterations):
-        print(f">> Imputation round {_round + 1}...")
+        logger.debug(f"Imputation round {_round + 1}")
 
-        current = prev.copy()
-        missing_mask = prev.isin(missing_states)
-        missing_indices = np.where(missing_mask)
+        values = prev.to_numpy(dtype=object)
+        current = values.copy()
+        missing_indices = np.where(prev.isin(missing_states))
 
-        for i, j in tqdm.tqdm(
-            zip(missing_indices[0], missing_indices[1], strict=False),
-            total=len(missing_indices[0]),
-        ):
-            imputed_value, proportion_of_votes, n_votes = _impute_single_state(
-                prev.index.values[i],
-                j,
-                prev,
-                neighborhood_graph=spatial_graph,
-                missing_states=missing_states,
-                number_of_hops=imputation_hops,
-                max_neighbor_distance=max_neighbor_distance,
-                coordinates=coordinates,
-            )
+        for i, j in zip(missing_indices[0], missing_indices[1], strict=False):
+            votes = []
+            for state in values[voters.get(i, []), j]:
+                if state in missing_states:
+                    continue
+                votes.extend(state if isinstance(state, tuple) else (state,))
+            if not votes:
+                continue
+            states, counts = np.unique(votes, return_counts=True)
+            imputed_value = states[np.argmax(counts)]
             if (
-                n_votes > 0
-                and proportion_of_votes >= imputation_concordance
+                np.max(counts) / np.sum(counts) >= imputation_concordance
                 and imputed_value not in missing_states
                 and imputed_value not in unmodified_states
             ):
-                current.iloc[i, j] = imputed_value
+                current[i, j] = imputed_value
 
-        prev = current
+        # Restore the column dtypes (categories are re-inferred to admit imputed states).
+        dtypes = {
+            column: "category" if isinstance(dtype, pd.CategoricalDtype) else dtype
+            for column, dtype in prev.dtypes.items()
+        }
+        prev = pd.DataFrame(current, index=prev.index, columns=prev.columns).astype(dtypes)
 
     tdata.obsm[key_added] = prev
 

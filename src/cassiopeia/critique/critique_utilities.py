@@ -1,6 +1,5 @@
 """Utilities for the critique module."""
 
-import itertools
 import math
 from collections import defaultdict
 from typing import Any
@@ -21,8 +20,7 @@ def nCr(n: int, r: int) -> float:
     """
     if r > n or n < 0 or r < 0:
         return 0
-    f = math.factorial
-    return f(n) // f(r) // f(n - r)
+    return math.comb(n, r)
 
 
 def annotate_tree_depths(G: nx.DiGraph) -> dict[int, list[Any]]:
@@ -90,6 +88,20 @@ def get_outgroup(G: nx.DiGraph, triplet: tuple[Any, Any, Any]) -> str:
     return "None"
 
 
+def _leaves_below(G: nx.DiGraph, u: Any) -> list[Any]:
+    """Leaves of the subtree rooted at *u*."""
+    leaves: list[Any] = []
+    stack = [u]
+    while stack:
+        x = stack.pop()
+        children = list(G.successors(x))
+        if children:
+            stack.extend(children)
+        else:
+            leaves.append(x)
+    return leaves
+
+
 def sample_triplet_at_depth(
     G: "nx.DiGraph",
     depth: int,
@@ -98,26 +110,25 @@ def sample_triplet_at_depth(
     """Samples a triplet at a given depth for a networkx DiGraph.
 
     Samples a triplet of leaves such that the depth of the LCA of the triplet
-    is at the specified depth.
+    is at the specified depth. The LCA is drawn in proportion to the number of
+    triplets it is the LCA of, and the triplet uniformly among those. A triplet
+    with two leaves in one daughter clade of the LCA is resolvable (the third
+    leaf is the outgroup); one with its leaves in three daughter clades is not.
 
     Args:
         G: nx.DiGraph
         depth: Depth at which to sample the triplet
         depth_to_nodes: An optional dictionary that maps a depth to the nodes
-            that appear at that depth. This speeds up the function considerably.
+            that appear at that depth, as returned by
+            :func:`annotate_tree_depths` (which must have been run on *G*).
+            This speeds up the function considerably.
 
     Returns:
             A list of three leaves corresponding to the triplet name of the outgroup
             of the triplet.
     """
-    annotated_depth_to_nodes = annotate_tree_depths(
-        G
-    )  # edits G in place so nodes have all three attributes
-    if depth_to_nodes is not None:
-        if depth_to_nodes != annotated_depth_to_nodes:
-            raise ValueError("Provided depth_to_nodes does not match the graph structure.")
-    else:
-        depth_to_nodes = annotated_depth_to_nodes
+    if depth_to_nodes is None:
+        depth_to_nodes = annotate_tree_depths(G)  # edits G in place
 
     candidates = depth_to_nodes.get(depth, [])
     if not candidates:
@@ -126,84 +137,44 @@ def sample_triplet_at_depth(
     total_triplets = int(sum(G.nodes[v].get("number_of_triplets", 0) for v in candidates))
     if total_triplets > 0:
         probs = [G.nodes[v].get("number_of_triplets", 0) / total_triplets for v in candidates]
-        node = np.random.choice(candidates, size=1, replace=False, p=probs)[0]
+        node = candidates[np.random.choice(len(candidates), p=probs)]
     else:
         node = candidates[0]
 
-    subtree_leaf_size = {u: G.nodes[u]["subtree_leaf_size"] for u in G.nodes}
-
-    # daughter clade combos
     kids = list(G.successors(node))
-    combos: list[tuple[Any, Any, Any]] = []
-    weights: list[int] = []
-    denom = 0
+    sizes = np.array([G.nodes[k]["subtree_leaf_size"] for k in kids], dtype=float)
+    total = sizes.sum()
+    # Triplets with two leaves in one clade (resolvable) and with three clades.
+    resolvable = np.array([nCr(int(s), 2) for s in sizes], dtype=float) * (total - sizes)
+    n_resolvable = resolvable.sum()
+    n_unresolvable = (total**3 - 3 * total * (sizes**2).sum() + 2 * (sizes**3).sum()) / 6
 
-    for a, b, c in itertools.combinations_with_replacement(kids, 3):
-        if a == b == c:
-            continue
-        combos.append((a, b, c))
-        sa, sb, sc = (subtree_leaf_size[a], subtree_leaf_size[b], subtree_leaf_size[c])
-        if a == b:
-            w = nCr(sa, 2) * sc
-        elif b == c:
-            w = nCr(sb, 2) * sa
-        elif a == c:
-            w = nCr(sc, 2) * sb
-        else:
-            w = sa * sb * sc
-        weights.append(w)
-        denom += w
-
-    if denom == 0 or not combos:
+    if n_resolvable + n_unresolvable <= 0:
         # not enough structure; sample any 3 leaves under node and mark unresolved
-        leaves: list[Any] = []
-        stack = [node]
-        while stack:
-            x = stack.pop()
-            ch = list(G.successors(x))
-            if not ch:
-                leaves.append(x)
-            else:
-                stack.extend(ch)
+        leaves = _leaves_below(G, node)
         if len(leaves) < 3:
             raise ValueError("Not enough leaves to form a triplet at this depth.")
-        pick = np.random.choice(leaves, 3, replace=False)
-        return (str(pick[0]), str(pick[1]), str(pick[2])), "None"
+        pick = np.random.choice(len(leaves), 3, replace=False)
+        return tuple(str(leaves[i]) for i in pick), "None"
 
-    probs = [w / denom for w in weights]
-    idx = int(np.random.choice(len(combos), size=1, replace=False, p=probs)[0])
-    a, b, c = combos[idx]
+    if np.random.random() < n_resolvable / (n_resolvable + n_unresolvable):
+        a = np.random.choice(len(kids), p=resolvable / n_resolvable)
+        others = sizes.copy()
+        others[a] = 0
+        b = np.random.choice(len(kids), p=others / others.sum())
+        in_leaves = _leaves_below(G, kids[a])
+        in_group = [in_leaves[i] for i in np.random.choice(len(in_leaves), 2, replace=False)]
+        out_leaves = _leaves_below(G, kids[b])
+        out_group = out_leaves[np.random.randint(len(out_leaves))]
+        return (str(in_group[0]), str(in_group[1]), str(out_group)), str(out_group)
 
-    # draw leaves according to combo
-    def leaves_in_subtree(u: Any) -> list[Any]:
-        leaves: list[Any] = []
-        st = [u]
-        while st:
-            x = st.pop()
-            ch = list(G.successors(x))
-            if not ch:
-                leaves.append(x)
-            else:
-                st.extend(ch)
-        return leaves
-
-    if a == b:
-        in_group = np.random.choice(leaves_in_subtree(a), 2, replace=False)
-        out_group = np.random.choice(leaves_in_subtree(c))
-    elif b == c:
-        in_group = np.random.choice(leaves_in_subtree(b), 2, replace=False)
-        out_group = np.random.choice(leaves_in_subtree(a))
-    elif a == c:
-        in_group = np.random.choice(leaves_in_subtree(c), 2, replace=False)  # no replacement
-        out_group = np.random.choice(leaves_in_subtree(b))
-    else:
-        return (
-            (
-                str(np.random.choice(leaves_in_subtree(a))),
-                str(np.random.choice(leaves_in_subtree(b))),
-                str(np.random.choice(leaves_in_subtree(c))),
-            ),
-            "None",
-        )
-
-    return (str(in_group[0]), str(in_group[1]), str(out_group)), str(out_group)
+    # Three distinct clades, each drawn in proportion to its number of leaves.
+    while True:
+        a, b, c = np.random.choice(len(kids), 3, p=sizes / total)
+        if a != b and b != c and a != c:
+            break
+    picks = []
+    for k in (a, b, c):
+        leaves = _leaves_below(G, kids[k])
+        picks.append(str(leaves[np.random.randint(len(leaves))]))
+    return tuple(picks), "None"

@@ -17,6 +17,7 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+import shutil
 import sys
 from pathlib import Path
 
@@ -31,6 +32,18 @@ from sphinx.util.inspect import safe_getattr
 
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
+
+# Copy the tutorials from ../notebooks. A symlink does not work: Sphinx resolves it, which
+# breaks the relative paths that nbsphinx writes for the figures of each notebook.
+_notebooks = HERE / "notebooks"
+if _notebooks.is_symlink():
+    _notebooks.unlink()
+shutil.rmtree(_notebooks, ignore_errors=True)
+shutil.copytree(
+    HERE.parent / "notebooks",
+    _notebooks,
+    ignore=shutil.ignore_patterns("._*", ".ipynb_checkpoints"),
+)
 
 import cassiopeia  # noqa
 
@@ -59,6 +72,7 @@ extensions = [
     "sphinx_gallery.load_style",
     "myst_parser",
     "sphinx_tabs.tabs",
+    "sphinx_design",
 ]
 
 myst_enable_extensions = [
@@ -110,6 +124,8 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "networkx": ("https://networkx.org/documentation/stable/", None),
     "treedata": ("https://treedata.readthedocs.io/en/latest/", None),
+    "pycea": ("https://pycea.readthedocs.io/en/latest/", None),
+    "scanpy": ("https://scanpy.readthedocs.io/en/stable/", None),
 }
 
 # General information about the project.
@@ -162,6 +178,7 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo.png"
 
 html_theme_options = {
+    "logo": {"image_light": "_static/logo.png", "image_dark": "_static/logo_dark.png"},
     "github_url": "https://github.com/YosefLab/Cassiopeia",
     "twitter_url": "https://twitter.com/YosefLab",
     # "use_edit_page_button": True,
@@ -180,12 +197,11 @@ html_static_path = ["_static"]
 html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
+# Notebooks not listed here use the figure of the cell tagged "nbsphinx-thumbnail".
 nbsphinx_thumbnails = {
     "notebooks/preprocess": "_static/tutorials/preprocess.png",
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
-    "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
-    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png",
 }
 
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import itertools
 import random
-import time
+import secrets
 import warnings
 from collections.abc import Generator, Mapping
-from hashlib import blake2b
 from typing import Any
 
 import networkx as nx
@@ -505,12 +505,19 @@ def _get_node_data(g: nx.DiGraph, key: str) -> pd.Series:
 def _node_name_generator() -> Generator[str, None, None]:
     """Yield unique internal node names for building reconstructed trees.
 
-    Produces unique names by hashing timestamps.
+    Names combine a random prefix, drawn once per generator, with a counter: they
+    are unique within a generator and, with high probability, across generators.
+    (Hashing ``time.time()`` repeated names on platforms with a coarse clock, such
+    as macOS, which turned reconstructed trees into graphs with merged nodes.)
     """
-    while True:
-        k = str(time.time()).encode("utf-8")
-        h = blake2b(key=k, digest_size=12)
-        yield "cassiopeia_internal_node" + h.hexdigest()
+    prefix = secrets.token_hex(8)
+    for i in itertools.count():
+        yield f"cassiopeia_internal_node{prefix}{i}"
+
+
+# Smallest "negative_log" weight: -log(1) = 0 would make the solvers ignore a state
+# whose prior is 1 (a site with a single possible edit).
+_MIN_LOG_WEIGHT = 1e-3
 
 
 def _transform_priors(
@@ -527,7 +534,9 @@ def _transform_priors(
         priors: A dictionary of prior probabilities for each character/state pair.
         prior_transformation: A function defining a transformation on the priors
             in forming weights. Supports the following transformations:
-                "negative_log": Transforms each probability by the negative log
+                "negative_log": Transforms each probability by the negative log,
+                    floored at ``1e-3`` so that a state with prior 1 (e.g. the
+                    only outcome of a base editor) still carries weight
                 "inverse": Transforms each probability p by taking 1/p
                 "square_root_inverse": Transforms each probability by the
                     square root of 1/p
@@ -546,7 +555,7 @@ def _transform_priors(
     ]:
         raise PriorTransformationError("Please select one of the supported prior transformations.")
 
-    prior_function = lambda x: -np.log(x)
+    prior_function = lambda x: max(-np.log(x), _MIN_LOG_WEIGHT)
 
     if prior_transformation == "square_root_inverse":
         prior_function = lambda x: (np.sqrt(1 / x))

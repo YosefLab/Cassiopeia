@@ -9,7 +9,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
-from cassiopeia.utils import _collapse_unifurcations, _get_digraph
+from cassiopeia.utils import _collapse_unifurcations, _get_digraph, _normalize_missing
 
 
 def sample_uniform(
@@ -213,8 +213,14 @@ def sample_supercellular(
         tdata = sample_spatial(tdata, space=mask)
         tdata = sample_supercellular(tdata, spatial_key="spatial")
 
-    In both modes, character states from merged leaves are combined with
-    ``"|"`` separating the contributing state tokens.
+    In both modes, the states of merged leaves are combined into ambiguous
+    states: tuples of the states observed in the merged cells, sorted, such as
+    ``("1", "4")``. This is the format accepted by the solvers (see
+    :func:`cassiopeia.pp.alleles_to_characters` with ``allow_ambiguous=True``).
+    Missing states (``tdata.uns["missing_state"]``) are dropped unless all
+    merged cells are missing, and a state shared by all merged cells is kept
+    as a single state rather than a tuple. Other ``obsm`` DataFrames are
+    combined the same way.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -226,8 +232,9 @@ def sample_supercellular(
             When provided, activates pixel mode and ``ratio`` /
             ``number_of_merges`` must not be set.
         keep_root_edge: Preserve root's single child edge after pruning.
-        collapse_duplicates: If ``True``, deduplicate repeated state tokens
-            within a merged state string (e.g., ``"1|1|2"`` → ``"1|2"``).
+        collapse_duplicates: If ``True``, deduplicate repeated states within a
+            merged state (e.g., ``("1", "1", "2")`` → ``("1", "2")`` and
+            ``("1", "1")`` → ``"1"``).
         random_seed: NumPy random seed for reproducibility (iterative mode).
         tree_key: Key in ``tdata.obst`` for the tree. Only required if
             ``tdata`` contains multiple trees.
@@ -274,14 +281,15 @@ def sample_supercellular(
 
     working_tree = tdata.obst[tree_key].copy()
     current_leaves = list(leaves)
+    missing = _missing_states(tdata)
 
-    # Snapshot obsm character data per leaf as string lists
-    obsm_data: dict[str, dict[str, list[str]]] = {}
+    # Snapshot obsm data per leaf as lists of states
+    obsm_data: dict[str, dict[str, list]] = {}
     obsm_cols: dict[str, list] = {}
     for key, val in tdata.obsm.items():
         if isinstance(val, pd.DataFrame):
             obsm_cols[key] = list(val.columns)
-            obsm_data[key] = {leaf: list(val.loc[leaf].astype(str)) for leaf in leaves}
+            obsm_data[key] = {leaf: list(val.loc[leaf]) for leaf in leaves}
 
     for _ in range(n_merges):
         leaf1 = str(np.random.choice(current_leaves))
@@ -303,7 +311,8 @@ def sample_supercellular(
             s1 = obsm_data[key][leaf1]
             s2 = obsm_data[key][leaf2]
             obsm_data[key][new_leaf] = [
-                _merge_state(a, b, collapse_duplicates) for a, b in zip(s1, s2, strict=False)
+                _merge_states([a, b], collapse_duplicates, missing)
+                for a, b in zip(s1, s2, strict=False)
             ]
 
         current_leaves = [l for l in current_leaves if l != leaf1 and l != leaf2]
@@ -318,7 +327,7 @@ def sample_supercellular(
         new_obsm[key] = pd.DataFrame(
             {leaf: obsm_data[key][leaf] for leaf in final_leaves},
             index=cols,
-        ).T
+        ).T.infer_objects()
 
     return td.TreeData(
         obs=new_obs,
@@ -437,7 +446,7 @@ def sample_timepoints(
     ancestors_needed: set[str] = set()
     for node in sampled:
         ancestors_needed |= nx.ancestors(tree, node)
-    induced = tree.subgraph(ancestors_needed | set(sampled)).copy()
+    induced = _induced_subgraph(tree, ancestors_needed | set(sampled))
 
     # For cells sampled before their natural division time, override time
     # to reflect when they were actually sampled.
@@ -548,6 +557,7 @@ def _pixel_merge(
         spatial_key=spatial_key,
         pixel_of=pixel_of,
         collapse_duplicates=collapse_duplicates,
+        missing=_missing_states(tdata),
     )
     return td.TreeData(
         obs=new_obs,
@@ -563,18 +573,44 @@ def _leaf_distance(tree: nx.DiGraph, leaf1: str, leaf2: str, time_key: str = "ti
     return tree.nodes[leaf1][time_key] + tree.nodes[leaf2][time_key] - 2 * tree.nodes[lca][time_key]
 
 
-def _merge_state(s1: str, s2: str, collapse_duplicates: bool) -> str:
-    """Merge two state strings with ``|`` separator."""
-    parts = s1.split("|") + s2.split("|")
+def _missing_states(tdata: td.TreeData) -> set:
+    """Missing-state values of *tdata* (``uns["missing_state"]`` or the defaults)."""
+    return _normalize_missing(tdata.uns.get("missing_state", (-1, "-1", "NA", "-")))
+
+
+def _merge_states(values: list, collapse_duplicates: bool, missing: set):
+    """Combine the states of merged cells into one (possibly ambiguous) state.
+
+    Tuples (states of previously merged cells) are flattened and missing states
+    are dropped unless every state is missing. Several remaining states are
+    returned as a sorted tuple; a single one is returned as is.
+    """
+    states = []
+    for value in values:
+        states.extend(value if isinstance(value, tuple) else (value,))
+    observed = [s for s in states if s not in missing]
+    if not observed:
+        return states[0]
     if collapse_duplicates:
-        seen: set[str] = set()
-        unique: list[str] = []
-        for x in parts:
-            if x not in seen:
-                seen.add(x)
-                unique.append(x)
-        parts = unique
-    return "|".join(parts)
+        observed = list(dict.fromkeys(observed))
+    if len(observed) == 1:
+        return observed[0]
+    return tuple(sorted(observed, key=str))
+
+
+def _induced_subgraph(tree: nx.DiGraph, nodes: set) -> nx.DiGraph:
+    """Copy of the subgraph induced by *nodes*, in the node order of *tree*.
+
+    ``tree.subgraph(nodes)`` iterates over the set of nodes, whose order depends on
+    ``PYTHONHASHSEED``; downstream random draws (e.g. ``missing_data``) follow the node
+    order, so seeded simulations would differ between processes.
+    """
+    induced = nx.DiGraph(**tree.graph)
+    induced.add_nodes_from((n, data) for n, data in tree.nodes(data=True) if n in nodes)
+    induced.add_edges_from(
+        (u, v, data) for u, v, data in tree.edges(data=True) if u in nodes and v in nodes
+    )
+    return induced
 
 
 def _induce_and_collapse(
@@ -584,7 +620,7 @@ def _induce_and_collapse(
     ancestors: set[str] = set()
     for leaf in final_leaves:
         ancestors |= nx.ancestors(tree, leaf)
-    induced = tree.subgraph(ancestors | set(final_leaves)).copy()
+    induced = _induced_subgraph(tree, ancestors | set(final_leaves))
     return _collapse_unifurcations(induced, collapse_root=not keep_root_edge)
 
 
@@ -614,6 +650,7 @@ def _merge_obsm(
     spatial_key: str,
     pixel_of: dict[str, tuple],
     collapse_duplicates: bool,
+    missing: set,
 ) -> dict:
     """Build merged obsm for pixel merges."""
     new_obsm = {}
@@ -632,29 +669,13 @@ def _merge_obsm(
                 if key == spatial_key:
                     rows[leaf] = list(pixel_of[leaf])
                 else:
-                    col_vals = [list(val.loc[l].astype(str)) for l in old_leaves]
-                    merged_row = []
-                    for group in zip(*col_vals, strict=False):
-                        merged_row.append(_merge_state_multi(list(group), collapse_duplicates))
-                    rows[leaf] = merged_row
+                    col_vals = [list(val.loc[l]) for l in old_leaves]
+                    rows[leaf] = [
+                        _merge_states(list(group), collapse_duplicates, missing)
+                        for group in zip(*col_vals, strict=False)
+                    ]
 
         if rows:
-            new_obsm[key] = pd.DataFrame(rows, index=cols).T[cols]
+            new_obsm[key] = pd.DataFrame(rows, index=cols).T[cols].infer_objects()
 
     return new_obsm
-
-
-def _merge_state_multi(values: list[str], collapse_duplicates: bool) -> str:
-    """Merge a list of state strings with ``|`` separator."""
-    parts: list[str] = []
-    for v in values:
-        parts.extend(v.split("|"))
-    if collapse_duplicates:
-        seen: set[str] = set()
-        unique: list[str] = []
-        for x in parts:
-            if x not in seen:
-                seen.add(x)
-                unique.append(x)
-        parts = unique
-    return "|".join(parts)

@@ -217,3 +217,15 @@ def test_default_parameter_warns_once(monkeypatch):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert utils._get_parameter(tdata, "missing_state") == (-1, "-1", "NA", "-")
+
+
+def test_node_name_generator_unique_with_coarse_clock(monkeypatch):
+    """Names stay unique when the clock does not advance (macOS has a microsecond clock)."""
+    import time
+
+    monkeypatch.setattr(time, "time", lambda: 0.0)
+    gen = utils._node_name_generator()
+    names = [next(gen) for _ in range(1000)]
+    assert len(set(names)) == len(names)
+    assert all(name.startswith("cassiopeia_internal_node") for name in names)
+    assert next(utils._node_name_generator()) not in names

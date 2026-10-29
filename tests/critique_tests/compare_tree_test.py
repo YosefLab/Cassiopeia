@@ -284,5 +284,21 @@ def test_robinson_foulds_mixed_types(tdata, ground_truth_tree):
     assert max_rf > 0
 
 
+def test_triplets_correct_large_multifurcations():
+    # Three clades of 200 leaves each: triplets with two leaves in one clade are
+    # resolvable at the root, the rest (one leaf per clade) are not.
+    tree = nx.DiGraph()
+    for c in range(3):
+        tree.add_edge("root", f"c{c}")
+        tree.add_edges_from((f"c{c}", f"c{c}_{i}") for i in range(200))
+    _, resolvable, _, unresolvable = cas.critique.triplets_correct(
+        tree, tree.copy(), number_of_trials=2000
+    )
+    expected = 200**3 / (3 * 19900 * 400 + 200**3)
+    assert resolvable[0] == 1.0
+    assert pytest.approx(unresolvable[0], abs=0.04) == expected
+    assert unresolvable[1] == 1.0
+
+
 if __name__ == "__main__":
     pytest.main(["-v", __file__])

@@ -217,6 +217,11 @@ def _compute_mutation_frequencies(
     return freq_dict
 
 
+def _is_integer_matrix(character_matrix: pd.DataFrame) -> bool:
+    """Whether every column is integer (no ambiguous states after encoding)."""
+    return all(np.issubdtype(dtype, np.integer) for dtype in character_matrix.dtypes)
+
+
 def _build_weights_array(
     weights: dict[int, dict[int, float]] | None, nc: int, nstates: int
 ) -> np.ndarray:
@@ -302,8 +307,9 @@ def _greedy_split(
         A tuple of lists representing the left and right partition groups.
     """
     missing_data_classifier = _resolve_missing_data_classifier(missing_data_classifier)
-    # Fast path: the built-in "average" classifier is implemented in Cython.
-    if missing_data_classifier is _assign_missing_average:
+    # Fast path: the built-in "average" classifier is implemented in Cython for
+    # integer matrices (ambiguous states make the encoded matrix ``object``).
+    if missing_data_classifier is _assign_missing_average and _is_integer_matrix(character_matrix):
         return _perform_split_fast(character_matrix, samples, weights, missing_state_indicator)
     sample_indices = convert_sample_names_to_indices(character_matrix.index, samples)
     mutation_frequencies = _compute_mutation_frequencies(
@@ -597,9 +603,12 @@ def greedy(
         weights = _transform_priors(priors, prior_transformation)
 
     # Fast path: the built-in "average" classifier uses an index-based recursion
-    # backed by the Cython split kernel. Custom classifiers use the reference
-    # Python recursion (which still dispatches "average" splits to Cython).
-    if _resolve_missing_data_classifier(missing_data_classifier) is _assign_missing_average:
+    # backed by the Cython split kernel. Custom classifiers and ambiguous states
+    # use the reference Python recursion (which still dispatches "average" splits
+    # of integer matrices to Cython).
+    if _resolve_missing_data_classifier(
+        missing_data_classifier
+    ) is _assign_missing_average and _is_integer_matrix(character_matrix):
         tree = _greedy_solve_fast(
             character_matrix,
             missing_state_indicator=missing_state,

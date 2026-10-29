@@ -44,6 +44,12 @@ def test_bad_prior_transformations():
         _transform_priors({0: {1: 0}, 1: {1: -1, 2: -1.5}}, "negative_log")
 
 
+def test_negative_log_weight_of_certain_state_is_positive():
+    weights = _transform_priors({0: {1: 1.0, 2: 0.5}}, "negative_log")
+    assert weights[0][1] > 0
+    assert weights[0][2] == pytest.approx(-np.log(0.5))
+
+
 def test_negative_log_prior_transformations(data):
     priors = data["priors"]
     expected = {c: {s: -np.log(p) for s, p in states.items()} for c, states in priors.items()}

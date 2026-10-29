@@ -15,12 +15,18 @@ reconstructing & plotting trees, analyzing these trees, and benchmarking new alg
 
 You can find all of our [documentation here](https://cassiopeia-lineage.readthedocs.io/en/latest/index.html).
 
-We also have provided tutorials for three modules:
+We also provide tutorials:
 
-- [processing fastqs](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
-- [reconstructing trees](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
-- [simulating trees and benchmarking](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
-- [plotting trees with our local library](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/local_plotting.ipynb)
+- [preprocessing sequencing reads](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/preprocess.ipynb)
+- [basic benchmarking pipeline](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/benchmark.ipynb)
+- [basic tree reconstruction](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/reconstruct.ipynb)
+- [gene expression simulation](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/expr_simulation.ipynb)
+- [branch length estimation](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/branch_lengths.ipynb)
+- [choosing the best solver](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/solvers.ipynb)
+- [advanced simulation: ecDNA](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/simulate_ecDNA.ipynb)
+- [spatially-resolved lineage tracing](https://github.com/YosefLab/Cassiopeia/blob/master/notebooks/spatial.ipynb)
+
+Trees are stored in [TreeData](https://treedata.readthedocs.io/en/latest/) objects and can be plotted and analyzed with [pycea](https://pycea.readthedocs.io/en/latest/).
 
 
 You can also find our originally describing Cassiopeia published in [Genome Biology](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02000-8).
@@ -30,29 +36,26 @@ Free Software: MIT License
 Installation
 --------------
 
-For users:
+Cassiopeia requires Python >= 3.10. Install it from [PyPI](https://pypi.org/project/cassiopeia-lineage/):
 
 ```
-pip install git+https://github.com/YosefLab/Cassiopeia@master#egg=cassiopeia-lineage
+pip install cassiopeia-lineage
 ```
 
-For developers:
+Optional dependencies:
 
-1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
+- Branch length estimation (`cas.tl.estimate_branch_lengths`): `pip install "cassiopeia-lineage[convexml]"`, which adds [cvxpy](https://www.cvxpy.org/).
+- Spatial neighbor graphs for `cas.sp.impute_alleles_spatial`: `pip install "cassiopeia-lineage[spatial]"`, which adds [squidpy](https://squidpy.readthedocs.io/).
+- The ILP solver (`cas.solver.ilp`, the default bottom solver of `cas.solver.hybrid`) requires [Gurobi](https://www.gurobi.com/): `pip install gurobipy` and a license, which is [free for academic users](https://www.gurobi.com/academia/academic-program-and-licenses/).
 
-2. Ensure that you have Python >= 3.10 installed. (Due to dependencies and ongoing updates to Python, we will not guarantee support for python <= 3.9) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+For developers, clone the repository, install it in editable mode with the test dependencies, and run the tests:
 
-3. [Optional] If you intend to use the CassiopeiaILP solver, please be sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
-    * Run the command ``gurobi.sh`` from a terminal window
-    * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
-
-4. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .` or `make install`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
-
-5. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these analyses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
-
-6. [Optional] To estimate branch lengths with `cas.tl.estimate_branch_lengths`, install Cassiopeia with `pip install .[convexml]`, which adds [cvxpy](https://www.cvxpy.org/).
-
-To verify that it installed correctly, install `pytest` (`pip install pytest`) and try running our tests with `make test`.
+```
+git clone https://github.com/YosefLab/Cassiopeia.git
+cd Cassiopeia
+pip install -e ".[test]"
+pytest
+```
 
 Reference
 ----------------------

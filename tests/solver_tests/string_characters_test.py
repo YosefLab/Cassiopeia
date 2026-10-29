@@ -7,7 +7,6 @@ integers.  The solvers encode such matrices to integers internally
 """
 
 import functools
-import importlib.util
 
 import networkx as nx
 import numpy as np
@@ -17,7 +16,24 @@ import treedata as td
 
 import cassiopeia as cas
 
-GUROBI_INSTALLED = importlib.util.find_spec("gurobipy") is not None
+
+def _gurobi_available() -> bool:
+    """Whether gurobipy is installed and licensed on this host (licenses can be host-locked)."""
+    try:
+        import gurobipy
+    except ImportError:
+        return False
+    try:
+        env = gurobipy.Env(empty=True)
+        env.setParam("OutputFlag", 0)
+        env.start()
+        env.dispose()
+    except gurobipy.GurobiError:
+        return False
+    return True
+
+
+GUROBI_INSTALLED = _gurobi_available()
 
 # String character matrix with "*" as the unmodified state.
 CM = pd.DataFrame.from_dict(
@@ -149,3 +165,33 @@ def test_pairwise_string_unmodified_maps_to_zero():
     cas.dissimilarity.pairwise(s, method="weighted_hamming", key_added="d")
     cas.dissimilarity.pairwise(i, method="weighted_hamming", key_added="d")
     assert np.allclose(s.obsp["d"], i.obsp["d"])
+
+
+def test_ambiguous_string_states_match_integer_encoding():
+    ints = pd.DataFrame(
+        {"c0": [(1, 2), 1, 0, -1], "c1": [0, (0, 3), 3, 3], "c2": [2, 2, (2, -1), 0]},
+        index=["x", "y", "z", "w"],
+    )
+    names = {0: "*", -1: "-"}
+
+    def to_str(v):
+        if isinstance(v, tuple):
+            return tuple(names.get(s, str(s)) for s in v)
+        return names.get(v, str(v))
+
+    results = []
+    for cm, uns in [
+        (ints, {"unmodified_state": 0, "missing_state": -1}),
+        (ints.map(to_str), {"unmodified_state": "*", "missing_state": "-"}),
+    ]:
+        tdata = td.TreeData(obs=pd.DataFrame(index=cm.index), obsm={"characters": cm}, uns=uns)
+        results.append(
+            cas.dissimilarity.pairwise(tdata, method="cluster_weighted_hamming", copy=True)
+        )
+        cas.solver.nj(tdata, dissim_fn="cluster_weighted_hamming")
+        cas.solver.upgma(tdata, dissim_fn="cluster_weighted_hamming")
+        cas.solver.greedy(tdata)
+        for key in ["nj", "upgma", "greedy"]:
+            tree = tdata.obst[key]
+            assert sorted(n for n in tree if tree.out_degree(n) == 0) == sorted(cm.index)
+    pd.testing.assert_frame_equal(results[0], results[1])
