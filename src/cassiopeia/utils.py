@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import itertools
 import random
-import time
+import secrets
 import warnings
 from collections.abc import Generator, Mapping
-from hashlib import blake2b
 from typing import Any
 
 import networkx as nx
@@ -505,12 +505,14 @@ def _get_node_data(g: nx.DiGraph, key: str) -> pd.Series:
 def _node_name_generator() -> Generator[str, None, None]:
     """Yield unique internal node names for building reconstructed trees.
 
-    Produces unique names by hashing timestamps.
+    Names combine a random prefix, drawn once per generator, with a counter: they
+    are unique within a generator and, with high probability, across generators.
+    (Hashing ``time.time()`` repeated names on platforms with a coarse clock, such
+    as macOS, which turned reconstructed trees into graphs with merged nodes.)
     """
-    while True:
-        k = str(time.time()).encode("utf-8")
-        h = blake2b(key=k, digest_size=12)
-        yield "cassiopeia_internal_node" + h.hexdigest()
+    prefix = secrets.token_hex(8)
+    for i in itertools.count():
+        yield f"cassiopeia_internal_node{prefix}{i}"
 
 
 # Smallest "negative_log" weight: -log(1) = 0 would make the solvers ignore a state
