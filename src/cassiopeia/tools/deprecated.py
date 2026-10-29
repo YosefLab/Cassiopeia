@@ -127,7 +127,7 @@ class IIDExponentialBayesian:
     def __init__(*args, **kwargs):
         raise NotImplementedError(
             "IIDExponentialBayesian() was removed in v3.0.0. "
-            "Use ConvexML instead: https://github.com/songlab-cal/ConvexML"
+            "Use cassiopeia.tl.estimate_branch_lengths instead."
         )
 
 
@@ -136,7 +136,8 @@ class IIDExponentialMLE:
 
     def __init__(*args, **kwargs):
         raise NotImplementedError(
-            "IIDExponentialMLE() was removed in v3.0.0. Use ConvexML instead: https://github.com/songlab-cal/ConvexML"
+            "IIDExponentialMLE() was removed in v3.0.0. "
+            "Use cassiopeia.tl.estimate_branch_lengths instead."
         )
 
 

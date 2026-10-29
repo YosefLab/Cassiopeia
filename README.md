@@ -50,6 +50,8 @@ For developers:
 
 5. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these analyses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
 
+6. [Optional] To estimate branch lengths with `cas.tl.estimate_branch_lengths`, install Cassiopeia with `pip install .[convexml]`, which adds [cvxpy](https://www.cvxpy.org/).
+
 To verify that it installed correctly, install `pytest` (`pip install pytest`) and try running our tests with `make test`.
 
 Reference

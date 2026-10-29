@@ -63,6 +63,14 @@ and this project adheres to [Semantic Versioning][].
   - `pp.run` / `cassiopeia-preprocess run config.yaml` run the pipeline from
     reads to the filtered allele table, saved as parquet; build the character
     matrix from it with `pp.alleles_to_characters`.
+- `tl.estimate_branch_lengths` estimates node times and branch lengths by
+  maximum likelihood with ConvexML (`method="convexml"`, adapted from
+  [ConvexML](https://github.com/songlab-cal/ConvexML)), with leaf sampling times
+  (`leaf_time_key`) and per-character relative rates. Requires cvxpy
+  (`pip install cassiopeia-lineage[convexml]`).
+- `tl.ancestral_characters` gained `method=`: `"camin_sokal"` (default, as
+  before), `"conservative"` (ConvexML's conservative maximum parsimony) and
+  `"sankoff"` (weighted Sankoff parsimony that tolerates noisy characters).
 
 ### Changed
 
@@ -104,7 +112,7 @@ and this project adheres to [Semantic Versioning][].
 - `cassiopeia.mixins.logger` no longer depends on `ngs-tools`.
 
 - Removed plotting module. Use [Pycea](https://pycea.readthedocs.io/en/latest/index.html) for all plotting needs.
-- Removed `IIDExponentialBayesian` and `IIDExponentialBayesian` branch length estimation classes. The latest version of these are part of the [ConvexML](https://github.com/songlab-cal/ConvexML) package.
+- Removed the `IIDExponentialMLE` and `IIDExponentialBayesian` branch length estimation classes. Use `tl.estimate_branch_lengths` instead.
 - Removed  `FitnessEstimator` fitness estimation class. This is now implemented by [pycea.tl.fitness](https://pycea.readthedocs.io/en/latest/generated/pycea.tl.fitness.html#pycea.tl.fitness)
 - Updated the Robinson-Foulds implementation to rely on the shared utilities
   while continuing to accept mixed tree types and support string keys via
