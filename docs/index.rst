@@ -2,18 +2,18 @@
 Cassiopeia
 ==========
 
-Cassiopeia [Jones20]_ is a package for end-to-end analysis of single-cell lineage tracing data: from
-sequencing reads to character matrices, tree reconstruction and branch length estimation, and
-simulations for benchmarking new methods. It is maintained by the `Yosef Lab <https://yoseflab.github.io/>`_
-at the Weizmann Institute.
+Cassiopeia [Jones20]_ is a package for processing and analyzing lineage tracing data.
+It provides an end-to-end pipeline for converting raw sequencing reads into character matrices and
+reconstructing lineage trees, along with tools for simulating lineage tracing data and benchmarking
+reconstruction methods. Cassiopeia is maintained by the
+`Yosef Lab <https://yoseflab.github.io/>`_ at the Weizmann Institute.
 
-Cassiopeia is part of an ecosystem of packages for lineage tracing:
+Cassiopeia is part of the lineageverse ecosystem:
 
-* `TreeData <https://treedata.readthedocs.io/en/latest/>`_ stores trees together with cell-level data. It
-  extends `AnnData <https://anndata.readthedocs.io/en/latest/>`_ with trees in ``obst``, and every
-  Cassiopeia function reads and writes TreeData objects.
-* `pycea <https://pycea.readthedocs.io/en/latest/>`_ plots trees and analyzes them downstream, for
-  example to find clades, estimate fitness or test whether cell states are heritable.
+* `TreeData <https://treedata.readthedocs.io/en/latest/>`_, a data structure for storing lineage trees
+  alongside cell-level data. Cassiopeia functions read and write TreeData objects.
+* `Pycea <https://pycea.readthedocs.io/en/latest/>`_, a toolkit for visualizing and analyzing
+  lineage trees stored in TreeData objects.
 
 Cassiopeia (``import cassiopeia as cas``) is organized into the following modules:
 
