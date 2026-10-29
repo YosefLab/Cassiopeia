@@ -23,8 +23,7 @@ pytest.importorskip("cvxpy")
 DATA = Path(__file__).parent / "data" / "convexml"
 SOLVERS = ["CLARABEL", "SCS"]
 # Turn off regularization so the problems can be solved by hand.
-EXACT = {"min_branch_length": 1e-4, "pseudo_mutations": 0, "pseudo_non_mutations": 0,
-         "resolve_multifurcations": False}  # fmt: skip
+EXACT = {"min_branch_length": 1e-4, "pseudo_mutations": 0, "pseudo_non_mutations": 0}
 BINARY_EDGES = [("0", "1"), ("0", "2"), ("1", "3"), ("1", "4"), ("2", "5"), ("2", "6")]
 
 
@@ -191,23 +190,26 @@ def test_min_branch_length(solver):
         min_leaf_branch_length=0.01,
         pseudo_mutations=0,
         pseudo_non_mutations=0,
-        resolve_multifurcations=False,
     )
-    expected = {("0", "1"): 0.99, ("0", "2"): 0.01, ("1", "3"): 0.01, ("1", "4"): 0.01,
-                ("2", "5"): 0.99, ("2", "6"): 0.99}  # fmt: skip
+    # Node 2 is two minimum branch lengths below the root: the implicit branch from
+    # the founder to its first division (node 0's states), then the edge to 2.
+    expected = {("0", "1"): 0.99, ("0", "2"): 0.02, ("1", "3"): 0.01, ("1", "4"): 0.01,
+                ("2", "5"): 0.98, ("2", "6"): 0.98}  # fmt: skip
     for edge, length in expected.items():
         assert g.edges[edge]["length"] == pytest.approx(length, abs=1e-3)
-    assert result["mutation_rate"] == pytest.approx(0.405, abs=1e-3)
-    assert result["log_likelihood"] == pytest.approx(-1.922, abs=1e-3)
+    # max_r -2 r + log(1 - exp(-0.98 r))
+    assert result["mutation_rate"] == pytest.approx(0.407, abs=1e-3)
+    assert result["log_likelihood"] == pytest.approx(-1.926, abs=1e-3)
 
 
 def test_min_leaf_branch_length_defaults_to_half():
     states = {n: [0] for n in "0123456"}
     states["6"] = [1]
     g, _ = fit(make_tdata(BINARY_EDGES, states), min_branch_length=0.02, pseudo_mutations=0,
-               pseudo_non_mutations=0, resolve_multifurcations=False)  # fmt: skip
+               pseudo_non_mutations=0)  # fmt: skip
     assert g.edges["1", "3"]["length"] == pytest.approx(0.01, abs=1e-3)
-    assert g.edges["0", "2"]["length"] == pytest.approx(0.02, abs=1e-3)
+    # The implicit founder branch plus the edge to node 2.
+    assert g.edges["0", "2"]["length"] == pytest.approx(0.04, abs=1e-3)
 
 
 def test_on_simulated_data():
@@ -343,7 +345,7 @@ def multifurcation_tdata() -> td.TreeData:
     return make_tdata(edges, states)
 
 
-def test_resolve_multifurcations_keeps_topology():
+def test_multifurcations_keep_topology():
     tdata = multifurcation_tdata()
     g, _ = fit(tdata)
     assert set(g.edges) == {("0", "1"), ("1", "2"), ("1", "3"), ("1", "4")}
@@ -353,25 +355,37 @@ def test_resolve_multifurcations_keeps_topology():
         )
 
 
-def test_resolve_multifurcations_shortens_root_edge():
-    # Resolving the multifurcation needs two divisions below node 1, so its edge
-    # from the root is shorter than when the multifurcation is kept (ConvexML).
-    resolved, _ = fit(multifurcation_tdata())
-    kept, _ = fit(multifurcation_tdata(), resolve_multifurcations=False)
-    assert resolved.edges["0", "1"]["length"] < kept.edges["0", "1"]["length"]
-    # ConvexML: 0.8347 resolved and 0.8885 kept
-    assert resolved.edges["0", "1"]["length"] == pytest.approx(0.8347, abs=1e-3)
-    assert kept.edges["0", "1"]["length"] == pytest.approx(0.8885, abs=1e-3)
+def test_multifurcations_are_resolved():
+    # Resolving the multifurcation needs two divisions below node 1, which
+    # shortens its edge from the root (ConvexML: 0.8347, 0.8885 if not resolved).
+    g, _ = fit(multifurcation_tdata())
+    assert g.edges["0", "1"]["length"] == pytest.approx(0.8347, abs=1e-3)
 
 
-def test_root_states_are_ignored():
-    # The root is the unedited founder: an edit stored at the root is placed on its edges.
-    edges = [("0", "1"), ("0", "2")]
-    founder = make_tdata(edges, {"0": [0, 0], "1": [1, 0], "2": [1, 1]})
-    edited = make_tdata(edges, {"0": [1, 0], "1": [1, 0], "2": [1, 1]})
-    a, _ = fit(founder, resolve_multifurcations=False)
-    b, _ = fit(edited, resolve_multifurcations=False)
-    assert a.nodes["1"]["time"] == pytest.approx(b.nodes["1"]["time"], abs=1e-6)
+def test_root_with_several_children_gets_founder_branch():
+    # The root's states belong to the founder's first division, which sits on an
+    # implicit branch below the founder: the same as an explicit founder node.
+    implicit = make_tdata([("0", "1"), ("0", "2")], {"0": [1, 0], "1": [1, 0], "2": [1, 1]})
+    explicit = make_tdata([("f", "0"), ("0", "1"), ("0", "2")],
+                          {"f": [0, 0], "0": [1, 0], "1": [1, 0], "2": [1, 1]})  # fmt: skip
+    a, fit_a = fit(implicit)
+    b, fit_b = fit(explicit)
+    assert a.nodes["0"]["time"] == 0.0
+    assert b.nodes["0"]["time"] > 0.0
+    for node in "12":
+        assert a.nodes[node]["time"] == pytest.approx(b.nodes[node]["time"], abs=1e-6)
+    assert fit_a["mutation_rate"] == pytest.approx(fit_b["mutation_rate"], abs=1e-6)
+
+
+def test_states_of_root_with_one_child_are_ignored():
+    # A root with one child is the unedited founder, whatever states it stores.
+    edges = [("0", "1"), ("1", "2"), ("1", "3")]
+    founder = make_tdata(edges, {"0": [0, 0], "1": [1, 0], "2": [1, 0], "3": [1, 1]})
+    edited = make_tdata(edges, {"0": [1, 0], "1": [1, 0], "2": [1, 0], "3": [1, 1]})
+    a, _ = fit(founder)
+    b, _ = fit(edited)
+    for node in "123":
+        assert a.nodes[node]["time"] == pytest.approx(b.nodes[node]["time"], abs=1e-6)
 
 
 def test_string_states_match_integer_states():

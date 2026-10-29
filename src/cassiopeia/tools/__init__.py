@@ -39,10 +39,10 @@ from .tree_metrics import (
 )
 
 __all__ = [
-    # Ancestral characters
-    "ancestral_characters",
     # Branch lengths
+    "ancestral_characters",
     "estimate_branch_lengths",
+    "rescale_node_times",
     # Metrics
     "calculate_likelihood",
     "calculate_parsimony",
@@ -58,7 +58,6 @@ __all__ = [
     "get_leaves",
     "get_root",
     "mean_depth",
-    "rescale_node_times",
     # Deprecated
     "FitnessEstimator",
     "IIDExponentialBayesian",

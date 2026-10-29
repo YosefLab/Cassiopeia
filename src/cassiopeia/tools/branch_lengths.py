@@ -333,7 +333,6 @@ def estimate_branch_lengths(
     min_leaf_branch_length: float | None = None,
     pseudo_mutations: float = 0.1,
     pseudo_non_mutations: float = 0.1,
-    resolve_multifurcations: bool = True,
     solver: str | Sequence[str] = ("CLARABEL", "SCS"),
     time_key: str = "time",
     length_key: str = "length",
@@ -360,11 +359,17 @@ def estimate_branch_lengths(
     as many independent edits on the edges below them, which distorts the
     branch lengths.
 
-    The root is taken to be the unedited founder cell at time 0, so states
-    stored at the root are ignored. Missing data are treated as missing at
-    random; an edit seen below nodes with missing data is placed on the path
-    from the nearest ancestor with data. Pseudocounts of mutations and
-    non-mutations on every edge regularize the estimate.
+    The root is placed at time 0 as the unedited founder cell. A root with
+    several children stands for the founder's first division: it gets an
+    implicit branch from the founder that carries the states stored at the
+    root (the states of a root with one child are ignored). A node with more
+    than two children hides cell divisions, so for the estimate it is resolved
+    into binary splits as ConvexML does, and its children are placed as many
+    minimum branch lengths below it as the splits need. The implicit nodes are
+    not added to the tree. Missing data are treated as missing at random; an
+    edit seen below nodes with missing data is placed on the path from the
+    nearest ancestor with data. Pseudocounts of mutations and non-mutations on
+    every edge regularize the estimate.
 
     Results are written in place:
 
@@ -404,12 +409,6 @@ def estimate_branch_lengths(
             spread over the characters.
         pseudo_non_mutations: Number of fictitious non-mutations added to each
             edge, spread over the characters.
-        resolve_multifurcations: Resolve nodes with more than two children into
-            binary splits for the estimate, as ConvexML does. A multifurcation
-            hides cell divisions, so its children are placed as many minimum
-            branch lengths below it as the binary splits need. A root with
-            several children also gets an implicit branch from the founder.
-            The implicit nodes are not added to the tree.
         solver: Convex solver, or solvers to try in order: ``"CLARABEL"``,
             ``"SCS"``, ``"ECOS"`` or ``"MOSEK"`` (installed separately).
         time_key: Node attribute under which to store node times.
@@ -483,8 +482,7 @@ def estimate_branch_lengths(
     depth, max_time = _leaf_depths(tdata, leaves, leaf_time_key)
     rates = _relative_rates(tdata, characters_key, relative_rates, codes.shape[1])
 
-    if resolve_multifurcations:
-        children = _resolve_multifurcations(children, states, root)
+    children = _resolve_multifurcations(children, states, root)
     states[root] = np.zeros(codes.shape[1], dtype=np.int64)
 
     times, site_rates, log_likelihood, penalized, used = _convexml(

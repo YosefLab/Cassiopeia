@@ -38,18 +38,12 @@ Topology
    tl.get_leaves
    tl.get_root
    tl.mean_depth
-   tl.rescale_node_times
-
-Ancestral Characters
-~~~~~~~~~~~~~~~~~~~~~~
-.. autosummary::
-   :toctree: reference/
-
-   tl.ancestral_characters
 
 Branch Lengths
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autosummary::
    :toctree: reference/
 
+   tl.ancestral_characters
    tl.estimate_branch_lengths
+   tl.rescale_node_times
