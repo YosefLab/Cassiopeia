@@ -72,6 +72,7 @@ extensions = [
     "sphinx_gallery.load_style",
     "myst_parser",
     "sphinx_tabs.tabs",
+    "sphinx_design",
 ]
 
 myst_enable_extensions = [
@@ -177,6 +178,7 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo.png"
 
 html_theme_options = {
+    "logo": {"image_light": "_static/logo.png", "image_dark": "_static/logo_dark.png"},
     "github_url": "https://github.com/YosefLab/Cassiopeia",
     "twitter_url": "https://twitter.com/YosefLab",
     # "use_edit_page_button": True,

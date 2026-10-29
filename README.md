@@ -36,29 +36,26 @@ Free Software: MIT License
 Installation
 --------------
 
-For users:
+Cassiopeia requires Python >= 3.10. Install it from [PyPI](https://pypi.org/project/cassiopeia-lineage/):
 
 ```
-pip install git+https://github.com/YosefLab/Cassiopeia@master#egg=cassiopeia-lineage
+pip install cassiopeia-lineage
 ```
 
-For developers:
+Optional dependencies:
 
-1. Clone the package as so: ``git clone https://github.com/YosefLab/Cassiopeia.git``
+- Branch length estimation (`cas.tl.estimate_branch_lengths`): `pip install "cassiopeia-lineage[convexml]"`, which adds [cvxpy](https://www.cvxpy.org/).
+- Spatial neighbor graphs for `cas.sp.impute_alleles_spatial`: `pip install "cassiopeia-lineage[spatial]"`, which adds [squidpy](https://squidpy.readthedocs.io/).
+- The ILP solver (`cas.solver.ilp`, the default bottom solver of `cas.solver.hybrid`) requires [Gurobi](https://www.gurobi.com/): `pip install gurobipy` and a license, which is [free for academic users](https://www.gurobi.com/academia/academic-program-and-licenses/).
 
-2. Ensure that you have Python >= 3.10 installed. (Due to dependencies and ongoing updates to Python, we will not guarantee support for python <= 3.9) We prefer using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+For developers, clone the repository, install it in editable mode with the test dependencies, and run the tests:
 
-3. [Optional] If you intend to use the CassiopeiaILP solver, please be sure that Gurobi is installed. You can follow the instructions listed [here](http://www.gurobi.com/academia/for-universities). To verify that it's working correctly, use the following tests:
-    * Run the command ``gurobi.sh`` from a terminal window
-    * From the Gurobi installation directory (where there is a setup.py file), use ``python setup.py install --user``
-
-4. Install Cassiopeia by first changing into the Cassiopeia directory and then `pip3 install .` or `make install`. To install dev and docs requirements, you can run `pip3 install .[dev,docs]`.
-
-5. [Optional] To use tools built for the analysis of spatial lineage tracing datasets, you can install Cassiopeia with `pip install .[spatial]`. Please note that we recommend using Python >= 3.9 for these analyses as some features might not be available otherwise, due to package dependencies (especially 3D visualization).
-
-6. [Optional] To estimate branch lengths with `cas.tl.estimate_branch_lengths`, install Cassiopeia with `pip install .[convexml]`, which adds [cvxpy](https://www.cvxpy.org/).
-
-To verify that it installed correctly, install `pytest` (`pip install pytest`) and try running our tests with `make test`.
+```
+git clone https://github.com/YosefLab/Cassiopeia.git
+cd Cassiopeia
+pip install -e ".[test]"
+pytest
+```
 
 Reference
 ----------------------
