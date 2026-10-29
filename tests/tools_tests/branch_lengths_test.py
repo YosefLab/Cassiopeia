@@ -388,6 +388,54 @@ def test_states_of_root_with_one_child_are_ignored():
         assert a.nodes[node]["time"] == pytest.approx(b.nodes[node]["time"], abs=1e-6)
 
 
+@pytest.mark.parametrize("solver", SOLVERS)
+def test_edited_root_hand_solvable(solver):
+    # Site 0 is edited in the root: no mutation, and no branch above the root's
+    # division. max_r -r + log(1 - exp(-r)) over the two unit edges: r = ln 2.
+    tdata = make_tdata([("0", "1"), ("0", "2")], {"0": [5, 0], "1": [5, 1], "2": [5, 0]})
+    g, result = fit(tdata, solver=solver, unedited_root=False, **EXACT)
+    assert g.nodes["0"]["time"] == 0.0
+    for edge in [("0", "1"), ("0", "2")]:
+        assert g.edges[edge]["length"] == pytest.approx(1.0, abs=1e-3)
+    assert result["mutation_rate"] == pytest.approx(np.log(2), abs=1e-3)
+    assert result["log_likelihood"] == pytest.approx(-1.386, abs=1e-3)
+    # By default the edit at site 0 is a mutation before the root's division, at
+    # time t: max 2 log(1 - exp(-r / 2)) - r at t = 1/2, so r = 2 ln 2.
+    tdata = make_tdata([("0", "1"), ("0", "2")], {"0": [5, 0], "1": [5, 1], "2": [5, 0]})
+    _, result = fit(tdata, solver=solver, **EXACT)
+    assert result["mutation_rate"] == pytest.approx(2 * np.log(2), abs=1e-3)
+    assert result["log_likelihood"] == pytest.approx(-4 * np.log(2), abs=1e-3)
+
+
+def test_edited_root_matches_dropping_its_edits():
+    # Sites edited in the root carry no information about branch lengths.
+    states = {
+        "0": [7, 0, 0, 0, 0],
+        "1": [7, 1, 0, 0, -1],
+        "2": [7, 0, 0, 6, -1],
+        "3": [7, 1, 2, 0, -1],
+        "4": [-1, 1, 0, 3, 0],
+        "5": [7, 0, 4, 6, -1],
+        "6": [7, 0, 0, 6, 8],
+    }
+    a, fit_a = fit(make_tdata(BINARY_EDGES, states), unedited_root=False)
+    b, fit_b = fit(make_tdata(BINARY_EDGES, {n: s[1:] for n, s in states.items()}),
+                   unedited_root=False)  # fmt: skip
+    for node in "0123456":
+        assert a.nodes[node]["time"] == pytest.approx(b.nodes[node]["time"], abs=1e-5)
+    assert fit_a["mutation_rate"] == pytest.approx(fit_b["mutation_rate"], rel=1e-4)
+
+
+def test_edited_root_missing_sites_are_unedited():
+    edges = [("0", "1"), ("0", "2")]
+    missing = make_tdata(edges, {"0": [7, -1], "1": [7, 1], "2": [7, 0]})
+    unedited = make_tdata(edges, {"0": [7, 0], "1": [7, 1], "2": [7, 0]})
+    a, _ = fit(missing, unedited_root=False)
+    b, _ = fit(unedited, unedited_root=False)
+    for node in "12":
+        assert a.nodes[node]["time"] == pytest.approx(b.nodes[node]["time"], abs=1e-6)
+
+
 def test_string_states_match_integer_states():
     states = {
         "0": [0, 0, 0, 0],

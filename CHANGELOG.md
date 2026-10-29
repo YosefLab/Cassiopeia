@@ -66,7 +66,8 @@ and this project adheres to [Semantic Versioning][].
 - `tl.estimate_branch_lengths` estimates node times and branch lengths by
   maximum likelihood with ConvexML (`method="convexml"`, adapted from
   [ConvexML](https://github.com/songlab-cal/ConvexML)), with leaf sampling times
-  (`leaf_time_key`) and per-character relative rates. Requires cvxpy
+  (`leaf_time_key`), per-character relative rates and roots that were already
+  edited when tracing started (`unedited_root=False`). Requires cvxpy
   (`pip install cassiopeia-lineage[convexml]`).
 - `tl.ancestral_characters` gained `method=`: `"camin_sokal"` (default, as
   before), `"conservative"` (ConvexML's conservative maximum parsimony) and

@@ -67,11 +67,13 @@ def _implicit_state(parent: np.ndarray, first: np.ndarray, second: np.ndarray) -
     return np.where(parent > 0, parent, state)
 
 
-def _resolve_multifurcations(children: dict, states: dict, root) -> dict:
+def _resolve_multifurcations(children: dict, states: dict, root, founder_branch: bool) -> dict:
     """Binarize a tree for estimation, as ConvexML does.
 
-    A root with several children gets one implicit child that takes over the
-    root's states, so the root stands for the unedited founder. Each node with
+    With ``founder_branch``, a root with several children gets one implicit
+    child that takes over the root's states, so the root stands for the
+    unedited founder and the edits at the root fall on the branch to its first
+    division. Each node with
     more than two children is resolved by repeatedly joining its two smallest
     subtrees (by number of nodes, ties broken by name). ``states`` gains the
     states of the implicit nodes (see :func:`_implicit_state`).
@@ -99,7 +101,7 @@ def _resolve_multifurcations(children: dict, states: dict, root) -> dict:
     def effective(node) -> np.ndarray:
         return np.where(states[node] >= 0, states[node], leaf_states[node])
 
-    if len(children[root]) >= 2:
+    if founder_branch and len(children[root]) >= 2:
         child = name(f"{root}-child")
         children[child], children[root] = children[root], [child]
         states[child], leaf_states[child] = states[root], leaf_states[root]
@@ -328,6 +330,7 @@ def estimate_branch_lengths(
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
     leaf_time_key: str | None = None,
+    unedited_root: bool = True,
     relative_rates: Sequence[float] | pd.Series | None = None,
     min_branch_length: float = 0.01,
     min_leaf_branch_length: float | None = None,
@@ -359,17 +362,18 @@ def estimate_branch_lengths(
     as many independent edits on the edges below them, which distorts the
     branch lengths.
 
-    The root is placed at time 0 as the unedited founder cell. A root with
-    several children stands for the founder's first division: it gets an
-    implicit branch from the founder that carries the states stored at the
-    root (the states of a root with one child are ignored). A node with more
-    than two children hides cell divisions, so for the estimate it is resolved
-    into binary splits as ConvexML does, and its children are placed as many
-    minimum branch lengths below it as the splits need. The implicit nodes are
-    not added to the tree. Missing data are treated as missing at random; an
-    edit seen below nodes with missing data is placed on the path from the
-    nearest ancestor with data. Pseudocounts of mutations and non-mutations on
-    every edge regularize the estimate.
+    Node times are measured from the root, which is placed at time 0. By
+    default, the root is the cell in which lineage tracing started, before any
+    site was edited, so edits found at the root count as mutations that
+    occurred before its first division, which lengthens the branches below it
+    (see ``unedited_root``). A node with more than two children hides cell
+    divisions, so for the estimate it is resolved into binary splits as
+    ConvexML does, and its children are placed as many minimum branch lengths
+    below it as the splits need; the splits are not added to the tree. Missing
+    data are treated as missing at random; an edit seen below nodes with
+    missing data is placed on the path from the nearest ancestor with data.
+    Pseudocounts of mutations and non-mutations on every edge regularize the
+    estimate.
 
     Results are written in place:
 
@@ -396,6 +400,11 @@ def estimate_branch_lengths(
             :func:`cassiopeia.sim.sample_timepoints`). Relaxes the assumption
             that all leaves are sampled at the same time, and node times and the
             mutation rate are reported in the units of this column.
+        unedited_root: Whether no site was edited in the root cell when lineage
+            tracing started. Set to ``False`` if the root already carried the
+            edits found at it (e.g. a clone from a previously edited
+            population): they are then present from time 0 and do not count
+            as mutations. Sites missing at the root are taken to be unedited.
         relative_rates: Relative mutation rate of each character, in the order
             of the character matrix (a Series is aligned to its columns). By
             default all characters mutate at the same rate.
@@ -482,8 +491,11 @@ def estimate_branch_lengths(
     depth, max_time = _leaf_depths(tdata, leaves, leaf_time_key)
     rates = _relative_rates(tdata, characters_key, relative_rates, codes.shape[1])
 
-    children = _resolve_multifurcations(children, states, root)
-    states[root] = np.zeros(codes.shape[1], dtype=np.int64)
+    children = _resolve_multifurcations(children, states, root, founder_branch=unedited_root)
+    if unedited_root:
+        states[root] = np.zeros(codes.shape[1], dtype=np.int64)
+    else:
+        states[root] = np.where(states[root] > 0, states[root], 0)
 
     times, site_rates, log_likelihood, penalized, used = _convexml(
         cp,
