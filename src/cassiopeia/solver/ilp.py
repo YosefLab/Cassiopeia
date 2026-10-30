@@ -419,7 +419,6 @@ def ilp(
             ``weighted=True`` without priors.
     """
     _check_leaf_alignment(tdata)
-    _import_gurobipy()
     tdata = tdata.copy() if copy else tdata
     character_matrix = _get_characters(tdata, characters_key, missing_state).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
@@ -482,6 +481,9 @@ def ilp(
             logger.removeHandler(file_handler)
             file_handler.close()
         return tdata if copy else None
+
+    # fail before building the potential graph if Gurobi is missing
+    _import_gurobipy()
 
     # determine the maximum LCA distance to consider
     if (maximum_potential_graph_lca_distance is not None) and (
