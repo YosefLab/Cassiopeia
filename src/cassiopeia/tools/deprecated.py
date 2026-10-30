@@ -154,7 +154,7 @@ def compute_evolutionary_coupling(*args, **kwargs):
     """Placeholder for the removed :func:`compute_evolutionary_coupling` API."""
     raise NotImplementedError(
         "compute_evolutionary_coupling() was removed in v3.0.0. "
-        "Use pycea.tl.ancestral_linkage instead instead: https://pycea.readthedocs.io/"
+        "Use pycea.tl.ancestral_linkage instead: https://pycea.readthedocs.io/"
     )
 
 
@@ -162,7 +162,7 @@ def compute_morans_i(*args, **kwargs):
     """Placeholder for the removed :func:`compute_morans_i` API."""
     raise NotImplementedError(
         "compute_morans_i() was removed in v3.0.0. "
-        "Use pycea.tl.autocorr instead instead: https://pycea.readthedocs.io/"
+        "Use pycea.tl.autocorr instead: https://pycea.readthedocs.io/"
     )
 
 

@@ -14,8 +14,10 @@ from cassiopeia import dissimilarity as dissimilarity_functions
 from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
 from cassiopeia.dissimilarity._pairwise import _resolve_metric_priors
 from cassiopeia.utils import (
+    _check_leaf_alignment,
     _get_characters,
     _get_parameter,
+    _name_internal_nodes,
     _node_name_generator,
     _save_dissimilarity,
     _set_tree,
@@ -79,7 +81,7 @@ def upgma(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     threads: int = 1,
     copy: bool = False,
 ) -> TreeData | None:
@@ -106,7 +108,8 @@ def upgma(
         priors: Priors for character states, used by weighted dissimilarity
             metrics. ``None`` (default) uses ``tdata.uns["priors"]`` if present;
             ``True`` requires stored priors; ``False`` disables priors; a dict
-            (character index -> {state: probability}) is used directly.
+            keyed by character name or index (``{character: {state:
+            probability}}``), or a list of per-character dicts, is used directly.
         threads: Threads for parallel dissimilarity computation.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
@@ -114,13 +117,14 @@ def upgma(
     Returns:
         A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
+    _check_leaf_alignment(tdata)
     tdata = tdata.copy() if copy else tdata
     dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
 
     if dissim_key is None:
         unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
         missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
-        characters = _get_characters(tdata, characters_key)
+        characters = _get_characters(tdata, characters_key, missing_state)
         priors = _resolve_metric_priors(tdata, priors, dissim_fn, characters)
         dist_df = _pairwise(
             characters,
@@ -140,6 +144,7 @@ def upgma(
 
     node_gen = _node_name_generator()
     rooted = _build_graph(dist_df, node_gen)
+    rooted = _name_internal_nodes(rooted, dist_df.index)
 
     _set_tree(tdata, rooted, key_added)
 
@@ -178,6 +183,12 @@ class UPGMASolver:
         implementation: str | None = None,
         threads: int = 1,
     ):
+        warnings.warn(
+            "UPGMASolver is deprecated and will be removed in a future "
+            "release. Use cassiopeia.solver.upgma() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if implementation is not None:
             warnings.warn(
                 "The 'implementation' parameter is deprecated and will be removed "

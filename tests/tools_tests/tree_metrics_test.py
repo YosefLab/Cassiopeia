@@ -485,3 +485,16 @@ def test_likelihood_sum_to_one():
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+@pytest.mark.parametrize("model", ["discrete", "continuous"])
+def test_likelihood_on_simulated_data(model):
+    # String states and node times only (no edge lengths), as simulated.
+    import cassiopeia as cas
+
+    tdata = cas.sim.birth_death_process(num_extant=20, random_seed=0)
+    cas.sim.stochastic_tracing(tdata, 3, 2, mutation_rate=0.3, random_seed=0)
+    likelihood = tree_metrics.calculate_likelihood(
+        tdata, model=model, stochastic_missing_probability=0.0
+    )
+    assert -np.inf < likelihood < 0

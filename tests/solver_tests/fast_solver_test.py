@@ -286,6 +286,7 @@ def test_numpy_characters_use_obs_names():
     )
     dm = cas.dissimilarity.pairwise(tdata, copy=True)
     assert list(dm.index) == ["x", "y", "z"]
+    cas.dissimilarity.pairwise(tdata, method="cluster_weighted_hamming", copy=True)
     cas.solver.nj(tdata)
     assert sorted(leaves(tdata.obst["nj"])) == ["x", "y", "z"]
 

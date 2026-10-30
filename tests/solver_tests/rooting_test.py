@@ -221,6 +221,29 @@ def test_reroot_fills_missing_lengths_from_times(tdata):
     assert rt.nodes[roots(rt)[0]]["time"] == 2.0
 
 
+def splits(g):
+    """Leaf bipartitions of a tree (its unrooted topology)."""
+    all_leaves = frozenset(leaves(g))
+    below = {n: frozenset(nx.descendants(g, n) & all_leaves) or frozenset({n}) for n in g}
+    return {min(below[v], all_leaves - below[v], key=sorted) for _, v in g.edges}
+
+
+@pytest.mark.parametrize("method", ["midpoint", "centroid", "shared_mutation"])
+def test_reroot_nj_and_simulated_trees(method):
+    # Simulated trees have a unifurcating root; nj names its root "root".
+    tdata = cas.sim.birth_death_process(num_extant=20, random_seed=0, key_added="sim")
+    cas.sim.stochastic_tracing(tdata, 4, 3, mutation_rate=0.3, random_seed=0, tree_key="sim")
+    cas.solver.nj(tdata)
+    g = tdata.obst["nj"].copy()
+    nx.set_edge_attributes(g, 1.0, "length")
+    tdata.obst["nj"] = g
+    for key in ["sim", "nj"]:
+        before = splits(tdata.obst[key])
+        cas.solver.reroot(tdata, method=method, tree_key=key)
+        assert leaves(tdata.obst[key]) == sorted(tdata.obs_names)
+        assert splits(tdata.obst[key]) <= before
+
+
 def test_reroot_outgroup_requires_name(tdata):
     with pytest.raises(ValueError, match="requires the name of an outgroup"):
         cas.solver.reroot(tdata, method="outgroup")

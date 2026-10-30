@@ -15,8 +15,10 @@ from cassiopeia.dissimilarity import _pairwise, _resolve_dissimilarity
 from cassiopeia.dissimilarity._pairwise import _resolve_metric_priors
 from cassiopeia.solver import rooting
 from cassiopeia.utils import (
+    _check_leaf_alignment,
     _get_characters,
     _get_parameter,
+    _name_internal_nodes,
     _node_name_generator,
     _save_dissimilarity,
     _set_tree,
@@ -75,7 +77,7 @@ def nj(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     threads: int = 1,
     copy: bool = False,
 ) -> TreeData | None:
@@ -85,8 +87,9 @@ def nj(
     when none is available, from the character matrix in ``tdata.obsm``. The
     result is stored as an ``nx.DiGraph`` in ``tdata.obst[key_added]``.
 
-    Rooting is selected by *root*: ``None`` uses ``root_sample_name`` or the
-    first obs name; otherwise *root* names a procedure registered in
+    Rooting is selected by *root*: ``None`` roots the tree at the last internal
+    node joined, without a rooting procedure; otherwise *root* names a procedure
+    registered in
     :mod:`cassiopeia.solver.rooting` (``'outgroup'``, ``'midpoint'``,
     ``'centroid'``, ``'shared_mutation'``). When ``root='outgroup'`` with
     ``outgroup=None``, a synthetic all-unmodified leaf named ``'root'`` is added
@@ -100,7 +103,7 @@ def nj(
         dissim_fn: Dissimilarity function used when distances are not
             precomputed. Accepts a callable or a string name of a built-in
             metric in :mod:`cassiopeia.dissimilarity`.
-        root: Rooting procedure name.
+        root: Rooting procedure name, or ``None`` for no rooting procedure.
         outgroup: For ``root='outgroup'``: sample name to use as outgroup, or
             ``None`` to add a synthetic all-unmodified outgroup named ``'root'``.
         save_dissim: Whether to store the computed dissimilarity map in
@@ -115,7 +118,8 @@ def nj(
         priors: Priors for character states, used by weighted dissimilarity
             metrics. ``None`` (default) uses ``tdata.uns["priors"]`` if present;
             ``True`` requires stored priors; ``False`` disables priors; a dict
-            (character index -> {state: probability}) is used directly.
+            keyed by character name or index (``{character: {state:
+            probability}}``), or a list of per-character dicts, is used directly.
         threads: Threads for parallel dissimilarity computation.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
@@ -123,6 +127,7 @@ def nj(
     Returns:
         A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
+    _check_leaf_alignment(tdata)
     tdata = tdata.copy() if copy else tdata
     dissimilarity_fn = _resolve_dissimilarity(dissim_fn)
     synthetic_root = root == "outgroup" and outgroup is None
@@ -139,7 +144,7 @@ def nj(
     else:
         unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
         missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
-        characters = _get_characters(tdata, characters_key)
+        characters = _get_characters(tdata, characters_key, missing_state)
         priors = _resolve_metric_priors(tdata, priors, dissim_fn, characters)
 
         if synthetic_root:
@@ -177,6 +182,7 @@ def nj(
     graph = _build_graph(dist_df, node_gen)
 
     rooted = _root_graph(graph, root, outgroup, tdata, characters_key)
+    rooted = _name_internal_nodes(rooted, dist_df.index)
 
     _set_tree(tdata, rooted, key_added)
 
@@ -192,12 +198,15 @@ def _root_graph(
 ) -> nx.DiGraph:
     """Root the complete NJ *graph* using the procedure named by *root*.
 
-    ``root=None`` roots at the default node (``root_sample_name`` / first obs)
-    via DFS; otherwise *root* selects a registered procedure in
-    :mod:`cassiopeia.solver.rooting`.
+    ``root=None`` roots at the last internal node joined (a CassiopeiaTree's
+    ``root_sample_name`` if set) via DFS; otherwise *root* selects a registered
+    procedure in :mod:`cassiopeia.solver.rooting`.
     """
     if root is None:
         root_node = rooting._default_root(data)
+        if root_node is None:
+            internal = [n for n in graph.nodes if graph.degree[n] > 1]
+            root_node = internal[-1] if internal else next(iter(graph.nodes))
         rooted = nx.DiGraph()
         for e in nx.dfs_edges(graph, source=root_node):
             rooted.add_edge(e[0], e[1])
@@ -250,6 +259,12 @@ class NeighborJoiningSolver:
         implementation: str | None = None,
         threads: int = 1,
     ):
+        warnings.warn(
+            "NeighborJoiningSolver is deprecated and will be removed in a future "
+            "release. Use cassiopeia.solver.nj() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if implementation is not None:
             warnings.warn(
                 "The 'implementation' parameter is deprecated and will be removed "

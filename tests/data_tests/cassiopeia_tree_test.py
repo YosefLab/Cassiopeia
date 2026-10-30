@@ -1978,7 +1978,7 @@ def test_to_treedata():
     assert tdata.obsm["characters"].shape == (4, 3)
     assert len(tdata.obst["tree"].nodes) == 7
     np.testing.assert_array_equal(tdata.obsp["distances"], dissim_map.values)
-    assert tdata.uns["priors"] == {"1": {"1": 0.1}}  # stored form (string keys)
+    assert tdata.uns["priors"] == {"char2": {"1": 0.1}}  # stored form (by character name)
     assert tdata.uns["param"] == 42
     assert tdata.uns["missing_state"] == -1
     pd.testing.assert_frame_equal(tdata.obsm["layer_foo"], cm * 2)

@@ -291,7 +291,7 @@ def pairwise(
     key_added: str = "distances",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     prior_transformation: str = "negative_log",
     threads: int = 1,
     copy: bool = False,
@@ -315,8 +315,9 @@ def pairwise(
             if ``None``).
         priors: Priors for character states, used by weighted metrics. ``None``
             (default) uses ``tdata.uns["priors"]`` if present; ``True`` requires
-            stored priors; ``False`` disables priors; a dict (character index ->
-            {state: probability}) is used directly.
+            stored priors; ``False`` disables priors; a dict keyed by character
+            name or index (``{character: {state: probability}}``), or a list of
+            per-character dicts, is used directly.
         prior_transformation: Transformation applied to priors to form weights.
         threads: Threads for parallel computation.
         copy: If ``True``, return the dissimilarity map as a
@@ -338,7 +339,7 @@ def pairwise(
             "CassiopeiaTree.to_treedata()."
         )
 
-    chars = _get_characters(tdata, characters_key)
+    chars = _get_characters(tdata, characters_key, missing_state)
     missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
     priors = _resolve_metric_priors(tdata, priors, method, chars)

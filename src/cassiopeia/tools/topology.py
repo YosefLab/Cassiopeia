@@ -93,7 +93,7 @@ def mean_depth(
 
 
 def rescale_node_times(
-    tree: TreeData | nx.DiGraph,
+    tdata: TreeData | nx.DiGraph,
     time_key: str = "time",
     min: float = 0,
     max: float = 1,
@@ -109,32 +109,31 @@ def rescale_node_times(
     assigned ``min``.
 
     Args:
-        tree: Tree object. Either a :class:`~treedata.TreeData` or an
-            :class:`networkx.DiGraph`.
+        tdata: TreeData or :class:`networkx.DiGraph` holding the tree.
         time_key: Node attribute key containing the times to rescale.
         min: Target value for the smallest node time.
         max: Target value for the largest node time.
         key_added: Node attribute under which to store the rescaled times. If
             ``None`` (default), the rescaled times overwrite ``time_key``.
-        tree_key: The ``obst`` key of the tree to use when ``tree`` is a TreeData
+        tree_key: The ``obst`` key of the tree to use when ``tdata`` is a TreeData
             object.
-        copy: If ``True``, operate on and return a copy of *tree*; otherwise
+        copy: If ``True``, operate on and return a copy of *tdata*; otherwise
             modify in place and return ``None``.
 
     Returns:
-        A modified copy of *tree* (TreeData or DiGraph, matching the input) if
+        A modified copy of *tdata* (TreeData or DiGraph, matching the input) if
         ``copy=True``, else ``None``.
     """
-    if not isinstance(tree, (TreeData, nx.DiGraph)):
+    if not isinstance(tdata, (TreeData, nx.DiGraph)):
         raise TypeError(
-            f"rescale_node_times() operates on TreeData or nx.DiGraph, got {type(tree)}."
+            f"rescale_node_times() operates on TreeData or nx.DiGraph, got {type(tdata)}."
         )
     if max <= min:
         raise ValueError(f"max ({max}) must be greater than min ({min}).")
 
     if copy:
-        tree = tree.copy()
-    g, _ = _get_digraph(tree, tree_key)
+        tdata = tdata.copy()
+    g, _ = _get_digraph(tdata, tree_key)
     _check_tree_has_key(g, time_key)
 
     times = np.array([g.nodes[node][time_key] for node in g.nodes], dtype=float)
@@ -150,7 +149,7 @@ def rescale_node_times(
         g.nodes[node][output_key] = scaled
 
     if copy:
-        return tree if isinstance(tree, TreeData) else g
+        return tdata if isinstance(tdata, TreeData) else g
     return None
 
 

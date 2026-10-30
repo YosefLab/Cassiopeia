@@ -10,7 +10,6 @@ from treedata import TreeData
 
 from cassiopeia import utils
 from cassiopeia.mixins import ParameterEstimateError, ParameterEstimateWarning
-from cassiopeia.tools.topology import get_root
 from cassiopeia.tools.topology import mean_depth as _mean_depth
 
 
@@ -147,7 +146,8 @@ def estimate_mutation_rate(
     continuous: bool = True,
     assume_root_implicit_branch: bool = True,
     characters_key: str = "characters",
-    depth_key: str = "depth",
+    depth_key: str | None = None,
+    time_key: str = "time",
     tree_key: str | None = None,
     missing_state: str | int | Sequence[str | int] | None = None,
     unmodified_state: str | int | Sequence[str | int] | None = None,
@@ -156,21 +156,24 @@ def estimate_mutation_rate(
     """Estimate the mutation rate of a tree from its observed mutations.
 
     Estimates the mutation rate from the fraction of mutated (non-missing,
-    non-unmodified) entries in the character matrix and the mean depth/time of
-    the tree, either as a per-generation (discrete) or instantaneous (continuous)
-    rate.
+    non-unmodified) entries in the character matrix and the mean depth
+    (``continuous=False``) or time (``continuous=True``) of the leaves, either as
+    a per-generation (discrete) or instantaneous (continuous) rate.
 
     Args:
         tdata: TreeData object containing tree topology and character matrix.
-        continuous: If True, calculate a continuous mutation rate accounting for branch
-            lengths. If False, calculate a discrete mutation rate using node depths.
-            Default is True.
+        continuous: If True, calculate a continuous mutation rate from node times
+            (``time_key``). If False, calculate a discrete mutation rate from node
+            depths (``depth_key``). Default is True.
         assume_root_implicit_branch: If True, assume an implicit branch leading from
             the root if it doesn't exist (i.e., if root has multiple children). This
             branch is added to the total time when calculating the estimate. Default is True.
         characters_key: The ``obsm`` key for the character matrix. Default is "characters".
-        depth_key: Node attribute key containing depth values (e.g., "depth" for
-            generation count, "time" for evolutionary time). Default is "depth".
+        depth_key: (``continuous=False``) Node attribute holding the number of
+            generations from the root. If ``None`` (default), it is the number of
+            edges from the root.
+        time_key: (``continuous=True``) Node attribute holding node times; branch
+            lengths are the differences between them. Default is "time".
         tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
             trees.
         missing_state: Value(s) to consider as missing data. Can be a single value
@@ -202,17 +205,7 @@ def estimate_mutation_rate(
     if mutation_proportion < 0 or mutation_proportion > 1:
         raise ParameterEstimateError("Mutation proportion must be between 0 and 1.")
 
-    edges = list(t.edges())
-
-    _check_continuous_not_int(t, edges, continuous)
-
-    root = get_root(tdata, tree_key=tree_key)
-    mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
-
-    if assume_root_implicit_branch and t.out_degree(root) != 1:
-        mean_depth += (
-            1 if not continuous else np.mean(np.mean([t[u][v]["length"] for u, v in edges]))
-        )
+    mean_depth = _tree_depth(t, continuous, depth_key, time_key, assume_root_implicit_branch)
 
     if not continuous:
         mutation_rate = 1 - (1 - mutation_proportion) ** (1 / mean_depth)
@@ -229,7 +222,8 @@ def estimate_missing_rates(
     stochastic_missing_probability: float | None = None,
     heritable_missing_rate: float | None = None,
     characters_key: str = "characters",
-    depth_key: str = "depth",
+    depth_key: str | None = None,
+    time_key: str = "time",
     tree_key: str | None = None,
     missing_state: str | int | Sequence[str | int] | None = None,
     **kwargs,
@@ -301,9 +295,9 @@ def estimate_missing_rates(
 
     Args:
         tdata: TreeData object containing tree topology and character matrix
-        continuous: If True, calculate a continuous missing rate accounting for branch
-            lengths. If False, calculate a discrete missing rate based on the number of
-            generations. Default is True.
+        continuous: If True, calculate a continuous missing rate from node times
+            (``time_key``). If False, calculate a discrete missing rate from the
+            number of generations (``depth_key``). Default is True.
         assume_root_implicit_branch: If True, assume an implicit branch leading from
             the root if it doesn't exist (i.e., if root has multiple children). This
             branch is added to the total time when calculating the estimate. Default is True.
@@ -313,14 +307,20 @@ def estimate_missing_rates(
         heritable_missing_rate: The heritable missing rate. Will override the value
             stored in ``tdata.uns`` if provided. Default is None.
         characters_key: The ``obsm`` key for the character matrix. Default is "characters".
-        depth_key: Node attribute key containing depth values (e.g., "depth" for
-            generation count, "time" for evolutionary time). Default is "depth".
+        depth_key: (``continuous=False``) Node attribute holding the number of
+            generations from the root. If ``None`` (default), it is the number of
+            edges from the root.
+        time_key: (``continuous=True``) Node attribute holding node times; branch
+            lengths are the differences between them. Default is "time".
         tree_key: The ``obst`` key of the tree to use if ``tdata`` contains multiple
             trees.
         missing_state: Value(s) to consider as missing data. Can be a single value
             or a sequence of values. If not provided, uses ``tdata.uns['missing_state']``,
             or defaults to (-1, "-1", "NA", "-").
         **kwargs: Deprecated ``layer`` alias for ``characters_key``.
+
+    Returns:
+        The stochastic missing probability and the heritable missing rate.
 
     Warns:
         UserWarning: If continuous=True but branch lengths are integers, suggesting
@@ -367,26 +367,13 @@ def estimate_missing_rates(
             "Please only supply one of the two"
         )
 
-    edges = list(t.edges())
-
-    _check_continuous_not_int(t, edges, continuous)
-
-    root = get_root(tdata, tree_key=tree_key)
-    mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
+    mean_depth = _tree_depth(t, continuous, depth_key, time_key, assume_root_implicit_branch)
 
     if heritable_missing_rate is None:
         if stochastic_missing_probability < 0:
             raise ParameterEstimateError("Stochastic missing data rate must be > 0.")
         if stochastic_missing_probability > 1:
             raise ParameterEstimateError("Stochastic missing data rate must be < 1.")
-
-        mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
-
-        if assume_root_implicit_branch and t.out_degree(root) != 1:
-            if not continuous:
-                mean_depth += 1
-            else:
-                mean_depth += np.mean([t[u][v]["length"] for u, v in edges])
 
         if not continuous:
             heritable_missing_rate = 1 - (
@@ -403,14 +390,6 @@ def estimate_missing_rates(
             raise ParameterEstimateError("Heritable missing data rate must be > 0.")
         if not continuous and heritable_missing_rate > 1:
             raise ParameterEstimateError("Per-generation heritable missing data rate must be < 1.")
-
-        mean_depth = _mean_depth(tdata, depth_key, tree_key=tree_key)
-
-        if assume_root_implicit_branch and t.out_degree(root) != 1:
-            if not continuous:
-                mean_depth += 1
-            else:
-                mean_depth += np.mean([t[u][v]["length"] for u, v in edges])
 
         if not continuous:
             heritable_proportion = 1 - (1 - heritable_missing_rate) ** mean_depth
@@ -451,22 +430,50 @@ def _entry_mask(character_matrix: pd.DataFrame, indicator) -> np.ndarray:
     return np.isin(character_matrix.values, indicator)
 
 
-def _check_continuous_not_int(
-    tree: nx.DiGraph,
-    edges: list,
-    continuous: bool = True,
-) -> None:
+def _tree_depth(
+    t: nx.DiGraph,
+    continuous: bool,
+    depth_key: str | None,
+    time_key: str,
+    assume_root_implicit_branch: bool,
+) -> float:
+    """Mean depth (generations) or time of the leaves below the root.
+
+    With ``assume_root_implicit_branch`` and a root with several children, an
+    implicit branch above the root adds one generation, or the mean branch
+    length.
+    """
+    root = utils._get_root(t)
+    if continuous:
+        missing = [n for n in t.nodes if time_key not in t.nodes[n]]
+        if missing:
+            raise ParameterEstimateError(
+                f"continuous=True needs node times in the {time_key!r} node attribute, "
+                f"which {len(missing)} node(s) lack (e.g. {missing[0]!r}). Pass time_key=, "
+                "estimate them with cas.tl.estimate_branch_lengths, or use continuous=False."
+            )
+        lengths = [t.nodes[v][time_key] - t.nodes[u][time_key] for u, v in t.edges]
+        _check_continuous_not_int(lengths, continuous)
+        leaves = [n for n in t.nodes if t.out_degree(n) == 0]
+        depth = float(np.mean([t.nodes[n][time_key] for n in leaves])) - t.nodes[root][time_key]
+        implicit = float(np.mean(lengths)) if lengths else 0.0
+    else:
+        depth = _mean_depth(t, depth_key)
+        implicit = 1
+    if assume_root_implicit_branch and t.out_degree(root) != 1:
+        depth += implicit
+    return depth
+
+
+def _check_continuous_not_int(lengths: Sequence[float], continuous: bool = True) -> None:
     """Warn if continuous=True but branch lengths are discrete integers."""
-    if not edges:
+    if not len(lengths):
         return
 
-    u, v = edges[0]
-    branch = tree[u][v]["length"]
-
-    if continuous and float(branch).is_integer():
+    if continuous and float(lengths[0]).is_integer():
         warnings.warn(
             "continuous=True with discrete branches may produce incorrect estimates. "
             "Consider using continuous=False",
             UserWarning,
-            stacklevel=2,
+            stacklevel=3,
         )

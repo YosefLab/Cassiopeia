@@ -25,9 +25,10 @@ from cassiopeia.mixins import ILPSolverError, is_ambiguous_state, logger
 from cassiopeia.solver import ilp_solver_utilities
 from cassiopeia.tools.ancestral_characters import _get_lca_characters
 from cassiopeia.utils import (
+    _check_leaf_alignment,
     _get_characters,
     _get_parameter,
-    _node_name_generator,
+    _name_internal_nodes,
     _resolve_priors,
     _set_tree,
     _transform_priors,
@@ -93,18 +94,27 @@ def _infer_potential_graph(
 # ── Steiner tree ILP ──────────────────────────────────────────────────────────
 
 
+def _import_gurobipy():
+    """Import :mod:`gurobipy`, or raise an :class:`ILPSolverError` explaining how to get it."""
+    try:
+        import gurobipy
+    except ModuleNotFoundError as err:
+        raise ILPSolverError(
+            "The ILP solver requires Gurobi. Install it with `pip install gurobipy` and "
+            "set up a Gurobi license (free for academics: https://www.gurobi.com/academia/). "
+            "cas.solver.hybrid uses the ILP bottom solver by default; pass "
+            "bottom_solver='nj' or 'greedy' to run without Gurobi."
+        ) from err
+    return gurobipy
+
+
 def _generate_steiner_model(
     potential_graph: nx.DiGraph,
     root,
     targets: list,
 ):
     """Build a Gurobi mixed-integer model for the Steiner Tree problem."""
-    try:
-        import gurobipy
-    except ModuleNotFoundError as err:
-        raise ILPSolverError(
-            "Gurobi not found. You must install Gurobi & gurobipy from source."
-        ) from err
+    gurobipy = _import_gurobipy()
 
     source_flow = dict.fromkeys(potential_graph.nodes(), 0)
 
@@ -343,20 +353,8 @@ def _finalize(
     characters_key: str | None,
     key_added: str,
 ) -> None:
-    """Rename internal (tuple) nodes to unique names and store the tree."""
-    node_name_generator = _node_name_generator()
-    sample_set = set(character_matrix.index)
-    rename = {}
-    seen = set()
-    for node in solution.nodes():
-        if node in sample_set:
-            continue
-        new_name = next(node_name_generator)
-        while new_name in seen:
-            new_name = next(node_name_generator)
-        rename[node] = new_name
-        seen.add(new_name)
-    tree = nx.relabel_nodes(solution, rename)
+    """Rename internal (tuple) nodes and store the tree."""
+    tree = _name_internal_nodes(solution, character_matrix.index)
 
     _set_tree(tdata, tree, key_added)
 
@@ -377,7 +375,7 @@ def ilp(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with Cassiopeia-ILP (maximum parsimony).
@@ -407,8 +405,9 @@ def ilp(
         priors: Priors for character states. ``None`` (default) uses
             ``tdata.uns["priors"]`` if present and otherwise reconstructs without
             priors; ``True`` requires stored priors and raises if there are none;
-            ``False`` reconstructs without priors; a dict (character index ->
-            {state: probability}) is used directly.
+            ``False`` reconstructs without priors; a dict keyed by character
+            name or index (``{character: {state: probability}}``), or a list of
+            per-character dicts, is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
@@ -419,8 +418,10 @@ def ilp(
         ILPSolverError: On missing character matrix, ambiguous states, or
             ``weighted=True`` without priors.
     """
+    _check_leaf_alignment(tdata)
+    _import_gurobipy()
     tdata = tdata.copy() if copy else tdata
-    character_matrix = _get_characters(tdata, characters_key).copy()
+    character_matrix = _get_characters(tdata, characters_key, missing_state).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
     priors = _resolve_priors(tdata, priors, character_matrix)

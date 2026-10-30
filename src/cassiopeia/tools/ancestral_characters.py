@@ -536,7 +536,7 @@ def ancestral_characters(
     unmodified_states = _normalize_missing(unmodified)
 
     write_key = key_added if key_added is not None else characters_key
-    character_matrix = _get_characters(tdata, characters_key)
+    character_matrix = _get_characters(tdata, characters_key, missing_state)
     observed = set(character_matrix.to_numpy(dtype=object).ravel().tolist())
     missing_value = _state_value(missing, observed)
     unmodified_value = _state_value(unmodified, observed)

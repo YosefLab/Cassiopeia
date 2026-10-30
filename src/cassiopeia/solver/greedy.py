@@ -28,8 +28,10 @@ from cassiopeia.mixins import (
     unravel_ambiguous_states,
 )
 from cassiopeia.utils import (
+    _check_leaf_alignment,
     _get_characters,
     _get_parameter,
+    _name_internal_nodes,
     _node_name_generator,
     _resolve_priors,
     _set_tree,
@@ -556,7 +558,7 @@ def greedy(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     copy: bool = False,
 ) -> TreeData | None:
     """Reconstruct a tree with vanilla Cassiopeia-Greedy.
@@ -579,16 +581,18 @@ def greedy(
         priors: Priors for character states. ``None`` (default) uses
             ``tdata.uns["priors"]`` if present and otherwise reconstructs without
             priors; ``True`` requires stored priors and raises if there are none;
-            ``False`` reconstructs without priors; a dict (character index ->
-            {state: probability}) is used directly.
+            ``False`` reconstructs without priors; a dict keyed by character
+            name or index (``{character: {state: probability}}``), or a list of
+            per-character dicts, is used directly.
         copy: If ``True``, return a copy of *tdata*; otherwise modify in-place
             and return ``None``.
 
     Returns:
         A modified copy of *tdata* if ``copy=True``, else ``None``.
     """
+    _check_leaf_alignment(tdata)
     tdata = tdata.copy() if copy else tdata
-    character_matrix = _get_characters(tdata, characters_key).copy()
+    character_matrix = _get_characters(tdata, characters_key, missing_state).copy()
     missing_state = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
     priors = _resolve_priors(tdata, priors, character_matrix)
@@ -624,6 +628,7 @@ def greedy(
             allow_ambiguous=True,
         )
 
+    tree = _name_internal_nodes(tree, character_matrix.index)
     _set_tree(tdata, tree, key_added)
 
     return tdata if copy else None
