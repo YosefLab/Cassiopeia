@@ -11,7 +11,7 @@ import pandas as pd
 from cassiopeia.mixins import PreprocessError, logger
 
 from ._resolve import resolve_alleles
-from ._utils import SINGLE_CLONE, passing, site_columns
+from ._utils import SINGLE_CLONE, check_choice, passing, site_columns
 
 
 def _is_unedited(token: str) -> bool:
@@ -83,6 +83,7 @@ def alleles_to_characters(
     allow_ambiguous: bool = False,
     unknown: Literal["missing", "keep"] = "missing",
     return_type: Literal["treedata", "dataframe"] = "treedata",
+    key_added: str = "characters",
 ):
     """Build the character matrix from the allele table.
 
@@ -105,8 +106,9 @@ def alleles_to_characters(
       (as in the allele table) for edits.
     * a dict from allele to state, e.g. to use the same states across
       samples. Unedited and missing are ``0`` and ``-1`` when all states are
-      integers, ``"*"`` and ``"-"`` otherwise; alleles not in the dict are
-      missing.
+      integers; otherwise they are ``"*"`` and ``"-"`` and every state is
+      written as a string. States must differ from the unedited and missing
+      states. Alleles not in the dict are missing.
 
     The unedited and missing states are recorded (``uns`` or ``attrs``
     ``'unmodified_state'`` / ``'missing_state'``) so the solvers pick them up.
@@ -123,9 +125,10 @@ def alleles_to_characters(
             the lookup as ``"missing"`` (default) or ``"keep"`` them as states.
         return_type: ``"treedata"`` or ``"dataframe"`` (the character matrix
             only, with the states and clone characters in ``attrs``).
+        key_added: Key of the character matrix in ``tdata.obsm``.
 
     Returns:
-        :class:`treedata.TreeData` with ``obsm['characters']``, ``obs`` (QC
+        :class:`treedata.TreeData` with ``obsm[key_added]``, ``obs`` (QC
         metrics, clone, doublet scores), ``uns['character_states']``
         (character, state, allele) and ``uns['preprocess']`` (construct,
         thresholds, read statistics and per-cell QC for all cells); or the
@@ -140,13 +143,24 @@ def alleles_to_characters(
             for v in mapping_dict.values()
         )
         missing_state, unmodified_state = (-1, 0) if ints else ("-", "*")
+        mapping_dict = {k: int(v) if ints else str(v) for k, v in mapping_dict.items()}
+        reserved = {
+            k: v
+            for k, v in mapping_dict.items()
+            if v in (missing_state, unmodified_state) and not _is_unedited(str(k))
+        }
+        if reserved:
+            raise ValueError(
+                f"`mapping` sends alleles to the unedited ({unmodified_state!r}) or missing "
+                f"({missing_state!r}) state: {reserved}."
+            )
     elif mapping in ("str", "int", "allele"):
         mapping_dict = None
         missing_state, unmodified_state = (-1, 0) if mapping == "int" else ("-", "*")
     else:
         raise ValueError(f"mapping must be 'str', 'int', 'allele' or a dict, not {mapping!r}.")
-    if return_type not in ("treedata", "dataframe"):
-        raise ValueError(f"return_type must be 'treedata' or 'dataframe', not {return_type!r}.")
+    check_choice("return_type", return_type, ("treedata", "dataframe"))
+    check_choice("unknown", unknown, ("missing", "keep"))
     sites = site_columns(df)
     d = passing(df)
     res, clusters = resolve_alleles(d, sites, use_pass=False, return_clusters=True)
@@ -268,7 +282,7 @@ def alleles_to_characters(
     for c in obs.columns:
         if obs[c].dtype == object:
             obs[c] = obs[c].astype(str).replace({"nan": None, "None": None})
-    tdata = td.TreeData(obs=obs, obsm={"characters": chars})
+    tdata = td.TreeData(obs=obs, obsm={key_added: chars})
     tdata.uns["character_states"] = states
     tdata.uns["missing_state"] = missing_state
     tdata.uns["unmodified_state"] = unmodified_state

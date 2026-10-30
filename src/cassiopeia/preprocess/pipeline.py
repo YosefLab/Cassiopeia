@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +17,7 @@ from cassiopeia.mixins import PreprocessError, logger
 from .align import align
 from .alleles import call_alleles
 from .clones import call_clones
-from .construct import load_construct
+from .construct import Construct, load_construct
 from .correct import correct_intbcs
 from .doublets import filter_doublets
 from .filter import filter_alleles, filter_cells
@@ -32,10 +34,23 @@ STEPS = [
     "filter_alleles",
     "filter_cells",
     "call_clones",
+    "filter_doublets",
     "filter_integrations",
     "filter_cells_coverage",
-    "filter_doublets",
 ]
+
+#: The function run by each step.
+_STEP_FUNCTIONS: dict[str, Callable] = {
+    "align": align,
+    "call_alleles": call_alleles,
+    "correct_intbcs": correct_intbcs,
+    "filter_alleles": filter_alleles,
+    "filter_cells": filter_cells,
+    "call_clones": call_clones,
+    "filter_doublets": filter_doublets,
+    "filter_integrations": filter_integrations,
+    "filter_cells_coverage": filter_cells,
+}
 
 DEFAULTS: dict[str, Any] = {
     "correct_intbcs": {},
@@ -43,9 +58,9 @@ DEFAULTS: dict[str, Any] = {
     "filter_cells": {"min_umi": 10},
     # only for data with several clones
     "call_clones": False,
+    "filter_doublets": {},
     "filter_integrations": {},
     "filter_cells_coverage": {"min_intbc_frac": 0.5},
-    "filter_doublets": {},
 }
 
 EXAMPLE_CONFIG = """\
@@ -69,10 +84,10 @@ call_alleles: {min_reads_per_umi: 2}   # one row per (cell, intBC, allele); adju
 correct_intbcs: {}
 filter_alleles: {min_allele_frac: 0.5, min_umi_per_allele: 2}   # adjust to sequencing depth
 filter_cells: {min_umi: 10}
-call_clones: {method: nova_clone}     # only for data with several clones (default: skipped)
+call_clones: false                   # {method: nova_clone} for data with several clones
+filter_doublets: {}                  # before filter_integrations, so doublets do not inflate conflicts
 filter_integrations: {min_detection: 0.2, max_conflict: 0.2}
 filter_cells_coverage: {min_intbc_frac: 0.5}   # optional
-filter_doublets: {}
 # The result is <dir>/<name>.alleles.parquet. Convert it to characters in Python:
 #   df = cas.pp.read_alleles("results/sample1/sample1.alleles.parquet")
 #   tdata = cas.pp.alleles_to_characters(df)
@@ -80,17 +95,17 @@ filter_doublets: {}
 
 
 def load_config(config: str | Path | dict) -> dict:
-    """Load a run configuration from YAML or a dict."""
+    """Load and check a run configuration from YAML or a dict."""
     if isinstance(config, dict):
         cfg = copy.deepcopy(config)
-        base = Path(".")
     else:
         path = Path(config)
         with open(path) as f:
             cfg = yaml.safe_load(f)
-        base = path.parent
+        if not isinstance(cfg, dict):
+            raise PreprocessError(f"The config {str(path)!r} is not a YAML mapping.")
         if isinstance(cfg.get("construct"), str):
-            cpath = base / cfg["construct"]
+            cpath = path.parent / cfg["construct"]
             if cpath.suffix in (".yaml", ".yml") and cpath.exists():
                 cfg["construct"] = str(cpath)
     if "construct" not in cfg:
@@ -98,6 +113,8 @@ def load_config(config: str | Path | dict) -> dict:
     inp = cfg.get("input") or {}
     if not inp.get("fastq") and not inp.get("bam"):
         raise PreprocessError("The config `input` needs `fastq` or `bam`.")
+    if inp.get("fastq") and inp.get("bam"):
+        raise PreprocessError("The config `input` needs `fastq` or `bam`, not both.")
     unknown = set(cfg) - {"construct", "input", "output", "threads", *STEPS}
     if "alleles_to_characters" in unknown:
         raise PreprocessError(
@@ -106,7 +123,43 @@ def load_config(config: str | Path | dict) -> dict:
         )
     if unknown:
         raise PreprocessError(f"Unknown config keys: {sorted(unknown)}")
+    if cfg.get("threads") is not None:
+        try:
+            cfg["threads"] = int(cfg["threads"])
+        except (TypeError, ValueError):
+            raise PreprocessError(
+                f"`threads` must be an integer, not {cfg['threads']!r}."
+            ) from None
+    if inp.get("fastq") and cfg.get("align") is False:
+        raise PreprocessError(
+            "`align` cannot be skipped for FASTQ input; give `input: {bam: ...}` to start "
+            "from an aligned BAM."
+        )
+    for step in STEPS:
+        _check_step_options(step, cfg.get(step))
     return cfg
+
+
+def _check_step_options(step: str, val: Any) -> None:
+    """Check that a step's config value is a mapping of its function's arguments (or a bool)."""
+    if val is None or isinstance(val, bool):
+        return
+    if not isinstance(val, dict):
+        raise PreprocessError(
+            f"`{step}` must be a mapping of options, or false to skip the step, not {val!r}."
+        )
+    params = inspect.signature(_STEP_FUNCTIONS[step]).parameters
+    # set by the pipeline from `construct` and `input`
+    fixed = {"fastqs", "construct"} if step == "align" else {"bam", "construct", "df"}
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        bad = [k for k in val if k in fixed]
+    else:
+        bad = [k for k in val if k not in params or k in fixed]
+    if bad:
+        valid = sorted(
+            k for k in params if k not in fixed and params[k].kind != params[k].VAR_KEYWORD
+        )
+        raise PreprocessError(f"Unknown options for `{step}`: {bad}. Options: {', '.join(valid)}.")
 
 
 def _opts(cfg: dict, step: str) -> dict | None:
@@ -114,8 +167,33 @@ def _opts(cfg: dict, step: str) -> dict | None:
     if val is False:
         return None
     opts = dict(DEFAULTS.get(step) or {})
-    opts.update(val or {})
+    if isinstance(val, dict):
+        opts.update(val)
     return opts
+
+
+def _yaml_safe(obj: Any) -> Any:
+    """The config with paths, constructs and tuples converted for ``yaml.safe_dump``."""
+    if isinstance(obj, Construct):
+        return _yaml_safe(obj.to_dict())
+    if isinstance(obj, dict):
+        return {str(k): _yaml_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [_yaml_safe(v) for v in obj]
+    if obj is None or type(obj) in (str, int, float, bool):
+        return obj
+    if hasattr(obj, "item"):  # numpy scalars
+        return _yaml_safe(obj.item())
+    return str(obj)  # paths and other objects
+
+
+def _call(fn: Callable, *args, opts: dict, threads: int | None, save: str | None):
+    """Run a step; its config options override the pipeline's threads and plot settings."""
+    kwargs: dict[str, Any] = {"plot": False, "save": save}
+    if "n_threads" in inspect.signature(fn).parameters:
+        kwargs["n_threads"] = threads
+    kwargs.update(opts)
+    return fn(*args, **kwargs)
 
 
 def run(config: str | Path | dict) -> pd.DataFrame:
@@ -139,14 +217,21 @@ def run(config: str | Path | dict) -> pd.DataFrame:
     5. :func:`~cassiopeia.pp.filter_cells`, with ``min_umi=10`` by default.
     6. :func:`~cassiopeia.pp.call_clones`, skipped unless it is in the config
        (only for data with several clones).
-    7. :func:`~cassiopeia.pp.filter_integrations`
-    8. ``filter_cells_coverage``: :func:`~cassiopeia.pp.filter_cells` again,
+    7. :func:`~cassiopeia.pp.filter_doublets`, before
+       ``filter_integrations`` so that doublets do not inflate its conflict
+       rates.
+    8. :func:`~cassiopeia.pp.filter_integrations`
+    9. ``filter_cells_coverage``: :func:`~cassiopeia.pp.filter_cells` again,
        with ``min_intbc_frac=0.5`` by default. Runs only after
        ``filter_integrations`` or ``call_clones``.
-    9. :func:`~cassiopeia.pp.filter_doublets`
 
     Filters annotate the table (``pass_*`` columns) rather than drop rows, so
     the saved table keeps every allele and can be filtered again.
+
+    Each run processes one sample. To analyze several samples together, run
+    the pipeline per sample and combine the character matrices (see
+    :func:`~cassiopeia.pp.call_alleles`); concatenated allele tables do not
+    work with the steps.
 
     The config has these keys:
 
@@ -161,7 +246,9 @@ def run(config: str | Path | dict) -> pd.DataFrame:
       ``true``).
     * ``threads``: default is the Slurm allocation, else up to 8.
     * One key per step, holding keyword arguments of its function, or
-      ``false`` to skip it. Steps left out run with their defaults.
+      ``false`` to skip it (``align`` cannot be skipped for FASTQ input).
+      Steps left out run with their defaults. ``n_threads``, ``plot`` and
+      ``save`` given for a step override ``threads`` and ``output.plots``.
 
     For example:
 
@@ -207,11 +294,11 @@ def run(config: str | Path | dict) -> pd.DataFrame:
     threads = cfg.get("threads")
     inp = cfg["input"]
 
-    def plot_args(step):
-        return {"plot": False, "save": str(qc_dir / f"{step}.png") if plots else None}
+    def save(step: str) -> str | None:
+        return str(qc_dir / f"{step}.png") if plots else None
 
     with open(out_dir / "config.yaml", "w") as f:
-        yaml.safe_dump(cfg, f, sort_keys=False)
+        yaml.safe_dump(_yaml_safe(cfg), f, sort_keys=False)
     logger.info(f"Running Cassiopeia preprocessing for {name!r} ({construct!r}) -> {out_dir}")
 
     if inp.get("fastq"):
@@ -220,10 +307,12 @@ def run(config: str | Path | dict) -> pd.DataFrame:
         if inp.get("whitelist"):
             opts.setdefault("whitelist", inp["whitelist"])
         bam = opts.pop("output_bam", str(out_dir / f"{name}.aligned.bam"))
-        align(inp["fastq"], bam, construct, n_threads=threads, **opts, **plot_args("align"))
+        _call(align, inp["fastq"], bam, construct, opts=opts, threads=threads, save=save("align"))
         lay = parse_layout(opts["layout"])
         ca_defaults = {"cb_tag": "CB" if lay.cb else None, "umi_tag": "UB" if lay.umi else None}
     else:
+        if cfg.get("align"):
+            logger.warning("Ignoring the `align` options: the input is a BAM.")
         bam = inp["bam"]
         ca_defaults = {}
     ca = dict(ca_defaults)
@@ -232,23 +321,18 @@ def run(config: str | Path | dict) -> pd.DataFrame:
         ca.setdefault("cells", inp["cells"])
     if inp.get("contigs"):
         ca.setdefault("contigs", inp["contigs"])
-    df = call_alleles(bam, construct, n_threads=threads, **ca, **plot_args("call_alleles"))
+    df = _call(call_alleles, bam, construct, opts=ca, threads=threads, save=save("call_alleles"))
 
-    if (o := _opts(cfg, "correct_intbcs")) is not None and construct.intbc is not None:
-        df = correct_intbcs(df, n_threads=threads, **o, **plot_args("correct_intbcs"))
-    if (o := _opts(cfg, "filter_alleles")) is not None:
-        df = filter_alleles(df, **o, **plot_args("filter_alleles"))
-    if (o := _opts(cfg, "filter_cells")) is not None:
-        df = filter_cells(df, **o, **plot_args("filter_cells"))
-    if (o := _opts(cfg, "call_clones")) is not None:
-        df = call_clones(df, **o, **plot_args("call_clones"))
-    if (o := _opts(cfg, "filter_integrations")) is not None:
-        df = filter_integrations(df, **o, **plot_args("filter_integrations"))
-    expected = df.attrs.get("integrations") or df.attrs.get("clone_intbcs")
-    if (o := _opts(cfg, "filter_cells_coverage")) is not None and expected:
-        df = filter_cells(df, **o, **plot_args("filter_cells_coverage"))
-    if (o := _opts(cfg, "filter_doublets")) is not None:
-        df = filter_doublets(df, **o, **plot_args("filter_doublets"))
+    for step in STEPS[2:]:
+        o = _opts(cfg, step)
+        if o is None:
+            continue
+        if step == "correct_intbcs" and construct.intbc is None:
+            continue
+        expected = df.attrs.get("integrations") or df.attrs.get("clone_intbcs")
+        if step == "filter_cells_coverage" and not expected:
+            continue
+        df = _call(_STEP_FUNCTIONS[step], df, opts=o, threads=threads, save=save(step))
     path = out_dir / f"{name}.alleles.parquet"
     df.to_parquet(path)
     cells = cell_metrics(df)
@@ -261,5 +345,13 @@ def run(config: str | Path | dict) -> pd.DataFrame:
 
 
 def read_alleles(path: str | Path) -> pd.DataFrame:
-    """Read an allele table saved with ``df.to_parquet`` (attrs are restored)."""
+    """Read an allele table saved with ``df.to_parquet`` or by :func:`~cassiopeia.pp.run`.
+
+    Args:
+        path: Parquet file.
+
+    Returns:
+        The allele table, with its categorical columns and ``df.attrs``
+        (construct, thresholds, read statistics) restored.
+    """
     return pd.read_parquet(path)

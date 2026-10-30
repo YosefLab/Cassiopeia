@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import io
 import logging
+import warnings
 from pathlib import Path
 from typing import Literal
 
@@ -132,11 +133,17 @@ def call_clones(
                     "UMI_count": sub["UMI_count"].astype(int).to_numpy(),
                 }
             )
-        # NovaClone logs every step at INFO level; keep only warnings
+        # NovaClone logs every step at INFO level, prints progress bars and
+        # numpy warnings; keep only its log warnings
         previous = logging.root.manager.disable
         logging.disable(logging.INFO)
         try:
-            with contextlib.redirect_stdout(io.StringIO()):
+            with (
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+                warnings.catch_warnings(),
+            ):
+                warnings.simplefilter("ignore", RuntimeWarning)
                 raw = nova_clone.clone_calling_algorithm(per_sample, **nova_kwargs)
         finally:
             logging.disable(previous)
@@ -173,7 +180,18 @@ def call_clones(
         f"call_clones ({method_used}): {len(sig)} clones, {n_assigned:,}/{len(cells):,} cells assigned"
         + (f", {int(sizes.get('multiplet', 0)):,} multiplets" if "multiplet" in sizes else "")
     )
-    if len(sig) == 1 and method_used == "nova_clone" and n_assigned > 0.95 * len(cells):
+    if not sig or n_assigned == 0:
+        logger.warning(
+            f"call_clones: no clones found ({n_assigned:,}/{len(cells):,} cells assigned); "
+            "pp.filter_integrations will fail. "
+            + (
+                "Lower NovaClone's thresholds for small datasets (e.g. min_cells_assigned, "
+                "min_intbc_cellbc_count), or skip pp.call_clones for data with a single clone."
+                if method_used == "nova_clone"
+                else "Check that `clones` is keyed by the table's cell barcodes."
+            )
+        )
+    elif len(sig) == 1 and method_used == "nova_clone" and n_assigned > 0.95 * len(cells):
         logger.warning(
             "NovaClone found a single clone; data where all cells share their integrations "
             "do not need pp.call_clones."

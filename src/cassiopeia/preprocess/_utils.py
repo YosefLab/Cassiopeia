@@ -14,9 +14,17 @@ import pandas as pd
 from cassiopeia.mixins import logger
 
 
+def check_choice(name: str, value: Any, choices: Iterable[Any]) -> None:
+    """Raise a ValueError if ``value`` is not one of ``choices``."""
+    choices = list(choices)
+    if value not in choices:
+        shown = ", ".join(repr(c) for c in choices)
+        raise ValueError(f"{name} must be one of {shown}, not {value!r}.")
+
+
 def default_threads(n_threads: int | None) -> int:
     """Number of threads: explicit value, else SLURM allocation, else up to 8."""
-    if n_threads is not None and n_threads > 0:
+    if n_threads is not None and int(n_threads) > 0:
         return int(n_threads)
     slurm = os.environ.get("SLURM_CPUS_PER_TASK")
     if slurm and slurm.isdigit():

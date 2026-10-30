@@ -538,6 +538,10 @@ def plot_clone_intbc_heatmap(
     if mat.shape[1]:
         owner = mat.fillna(0).to_numpy().argmax(axis=0)
         mat = mat.iloc[:, np.lexsort((-mat.fillna(0).to_numpy().max(axis=0), owner))]
+    if not mat.size:
+        ax.text(0.5, 0.5, "no clones", ha="center", va="center", transform=ax.transAxes)
+        ax.set_axis_off()
+        return ax
     cmap = LinearSegmentedColormap.from_list("cas_blue", SEQ)
     im = ax.imshow(
         mat.fillna(0).to_numpy(), aspect="auto", cmap=cmap, vmin=0, vmax=1, interpolation="nearest"
@@ -635,9 +639,15 @@ def plot_doublet_scores(df: pd.DataFrame):
 
 
 def _edit_label(token, width: int = 24) -> str:
-    """Short label for an allele (the bracketed edits of an indel allele)."""
+    """Short label for an allele: its bracketed indels, with the inserted bases of insertions."""
     s = str(token)
-    edits = re.findall(r"\[([^\]]+)\]", s)
+    edits = []
+    for m in re.finditer(r"\[([^\]]+)\]", s):
+        edit = m.group(1)
+        ins = re.fullmatch(r"\d+:(\d+)I", edit)
+        if ins:  # the inserted bases follow the bracket
+            edit += ":" + s[m.end() : m.end() + int(ins.group(1))]
+        edits.append(edit)
     if edits:
         s = ",".join(edits)
     return s if len(s) <= width else s[: width - 1] + "…"
@@ -647,7 +657,7 @@ def _is_unedited(token: str) -> bool:
     return token == "None" or "[None]" in token
 
 
-def _state_counts(data) -> tuple[pd.DataFrame, str, str]:
+def _state_counts(data, characters_key: str = "characters") -> tuple[pd.DataFrame, str, str]:
     """Long table (unit, state, count) and the unit / denominator names.
 
     ``state`` is an allele, ``"unedited"``, ``"missing"`` or ``"ambiguous"``.
@@ -672,7 +682,7 @@ def _state_counts(data) -> tuple[pd.DataFrame, str, str]:
         unit = "UMIs" if has_umis else "reads"
         return pd.DataFrame(rows, columns=["unit", "state", "count"]), "site", unit
     if hasattr(data, "obsm"):
-        chars = data.obsm["characters"]
+        chars = data.obsm[characters_key]
         meta = data.uns
         clone = data.obs["clone"].astype(str).to_numpy() if "clone" in data.obs.columns else None
     elif isinstance(data, pd.DataFrame):
@@ -726,6 +736,7 @@ def plot_edit_frequency(
     n_edits: int = 8,
     max_characters: int = 80,
     ax=None,
+    characters_key: str = "characters",
 ):
     """Frequency of edits per character, or of each edit across characters.
 
@@ -754,6 +765,7 @@ def plot_edit_frequency(
         max_characters: Show at most this many characters (those with the
             fewest missing values).
         ax: Matplotlib axes.
+        characters_key: (TreeData) Key of the character matrix in ``obsm``.
 
     Returns:
         The matplotlib axes.
@@ -762,7 +774,7 @@ def plot_edit_frequency(
         raise ValueError(f"by must be 'character' or 'edit', not {by!r}.")
     if color_by not in ("edited", "edit"):
         raise ValueError(f"color_by must be 'edited' or 'edit', not {color_by!r}.")
-    long, unit, denom = _state_counts(data)
+    long, unit, denom = _state_counts(data, characters_key)
     special = {"missing", "unedited", "ambiguous"}
     edits = long[~long["state"].isin(special)]
     top = list(edits.groupby("state")["count"].sum().sort_values(ascending=False).index[:n_edits])

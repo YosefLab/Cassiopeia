@@ -7,7 +7,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from cassiopeia.mixins import PreprocessError
+from cassiopeia.mixins import PreprocessError, logger
 from cassiopeia.utils import _format_priors
 
 from ._utils import CELL_PASS as _CELL_PASS
@@ -53,6 +53,11 @@ def _intbc_fraction(df: pd.DataFrame) -> pd.Series:
     """
     expected = _expected_intbcs(df)
     if expected is None:
+        if "integrations" in df.attrs or "clone_intbcs" in df.attrs:
+            raise PreprocessError(
+                "The intBC fraction needs the expected intBCs, but no integrations were kept "
+                "by pp.filter_integrations (or no clones found by pp.call_clones)."
+            )
         raise PreprocessError(
             "The intBC fraction needs the expected intBCs: run pp.filter_integrations first."
         )
@@ -237,9 +242,10 @@ __all__ = [
 ]
 
 
-def _character_intbc(name: str) -> str:
-    """The intBC of a character named ``{intBC}-{site}``."""
-    return name.rsplit("-", 1)[0] if "-" in name else name
+def _split_character(name: str) -> tuple[str, str]:
+    """The intBC and site of a character named ``{intBC}-{site}``."""
+    intbc, _, site = name.rpartition("-")
+    return (intbc, site) if intbc else (name, name)
 
 
 def _allele_lookup(meta) -> dict[tuple[str, str], str]:
@@ -251,19 +257,25 @@ def _allele_lookup(meta) -> dict[tuple[str, str], str]:
     return dict(zip(keys, states["allele"].astype(str), strict=True))
 
 
-def _state_priors(tdata, characters_key: str, freq: pd.Series) -> dict[int, dict[str, float]]:
-    """Priors ``{character index: {state: probability}}``; a state's is its allele's frequency."""
+def _state_priors(
+    tdata, characters_key: str, freq: pd.Series, per_site: bool
+) -> dict[int, dict[str, float]]:
+    """Priors ``{character position: {state: probability}}``; a state's is its allele's frequency."""
     chars = tdata.obsm[characters_key]
     skip = {str(tdata.uns.get("missing_state", -1)), str(tdata.uns.get("unmodified_state", 0))}
     allele_of = _allele_lookup(tdata.uns)
     freq = freq.to_dict()
     priors = {}
     for i, name in enumerate(chars.columns):
+        site = _split_character(str(name))[1]
         states = {}
         for v in pd.unique(chars[name].to_numpy()):
             for s in v if isinstance(v, tuple) else (v,):
                 s = str(s)
-                p = None if s in skip else freq.get(allele_of.get((str(name), s), s))
+                if s in skip:
+                    continue
+                allele = allele_of.get((str(name), s), s)
+                p = freq.get((site, allele) if per_site else allele)
                 if p is not None:
                     states[s] = float(p)
         if states:
@@ -271,10 +283,28 @@ def _state_priors(tdata, characters_key: str, freq: pd.Series) -> dict[int, dict
     return priors
 
 
+def _cell_groups(chars: pd.DataFrame, obs: pd.DataFrame | None, by: list[str]) -> np.ndarray:
+    """Group label of each cell from ``obs`` columns (``"cellBC"``: the cell names)."""
+    if not by:
+        return np.zeros(len(chars), dtype=int)
+    cols = []
+    for g in by:
+        if obs is not None and g in obs.columns:
+            cols.append(obs[g].astype(str).to_numpy())
+        elif g == "cellBC":
+            cols.append(chars.index.astype(str).to_numpy())
+        else:
+            raise ValueError(f"Grouping variable {g!r} must be 'cellBC' or a column of tdata.obs.")
+    return pd.DataFrame(dict(enumerate(cols))).agg("|".join, axis=1).to_numpy()
+
+
 def _priors_from_characters(
-    data, grouping_variables: list[str], characters_key: str
-) -> tuple[dict[str, int], int]:
-    """Indel occurrences per group in a character matrix (TreeData or DataFrame)."""
+    data, grouping_variables: list[str], characters_key: str, per_site: bool
+) -> tuple[dict, dict]:
+    """Indel occurrences and observed groups in a character matrix (TreeData or DataFrame).
+
+    Keys are ``(site, allele)`` and ``site`` with ``per_site``, else ``allele`` and ``None``.
+    """
     if hasattr(data, "obsm"):
         chars, meta, obs = data.obsm[characters_key], data.uns, data.obs
     else:
@@ -282,35 +312,58 @@ def _priors_from_characters(
     missing = str(meta.get("missing_state", -1))
     unedited = str(meta.get("unmodified_state", 0))
     allele_of = _allele_lookup(meta)
-    by = [g for g in grouping_variables if g != "intBC"]
-    if by:
-        if obs is None or any(g not in obs.columns for g in by):
-            raise ValueError(f"Grouping variables {by} must be columns of tdata.obs.")
-        cell_group = obs[by].astype(str).agg("|".join, axis=1).to_numpy()
-    else:
-        cell_group = np.zeros(len(chars), dtype=int)
-    columns: dict[str, list[str]] = {}
-    for name in chars.columns:
-        columns.setdefault(_character_intbc(str(name)), []).append(name)
-    counts: dict[str, int] = {}
-    n_groups = 0
-    for group in pd.unique(cell_group):
-        rows = cell_group == group
-        for names in columns.values():
-            seen: set[str] = set()
-            observed = False
-            for name in names:
-                for v in pd.unique(chars.loc[rows, name].to_numpy()):
+    cell_group = _cell_groups(chars, obs, [g for g in grouping_variables if g != "intBC"])
+    names = [str(c) for c in chars.columns]
+    intbc_columns: dict[str, list[int]] = {}
+    for j, name in enumerate(names):
+        intbc_columns.setdefault(_split_character(name)[0], []).append(j)
+    site = [_split_character(name)[1] if per_site else None for name in names]
+    values = chars.to_numpy()
+    group_rows = pd.Series(np.arange(len(chars))).groupby(cell_group, sort=False).indices
+    counts: dict = {}
+    n_groups: dict = {}
+    for rows in group_rows.values():
+        block = values[rows]
+        for cols in intbc_columns.values():
+            seen: set = set()
+            observed: set = set()
+            for j in cols:
+                for v in pd.unique(block[:, j]):
                     for s in v if isinstance(v, tuple) else (v,):
                         s = str(s)
                         if s == missing:
                             continue
-                        observed = True
+                        observed.add(site[j])
                         if s != unedited:
-                            seen.add(allele_of.get((str(name), s), s))
-            n_groups += observed
-            for allele in seen:
-                counts[allele] = counts.get(allele, 0) + 1
+                            allele = allele_of.get((names[j], s), s)
+                            seen.add((site[j], allele) if per_site else allele)
+            for key in observed:
+                n_groups[key] = n_groups.get(key, 0) + 1
+            for key in seen:
+                counts[key] = counts.get(key, 0) + 1
+    return counts, n_groups
+
+
+def _priors_from_alleles(
+    df: pd.DataFrame, grouping_variables: list[str], cut_sites: list[str], per_site: bool
+) -> tuple[dict, dict]:
+    """Indel occurrences and groups in an allele table (keys as in :func:`_priors_from_characters`)."""
+    groups = passing(df).groupby(grouping_variables, observed=True)
+    counts: dict = {}
+    n_groups: dict = {None: groups.ngroups} if not per_site else {}
+    for _, g in groups:
+        if not per_site:
+            for allele in pd.unique(g[cut_sites].astype(object).to_numpy().ravel()):
+                if isinstance(allele, str) and "none" not in allele.lower():
+                    counts[allele] = counts.get(allele, 0) + 1
+            continue
+        for site in cut_sites:
+            alleles = [a for a in pd.unique(g[site].astype(object)) if isinstance(a, str)]
+            if alleles:
+                n_groups[site] = n_groups.get(site, 0) + 1
+            for allele in alleles:
+                if "none" not in allele.lower():
+                    counts[(site, allele)] = counts.get((site, allele), 0) + 1
     return counts, n_groups
 
 
@@ -319,24 +372,39 @@ def compute_indel_priors(
     grouping_variables: list[str] | None = None,
     cut_sites: list[str] | None = None,
     characters_key: str = "characters",
+    per_site: bool = True,
 ) -> pd.DataFrame:
     """Empirical indel frequencies, for use as priors.
 
     Counts the independent groups in which each indel occurs and divides by
     the number of groups. By default each intBC is a group, which holds for a
     clonal population; group by more columns (e.g. ``["clone", "intBC"]``)
-    when the same intBC occurs in several clones.
+    when the same intBC occurs in several clones. With few intBCs (e.g.
+    constructs without an intBC, such as GESTALT, where all cells form one
+    group), every indel occurs in every group; group by cell
+    (``["cellBC", "intBC"]``) to use frequencies across cells instead.
+
+    With ``per_site=True`` (default) the frequencies are computed for each
+    site: the frequency of an indel at a site is the fraction of the groups
+    in which the site is observed that carry it there. This is needed when
+    the same allele means different edits at different sites, as for the
+    labels of ``insertion_lookup`` sites (PEtracer) and the patterns of
+    ``substitution`` sites (BASELINE). ``per_site=False`` pools the sites,
+    as the pre-3.0 Cassiopeia did: a group counts once for an indel found at
+    any of its sites. This suits Cas9 indel alleles, which name their
+    position.
 
     Accepts the allele table, a legacy allele table with one column per cut
     site, or a character matrix from
     :func:`cassiopeia.pp.alleles_to_characters` (a TreeData, or the DataFrame
     from ``return_type="dataframe"``). For a character matrix, edits are
-    mapped back to their alleles with ``character_states``, the intBC of a
-    character is taken from its name (``{intBC}-{site}``), and grouping
-    variables other than ``"intBC"`` are columns of ``tdata.obs``.
+    mapped back to their alleles with ``character_states``, the intBC and
+    site of a character are taken from its name (``{intBC}-{site}``), and
+    grouping variables other than ``"intBC"`` and ``"cellBC"`` are columns
+    of ``tdata.obs``.
 
     For a TreeData, the priors are also stored in ``tdata.uns["priors"]`` as
-    ``{character index: {state: probability}}``, the probability of a state
+    ``{character name: {state: probability}}``, the probability of a state
     being the frequency of its indel. The solvers (e.g.
     :func:`cassiopeia.solver.greedy`) use them by default.
 
@@ -348,10 +416,12 @@ def compute_indel_priors(
         cut_sites: (allele tables) Site columns. Default: the construct's
             sites, or columns named ``r1``, ``r2``, ... of a legacy allele table.
         characters_key: (TreeData) Key of the character matrix in ``obsm``.
+        per_site: Compute frequencies per site instead of pooling all sites.
 
     Returns:
-        DataFrame indexed by indel with ``count`` (groups containing it) and
-        ``freq`` (fraction of groups).
+        DataFrame with ``count`` (groups containing the indel) and ``freq``
+        (fraction of groups), indexed by ``site`` and ``indel`` with
+        ``per_site=True``, else by ``indel``.
     """
     grouping_variables = list(grouping_variables or ["intBC"])
     is_matrix = hasattr(data, "obsm") or (
@@ -360,24 +430,36 @@ def compute_indel_priors(
         and "missing_state" in data.attrs
     )
     if is_matrix:
-        counts, n_groups = _priors_from_characters(data, grouping_variables, characters_key)
+        counts, n_groups = _priors_from_characters(
+            data, grouping_variables, characters_key, per_site
+        )
     else:
-        df = data
         if cut_sites is None:
-            if df.attrs.get("sites"):
-                cut_sites = site_columns(df)
+            if data.attrs.get("sites"):
+                cut_sites = site_columns(data)
             else:
-                cut_sites = [c for c in df.columns if re.fullmatch(r"r\d+", str(c))]
-        groups = passing(df).groupby(grouping_variables, observed=True)
-        counts = {}
-        for _, g in groups:
-            for allele in pd.unique(g[cut_sites].astype(object).to_numpy().ravel()):
-                if isinstance(allele, str) and "none" not in allele.lower():
-                    counts[allele] = counts.get(allele, 0) + 1
-        n_groups = groups.ngroups
-    out = pd.DataFrame({"count": pd.Series(counts, dtype=int)})
-    out["freq"] = out["count"] / max(n_groups, 1)
-    out.index.name = "indel"
+                cut_sites = [c for c in data.columns if re.fullmatch(r"r\d+", str(c))]
+        counts, n_groups = _priors_from_alleles(data, grouping_variables, cut_sites, per_site)
+    keys = list(counts)
+    if per_site:
+        index = pd.MultiIndex.from_tuples(keys, names=["site", "indel"]) if keys else None
+        if index is None:
+            index = pd.MultiIndex.from_arrays([[], []], names=["site", "indel"])
+        totals = np.array([n_groups.get(site, 0) for site, _ in keys], dtype=float)
+    else:
+        index = pd.Index(keys, name="indel", dtype=object)
+        totals = np.full(len(keys), float(sum(n_groups.values())))
+    count = np.array([counts[k] for k in keys], dtype=int)
+    out = pd.DataFrame({"count": count, "freq": count / np.maximum(totals, 1)}, index=index)
+    if len(out) > 1 and (out["freq"] >= 1).all():
+        logger.warning(
+            "compute_indel_priors: every indel occurs in every group, so all frequencies are 1. "
+            "Use more groups, e.g. grouping_variables=['cellBC', 'intBC'] for frequencies "
+            "across cells."
+        )
     if hasattr(data, "obsm"):
-        data.uns["priors"] = _format_priors(_state_priors(data, characters_key, out["freq"]))
+        data.uns["priors"] = _format_priors(
+            _state_priors(data, characters_key, out["freq"], per_site),
+            data.obsm[characters_key].columns,
+        )
     return out

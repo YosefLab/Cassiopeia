@@ -14,9 +14,9 @@ def processed(sim_factory):
     df = cas.pp.call_alleles(sim.bam, "weissman", plot=False)
     df = cas.pp.filter_alleles(df, min_umi_per_allele=2, min_avg_reads_per_umi=3, plot=False)
     df = cas.pp.filter_cells(df, min_umi=5, plot=False)
+    df = cas.pp.filter_doublets(df, plot=False)
     df = cas.pp.filter_integrations(df, plot=False)
     df = cas.pp.filter_cells(df, min_intbc_frac=0.5, plot=False)
-    df = cas.pp.filter_doublets(df, plot=False)
     return sim, df
 
 

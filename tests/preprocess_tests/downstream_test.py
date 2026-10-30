@@ -21,9 +21,9 @@ def _process(sim, clones=False, collapse=False, correct=True, **kw):
     df = cas.pp.filter_cells(df, min_umi=5)
     if clones:
         df = cas.pp.call_clones(df, **kw)
+    df = cas.pp.filter_doublets(df)
     df = cas.pp.filter_integrations(df, min_detection=0.4)
-    df = cas.pp.filter_cells(df, min_intbc_frac=0.5)
-    return cas.pp.filter_doublets(df)
+    return cas.pp.filter_cells(df, min_intbc_frac=0.5)
 
 
 def _truth_cells(sim, df):
@@ -149,6 +149,8 @@ def test_filters_annotate(sim_factory):
     assert qc["min_avg_reads_per_umi"] == 0 and qc["allow_allele_conflicts"] is False
     with pytest.raises(Exception, match="filter_integrations"):
         cas.pp.filter_cells(out, min_intbc_frac=0.5)
+    with pytest.raises(Exception, match="kept no integrations"):
+        cas.pp.filter_integrations(out, min_detection=1.1)
 
 
 def test_single_clone_pipeline(sim_factory):
@@ -210,8 +212,8 @@ def test_user_clones(sim_factory):
     df = cas.pp.filter_alleles(df, min_umi_per_allele=1)
     df = cas.pp.filter_cells(df, min_umi=5)
     df = cas.pp.call_clones(df, clones=clones)
-    df = cas.pp.filter_integrations(df)
     df = cas.pp.filter_doublets(df)
+    df = cas.pp.filter_integrations(df)
     # cells flagged as doublets are left out of the integration metrics
     assert (~df["pass_doublet"]).any()
     with_doublets = cas.pp.integration_metrics(df.assign(pass_doublet=True))
@@ -312,24 +314,24 @@ def test_compute_indel_priors(sim_factory, tmp_path):
     df = _process(sim)
     priors = cas.pp.compute_indel_priors(df)
     assert len(priors) > 0 and priors["freq"].between(0, 1).all()
-    assert not any("None" in i for i in priors.index)
+    assert not any("None" in i for i in priors.index.get_level_values("indel"))
     assert priors["count"].max() <= df.loc[df["pass"], "intBC"].nunique()
     # from the character matrix, mapping states back to alleles
     results = []
     for mapping in ("str", "int", "allele"):
         tdata = cas.pp.alleles_to_characters(df, mapping=mapping)
         results.append(cas.pp.compute_indel_priors(tdata).sort_index())
-        # TreeData input: priors per character index and state, for the solvers
+        # TreeData input: priors per character name and state, for the solvers
         chars, stored = tdata.obsm["characters"], tdata.uns["priors"]
         st = tdata.uns["character_states"]
         keys = zip(st["character"], st["state"].astype(str), strict=True)
         allele = dict(zip(keys, st["allele"], strict=True))
         assert stored and all(isinstance(s, str) for d in stored.values() for s in d)
-        for i, states in stored.items():
-            name = chars.columns[int(i)]
+        for name, states in stored.items():
             assert set(states) == {str(s) for s in chars[name].unique()} - {"*", "-", "0", "-1"}
+            site = name.rsplit("-", 1)[1]
             for s, p in states.items():
-                assert p == results[-1].loc[allele.get((name, s), s), "freq"]
+                assert p == results[-1].loc[(site, allele.get((name, s), s)), "freq"]
         tdata.write_h5td(tmp_path / f"{mapping}.h5td")
         cas.solver.greedy(td.read_h5td(tmp_path / f"{mapping}.h5td"), priors=True)
     chars = cas.pp.alleles_to_characters(df, return_type="dataframe")

@@ -144,6 +144,8 @@ class Construct:
             contig name, e.g. ``"intID\\d+"``).
         array: Tandem array description for ``sequential_insertion`` sites.
         description: Free text.
+        extra: Other metadata (kept, not used). Unknown keys in a YAML or
+            dict construct are an error; put such metadata under ``extra``.
     """
 
     name: str
@@ -157,9 +159,11 @@ class Construct:
 
     def __post_init__(self):
         self.reference = self.reference.upper().replace("U", "T")
-        self.sites = [s if isinstance(s, Site) else Site(**s) for s in self.sites]
+        self.sites = [
+            s if isinstance(s, Site) else Site(**_known_keys(Site, s)) for s in self.sites
+        ]
         if isinstance(self.array, dict):
-            self.array = TapeArray(**self.array)
+            self.array = TapeArray(**_known_keys(TapeArray, self.array))
         if self.intbc == "auto":
             runs = [(m.start(), m.end()) for m in re.finditer("N+", self.reference)]
             if len(runs) > 1:
@@ -169,6 +173,11 @@ class Construct:
             self.intbc = runs[0] if runs else None
         elif self.intbc is not None:
             self.intbc = (int(self.intbc[0]), int(self.intbc[1]))
+            if not 0 <= self.intbc[0] < self.intbc[1] <= len(self.reference):
+                raise ValueError(
+                    f"Construct {self.name!r}: intbc {list(self.intbc)} must be [start, end) "
+                    f"with 0 <= start < end <= {len(self.reference)} (the reference length)."
+                )
         names = [s.name for s in self.sites]
         if len(set(names)) != len(names):
             raise ValueError("Site names must be unique.")
@@ -232,11 +241,7 @@ class Construct:
         for s in d.get("sites", []):
             if isinstance(s.get("window"), list):
                 s["window"] = tuple(s["window"])
-        known = set(cls.__dataclass_fields__)
-        extra = {k: v for k, v in d.items() if k not in known}
-        d = {k: v for k, v in d.items() if k in known}
-        d.setdefault("extra", {}).update(extra)
-        return cls(**d)
+        return cls(**_known_keys(cls, d))
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> Construct:
@@ -294,6 +299,20 @@ class Construct:
             f"Construct({self.name!r}, {len(self.reference)}bp, {bc}, "
             f"{len(self.sites)} sites [{models}])"
         )
+
+
+def _known_keys(cls, d: dict) -> dict:
+    """``d`` if all its keys are fields of the dataclass ``cls``; else a ValueError."""
+    what = f"{cls.__name__} {d['name']!r}" if isinstance(d, dict) and "name" in d else cls.__name__
+    if not isinstance(d, dict):
+        raise ValueError(f"Expected a mapping for the {what}, not {d!r}.")
+    fields = set(cls.__dataclass_fields__)
+    unknown = sorted(set(d) - fields)
+    if unknown:
+        raise ValueError(
+            f"Unknown keys for the {what}: {unknown}. Valid keys: {', '.join(sorted(fields))}."
+        )
+    return d
 
 
 def _read_fasta(path: str | Path, contig: str | None = None) -> str:
