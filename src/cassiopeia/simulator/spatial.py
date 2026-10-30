@@ -1,5 +1,7 @@
 """Functional spatial data simulation for Cassiopeia."""
 
+from typing import Literal, overload
+
 import networkx as nx
 import numpy as np
 import treedata as td
@@ -7,9 +9,35 @@ from scipy import spatial as scipy_spatial
 from scipy.stats.qmc import PoissonDisk
 
 from cassiopeia.mixins import DataSimulatorError
+from cassiopeia.simulator.tracing import _check_node_attr
 from cassiopeia.utils import _get_digraph
 
 
+@overload
+def brownian_spatial(
+    tdata: td.TreeData,
+    dim: int = 2,
+    diffusion_coefficient: float = 1.0,
+    scale_unit_area: bool = False,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "spatial",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def brownian_spatial(
+    tdata: td.TreeData,
+    dim: int = 2,
+    diffusion_coefficient: float = 1.0,
+    scale_unit_area: bool = False,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "spatial",
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
 def brownian_spatial(
     tdata: td.TreeData,
     dim: int = 2,
@@ -20,7 +48,7 @@ def brownian_spatial(
     time_key: str = "time",
     key_added: str = "spatial",
     copy: bool = False,
-) -> td.TreeData:
+) -> td.TreeData | None:
     """Overlay spatial coordinates via Brownian motion along the tree.
 
     The root is placed at the origin. Each other node's position is the parent
@@ -28,8 +56,9 @@ def brownian_spatial(
     where D is the diffusion coefficient and t is the branch length. Displacements
     are independent across dimensions and nodes.
 
-    Leaf coordinates are stored in ``tdata.obsm[key_added]`` as a numpy array.
-    All node coordinates (including internal nodes) are stored in ``tdata.obst[tree_key].nodes[node][key_added]``.
+    Coordinates of the observations (leaves) are stored in ``tdata.obsm[key_added]``
+    as a numpy array, and those of all nodes (including internal nodes) in the
+    ``key_added`` node attribute of ``tdata.obst[tree_key]``.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -41,24 +70,27 @@ def brownian_spatial(
         random_seed: NumPy random seed for reproducibility.
         tree_key: Key in ``tdata.obst`` for the tree. Only required if
             ``tdata`` contains multiple trees.
-        time_key: Node attribute key for branch lengths (default ``"time"``). Must be present on all nodes.
+        time_key: Node attribute holding node times (default ``"time"``); branch
+            lengths are time differences. Must be present on all nodes.
         key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
-            If ``False`` (default), modify ``tdata`` in-place.
+            If ``False`` (default), modify ``tdata`` in place.
 
     Returns:
-        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
-        input modified in-place.
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
 
     Raises:
-        DataSimulatorError: If ``dim`` <= 0 or ``diffusion_coefficient`` < 0.
+        DataSimulatorError: If ``dim`` <= 0, ``diffusion_coefficient`` < 0, or
+            a node has no time.
     """
-    _, tree_key = _get_digraph(tdata, tree_key)
+    tree, tree_key = _get_digraph(tdata, tree_key)
     if dim <= 0:
         raise DataSimulatorError("Number of dimensions must be positive.")
     if diffusion_coefficient < 0:
         raise DataSimulatorError("Diffusion coefficient must be non-negative.")
+    _check_node_attr(tree, time_key)
 
     if copy:
         tdata = tdata.copy()
@@ -95,10 +127,30 @@ def brownian_spatial(
     coords = np.array([locations[leaf] for leaf in leaves])
     tdata.obsm[key_added] = coords
 
-    if copy:
-        return tdata
+    return tdata if copy else None
 
 
+@overload
+def clonal_spatial(
+    tdata: td.TreeData,
+    shape: tuple[int, ...] | None = None,
+    space: np.ndarray | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    key_added: str = "spatial",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def clonal_spatial(
+    tdata: td.TreeData,
+    shape: tuple[int, ...] | None = None,
+    space: np.ndarray | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    key_added: str = "spatial",
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
 def clonal_spatial(
     tdata: td.TreeData,
     shape: tuple[int, ...] | None = None,
@@ -107,7 +159,7 @@ def clonal_spatial(
     tree_key: str | None = None,
     key_added: str = "spatial",
     copy: bool = False,
-) -> td.TreeData:
+) -> td.TreeData | None:
     """Overlay spatial coordinates with clonal spatial autocorrelation.
 
     N coordinates (N = number of leaves) are sampled in the given space via
@@ -117,8 +169,9 @@ def clonal_spatial(
     Delaunay/kNN graph), so that leaves sharing recent ancestry tend to be
     spatially clustered.
 
-    Leaf coordinates are stored in ``tdata.obsm[key_added]`` as a numpy array.
-    Internal node coordinates (centroid of their assigned points) are stored in ``tdata.obst[tree_key].nodes[node][key_added]``.
+    Coordinates of the observations are stored in ``tdata.obsm[key_added]`` as a
+    numpy array, and those of all nodes in the ``key_added`` node attribute of
+    ``tdata.obst[tree_key]`` (internal nodes get the centroid of their points).
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -133,11 +186,11 @@ def clonal_spatial(
         key_added: Key for storing coordinates in ``tdata.obsm`` and as node
             attributes.
         copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
-            If ``False`` (default), modify ``tdata`` in-place.
+            If ``False`` (default), modify ``tdata`` in place.
 
     Returns:
-        Modified ``tdata``. If ``copy=True``, a new TreeData; otherwise the
-        input modified in-place.
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
 
     Raises:
         DataSimulatorError: If neither/both of ``shape`` and ``space`` are provided.
@@ -172,7 +225,7 @@ def clonal_spatial(
 
     tree = tdata.obst[tree_key]
     root = next(n for n in tree if tree.in_degree(n) == 0)
-    n_leaves = len(tdata.obs_names)
+    n_leaves = sum(1 for n in tree if tree.out_degree(n) == 0)
 
     points = _sample_points(actual_space, dim, n_leaves)
 
@@ -205,8 +258,7 @@ def clonal_spatial(
     coords = np.array([locations[leaf] for leaf in leaves])
     tdata.obsm[key_added] = coords
 
-    if copy:
-        return tdata
+    return tdata if copy else None
 
 
 # --- Private helpers ---
@@ -263,6 +315,10 @@ def _nearest_neighbors_graph(points: np.ndarray, k: int) -> nx.Graph:
 
 def _points_to_graph(points: np.ndarray) -> nx.Graph:
     """Build a connected graph (Delaunay for >5 points, kNN otherwise)."""
+    if len(points) == 1:  # e.g. a unifurcation above a leaf
+        G = nx.Graph()
+        G.add_node(0)
+        return G
     if len(points) > 5:
         return _triangulation_graph(points)
     return _nearest_neighbors_graph(points, min(5, len(points) - 1))

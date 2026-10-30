@@ -1,4 +1,6 @@
-from typing import Literal
+"""Functional gene expression simulators for Cassiopeia."""
+
+from typing import Literal, overload
 
 import networkx as nx
 import numpy as np
@@ -6,27 +8,38 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import DataSimulatorError
-from cassiopeia.utils import _check_tree_has_key, _get_digraph, _get_root
+from cassiopeia.simulator.tracing import _check_node_attr
+from cassiopeia.utils import _get_digraph, _get_root
 
 
-def _add_expression_to_tdata(tdata, expression, layer=None):
-    """Update TreeData with expression data."""
-    new_tdata = td.TreeData(
-        obs=tdata.obs.copy(),
-        var=pd.DataFrame(index=[f"Gene_{i}" for i in range(expression.shape[1])]),
-        obsm=tdata.obsm.copy(),
-        varm=tdata.varm.copy(),
-        layers=tdata.layers.copy(),
-        uns=tdata.uns.copy(),
-        obst=tdata.obst.copy(),
-        alignment=tdata.alignment,
-        label=tdata.label,
-    )
-    if layer is not None:
-        new_tdata.layers[layer] = expression
+def _set_expression(tdata: td.TreeData, X: np.ndarray, layer: str | None = None) -> None:
+    """Store an expression matrix in ``tdata.X`` or ``tdata.layers[layer]``, in place.
+
+    If ``tdata`` has a different number of variables than ``X`` has columns, its
+    variable axis is replaced by genes ``Gene_0``, ``Gene_1``, ..., dropping
+    ``X``, ``layers``, ``varm``, ``varp`` and ``vart`` (which are sized to the
+    old variables). Observation data (``obs``, ``obsm``, ``obsp``, ``obst``) and
+    ``uns`` are kept.
+    """
+    if tdata.n_vars != X.shape[1]:
+        var = pd.DataFrame(index=[f"Gene_{i}" for i in range(X.shape[1])])
+        tdata.X = None  # sized to the old variables
+        # AnnData cannot resize the variable axis in place; re-initialize the object.
+        tdata._init_as_actual(
+            obs=tdata.obs,
+            var=var,
+            uns=tdata.uns,
+            obsm=dict(tdata.obsm),
+            obsp=dict(tdata.obsp),
+            obst=dict(tdata.obst),
+            label=tdata.label,
+            alignment=tdata.alignment,
+            allow_overlap=tdata.allow_overlap,
+        )
+    if layer is None:
+        tdata.X = X
     else:
-        new_tdata.X = expression
-    return new_tdata
+        tdata.layers[layer] = X
 
 
 def _expression_from_latent(X_latent, latent_dim, n_genes, rng):
@@ -89,6 +102,7 @@ def _sample_counts(
     )
 
 
+@overload
 def brownian_expression(
     tdata: td.TreeData,
     latent_dim: int = 20,
@@ -103,85 +117,106 @@ def brownian_expression(
     depth_key: str = "time",
     tree_key: str | None = None,
     layer_added: str | None = None,
-) -> td.TreeData:
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def brownian_expression(
+    tdata: td.TreeData,
+    latent_dim: int = 20,
+    n_genes: int = 5000,
+    diffusion: float = 1.0,
+    momentum: float = 0.5,
+    distribution: Literal["gaussian", "poisson", "negative_binomial"] = "gaussian",
+    library_size: float = 10000,
+    dispersion: float = 0.1,
+    random_seed: int | None = None,
+    latent_key: str = "X_latent",
+    depth_key: str = "time",
+    tree_key: str | None = None,
+    layer_added: str | None = None,
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
+def brownian_expression(
+    tdata: td.TreeData,
+    latent_dim: int = 20,
+    n_genes: int = 5000,
+    diffusion: float = 1.0,
+    momentum: float = 0.5,
+    distribution: Literal["gaussian", "poisson", "negative_binomial"] = "gaussian",
+    library_size: float = 10000,
+    dispersion: float = 0.1,
+    random_seed: int | None = None,
+    latent_key: str = "X_latent",
+    depth_key: str = "time",
+    tree_key: str | None = None,
+    layer_added: str | None = None,
+    copy: bool = False,
+) -> td.TreeData | None:
     r"""Simulate expression data along a tree via Brownian motion in latent space.
 
     This function simulates a latent Brownian-motion trajectory for each cell
     along a rooted tree with AR(1)-style momentum in the latent
     displacements. The latent coordinates are then linearly projected into
-    gene space using a random (or user-supplied) loading matrix.
+    gene space using a random loading matrix and passed through the
+    ``distribution`` observation model.
 
-    The function returns a copy of ``tdata`` with the following updates:
+    The root node is placed at the origin in latent space. With momentum
+    :math:`m`, the latent displacement on a child edge is
+    ``disp_child = m * disp_parent + innovation``, where the innovation variance
+    is chosen so that the marginal displacement variance along each edge
+    matches the Brownian variance :math:`2 D \Delta t`. With ``momentum=0``
+    displacements are i.i.d. Gaussian for each edge. Branches of zero length
+    inherit the parent's latent position.
 
-    * Latent coordinates for each node are stored in ``tdata.obsm[latent_key]``
-      and as node attributes under ``latent_key``.
-    * The reconstructed expression matrix is stored either in
-      ``tdata.layers[layer_added]`` (if provided) or in ``tdata.X``.
+    Results are written to ``tdata``:
 
-    Parameters
-    ----------
-    tdata:
-        The :class:`td.TreeData` object.
-    latent_dim
-        Dimensionality of the latent Brownian space.
-    n_genes
-        Number of genes to simulate in the observed expression matrix.
-    distribution
-        Observation model used to generate the expression matrix from the
-        latent projection. ``"gaussian"`` (default) returns the continuous
-        projection unchanged; ``"poisson"`` and ``"negative_binomial"`` sample
-        integer counts (see :func:`_sample_counts`).
-    library_size
-        Expected total counts per cell, used to scale the per-cell rate for the
-        count distributions. Ignored when ``distribution == "gaussian"``.
-    dispersion
-        Overdispersion (inverse size) of the negative binomial; the count
-        variance is ``lam + dispersion * lam**2``. Ignored for the other
-        distributions.
-    diffusion
-        Diffusion coefficient :math:`D` for the Brownian process. For an
-        edge of length :math:`\\Delta t`, the latent variance along that edge
-        is :math:`2 D \\Delta t`.
-    momentum
-        Momentum coefficient :math:`m` in [0, 1). When non-zero, the latent
-        displacement on a child edge is modeled as an AR(1) process:
+    * ``tdata.obsm[latent_key]``: latent coordinates of the observations, also
+      stored for every node in the ``latent_key`` node attribute.
+    * ``tdata.layers[layer_added]`` (if given) or ``tdata.X``: the expression
+      matrix. If ``tdata`` has a different number of variables than
+      ``n_genes``, its variable axis is replaced by genes ``Gene_0``,
+      ``Gene_1``, ..., dropping ``X``, ``layers``, ``varm`` and ``varp``.
 
-        ``disp_child = m * disp_parent + innovation``
-
-        where the innovation variance is chosen so that the marginal
-        displacement variance along each edge matches the Brownian variance.
-        When ``momentum == 0.0``, displacements are i.i.d. Gaussian for each
-        edge.
-    random_seed
-        Optional random seed for reproducibility.
-    latent_key
-        Key under which to store latent positions in node attributes and in
-        ``tdata.obsm[latent_key]``.
-    depth_key
-        Name of the node attribute giving the time/depth from the root.
-    tree_key
-        Specifies which tree to use if ``tdata`` contains multiple trees.
-    layer_added
-        If specified, the reconstructed expression matrix is stored in
-        ``tdata.layers[layer_added]``. Otherwise it is stored in ``tdata.X``.
+    Args:
+        tdata: TreeData with a tree in ``obst[tree_key]`` whose nodes have times
+            under ``depth_key``.
+        latent_dim: Dimensionality of the latent Brownian space.
+        n_genes: Number of genes to simulate in the observed expression matrix.
+        diffusion: Diffusion coefficient :math:`D` of the Brownian process. For
+            an edge of length :math:`\Delta t`, the latent variance along that
+            edge is :math:`2 D \Delta t`.
+        momentum: Momentum coefficient :math:`m` in ``[0, 1)`` of the AR(1)
+            displacements (see above).
+        distribution: Observation model used to generate the expression matrix
+            from the latent projection. ``"gaussian"`` (default) returns the
+            continuous projection unchanged; ``"poisson"`` and
+            ``"negative_binomial"`` sample integer counts from a per-cell
+            softmax rate scaled to ``library_size``.
+        library_size: Expected total counts per cell for the count
+            distributions. Ignored when ``distribution="gaussian"``.
+        dispersion: Overdispersion (inverse size) of the negative binomial; the
+            count variance is ``lam + dispersion * lam**2``. Ignored for the
+            other distributions.
+        random_seed: Random seed for reproducibility.
+        latent_key: Key under which latent positions are stored in node
+            attributes and in ``tdata.obsm``.
+        depth_key: Node attribute holding the time/depth from the root.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
+        layer_added: If given, the expression matrix is stored in
+            ``tdata.layers[layer_added]``; otherwise in ``tdata.X``.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in place.
 
     Returns:
-    -------
-    tdata : :class:`td.TreeData`
-        The modified TreeData object with simulated data overlaid.
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
 
     Raises:
-    ------
-    DataSimulatorError
-        If ``latent_dim <= 0``, ``diffusion_coefficient < 0``,
-        ``momentum`` is not in ``[0, 1)``, or if the depth/time is decreasing
-        along any edge.
-
-    Notes:
-    -----
-    * The root node is placed at the origin in latent space.
-    * Branches with zero length (or zero implied variance) simply inherit the
-      parent's latent position with zero displacement.
+        DataSimulatorError: If ``latent_dim <= 0``, ``diffusion < 0``,
+            ``momentum`` is not in ``[0, 1)``, a node has no time under
+            ``depth_key``, or the time decreases along an edge.
     """
     # Setup
     if latent_dim <= 0:
@@ -192,10 +227,13 @@ def brownian_expression(
         raise DataSimulatorError("Momentum must be in [0, 1).")
     rng = np.random.default_rng(random_seed)
 
+    if copy:
+        tdata = tdata.copy()
+
     # Extract directed tree and root
     t, _ = _get_digraph(tdata, tree_key)
     root = _get_root(t)
-    _check_tree_has_key(t, depth_key)
+    _check_node_attr(t, depth_key, arg="depth_key")
     last_disp_key = "_last_displacement"
 
     # Simulate latent space trajectories
@@ -264,7 +302,8 @@ def brownian_expression(
     for node in t.nodes:
         t.nodes[node].pop(last_disp_key, None)
 
-    return _add_expression_to_tdata(tdata, X, layer_added)
+    _set_expression(tdata, X, layer_added)
+    return tdata if copy else None
 
 
 def _rescale_node_times(
@@ -289,6 +328,7 @@ def _rescale_node_times(
         tree.nodes[n][scaled_time_key] = min_time + (original_t - t_min) * scale
 
 
+@overload
 def trajectory_expression(
     tdata: td.TreeData,
     trajectory: td.TreeData | nx.DiGraph,
@@ -301,9 +341,45 @@ def trajectory_expression(
     prob_key: str | None = None,
     depth_key: str = "time",
     random_seed: int | None = None,
+    tree_key: str | None = None,
     layer_added: str | None = None,
-) -> td.TreeData:
-    r"""Simulate expression along a lineage by mapping cells onto a cell-state trajectory.
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def trajectory_expression(
+    tdata: td.TreeData,
+    trajectory: td.TreeData | nx.DiGraph,
+    n_genes: int = 5000,
+    distribution: Literal["gaussian", "poisson", "negative_binomial"] = "gaussian",
+    library_size: float = 10000,
+    dispersion: float = 0.1,
+    latent_noise: float = 0.0,
+    latent_key: str = "X_latent",
+    prob_key: str | None = None,
+    depth_key: str = "time",
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    layer_added: str | None = None,
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
+def trajectory_expression(
+    tdata: td.TreeData,
+    trajectory: td.TreeData | nx.DiGraph,
+    n_genes: int = 5000,
+    distribution: Literal["gaussian", "poisson", "negative_binomial"] = "gaussian",
+    library_size: float = 10000,
+    dispersion: float = 0.1,
+    latent_noise: float = 0.0,
+    latent_key: str = "X_latent",
+    prob_key: str | None = None,
+    depth_key: str = "time",
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    layer_added: str | None = None,
+    copy: bool = False,
+) -> td.TreeData | None:
+    """Simulate expression along a lineage by mapping cells onto a cell-state trajectory.
 
     Unlike :func:`brownian_expression`, which lets each cell drift freely in
     latent space, this function constrains cells to follow a predefined
@@ -316,12 +392,12 @@ def trajectory_expression(
     cells share state up to the point their ancestors committed to different
     trajectory branches.
 
-    Algorithm
-    ---------
+    The simulation proceeds in four steps:
+
     1. **Time rescaling.** The node times of the lineage tree and of the
-       trajectory are each independently rescaled to ``[0, 1]`` (see
-       :func:`_rescale_node_times`), so the two trees are compared on a common
-       pseudotime axis regardless of their absolute time units.
+       trajectory are each independently rescaled to ``[0, 1]``, so the two
+       trees are compared on a common pseudotime axis regardless of their
+       absolute time units.
     2. **Walking the trajectory.** Cells are visited in topological (root → leaf)
        order. Each cell inherits the trajectory edge its parent ended on, then
        *advances* forward along the trajectory until it reaches the edge whose
@@ -338,78 +414,76 @@ def trajectory_expression(
        clamped at a leaf (or on a zero-length edge) take that node's latent
        vector directly.
     4. **Noise and projection.** Optional Gaussian noise of standard deviation
-       ``latent_noise`` is added to every latent vector. The leaf latent vectors
-       are then linearly projected into ``n_genes`` gene-space dimensions with a
-       random loading matrix and passed through the ``distribution`` observation
-       model (see :func:`_sample_counts`).
+       ``latent_noise`` is added to every latent vector. The latent vectors of
+       the observations are then linearly projected into ``n_genes`` gene-space
+       dimensions with a random loading matrix and passed through the
+       ``distribution`` observation model.
 
-    The function returns a copy of ``tdata`` with:
+    Results are written to ``tdata``:
 
-    * leaf latent vectors in ``tdata.obsm[latent_key]`` (n_leaves × latent_dim),
-      where ``latent_dim`` is inferred from the trajectory's latent vectors;
-    * the expression matrix in ``tdata.layers[layer_added]`` (if given) or
-      ``tdata.X``.
+    * ``tdata.obsm[latent_key]``: latent vectors of the observations
+      (n_obs × latent_dim), where ``latent_dim`` is inferred from the
+      trajectory's latent vectors;
+    * ``tdata.layers[layer_added]`` (if given) or ``tdata.X``: the expression
+      matrix. If ``tdata`` has a different number of variables than
+      ``n_genes``, its variable axis is replaced by genes ``Gene_0``,
+      ``Gene_1``, ..., dropping ``X``, ``layers``, ``varm`` and ``varp``.
 
-    Parameters
-    ----------
-    tdata
-        The lineage :class:`td.TreeData` to annotate. Its tree must carry node
-        times under ``depth_key``.
-    trajectory
-        The cell-state trajectory, as a :class:`td.TreeData` or
-        :class:`networkx.DiGraph`. Node attributes:
-
-          - ``depth_key`` : float — pseudotime of the state.
-          - ``latent_key`` : np.ndarray of shape ``(latent_dim,)`` — the state's
-            latent coordinates.
-
-        Optional edge attribute ``prob_key`` : float — relative weight used when
-        choosing among the children of a branch point.
-    n_genes
-        Number of genes to simulate in the observed expression matrix.
-    distribution
-        Observation model used to generate the expression matrix from the
-        latent projection. ``"gaussian"`` (default) returns the continuous
-        projection unchanged; ``"poisson"`` and ``"negative_binomial"`` sample
-        integer counts (see :func:`_sample_counts`).
-    library_size
-        Expected total counts per cell, used to scale the per-cell rate for the
-        count distributions. Ignored when ``distribution == "gaussian"``.
-    dispersion
-        Overdispersion (inverse size) of the negative binomial; the count
-        variance is ``lam + dispersion * lam**2``. Ignored for the other
-        distributions.
-    latent_noise
-        Standard deviation of Gaussian noise added to each cell's latent vector
-        before projection into gene space.
-    latent_key
-        Node attribute on ``trajectory`` holding the latent vectors; also the
-        key under which leaf latent vectors are written to ``tdata.obsm``.
-    prob_key
-        Edge attribute on ``trajectory`` used as the transition weight when
-        choosing a child at a branch point. If ``None``, children are chosen
-        uniformly at random.
-    depth_key
-        Node attribute holding times on both ``tdata`` and ``trajectory``.
-    random_seed
-        Seed for reproducibility.
-    layer_added
-        If specified, the expression matrix is stored in
-        ``tdata.layers[layer_added]``. Otherwise it is stored in ``tdata.X``.
+    Args:
+        tdata: The lineage TreeData to annotate. Its tree must carry node times
+            under ``depth_key``.
+        trajectory: The cell-state trajectory, as a TreeData or
+            :class:`networkx.DiGraph`. Its nodes need ``depth_key`` (float, the
+            pseudotime of the state) and ``latent_key`` (array of shape
+            ``(latent_dim,)``, the state's latent coordinates) attributes. An
+            optional ``prob_key`` edge attribute (float) weights the choice
+            among the children of a branch point.
+        n_genes: Number of genes to simulate in the observed expression matrix.
+        distribution: Observation model used to generate the expression matrix
+            from the latent projection. ``"gaussian"`` (default) returns the
+            continuous projection unchanged; ``"poisson"`` and
+            ``"negative_binomial"`` sample integer counts from a per-cell
+            softmax rate scaled to ``library_size``.
+        library_size: Expected total counts per cell for the count
+            distributions. Ignored when ``distribution="gaussian"``.
+        dispersion: Overdispersion (inverse size) of the negative binomial; the
+            count variance is ``lam + dispersion * lam**2``. Ignored for the
+            other distributions.
+        latent_noise: Standard deviation of Gaussian noise added to each cell's
+            latent vector before projection into gene space.
+        latent_key: Node attribute on ``trajectory`` holding the latent vectors;
+            also the ``tdata.obsm`` key for the cells' latent vectors.
+        prob_key: Edge attribute on ``trajectory`` used as the transition weight
+            when choosing a child at a branch point. If ``None``, children are
+            chosen uniformly at random.
+        depth_key: Node attribute holding times on both ``tdata`` and
+            ``trajectory``.
+        random_seed: Random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the lineage tree. Only required if
+            ``tdata`` contains multiple trees.
+        layer_added: If given, the expression matrix is stored in
+            ``tdata.layers[layer_added]``; otherwise in ``tdata.X``.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in place.
 
     Returns:
-    -------
-    tdata : :class:`td.TreeData`
-        Copy of ``tdata`` with leaf latent vectors in ``obsm[latent_key]`` and
-        the simulated expression matrix overlaid.
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
+
+    Raises:
+        DataSimulatorError: If a node of the lineage tree or of the trajectory
+            has no time under ``depth_key``.
     """
     # Setup
-    lineage_tdata = tdata.copy()
     rng = np.random.default_rng(random_seed)
+    if copy:
+        tdata = tdata.copy()
     scaled_time_key = "scaled_time"
     factor_edge_key = "factor_edge"
     trajectory, _ = _get_digraph(trajectory, copy=True)
-    lineage_tree, _ = _get_digraph(tdata, copy=True)
+    lineage_tree, _ = _get_digraph(tdata, tree_key, copy=True)
+    _check_node_attr(lineage_tree, depth_key, arg="depth_key")
+    _check_node_attr(trajectory, depth_key, arg="depth_key")
     factor_root = _get_root(trajectory)
     lineage_root = _get_root(lineage_tree)
     factor_topo = list(nx.topological_sort(trajectory))
@@ -503,13 +577,14 @@ def trajectory_expression(
         embeddings += rng.normal(loc=0.0, scale=latent_noise, size=embeddings.shape)
     columns = [f"{i}" for i in range(latent_dim)]
     embeddings = pd.DataFrame(embeddings, index=lineage_topo, columns=columns)
-    # Restrict to observed cells (leaves) so the latent and expression matrices
-    # are aligned with ``tdata.obs_names``.
-    embeddings = embeddings.loc[lineage_tdata.obs_names]
-    lineage_tdata.obsm[latent_key] = embeddings
+    # Restrict to the observations so the latent and expression matrices are
+    # aligned with ``tdata.obs_names``.
+    embeddings = embeddings.loc[tdata.obs_names]
+    tdata.obsm[latent_key] = embeddings
 
     # Get gene expression via linear projection, then apply the observation model
     X = _expression_from_latent(embeddings.to_numpy(), latent_dim, n_genes, rng)
     X = _sample_counts(X, distribution, library_size, dispersion, rng)
 
-    return _add_expression_to_tdata(lineage_tdata, X, layer_added)
+    _set_expression(tdata, X, layer_added)
+    return tdata if copy else None
